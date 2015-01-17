@@ -1,11 +1,10 @@
-package main
+package storagedb
 
 import (
     "os"
     "encoding/binary"
     "bytes"
-    "time"
-    "fmt"
+    //"time"
     "errors"
 )
 
@@ -122,40 +121,4 @@ func (dr *DataReader) ReadBatch(startindex int64,endindex int64) (timestamp []in
     }
 
     return timestamp,data,nil
-}
-
-
-func main() {
-    x,err := GetReader("./lol")
-
-    if (err!=nil) {
-        fmt.Printf("get err: %s\n",err)
-        panic(0)
-    }
-    defer x.Close()
-
-    timestamp,data,err := x.Read(1)
-    if (err != nil) {
-        fmt.Printf("Read error\n")
-    } else {
-        fmt.Printf("2nd element: %s (%s)\n",string(data),time.Unix(0,timestamp))
-    }
-
-    timestamps,datas,err := x.ReadBatch(0,3)
-    if (err != nil) {
-        fmt.Printf("ReadBatch error\n")
-    } else {
-        for i := 0; i < len(timestamps); i++ {
-            fmt.Printf("%d: %s (%s)\n",i,string(datas[i]),time.Unix(0,timestamps[i]))
-        }
-    }
-
-    fmt.Printf("Size: %d\n",x.Len())
-    time.Sleep(5*time.Second)
-
-    fmt.Printf("Size: %d\n",x.Len())
-    time.Sleep(5*time.Second)
-    fmt.Printf("Size: %d\n",x.Len())
-
-
 }

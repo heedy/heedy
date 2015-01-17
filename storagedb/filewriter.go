@@ -1,11 +1,10 @@
-package main
+package storagedb
 
 import (
     "os"
     "bytes"
     "encoding/binary"
     "time"
-    "fmt"
 )
 
 type DataWriter struct {
@@ -85,22 +84,4 @@ func (dw *DataWriter) BatchInsertNow(data []byte) {
 
 func (dw *DataWriter) Len() (int) {
     return dw.offsetb.Len()/16   //Each write to the offset buffer is 2 64 bit integers, which are 8 bytes each
-}
-
-func main() {
-    x,err := GetWriter("./lol")
-
-    if (err!=nil) {
-        fmt.Printf("get err: %s\n",err)
-        panic(0)
-    }
-    defer x.Close()
-
-    fmt.Printf("BatchSize: %d\n",x.Len())
-    x.BatchInsertNow([]byte("Hello World!"))
-    fmt.Printf("BatchSize: %d\n",x.Len())
-    x.BatchWrite()
-    fmt.Printf("BatchSize: %d\n",x.Len())
-
-
 }
