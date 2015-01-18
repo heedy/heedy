@@ -80,6 +80,24 @@ func (dr *DataReader) Read(index int64) (timestamp int64, data []byte, err error
     return timestamp,databuffer,nil
 }
 
+func (dr *DataReader) ReadTimestamp(index int64) (timestamp int64,err error) {
+    //Makes sure that the length is within range
+    if (index >= dr.size) {
+        if (index >= dr.Len()) {
+            return 0,errors.New("Index out of bounds")
+        }
+    }
+
+    //The index is within bounds - read the offsetfile. The offsetfile is written: (startloc,timestamp,endloc)
+    offsetbuffer := make([]byte, 8)
+    dr.offsetf.ReadAt(offsetbuffer,2*8*index+8)
+
+    buf := bytes.NewReader(offsetbuffer)
+    binary.Read(buf,binary.LittleEndian,&timestamp)
+
+    return timestamp,nil
+}
+
 func (dr *DataReader) ReadBatch(startindex int64,endindex int64) (timestamp []int64, data [][]byte, err error) {
     //Makes sure that the length is within range
     if (endindex > dr.size) {
@@ -120,4 +138,64 @@ func (dr *DataReader) ReadBatch(startindex int64,endindex int64) (timestamp []in
     }
 
     return timestamp,data,nil
+}
+
+//Find the datapoint x such that the timestamp of x = inf(i> t),
+//where i are datapoints and t is the given timestamp.
+//Ie, it finds the first datapoint with a timestamp > given.
+//TODO: This code makes no guarantees about nanosecond-level precision.
+func (dr *DataReader) FindTime(timestamp int64) (index int64, err error) {
+    //We do this shit logn style
+    leftbound := int64(0)
+    leftts,err := dr.ReadTimestamp(0)
+    if err != nil {
+        return 0,err
+    }
+
+    //If the timestamp is earlier than earliest datapoint
+    if (leftts > timestamp) {
+        return 0,nil
+    }
+
+    //If Len is 0, then we would have failed reading already
+    rightbound := dr.Len()-1
+    rightts,err := dr.ReadTimestamp(rightbound)
+    if err != nil {
+        return 0,err
+    }
+
+    if (rightts <= timestamp) {
+        return dr.size,errors.New("Not within range") //Returns the answer along with a not in range error
+    }
+
+    for (rightbound - leftbound > 1) {
+        midpoint := (leftbound + rightbound)/2
+        ts,err := dr.ReadTimestamp(midpoint)
+        if (err!= nil) {
+            return 0,err
+        }
+        if (ts <= timestamp) {
+            leftbound = midpoint
+            leftts = ts
+        } else {
+            rightbound = midpoint
+            rightts = ts
+        }
+    }
+    return rightbound, nil
+}
+
+
+func (dr *DataReader) FindTimeRange(timestamp int64,timestamp2 int64) (index int64, index2 int64, err error) {
+    //We could do this in a much faster way by using the fact that the time range number 1 limits the locations
+    //  of timestamp2 but that can be done some time in the far,misty future.
+    i1,err := dr.FindTime(timestamp)
+    if (err!=nil) {
+        return i1,-1,err
+    }
+    i2,err2 := dr.FindTime(timestamp2)
+    if (err2!=nil) {
+        return i1,i2,err2
+    }
+    return i1,i2,nil
 }
