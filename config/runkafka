@@ -1,0 +1,2 @@
+#!/bin/sh
+python2 connect.py -c setup.cfg
