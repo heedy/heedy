@@ -1,10 +1,11 @@
-package storagedb
+package filedb
 
 import (
     "os"
     "bytes"
     "encoding/binary"
     "time"
+    "path/filepath"
 )
 
 type DataWriter struct {
@@ -21,6 +22,14 @@ func (dw *DataWriter) Close() {
 }
 
 func GetWriter(path string) (dw *DataWriter, err error) {
+    //Check if the directory exists
+    parentdir := filepath.Dir(path)
+    if PathExists(parentdir) == false {
+        err = os.MkdirAll(parentdir,0777)
+        if (err != nil) {
+            return nil,err
+        }
+    }
     //Opens the offset and data files for append
     offsetf,err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
     if (err != nil) {

@@ -1,4 +1,4 @@
-package storagedb
+package filedb
 
 import (
     "os"

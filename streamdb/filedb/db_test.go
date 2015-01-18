@@ -1,26 +1,40 @@
-package storagedb_test
+package filedb_test
 
 import (
-    "connectordb/storagedb"
+    "connectordb/streamdb/filedb"
     "time"
     "testing"
     )
 
-func TestReadWrite(t *testing.T) {
-    if (storagedb.PathExists("./data_test") == true) {
-        storagedb.Delete("./data_test")
-        storagedb.Delete("./data_test.data")
+func TestFileDB(t *testing.T) {
+    if (filedb.PathExists("./testdb") == true) {
+        filedb.Delete("./testdb")
+    }
+
+    db,err := filedb.FileDatabase("./testdb")
+
+    if err != nil {
+        t.Errorf("Database Error: %s\n",err)
+        return
+    }
+
+    if (db.Exists("user1/stream1")) {
+        t.Errorf("Existence of nonexisting\n")
     }
 
 
-    writer,err := storagedb.GetWriter("./data_test")
+    writer,err := db.Writer("user1/stream1")
     if (err!=nil) {
         t.Errorf("Writer error: %s\n",err)
         return
     }
     defer writer.Close()
 
-    reader,err := storagedb.GetReader("./data_test")
+    if (db.Exists("/user1/stream1") == false) {
+        t.Errorf("Nonexistence of existing\n")
+    }
+
+    reader,err := db.Reader("user1/stream1")
     if (err!=nil) {
         t.Errorf("Reader error: %s\n",err)
         return
@@ -74,14 +88,10 @@ func TestReadWrite(t *testing.T) {
         t.Errorf("Reader length incorrect\n")
     }
 
-    if (storagedb.PathExists("./data_test") != true) {
-        t.Errorf("The path DOES exist, foo\n")
-    }
-
 }
 
 func BenchmarkWrite(b *testing.B) {
-    writer,err := storagedb.GetWriter("./data_test")
+    writer,err := filedb.GetWriter("./testdb/database")
     if (err!=nil) {
         b.Errorf("Writer error: %s\n",err)
         return
@@ -95,7 +105,7 @@ func BenchmarkWrite(b *testing.B) {
 }
 
 func BenchmarkRead(b *testing.B) {
-    writer,err := storagedb.GetWriter("./data_test")
+    writer,err := filedb.GetWriter("./testdb/database")
     if (err!=nil) {
         b.Errorf("Writer error: %s\n",err)
         return
@@ -105,9 +115,13 @@ func BenchmarkRead(b *testing.B) {
     for i:= 0; i<b.N; i++ {
         writer.BatchInsertNow([]byte("Hello World! Testing testing 1 2 3 Blah blah"))
     }
-    writer.BatchWrite()
+    err = writer.BatchWrite()
+    if (err!= nil) {
+        b.Errorf("BatchWrite error: %s\n",err)
+    }
 
-    reader,err := storagedb.GetReader("./data_test")
+
+    reader,err := filedb.GetReader("./testdb/database")
     if (err!=nil) {
         b.Errorf("Reader error: %s\n",err)
         return
@@ -117,6 +131,9 @@ func BenchmarkRead(b *testing.B) {
     b.ResetTimer()
 
     for i:=0; i< b.N;i++ {
-        reader.Read(int64(i))
+        _,_,err = reader.Read(int64(i))
+        if (err!= nil) {
+            b.Errorf("Reader error: %s\n",err)
+        }
     }
 }
