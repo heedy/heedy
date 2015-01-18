@@ -1,10 +1,9 @@
-package storagedb
+package filedb
 
 import (
     "os"
     "encoding/binary"
     "bytes"
-    //"time"
     "errors"
 )
 
