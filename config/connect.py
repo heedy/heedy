@@ -9,7 +9,7 @@ from kafkaserver import Kafka
 def runserver():
     s = ServerSetup(description="Connector server",bindir="./bin")
     zk = Zookeeper(s.hostname,s.port)
-    kf = Kafka(zk.host,s.hostname)
+    kf = Kafka(zk.host,s.hostname,1336)
 
     print "\n**********************************************\n"
     print "Started Successfully\nRUNNING AT",zk.host
