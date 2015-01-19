@@ -1,0 +1,591 @@
+// Package users provides an API for managing user information.
+package users
+
+// BUG(joseph) This should be moved to gorp once they support strong foreign key constraints
+// right now we can't risk it without them
+
+import (
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
+	"log"
+	"github.com/nu7hatch/gouuid"
+	"errors"
+)
+
+
+const(
+	// A black and qhite question mark
+	DEFAULT_ICON =`iVBORw0KGgoAAAANSUhEUgAAAEAAAABAAQMAAACQp+OdAAAABlBMVEUAA
+	AAAAAClZ7nPAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxMAAAsTAQCanBgAAACVS
+	URBVCjPjdGxDcQgDAVQRxSUHoFRMtoxWkZhBEoKK/+IsaNc0ElQxE8K3xhBtLa4Gj4YNQBFEYHxjwFRJ
+	OBU7AAsZOgVWSEJR68bajSUoOjfoK07NkP+h/jAiI8g2WgGdqRx+jVa/r0P2cx9EPE2zduUVxv2NHs6n
+	Q6Z0BZQaX3F4/0od3xvE2TCtOeOs12UQl6c5Quj42jQ5zt8GQAAAABJRU5ErkJggg==`
+)
+
+var (
+ 	DB_DRIVER string
+	db *sql.DB // the database
+)
+
+
+
+type User struct {
+	Id int
+	Name string
+	Email string
+	Password string
+	PasswordSalt string
+	PasswordHashScheme string
+	Admin bool
+	Phone string
+	PhoneCarrier string // phone carrier string
+	UploadLimit_Items int // upload limit in items/day
+	ProcessingLimit_S int // processing limit in seconds/day
+	StorageLimit_Gb int // storage limit in GB
+}
+
+type PhoneCarrier struct {
+	carrier_id int
+	carrier_name string
+	carrier_email_domain string
+}
+
+
+type Device struct {
+	Id int
+	Name string
+	ApiKey string
+	Enabled bool
+	Icon_PngB64 string // a png image in base64
+	Shortname string
+	Superdevice bool
+	OwnerId int // a user
+}
+
+type Stream struct {
+	Id int
+	Name string
+	Active bool
+	Public bool
+	Schema_Json string
+	Defaults_Json string
+	OwnerId int
+}
+
+/**
+Sets up the SQLITE databse.
+**/
+func setupDatabase() {
+
+	_, err := db.Exec("PRAGMA foreign_keys = ON;")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier
+		(	carrier_id INTEGER PRIMARY KEY,
+			carrier_name STRING UNIQUE NOT NULL,
+			carrier_email_domain STRING UNIQUE NOT NULL)`);
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, _ = db.Exec(`INSERT INTO PhoneCarrier VALUES (0, "None", "")`);
+
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS User
+		(   Id INTEGER PRIMARY KEY,
+			Name STRING UNIQUE NOT NULL,
+			Email STRING UNIQUE NOT NULL,
+			Password STRING NOT NULL,
+			PasswordSalt STRING NOT NULL,
+			PasswordHashScheme STRING NOT NULL,
+			Admin BOOLEAN DEFAULT FALSE,
+			Phone STRING DEFAULT "",
+			PhoneCarrier INTEGER DEFAULT 0,
+			UploadLimit_Items INTEGER DEFAULT 24000,
+			ProcessingLimit_S INTEGER DEFAULT 86400,
+			StorageLimit_Gb INTEGER DEFAULT 4,
+
+			FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(carrier_id) ON DELETE SET NULL
+			);`)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON User (Name);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Device
+		(   Id INTEGER PRIMARY KEY,
+			Name STRING NOT NULL,
+			ApiKey STRING NOT NULL,
+			Enabled BOOLEAN DEFAULT TRUE,
+			Icon_PngB64 STRING DEFAULT "",
+			Shortname STRING DEFAULT "",
+			Superdevice BOOL DEFAULT FALSE,
+			OwnerId INTEGER,
+			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE
+			);`)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Stream
+		(   Id INTEGER PRIMARY KEY,
+			Name STRING NOT NULL,
+			Active BOOLEAN DEFAULT TRUE,
+			Public BOOLEAN DEFAULT FALSE,
+			Schema_Json STRING NOT NULL,
+			Defaults_Json STRING NOT NULL,
+			OwnerId INTEGER,
+			FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE
+			);`)
+
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
+}
+
+
+
+// CreateUser creates a user given the user's credentials.
+// If a user already exists with the given credentials, an error is thrown.
+func CreateUser(Name, Email, Password string) (err error) {
+
+	// Ensure we don't have someone with the same email or name
+	usr, err := ReadUserByEmail(Email)
+	if(usr != nil){
+		return errors.New("A user already exists with this email")
+	}
+
+	usr, err = ReadUserByName(Name)
+	if(usr != nil){
+		return errors.New("A user already exists with this name")
+	}
+
+	// Now do the insert
+
+	PasswordSalt, _ := uuid.NewV4()
+	user_hash_scheme := "SHA512"
+	saltedpass := Password + PasswordSalt.String()
+
+	//BUG(Joseph): decide and do encryption here // []byte(sha512.Sum512([]byte(saltedpass)))?
+	dbpass := saltedpass
+
+	_, err = db.Exec(`INSERT INTO User (
+		Name,
+		Email,
+		Password,
+		PasswordSalt,
+		PasswordHashScheme) VALUES (?,?,?,?,?);`,
+		Name,
+		Email,
+		dbpass,
+		PasswordSalt.String(),
+		user_hash_scheme)
+
+	return err
+}
+
+// constructUserFromRow converts a sql.Rows object to a single user
+func constructUserFromRow(rows *sql.Rows) (*User, error){
+	u := new(User)
+
+	for rows.Next() {
+		err := rows.Scan(
+					&u.Id,
+					&u.Name,
+					&u.Email,
+					&u.Password,
+					&u.PasswordSalt,
+					&u.PasswordHashScheme,
+					&u.Admin,
+					&u.Phone,
+					&u.PhoneCarrier,
+					&u.UploadLimit_Items,
+					&u.ProcessingLimit_S,
+					&u.StorageLimit_Gb)
+		return u, err
+	}
+
+	return nil, errors.New("No user supplied")
+}
+
+// ReadUserByEmail returns a User instance if a user exists with the given
+// email address.
+func ReadUserByEmail(Email string) (*User, error){
+	rows, err := db.Query("SELECT * FROM User WHERE Email = ? LIMIT 1", Email)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	return constructUserFromRow(rows)
+}
+
+// ReadUserByName returns a User instance if a user exists with the given
+// username.
+func ReadUserByName(Name string) (*User, error){
+	rows, err := db.Query("SELECT * FROM User WHERE Name = ? LIMIT 1", Name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	return constructUserFromRow(rows)
+}
+
+// ReadUserById returns a User instance if a user exists with the given
+// id.
+func ReadUserById(Id int) (*User, error){
+	rows, err := db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	return constructUserFromRow(rows)
+}
+
+// UpdateUser updates the user with the given id in the database using the
+// information provided in the user struct.
+func UpdateUser(user User) (error) {
+	_, err := db.Exec(`UPDATE User SET
+		Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
+			Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
+			ProcessingLimit_S=?, StorageLimit_Gb=? WHERE Id = ?;`,
+			user.Name,
+			user.Email,
+			user.Password,
+			user.PasswordSalt,
+			user.PasswordHashScheme,
+			user.Admin,
+			user.Phone,
+			user.PhoneCarrier,
+			user.UploadLimit_Items,
+			user.ProcessingLimit_S,
+			user.StorageLimit_Gb,
+			user.Id);
+	return err
+}
+
+// DeleteUser removes a user from the database
+func DeleteUser(user User) (error) {
+	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, user.Id );
+	return err
+}
+
+// CreatePhoneCarrier creates a phone carrier from the carrier name and
+// the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
+func CreatePhoneCarrier(carrier_name, carrier_email_domain string) (error) {
+
+	_, err := db.Exec(`INSERT INTO PhoneCarrier (
+		carrier_name,
+		carrier_email_domain) VALUES (?,?);`,
+		carrier_name,
+		carrier_email_domain)
+
+	return err
+}
+
+// constructPhoneCarrierFromRow creates a single PhoneCarrier instance from
+// the given rows.
+func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
+	u := new(PhoneCarrier)
+
+	for rows.Next() {
+		err := rows.Scan(
+			&u.carrier_id,
+			&u.carrier_name,
+			&u.carrier_email_domain)
+
+		if err != nil {
+			return u, err
+		}
+
+		return u, nil
+	}
+
+	return u, errors.New("No carrier supplied")
+}
+
+// ReadPhoneCarrierById selects a phone carrier from the database given its ID
+func ReadPhoneCarrierById(carrier_id int) (*PhoneCarrier, error) {
+	rows, err := db.Query("SELECT * FROM PhoneCarrier WHERE carrier_id = ? LIMIT 1", carrier_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	return constructPhoneCarrierFromRow(rows)
+}
+
+// UpdatePhoneCarrier updates the database's phone carrier data with that of the
+// struct provided.
+func UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
+	_, err := db.Exec(`UPDATE PhoneCarrier SET
+		carrier_name=?, carrier_email_domain=? WHERE carrier_id = ?;`,
+		carrier.carrier_name,
+		carrier.carrier_email_domain,
+		carrier.carrier_id);
+	return err
+}
+
+// DeletePhoneCarrier removes a phone carrier from the database, this will set
+// all users carrier with this phone carrier as a foreign key to NULL
+func DeletePhoneCarrier(carrier *PhoneCarrier) (error) {
+	_, err := db.Exec(`DELETE FROM PhoneCarrier WHERE carrier_id = ?;`, carrier.carrier_id );
+	return err
+}
+
+// CreateDevice adds a device to the system given its owner and name.
+func CreateDevice(Name string, OwnerId *User) (error) {
+	ApiKey, _ := uuid.NewV4()
+
+	_, err := db.Exec(`INSERT INTO Device
+		(	Name,
+			ApiKey,
+			Icon_PngB64,
+			OwnerId)
+		VALUES (?,?,?,?,?)`,
+		Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
+	return err
+}
+
+// constructDeviceFromRow converts a SQL result to device by filling out a struct.
+func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
+	u := new(Device)
+
+	for rows.Next() {
+		err := rows.Scan(
+			&u.Id,
+			&u.Name,
+			&u.ApiKey,
+			&u.Enabled,
+			&u.Icon_PngB64,
+			&u.Shortname,
+			&u.Superdevice,
+			&u.OwnerId)
+
+			return u, err
+	}
+
+	return u, errors.New("No carrier supplied")
+}
+
+// constructDevicesFromRows constructs a series of devices
+func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
+	out := []*Device{}
+
+	for rows.Next() {
+		u := new(Device)
+		err := rows.Scan(
+			&u.Id,
+			&u.Name,
+			&u.ApiKey,
+			&u.Enabled,
+			&u.Icon_PngB64,
+			&u.Shortname,
+			&u.Superdevice,
+			&u.OwnerId)
+
+		out = append(out, u)
+
+		if(err != nil) {
+			return out, err
+		}
+	}
+
+	return out, nil
+}
+
+// ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
+func ReadDeviceById(Id int) (*Device, error) {
+	rows, err := db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	return constructDeviceFromRow(rows)
+
+}
+
+// UpdateDevice updates the given device in the database with all fields in the
+// struct.
+func UpdateDevice(device *Device) (error) {
+	_, err := db.Exec(`UPDATE Device SET
+			Name = ?, ApiKey = ?, Enabled = ?,
+			Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
+			OwnerId = ? WHERE Id = ?;`,
+			device.Name,
+			device.ApiKey,
+			device.Enabled,
+			device.Icon_PngB64,
+			device.Shortname,
+			device.Superdevice,
+			device.OwnerId,
+			device.Id)
+
+	return err
+}
+
+// DeleteDevice removes a device from the system.
+func DeleteDevice(device *Device) (error) {
+	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, device.Id );
+	return err
+}
+
+
+
+// CreateStream creates a new stream for a given device with the given name, schema and default values.
+func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (error) {
+	_, err := db.Exec(`INSERT INTO Stream
+		(	Name,
+			Schema_Json,
+			Defaults_Json,
+			OwnerId) VALUES (?,?,?,?);`,
+			Name, Schema_Json, Defaults_Json, owner.Id)
+	return err
+}
+
+
+// constructStreamsFromRows converts a rows statement to an array of streams
+func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
+	out := []*Stream{}
+
+	for rows.Next() {
+		u := new(Stream)
+		err := rows.Scan(
+			&u.Id,
+			&u.Name,
+			&u.Active,
+			&u.Public,
+			&u.Schema_Json,
+			&u.Defaults_Json,
+			&u.OwnerId)
+
+		out = append(out, u)
+
+		if(err != nil) {
+			return out, err
+		}
+	}
+
+	return out, nil
+}
+
+
+// ReadStreamById fetches the stream with the given id and returns it, or nil if
+// no such stream exists.
+func ReadStreamById(id int) (*Stream, error) {
+	rows, err := db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	streams, err := constructStreamsFromRows(rows)
+
+	if(len(streams) != 1) {
+		return nil, errors.New("Wrong number of streams returned")
+	}
+
+	return streams[0], nil
+}
+
+// UpdateStream updates the stream with the given ID with the provided data
+// replacing all prior contents.
+func UpdateStream(stream *Stream) (error) {
+	_, err := db.Exec(`UPDATE Stream SET
+		Name = ?,
+		Active = ?,
+		Public = ?,
+		Schema_Json = ?,
+		Defaults_Json = ?,
+		OwnerId = ? WHERE Id = ?`,
+		stream.Name,
+		stream.Active,
+		stream.Public,
+		stream.Schema_Json,
+		stream.Defaults_Json,
+		stream.OwnerId,
+		stream.Id)
+
+	return err
+}
+
+// DeleteStream removes a stream from the database
+func DeleteStream(stream *Stream) (error) {
+	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, stream.Id );
+	return err
+}
+
+
+func init() {
+	log.Print("Starting Up User Database")
+	var err error
+	db, err = sql.Open("sqlite3", "users.sqlite3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		log.Print("Cannot Contact User Database")
+	}
+
+	setupDatabase()
+
+	log.Print("Finishing User Database Init")
+}
+
