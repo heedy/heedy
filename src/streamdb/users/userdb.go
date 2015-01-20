@@ -30,7 +30,7 @@ var (
 
 
 type User struct {
-	Id int
+	Id int64
 	Name string
 	Email string
 	Password string
@@ -38,21 +38,21 @@ type User struct {
 	PasswordHashScheme string
 	Admin bool
 	Phone string
-	PhoneCarrier string // phone carrier string
+	PhoneCarrier int // phone carrier id
 	UploadLimit_Items int // upload limit in items/day
 	ProcessingLimit_S int // processing limit in seconds/day
 	StorageLimit_Gb int // storage limit in GB
 }
 
 type PhoneCarrier struct {
-	carrier_id int
-	carrier_name string
-	carrier_email_domain string
+	Id int64
+	Name string
+	EmailDomain string
 }
 
 
 type Device struct {
-	Id int
+	Id int64
 	Name string
 	ApiKey string
 	Enabled bool
@@ -63,7 +63,7 @@ type Device struct {
 }
 
 type Stream struct {
-	Id int
+	Id int64
 	Name string
 	Active bool
 	Public bool
@@ -84,9 +84,9 @@ func setupDatabase() {
 	}
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier
-		(	carrier_id INTEGER PRIMARY KEY,
-			carrier_name STRING UNIQUE NOT NULL,
-			carrier_email_domain STRING UNIQUE NOT NULL)`);
+		(	Id INTEGER PRIMARY KEY,
+			Name STRING UNIQUE NOT NULL,
+			EmailDomain STRING UNIQUE NOT NULL)`);
 
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +109,7 @@ func setupDatabase() {
 			ProcessingLimit_S INTEGER DEFAULT 86400,
 			StorageLimit_Gb INTEGER DEFAULT 4,
 
-			FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(carrier_id) ON DELETE SET NULL
+			FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL
 			);`)
 
 	if err != nil {
@@ -186,17 +186,17 @@ func setupDatabase() {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func CreateUser(Name, Email, Password string) (err error) {
+func CreateUser(Name, Email, Password string) (id int64, err error) {
 
 	// Ensure we don't have someone with the same email or name
 	usr, err := ReadUserByEmail(Email)
 	if(usr != nil){
-		return errors.New("A user already exists with this email")
+		return 0, errors.New("A user already exists with this email")
 	}
 
 	usr, err = ReadUserByName(Name)
 	if(usr != nil){
-		return errors.New("A user already exists with this name")
+		return 0, errors.New("A user already exists with this name")
 	}
 
 	// Now do the insert
@@ -208,7 +208,7 @@ func CreateUser(Name, Email, Password string) (err error) {
 	//BUG(Joseph): decide and do encryption here // []byte(sha512.Sum512([]byte(saltedpass)))?
 	dbpass := saltedpass
 
-	_, err = db.Exec(`INSERT INTO User (
+	res, err := db.Exec(`INSERT INTO User (
 		Name,
 		Email,
 		Password,
@@ -220,7 +220,11 @@ func CreateUser(Name, Email, Password string) (err error) {
 		PasswordSalt.String(),
 		user_hash_scheme)
 
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }
 
 // constructUserFromRow converts a sql.Rows object to a single user
@@ -319,15 +323,19 @@ func DeleteUser(user User) (error) {
 
 // CreatePhoneCarrier creates a phone carrier from the carrier name and
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
-func CreatePhoneCarrier(carrier_name, carrier_email_domain string) (error) {
+func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
-	_, err := db.Exec(`INSERT INTO PhoneCarrier (
-		carrier_name,
-		carrier_email_domain) VALUES (?,?);`,
-		carrier_name,
-		carrier_email_domain)
+	res, err := db.Exec(`INSERT INTO PhoneCarrier (
+		Name,
+		EmailDomain) VALUES (?,?);`,
+		Name,
+		EmailDomain)
 
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }
 
 // constructPhoneCarrierFromRow creates a single PhoneCarrier instance from
@@ -337,23 +345,42 @@ func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 
 	for rows.Next() {
 		err := rows.Scan(
-			&u.carrier_id,
-			&u.carrier_name,
-			&u.carrier_email_domain)
+			&u.Id,
+			&u.Name,
+			&u.EmailDomain)
 
 		if err != nil {
-			return u, err
+			return nil, err
 		}
 
 		return u, nil
 	}
 
-	return u, errors.New("No carrier supplied")
+	return nil, errors.New("No carrier supplied")
+}
+
+
+// constructDevicesFromRows constructs a series of devices
+func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
+	out := []*PhoneCarrier{}
+
+	for rows.Next() {
+		u := new(PhoneCarrier)
+		err := rows.Scan(&u.Id, &u.Name, &u.EmailDomain)
+
+		if err != nil {
+			return out, err
+		}
+
+		out = append(out, u)
+	}
+
+	return out, nil
 }
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
-func ReadPhoneCarrierById(carrier_id int) (*PhoneCarrier, error) {
-	rows, err := db.Query("SELECT * FROM PhoneCarrier WHERE carrier_id = ? LIMIT 1", carrier_id)
+func ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
+	rows, err := db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
 
 	if err != nil {
 		return nil, err
@@ -364,36 +391,53 @@ func ReadPhoneCarrierById(carrier_id int) (*PhoneCarrier, error) {
 	return constructPhoneCarrierFromRow(rows)
 }
 
+func ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
+	rows, err := db.Query("SELECT * FROM PhoneCarrier")
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	return constructPhoneCarriersFromRows(rows)
+}
+
 // UpdatePhoneCarrier updates the database's phone carrier data with that of the
 // struct provided.
 func UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
 	_, err := db.Exec(`UPDATE PhoneCarrier SET
-		carrier_name=?, carrier_email_domain=? WHERE carrier_id = ?;`,
-		carrier.carrier_name,
-		carrier.carrier_email_domain,
-		carrier.carrier_id);
+		Name=?, EmailDomain=? WHERE Id = ?;`,
+		carrier.Name,
+		carrier.EmailDomain,
+		carrier.Id);
 	return err
 }
 
 // DeletePhoneCarrier removes a phone carrier from the database, this will set
 // all users carrier with this phone carrier as a foreign key to NULL
-func DeletePhoneCarrier(carrier *PhoneCarrier) (error) {
-	_, err := db.Exec(`DELETE FROM PhoneCarrier WHERE carrier_id = ?;`, carrier.carrier_id );
+func DeletePhoneCarrier(carrierId int64) (error) {
+	_, err := db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId );
 	return err
 }
 
 // CreateDevice adds a device to the system given its owner and name.
-func CreateDevice(Name string, OwnerId *User) (error) {
+// returns the last inserted id
+func CreateDevice(Name string, OwnerId *User) (int64, error) {
 	ApiKey, _ := uuid.NewV4()
 
-	_, err := db.Exec(`INSERT INTO Device
+	res, err := db.Exec(`INSERT INTO Device
 		(	Name,
 			ApiKey,
 			Icon_PngB64,
 			OwnerId)
 		VALUES (?,?,?,?,?)`,
 		Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
-	return err
+
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }
 
 // constructDeviceFromRow converts a SQL result to device by filling out a struct.
@@ -485,14 +529,19 @@ func DeleteDevice(device *Device) (error) {
 
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
-func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (error) {
-	_, err := db.Exec(`INSERT INTO Stream
+func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64, error) {
+	res, err := db.Exec(`INSERT INTO Stream
 		(	Name,
 			Schema_Json,
 			Defaults_Json,
 			OwnerId) VALUES (?,?,?,?);`,
 			Name, Schema_Json, Defaults_Json, owner.Id)
-	return err
+
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }
 
 
@@ -577,7 +626,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	//defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -588,4 +637,3 @@ func init() {
 
 	log.Print("Finishing User Database Init")
 }
-
