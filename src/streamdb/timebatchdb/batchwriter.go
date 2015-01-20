@@ -10,7 +10,7 @@ import (
 type BatchWriter struct {
     IndexBuffer *bytes.Buffer    //A buffer which stores the batchfile elements
     DataBuffer *bytes.Buffer     //A buffer which stores the blob data to be written
-    lasttime uint64         //The timestamp of the most recent datapoint
+    LastTime uint64         //The timestamp of the most recent datapoint
     writelock sync.Mutex    //The writeLock - when writelock is on, the batch is being written
 }
 
@@ -30,29 +30,6 @@ func (bw *BatchWriter) Lock() () {
     bw.writelock.Lock()
 }
 
-/*
-func (bw *BatchWriter) Write(indexf *os.File,dataf *os.File) (dataw int, indexw int, err error) {
-    bw.writelock.Lock()
-
-    dataw,err = dataf.Write(bw.DataBuffer.Bytes())
-    if (err != nil) {
-        bw.writelock.Unlock()
-        return dataw,0,err
-    }
-
-    indexw,err = indexf.Write(bw.IndexBuffer.Bytes())
-    if (err != nil) {
-        bw.writelock.Unlock()
-        return dataw,indexw,err
-    }
-
-    bw.Clear()
-    bw.writelock.Unlock()
-
-    return dataw,indexw,nil
-}
-*/
-
 func (bw *BatchWriter) Insert(timestamp uint64, data []byte) {
     bw.writelock.Lock()
 
@@ -61,7 +38,7 @@ func (bw *BatchWriter) Insert(timestamp uint64, data []byte) {
     binary.Write(bw.IndexBuffer,binary.LittleEndian,timestamp)
     binary.Write(bw.IndexBuffer,binary.LittleEndian,int64(bw.DataBuffer.Len()))
 
-    bw.lasttime = timestamp
+    bw.LastTime = timestamp
 
 
     bw.writelock.Unlock()
