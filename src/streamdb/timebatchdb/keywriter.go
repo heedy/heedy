@@ -1,4 +1,6 @@
-package filedb
+package timebatchdb
+
+/*
 
 import (
     "os"
@@ -100,3 +102,4 @@ func GetKeyCacheWriter(path string) (kcw *KeyCacheWriter, err error) {
 
     return kcw,nil
 }
+*/
