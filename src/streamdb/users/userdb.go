@@ -22,11 +22,17 @@ const(
 	URBVCjPjdGxDcQgDAVQRxSUHoFRMtoxWkZhBEoKK/+IsaNc0ElQxE8K3xhBtLa4Gj4YNQBFEYHxjwFRJ
 	OBU7AAsZOgVWSEJR68bajSUoOjfoK07NkP+h/jAiI8g2WgGdqRx+jVa/r0P2cx9EPE2zduUVxv2NHs6n
 	Q6Z0BZQaX3F4/0od3xvE2TCtOeOs12UQl6c5Quj42jQ5zt8GQAAAABJRU5ErkJggg==`
+	DEFAULT_PASSWORD_HASH = "SHA512"
+
 )
 
 var (
  	DB_DRIVER string
 	db *sql.DB // the database
+
+	// Standard Errors
+	ERR_EMAIL_EXISTS = errors.New("A user already exists with this email")
+	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
 )
 
 
@@ -51,7 +57,6 @@ type PhoneCarrier struct {
 	Name string
 	EmailDomain string
 }
-
 
 type Device struct {
 	Id int64
@@ -182,15 +187,54 @@ func setupDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-
 }
 
-/**
-func ValidatePassword(Name, Password string) (bool) {
+// calcHash calculates the user hash for the given password, salt and hashing
+// scheme
+func calcHash(password, salt, scheme string) (string) {
+	switch scheme {
+		// We switch over hashes here so if we need to upgrade in the future,
+		// it is easy.
+		case "SHA512":
+			saltedpass := password + salt
 
+			hasher := sha512.New()
+			hasher.Write([]byte(saltedpass))
+			return hex.EncodeToString(hasher.Sum(nil))
+
+			//saltedpass := Password + PasswordSalt.String()
+			//hasher := sha512.New()
+			//hasher.Write([]byte(saltedpass))
+			//dbpass := hex.EncodeToString(hasher.Sum(nil))
+		default:
+			return calcHash(password, salt, "SHA512")
+	}
 }
-**/
+
+// ValidateUser checks to see if a user going by the username or email
+// matches the given password, returns true if it does false if it does not
+func ValidateUser(UsernameOrEmail, Password string) (bool) {
+	usr, _ := ReadUserByName(UsernameOrEmail)
+	if usr != nil {
+		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	usr, _ = ReadUserByEmail(UsernameOrEmail)
+	if usr != nil {
+		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	return false
+}
+
 
 
 // CreateUser creates a user given the user's credentials.
@@ -200,21 +244,18 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 	// Ensure we don't have someone with the same email or name
 	usr, err := ReadUserByEmail(Email)
 	if(usr != nil){
-		return 0, errors.New("A user already exists with this email")
+		return -1, ERR_EMAIL_EXISTS
 	}
 
 	usr, err = ReadUserByName(Name)
 	if(usr != nil){
-		return 0, errors.New("A user already exists with this name")
+		return -1, ERR_USERNAME_EXISTS
 	}
 
 	PasswordSalt, _ := uuid.NewV4()
-	user_hash_scheme := "SHA512"
-	saltedpass := Password + PasswordSalt.String()
+	dbpass := calcHash(Password, PasswordSalt.String(), DEFAULT_PASSWORD_HASH)
 
-	hasher := sha512.New()
-	hasher.Write([]byte(saltedpass))
-	dbpass := hex.EncodeToString(hasher.Sum(nil))
+
 	// Note that golang uses utf8 strings converted to bytes first, so the hashes
 	// may not match up with hash generators found online!
 	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
@@ -229,10 +270,10 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 		Email,
 		dbpass,
 		PasswordSalt.String(),
-		user_hash_scheme)
+		DEFAULT_PASSWORD_HASH)
 
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	return res.LastInsertId()
@@ -369,7 +410,6 @@ func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 
 	return nil, errors.New("No carrier supplied")
 }
-
 
 // constructPhoneCarriersFromRows constructs a series of phone carriers
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {

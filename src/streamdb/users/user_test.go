@@ -86,6 +86,30 @@ func TestReadUserByName(t *testing.T){
     }
 }
 
+func TestValidateUser(t *testing.T){
+    name, email, pass := "TestValidateUser_name", "TestValidateUser_email", "TestValidateUser_pass"
+
+    _, err := CreateUser(name, email, pass)
+    if err != nil {
+        t.Errorf("Cannot create user %v", err)
+        return
+    }
+
+    if ! ValidateUser(name, pass) {
+        t.Errorf("could not validate a user with username and pass")
+    }
+
+
+    if ! ValidateUser(email, pass) {
+        t.Errorf("could not validate a user with email and pass")
+    }
+
+
+    if ValidateUser(email, email) {
+        t.Errorf("Validated an incorrect user")
+    }
+}
+
 
 func TestReadUserById(t *testing.T){
     // test failures on non existance
