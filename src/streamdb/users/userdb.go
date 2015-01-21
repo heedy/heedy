@@ -10,6 +10,8 @@ import (
 	"log"
 	"github.com/nu7hatch/gouuid"
 	"errors"
+	"crypto/sha512"
+	"encoding/hex"
 )
 
 
@@ -182,6 +184,11 @@ func setupDatabase() {
 
 }
 
+/**
+func ValidatePassword(Name, Password string) (bool) {
+
+}
+**/
 
 
 // CreateUser creates a user given the user's credentials.
@@ -199,14 +206,13 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 		return 0, errors.New("A user already exists with this name")
 	}
 
-	// Now do the insert
-
 	PasswordSalt, _ := uuid.NewV4()
 	user_hash_scheme := "SHA512"
 	saltedpass := Password + PasswordSalt.String()
 
-	//BUG(Joseph): decide and do encryption here // []byte(sha512.Sum512([]byte(saltedpass)))?
-	dbpass := saltedpass
+	hasher := sha512.New()
+	hasher.Write([]byte(saltedpass))
+	dbpass := hex.EncodeToString(hasher.Sum(nil))
 
 	res, err := db.Exec(`INSERT INTO User (
 		Name,
@@ -281,7 +287,7 @@ func ReadUserByName(Name string) (*User, error){
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func ReadUserById(Id int) (*User, error){
+func ReadUserById(Id int64) (*User, error){
 	rows, err := db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
 
 	if err != nil {
@@ -295,7 +301,7 @@ func ReadUserById(Id int) (*User, error){
 
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
-func UpdateUser(user User) (error) {
+func UpdateUser(user *User) (error) {
 	_, err := db.Exec(`UPDATE User SET
 		Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
 			Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
@@ -316,8 +322,8 @@ func UpdateUser(user User) (error) {
 }
 
 // DeleteUser removes a user from the database
-func DeleteUser(user User) (error) {
-	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, user.Id );
+func DeleteUser(id int64) (error) {
+	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, id );
 	return err
 }
 

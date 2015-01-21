@@ -131,7 +131,7 @@ func TestDeletePhoneCarrier(t *testing.T) {
         t.Errorf("Cannot create phone carrier to test delete")
         return
     }
-    
+
     err = DeletePhoneCarrier(id)
 
     if nil != err {
@@ -150,13 +150,3 @@ func TestDeletePhoneCarrier(t *testing.T) {
         t.Errorf("Expected nil, but we got back a carrier meaning the delete failed %v", carrier)
     }
 }
-
-/**
-
-        // DeletePhoneCarrier removes a phone carrier from the database, this will set
-        // all users carrier with this phone carrier as a foreign key to NULL
-        func DeletePhoneCarrier(carrier *PhoneCarrier) (error) {
-            _, err := db.Exec(`DELETE FROM PhoneCarrier WHERE carrier_id = ?;`, carrier.carrier_id );
-            return err
-        }
-**/
