@@ -126,13 +126,14 @@ func setupDatabase() {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Device
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
-			ApiKey STRING NOT NULL,
+			ApiKey STRING UNIQUE NOT NULL,
 			Enabled BOOLEAN DEFAULT TRUE,
 			Icon_PngB64 STRING DEFAULT "",
 			Shortname STRING DEFAULT "",
 			Superdevice BOOL DEFAULT FALSE,
 			OwnerId INTEGER,
-			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE
+			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE,
+			UNIQUE(Name, OwnerId)
 			);`)
 
 	if err != nil {
@@ -163,7 +164,8 @@ func setupDatabase() {
 			Schema_Json STRING NOT NULL,
 			Defaults_Json STRING NOT NULL,
 			OwnerId INTEGER,
-			FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE
+			FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
+			UNIQUE(Name, OwnerId)
 			);`)
 
 
@@ -369,7 +371,7 @@ func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 }
 
 
-// constructDevicesFromRows constructs a series of devices
+// constructPhoneCarriersFromRows constructs a series of phone carriers
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 	out := []*PhoneCarrier{}
 
@@ -439,9 +441,10 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 			ApiKey,
 			Icon_PngB64,
 			OwnerId)
-		VALUES (?,?,?,?,?)`,
+		VALUES (?,?,?,?)`,
 		Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
 
+	//log.Printf("Created Device, err %v", err)
 	if err != nil {
 		return 0, err
 	}
@@ -497,7 +500,7 @@ func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
-func ReadDeviceById(Id int) (*Device, error) {
+func ReadDeviceById(Id int64) (*Device, error) {
 	rows, err := db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
 
 	if err != nil {
@@ -582,7 +585,7 @@ func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func ReadStreamById(id int) (*Stream, error) {
+func ReadStreamById(id int64) (*Stream, error) {
 	rows, err := db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
 
 	if err != nil {
@@ -622,8 +625,8 @@ func UpdateStream(stream *Stream) (error) {
 }
 
 // DeleteStream removes a stream from the database
-func DeleteStream(stream *Stream) (error) {
-	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, stream.Id );
+func DeleteStream(Id int64) (error) {
+	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, Id );
 	return err
 }
 
