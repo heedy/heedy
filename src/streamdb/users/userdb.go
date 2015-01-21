@@ -10,6 +10,8 @@ import (
 	"log"
 	"github.com/nu7hatch/gouuid"
 	"errors"
+	"crypto/sha512"
+	"encoding/hex"
 )
 
 
@@ -20,11 +22,17 @@ const(
 	URBVCjPjdGxDcQgDAVQRxSUHoFRMtoxWkZhBEoKK/+IsaNc0ElQxE8K3xhBtLa4Gj4YNQBFEYHxjwFRJ
 	OBU7AAsZOgVWSEJR68bajSUoOjfoK07NkP+h/jAiI8g2WgGdqRx+jVa/r0P2cx9EPE2zduUVxv2NHs6n
 	Q6Z0BZQaX3F4/0od3xvE2TCtOeOs12UQl6c5Quj42jQ5zt8GQAAAABJRU5ErkJggg==`
+	DEFAULT_PASSWORD_HASH = "SHA512"
+
 )
 
 var (
  	DB_DRIVER string
 	db *sql.DB // the database
+
+	// Standard Errors
+	ERR_EMAIL_EXISTS = errors.New("A user already exists with this email")
+	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
 )
 
 
@@ -49,7 +57,6 @@ type PhoneCarrier struct {
 	Name string
 	EmailDomain string
 }
-
 
 type Device struct {
 	Id int64
@@ -124,13 +131,14 @@ func setupDatabase() {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Device
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
-			ApiKey STRING NOT NULL,
+			ApiKey STRING UNIQUE NOT NULL,
 			Enabled BOOLEAN DEFAULT TRUE,
 			Icon_PngB64 STRING DEFAULT "",
 			Shortname STRING DEFAULT "",
 			Superdevice BOOL DEFAULT FALSE,
 			OwnerId INTEGER,
-			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE
+			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE,
+			UNIQUE(Name, OwnerId)
 			);`)
 
 	if err != nil {
@@ -161,7 +169,8 @@ func setupDatabase() {
 			Schema_Json STRING NOT NULL,
 			Defaults_Json STRING NOT NULL,
 			OwnerId INTEGER,
-			FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE
+			FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
+			UNIQUE(Name, OwnerId)
 			);`)
 
 
@@ -178,8 +187,52 @@ func setupDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
+// calcHash calculates the user hash for the given password, salt and hashing
+// scheme
+func calcHash(password, salt, scheme string) (string) {
+	switch scheme {
+		// We switch over hashes here so if we need to upgrade in the future,
+		// it is easy.
+		case "SHA512":
+			saltedpass := password + salt
 
+			hasher := sha512.New()
+			hasher.Write([]byte(saltedpass))
+			return hex.EncodeToString(hasher.Sum(nil))
+
+			//saltedpass := Password + PasswordSalt.String()
+			//hasher := sha512.New()
+			//hasher.Write([]byte(saltedpass))
+			//dbpass := hex.EncodeToString(hasher.Sum(nil))
+		default:
+			return calcHash(password, salt, "SHA512")
+	}
+}
+
+// ValidateUser checks to see if a user going by the username or email
+// matches the given password, returns true if it does false if it does not
+func ValidateUser(UsernameOrEmail, Password string) (bool) {
+	usr, _ := ReadUserByName(UsernameOrEmail)
+	if usr != nil {
+		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	usr, _ = ReadUserByEmail(UsernameOrEmail)
+	if usr != nil {
+		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	return false
 }
 
 
@@ -191,22 +244,21 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 	// Ensure we don't have someone with the same email or name
 	usr, err := ReadUserByEmail(Email)
 	if(usr != nil){
-		return 0, errors.New("A user already exists with this email")
+		return -1, ERR_EMAIL_EXISTS
 	}
 
 	usr, err = ReadUserByName(Name)
 	if(usr != nil){
-		return 0, errors.New("A user already exists with this name")
+		return -1, ERR_USERNAME_EXISTS
 	}
 
-	// Now do the insert
-
 	PasswordSalt, _ := uuid.NewV4()
-	user_hash_scheme := "SHA512"
-	saltedpass := Password + PasswordSalt.String()
+	dbpass := calcHash(Password, PasswordSalt.String(), DEFAULT_PASSWORD_HASH)
 
-	//BUG(Joseph): decide and do encryption here // []byte(sha512.Sum512([]byte(saltedpass)))?
-	dbpass := saltedpass
+
+	// Note that golang uses utf8 strings converted to bytes first, so the hashes
+	// may not match up with hash generators found online!
+	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
 
 	res, err := db.Exec(`INSERT INTO User (
 		Name,
@@ -218,10 +270,10 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 		Email,
 		dbpass,
 		PasswordSalt.String(),
-		user_hash_scheme)
+		DEFAULT_PASSWORD_HASH)
 
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	return res.LastInsertId()
@@ -281,7 +333,7 @@ func ReadUserByName(Name string) (*User, error){
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func ReadUserById(Id int) (*User, error){
+func ReadUserById(Id int64) (*User, error){
 	rows, err := db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
 
 	if err != nil {
@@ -295,7 +347,7 @@ func ReadUserById(Id int) (*User, error){
 
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
-func UpdateUser(user User) (error) {
+func UpdateUser(user *User) (error) {
 	_, err := db.Exec(`UPDATE User SET
 		Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
 			Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
@@ -316,8 +368,8 @@ func UpdateUser(user User) (error) {
 }
 
 // DeleteUser removes a user from the database
-func DeleteUser(user User) (error) {
-	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, user.Id );
+func DeleteUser(id int64) (error) {
+	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, id );
 	return err
 }
 
@@ -359,8 +411,7 @@ func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 	return nil, errors.New("No carrier supplied")
 }
 
-
-// constructDevicesFromRows constructs a series of devices
+// constructPhoneCarriersFromRows constructs a series of phone carriers
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 	out := []*PhoneCarrier{}
 
@@ -430,9 +481,10 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 			ApiKey,
 			Icon_PngB64,
 			OwnerId)
-		VALUES (?,?,?,?,?)`,
+		VALUES (?,?,?,?)`,
 		Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
 
+	//log.Printf("Created Device, err %v", err)
 	if err != nil {
 		return 0, err
 	}
@@ -458,7 +510,7 @@ func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
 			return u, err
 	}
 
-	return u, errors.New("No carrier supplied")
+	return nil, errors.New("No carrier supplied")
 }
 
 // constructDevicesFromRows constructs a series of devices
@@ -488,7 +540,7 @@ func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
-func ReadDeviceById(Id int) (*Device, error) {
+func ReadDeviceById(Id int64) (*Device, error) {
 	rows, err := db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
 
 	if err != nil {
@@ -521,8 +573,8 @@ func UpdateDevice(device *Device) (error) {
 }
 
 // DeleteDevice removes a device from the system.
-func DeleteDevice(device *Device) (error) {
-	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, device.Id );
+func DeleteDevice(Id int64) (error) {
+	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
 	return err
 }
 
@@ -573,7 +625,7 @@ func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func ReadStreamById(id int) (*Stream, error) {
+func ReadStreamById(id int64) (*Stream, error) {
 	rows, err := db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
 
 	if err != nil {
@@ -613,8 +665,8 @@ func UpdateStream(stream *Stream) (error) {
 }
 
 // DeleteStream removes a stream from the database
-func DeleteStream(stream *Stream) (error) {
-	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, stream.Id );
+func DeleteStream(Id int64) (error) {
+	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, Id );
 	return err
 }
 
