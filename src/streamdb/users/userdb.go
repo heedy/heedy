@@ -470,7 +470,7 @@ func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
 			return u, err
 	}
 
-	return u, errors.New("No carrier supplied")
+	return nil, errors.New("No carrier supplied")
 }
 
 // constructDevicesFromRows constructs a series of devices
@@ -533,8 +533,8 @@ func UpdateDevice(device *Device) (error) {
 }
 
 // DeleteDevice removes a device from the system.
-func DeleteDevice(device *Device) (error) {
-	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, device.Id );
+func DeleteDevice(Id int64) (error) {
+	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
 	return err
 }
 
