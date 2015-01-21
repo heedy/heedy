@@ -4,59 +4,52 @@ import (
     //"bytes"
     //"encoding/binary"
     "os"
+    "path"
     )
 
-type KeyReaderKey struct {
-    prevfileindex uint64    //The index of the most recently written batch of the key
-    keypoints uint64        //The "index" of the key itself, meaning the number of data points written thus far in total
-}
 
-type KeyReader struct {
-    keyfile *os.File    //The file in which the keys and links to batches are stored
+type IndexReader struct {
+    indexfile *os.File    //The file in which the index is stored
     offsetf *os.File     //File where batch offsets and timestamps are stored
     dataf *os.File      //File where data is stored
-    keys map[uint64](*KeyReaderKey)  //The map for all keys
+    pages map[uint64](*IndexCache)  //The cache of the index and associated batches
+    pagesize uint64         //The size of each IndexPage
+
 }
 
-//Closes all open files in keyReader
-func (kw *KeyReader) Close() {
-    kw.keyfile.Close()
+//Closes all open files in IndexReader. Must be called to not leak memory
+func (kw *IndexReader) Close() {
+    kw.indexfile.Close()
     kw.offsetf.Close()
     kw.dataf.Close()
 }
 
 
-//The previndex is the batch number of the most recent batch with the same key. keypoints is
-//the total number of datapoints written with this key. Ie, if there were an array of all the
-//datapoints of the given key written thus far, keypoints would be the size of this array
-func NewKeyReaderKey(previndex uint64, keypoints uint64) (*KeyReaderKey) {
-    return &KeyReaderKey{previndex,keypoints}
-}
-
-//Opens the KeyWriter given a relative path of the datafiles (without extensions)
-func NewKeyReader(path string) (kr *KeyReader, err error){
-    if err = MakeParentDirs(path); err!= nil {
+//Opens the IndexReader given a relative path of the directory containing datafiles
+func NewIndexReader(fpath string) (kr *IndexReader, err error){
+    if err = MakeDirs(fpath); err!= nil {
         return nil,err
     }
 
     //Opens offset and data file for append
-    offsetf,err := os.OpenFile(path + ".offsets", os.O_RDONLY, 0666)
+    offsetf,err := os.OpenFile(path.Join(fpath,"offsets"), os.O_RDONLY, 0666)
     if (err != nil) {
         return nil,err
     }
-    dataf,err := os.OpenFile(path + ".data",os.O_RDONLY, 0666)
+    dataf,err := os.OpenFile(path.Join(fpath,"data"),os.O_RDONLY, 0666)
     if (err != nil) {
         offsetf.Close()
         return nil,err
     }
 
-    //Open the keyfile
-    keyf,err := os.OpenFile(path + ".index",os.O_RDONLY, 0666)
+    //Open the indexf
+    indexf,err := os.OpenFile(path.Join(fpath,"index"),os.O_RDONLY, 0666)
     if (err != nil) {
         dataf.Close()
         offsetf.Close()
         return nil,err
     }
 
-    return &KeyReader{keyf,offsetf,dataf,make(map[uint64](*KeyReaderKey))},nil
+    //The default page size is 10 for testing. This will definitely have to increase a lot.
+    return &IndexReader{indexf,offsetf,dataf,make(map[uint64](*IndexCache)),10},nil
 }

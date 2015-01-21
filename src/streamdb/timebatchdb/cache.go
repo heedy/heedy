@@ -9,7 +9,12 @@ import (
     "errors"
     )
 
-
+    //The previndex is the batch number of the most recent batch with the same key. keypoints is
+    //the total number of datapoints written with this key. Ie, if there were an array of all the
+    //datapoints of the given key written thus far, keypoints would be the size of this array
+    func NewKeyReaderKey(previndex uint64, keypoints uint64) (*KeyReaderKey) {
+    return &KeyReaderKey{previndex,keypoints}
+}
 
     //Given a key number, returns the BatchWriter associated with it.
     func (iw *IndexWriter) GetIndexBatch(key uint64) (batch *BatchWriter,err error) {

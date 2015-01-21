@@ -4,9 +4,10 @@ import (
     "bytes"
     "encoding/binary"
     "os"
+    "path"
     )
 
-const indexElementSize uint64 = 8*3
+const IndexElementSize uint64 = 8*5
 
 type IndexWriterBatch struct {
     Bw *BatchWriter         //The writer buffer
@@ -93,25 +94,25 @@ func (iw *IndexWriter) Flush() (err error) {
     return nil
 }
 
-//Opens the IndexWriter given a relative path of the key index
-func NewIndexWriter(path string) (kw *IndexWriter, err error){
-    if err = MakeParentDirs(path); err!= nil {
+//Opens the IndexWriter given the path to the directory where the database is located
+func NewIndexWriter(fpath string) (kw *IndexWriter, err error){
+    if err = MakeDirs(fpath); err!= nil {
         return nil,err
     }
 
     //Opens offset and data file for append
-    offsetf,err := os.OpenFile(path + ".offsets", os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
+    offsetf,err := os.OpenFile(path.Join(fpath,"offsets"), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
     if (err != nil) {
         return nil,err
     }
-    dataf,err := os.OpenFile(path + ".data", os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
+    dataf,err := os.OpenFile(path.Join(fpath,"data"), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
     if (err != nil) {
         offsetf.Close()
         return nil,err
     }
 
     //Open the indexf
-    indexf,err := os.OpenFile(path + ".index", os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
+    indexf,err := os.OpenFile(path.Join(fpath,"index"), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
     if (err != nil) {
         dataf.Close()
         offsetf.Close()
@@ -142,7 +143,7 @@ func NewIndexWriter(path string) (kw *IndexWriter, err error){
         return nil,err
     }
 
-    batchnum := uint64(indexstat.Size())/indexElementSize
+    batchnum := uint64(indexstat.Size())/IndexElementSize
 
     if (indexstat.Size()==0) {
         //The index file is empty - add 2 0s to it which are the dataloc and offsetloc of first batch

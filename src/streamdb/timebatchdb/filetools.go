@@ -17,6 +17,11 @@ func PathExists(path string) bool {
 func MakeParentDirs(path string) (err error) {
     //Check if the directory exists
     parentdir := filepath.Dir(path)
+    return MakeDirs(parentdir)
+}
+
+//Given the path of a directory, makes sure the entire path exists, and creates it if not.
+func MakeDirs(parentdir string) (err error) {
     if PathExists(parentdir) == false {
         err = os.MkdirAll(parentdir,0777)
         if (err != nil) {
