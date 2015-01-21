@@ -213,6 +213,9 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 	hasher := sha512.New()
 	hasher.Write([]byte(saltedpass))
 	dbpass := hex.EncodeToString(hasher.Sum(nil))
+	// Note that golang uses utf8 strings converted to bytes first, so the hashes
+	// may not match up with hash generators found online!
+	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
 
 	res, err := db.Exec(`INSERT INTO User (
 		Name,
