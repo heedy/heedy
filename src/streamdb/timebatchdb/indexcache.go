@@ -52,7 +52,7 @@ func (ic *IndexCache) GetIndexValues(index int) (timestamp uint64, datanum uint6
 }
 
 
-func GetIndexCache(indexfile *os.File, startindex int64, pagesize int) (i *IndexCache,err error){
+func GetIndexCache(indexfile *os.File, startindex uint64, pagesize int) (i *IndexCache,err error){
     ip,err := GetIndexPage(indexfile,startindex,pagesize)
     if (err != nil) {
         return nil,err

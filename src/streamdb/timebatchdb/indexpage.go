@@ -28,11 +28,11 @@ func (ip *IndexPage) GetLocs(i int) (dataindex uint64,datasize int,offsetindex u
 
 //Given the index file, an index at which to start, and the number of entries to read,
 //returns the IndexPage with the decoded data
-func GetIndexPage(file *os.File, startindex int64, pagesize int) (ip *IndexPage,err error){
+func GetIndexPage(file *os.File, startindex uint64, pagesize int) (ip *IndexPage,err error){
 
     //There are 5 elements to each, and the dataloc and batchloc is shared with next one
     pagebuf := make([]byte,int(IndexElementSize)*pagesize+2*8)
-    numread,_ := file.ReadAt(pagebuf,startindex*int64(IndexElementSize))
+    numread,_ := file.ReadAt(pagebuf,int64(startindex)*int64(IndexElementSize))
 
     //The file might end before
     pagesize = numread/int(IndexElementSize)
