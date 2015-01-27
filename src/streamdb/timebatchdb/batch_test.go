@@ -5,7 +5,7 @@ import (
     )
 
 func TestBatch(t *testing.T) {
-    bw := timebatchdb.NewBatchWriter()
+    bw := NewBatchWriter()
 
     if (bw.Len()!= 0 || bw.Size() != 0) {
         t.Errorf("Incorrect Length")
@@ -25,7 +25,7 @@ func TestBatch(t *testing.T) {
     }
 
     //Now read the write buffer right into a BatchReader
-    br := timebatchdb.NewBatchReader(bw.IndexBuffer.Bytes(),bw.DataBuffer.Bytes())
+    br := NewBatchReader(bw.IndexBuffer.Bytes(),bw.DataBuffer.Bytes())
 
     if (br.Len()!= 2 || br.Size() != 25) {
         t.Errorf("Incorrect Lengths")
@@ -58,7 +58,7 @@ func TestBatch(t *testing.T) {
 }
 
 func TestBatchRange(t *testing.T) {
-    bw := timebatchdb.NewBatchWriter()
+    bw := NewBatchWriter()
 
     bw.Insert(1000,[]byte("test"))
     bw.Insert(1500,[]byte("test"))
@@ -71,7 +71,7 @@ func TestBatchRange(t *testing.T) {
     bw.Insert(3000,[]byte("test"))
 
 
-    reader := timebatchdb.NewBatchReader(bw.IndexBuffer.Bytes(),bw.DataBuffer.Bytes())
+    reader := NewBatchReader(bw.IndexBuffer.Bytes(),bw.DataBuffer.Bytes())
 
     if (reader.Timestamps[0]!=1000 || len(reader.Timestamps)!=9) {
         t.Errorf("error reading\n")
