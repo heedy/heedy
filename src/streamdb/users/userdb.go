@@ -52,6 +52,15 @@ type User struct {
 	StorageLimit_Gb int // storage limit in GB
 }
 
+type CleanUser struct {
+	Name string
+}
+
+func (u User) ToClean() CleanUser {
+	return CleanUser{Name:u.Name}
+}
+
+
 type PhoneCarrier struct {
 	Id int64
 	Name string
@@ -67,6 +76,32 @@ type Device struct {
 	Shortname string
 	Superdevice bool
 	OwnerId int // a user
+}
+
+// Check if the device is enabled
+func (d Device) isActive() bool {
+	return d.Enabled
+}
+
+// Checks if the device is enabled and a superdevice
+func (d Device) isAdmin() bool {
+	return d.isActive() && d.Superdevice
+}
+
+func (d Device) ToClean() CleanDevice {
+	return CleanDevice{Id: d.Id,
+		Name:d.Name,
+		Enabled:d.Enabled,
+		Icon_PngB64:d.Icon_PngB64,
+		Shortname:d.Shortname}
+}
+
+type CleanDevice struct {
+	Id int64
+	Name string
+	Enabled bool
+	Icon_PngB64 string
+	Shortname string
 }
 
 type Stream struct {
@@ -234,7 +269,6 @@ func ValidateUser(UsernameOrEmail, Password string) (bool) {
 
 	return false
 }
-
 
 
 // CreateUser creates a user given the user's credentials.
@@ -551,6 +585,19 @@ func ReadDeviceById(Id int64) (*Device, error) {
 
 	return constructDeviceFromRow(rows)
 
+}
+
+// ReadDeviceByApiKey reads a device by an api key and returns it, it will be
+// nil if an error was encountered and error will be set.
+func ReadDeviceByApiKey(Key string) (*Device, error) {
+	rows, err := db.Query("SELECT * FROM Device WHERE ApiKey = ? LIMIT 1", Key)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	return constructDeviceFromRow(rows)
 }
 
 // UpdateDevice updates the given device in the database with all fields in the
