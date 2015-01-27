@@ -1,0 +1,9 @@
+language: go
+go: 
+    - tip
+
+install:
+    - go get github.com/apcera/nats
+    - go get github.com/apcera/gnatsd
+    
+script: go test ./src/...
