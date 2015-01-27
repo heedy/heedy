@@ -1,8 +1,7 @@
-package timebatchdb_test
+package timebatchdb
 
 import (
     "testing"
-    "streamdb/timebatchdb"
     )
 
 func TestBatch(t *testing.T) {
