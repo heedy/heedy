@@ -5,11 +5,13 @@ import (
     "net/http"
     "log"
     "fmt"
+    "flag"
     )
 
 var (
     UNAUTHORIZED_MESSAGE = []byte("The API key provided either doesn't exist our records or is disabled.")
-    )
+    ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
+)
 
 
 
@@ -19,6 +21,13 @@ func apiAuth(h http.HandlerFunc, superdeviceRequired bool) http.HandlerFunc {
         vars := mux.Vars(request)
         auth := vars["AuthKey"]
         device, err := ReadDeviceByApiKey(auth)
+
+
+        // for development purposes
+        if *ignoreBadApiKeys {
+            h.ServeHTTP(writer, request)
+            return
+        }
 
         // Check for devices that exist
         if device == nil || err != nil {
@@ -156,7 +165,7 @@ func deleteStream(writer http.ResponseWriter, request *http.Request) {
 
 
 // Creates a subrouter available to
-func GetSubrouter(subroutePrefix *mux.Route) {
+func GetSubrouter(subroutePrefix *mux.Router) {
 
     //    r := mux.NewRouter()
 
