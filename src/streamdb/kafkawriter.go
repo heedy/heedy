@@ -2,9 +2,26 @@ package main
 
 import (
     "github.com/Shopify/sarama"
+    "bytes"
+    "encoding/binary"
     "fmt"
 )
 
+
+type DataStreamer struct {
+    client *sarama.Client                       //The kafka client
+    producer *sarama.Producer                   //The kafka producer
+}
+
+func (ds *DataStreamer) Close() {
+    ds.producer.Close()
+    ds.client.Close()
+}
+
+func Write(topic string, key uint64, timestamp uint64, data []byte) {
+    buf:= make([]byte,len(data)+8)
+
+}
 
 func TopicReader(topic string, partition int32, client *sarama.Client) {
     fmt.Printf("RunTopic: %s %d\n",topic,partition)

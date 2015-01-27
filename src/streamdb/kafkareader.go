@@ -2,6 +2,7 @@ package main
 
 import (
     "github.com/Shopify/sarama"
+    "github.com/garyburd/redigo"
     "fmt"
     "os"
     "bufio"
@@ -55,4 +56,3 @@ import (
                 _, _ = reader.ReadString('\n')
 
             }
-            
