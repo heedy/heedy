@@ -3,6 +3,7 @@ go:
     - tip
 
 install:
+    - export GOPATH=$HOME/gopath/src/github.com/dkumor/connectordb
     - go get github.com/apcera/nats
     - go get github.com/apcera/gnatsd
     - go get github.com/mattn/go-sqlite3
