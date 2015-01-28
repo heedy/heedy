@@ -12,10 +12,12 @@ install:
     - go get github.com/gorilla/mux
     - go get github.com/gorilla/context
 
-script:
+before_script:
     - go build github.com/apcera/gnatsd
     - ./gnatsd -c ./config/gnatsd.conf &
-    - redis-server ./config/redis.conf &
+    - redis-server ./config/redis.conf > /dev/null 2>&1 &
+
+script:
     - go test streamdb/...
 
 notifications:
