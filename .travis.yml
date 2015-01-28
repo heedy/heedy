@@ -6,8 +6,15 @@ install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - go get github.com/apcera/nats
     - go get github.com/apcera/gnatsd
+    - go get github.com/garyburd/redigo
     - go get github.com/mattn/go-sqlite3
     - go get github.com/nu7hatch/gouuid
     - go get github.com/gorilla/mux
     
 script: go test streamdb/...
+
+notifications:
+    email:
+        recipients:
+            - daniel@dkumor.com
+            - joseph@josephlewis.net
