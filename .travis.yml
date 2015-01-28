@@ -11,7 +11,11 @@ install:
     - go get github.com/nu7hatch/gouuid
     - go get github.com/gorilla/mux
     
-script: go test streamdb/...
+script:
+    - go build github.com/apcera/gnatsd
+    - ./gnatsd -c ./config/gnatsd.conf &
+    - redis-server ./config/redis.conf &
+    - go test streamdb/...
 
 notifications:
     email:
