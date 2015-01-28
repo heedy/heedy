@@ -10,7 +10,8 @@ install:
     - go get github.com/mattn/go-sqlite3
     - go get github.com/nu7hatch/gouuid
     - go get github.com/gorilla/mux
-    
+    - go get github.com/gorilla/context
+
 script:
     - go build github.com/apcera/gnatsd
     - ./gnatsd -c ./config/gnatsd.conf &
@@ -22,3 +23,4 @@ notifications:
         recipients:
             - daniel@dkumor.com
             - joseph@josephlewis.net
+

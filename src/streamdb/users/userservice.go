@@ -2,17 +2,25 @@ package users
 
 import (
     "github.com/gorilla/mux"
+    "github.com/gorilla/context"
     "net/http"
     "log"
     "fmt"
     "flag"
+    "encoding/json"
     )
+
+type key int
 
 var (
     UNAUTHORIZED_MESSAGE = []byte("The API key provided either doesn't exist our records or is disabled.")
+    ERROR_MESSAGE = []byte("An internal error occurred.")
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
 )
 
+const (
+    REQUEST_DEVICE_IS_SUPERUSER key = 0
+)
 
 
 // Runs an authorization check on the api before calling the function
@@ -25,6 +33,7 @@ func apiAuth(h http.HandlerFunc, superdeviceRequired bool) http.HandlerFunc {
 
         // for development purposes
         if *ignoreBadApiKeys {
+            context.Set(request, REQUEST_DEVICE_IS_SUPERUSER, true)
             h.ServeHTTP(writer, request)
             return
         }
@@ -63,6 +72,7 @@ func apiAuth(h http.HandlerFunc, superdeviceRequired bool) http.HandlerFunc {
 
         // TODO check for upload limits
 
+        context.Set(request, REQUEST_DEVICE_IS_SUPERUSER, device.isAdmin())
         h.ServeHTTP(writer, request)
     })
 }
@@ -75,10 +85,39 @@ type ReadUserResult struct {
 
 
 func readUser(writer http.ResponseWriter, request *http.Request) {
-    //var result ReadUserResult
+    var result ReadUserResult
 
-    // todo fill structs
-    fmt.Fprintf(writer, "Hi there, I love %s!", request.URL.Path[1:])
+    users, err := ReadAllUsers()
+
+    if err != nil {
+        log.Printf("Could not service read user request|err:%v", err)
+        writer.WriteHeader(http.StatusInternalServerError)
+        writer.Write(ERROR_MESSAGE)
+        return
+    }
+
+    is_super := context.Get(request, REQUEST_DEVICE_IS_SUPERUSER)
+
+    for _, u := range users {
+        result.Users = append(result.Users, u.ToClean())
+
+        if is_super.(bool) {
+            result.Unsanitized = append(result.Unsanitized, *u)
+        }
+
+    }
+
+    val, err := json.Marshal(result)
+
+    if err != nil {
+        log.Printf("Could not service read user request|err:%v", err)
+        writer.WriteHeader(http.StatusInternalServerError)
+        writer.Write(ERROR_MESSAGE)
+        return
+    }
+
+    writer.WriteHeader(http.StatusOK)
+    writer.Write(val)
 }
 
 
