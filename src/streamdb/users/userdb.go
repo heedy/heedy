@@ -337,6 +337,34 @@ func constructUserFromRow(rows *sql.Rows) (*User, error){
 	return nil, errors.New("No user supplied")
 }
 
+func constructUsersFromRows(rows *sql.Rows) ([]*User, error){
+	out := []*User{}
+
+	for rows.Next() {
+		u := new(User)
+		err := rows.Scan(&u.Id,
+			&u.Name,
+			&u.Email,
+			&u.Password,
+			&u.PasswordSalt,
+			&u.PasswordHashScheme,
+			&u.Admin,
+			&u.Phone,
+			&u.PhoneCarrier,
+			&u.UploadLimit_Items,
+			&u.ProcessingLimit_S,
+			&u.StorageLimit_Gb)
+
+		if err != nil {
+			return out, err
+		}
+
+		out = append(out, u)
+	}
+
+	return out, nil
+}
+
 // ReadUserByEmail returns a User instance if a user exists with the given
 // email address.
 func ReadUserByEmail(Email string) (*User, error){
@@ -378,6 +406,18 @@ func ReadUserById(Id int64) (*User, error){
 
 	return constructUserFromRow(rows)
 }
+
+func ReadAllUsers() ([]*User, error) {
+	rows, err := db.Query("SELECT * FROM User")
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	return constructUsersFromRows(rows)
+}
+
 
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.

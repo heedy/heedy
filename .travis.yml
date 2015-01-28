@@ -9,5 +9,6 @@ install:
     - go get github.com/mattn/go-sqlite3
     - go get github.com/nu7hatch/gouuid
     - go get github.com/gorilla/mux
+    - go get github.com/gorilla/context
     
 script: go test streamdb/...
