@@ -16,6 +16,7 @@ before_script:
     - go build github.com/apcera/gnatsd
     - ./gnatsd -c ./config/gnatsd.conf &
     - redis-server ./config/redis.conf > /dev/null 2>&1 &
+    - sleep 5
 
 script:
     - go test streamdb/...
