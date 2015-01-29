@@ -2,6 +2,7 @@ package timebatchdb
 
 import (
     "testing"
+    "time"
     )
 
 func TestMessenger(t *testing.T) {
@@ -33,7 +34,16 @@ func TestMessenger(t *testing.T) {
         return
     }
 
+    go func() {
+        time.Sleep(1*time.Second)
+        recvchan <- &Message{0,"TIMEOUT",nil}
+    }()
+
     m := <- recvchan
+    if (m.Key=="TIMEOUT") {
+        t.Errorf("Message read timed out!")
+        return
+    }
 
     if (m.Timestamp!=1000 || string(m.Data)!="Hello World!" || m.Key!="user1/item1/stream1") {
         t.Errorf("Incorrect read %s",m)
