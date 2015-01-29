@@ -6,8 +6,8 @@ import (
     )
 
 func TestKeyMap(t *testing.T) {
-    os.RemoveAll("testkeymapfile")
-    m1,err := OpenKeyMap("testkeymapfile")
+    os.RemoveAll("testdatabase/keys")
+    m1,err := OpenKeyMap("testdatabase")
     if (err!=nil) {
         t.Errorf("Error opening file: %s",err)
         return
@@ -43,7 +43,7 @@ func TestKeyMap(t *testing.T) {
         return
     }
 
-    m2,err := OpenKeyMap("testkeymapfile")
+    m2,err := OpenKeyMap("testdatabase")
     if (err!=nil) {
         t.Errorf("Error opening file: %s",err)
         return

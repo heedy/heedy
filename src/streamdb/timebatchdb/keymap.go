@@ -31,7 +31,7 @@ func (k *KeyMap) Reload() (err error) {
     //Read the keys until EOF
     err = nil
     key := uint64(0)
-    var keylen uint32
+    var keylen uint16
     var keystr []byte
     for err == nil {
         err = binary.Read(k.keyfile,binary.LittleEndian, &keylen)
@@ -64,7 +64,7 @@ func (k *KeyMap) Create(key string) (uint64, error) {
 
     //Write the file
     bytestr := []byte(key)
-    err := binary.Write(k.keyfile,binary.LittleEndian,uint32(len(bytestr)))
+    err := binary.Write(k.keyfile,binary.LittleEndian,uint16(len(bytestr)))
     if (err!=nil) {
         return 0,err
     }
@@ -96,7 +96,7 @@ func OpenKeyMap(fpath string) (*KeyMap,error) {
     }
 
 
-    keyfile,err := os.OpenFile(path.Join(fpath,"keys"), os.O_APPEND|os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
+    keyfile,err := os.OpenFile(path.Join(fpath,"keys"), os.O_APPEND|os.O_RDWR|os.O_CREATE, 0666)
     if (err != nil) {
         return nil,err
     }
