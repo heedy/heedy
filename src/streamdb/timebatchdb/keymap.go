@@ -2,7 +2,6 @@ package timebatchdb
 
 import (
     "os"
-    "encoding/binary"
     "path"
     )
 
@@ -25,16 +24,15 @@ func (k *KeyMap) Len() uint64 {
 //Clears the keys, and reloads the entire keymap from file
 func (k *KeyMap) Reload() (err error) {
     k.keymap = make(map[string]uint64)
-
     k.keyfile.Seek(0,0)
 
     //Read the keys until EOF
     err = nil
     key := uint64(0)
-    var keylen uint16
     var keystr []byte
+
     for err == nil {
-        err = binary.Read(k.keyfile,binary.LittleEndian, &keylen)
+        keylen,err := ReadUvarint(k.keyfile)
         if err==nil {
             keystr = make([]byte,keylen)
             _, err := k.keyfile.Read(keystr)
@@ -42,6 +40,10 @@ func (k *KeyMap) Reload() (err error) {
                 key+=1
                 k.keymap[string(keystr)] = key
             }
+        } else {
+            //err is redefined with :=! This is super important, since it breaks stuff. It took
+            //me 2 hours of hair-tearing and poring through ReadUVarInt to figure this one out!
+            break
         }
     }
     k.keynum = key
@@ -64,11 +66,9 @@ func (k *KeyMap) Create(key string) (uint64, error) {
 
     //Write the file
     bytestr := []byte(key)
-    err := binary.Write(k.keyfile,binary.LittleEndian,uint16(len(bytestr)))
-    if (err!=nil) {
-        return 0,err
-    }
-    _,err = k.keyfile.Write(bytestr)
+    WriteUvarint(k.keyfile,uint64(len(bytestr)))   //Uvar.. in filetools
+
+    _,err := k.keyfile.Write(bytestr)
     if (err!=nil) {
         return 0,err
     }
@@ -94,7 +94,6 @@ func OpenKeyMap(fpath string) (*KeyMap,error) {
     if err := MakeDirs(fpath); err!= nil {
         return nil,err
     }
-
 
     keyfile,err := os.OpenFile(path.Join(fpath,"keys"), os.O_APPEND|os.O_RDWR|os.O_CREATE, 0666)
     if (err != nil) {

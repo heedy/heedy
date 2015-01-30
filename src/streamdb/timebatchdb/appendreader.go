@@ -3,7 +3,6 @@ package timebatchdb
 import (
     "os"
     "path"
-    "encoding/binary"
     "strconv"
     )
 
@@ -25,30 +24,10 @@ func (a *AppendReader) Size() int64 {
 }
 
 //Returns the next datapoint from the append file.
-func (a *AppendReader) Next() (key string,timestamp uint64,data []byte,err error) {
-    var keylength uint16
-    var datalen uint32
+func (a *AppendReader) Next() (d *KeyedDatapoint,err error) {
+    d,err = ReadKeyedDatapoint(a.appendf)
 
-    err = binary.Read(a.appendf,binary.LittleEndian,&timestamp)
-    if (err!=nil) {
-        return "",0,nil,err
-    }
-    err = binary.Read(a.appendf,binary.LittleEndian,&keylength)
-    if (err!=nil) {
-        return "",0,nil,err
-    }
-    err = binary.Read(a.appendf,binary.LittleEndian,&datalen)
-    if (err!=nil) {
-        return "",0,nil,err
-    }
-
-    keybytes := make([]byte,keylength)
-    data = make([]byte,datalen)
-
-    a.appendf.Read(keybytes)
-    _,err = a.appendf.Read(data)
-
-    return string(keybytes),timestamp,data,err
+    return d,err
 
 }
 

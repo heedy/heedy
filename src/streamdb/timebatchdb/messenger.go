@@ -3,7 +3,6 @@ package timebatchdb
 import (
     "github.com/apcera/nats"
     "strings"
-    "time"
     )
 
 type Messenger struct {
@@ -11,17 +10,7 @@ type Messenger struct {
     econn *nats.EncodedConn     //The Encoded conn, ie, a data message
 }
 
-type Message struct {
-    Timestamp uint64            //The timestamp associated with data
-    Key string                  //The key name associated with message
-    Data []byte                 //The associated data
-}
-
-func (m *Message) String() string {
-    return "[KEY="+m.Key+" TIME="+time.Unix(0,int64(m.Timestamp)).String()+" DATA="+string(m.Data)+"]"
-}
-
-type SubscriptionFunction func(*Message)
+type SubscriptionFunction func(*KeyedDatapoint)
 
 
 func (m *Messenger) Close() {
@@ -45,14 +34,14 @@ func ConnectMessenger(url string) (*Messenger,error){
     return &Messenger{conn,econn},nil
 }
 
-func (m *Messenger) Publish(key string,timestamp uint64,data []byte) error {
-    return m.econn.Publish(strings.Replace(key,"/",".",-1),&Message{timestamp,key,data})
+func (m *Messenger) Publish(d *KeyedDatapoint) error {
+    return m.econn.Publish(strings.Replace(d.Key(),"/",".",-1),d)
 }
 
 func (m *Messenger) Subscribe(key string, fn SubscriptionFunction) (*nats.Subscription,error){
     return m.econn.Subscribe(strings.Replace(key,"/",".",-1),fn)
 }
 
-func (m *Messenger) SubChannel(key string, chn chan *Message) (*nats.Subscription,error) {
+func (m *Messenger) SubChannel(key string, chn chan *KeyedDatapoint) (*nats.Subscription,error) {
     return m.econn.BindRecvChan(strings.Replace(key,"/",".",-1),chn)
 }

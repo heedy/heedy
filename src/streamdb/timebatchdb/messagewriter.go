@@ -14,7 +14,7 @@ func MessageWriter(url string,key string) error {
     }
     defer msg.Close()
 
-    recvchan := make(chan *Message)
+    recvchan := make(chan *KeyedDatapoint)
     _,err = msg.SubChannel(key,recvchan)
     if err != nil {
         return err

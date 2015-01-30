@@ -4,7 +4,6 @@ import (
     "os"
     "path"
     "bytes"
-    "encoding/binary"
     "strconv"
     "sync"
     "time"
@@ -70,7 +69,7 @@ func (a *AppendWriter) WriteFile() error {
 }
 
 //Writes the given stuff to the buffer
-func (a *AppendWriter) WriteBuffer(key string,timestamp uint64, data []byte) {
+func (a *AppendWriter) WriteBuffer(d *KeyedDatapoint) {
     a.buflock.Lock()
     //Choose the correct buffer. The opposite of the buffer used for writebuf
     buf := a.buffer1
@@ -78,13 +77,7 @@ func (a *AppendWriter) WriteBuffer(key string,timestamp uint64, data []byte) {
         buf = a.buffer2
     }
 
-    //The format is [timestamp][keylength][datalength][key][data]
-    bytekey := []byte(key)
-    binary.Write(buf,binary.LittleEndian,timestamp)
-    binary.Write(buf,binary.LittleEndian,uint16(len(bytekey)))
-    binary.Write(buf,binary.LittleEndian,uint32(len(data)))
-    buf.Write(bytekey)
-    buf.Write(data)
+    buf.Write(d.Bytes())
 
     a.buflock.Unlock()
 }
