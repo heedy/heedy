@@ -1,29 +1,17 @@
 language: go
-go: 
+go:
     - tip
 
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
-    - go get github.com/apcera/nats
-    - go get github.com/apcera/gnatsd
-    - go get github.com/garyburd/redigo/redis
-    - go get github.com/mattn/go-sqlite3
-    - go get github.com/nu7hatch/gouuid
-    - go get github.com/gorilla/mux
-    - go get github.com/gorilla/context
-
-before_script:
-    - go build github.com/apcera/gnatsd
-    - ./gnatsd -c ./config/gnatsd.conf &
-    - redis-server ./config/redis.conf > /dev/null 2>&1 &
-    - sleep 15
+    - make dependencies
 
 script:
-    - go test streamdb/...
+    - make test
+    - make
 
 notifications:
     email:
         recipients:
             - daniel@dkumor.com
             - joseph@josephlewis.net
-

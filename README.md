@@ -4,22 +4,39 @@ ConnectorDB
 =========================
 A database that connects stuff
 
+## Dependencies
+You must have redis installed. To install the other necessary go dependencies, run:
+```bash
+make dependencies
+```
 
 ## Building
 
-The dependencies include `redis`, and all the go packages included in the `install` section of `.travis.yml`.
-
-The `/tools` directory contains standalone executables, each of which needs to be individually compiled with a command such as:
-
+The following will create all necessary binaries
 ```bash
-go build ./tools/dbwriter.go
+make
 ```
 
-Lastly, gnatsd needs to be compiled from source:
+At that point, binaries are located in `/bin`. Good default config files are located in `/config`.
+
+## Testing
+
+This will run all tests, spawning the necessary servers in the process:
 ```bash
-go build github.com/apcera/gnatsd
+make test
 ```
 
-## Running
+#### Manual Testing:
+Manually running tests is done by running, all in different terminals:
+```bash
+redis-server config/redis.conf
+```
+```bash
+./bin/gnatsd -c config/gnatsd.conf
+```
 
-The servers in the `before_script` part of `.travis.yml` need to be running in the background before the rest can run.
+Then:
+```bash
+go test streamdb/...
+```
+This allows to keep redis and gnatsd running while coding.
