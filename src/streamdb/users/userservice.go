@@ -8,6 +8,8 @@ import (
     "fmt"
     "flag"
     "encoding/json"
+    "io"
+    "io/ioutil"
     )
 
 type key int
@@ -16,11 +18,51 @@ var (
     UNAUTHORIZED_MESSAGE = []byte("The API key provided either doesn't exist our records or is disabled.")
     ERROR_MESSAGE = []byte("An internal error occurred.")
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
+    errorGenericResult = GenericResult{http.StatusInternalServerError, "An internal error occurred"}
+    okGenericResult = GenericResult{http.StatusOK, "Success"}
+
 )
 
 const (
     REQUEST_DEVICE_IS_SUPERUSER key = 0
 )
+
+type GenericResult struct {
+    Status int  // An HTTP status code
+    Message string  // Extra data needed to pass along
+}
+
+
+type ReadUserResult struct {
+    Users []CleanUser
+    Unsanitized []User
+    GenericResult
+}
+
+func (result GenericResult) writeToHttp(writer http.ResponseWriter) {
+
+    if result.Status == 0 {
+        result.Status = http.StatusOK
+    }
+
+    val, err := json.Marshal(result)
+
+    if err != nil {
+        log.Printf("Could not marshal data structure to json|err:%v result:%v", err, result)
+
+        writer.WriteHeader(http.StatusInternalServerError)
+        writer.Write(ERROR_MESSAGE)
+        return
+    }
+
+    writer.WriteHeader(result.Status)
+    writer.Write(val)
+}
+
+// Tests to see if this result was a "success" or not.
+func (r GenericResult) IsSuccess() bool {
+    return r.Status == 200 || r.Status == 204 // HTTP success code for ok
+}
 
 
 // Runs an authorization check on the api before calling the function
@@ -77,22 +119,16 @@ func apiAuth(h http.HandlerFunc, superdeviceRequired bool) http.HandlerFunc {
     })
 }
 
-type ReadUserResult struct {
-    Users []CleanUser
-    Unsanitized []User
-}
-
-
 
 func readUser(writer http.ResponseWriter, request *http.Request) {
     var result ReadUserResult
+    result.Status = 200
 
     users, err := ReadAllUsers()
 
     if err != nil {
         log.Printf("Could not service read user request|err:%v", err)
-        writer.WriteHeader(http.StatusInternalServerError)
-        writer.Write(ERROR_MESSAGE)
+        errorGenericResult.writeToHttp(writer)
         return
     }
 
@@ -104,15 +140,13 @@ func readUser(writer http.ResponseWriter, request *http.Request) {
         if is_super.(bool) {
             result.Unsanitized = append(result.Unsanitized, *u)
         }
-
     }
 
     val, err := json.Marshal(result)
 
     if err != nil {
         log.Printf("Could not service read user request|err:%v", err)
-        writer.WriteHeader(http.StatusInternalServerError)
-        writer.Write(ERROR_MESSAGE)
+        errorGenericResult.writeToHttp(writer)
         return
     }
 
@@ -128,21 +162,60 @@ func createUser(writer http.ResponseWriter, request *http.Request) {
     fmt.Fprintf(writer, "Hi there, I love %s!", request.URL.Path[1:])
 }
 
+func readBody(request *http.Request) ([]byte, error) {
+    defer request.Body.Close()
+    return ioutil.ReadAll(io.LimitReader(request.Body, 1048576))
+}
+
+func readBodyUnmarshalAndError(writer http.ResponseWriter, request *http.Request, tofill interface{}) (error) {
+    body, err := readBody(request)
+    if err != nil {
+        log.Printf("Could not read the body|err:%v", err)
+        errorGenericResult.writeToHttp(writer)
+        return err
+    }
+
+    if err := json.Unmarshal(body, tofill); err != nil {
+        log.Printf("Could not unmarshal|err:%v", err)
+        errorGenericResult.writeToHttp(writer)
+        return err
+    }
+
+    return nil
+}
+
 
 func updateUser(writer http.ResponseWriter, request *http.Request) {
-    //var result ReadUserResult
+    var userUpload User
 
-    // todo fill structs
-    fmt.Fprintf(writer, "Hi there, I love %s!", request.URL.Path[1:])
+    if err := readBodyUnmarshalAndError(writer, request, userUpload); err != nil {
+        return // errors already handled
+    }
+
+    if err := UpdateUser(&userUpload); err != nil {
+        log.Printf("Could not service update user request|err:%v", err)
+        errorGenericResult.writeToHttp(writer)
+        return
+    }
+
+    okGenericResult.writeToHttp(writer)
 }
 
 
 func deleteUser(writer http.ResponseWriter, request *http.Request) {
-    //var result ReadUserResult
+    var userUpload User
 
-    // todo fill structs
-    fmt.Fprintf(writer, "Hi there, I love %s!", request.URL.Path[1:])
-}
+    if err := readBodyUnmarshalAndError(writer, request, userUpload); err != nil {
+        return // errors already handled
+    }
+
+    if err := DeleteUser(userUpload.Id); err != nil {
+        log.Printf("Could not service update user request|err:%v", err)
+        errorGenericResult.writeToHttp(writer)
+        return
+    }
+
+    okGenericResult.writeToHttp(writer)}
 
 
 func readDevice(writer http.ResponseWriter, request *http.Request) {

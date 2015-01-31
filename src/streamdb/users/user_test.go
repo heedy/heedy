@@ -210,7 +210,6 @@ func TestDeleteUser(t *testing.T) {
         t.Errorf("The user with ID %v should have errored out, but it did not", id)
         return
     }
-
     if user != nil {
         t.Errorf("Expected nil, but we got back a user meaning the delete failed %v", user)
     }

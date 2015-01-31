@@ -33,6 +33,7 @@ var (
 	// Standard Errors
 	ERR_EMAIL_EXISTS = errors.New("A user already exists with this email")
 	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
+	ERR_INVALID_PTR = errors.New("The provided pointer is nil")
 )
 
 
@@ -60,6 +61,9 @@ func (u User) ToClean() CleanUser {
 	return CleanUser{Name:u.Name}
 }
 
+func (u User) SetNewPassword(newPass string) {
+	u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
+}
 
 type PhoneCarrier struct {
 	Id int64
@@ -317,6 +321,11 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 func constructUserFromRow(rows *sql.Rows) (*User, error){
 	u := new(User)
 
+	if rows == nil {
+		return u, ERR_INVALID_PTR
+	}
+
+
 	for rows.Next() {
 		err := rows.Scan(
 					&u.Id,
@@ -340,8 +349,13 @@ func constructUserFromRow(rows *sql.Rows) (*User, error){
 func constructUsersFromRows(rows *sql.Rows) ([]*User, error){
 	out := []*User{}
 
+	if rows == nil {
+		return out, ERR_INVALID_PTR
+	}
+
+
 	for rows.Next() {
-		u := new(User)
+		u :=  new(User)
 		err := rows.Scan(&u.Id,
 			&u.Name,
 			&u.Email,
@@ -422,6 +436,11 @@ func ReadAllUsers() ([]*User, error) {
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
 func UpdateUser(user *User) (error) {
+
+	if user == nil {
+		return ERR_INVALID_PTR
+	}
+
 	_, err := db.Exec(`UPDATE User SET
 		Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
 			Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
@@ -469,6 +488,10 @@ func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 	u := new(PhoneCarrier)
 
+	if rows == nil {
+		return u, ERR_INVALID_PTR
+	}
+
 	for rows.Next() {
 		err := rows.Scan(
 			&u.Id,
@@ -488,6 +511,11 @@ func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
 // constructPhoneCarriersFromRows constructs a series of phone carriers
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 	out := []*PhoneCarrier{}
+
+	if rows == nil {
+		return out, ERR_INVALID_PTR
+	}
+
 
 	for rows.Next() {
 		u := new(PhoneCarrier)
@@ -530,6 +558,11 @@ func ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
 // UpdatePhoneCarrier updates the database's phone carrier data with that of the
 // struct provided.
 func UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
+	if carrier == nil {
+		return ERR_INVALID_PTR
+	}
+
+
 	_, err := db.Exec(`UPDATE PhoneCarrier SET
 		Name=?, EmailDomain=? WHERE Id = ?;`,
 		carrier.Name,
@@ -548,6 +581,11 @@ func DeletePhoneCarrier(carrierId int64) (error) {
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id
 func CreateDevice(Name string, OwnerId *User) (int64, error) {
+	// guards
+	if OwnerId == nil {
+		return -1, ERR_INVALID_PTR
+	}
+
 	ApiKey, _ := uuid.NewV4()
 
 	res, err := db.Exec(`INSERT INTO Device
@@ -558,9 +596,8 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 		VALUES (?,?,?,?)`,
 		Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
 
-	//log.Printf("Created Device, err %v", err)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	return res.LastInsertId()
@@ -569,6 +606,11 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 // constructDeviceFromRow converts a SQL result to device by filling out a struct.
 func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
 	u := new(Device)
+
+	// defensive programming
+	if rows == nil {
+		return u, ERR_INVALID_PTR
+	}
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -590,6 +632,11 @@ func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
 // constructDevicesFromRows constructs a series of devices
 func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 	out := []*Device{}
+
+	// defensive programming
+	if rows == nil {
+		return out, ERR_INVALID_PTR
+	}
 
 	for rows.Next() {
 		u := new(Device)
@@ -643,6 +690,10 @@ func ReadDeviceByApiKey(Key string) (*Device, error) {
 // UpdateDevice updates the given device in the database with all fields in the
 // struct.
 func UpdateDevice(device *Device) (error) {
+	if device == nil {
+		return ERR_INVALID_PTR
+	}
+
 	_, err := db.Exec(`UPDATE Device SET
 			Name = ?, ApiKey = ?, Enabled = ?,
 			Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
@@ -669,6 +720,10 @@ func DeleteDevice(Id int64) (error) {
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64, error) {
+	if owner == nil {
+		return -1, ERR_INVALID_PTR
+	}
+
 	res, err := db.Exec(`INSERT INTO Stream
 		(	Name,
 			Schema_Json,
@@ -687,6 +742,11 @@ func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64
 // constructStreamsFromRows converts a rows statement to an array of streams
 func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
 	out := []*Stream{}
+
+	// defensive programming
+	if rows == nil {
+		return out, ERR_INVALID_PTR
+	}
 
 	for rows.Next() {
 		u := new(Stream)
@@ -733,6 +793,11 @@ func ReadStreamById(id int64) (*Stream, error) {
 // UpdateStream updates the stream with the given ID with the provided data
 // replacing all prior contents.
 func UpdateStream(stream *Stream) (error) {
+	if stream == nil {
+		return ERR_INVALID_PTR
+	}
+
+
 	_, err := db.Exec(`UPDATE Stream SET
 		Name = ?,
 		Active = ?,
