@@ -24,7 +24,7 @@ func MessageView(url string,key string) error {
     }
     defer msg.Close()
 
-    recvchan := make(chan *timebatchdb.KeyedDatapoint)
+    recvchan := make(chan timebatchdb.KeyedDatapoint)
     _,err = msg.SubChannel(key,recvchan)
     if err != nil {
         return err

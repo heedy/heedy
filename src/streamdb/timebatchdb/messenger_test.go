@@ -21,7 +21,7 @@ func TestMessenger(t *testing.T) {
     }
     defer msg2.Close()
 
-    recvchan := make(chan *KeyedDatapoint)
+    recvchan := make(chan KeyedDatapoint)
     _,err = msg2.SubChannel("user1/>",recvchan)
     if err != nil {
         t.Errorf("Couldn't bind channel: %s",err)

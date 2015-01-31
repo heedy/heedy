@@ -16,46 +16,46 @@ type Datapoint struct {
 }
 
 //Total size in bytes of the datapoint
-func (d *Datapoint) Len() int {
+func (d Datapoint) Len() int {
     return len(d.Buf)
 }
 
 //The length of the data of the databuffer
-func (d *Datapoint) DataLen() int {
+func (d Datapoint) DataLen() int {
     return len(d.Data())
 }
 
 //The byte array of the datapoint
-func (d *Datapoint) Bytes() []byte {
+func (d Datapoint) Bytes() []byte {
     return d.Buf
 }
 
-func (d *Datapoint) String() string {
+func (d Datapoint) String() string {
     return "[TIME="+time.Unix(0,int64(d.Timestamp())).String()+" DATA="+string(d.Data())+"]"
 }
 
 //Returns the datapoint's timestamp
-func (d *Datapoint) Timestamp() (ts uint64) {
+func (d Datapoint) Timestamp() (ts uint64) {
     binary.Read(bytes.NewBuffer(d.Buf),binary.LittleEndian,&ts)
     return ts
 }
 
 //Returns the data associated with the datapoint
-func (d *Datapoint) Data() ([]byte) {
+func (d Datapoint) Data() ([]byte) {
     _, bytes_read := binary.Uvarint(d.Buf[8:])
     return d.Buf[8+bytes_read:]
 }
 
 //Gets the datapoint
-func (d *Datapoint) Get() (timestamp uint64,data []byte) {
+func (d Datapoint) Get() (timestamp uint64,data []byte) {
     return d.Timestamp(),d.Data()   //The return here is simple, since we don't do any real processing
 }
 
 //Reads the datapoint from file
-func ReadDatapoint(r io.Reader) (*Datapoint,error) {
+func ReadDatapoint(r io.Reader) (Datapoint,error) {
     buf := new(bytes.Buffer)
     err := ReadDatapointIntoBuffer(r,buf)
-    return &Datapoint{buf.Bytes()},err  //The bytes the buffer read are our datapoint
+    return Datapoint{buf.Bytes()},err  //The bytes the buffer read are our datapoint
 
 }
 
@@ -83,18 +83,18 @@ func DatapointIntoBuffer(w *bytes.Buffer, timestamp uint64,data []byte) {
     w.Write(data)
 }
 
-func NewDatapoint(timestamp uint64, data []byte) *Datapoint {
+func NewDatapoint(timestamp uint64, data []byte) Datapoint {
     buf := new(bytes.Buffer)
     DatapointIntoBuffer(buf,timestamp,data)
-    return &Datapoint{buf.Bytes()}  //The bytes the buffer read are our datapoint
+    return Datapoint{buf.Bytes()}  //The bytes the buffer read are our datapoint
 }
 
 //Given an arbitrarily sized byte array, reads one datapoint from it (and uses a slice as its internal storage).
 //This allows to read a large array of datapoints by using this function repeatedly.
-func DatapointFromBytes(buf [] byte) (d *Datapoint, bytesread uint64) {
+func DatapointFromBytes(buf [] byte) (d Datapoint, bytesread uint64) {
     size,bytes_read := binary.Uvarint(buf[8:]) //We just need to know how large the data is
     bytesread = 8+uint64(bytes_read)+size
-    return &Datapoint{buf[:bytesread]},bytesread
+    return Datapoint{buf[:bytesread]},bytesread
 }
 
 
@@ -106,67 +106,67 @@ type KeyedDatapoint struct {
 }
 
 //Returns the byte array associated with the keyed datapoint
-func (d *KeyedDatapoint) Bytes() []byte {
+func (d KeyedDatapoint) Bytes() []byte {
     return d.Buf
 }
 
 //Gets the datapoint from a keyed-datapoint
-func (d *KeyedDatapoint) Datapoint() *Datapoint {
+func (d KeyedDatapoint) Datapoint() Datapoint {
     //Find the location of the datapoint
     size,bytes_read := binary.Uvarint(d.Buf)
-    return &Datapoint{d.Buf[bytes_read+int(size):]}
+    return Datapoint{d.Buf[bytes_read+int(size):]}
 }
 
-func (d *KeyedDatapoint) Key() string {
+func (d KeyedDatapoint) Key() string {
     size,bytes_read := binary.Uvarint(d.Buf)
     return string(d.Buf[bytes_read:bytes_read+int(size)])
 }
 
-func (d *KeyedDatapoint) Timestamp() uint64 {
+func (d KeyedDatapoint) Timestamp() uint64 {
     return d.Datapoint().Timestamp()
 }
-func (d *KeyedDatapoint) Data() []byte {
+func (d KeyedDatapoint) Data() []byte {
     return d.Datapoint().Data()
 }
 
 //A standard way to create a datapoint
-func NewKeyedDatapoint(key string, timestamp uint64, data []byte) *KeyedDatapoint {
+func NewKeyedDatapoint(key string, timestamp uint64, data []byte) KeyedDatapoint {
     buf := new(bytes.Buffer)
     bytekey := []byte(key)
     WriteUvarint(buf,uint64(len(bytekey)))
     buf.Write(bytekey)
     DatapointIntoBuffer(buf,timestamp,data)
-    return &KeyedDatapoint{buf.Bytes()}
+    return KeyedDatapoint{buf.Bytes()}
 
 }
 
 //Reads the datapoint from file
-func ReadKeyedDatapoint(r io.Reader) (*KeyedDatapoint,error) {
+func ReadKeyedDatapoint(r io.Reader) (KeyedDatapoint,error) {
     w := new(bytes.Buffer)
     n,err := ReadUvarint(r)
     if err!=nil {
-        return nil,err
+        return KeyedDatapoint{nil},err
     }
     WriteUvarint(w,n)
     _,err  = io.CopyN(w,r,int64(n))
     if err!=nil {
-        return nil,err
+        return KeyedDatapoint{nil},err
     }
     err = ReadDatapointIntoBuffer(r,w)
-    return &KeyedDatapoint{w.Bytes()},err //The bytes the buffer read are our datapoint
+    return KeyedDatapoint{w.Bytes()},err //The bytes the buffer read are our datapoint
 
 }
 
-func (d *KeyedDatapoint) String() string {
+func (d KeyedDatapoint) String() string {
     return "[KEY="+d.Key()+" TIME="+time.Unix(0,int64(d.Timestamp())).String()+" DATA="+string(d.Data())+"]"
 }
 
 //Total size in bytes of the datapoint
-func (d *KeyedDatapoint) Len() int {
+func (d KeyedDatapoint) Len() int {
     return len(d.Buf)
 }
 
 //The length of the data of the databuffer
-func (d *KeyedDatapoint) DataLen() int {
+func (d KeyedDatapoint) DataLen() int {
     return len(d.Data())
 }

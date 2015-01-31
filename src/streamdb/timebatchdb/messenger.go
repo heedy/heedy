@@ -34,7 +34,7 @@ func ConnectMessenger(url string) (*Messenger,error){
     return &Messenger{conn,econn},nil
 }
 
-func (m *Messenger) Publish(d *KeyedDatapoint) error {
+func (m *Messenger) Publish(d KeyedDatapoint) error {
     return m.econn.Publish(strings.Replace(d.Key(),"/",".",-1),d)
 }
 
@@ -42,6 +42,6 @@ func (m *Messenger) Subscribe(key string, fn SubscriptionFunction) (*nats.Subscr
     return m.econn.Subscribe(strings.Replace(key,"/",".",-1),fn)
 }
 
-func (m *Messenger) SubChannel(key string, chn chan *KeyedDatapoint) (*nats.Subscription,error) {
+func (m *Messenger) SubChannel(key string, chn chan KeyedDatapoint) (*nats.Subscription,error) {
     return m.econn.BindRecvChan(strings.Replace(key,"/",".",-1),chn)
 }

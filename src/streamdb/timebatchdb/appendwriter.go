@@ -69,7 +69,7 @@ func (a *AppendWriter) WriteFile() error {
 }
 
 //Writes the given stuff to the buffer
-func (a *AppendWriter) WriteBuffer(d *KeyedDatapoint) {
+func (a *AppendWriter) WriteBuffer(d KeyedDatapoint) {
     a.buflock.Lock()
     //Choose the correct buffer. The opposite of the buffer used for writebuf
     buf := a.buffer1

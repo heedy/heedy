@@ -24,7 +24,7 @@ func (a *AppendReader) Size() int64 {
 }
 
 //Returns the next datapoint from the append file.
-func (a *AppendReader) Next() (d *KeyedDatapoint,err error) {
+func (a *AppendReader) Next() (d KeyedDatapoint,err error) {
     d,err = ReadKeyedDatapoint(a.appendf)
 
     return d,err
