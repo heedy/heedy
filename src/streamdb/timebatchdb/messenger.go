@@ -14,8 +14,6 @@ type SubscriptionFunction func(*KeyedDatapoint)
 
 
 func (m *Messenger) Close() {
-    m.econn.Flush()
-    m.conn.Flush()
     m.econn.Close()
     m.conn.Close()
 }
@@ -44,4 +42,9 @@ func (m *Messenger) Subscribe(key string, fn SubscriptionFunction) (*nats.Subscr
 
 func (m *Messenger) SubChannel(key string, chn chan KeyedDatapoint) (*nats.Subscription,error) {
     return m.econn.BindRecvChan(strings.Replace(key,"/",".",-1),chn)
+}
+
+//Makes sure all commands are acknowledged by the server
+func (m *Messenger) Flush() {
+    m.econn.Flush()
 }

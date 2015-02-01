@@ -1,4 +1,4 @@
-.PHONY: clean all dependencies test gnatsd
+.PHONY: clean all dependencies test
 
 #gets the list of files that we're to compile
 SRC=$(wildcard tools/*.go)
@@ -7,21 +7,26 @@ SRC=$(wildcard tools/*.go)
 TMPO=$(patsubst tools/%.go,bin/%,$(SRC))
 OBJ=$(TMPO:.go=)
 
+
+
+all: $(OBJ) bin/dep/gnatsd
+bin:
+	mkdir bin
+	mkdir bin/dep
 #Rule to go from source go file to binary
 bin/%: tools/%.go bin
 	go build -o $@ $<
 
-all: $(OBJ)
-bin:
-	mkdir bin
 clean:
 	rm -rf bin
+
+
 
 ############################################################################################################
 #Dependencies of the project
 ############################################################################################################
 
-dependencies: bin
+dependencies:
 	go get github.com/apcera/nats
 	go get github.com/apcera/gnatsd
 	go get github.com/garyburd/redigo/redis
@@ -29,11 +34,15 @@ dependencies: bin
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux
 	go get github.com/gorilla/context
-	go build -o bin/gnatsd github.com/apcera/gnatsd
+
+#gnatsd is the messenger server - deps must be installed, but we don't want deps to be called
+#each time we check for gnatsd executable or each time tests are run
+bin/dep/gnatsd: bin
+	go build -o bin/dep/gnatsd github.com/apcera/gnatsd
 
 ############################################################################################################
 #Running Tests
 ############################################################################################################
 
-test: dependencies 
+test: bin/dep/gnatsd
 	./runtests.sh
