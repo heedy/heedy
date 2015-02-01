@@ -3,56 +3,24 @@ package users
 import (
     "testing"
     "reflect"
-    "log"
     )
-
-var (
-    usrid2 int64
-    usr2 *User
-)
-
-
-func init() {
-    var err error
-
-    usrid, err = CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
-    if err != nil {
-        log.Print(err)
-    }
-
-    usr, err = ReadUserById(usrid)
-    if err != nil {
-        log.Print(err)
-    }
-
-    usrid2, err = CreateUser("DeviceTestUserName2", "DeviceTestUserEmail2", "DeviceTestUserPassword2")
-    if err != nil {
-        log.Print(err)
-    }
-
-    usr2, err = ReadUserById(usrid2)
-    if err != nil {
-        log.Print(err)
-    }
-
-}
 
 
 func TestCreateDevice(t *testing.T) {
-    _, err := CreateDevice("TestCreateDevice", usr)
+    _, err := testdb.CreateDevice("TestCreateDevice", usr)
     if(err != nil) {
         t.Errorf("Cannot create device %v", err)
         return
     }
 
     // DeviceName/Usernames must be unique
-    _, err = CreateDevice("TestCreateDevice", usr)
+    _, err = testdb.CreateDevice("TestCreateDevice", usr)
     if(err == nil) {
         t.Errorf("Created device with duplicate name under the same user")
     }
 
     // but should work with different users
-    _, err = CreateDevice("TestCreateDevice", usr2)
+    _, err = testdb.CreateDevice("TestCreateDevice", usr2)
     if(err != nil) {
         t.Errorf("Could not create device with secnod user %v", err)
         return
@@ -61,14 +29,14 @@ func TestCreateDevice(t *testing.T) {
 
 
 func TestReadDeviceById(t *testing.T) {
-    id, err := CreateDevice("TestReadStreamById", usr)
+    id, err := testdb.CreateDevice("TestReadStreamById", usr)
 
     if(err != nil) {
         t.Errorf("Cannot create object %v", err)
         return
     }
 
-    obj, err := ReadDeviceById(id)
+    obj, err := testdb.ReadDeviceById(id)
 
     if err != nil || obj == nil {
         t.Errorf("Cannot read object back with returned id %v, err: %v, obj: %v", id, err, obj)
@@ -77,13 +45,13 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-    id, err := CreateDevice("TestUpdateDevice", usr)
+    id, err := testdb.CreateDevice("TestUpdateDevice", usr)
     if err != nil {
         t.Errorf("Cannot create object %v", err)
         return
     }
 
-    obj, err := ReadDeviceById(id)
+    obj, err := testdb.ReadDeviceById(id)
     if err != nil || obj == nil {
         t.Errorf("Cannot read object back with id: {}, err: {}, obj:{}", id, err, obj)
         return
@@ -96,13 +64,13 @@ func TestUpdateDevice(t *testing.T) {
     obj.Shortname = "My Wifi Router"
     obj.Superdevice = true
 
-    err = UpdateDevice(obj)
+    err = testdb.UpdateDevice(obj)
     if err != nil {
         t.Errorf("Could not update object %v", err)
         return
     }
 
-    obj2, err := ReadDeviceById(id)
+    obj2, err := testdb.ReadDeviceById(id)
     if err != nil || obj2 == nil {
         t.Errorf("Cannot read object back with id: {}, err: {}, obj:{}", id, err, obj2)
         return
@@ -115,21 +83,21 @@ func TestUpdateDevice(t *testing.T) {
 
 
 func TestDeleteDevice(t *testing.T) {
-    id, err := CreateDevice("TestDeleteDevice", usr)
+    id, err := testdb.CreateDevice("TestDeleteDevice", usr)
 
     if nil != err {
         t.Errorf("Cannot create object to test delete err: %v", err)
         return
     }
 
-    err = DeleteDevice(id)
+    err = testdb.DeleteDevice(id)
 
     if nil != err {
         t.Errorf("Error when attempted delete %v", err)
         return
     }
 
-    obj, err := ReadDeviceById(id)
+    obj, err := testdb.ReadDeviceById(id)
 
     if err == nil {
         t.Errorf("The object with the selected ID should have errored out, but it did not")

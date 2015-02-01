@@ -7,7 +7,6 @@ package users
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"github.com/nu7hatch/gouuid"
 	"errors"
 	"crypto/sha512"
@@ -26,14 +25,51 @@ const(
 )
 
 var (
- 	DB_DRIVER string
-	db *sql.DB // the database
-
 	// Standard Errors
 	ERR_EMAIL_EXISTS = errors.New("A user already exists with this email")
 	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
 	ERR_INVALID_PTR = errors.New("The provided pointer is nil")
 )
+
+// The main UserDatabase type
+type UserDatabase struct {
+	driverstr string
+	filepath string
+	db *sql.DB
+}
+
+// Opens the database for operations
+func (userdb *UserDatabase) open() (error){
+	var err error
+	userdb.db, err = sql.Open(userdb.driverstr, userdb.filepath)
+	if err != nil {
+		return err
+	}
+
+	err = userdb.db.Ping()
+	if err != nil {
+		return err
+	}
+
+	return userdb.setupDatabase()
+}
+
+func NewSqliteUserDatabase(path string) (*UserDatabase, error) {
+	n := new(UserDatabase)
+
+	n.driverstr = "sqlite3"
+	n.filepath = path
+
+	if err := n.open(); err != nil {
+		return nil, err
+	}
+
+	if err := n.setupDatabase(); err != nil {
+		return nil, err
+	}
+
+	return n, nil
+}
 
 
 
@@ -41,27 +77,27 @@ var (
 /**
 Sets up the SQLITE databse.
 **/
-func setupDatabase() {
+func (userdb *UserDatabase) setupDatabase() error{
 
-	_, err := db.Exec("PRAGMA foreign_keys = ON;")
+	_, err := userdb.db.Exec("PRAGMA foreign_keys = ON;")
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier
 		(	Id INTEGER PRIMARY KEY,
 			Name STRING UNIQUE NOT NULL,
 			EmailDomain STRING UNIQUE NOT NULL)`);
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, _ = db.Exec(`INSERT INTO PhoneCarrier VALUES (0, "None", "")`);
+	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, "None", "")`);
 
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS User
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS User
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING UNIQUE NOT NULL,
 			Email STRING UNIQUE NOT NULL,
@@ -79,15 +115,15 @@ func setupDatabase() {
 			);`)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON User (Name);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON User (Name);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Device
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Device
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			ApiKey STRING UNIQUE NOT NULL,
@@ -101,26 +137,26 @@ func setupDatabase() {
 			);`)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS Stream
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Stream
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			Active BOOLEAN DEFAULT TRUE,
@@ -134,18 +170,20 @@ func setupDatabase() {
 
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
 
 // calcHash calculates the user hash for the given password, salt and hashing
@@ -167,15 +205,15 @@ func calcHash(password, salt, scheme string) (string) {
 
 // ValidateUser checks to see if a user going by the username or email
 // matches the given password, returns true if it does false if it does not
-func ValidateUser(UsernameOrEmail, Password string) (bool) {
+func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool) {
 	var usr *User
 
-	usr, _ = ReadUserByName(UsernameOrEmail)
+	usr, _ = userdb.ReadUserByName(UsernameOrEmail)
 	if usr != nil {
 		goto gotuser
 	}
 
-	usr, _ = ReadUserByEmail(UsernameOrEmail)
+	usr, _ = userdb.ReadUserByEmail(UsernameOrEmail)
 	if usr != nil {
 		goto gotuser
 	}
@@ -191,15 +229,15 @@ gotuser:
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func CreateUser(Name, Email, Password string) (id int64, err error) {
+func (userdb *UserDatabase) CreateUser(Name, Email, Password string) (id int64, err error) {
 
 	// Ensure we don't have someone with the same email or name
-	usr, err := ReadUserByEmail(Email)
+	usr, err := userdb.ReadUserByEmail(Email)
 	if(usr != nil){
 		return -1, ERR_EMAIL_EXISTS
 	}
 
-	usr, err = ReadUserByName(Name)
+	usr, err = userdb.ReadUserByName(Name)
 	if(usr != nil){
 		return -1, ERR_USERNAME_EXISTS
 	}
@@ -212,7 +250,7 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 	// may not match up with hash generators found online!
 	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
 
-	res, err := db.Exec(`INSERT INTO User (
+	res, err := userdb.db.Exec(`INSERT INTO User (
 		Name,
 		Email,
 		Password,
@@ -283,27 +321,27 @@ func constructUsersFromRows(rows *sql.Rows) ([]*User, error){
 
 // ReadUserByEmail returns a User instance if a user exists with the given
 // email address.
-func ReadUserByEmail(Email string) (*User, error){
-	rows, err := db.Query("SELECT * FROM User WHERE Email = ? LIMIT 1", Email)
+func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error){
+	rows, err := userdb.db.Query("SELECT * FROM User WHERE Email = ? LIMIT 1", Email)
 	return constructUserFromRow(rows, err)
 }
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
-func ReadUserByName(Name string) (*User, error){
-	rows, err := db.Query("SELECT * FROM User WHERE Name = ? LIMIT 1", Name)
+func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error){
+	rows, err := userdb.db.Query("SELECT * FROM User WHERE Name = ? LIMIT 1", Name)
 	return constructUserFromRow(rows, err)
 }
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func ReadUserById(Id int64) (*User, error){
-	rows, err := db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
+func (userdb *UserDatabase) ReadUserById(Id int64) (*User, error){
+	rows, err := userdb.db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
 	return constructUserFromRow(rows, err)
 }
 
-func ReadAllUsers() ([]*User, error) {
-	rows, err := db.Query("SELECT * FROM User")
+func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
+	rows, err := userdb.db.Query("SELECT * FROM User")
 
 	if err != nil {
 		return nil, err
@@ -316,13 +354,13 @@ func ReadAllUsers() ([]*User, error) {
 
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
-func UpdateUser(user *User) (error) {
+func (userdb *UserDatabase) UpdateUser(user *User) (error) {
 
 	if user == nil {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := db.Exec(`UPDATE User SET
+	_, err := userdb.db.Exec(`UPDATE User SET
 		Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
 			Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
 			ProcessingLimit_S=?, StorageLimit_Gb=? WHERE Id = ?;`,
@@ -342,16 +380,16 @@ func UpdateUser(user *User) (error) {
 }
 
 // DeleteUser removes a user from the database
-func DeleteUser(id int64) (error) {
-	_, err := db.Exec(`DELETE FROM User WHERE Id = ?;`, id );
+func (userdb *UserDatabase) DeleteUser(id int64) (error) {
+	_, err := userdb.db.Exec(`DELETE FROM User WHERE Id = ?;`, id );
 	return err
 }
 
 // CreatePhoneCarrier creates a phone carrier from the carrier name and
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
-func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
+func (userdb *UserDatabase) CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
-	res, err := db.Exec(`INSERT INTO PhoneCarrier (Name, EmailDomain)
+	res, err := userdb.db.Exec(`INSERT INTO PhoneCarrier (Name, EmailDomain)
 						 VALUES (?,?);`,
 		Name,
 		EmailDomain)
@@ -406,13 +444,13 @@ func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 }
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
-func ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
-	rows, err := db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
+func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
+	rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
 	return constructPhoneCarrierFromRow(rows, err)
 }
 
-func ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
-	rows, err := db.Query("SELECT * FROM PhoneCarrier")
+func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
+	rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier")
 
 	if err != nil {
 		return nil, err
@@ -424,13 +462,13 @@ func ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
 
 // UpdatePhoneCarrier updates the database's phone carrier data with that of the
 // struct provided.
-func UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
+func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
 	if carrier == nil {
 		return ERR_INVALID_PTR
 	}
 
 
-	_, err := db.Exec(`UPDATE PhoneCarrier SET
+	_, err := userdb.db.Exec(`UPDATE PhoneCarrier SET
 		Name=?, EmailDomain=? WHERE Id = ?;`,
 		carrier.Name,
 		carrier.EmailDomain,
@@ -440,14 +478,14 @@ func UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
 
 // DeletePhoneCarrier removes a phone carrier from the database, this will set
 // all users carrier with this phone carrier as a foreign key to NULL
-func DeletePhoneCarrier(carrierId int64) (error) {
-	_, err := db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId );
+func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) (error) {
+	_, err := userdb.db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId );
 	return err
 }
 
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id
-func CreateDevice(Name string, OwnerId *User) (int64, error) {
+func (userdb *UserDatabase) CreateDevice(Name string, OwnerId *User) (int64, error) {
 	// guards
 	if OwnerId == nil {
 		return -1, ERR_INVALID_PTR
@@ -455,7 +493,7 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 
 	ApiKey, _ := uuid.NewV4()
 
-	res, err := db.Exec(`INSERT INTO Device
+	res, err := userdb.db.Exec(`INSERT INTO Device
 		(	Name,
 			ApiKey,
 			Icon_PngB64,
@@ -519,27 +557,27 @@ func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
-func ReadDeviceById(Id int64) (*Device, error) {
-	rows, err := db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
+func (userdb *UserDatabase) ReadDeviceById(Id int64) (*Device, error) {
+	rows, err := userdb.db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
 	return constructDeviceFromRow(rows, err)
 
 }
 
 // ReadDeviceByApiKey reads a device by an api key and returns it, it will be
 // nil if an error was encountered and error will be set.
-func ReadDeviceByApiKey(Key string) (*Device, error) {
-	rows, err := db.Query("SELECT * FROM Device WHERE ApiKey = ? LIMIT 1", Key)
+func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
+	rows, err := userdb.db.Query("SELECT * FROM Device WHERE ApiKey = ? LIMIT 1", Key)
 	return constructDeviceFromRow(rows, err)
 }
 
 // UpdateDevice updates the given device in the database with all fields in the
 // struct.
-func UpdateDevice(device *Device) (error) {
+func (userdb *UserDatabase) UpdateDevice(device *Device) (error) {
 	if device == nil {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := db.Exec(`UPDATE Device SET
+	_, err := userdb.db.Exec(`UPDATE Device SET
 			Name = ?, ApiKey = ?, Enabled = ?,
 			Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
 			OwnerId = ? WHERE Id = ?;`,
@@ -556,18 +594,18 @@ func UpdateDevice(device *Device) (error) {
 }
 
 // DeleteDevice removes a device from the system.
-func DeleteDevice(Id int64) (error) {
-	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
+func (userdb *UserDatabase) DeleteDevice(Id int64) (error) {
+	_, err := userdb.db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
 	return err
 }
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
-func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64, error) {
+func (userdb *UserDatabase) CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64, error) {
 	if owner == nil {
 		return -1, ERR_INVALID_PTR
 	}
 
-	res, err := db.Exec(`INSERT INTO Stream
+	res, err := userdb.db.Exec(`INSERT INTO Stream
 		(	Name,
 			Schema_Json,
 			Defaults_Json,
@@ -615,8 +653,8 @@ func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func ReadStreamById(id int64) (*Stream, error) {
-	rows, err := db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
+func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
+	rows, err := userdb.db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
 
 	if err != nil {
 		return nil, err
@@ -635,13 +673,13 @@ func ReadStreamById(id int64) (*Stream, error) {
 
 // UpdateStream updates the stream with the given ID with the provided data
 // replacing all prior contents.
-func UpdateStream(stream *Stream) (error) {
+func (userdb *UserDatabase) UpdateStream(stream *Stream) (error) {
 	if stream == nil {
 		return ERR_INVALID_PTR
 	}
 
 
-	_, err := db.Exec(`UPDATE Stream SET
+	_, err := userdb.db.Exec(`UPDATE Stream SET
 		Name = ?,
 		Active = ?,
 		Public = ?,
@@ -660,27 +698,7 @@ func UpdateStream(stream *Stream) (error) {
 }
 
 // DeleteStream removes a stream from the database
-func DeleteStream(Id int64) (error) {
-	_, err := db.Exec(`DELETE FROM Stream WHERE Id = ?;`, Id );
+func (userdb *UserDatabase) DeleteStream(Id int64) (error) {
+	_, err := userdb.db.Exec(`DELETE FROM Stream WHERE Id = ?;`, Id );
 	return err
-}
-
-
-func init() {
-	log.Print("Starting Up User Database")
-	var err error
-	db, err = sql.Open("sqlite3", "users.sqlite3")
-	if err != nil {
-		log.Fatal(err)
-	}
-	//defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		log.Print("Cannot Contact User Database")
-	}
-
-	setupDatabase()
-
-	log.Print("Finishing User Database Init")
 }

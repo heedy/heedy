@@ -20,7 +20,7 @@ var (
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
     errorGenericResult = GenericResult{http.StatusInternalServerError, "An internal error occurred"}
     okGenericResult = GenericResult{http.StatusOK, "Success"}
-
+    userdb *UserDatabase
 )
 
 const (
@@ -70,7 +70,7 @@ func apiAuth(h http.HandlerFunc, superdeviceRequired bool) http.HandlerFunc {
     return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
         vars := mux.Vars(request)
         auth := vars["AuthKey"]
-        device, err := ReadDeviceByApiKey(auth)
+        device, err := userdb.ReadDeviceByApiKey(auth)
 
 
         // for development purposes
@@ -124,7 +124,7 @@ func readUser(writer http.ResponseWriter, request *http.Request) {
     var result ReadUserResult
     result.Status = 200
 
-    users, err := ReadAllUsers()
+    users, err := userdb.ReadAllUsers()
 
     if err != nil {
         log.Printf("Could not service read user request|err:%v", err)
@@ -192,7 +192,7 @@ func updateUser(writer http.ResponseWriter, request *http.Request) {
         return // errors already handled
     }
 
-    if err := UpdateUser(&userUpload); err != nil {
+    if err := userdb.UpdateUser(&userUpload); err != nil {
         log.Printf("Could not service update user request|err:%v", err)
         errorGenericResult.writeToHttp(writer)
         return
@@ -209,7 +209,7 @@ func deleteUser(writer http.ResponseWriter, request *http.Request) {
         return // errors already handled
     }
 
-    if err := DeleteUser(userUpload.Id); err != nil {
+    if err := userdb.DeleteUser(userUpload.Id); err != nil {
         log.Printf("Could not service update user request|err:%v", err)
         errorGenericResult.writeToHttp(writer)
         return
@@ -300,7 +300,7 @@ func GetSubrouter(subroutePrefix *mux.Router) {
     s.HandleFunc("/{AuthKey}/{username}/{devicename}/stream/", apiAuth(readStream, false)).Methods("GET")
     s.HandleFunc("/{AuthKey}/{username}/{devicename}/stream/", apiAuth(createStream, false)).Methods("POST")
     // no puts, stream data is immutable.
-    s.HandleFunc("/{AuthKey}/{username}/{devicename}/stream/", deleteStream).Methods("DELETE")
+    s.HandleFunc("/{AuthKey}/{username}/{devicename}/stream/", apiAuth(deleteStream, true)).Methods("DELETE")
 
     /**
     /api/v1/{AuthKey}/{username}/device/
@@ -322,4 +322,13 @@ func GetSubrouter(subroutePrefix *mux.Router) {
     PUT - NOT AVAILABLE, DATA IS IMMUTABLE
     DELETE - removes a stream -- superdevice only
     **/
+}
+
+func init() {
+    var err error
+    userdb, err = NewSqliteUserDatabase("production.sqlite")
+
+    if err != nil {
+        panic("Cannot open user database")
+    }
 }

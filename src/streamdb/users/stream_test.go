@@ -4,6 +4,7 @@ import (
     "testing"
     "reflect"
     "log"
+    "os"
 )
 
 var (
@@ -12,60 +13,92 @@ var (
     usr *User
     devid int64
     dev *Device
+    testdb *UserDatabase
+    testdbname = "testing.sqlite3"
+    usrid2 int64
+    usr2 *User
 )
 
 
 func init() {
     var err error
-    carid, err = CreatePhoneCarrier("StreamTestPhoneCarrier", "StreamTestPhoneCarrier.com")
+
+    _ = os.Remove(testdbname)
+    testdb, err = NewSqliteUserDatabase(testdbname)
     if err != nil {
         log.Print(err)
     }
 
-    usrid, err = CreateUser("StreamTestUserName", "StreamTestUserEmail", "StreamTestUserPassword")
+    carid, err = testdb.CreatePhoneCarrier("StreamTestPhoneCarrier", "StreamTestPhoneCarrier.com")
     if err != nil {
         log.Print(err)
     }
 
-    usr, err = ReadUserById(usrid)
+    usrid, err = testdb.CreateUser("StreamTestUserName", "StreamTestUserEmail", "StreamTestUserPassword")
     if err != nil {
         log.Print(err)
     }
 
-    devid, err = CreateDevice("StreamTestDevice", usr)
+    usr, err = testdb.ReadUserById(usrid)
     if err != nil {
         log.Print(err)
     }
 
-    dev, err = ReadDeviceById(devid)
+    devid, err = testdb.CreateDevice("StreamTestDevice", usr)
     if err != nil {
         log.Print(err)
     }
+
+    dev, err = testdb.ReadDeviceById(devid)
+    if err != nil {
+        log.Print(err)
+    }
+    
+    usrid, err = testdb.CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
+    if err != nil {
+        log.Print(err)
+    }
+
+    usr, err = testdb.ReadUserById(usrid)
+    if err != nil {
+        log.Print(err)
+    }
+
+    usrid2, err = testdb.CreateUser("DeviceTestUserName2", "DeviceTestUserEmail2", "DeviceTestUserPassword2")
+    if err != nil {
+        log.Print(err)
+    }
+
+    usr2, err = testdb.ReadUserById(usrid2)
+    if err != nil {
+        log.Print(err)
+    }
+
 
 }
 
 
 func TestCreateStream(t *testing.T) {
-    _, err := CreateStream("TestCreateStream", "{}", "{}", dev)
+    _, err := testdb.CreateStream("TestCreateStream", "{}", "{}", dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
     }
 
-    _, err = CreateStream("TestCreateStream", "{}", "{}", dev)
+    _, err = testdb.CreateStream("TestCreateStream", "{}", "{}", dev)
     if(err == nil) {
         t.Errorf("Created stream with duplicate name")
     }
 }
 
 func TestReadStreamById(t *testing.T) {
-    streamid, err := CreateStream("TestReadStreamById", "{}", "{}", dev)
+    streamid, err := testdb.CreateStream("TestReadStreamById", "{}", "{}", dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
     }
 
-    stream, err := ReadStreamById(streamid)
+    stream, err := testdb.ReadStreamById(streamid)
 
     if err != nil || stream == nil {
         t.Errorf("Cannot read stream back with returned id %v", streamid)
@@ -74,13 +107,13 @@ func TestReadStreamById(t *testing.T) {
 }
 
 func TestUpdateStream(t *testing.T) {
-    streamid, err := CreateStream("TestUpdateStream", "{}", "{}", dev)
+    streamid, err := testdb.CreateStream("TestUpdateStream", "{}", "{}", dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
     }
 
-    stream, err := ReadStreamById(streamid)
+    stream, err := testdb.ReadStreamById(streamid)
 
     if err != nil || stream == nil{
         t.Errorf("Cannot read stream back with returned id %v", streamid)
@@ -94,13 +127,13 @@ func TestUpdateStream(t *testing.T) {
     stream.Defaults_Json = "{a:'b'}"
     //stream.OwnerId = dev
 
-    err = UpdateStream(stream)
+    err = testdb.UpdateStream(stream)
 
     if err != nil {
         t.Errorf("Could not update stream %v", err)
     }
 
-    stream2, err := ReadStreamById(streamid)
+    stream2, err := testdb.ReadStreamById(streamid)
 
     if err != nil {
         t.Errorf("got an error when trying to get a stream that should exist %v", err)
@@ -115,21 +148,21 @@ func TestUpdateStream(t *testing.T) {
 
 
 func TestDeleteStream(t *testing.T) {
-    id, err := CreateStream("TestDeleteStream", "{}", "{}", dev)
+    id, err := testdb.CreateStream("TestDeleteStream", "{}", "{}", dev)
 
     if nil != err {
         t.Errorf("Cannot create stream to test delete")
         return
     }
 
-    err = DeleteStream(id)
+    err = testdb.DeleteStream(id)
 
     if nil != err {
         t.Errorf("Error when attempted delete %v", err)
         return
     }
 
-    stream, err := ReadStreamById(id)
+    stream, err := testdb.ReadStreamById(id)
 
     if err == nil {
         t.Errorf("The stream with the selected ID should have errored out, but it was not")

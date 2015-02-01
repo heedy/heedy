@@ -3,18 +3,18 @@ package users
 import "testing"
 
 func TestCreatePhoneCarrier(t *testing.T) {
-    _, err := CreatePhoneCarrier("Test", "example.com")
+    _, err := testdb.CreatePhoneCarrier("Test", "example.com")
     if(err != nil) {
         t.Errorf("Cannot create phone carrier %v", err)
         return
     }
 
-    _, err = CreatePhoneCarrier("Test", "example2.com")
+    _, err = testdb.CreatePhoneCarrier("Test", "example2.com")
     if(err == nil) {
         t.Errorf("Created carrier with duplicate name")
     }
 
-    _, err = CreatePhoneCarrier("Test2", "example.com")
+    _, err = testdb.CreatePhoneCarrier("Test2", "example.com")
     if(err == nil) {
         t.Errorf("Created carrier with duplicate domain")
     }
@@ -22,10 +22,10 @@ func TestCreatePhoneCarrier(t *testing.T) {
 
 func TestReadAllPhoneCarriers(t *testing.T) {
 
-    _, _ = CreatePhoneCarrier("TestReadAllPhoneCarrier1", "TestReadAllPhoneCarrier1.com")
-    _, _ = CreatePhoneCarrier("TestReadAllPhoneCarrier2", "TestReadAllPhoneCarrier2.com")
+    _, _ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier1", "TestReadAllPhoneCarrier1.com")
+    _, _ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier2", "TestReadAllPhoneCarrier2.com")
 
-    carriers, err := ReadAllPhoneCarriers()
+    carriers, err := testdb.ReadAllPhoneCarriers()
 
     if err != nil {
         t.Errorf("Cannot read phone carriers %v", err)
@@ -60,13 +60,13 @@ func TestReadAllPhoneCarriers(t *testing.T) {
 
 func TestReadPhoneCarrierById(t *testing.T) {
 
-    id, err := CreatePhoneCarrier("TestReadPhoneCarrierById", "TestReadPhoneCarrierById.com")
+    id, err := testdb.CreatePhoneCarrier("TestReadPhoneCarrierById", "TestReadPhoneCarrierById.com")
 
     if nil != err {
         t.Errorf("Cannot create phone carrier to test")
     }
 
-    carrier, err := ReadPhoneCarrierById(id)
+    carrier, err := testdb.ReadPhoneCarrierById(id)
 
     if err != nil {
         t.Errorf("Cannot read phone carrier back with returned id %v", id)
@@ -89,13 +89,13 @@ func TestReadPhoneCarrierById(t *testing.T) {
 func TestUpdatePhoneCarrier(t *testing.T) {
     teststring := "Hello, World!"
 
-    id, err := CreatePhoneCarrier("TestUpdatePhoneCarrier", "TestUpdatePhoneCarrier.com")
+    id, err := testdb.CreatePhoneCarrier("TestUpdatePhoneCarrier", "TestUpdatePhoneCarrier.com")
 
     if nil != err {
         t.Errorf("Cannot create phone carrier to test")
     }
 
-    carrier, err := ReadPhoneCarrierById(id)
+    carrier, err := testdb.ReadPhoneCarrierById(id)
 
     if err != nil {
         t.Errorf("Cannot read phone carrier back with returned id %v", id)
@@ -104,13 +104,13 @@ func TestUpdatePhoneCarrier(t *testing.T) {
 
     carrier.Name = teststring
 
-    err = UpdatePhoneCarrier(carrier)
+    err = testdb.UpdatePhoneCarrier(carrier)
 
     if err != nil {
         t.Errorf("Cannot update carrier %v", err)
     }
 
-    carrier_back, err := ReadPhoneCarrierById(id)
+    carrier_back, err := testdb.ReadPhoneCarrierById(id)
 
     if err != nil {
         t.Errorf("Cannot read phone carrier back with returned id %v", id)
@@ -125,21 +125,21 @@ func TestUpdatePhoneCarrier(t *testing.T) {
 
 
 func TestDeletePhoneCarrier(t *testing.T) {
-    id, err := CreatePhoneCarrier("TestDeletePhoneCarrier", "TestDeletePhoneCarrier.com")
+    id, err := testdb.CreatePhoneCarrier("TestDeletePhoneCarrier", "TestDeletePhoneCarrier.com")
 
     if nil != err {
         t.Errorf("Cannot create phone carrier to test delete")
         return
     }
 
-    err = DeletePhoneCarrier(id)
+    err = testdb.DeletePhoneCarrier(id)
 
     if nil != err {
         t.Errorf("Error when attempted delete %v", err)
         return
     }
 
-    carrier, err := ReadPhoneCarrierById(id)
+    carrier, err := testdb.ReadPhoneCarrierById(id)
 
     if err == nil {
         t.Errorf("The carrier with the selected ID should have errored out, but it was not")
