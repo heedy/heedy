@@ -232,7 +232,13 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 }
 
 // constructUserFromRow converts a sql.Rows object to a single user
-func constructUserFromRow(rows *sql.Rows) (*User, error){
+func constructUserFromRow(rows *sql.Rows, err error) (*User, error){
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	users, err := constructUsersFromRows(rows)
 
 	if err == nil && len(users) > 0 {
@@ -279,42 +285,21 @@ func constructUsersFromRows(rows *sql.Rows) ([]*User, error){
 // email address.
 func ReadUserByEmail(Email string) (*User, error){
 	rows, err := db.Query("SELECT * FROM User WHERE Email = ? LIMIT 1", Email)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	return constructUserFromRow(rows)
+	return constructUserFromRow(rows, err)
 }
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
 func ReadUserByName(Name string) (*User, error){
 	rows, err := db.Query("SELECT * FROM User WHERE Name = ? LIMIT 1", Name)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	return constructUserFromRow(rows)
+	return constructUserFromRow(rows, err)
 }
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
 func ReadUserById(Id int64) (*User, error){
 	rows, err := db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	return constructUserFromRow(rows)
+	return constructUserFromRow(rows, err)
 }
 
 func ReadAllUsers() ([]*User, error) {
@@ -366,9 +351,8 @@ func DeleteUser(id int64) (error) {
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
 func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
-	res, err := db.Exec(`INSERT INTO PhoneCarrier (
-		Name,
-		EmailDomain) VALUES (?,?);`,
+	res, err := db.Exec(`INSERT INTO PhoneCarrier (Name, EmailDomain)
+						 VALUES (?,?);`,
 		Name,
 		EmailDomain)
 
@@ -382,7 +366,13 @@ func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
 // constructPhoneCarrierFromRow creates a single PhoneCarrier instance from
 // the given rows.
-func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error) {
+func constructPhoneCarrierFromRow(rows *sql.Rows, err error) (*PhoneCarrier, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	result, err := constructPhoneCarriersFromRows(rows)
 
 	if err == nil && len(result) > 0 {
@@ -418,14 +408,7 @@ func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
 func ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
 	rows, err := db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	return constructPhoneCarrierFromRow(rows)
+	return constructPhoneCarrierFromRow(rows, err)
 }
 
 func ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
@@ -488,7 +471,13 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 }
 
 // constructDeviceFromRow converts a SQL result to device by filling out a struct.
-func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
+func constructDeviceFromRow(rows *sql.Rows, err error) (*Device, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	result, err := constructDevicesFromRows(rows)
 
 	if err == nil && len(result) > 0 {
@@ -532,14 +521,7 @@ func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
 func ReadDeviceById(Id int64) (*Device, error) {
 	rows, err := db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	return constructDeviceFromRow(rows)
+	return constructDeviceFromRow(rows, err)
 
 }
 
@@ -547,13 +529,7 @@ func ReadDeviceById(Id int64) (*Device, error) {
 // nil if an error was encountered and error will be set.
 func ReadDeviceByApiKey(Key string) (*Device, error) {
 	rows, err := db.Query("SELECT * FROM Device WHERE ApiKey = ? LIMIT 1", Key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-	return constructDeviceFromRow(rows)
+	return constructDeviceFromRow(rows, err)
 }
 
 // UpdateDevice updates the given device in the database with all fields in the
