@@ -4,7 +4,7 @@ gnatsd_pid=$!
 redis-server ./config/redis.conf > /dev/null 2>&1 &
 redis_pid=$!
 echo "Waiting for servers to start..."
-sleep 10
+sleep 20
 echo "Running tests..."
 go test streamdb/...
 test_status=$?
