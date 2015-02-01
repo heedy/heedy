@@ -35,5 +35,5 @@ dependencies: bin
 #Running Tests
 ############################################################################################################
 
-test:
+test: dependencies 
 	./runtests.sh
