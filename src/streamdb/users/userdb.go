@@ -23,7 +23,6 @@ const(
 	OBU7AAsZOgVWSEJR68bajSUoOjfoK07NkP+h/jAiI8g2WgGdqRx+jVa/r0P2cx9EPE2zduUVxv2NHs6n
 	Q6Z0BZQaX3F4/0od3xvE2TCtOeOs12UQl6c5Quj42jQ5zt8GQAAAABJRU5ErkJggg==`
 	DEFAULT_PASSWORD_HASH = "SHA512"
-
 )
 
 var (
@@ -38,85 +37,6 @@ var (
 
 
 
-type User struct {
-	Id int64
-	Name string
-	Email string
-	Password string
-	PasswordSalt string
-	PasswordHashScheme string
-	Admin bool
-	Phone string
-	PhoneCarrier int // phone carrier id
-	UploadLimit_Items int // upload limit in items/day
-	ProcessingLimit_S int // processing limit in seconds/day
-	StorageLimit_Gb int // storage limit in GB
-}
-
-type CleanUser struct {
-	Name string
-}
-
-func (u User) ToClean() CleanUser {
-	return CleanUser{Name:u.Name}
-}
-
-func (u User) SetNewPassword(newPass string) {
-	u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
-}
-
-type PhoneCarrier struct {
-	Id int64
-	Name string
-	EmailDomain string
-}
-
-type Device struct {
-	Id int64
-	Name string
-	ApiKey string
-	Enabled bool
-	Icon_PngB64 string // a png image in base64
-	Shortname string
-	Superdevice bool
-	OwnerId int // a user
-}
-
-// Check if the device is enabled
-func (d Device) isActive() bool {
-	return d.Enabled
-}
-
-// Checks if the device is enabled and a superdevice
-func (d Device) isAdmin() bool {
-	return d.isActive() && d.Superdevice
-}
-
-func (d Device) ToClean() CleanDevice {
-	return CleanDevice{Id: d.Id,
-		Name:d.Name,
-		Enabled:d.Enabled,
-		Icon_PngB64:d.Icon_PngB64,
-		Shortname:d.Shortname}
-}
-
-type CleanDevice struct {
-	Id int64
-	Name string
-	Enabled bool
-	Icon_PngB64 string
-	Shortname string
-}
-
-type Stream struct {
-	Id int64
-	Name string
-	Active bool
-	Public bool
-	Schema_Json string
-	Defaults_Json string
-	OwnerId int
-}
 
 /**
 Sets up the SQLITE databse.
@@ -240,11 +160,6 @@ func calcHash(password, salt, scheme string) (string) {
 			hasher := sha512.New()
 			hasher.Write([]byte(saltedpass))
 			return hex.EncodeToString(hasher.Sum(nil))
-
-			//saltedpass := Password + PasswordSalt.String()
-			//hasher := sha512.New()
-			//hasher.Write([]byte(saltedpass))
-			//dbpass := hex.EncodeToString(hasher.Sum(nil))
 		default:
 			return calcHash(password, salt, "SHA512")
 	}
@@ -253,25 +168,24 @@ func calcHash(password, salt, scheme string) (string) {
 // ValidateUser checks to see if a user going by the username or email
 // matches the given password, returns true if it does false if it does not
 func ValidateUser(UsernameOrEmail, Password string) (bool) {
-	usr, _ := ReadUserByName(UsernameOrEmail)
+	var usr *User
+
+	usr, _ = ReadUserByName(UsernameOrEmail)
 	if usr != nil {
-		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
-			return true
-		} else {
-			return false
-		}
+		goto gotuser
 	}
 
 	usr, _ = ReadUserByEmail(UsernameOrEmail)
 	if usr != nil {
-		if calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
-			return true
-		} else {
-			return false
-		}
+		goto gotuser
 	}
 
-	return false
+gotuser:
+	if usr != nil && calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
+		return true
+	} else {
+		return false
+	}
 }
 
 
@@ -319,28 +233,10 @@ func CreateUser(Name, Email, Password string) (id int64, err error) {
 
 // constructUserFromRow converts a sql.Rows object to a single user
 func constructUserFromRow(rows *sql.Rows) (*User, error){
-	u := new(User)
+	users, err := constructUsersFromRows(rows)
 
-	if rows == nil {
-		return u, ERR_INVALID_PTR
-	}
-
-
-	for rows.Next() {
-		err := rows.Scan(
-					&u.Id,
-					&u.Name,
-					&u.Email,
-					&u.Password,
-					&u.PasswordSalt,
-					&u.PasswordHashScheme,
-					&u.Admin,
-					&u.Phone,
-					&u.PhoneCarrier,
-					&u.UploadLimit_Items,
-					&u.ProcessingLimit_S,
-					&u.StorageLimit_Gb)
-		return u, err
+	if err == nil && len(users) > 0 {
+		return users[0], err
 	}
 
 	return nil, errors.New("No user supplied")
@@ -483,26 +379,14 @@ func CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 	return res.LastInsertId()
 }
 
+
 // constructPhoneCarrierFromRow creates a single PhoneCarrier instance from
 // the given rows.
-func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error){
-	u := new(PhoneCarrier)
+func constructPhoneCarrierFromRow(rows *sql.Rows) (*PhoneCarrier, error) {
+	result, err := constructPhoneCarriersFromRows(rows)
 
-	if rows == nil {
-		return u, ERR_INVALID_PTR
-	}
-
-	for rows.Next() {
-		err := rows.Scan(
-			&u.Id,
-			&u.Name,
-			&u.EmailDomain)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return u, nil
+	if err == nil && len(result) > 0 {
+		return result[0], err
 	}
 
 	return nil, errors.New("No carrier supplied")
@@ -605,28 +489,13 @@ func CreateDevice(Name string, OwnerId *User) (int64, error) {
 
 // constructDeviceFromRow converts a SQL result to device by filling out a struct.
 func constructDeviceFromRow(rows *sql.Rows) (*Device, error) {
-	u := new(Device)
+	result, err := constructDevicesFromRows(rows)
 
-	// defensive programming
-	if rows == nil {
-		return u, ERR_INVALID_PTR
+	if err == nil && len(result) > 0 {
+		return result[0], err
 	}
 
-	for rows.Next() {
-		err := rows.Scan(
-			&u.Id,
-			&u.Name,
-			&u.ApiKey,
-			&u.Enabled,
-			&u.Icon_PngB64,
-			&u.Shortname,
-			&u.Superdevice,
-			&u.OwnerId)
-
-			return u, err
-	}
-
-	return nil, errors.New("No carrier supplied")
+	return nil, errors.New("No device supplied")
 }
 
 // constructDevicesFromRows constructs a series of devices
@@ -715,8 +584,6 @@ func DeleteDevice(Id int64) (error) {
 	_, err := db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
 	return err
 }
-
-
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func CreateStream(Name, Schema_Json, Defaults_Json string, owner *Device) (int64, error) {
