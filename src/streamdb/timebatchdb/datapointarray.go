@@ -7,8 +7,9 @@ import (
     )
 
 type DatapointArray struct {
-    Datapoints []Datapoint            //The array of datapoints
-    array []byte                //A (possibly nil) single byte array which holds all of the datapoints
+    Datapoints []Datapoint          //The array of datapoints
+    array []byte                    //A (possibly nil) single byte array which holds all of the datapoints
+    iloc int                        //Allows to make this a DataRange object
 }
 
 //The number of datapoints contained in the page
@@ -26,6 +27,33 @@ func (d *DatapointArray) Size() int {
         size+= d.Datapoints[i].Len()
     }
     return size
+}
+
+//Dummy function - allows datapointArray to conform to the DataRange interface
+func (d *DatapointArray) Init() {
+
+}
+//Dummy function - allows datapointArray to conform to the DataRange interface.
+//This doesn't actually do anything, and you don't need to call this
+func (d *DatapointArray) Close() {
+
+}
+
+//Allows to use DatapointArray as a DataRange - starts from the first datapoint, and
+//successively returns datapoint ptrs until there are none left, at which point it returns nil.
+//It is an iterator
+func (d *DatapointArray) Next() *Datapoint {
+    if d.iloc >= d.Len() {
+        return nil
+    }
+    dp := &d.Datapoints[d.iloc]
+    d.iloc++
+    return dp
+}
+
+//Resets the iterator back to 0
+func (d *DatapointArray) Reset() {
+    d.iloc = 0
 }
 
 //Returns the timestamps associated with the index range
@@ -173,7 +201,7 @@ func (d *DatapointArray) CompressedBytes() []byte {
 
 //Creates a DatapointArray given an actual datapoint array
 func NewDatapointArray(d []Datapoint) *DatapointArray {
-    return &DatapointArray{d,nil}
+    return &DatapointArray{d,nil,0}
 }
 
 //Creates DatapointArray from the raw stuff
@@ -217,7 +245,7 @@ func DatapointArrayFromList(l *list.List) *DatapointArray {
         points[j] = elem.Value.(Datapoint)
     }
 
-    return &DatapointArray{points,nil}
+    return &DatapointArray{points,nil,0}
 }
 
 //Given the correctly sized byte array for the compressed representation of a DatapointArray,
@@ -233,6 +261,21 @@ func DatapointArrayFromCompressedBytes(cdata []byte) *DatapointArray {
         d,err = ReadDatapoint(r)
     }
     r.Close()
+
+    return DatapointArrayFromList(l)
+}
+
+
+//Given a DataRange, creates a DatapointArray based upon it. Closes the DataRAnge when done
+func DatapointArrayFromDataRange(dr DataRange) *DatapointArray {
+    l := list.New()
+
+    d := dr.Next()
+    for d!=nil {
+        l.PushBack(*d)
+        d = dr.Next()
+    }
+    dr.Close()
 
     return DatapointArrayFromList(l)
 }
