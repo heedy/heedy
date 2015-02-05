@@ -4,6 +4,7 @@ import (
     "testing"
     )
 
+//WARNING: This function is used in tests of datarange also
 func assertData(t *testing.T,da *DatapointArray,try string) bool {
     if (da.Len()!=9) {
         t.Errorf("%s: DatapointArray length: %d",try,da.Len())
@@ -81,6 +82,39 @@ func TestDatapointArray(t *testing.T) {
 
     if (da.DatapointTRange(1200,2000).Len()!=4) {
         t.Errorf("Wrong TRange")
+        return
+    }
+
+    dp := da.Next()
+    if (dp == nil || dp.Timestamp()!=1000) {
+        t.Errorf("Iterator wrong")
+    }
+    dp = da.Next()
+    if (dp == nil || dp.Timestamp()!=1500) {
+        t.Errorf("Iterator wrong")
+    }
+    da.Next()
+    da.Next()
+    da.Next()
+    da.Next()
+    da.Next()
+    da.Next()
+    dp = da.Next()
+    if (dp == nil || dp.Timestamp()!=3000) {
+        t.Errorf("Iterator wrong")
+    }
+    dp = da.Next()
+    if (dp != nil) {
+        t.Errorf("Iterator wrong")
+    }
+    da.Reset()
+    dp = da.Next()
+    if (dp == nil || dp.Timestamp()!=1000) {
+        t.Errorf("Iterator wrong")
+    }
+    da.Reset()
+    //Lastly, make sure loading from DataRange is functional
+    if (!assertData(t,DatapointArrayFromDataRange(da),"fromdatarange")) {
         return
     }
 }

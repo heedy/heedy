@@ -1,11 +1,17 @@
 language: go
 go:
     - tip
+services:
+    - mongodb
 
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - make dependencies
 
+    
+before_script:
+    - sleep 10  #Wait to make sure mongodb is running
+    
 script:
     - make test
     - make

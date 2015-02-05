@@ -27,6 +27,9 @@ func TestMessenger(t *testing.T) {
         t.Errorf("Couldn't bind channel: %s",err)
         return
     }
+    //The connection needs to be flushed so that we are definitely subscribed to the channel
+    //before we publish on it
+    msg2.Flush()
 
     //Now, publish a message
     err = msg.Publish(NewKeyedDatapoint("user1/item1/stream1",1000,[]byte("Hello World!")))

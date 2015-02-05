@@ -2,6 +2,8 @@
 *.o
 *.a
 *.so
+*.sqlite
+*.sqlite3
 
 # Folders
 _obj
