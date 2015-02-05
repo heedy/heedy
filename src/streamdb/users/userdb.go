@@ -510,15 +510,14 @@ func (userdb *UserDatabase) CreateDevice(Name string, OwnerId *User) (int64, err
 
 // constructDeviceFromRow converts a SQL result to device by filling out a struct.
 func constructDeviceFromRow(rows *sql.Rows, err error) (*Device, error) {
+
+	result, err := constructDevicesFromRows(rows, err)
+
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	result, err := constructDevicesFromRows(rows)
-
-	if err == nil && len(result) > 0 {
+	if len(result) > 0 {
 		return result[0], err
 	}
 
@@ -526,14 +525,19 @@ func constructDeviceFromRow(rows *sql.Rows, err error) (*Device, error) {
 }
 
 // constructDevicesFromRows constructs a series of devices
-func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
+func constructDevicesFromRows(rows *sql.Rows, err error) ([]*Device, error) {
 	out := []*Device{}
+
+	if err != nil {
+		return out, err
+	}
 
 	// defensive programming
 	if rows == nil {
 		return out, ERR_INVALID_PTR
 	}
 
+	defer rows.Close()
 	for rows.Next() {
 		u := new(Device)
 		err := rows.Scan(
@@ -554,6 +558,12 @@ func constructDevicesFromRows(rows *sql.Rows) ([]*Device, error) {
 	}
 
 	return out, nil
+}
+
+func (userdb *UserDatabase) ReadDevicesForUserId(Id int64) ([]*Device, error) {
+	rows, err := userdb.db.Query("SELECT * FROM Device WHERE OwnerId = ?", Id)
+
+	return constructDevicesFromRows(rows, err)
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found

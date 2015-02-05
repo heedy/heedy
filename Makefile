@@ -29,6 +29,7 @@ dependencies: bin
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux
 	go get github.com/gorilla/context
+	go get labix.org/v2/mgo/bson
 	go build -o bin/gnatsd github.com/apcera/gnatsd
 
 ############################################################################################################

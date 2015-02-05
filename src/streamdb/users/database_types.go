@@ -22,6 +22,7 @@ func (u User) ToClean() CleanUser {
     return CleanUser{Name:u.Name}
 }
 
+
 // Sets a new password for an account
 func (u User) SetNewPassword(newPass string) {
     u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
@@ -53,7 +54,7 @@ type Device struct {
     Icon_PngB64 string  // a png image in base64
     Shortname string  // The human readable name of this device
     Superdevice bool  // Whether or not this is a "superdevice" which has access to the whole API
-    OwnerId int  // the user that owns this device
+    OwnerId int64  // the user that owns this device
 }
 
 // Check if the device is enabled
@@ -91,5 +92,12 @@ type Stream struct {
     Public bool
     Schema_Json string
     Defaults_Json string
-    OwnerId int
+    OwnerId int64
+}
+
+type CleanStream struct {
+    Id int64
+    Name string
+    Schema_Json string
+    Defaults_Json string
 }
