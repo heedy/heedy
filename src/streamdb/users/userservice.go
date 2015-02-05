@@ -3,7 +3,7 @@ package users
 import (
     "github.com/gorilla/mux"
     "github.com/gorilla/context"
-    "labix.org/v2/mgo/bson"
+    "gopkg.in/mgo.v2/bson"
     "net/http"
     "log"
     "flag"

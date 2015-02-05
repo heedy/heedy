@@ -39,3 +39,72 @@ func TestRangeList(t *testing.T) {
     }
 
 }
+
+func TestTimeRange(t *testing.T) {
+    timestamps := []uint64{1,2,3,4,5,6,6,7,8}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
+
+    da := CreateDatapointArray(timestamps,data)
+
+    tr := NewTimeRange(da,3,6)
+    defer tr.Close()
+    tr.Init()
+    dp := tr.Next()
+    if (dp==nil || dp.Timestamp()!=4) {
+        t.Errorf("TimeRange start time incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=5) {
+        t.Errorf("TimeRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=6) {
+        t.Errorf("TimeRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=6) {
+        t.Errorf("TimeRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp!=nil) {
+        t.Errorf("TimeRange endtime incorrect")
+    }
+}
+
+func TestNumRange(t *testing.T) {
+    timestamps := []uint64{1,2,3,4,5,6,6,7,8}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
+
+    da := CreateDatapointArray(timestamps,data)
+
+    tr := NewNumRange(da,5)
+    defer tr.Close()
+    tr.Init()
+    dp := tr.Next()
+    if (dp==nil || dp.Timestamp()!=1) {
+        t.Errorf("NumRange start time incorrect")
+    }
+    tr.Skip(2)
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=4) {
+        t.Errorf("NumRange start time incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=5) {
+        t.Errorf("NumRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=6) {
+        t.Errorf("NumRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp==nil || dp.Timestamp()!=6) {
+        t.Errorf("NumRange incorrect")
+    }
+    dp = tr.Next()
+    if (dp!=nil) {
+        t.Errorf("NumRange endtime incorrect")
+    }
+}

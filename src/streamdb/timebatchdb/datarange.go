@@ -98,3 +98,73 @@ func (r *RangeList) Append(d DataRange) {
 func NewRangeList() *RangeList {
     return &RangeList{list.New(),nil}
 }
+
+
+//A TimeRange is a Datarange which is time-bounded from both sides. That is, the datapoints allowed are only
+//within the given time range. So if given a DataRange with range [a,b], and the timerange is (c,d], the
+//TimeRange will return all datapoints within the Datarange which are within (c,d].
+type TimeRange struct {
+    dr DataRange        //The DataRange to wrap
+    starttime uint64    //The time at which to start the time range
+    endtime uint64      //The time at which to stop returning datapoints
+}
+
+func (r *TimeRange) Close() {
+    r.dr.Close()
+}
+
+func (r *TimeRange) Init() {
+    r.dr.Init()
+}
+
+func (r *TimeRange) Next() *Datapoint {
+    dp := r.dr.Next()
+    //Skip datapoints before the starttime
+    for (dp!=nil && dp.Timestamp()<= r.starttime) {
+        dp = r.dr.Next()
+    }
+    //Return nil if the timestamp is beyond our range
+    if (dp != nil && dp.Timestamp()>r.endtime) {
+        //The datapoint is beyond our range.
+        return nil
+    }
+    return dp
+}
+
+func NewTimeRange(dr DataRange, starttime uint64, endtime uint64) *TimeRange {
+    return &TimeRange{dr,starttime,endtime}
+}
+
+//Given a DataRange, it returns only the firt given number of datapoints (with an optional skip param)
+type NumRange struct {
+    dr DataRange
+    numleft uint64      //The number of dtapoints left to return
+}
+
+func (r *NumRange) Close() {
+    r.dr.Close()
+}
+
+func (r *NumRange) Init() {
+    r.dr.Init()
+}
+
+func (r *NumRange) Next() *Datapoint {
+    if (r.numleft==0) {
+        return nil
+    }
+    r.numleft--
+    return r.dr.Next()
+}
+
+//Skip the given number of datapoints without changing the number of datapoints left to return
+func (r *NumRange) Skip(num int) {
+    for i:=0;i<num;i++ {
+        r.dr.Next()
+    }
+}
+
+//Gets a new NumRange which will return up to the given amount of datapoints.
+func NewNumRange(dr DataRange,datapoints uint64) *NumRange {
+    return &NumRange{dr,datapoints}
+}
