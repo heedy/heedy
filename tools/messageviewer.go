@@ -10,13 +10,13 @@ import (
 
 var (
     server = flag.String("msg", "localhost:4222", "The address of the messenger server")
-    keys = flag.String("keys", ">", "The keys to watch")
+    routes = flag.String("routes", ">", "The routes to watch")
     helpflag = flag.Bool("help", false, "Prints this help message")
 )
 
-func MessageView(url string,key string) error {
+func MessageView(url string,route string) error {
 
-    log.Printf("MessageViewer (%s,%s)",url,key)
+    log.Printf("MessageViewer (%s,%s)",url,route)
 
     msg,err := timebatchdb.ConnectMessenger(url)
     if (err != nil) {
@@ -25,7 +25,7 @@ func MessageView(url string,key string) error {
     defer msg.Close()
 
     recvchan := make(chan timebatchdb.KeyedDatapoint)
-    _,err = msg.SubChannel(key,recvchan)
+    _,err = msg.SubChannel(route,recvchan)
     if err != nil {
         return err
     }
@@ -48,7 +48,7 @@ func main() {
         return
     }
 
-    log.Fatal(MessageView(*server,*keys))
+    log.Fatal(MessageView(*server,*routes))
 
 
 }

@@ -32,16 +32,20 @@ func ConnectMessenger(url string) (*Messenger,error){
     return &Messenger{conn,econn},nil
 }
 
-func (m *Messenger) Publish(d KeyedDatapoint) error {
-    return m.econn.Publish(strings.Replace(d.Key(),"/",".",-1),d)
+func (m *Messenger) Publish(d KeyedDatapoint,routing string) error {
+    if (len(routing)==0) {
+        routing = d.Key()
+    }
+    routing=strings.Replace(routing,"/",".",-1)
+    return m.econn.Publish(routing,d)
 }
 
-func (m *Messenger) Subscribe(key string, fn SubscriptionFunction) (*nats.Subscription,error){
-    return m.econn.Subscribe(strings.Replace(key,"/",".",-1),fn)
+func (m *Messenger) Subscribe(router string, fn SubscriptionFunction) (*nats.Subscription,error){
+    return m.econn.Subscribe(strings.Replace(router,"/",".",-1),fn)
 }
 
-func (m *Messenger) SubChannel(key string, chn chan KeyedDatapoint) (*nats.Subscription,error) {
-    return m.econn.BindRecvChan(strings.Replace(key,"/",".",-1),chn)
+func (m *Messenger) SubChannel(router string, chn chan KeyedDatapoint) (*nats.Subscription,error) {
+    return m.econn.BindRecvChan(strings.Replace(router,"/",".",-1),chn)
 }
 
 //Makes sure all commands are acknowledged by the server

@@ -32,7 +32,6 @@ dependencies:
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux
 	go get github.com/gorilla/context
-	go get labix.org/v2/mgo/bson
 	go get gopkg.in/mgo.v2
 
 #gnatsd is the messenger server - deps must be installed, but we don't want deps to be called

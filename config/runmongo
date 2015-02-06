@@ -1,0 +1,3 @@
+#!/bin/sh
+#TODO: Options in mongo are NOT for production
+mongod --config ./mongo.conf

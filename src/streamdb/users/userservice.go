@@ -2,7 +2,7 @@ package users
 
 import (
     "github.com/gorilla/mux"
-    "labix.org/v2/mgo/bson"
+    "gopkg.in/mgo.v2/bson"
     "net/http"
     "log"
     "flag"
@@ -110,7 +110,7 @@ type UserServiceHandler func(request *http.Request, requestingDevice *Device, us
 func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, requesterIsDevice, requesterOwnsStream bool) http.HandlerFunc {
 
     return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-        log.Printf("Handling function");
+
 
         // Do HTTP Authentication
         username, password, ok := request.BasicAuth()
@@ -133,6 +133,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
             requester.Enabled = true
             requester.Shortname = "userservice/superadmin" // can't occur naturally
         } else {
+            requester, err = userdb.ReadDeviceByApiKey(password)
 
             if username != "" {
                 log.Printf("found username %s password %s", username, password)

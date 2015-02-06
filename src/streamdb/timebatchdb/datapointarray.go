@@ -142,6 +142,15 @@ func (d *DatapointArray) FindTimeIndex(timestamp uint64) int {
     return rightbound
 }
 
+//Returns a DatapointArray which has the given starting bound (like DatapointTRange, but without upperbound)
+func (d *DatapointArray) TStart(timestamp uint64) *DatapointArray {
+    i := d.FindTimeIndex(timestamp)
+    if i==-1 {
+        return nil
+    }
+    return  NewDatapointArray(d.Datapoints[i:])
+}
+
 //Returns the DatapointArray of datapoints which fit within the time range:
 //  (timestamp1,timestamp2]
 func (d *DatapointArray) DatapointTRange(timestamp1 uint64, timestamp2 uint64) *DatapointArray {
