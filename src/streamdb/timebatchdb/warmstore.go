@@ -129,7 +129,7 @@ func (s *MongoStore) GetTime(key string, starttime uint64) DataRange {
         //We therefore close the Iterator, and return an empty RangeList (which has correct behavior
         //on empty)
         i.Close()
-        return NewRangeList()
+        return EmptyRange{}
     }
 
     da := DatapointArrayFromBytes(dp.Data)
@@ -138,7 +138,7 @@ func (s *MongoStore) GetTime(key string, starttime uint64) DataRange {
         //This is a legit error. This means that the database is corrupted!
         log.Println("MongoStore: Key=%s T=%d Corrupted!",key,starttime)
         i.Close()
-        return NewRangeList()
+        return EmptyRange{}
     }
 
     //And return the result
@@ -150,10 +150,8 @@ func (s *MongoStore) GetIndex(key string, startindex uint64) DataRange {
     dp := mongostruct{}
     if (!i.Next(&dp)) {
         //Looks like there are no documents that fit the criteria.
-        //We therefore close the Iterator, and return an empty RangeList (which has correct behavior
-        //on empty)
         i.Close()
-        return NewRangeList()
+        return EmptyRange{}
     }
 
     //Okay, now we convert the datapoints
@@ -167,7 +165,7 @@ func (s *MongoStore) GetIndex(key string, startindex uint64) DataRange {
     if (fromend > uint64(da.Len())) {
         log.Println("MongoStore: Key=%s I=%d Corrupted!",key,startindex)
         i.Close()
-        return NewRangeList()
+        return EmptyRange{}
     }
 
     //And return the result

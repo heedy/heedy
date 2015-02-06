@@ -13,6 +13,13 @@ type DataRange interface {
 }
 
 
+type EmptyRange struct {}
+func (r EmptyRange) Close() {}
+func (r EmptyRange) Init() {}
+func (r EmptyRange) Next() *Datapoint {
+    return nil
+}
+
 //The RangeList - it is a list of DataRanges, and acts as one large DataRange. In particular, it can combine
 //datasets with certain data overlap, since it makes sure that timestamps are strictly increasing.
 type RangeList struct {
