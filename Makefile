@@ -1,10 +1,10 @@
 .PHONY: clean all dependencies test
 
 #gets the list of files that we're to compile
-SRC=$(wildcard tools/*.go)
+SRC=$(wildcard src/core/*.go)
 
 #Get the list of executables from the file list
-TMPO=$(patsubst tools/%.go,bin/%,$(SRC))
+TMPO=$(patsubst src/core/%.go,bin/%,$(SRC))
 OBJ=$(TMPO:.go=)
 
 
@@ -17,7 +17,7 @@ bin:
 	mkdir bin
 	mkdir bin/dep
 #Rule to go from source go file to binary
-bin/%: tools/%.go bin
+bin/%: src/core/%.go bin
 	go build -o $@ $<
 
 clean:
