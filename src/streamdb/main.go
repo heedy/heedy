@@ -26,8 +26,8 @@ func main() {
         return
     }
 
-    log.Printf("Starting Server")
-    
+    log.Printf("Starting Server on port %d", *serverport)
+
     r := mux.NewRouter()
     users.GetSubrouter(r)
     //r.HandleFunc("/", HomeHandler)

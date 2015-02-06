@@ -11,6 +11,7 @@ import (
 	"errors"
 	"crypto/sha512"
 	"encoding/hex"
+	"log"
 )
 
 
@@ -205,24 +206,32 @@ func calcHash(password, salt, scheme string) (string) {
 
 // ValidateUser checks to see if a user going by the username or email
 // matches the given password, returns true if it does false if it does not
-func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool) {
+func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool, *User) {
 	var usr *User
+	var err error
 
-	usr, _ = userdb.ReadUserByName(UsernameOrEmail)
+	usr, err = userdb.ReadUserByName(UsernameOrEmail)
+	if err != nil {
+		log.Print(err)
+	}
 	if usr != nil {
 		goto gotuser
 	}
 
-	usr, _ = userdb.ReadUserByEmail(UsernameOrEmail)
+	usr, err = userdb.ReadUserByEmail(UsernameOrEmail)
+	if err != nil {
+		log.Print(err)
+	}
 	if usr != nil {
 		goto gotuser
 	}
 
 gotuser:
+	log.Printf("User: %v", usr)
 	if usr != nil && calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
-		return true
+		return true, usr
 	} else {
-		return false
+		return false, nil
 	}
 }
 
@@ -679,6 +688,16 @@ func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
 	}
 
 	return streams[0], nil
+}
+
+func (userdb *UserDatabase) ReadStreamsByDevice(device *Device) ([]*Stream, error) {
+	rows, err := userdb.db.Query("SELECT * FROM Stream WHERE OwnerId = ? LIMIT 1", device.Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return constructStreamsFromRows(rows)
 }
 
 // UpdateStream updates the stream with the given ID with the provided data

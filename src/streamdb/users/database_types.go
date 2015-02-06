@@ -29,6 +29,12 @@ func (u User) SetNewPassword(newPass string) {
 }
 
 
+// Checks if the device is enabled and a superdevice
+func (u User) IsAdmin() bool {
+    return u.Admin
+}
+
+
 
 // A sanitized version of user
 type CleanUser struct {
@@ -67,6 +73,10 @@ func (d Device) isAdmin() bool {
     return d.isActive() && d.Superdevice
 }
 
+func (d Device) IsOwnedBy(user *User) bool {
+    return d.OwnerId == user.Id
+}
+
 func (d Device) ToClean() CleanDevice {
     return CleanDevice{Id: d.Id,
         Name:d.Name,
@@ -100,4 +110,11 @@ type CleanStream struct {
     Name string
     Schema_Json string
     Defaults_Json string
+}
+
+func (d Stream) ToClean() CleanStream {
+    return CleanStream{Id: d.Id,
+        Name:d.Name,
+        Schema_Json:d.Schema_Json,
+        Defaults_Json:d.Defaults_Json}
 }

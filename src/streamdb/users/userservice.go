@@ -2,7 +2,6 @@ package users
 
 import (
     "github.com/gorilla/mux"
-    "github.com/gorilla/context"
     "labix.org/v2/mgo/bson"
     "net/http"
     "log"
@@ -26,6 +25,7 @@ var (
     okGenericResult = GenericResult{http.StatusOK, "Success"}
     emailExistsResult = GenericResult{http.StatusConflict, "A user with this email already exists"}
     usernameExistsResult = GenericResult{http.StatusConflict, "A user with this username already exists"}
+    badRequestResult = GenericResult{http.StatusBadRequest, "Something in the URL is wrong, do the user, device, or stream doesn't exist?"}
     userdb *UserDatabase
 )
 
@@ -49,6 +49,26 @@ type ReadDeviceResult struct {
     Devices []CleanDevice
     Unsanitized []Device
     GenericResult
+}
+
+type ReadStreamResult struct {
+    Streams []CleanStream
+    Unsanitized []Stream
+    GenericResult
+}
+
+type CreateSuccessResult struct {
+    Id int64
+    GenericResult
+}
+
+func NewCreateSuccessResult(id int64) CreateSuccessResult {
+    var res CreateSuccessResult
+    res.Id = id
+    res.Message = "Success"
+    res.Status = http.StatusOK
+
+    return res
 }
 
 func (result GenericResult) writeToHttp(writer http.ResponseWriter) {
@@ -90,12 +110,13 @@ type UserServiceHandler func(request *http.Request, requestingDevice *Device, us
 func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, requesterIsDevice, requesterOwnsStream bool) http.HandlerFunc {
 
     return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-
+        log.Printf("Handling function");
 
         // Do HTTP Authentication
         username, password, ok := request.BasicAuth()
 
         if ! ok && ! *ignoreBadApiKeys{
+            writer.Header().Set("WWW-Authenticate", "Basic")
             writer.WriteHeader(http.StatusUnauthorized)
             writer.Write(UNAUTHORIZED_MESSAGE)
 
@@ -112,12 +133,36 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
             requester.Enabled = true
             requester.Shortname = "userservice/superadmin" // can't occur naturally
         } else {
-            requester, err = userdb.ReadDeviceByApiKey(password)
 
-            if err != nil {
-                writer.WriteHeader(http.StatusUnauthorized)
-                writer.Write(UNAUTHORIZED_MESSAGE)
-                return
+            if username != "" {
+                log.Printf("found username %s password %s", username, password)
+
+                val, usr := userdb.ValidateUser(username, password)
+
+                if val {
+                    log.Print("correct user!")
+
+                    requester = new(Device)
+                    requester.Superdevice = usr.IsAdmin()
+                    requester.Enabled = true
+                    requester.Shortname = username
+                    requester.Name = username
+                    requester.OwnerId = usr.Id
+                    requester.Id = -1
+                } else {
+                    writer.WriteHeader(http.StatusUnauthorized)
+                    writer.Write(UNAUTHORIZED_MESSAGE)
+                    return
+                }
+
+            } else {
+                requester, err = userdb.ReadDeviceByApiKey(password)
+
+                if err != nil {
+                    writer.WriteHeader(http.StatusUnauthorized)
+                    writer.Write(UNAUTHORIZED_MESSAGE)
+                    return
+                }
             }
         }
 
@@ -159,6 +204,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
             if err != nil {
                 writer.WriteHeader(http.StatusBadRequest)
                 writer.Write(BAD_REQUEST_MESSAGE)
+                return
             }
         }
 
@@ -166,8 +212,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
             devicei, err := strconv.Atoi(deviceid)
 
             if err != nil {
-                writer.WriteHeader(http.StatusBadRequest)
-                writer.Write(BAD_REQUEST_MESSAGE)
+                badRequestResult.writeToHttp(writer)
                 return
             }
 
@@ -235,6 +280,14 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
             case "json":
                 val, err = json.Marshal(result)
                 ct = "text/json"
+
+                callbackname := request.FormValue("callback")
+                if callbackname != "" {
+                    ct = "application/javascript"
+                    val = append([]byte(callbackname + "("), val...)
+                    val = append(val, []byte(");")...)
+                }
+
             case "xml":
                 val, err = xml.Marshal(result)
                 ct = "text/xml"
@@ -254,7 +307,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
         }
 
         writer.Header().Set("Content-Type", ct)
-        writer.Header().Set("Content-Length", string(len(val)))
+        writer.Header().Set("Content-Length", strconv.Itoa(len(val)))
         writer.WriteHeader(resultcode)
 
         writer.Write(val)
@@ -287,6 +340,25 @@ func readAllUsers(request *http.Request, requestingDevice *Device, user *User, d
     return http.StatusOK, result
 }
 
+func readUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result ReadUserResult
+    result.Status = 200
+
+    if user == nil {
+        return http.StatusBadRequest, badRequestResult
+    }
+
+    can_read_unsanitized := requestingDevice.isAdmin() || requestingDevice.IsOwnedBy(user)
+
+    result.Users = append(result.Users, user.ToClean())
+
+    if can_read_unsanitized {
+        result.Unsanitized = append(result.Unsanitized, *user)
+    }
+
+    return http.StatusOK, result
+}
+
 
 // Requires a user struct with the name, email, password filled in. The password
 // should be plaintext.
@@ -294,13 +366,12 @@ func createUser(request *http.Request, requestingDevice *Device, user *User, dev
 
     var userUpload User
 
-    if err := readBodyUnmarshalAndError(request, userUpload); err != nil {
+    if err := readBodyUnmarshalAndError(request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    // TODO return the id
-    _, err := userdb.CreateUser(userUpload.Name, userUpload.Email, userUpload.Password)
+    id, err := userdb.CreateUser(userUpload.Name, userUpload.Email, userUpload.Password)
 
     switch {
         case err == ERR_EMAIL_EXISTS:
@@ -311,7 +382,7 @@ func createUser(request *http.Request, requestingDevice *Device, user *User, dev
             log.Printf("Could not service create user request |err:%v", err)
             return http.StatusInternalServerError, errorGenericResult
         default:
-            return http.StatusOK, okGenericResult
+            return http.StatusOK, NewCreateSuccessResult(id)
     }
 }
 
@@ -337,7 +408,7 @@ func readBodyUnmarshalAndError(request *http.Request, tofill interface{}) (error
 func updateUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     var userUpload User
 
-    if err := readBodyUnmarshalAndError( request, userUpload); err != nil {
+    if err := readBodyUnmarshalAndError( request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
@@ -354,7 +425,7 @@ func updateUser(request *http.Request, requestingDevice *Device, user *User, dev
 func deleteUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     var userUpload User
 
-    if err := readBodyUnmarshalAndError( request, userUpload); err != nil {
+    if err := readBodyUnmarshalAndError( request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
@@ -368,24 +439,22 @@ func deleteUser(request *http.Request, requestingDevice *Device, user *User, dev
 }
 
 
-func readDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readDevices(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     //var result ReadUserResult
     var result ReadDeviceResult
     result.Status = 200
 
-    usr, err := getUserFromRequest(request)
+    is_super := requestingDevice.isAdmin()
+    devs, err := userdb.ReadDevicesForUserId(user.Id)
 
     if err != nil {
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    is_super := context.Get(request, REQUEST_DEVICE_IS_SUPERUSER)
-    devs, err := userdb.ReadDevicesForUserId(usr.Id)
-
     for _, d := range devs {
         result.Devices = append(result.Devices, d.ToClean())
 
-        if is_super.(bool) {
+        if is_super {
             result.Unsanitized = append(result.Unsanitized, *d)
         }
     }
@@ -393,25 +462,39 @@ func readDevice(request *http.Request, requestingDevice *Device, user *User, dev
     return http.StatusOK, result
 }
 
+func readDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    //var result ReadUserResult
+    var result ReadDeviceResult
+    result.Status = 200
+
+    result.Devices = append(result.Devices, device.ToClean())
+
+    if requestingDevice.isAdmin() || device.IsOwnedBy(user) {
+        result.Unsanitized = append(result.Unsanitized, *device)
+    }
+
+    return http.StatusOK, result
+}
+
+
 
 func createDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     //var result ReadUserResult
     var upload CleanDevice
 
-    if err := readBodyUnmarshalAndError(request, upload); err != nil {
+    if err := readBodyUnmarshalAndError(request, &upload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    // todo return id
-    _, err := userdb.CreateDevice(upload.Name, user)
+    id, err := userdb.CreateDevice(upload.Name, user)
 
     switch {
         case err != nil:
             log.Printf("Could not service create user request |err:%v", err)
             return http.StatusInternalServerError, errorGenericResult
         default:
-            return http.StatusOK, okGenericResult
+            return http.StatusOK, NewCreateSuccessResult(id)
     }
 }
 
@@ -419,7 +502,7 @@ func createDevice(request *http.Request, requestingDevice *Device, user *User, d
 func updateDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     var upload Device
 
-    if err := readBodyUnmarshalAndError(request, upload); err != nil {
+    if err := readBodyUnmarshalAndError(request, &upload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
@@ -445,28 +528,56 @@ func deleteDevice(request *http.Request, requestingDevice *Device, user *User, d
 
 
 func readStream(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result ReadStreamResult
 
-    // todo fill structs
-    return http.StatusInternalServerError, errorGenericResult
+    is_super := requestingDevice.isAdmin()
+    result.Streams = append(result.Streams, stream.ToClean())
+
+    if is_super || requestingDevice.IsOwnedBy(user) {
+        result.Unsanitized = append(result.Unsanitized, *stream)
+    }
+
+    return http.StatusOK, result
+}
+
+func readAllStreams(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result ReadStreamResult
+
+    is_super := requestingDevice.isAdmin()
+    streams, err := userdb.ReadStreamsByDevice(device)
+
+    if err != nil {
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    for _, s := range streams {
+        result.Streams = append(result.Streams, s.ToClean())
+
+        if is_super || requestingDevice.IsOwnedBy(user) {
+            result.Unsanitized = append(result.Unsanitized, *s)
+        }
+    }
+
+    return http.StatusOK, result
 }
 
 
 func createStream(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
     var result CleanStream
 
-    if err := readBodyUnmarshalAndError(request, result); err != nil {
+    if err := readBodyUnmarshalAndError(request, &result); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
 
     // todo return id
-    _, err := userdb.CreateStream(result.Name, result.Schema_Json, result.Defaults_Json, device)
+    id, err := userdb.CreateStream(result.Name, result.Schema_Json, result.Defaults_Json, device)
 
     if err != nil {
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    return http.StatusOK, okGenericResult
+    return http.StatusOK, NewCreateSuccessResult(id)
 }
 
 
@@ -488,20 +599,19 @@ func deleteStream(request *http.Request, requestingDevice *Device, user *User, d
 func GetSubrouter(subroutePrefix *mux.Router) {
 
     //    r := mux.NewRouter()
+    if *ignoreBadApiKeys {
+        subroutePrefix.HandleFunc("/firstrun/", firstRunHandler)
+    }
 
-    s := subroutePrefix.PathPrefix("/api/v1/{style:[json|xml|bson]}").Subrouter()
+    s := subroutePrefix.PathPrefix("/api/v1/{style}").Subrouter()
 
-    //s.HandleFunc("/")
-
-    // get my user information
-    //s.HandleFunc("/{AuthKey}/myuser/", apiAuth(readUser, false)).Methods("GET")
 
 //apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, requesterIsDevice, requesterOwnsStream bool) http.HandlerFunc {
 
     s.HandleFunc("/user/", apiAuth(readAllUsers, false, false, false, false)).Methods("GET")
     s.HandleFunc("/user/", apiAuth(createUser,   true,  false, false, false)).Methods("POST")
 
-    //s.HandleFunc("/{username}/", apiAuth(readUser,   false, true, false, false)).Methods("GET")
+    s.HandleFunc("/{username}/", apiAuth(readUser,   false, true, false, false)).Methods("GET")
     s.HandleFunc("/{username}/", apiAuth(updateUser, true, false, false, false)).Methods("PUT")
     s.HandleFunc("/{username}/", apiAuth(deleteUser, true, false, false, false)).Methods("DELETE")
     // username exists?
@@ -512,14 +622,13 @@ func GetSubrouter(subroutePrefix *mux.Router) {
     //s.HandleFunc("/{AuthKey}/user/authenticate/").Methods("POST")
     // validate user?
 
-    // requesterIsSuperdevice, userOwnsReqeuster, requesterIsDevice, requesterOwnsStream bool) http.HandlerFunc {
-
-    s.HandleFunc("/{username}/device/", apiAuth(readDevice, false, true, false, false)).Methods("GET")
+    s.HandleFunc("/{username}/device/", apiAuth(readDevices, false, true, false, false)).Methods("GET")
     s.HandleFunc("/{username}/device/", apiAuth(createDevice, false, true, false, false)).Methods("POST")
+    s.HandleFunc("/{username}/{deviceid:[0-9]+}/", apiAuth(readDevice, false, true, false, false)).Methods("GET")
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/", apiAuth(updateDevice, false, true, true, false)).Methods("PUT")
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/", apiAuth(deleteDevice, true, false, false, false)).Methods("DELETE")
 
-    //s.HandleFunc("/{username}/{deviceid:[0-9]+}/stream/", apiAuth(readAllStreams, false, true, false, false)).Methods("GET")
+    s.HandleFunc("/{username}/{deviceid:[0-9]+}/stream/", apiAuth(readAllStreams, false, true, false, false)).Methods("GET")
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/stream/", apiAuth(createStream, false, true, true, false)).Methods("POST")
 
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}/", apiAuth(readStream,   false, false, false, false)).Methods("GET")
@@ -530,6 +639,12 @@ func GetSubrouter(subroutePrefix *mux.Router) {
 func init() {
     var err error
     userdb, err = NewSqliteUserDatabase("production.sqlite")
+
+    usr, err := userdb.ReadAllUsers()
+    if len(usr) == 0 {
+        log.Printf("No users found, auto ignoring bad api keys, all requests are superuser")
+        *ignoreBadApiKeys = true
+    }
 
     if err != nil {
         panic("Cannot open user database")
