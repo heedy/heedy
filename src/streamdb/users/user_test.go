@@ -95,17 +95,18 @@ func TestValidateUser(t *testing.T){
         return
     }
 
-    if ! testdb.ValidateUser(name, pass) {
+    validated, _ := testdb.ValidateUser(name, pass)
+    if ! validated  {
         t.Errorf("could not validate a user with username and pass")
     }
 
-
-    if ! testdb.ValidateUser(email, pass) {
+    validated, _ = testdb.ValidateUser(email, pass)
+    if ! validated {
         t.Errorf("could not validate a user with email and pass")
     }
 
-
-    if testdb.ValidateUser(email, email) {
+    validated, _ = testdb.ValidateUser(email, email)
+    if validated {
         t.Errorf("Validated an incorrect user")
     }
 }
