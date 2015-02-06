@@ -11,6 +11,8 @@ import (
     "io/ioutil"
     "strconv"
     "encoding/xml"
+    "streamdb/timebatchdb"
+    "time"
     )
 
 type key int
@@ -20,13 +22,20 @@ var (
     ERROR_MESSAGE = []byte("An internal error occurred, we'll get right on that, sorry!")
     BAD_REQUEST_MESSAGE = []byte("Something in the URL is wrong, do the user, device, or stream doesn't exist?")
     FORBIDDEN_MESSAGE = []byte("You do not have sufficient privliges to perform this action")
-    ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
     errorGenericResult = GenericResult{http.StatusInternalServerError, "An internal error occurred"}
     okGenericResult = GenericResult{http.StatusOK, "Success"}
     emailExistsResult = GenericResult{http.StatusConflict, "A user with this email already exists"}
     usernameExistsResult = GenericResult{http.StatusConflict, "A user with this username already exists"}
     badRequestResult = GenericResult{http.StatusBadRequest, "Something in the URL is wrong, do the user, device, or stream doesn't exist?"}
     userdb *UserDatabase
+    timedb *timebatchdb.Database
+
+    ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
+    msgserver = flag.String("msg", "localhost:4222", "The address of the messenger server")
+    mgoserver = flag.String("mgo", "localhost", "The address of the MongoDB server")
+    mgodb = flag.String("mgodb", "production_timebatchdb", "The name of the MongoDB database")
+    routes = flag.String("route", ">", "The routes to write to database")
+
 )
 
 const (
@@ -59,6 +68,16 @@ type ReadStreamResult struct {
 
 type CreateSuccessResult struct {
     Id int64
+    GenericResult
+}
+
+type Datapoint struct {
+    Timestamp string // rfc3339 formatted timestamp
+    Data string
+}
+
+type DatapointResult struct {
+    Data []Datapoint
     GenericResult
 }
 
@@ -595,6 +614,98 @@ func deleteStream(request *http.Request, requestingDevice *Device, user *User, d
 
 
 
+func createDataKey(user *User, device *Device, stream *Stream) string {
+    return user.Name + "/" + device.Name + "/" + stream.Name
+}
+
+
+func timeToUnixNano(timestamp string) (uint64, error) {
+    var t time.Time
+    err := t.UnmarshalText([]byte(timestamp))
+
+    return uint64(t.UnixNano()), err
+}
+
+
+// Converts a time in ns to an iso standard string
+func nanoToTimestamp(nano uint64) string {
+
+    str, err := time.Unix(0, int64(nano)).MarshalText()
+
+    if err != nil {
+        return "0000-00-00T00:00:00"
+    } else {
+        return string(str)
+    }
+}
+
+func createDataPoint(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result Datapoint
+
+    if user == nil || device == nil || stream == nil {
+        log.Printf("user, device, or stream is nil|usr:%v dev:%v stream:%v", user, device, stream)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    if err := readBodyUnmarshalAndError(request, &result); err != nil {
+        log.Printf("Could not unmarshal|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    ts, err := timeToUnixNano(result.Timestamp)
+
+    if ts == uint64(0) && err != nil {
+        log.Printf("Error converting timestamp|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    err = timedb.Insert(createDataKey(user, device, stream), ts, []byte(result.Data), "")
+
+    if err != nil {
+        log.Printf("Timedb error while inserting|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    return http.StatusOK, NewCreateSuccessResult(1)
+}
+
+
+// Reads the data between two indexes.
+func readDataByIndex(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result DatapointResult
+
+    vars := mux.Vars(request)
+    si1 := vars["index1"]
+    si2 := vars["index2"]
+
+
+    i1, _ := strconv.Atoi(si1)
+    i2, _ := strconv.Atoi(si2)
+
+
+    log.Printf("Requesting data (%v, %v] from %v", i1, i2, createDataKey(user, device, stream))
+
+    dataReader := timedb.GetIndexRange(createDataKey(user, device, stream), uint64(i1), uint64(i2))
+    defer dataReader.Close()
+
+    for {
+        next := dataReader.Next()
+        log.Printf("Next datapoint %v", next)
+
+        if next == nil {
+            break
+        }
+
+        var tmp Datapoint
+        tmp.Timestamp = nanoToTimestamp(next.Timestamp())
+        tmp.Data = string(next.Data())
+
+        result.Data = append(result.Data, tmp)
+    }
+
+    return http.StatusOK, result
+}
+
 
 // Creates a subrouter available to
 func GetSubrouter(subroutePrefix *mux.Router) {
@@ -635,6 +746,13 @@ func GetSubrouter(subroutePrefix *mux.Router) {
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}/", apiAuth(readStream,   false, false, false, false)).Methods("GET")
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}/", apiAuth(createStream, false, true, true, true)).Methods("POST")
     s.HandleFunc("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}/", apiAuth(deleteStream, true , false, false, false)).Methods("DELETE")
+
+
+    u := s.PathPrefix("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}").Subrouter()
+
+    u.HandleFunc("/point/i/{index1:[0-9]+}/{index2:[0-9]+}/", apiAuth(readDataByIndex, false, true, false, false)).Methods("GET")
+    //u.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
+    u.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
 }
 
 func init() {
@@ -649,5 +767,14 @@ func init() {
 
     if err != nil {
         panic("Cannot open user database")
+    }
+
+    go timebatchdb.DatabaseWriter(*msgserver,*mgoserver,*mgodb, *routes)
+
+    timedb, err = timebatchdb.OpenDatabase(*msgserver,*mgoserver,*mgodb)
+
+    if err != nil {
+        panic("Cannot open timeseries database")
+
     }
 }

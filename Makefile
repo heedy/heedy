@@ -9,7 +9,10 @@ OBJ=$(TMPO:.go=)
 
 
 
-all: $(OBJ) bin/dep/gnatsd
+all: clean dependencies $(OBJ) bin/dep/gnatsd test
+
+build: $(OBJ)
+
 bin:
 	mkdir bin
 	mkdir bin/dep
@@ -19,6 +22,7 @@ bin/%: tools/%.go bin
 
 clean:
 	rm -rf bin
+	go clean
 
 ############################################################################################################
 #Dependencies of the project

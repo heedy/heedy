@@ -11,7 +11,7 @@ import (
 var (
     msgserver = flag.String("msg", "localhost:4222", "The address of the messenger server")
     mgoserver = flag.String("mgo", "localhost", "The address of the MongoDB server")
-    mgodb = flag.String("mgodb", "timebatchdb", "The name of the MongoDB database")
+    mgodb = flag.String("mgodb", "production_timebatchdb", "The name of the MongoDB database")
     routes = flag.String("route", ">", "The routes to write to database")
     helpflag = flag.Bool("help", false, "Prints this help message")
 )
@@ -26,7 +26,7 @@ func main() {
         return
     }
 
-    log.Fatal(timebatchdb.DatabaseWriter(*msgserver,*mgodb,*routes,*mgodb))
+    log.Fatal(timebatchdb.DatabaseWriter(*msgserver,*mgodb,*mgodb, *routes))
 
 
 }

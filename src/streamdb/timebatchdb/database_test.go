@@ -7,7 +7,7 @@ import (
 
 func TestDatabase(t *testing.T) {
     //Turn on the database writer
-    go DatabaseWriter("localhost:4222","localhost","testing/>","testdb")
+    go DatabaseWriter("localhost:4222","localhost","testdb", "testing/>")
 
     m,err := OpenMongoStore("localhost","testdb")
     if (err!=nil) {
