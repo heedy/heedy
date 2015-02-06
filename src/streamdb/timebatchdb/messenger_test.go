@@ -32,7 +32,7 @@ func TestMessenger(t *testing.T) {
     msg2.Flush()
 
     //Now, publish a message
-    err = msg.Publish(NewKeyedDatapoint("user1/item1/stream1",1000,[]byte("Hello World!")))
+    err = msg.Publish(NewKeyedDatapoint("user1/item1/stream1",1000,[]byte("Hello World!")),"")
     if (err != nil) {
         t.Errorf("Couldn't publish: %s",err)
         return

@@ -32,8 +32,12 @@ func ConnectMessenger(url string) (*Messenger,error){
     return &Messenger{conn,econn},nil
 }
 
-func (m *Messenger) Publish(d KeyedDatapoint) error {
-    return m.econn.Publish(strings.Replace(d.Key(),"/",".",-1),d)
+func (m *Messenger) Publish(d KeyedDatapoint,routing string) error {
+    if (len(routing)==0) {
+        routing = d.Key()
+    }
+    routing=strings.Replace(routing,"/",".",-1)
+    return m.econn.Publish(routing,d)
 }
 
 func (m *Messenger) Subscribe(key string, fn SubscriptionFunction) (*nats.Subscription,error){

@@ -85,6 +85,11 @@ func TestDatapointArray(t *testing.T) {
         return
     }
 
+    if (da.TStart(2000).Len()!=4) {
+        t.Errorf("Wrong TStart")
+        return
+    }
+
     dp := da.Next()
     if (dp == nil || dp.Timestamp()!=1000) {
         t.Errorf("Iterator wrong")
