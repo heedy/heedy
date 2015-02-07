@@ -6,7 +6,7 @@ import (
 
 func DatabaseWriter(msgurl string,mgourl string,mdb string, router string) error {
 
-    log.Printf("Database Writer (MSG:%s,MGO:%s,K:%s,DB:%s)\n",msgurl,mgourl,router,mdb)
+    log.Printf("DBWriter (MSG:%s,MGO:%s,K:%s,DB:%s)\n",msgurl,mgourl,router,mdb)
 
     m,err := OpenMongoStore(mgourl,mdb)
     if err!=nil {
@@ -16,6 +16,7 @@ func DatabaseWriter(msgurl string,mgourl string,mdb string, router string) error
 
     msgr,err := ConnectMessenger(msgurl)
     if (err != nil) {
+
         return err
     }
     defer msgr.Close()
@@ -25,11 +26,13 @@ func DatabaseWriter(msgurl string,mgourl string,mdb string, router string) error
     if err != nil {
         return err
     }
-    log.Printf("Ready.\n")
+    log.Printf("DBWriter Ready.\n")
     for msg := range recvchan {
-        m.Append(msg.Key(),NewDatapointArray([]Datapoint{msg.Datapoint()}))
         log.Printf("%s\n",msg)
-
+        err = m.Append(msg.Key(),NewDatapointArray([]Datapoint{msg.Datapoint()}))
+        if err != nil {
+            log.Printf("DBWriter ERROR: %s\n",err)
+        }
     }
 
     return nil
