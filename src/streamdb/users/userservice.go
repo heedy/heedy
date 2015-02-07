@@ -620,9 +620,12 @@ func createDataKey(user *User, device *Device, stream *Stream) string {
 
 
 func timeToUnixNano(timestamp string) (uint64, error) {
+    ts, err := strconv.ParseUint(timestamp,10,64)
+    if err==nil {
+        return ts,nil
+    }
     var t time.Time
-    err := t.UnmarshalText([]byte(timestamp))
-
+    err = t.UnmarshalText([]byte(timestamp))
     return uint64(t.UnixNano()), err
 }
 
@@ -652,9 +655,10 @@ func createDataPoint(request *http.Request, requestingDevice *Device, user *User
         return http.StatusInternalServerError, errorGenericResult
     }
 
+    //Allows to send raw UnixNano timestamps
     ts, err := timeToUnixNano(result.Timestamp)
 
-    if ts == uint64(0) && err != nil {
+    if err != nil {
         log.Printf("Error converting timestamp|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
@@ -669,6 +673,48 @@ func createDataPoint(request *http.Request, requestingDevice *Device, user *User
     return http.StatusOK, NewCreateSuccessResult(1)
 }
 
+
+// Reads the data between two indexes.
+func readDataByTime(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+    var result DatapointResult
+
+    vars := mux.Vars(request)
+    si1 := vars["time1"]
+    si2 := vars["time2"]
+
+
+    ts1, err := timeToUnixNano(si1)
+    if err != nil {
+        log.Printf("Error converting timestamp|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+    ts2, err := timeToUnixNano(si2)
+    if err != nil {
+        log.Printf("Error converting timestamp|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
+
+    log.Printf("Requesting ts (%v, %v] from %v", ts1, ts2, createDataKey(user, device, stream))
+
+    dataReader := timedb.GetTimeRange(createDataKey(user, device, stream), ts1, ts2)
+    defer dataReader.Close()
+
+    for {
+        next := dataReader.Next()
+
+        if next == nil {
+            break
+        }
+
+        var tmp Datapoint
+        tmp.Timestamp = nanoToTimestamp(next.Timestamp())
+        tmp.Data = string(next.Data())
+
+        result.Data = append(result.Data, tmp)
+    }
+
+    return http.StatusOK, result
+}
 
 // Reads the data between two indexes.
 func readDataByIndex(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
@@ -690,7 +736,6 @@ func readDataByIndex(request *http.Request, requestingDevice *Device, user *User
 
     for {
         next := dataReader.Next()
-        log.Printf("Next datapoint %v", next)
 
         if next == nil {
             break
@@ -751,7 +796,7 @@ func GetSubrouter(subroutePrefix *mux.Router) {
     u := s.PathPrefix("/{username}/{deviceid:[0-9]+}/{streamid:[0-9]+}").Subrouter()
 
     u.HandleFunc("/point/i/{index1:[0-9]+}/{index2:[0-9]+}/", apiAuth(readDataByIndex, false, true, false, false)).Methods("GET")
-    //u.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
+    u.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
     u.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
 }
 
