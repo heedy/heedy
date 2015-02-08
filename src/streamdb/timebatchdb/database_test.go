@@ -29,7 +29,7 @@ func TestDatabase(t *testing.T) {
     //Wait one second for the DatabaseWriter to initialize
     time.Sleep(1000 * time.Millisecond)
 
-    timestamps := []uint64{1,2,3,4,5,6,3000,3100,3200}
+    timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 

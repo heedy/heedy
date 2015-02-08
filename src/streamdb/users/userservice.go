@@ -619,19 +619,19 @@ func createDataKey(user *User, device *Device, stream *Stream) string {
 }
 
 
-func timeToUnixNano(timestamp string) (uint64, error) {
-    ts, err := strconv.ParseUint(timestamp,10,64)
+func timeToUnixNano(timestamp string) (int64, error) {
+    ts, err := strconv.ParseInt(timestamp,10,64)
     if err==nil {
         return ts,nil
     }
     var t time.Time
     err = t.UnmarshalText([]byte(timestamp))
-    return uint64(t.UnixNano()), err
+    return t.UnixNano(), err
 }
 
 
 // Converts a time in ns to an iso standard string
-func nanoToTimestamp(nano uint64) string {
+func nanoToTimestamp(nano int64) string {
 
     str, err := time.Unix(0, int64(nano)).MarshalText()
 

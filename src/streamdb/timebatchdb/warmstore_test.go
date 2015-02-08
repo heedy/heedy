@@ -38,7 +38,7 @@ func TestMongoStore(t *testing.T) {
     }
 
     //Now insert some data
-    timestamps := []uint64{1,2,3,4,5,6,6,7,8}
+    timestamps := []int64{1,2,3,4,5,6,6,7,8}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 

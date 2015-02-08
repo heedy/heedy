@@ -36,7 +36,7 @@ func assertData(t *testing.T,da *DatapointArray,try string) bool {
 }
 
 func TestDatapointArray(t *testing.T) {
-    timestamps := []uint64{1000,1500,2000,2000,2000,2500,3000,3000,3000}
+    timestamps := []int64{1000,1500,2000,2000,2000,2500,3000,3000,3000}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 

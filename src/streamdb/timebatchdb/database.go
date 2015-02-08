@@ -16,7 +16,7 @@ func (d *Database) Close() {
 }
 
 //Returns the DataRange associated with the given time range
-func (d *Database) GetTimeRange(key string, starttime uint64, endtime uint64) DataRange {
+func (d *Database) GetTimeRange(key string, starttime int64, endtime int64) DataRange {
     drl := NewRangeList()
     if (endtime <=starttime) {
         return drl  //The RangeList is empty on invalid params
@@ -42,7 +42,7 @@ func (d *Database) GetIndexRange(key string, startindex uint64, endindex uint64)
 }
 
 //Inserts the given data into the database, and uses the given routing address for data
-func (d *Database) Insert(key string, timestamp uint64, data []byte,routing string) error {
+func (d *Database) Insert(key string, timestamp int64, data []byte,routing string) error {
     return d.ms.Publish(NewKeyedDatapoint(key,timestamp,data),routing)
 }
 

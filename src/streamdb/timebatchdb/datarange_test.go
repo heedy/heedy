@@ -6,8 +6,8 @@ import (
 
 func TestRangeList(t *testing.T) {
     //DataRange can't handle same-timestamp values
-    //timestamps := []uint64{1000,1500,2000,2000,2000,2500,3000,3000,3000}
-    timestamps := []uint64{1,2,3,4,5,6,3000,3100,3200}
+    //timestamps := []int64{1000,1500,2000,2000,2000,2500,3000,3000,3000}
+    timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 
@@ -41,7 +41,7 @@ func TestRangeList(t *testing.T) {
 }
 
 func TestTimeRange(t *testing.T) {
-    timestamps := []uint64{1,2,3,4,5,6,6,7,8}
+    timestamps := []int64{1,2,3,4,5,6,6,7,8}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 
@@ -73,7 +73,7 @@ func TestTimeRange(t *testing.T) {
 }
 
 func TestNumRange(t *testing.T) {
-    timestamps := []uint64{1,2,3,4,5,6,6,7,8}
+    timestamps := []int64{1,2,3,4,5,6,6,7,8}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 

@@ -10,7 +10,7 @@ import (
 
 //A datapoint - contains a timestamp and associated data
 //The data format is as follows:
-//  [timestamp uint64][datasize uvarint][data bytes]
+//  [timestamp int64][datasize uvarint][data bytes]
 type Datapoint struct {
     Buf []byte                 //The binary bytes associated with a datapoint
 }
@@ -35,7 +35,7 @@ func (d Datapoint) String() string {
 }
 
 //Returns the datapoint's timestamp
-func (d Datapoint) Timestamp() (ts uint64) {
+func (d Datapoint) Timestamp() (ts int64) {
     binary.Read(bytes.NewBuffer(d.Buf),binary.LittleEndian,&ts)
     return ts
 }
@@ -47,7 +47,7 @@ func (d Datapoint) Data() ([]byte) {
 }
 
 //Gets the datapoint
-func (d Datapoint) Get() (timestamp uint64,data []byte) {
+func (d Datapoint) Get() (timestamp int64,data []byte) {
     return d.Timestamp(),d.Data()   //The return here is simple, since we don't do any real processing
 }
 
@@ -61,7 +61,7 @@ func ReadDatapoint(r io.Reader) (Datapoint,error) {
 
 //Given file, reads the datapoint into the given buffer. Used internally for initializing KeyedDatapoint
 func ReadDatapointIntoBuffer(r io.Reader,w *bytes.Buffer) error {
-    //First, write the timestamp uint64
+    //First, write the timestamp int64
     _,err  := io.CopyN(w,r,8)
     if err!=nil {
         return err
@@ -77,13 +77,13 @@ func ReadDatapointIntoBuffer(r io.Reader,w *bytes.Buffer) error {
 }
 
 //Writes the datapoint structure into the given buffer
-func DatapointIntoBuffer(w *bytes.Buffer, timestamp uint64,data []byte) {
+func DatapointIntoBuffer(w *bytes.Buffer, timestamp int64,data []byte) {
     binary.Write(w,binary.LittleEndian,timestamp)
     WriteUvarint(w,uint64(len(data)))
     w.Write(data)
 }
 
-func NewDatapoint(timestamp uint64, data []byte) Datapoint {
+func NewDatapoint(timestamp int64, data []byte) Datapoint {
     buf := new(bytes.Buffer)
     DatapointIntoBuffer(buf,timestamp,data)
     return Datapoint{buf.Bytes()}  //The bytes the buffer read are our datapoint
@@ -122,7 +122,7 @@ func (d KeyedDatapoint) Key() string {
     return string(d.Buf[bytes_read:bytes_read+int(size)])
 }
 
-func (d KeyedDatapoint) Timestamp() uint64 {
+func (d KeyedDatapoint) Timestamp() int64 {
     return d.Datapoint().Timestamp()
 }
 func (d KeyedDatapoint) Data() []byte {
@@ -130,7 +130,7 @@ func (d KeyedDatapoint) Data() []byte {
 }
 
 //A standard way to create a datapoint
-func NewKeyedDatapoint(key string, timestamp uint64, data []byte) KeyedDatapoint {
+func NewKeyedDatapoint(key string, timestamp int64, data []byte) KeyedDatapoint {
     buf := new(bytes.Buffer)
     bytekey := []byte(key)
     WriteUvarint(buf,uint64(len(bytekey)))
