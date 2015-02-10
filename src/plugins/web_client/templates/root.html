@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <title>ConnectorDB Overview</title>
+        {{template "includes"}}
+    </head>
+    <body class='container'>
+
+        <h1>ConnectorDB Control</h1>
+
+        {{if .alert}}
+        <div class="alert alert-warning">{{.alert}}</div>
+        {{end}}
+
+        <div class="panel panel-default">
+            <div class="panel-heading">Devices</div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                <tr><th>Icon</th><th>Name</th><th>API Key</th><th>Edit</th></tr>
+                {{ range $dev := .devices }}
+                    <tr>
+                        <td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ $dev.Icon_PngB64 }}" /></td>
+                        <td>
+                        {{if $dev.Shortname}} 
+                            <abbr title="{{ $dev.Name }}">{{ $dev.Shortname }}</abbr>
+                        {{else}}
+                            <abbr title="{{ $dev.Name }}">{{ $dev.Name }}</abbr>
+                        {{end}}
+                        </td>
+                        <td>{{ $dev.ApiKey }}</td>
+                        <td><a href="/" class="btn btn-default">Edit</a></td>
+                    </tr>
+                {{ end }}
+                </table>
+            </div>
+        </div>
+</body>
+</html>

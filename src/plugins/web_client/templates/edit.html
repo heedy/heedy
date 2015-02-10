@@ -1,0 +1,45 @@
+<html>
+    <head>
+        <title>{{.}} | Autopilot Editor</title>
+        <script type='text/javascript' src='/inc/jquery-2.1.1.min.js'></script>
+        <link href="/inc/bootstrap.min.css" rel="stylesheet">
+        <script src="/inc/lib/codemirror.js" type="text/javascript"></script>
+        <link rel="stylesheet" href="/inc/lib/codemirror.css">
+        <script src="/inc/mode/xml/xml.js"></script>
+
+    </head>
+    <body class='container'>
+        <h1>Editing: {{.}}</h1>
+
+
+        <form action="/configuration/upload/" method="post" enctype="multipart/form-data" id="editor">
+            <textarea id="code" cols="120" rows="30" name="data">
+            </textarea>
+            <br />
+            <input type="text" name="name" placeholder="config name"></input>
+            <br />
+            <button type="submit" class="btn btn-success" name="Save and Exit">Save and Exit</button>
+            <a class="btn btn-danger" class="dangerous" href="/">Exit and Discard Changes</a>
+        </form>
+
+        <script type="text/javascript">
+        $( window ).load(function() {
+            var path = "/configuration/download/"+ encodeURI("{{.}}");
+            console.log(path);
+            $( "#code" ).load( "/configuration/download/"+ encodeURI("{{.}}"), function(){
+                var loc = document.getElementById("code");
+                var editor = CodeMirror.fromTextArea(loc, {
+                    height: "350px",
+                    mode:"xml",
+                    continuousScanning: 500,
+                    lineNumbers: true
+              });
+            });
+        });
+
+        $(".dangerous").click(function () {
+            window.onbeforeunload = function () { window.onbeforeunload = undefined; return 'Anything not saved will be lost.' };
+        });
+        </script>
+  </body>
+</html>
