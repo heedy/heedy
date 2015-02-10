@@ -10,7 +10,7 @@ import (
 //either by time or by index
 type WarmStore interface {
     Append(key string,da *DatapointArray) error
-    GetTime(key string, starttime uint64) DataRange
+    GetTime(key string, starttime int64) DataRange
     GetIndex(key string, startindex uint64) DataRange
     Close()
 }
@@ -18,12 +18,10 @@ type WarmStore interface {
 //This is the struct which defines how stuff is stored in MongoDB
 type mongostruct struct {
     Key string              //The key of the data array
-    EndTime uint64        //The final timestamp of the array
+    EndTime int64        //The final timestamp of the array
     EndIndex uint64       //The index of the last element in the array
     Data []byte             //The byte representation of a datapoint
 }
-
-
 
 
 //This is a datarange built upon a mongoDB iterator.
@@ -121,7 +119,7 @@ func (s *MongoStore) Append(key string, dp *DatapointArray) error {
     return s.Insert(key,i,dp)
 }
 
-func (s *MongoStore) GetTime(key string, starttime uint64) DataRange {
+func (s *MongoStore) GetTime(key string, starttime int64) DataRange {
     i := s.c.Find(bson.M{"key": key,"endtime": bson.M{"$gt": starttime}}).Sort("endtime").Iter()
     dp := mongostruct{}
     if (!i.Next(&dp)) {

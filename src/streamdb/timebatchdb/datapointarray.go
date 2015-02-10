@@ -57,14 +57,14 @@ func (d *DatapointArray) Reset() {
 }
 
 //Returns the timestamps associated with the index range
-func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []uint64) {
+func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []int64) {
     if (end > d.Len()) {
         end = d.Len()
     }
     if (start > end) {
         return nil
     }
-    timestamps = make([]uint64,end-start)
+    timestamps = make([]int64,end-start)
     for i:=start;i<end;i++ {
         timestamps[i] = d.Datapoints[i].Timestamp()
     }
@@ -72,7 +72,7 @@ func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []uint6
 }
 
 //Returns the array of timestamps
-func (d *DatapointArray) Timestamps() (timestamps []uint64) {
+func (d *DatapointArray) Timestamps() (timestamps []int64) {
     return d.TimestampIRange(0,d.Len())
 }
 
@@ -97,7 +97,7 @@ func (d *DatapointArray) Data() (data [][]byte) {
 }
 
 //Returns the array of timestamps and the array of associated data
-func (d *DatapointArray) Get() (timestamps []uint64, data [][]byte) {
+func (d *DatapointArray) Get() (timestamps []int64, data [][]byte) {
     return d.Timestamps(),d.Data()
 }
 
@@ -105,7 +105,7 @@ func (d *DatapointArray) Get() (timestamps []uint64, data [][]byte) {
 //than the given reference timestamp.
 //If no datapoints fit this, returns -1
 //(ie, no datapoint in array has a timestamp greater than the given time)
-func (d *DatapointArray) FindTimeIndex(timestamp uint64) int {
+func (d *DatapointArray) FindTimeIndex(timestamp int64) int {
     //BUG(daniel): This code makes no guarantees about nanosecond-level precision.
     if (d.Len()==0) {
         return -1
@@ -143,7 +143,7 @@ func (d *DatapointArray) FindTimeIndex(timestamp uint64) int {
 }
 
 //Returns a DatapointArray which has the given starting bound (like DatapointTRange, but without upperbound)
-func (d *DatapointArray) TStart(timestamp uint64) *DatapointArray {
+func (d *DatapointArray) TStart(timestamp int64) *DatapointArray {
     i := d.FindTimeIndex(timestamp)
     if i==-1 {
         return nil
@@ -153,7 +153,7 @@ func (d *DatapointArray) TStart(timestamp uint64) *DatapointArray {
 
 //Returns the DatapointArray of datapoints which fit within the time range:
 //  (timestamp1,timestamp2]
-func (d *DatapointArray) DatapointTRange(timestamp1 uint64, timestamp2 uint64) *DatapointArray {
+func (d *DatapointArray) DatapointTRange(timestamp1 int64, timestamp2 int64) *DatapointArray {
     i1 := d.FindTimeIndex(timestamp1)
     if i1==-1 {
         return nil
@@ -166,15 +166,15 @@ func (d *DatapointArray) DatapointTRange(timestamp1 uint64, timestamp2 uint64) *
     return  NewDatapointArray(d.Datapoints[i1:i2])
 }
 
-func (d *DatapointArray) DataTRange(timestamp1 uint64, timestamp2 uint64) [][]byte {
+func (d *DatapointArray) DataTRange(timestamp1 int64, timestamp2 int64) [][]byte {
     return d.DatapointTRange(timestamp1,timestamp2).Data()
 }
-func (d *DatapointArray) TimestampTRange(timestamp1 uint64, timestamp2 uint64) []uint64 {
+func (d *DatapointArray) TimestampTRange(timestamp1 int64, timestamp2 int64) []int64 {
     return d.DatapointTRange(timestamp1,timestamp2).Timestamps()
 }
 //Returns the array of timestamps and data which fit in the given time range:
 //  (timestamp1,timestamp2]
-func (d *DatapointArray) GetTRange(timestamp1 uint64, timestamp2 uint64) ([]uint64,[][]byte) {
+func (d *DatapointArray) GetTRange(timestamp1 int64, timestamp2 int64) ([]int64,[][]byte) {
     return d.DatapointTRange(timestamp1,timestamp2).Get()
 }
 
@@ -214,7 +214,7 @@ func NewDatapointArray(d []Datapoint) *DatapointArray {
 }
 
 //Creates DatapointArray from the raw stuff
-func CreateDatapointArray(timestamps []uint64, data [][]byte) *DatapointArray {
+func CreateDatapointArray(timestamps []int64, data [][]byte) *DatapointArray {
     arr := make([]Datapoint,len(timestamps))
 
     for i:=0;i<len(arr);i++ {

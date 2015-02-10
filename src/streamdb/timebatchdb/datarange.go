@@ -112,8 +112,8 @@ func NewRangeList() *RangeList {
 //TimeRange will return all datapoints within the Datarange which are within (c,d].
 type TimeRange struct {
     dr DataRange        //The DataRange to wrap
-    starttime uint64    //The time at which to start the time range
-    endtime uint64      //The time at which to stop returning datapoints
+    starttime int64    //The time at which to start the time range
+    endtime int64      //The time at which to stop returning datapoints
 }
 
 func (r *TimeRange) Close() {
@@ -138,7 +138,7 @@ func (r *TimeRange) Next() *Datapoint {
     return dp
 }
 
-func NewTimeRange(dr DataRange, starttime uint64, endtime uint64) *TimeRange {
+func NewTimeRange(dr DataRange, starttime int64, endtime int64) *TimeRange {
     return &TimeRange{dr,starttime,endtime}
 }
 
