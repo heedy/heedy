@@ -18,8 +18,8 @@ type User struct {
 }
 
 // Converts a user to a sanitized version
-func (u User) ToClean() CleanUser {
-    return CleanUser{Name:u.Name}
+func (u User) ToClean() User {
+    return User{0, u.Name, "","","","",false,"",0,0,0,0}
 }
 
 
@@ -35,10 +35,22 @@ func (u User) IsAdmin() bool {
 }
 
 
+func (u User) OwnsDevice(device *Device) bool {
+    return u.Id == device.OwnerId
+}
 
-// A sanitized version of user
-type CleanUser struct {
-    Name string  // The username
+
+// converts a user to a device for handling requests with a username/password
+func (usr User) ToDevice() *Device {
+    requester := new(Device)
+    requester.Superdevice = usr.IsAdmin()
+    requester.Enabled = true
+    requester.Shortname = usr.Name
+    requester.Name = usr.Name
+    requester.OwnerId = usr.Id
+    requester.Id = -1
+
+    return requester
 }
 
 
