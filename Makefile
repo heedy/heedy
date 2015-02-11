@@ -16,6 +16,9 @@ build: $(OBJ)
 bin:
 	mkdir bin
 	mkdir bin/dep
+	mkdir bin/test_coverage
+	cp -r config bin/config
+
 #Rule to go from source go file to binary
 bin/%: src/core/%.go bin
 	go build -o $@ $<
