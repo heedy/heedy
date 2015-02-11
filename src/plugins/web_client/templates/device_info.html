@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>ConnectorDB Device | {{ .device.Name }}</title>
+        {{template "includes"}}
+    </head>
+    <body class='container'>
+
+        {{template "heading"}}
+
+        
+        <div class="alert alert-gray"><a href="/" class="breadcrumb">Home</a> <a href="/device/{{.device.Id}}" class="breadcrumb">{{ .device.Name }}</a></div>
+
+        
+        <div class="panel panel-default panel-primary">
+            <div class="panel-heading">Device Information</div>
+            <div class="panel-body">
+                <table class="table">
+                <tr><td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ .device.Icon_PngB64 }}" /></td>
+                    <th><h2>                        
+                        {{if .device.Shortname}} 
+                            <abbr title="{{ .device.Name }}">{{ .device.Shortname }}</abbr>
+                        {{else}}
+                            <abbr title="{{ .device.Name }}">{{ .device.Name }}</abbr>
+                        {{end}}
+                    </h2></th></tr>
+                <tr><th>API Key</th><td>{{ .device.ApiKey }}</td></tr>
+                <tr><td></td><td><canvas id="qrapi" width="80px" height="80px"></div></td></tr>
+                </table>
+                <script type='text/javascript'>
+                $("#qrapi").qrcode({
+                    "render": "canvas",
+                    "size": 80,
+                    "text": "{{ .device.ApiKey }}"
+                });
+                </script>
+            </div>
+        </div>
+
+        
+        <div class="panel panel-default">
+            <div class="panel-heading">Streams</div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                <tr><th>Name</th><th>Active?</th><th>Public?</th><th></th></tr>
+                {{ range $stream := .streams }}
+                    <tr>
+                        <td>{{ $stream.Name }}</td>
+                        <td>
+                        {{if $stream.Active}} 
+                            <div class="yes" />
+                        {{else}}
+                            <div class="no" />
+                        {{end}}
+                        </td>
+                        <td>
+                        {{if $stream.Public}}
+                            <div class="yes" />
+                        {{else}}
+                            <div class="no" />
+                        {{end}}
+                        </td>
+                        <td><a href="/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
+                    </tr>
+                {{ end }}
+                </table>
+            </div>
+        </div>
+</body>
+</html>

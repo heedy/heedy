@@ -11,6 +11,7 @@ import (
     "github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"log"
+	"strconv"
 )
 
 var(
@@ -32,19 +33,42 @@ func generateMainPage(writer http.ResponseWriter, request *http.Request, user *u
 		pageData["alert"] = "Error getting devices."
 	}
 
-	//pageData["runs"] = ListDirectory("./autopilot/runs")
-	//pageData["pilots"] = ListDirectory("./autopilot/pilots")
-	//pageData["configurations"] = ListDirectory("./autopilot/configurations")
-
-	//running := AutopilotRunning()
-	//pageData["proc"] = running
-
-
 	err = templates.ExecuteTemplate(writer, "root.html", pageData)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
+}
 
+func generateDevicePage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
+	pageData := make(map[string] interface{})
+
+		vars := mux.Vars(request)
+		devids := vars["id"]
+
+
+		devid, _ := strconv.Atoi(devids)
+
+
+		device, err := userdb.ReadDeviceById(int64(devid))
+		pageData["device"] = device
+		pageData["user"] = user
+
+		if err != nil {
+			pageData["alert"] = "Error getting device."
+		}
+
+		streams, err := userdb.ReadStreamsByDevice(device)
+		pageData["streams"] = streams
+
+		if err != nil {
+			pageData["alert"] = "Error getting device streams"
+		}
+
+
+		err = templates.ExecuteTemplate(writer, "device_info.html", pageData)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		}
 }
 
 func GenericCommand(command string, args ...string) func(http.ResponseWriter, *http.Request) {
@@ -125,4 +149,6 @@ func Setup(subroutePrefix *mux.Router, udb *users.UserDatabase) {
 	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
 
     subroutePrefix.HandleFunc("/", authWrapper(generateMainPage))
+	subroutePrefix.HandleFunc("/device/{id:[0-9]+}", authWrapper(generateDevicePage))
+
 }

@@ -1,8 +1,68 @@
+/* device icons */
 .devicon {
-    width:50px;
-    height:50px;
+    width: 4em;
+    height: 4em;
 }
 
 abbr {
     border-bottom: 1px dashed gray;
+}
+
+/* Used for breadcrumbs */
+.alert-gray {
+    background-color: #F5F5F5;
+    border-color: #DDDDDD;
+    font-size: 1.1em;
+}
+
+
+.yes {
+    display:block;
+    width:1.5em;
+    height:1.5em;
+    background-image:url(/inc/img/check.svg);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+
+
+}
+
+.no {
+    display:block;
+    width:1.5em;
+    height:1.5em;
+    background-image:url(/inc/img/x.svg);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+
+.super {
+    display:block;
+    width:1.5em;
+    height:1.5em;
+    background-image:url(/inc/img/super.svg);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+.breadcrumb {
+    display: inline;
+    background-image: url("/inc/img/right_arrow.svg");
+    background-size: 2.2em;
+    background-repeat: no-repeat;
+    background-position: left top;
+    padding-left: 2em;
+    margin-left: 0em;
+    margin-right: 0em;
+    padding-right: 0em;
+}
+
+.headerimg {
+    margin-right:.5em;
+}
+
+/* Default size is a little small */
+.panel-heading {
+    font-size: 1.5em;
 }

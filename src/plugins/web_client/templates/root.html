@@ -5,17 +5,16 @@
     </head>
     <body class='container'>
 
-        <h1>ConnectorDB Control</h1>
+        {{template "heading"}}
 
-        {{if .alert}}
-        <div class="alert alert-warning">{{.alert}}</div>
-        {{end}}
+        <div class="alert alert-gray"><a href="/" class="breadcrumb">Home</a></div>
+
 
         <div class="panel panel-default">
             <div class="panel-heading">Devices</div>
             <div class="panel-body">
                 <table class="table table-striped">
-                <tr><th>Icon</th><th>Name</th><th>API Key</th><th>Edit</th></tr>
+                <tr><th>Icon</th><th>Name</th><th>API Key</th><th>Enabled</th><th></th><th></th></tr>
                 {{ range $dev := .devices }}
                     <tr>
                         <td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ $dev.Icon_PngB64 }}" /></td>
@@ -27,7 +26,10 @@
                         {{end}}
                         </td>
                         <td>{{ $dev.ApiKey }}</td>
-                        <td><a href="/" class="btn btn-default">Edit</a></td>
+                        <td>{{if $dev.Enabled}}<div class="yes" />{{else}}<div class="no" />{{end}}</td>
+                        <td>{{if $dev.Superdevice}}<div class="super" />{{end}}</td>
+
+                        <td><a href="/" class="btn btn-default">Edit</a><a href="/device/{{ $dev.Id }}" class="btn btn-default">View</a></td>
                     </tr>
                 {{ end }}
                 </table>
