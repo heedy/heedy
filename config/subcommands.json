@@ -1,0 +1,60 @@
+{
+    "env":{},
+    "subcommands":[
+        {
+            "name":"mongo",
+            "command":["mongod", "--config", "./config/mongo.conf", "--bind_ip", "mongoserver|ip", "--port", "mongoserver|port", "--dbpath", "setup-mongo|path", "--nohttpinterface", "--syslog", "--quiet", "--noprealloc", "--smallfiles"],
+            "envflags":{"mongoserver|ip":"127.0.0.1", "mongoserver|port":"27017"}, 
+            "depends":["setup-mongo"],
+            "run_forever":true
+        },
+        {
+            "name":"setup-mongo",
+            "command":["mkdir", "-p", "setup-mongo|path"],
+            "envflags":{"setup-mongo|path":"data/mongodb_database"},
+            "run_forever":false
+        },
+        {
+            "name":"gnatsd",
+            "command":["./dep/gnatsd","-c","gnatsd|config"],
+            "envflags":{"gnatsd|config":"./config/gnatsd.conf"},
+            "depends":[],
+            "run_forever":true
+        },
+        {
+            "name":"test",
+            "command":["go", "test", "../src/streamdb/...", "-cover", "-test.coverprofile=test_coverage/coverage.out"],
+            "depends":["mongo", "gnatsd"],
+            "envflags":{"test|ran":"true"},
+            "run_forever":false
+        },
+        {
+            "name":"pretty_test",
+            "command":["go", "tool", "cover", "-html=test_coverage/coverage.out", "-o", "test_coverage/coverage.html"],
+            "depends":["test"],
+            "envflags":{"prettytest|ran":"true"},
+            "run_forever":false
+        },
+        {
+            "name":"user_web",
+            "command":["./web"],
+            "depends":["user_service", "ts_service"],
+            "envflags":{"web|hostname":"localhost", "web|port":"8080"},
+            "run_forever":true
+        },
+        {
+            "name":"user_service",
+            "command":["./usersservice"],
+            "depends":[],
+            "envflags":{"usersservice|hostname":"localhost", "usersservice|port":"9002"},
+            "run_forever":true
+        }, 
+        {
+            "name":"timeseries_service",
+            "command":["./timeseriesservice"],
+            "depends":["mongo", "gnatsd"],
+            "envflags":{"timeseries|hostname":"localhost", "timeseries|port":"9001"},
+            "run_forever":true
+        }
+    ]
+}
