@@ -31,7 +31,7 @@ var (
     timedb               *timebatchdb.Database
 
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
-    adminDevice = Device{-1, "userservice/internal", "", true, "", "userservice/internal", true, -1}
+    adminDevice = Device{-1, "userservice/internal", "", true, "", "userservice/internal", true, -1, nil}
 )
 
 type UserServiceRequest struct {

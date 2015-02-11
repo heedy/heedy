@@ -50,6 +50,8 @@ func (usr User) ToDevice() *Device {
     requester.OwnerId = usr.Id
     requester.Id = -1
 
+    requester.user = &usr
+
     return requester
 }
 
@@ -73,6 +75,19 @@ type Device struct {
     Shortname string  // The human readable name of this device
     Superdevice bool  // Whether or not this is a "superdevice" which has access to the whole API
     OwnerId int64  // the user that owns this device
+
+    user *User // If this device is a user in disguise
+}
+
+// Checks to see if this is a pseudo-device created with User.ToDevice()
+func (d Device) IsUser() bool {
+    return d.user != nil
+}
+
+// If this device was created from a user, get it otherwise return nil
+// Scooby dooby doo!
+func (d Device) Unmask() *User {
+    return d.user
 }
 
 // Check if the device is enabled
