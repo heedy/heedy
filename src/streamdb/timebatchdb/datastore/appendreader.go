@@ -1,4 +1,4 @@
-package timebatchdb
+package datastore
 
 import (
     "os"

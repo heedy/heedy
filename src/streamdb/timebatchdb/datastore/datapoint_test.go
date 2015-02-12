@@ -1,4 +1,4 @@
-package timebatchdb
+package datastore
 
 import (
     "testing"
@@ -10,11 +10,6 @@ func TestDatapoint(t *testing.T) {
 
     if (d.Len()!=len(d.Bytes()) || d.Timestamp()!=1337 || string(d.Data())!="Hello World!" || d.DataLen()!=12) {
         t.Errorf("Datapoint read error: %s",d)
-        return
-    }
-    ts,dat := d.Get()
-    if (ts!=1337 || string(dat)!="Hello World!") {
-        t.Errorf("Datapoint get function failed")
         return
     }
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-    "streamdb/timebatchdb"
+    "streamdb/timebatchdb/datastore"
     "fmt"
     "log"
     "flag"
@@ -18,13 +18,13 @@ func MessageView(url string,route string) error {
 
     log.Printf("MessageViewer (%s,%s)",url,route)
 
-    msg,err := timebatchdb.ConnectMessenger(url)
+    msg,err := datastore.ConnectMessenger(url)
     if (err != nil) {
         return err
     }
     defer msg.Close()
 
-    recvchan := make(chan timebatchdb.KeyedDatapoint)
+    recvchan := make(chan datastore.KeyedDatapoint)
     _,err = msg.SubChannel(route,recvchan)
     if err != nil {
         return err
