@@ -539,27 +539,26 @@ func nanoToTimestamp(nano int64) string {
 }
 
 func createDataPoint(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
-    var result Datapoint
-
     if user == nil || device == nil || stream == nil {
         log.Printf("user, device, or stream is nil|usr:%v dev:%v stream:%v", user, device, stream)
         return http.StatusInternalServerError, errorGenericResult
     }
+
+    dtype,ok := timebatchdb.GetType("text")
+    if !ok {
+        log.Printf("Unrecognized datatype")
+        return http.StatusInternalServerError, errorGenericResult
+    }
+    result := dtype.New()
 
     if err := readBodyUnmarshalAndError(request, &result); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    //Allows to send raw UnixNano timestamps
-    ts, err := timeToUnixNano(result.Timestamp)
 
-    if err != nil {
-        log.Printf("Error converting timestamp|err:%v", err)
-        return http.StatusInternalServerError, errorGenericResult
-    }
-
-    err = timedb.Insert(createDataKey(user, device, stream), ts, []byte(result.Data), "")
+    //Automatically unmarshals result
+    err := timedb.InsertKey(createDataKey(user, device, stream), result,"text", "")
 
     if err != nil {
         log.Printf("Timedb error while inserting|err:%v", err)
@@ -592,19 +591,16 @@ func readDataByTime(request *http.Request, requestingDevice *Device, user *User,
 
     log.Printf("Requesting ts (%v, %v] from %v", ts1, ts2, createDataKey(user, device, stream))
 
-    dataReader := timedb.GetTimeRange(createDataKey(user, device, stream), ts1, ts2)
+    dataReader := timedb.GetTimeRange(createDataKey(user, device, stream), "text", ts1, ts2)
     defer dataReader.Close()
 
     for {
-        next := dataReader.Next()
+        var tmp Datapoint
+        ok := dataReader.UnmarshalNext(&tmp)
 
-        if next == nil {
+        if !ok {
             break
         }
-
-        var tmp Datapoint
-        tmp.Timestamp = nanoToTimestamp(next.Timestamp())
-        tmp.Data = string(next.Data())
 
         result.Data = append(result.Data, tmp)
     }
@@ -627,19 +623,16 @@ func readDataByIndex(request *http.Request, requestingDevice *Device, user *User
 
     log.Printf("Requesting data (%v, %v] from %v", i1, i2, createDataKey(user, device, stream))
 
-    dataReader := timedb.GetIndexRange(createDataKey(user, device, stream), uint64(i1), uint64(i2))
+    dataReader := timedb.GetIndexRange(createDataKey(user, device, stream),"text", uint64(i1), uint64(i2))
     defer dataReader.Close()
 
     for {
-        next := dataReader.Next()
+        var tmp Datapoint
+        ok := dataReader.UnmarshalNext(&tmp)
 
-        if next == nil {
+        if !ok {
             break
         }
-
-        var tmp Datapoint
-        tmp.Timestamp = nanoToTimestamp(next.Timestamp())
-        tmp.Data = string(next.Data())
 
         result.Data = append(result.Data, tmp)
     }

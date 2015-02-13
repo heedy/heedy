@@ -27,7 +27,7 @@ func TestDataStore(t *testing.T) {
     defer db.Close()
 
     //Wait one second for the DataStoreWriter to initialize
-    time.Sleep(1000 * time.Millisecond)
+    time.Sleep(500 * time.Millisecond)
 
     timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
@@ -41,7 +41,7 @@ func TestDataStore(t *testing.T) {
     }
 
     //Wait one second for the datapoints to be committed to the DataStore
-    time.Sleep(1000 * time.Millisecond)
+    time.Sleep(500 * time.Millisecond)
 
     //Now check a data range by index, and then by timestamp
     r := db.GetTimeRange("user1/device1/stream2",0,1000)
