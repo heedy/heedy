@@ -32,6 +32,7 @@ clean:
 ############################################################################################################
 
 dependencies:
+	go get golang.org/x/tools/cmd/cover
 	go get github.com/apcera/nats
 	go get github.com/apcera/gnatsd
 	go get github.com/garyburd/redigo/redis
