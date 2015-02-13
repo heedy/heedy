@@ -76,7 +76,7 @@ type TypedRange struct {
 func (tr TypedRange) Close() {
     tr.dr.Close()
 }
-func (tr TypedRange) Next() interface{} {
+func (tr TypedRange) Next() TypedDatapoint {
     d := tr.dr.Next()
     if d==nil {
         return nil

@@ -2,6 +2,7 @@ package users
 
 import (
     "net/http"
+    "streamdb/timebatchdb"
     )
 
 type GenericResult struct {
@@ -32,13 +33,8 @@ type CreateSuccessResult struct {
     GenericResult
 }
 
-type Datapoint struct {
-    Timestamp string // rfc3339 formatted timestamp
-    Data string
-}
-
 type DatapointResult struct {
-    Data []Datapoint
+    Data []timebatchdb.TypedDatapoint
     GenericResult
 }
 

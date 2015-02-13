@@ -595,10 +595,9 @@ func readDataByTime(request *http.Request, requestingDevice *Device, user *User,
     defer dataReader.Close()
 
     for {
-        var tmp Datapoint
-        ok := dataReader.UnmarshalNext(&tmp)
+        tmp:=dataReader.Next()
 
-        if !ok {
+        if tmp==nil {
             break
         }
 
@@ -627,10 +626,9 @@ func readDataByIndex(request *http.Request, requestingDevice *Device, user *User
     defer dataReader.Close()
 
     for {
-        var tmp Datapoint
-        ok := dataReader.UnmarshalNext(&tmp)
+        tmp:=dataReader.Next()
 
-        if !ok {
+        if tmp==nil {
             break
         }
 
