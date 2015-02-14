@@ -32,7 +32,6 @@ clean:
 ############################################################################################################
 
 dependencies:
-	go get golang.org/x/tools/cmd/cover
 	go get github.com/apcera/nats
 	go get github.com/apcera/gnatsd
 	go get github.com/garyburd/redigo/redis
@@ -42,6 +41,9 @@ dependencies:
 	go get github.com/gorilla/context
 	go get gopkg.in/mgo.v2
 	go get github.com/gorilla/sessions
+
+coverage:
+	go get golang.org/x/tools/cmd/cover
 
 #gnatsd is the messenger server - deps must be installed, but we don't want deps to be called
 #each time we check for gnatsd executable or each time tests are run

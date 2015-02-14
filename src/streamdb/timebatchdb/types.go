@@ -187,3 +187,23 @@ func unloadTimestamp(r reflect.Value) (int64,error) {
     }
     return 0,errors.New("Timestamp not string/int/time type")
 }
+
+func getDataField(r reflect.Value) reflect.Value {
+    t := r.Type()
+    sf,found := t.FieldByName("D")
+    if !found {
+        sf,found = t.FieldByName("Data")
+        if !found {
+            return reflect.Value{}  //Return the zero value
+        }
+    }
+    return r.FieldByIndex(sf.Index)
+}
+func extractValue(i interface{}) reflect.Value {
+    v := reflect.ValueOf(i)
+    //BUG(daniel): This should probably be Interface or Ptr...
+    for v.Kind()!=reflect.Struct {
+        v = v.Elem()
+    }
+    return v
+}

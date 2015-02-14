@@ -13,6 +13,7 @@ before_script:
     - sleep 10  #Wait to make sure mongodb is running
 
 script:
+    - make coverage
     - make
 
 notifications:
