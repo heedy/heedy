@@ -11,7 +11,7 @@ import (
     "log"
     "net/http"
     "strconv"
-    "streamdb/timebatchdb"
+    "streamdb/dtypes"
     "time"
 )
 
@@ -28,7 +28,7 @@ var (
     unauthorizedResult   = GenericResult{http.StatusUnauthorized, "The API key provided either doesn't exist our records or is disabled."}
     forbiddenResult      = GenericResult{http.StatusForbidden, "You do not have sufficient privliges to perform this action"}
     userdb               *UserDatabase
-    timedb               *timebatchdb.Database
+    timedb               *dtypes.TypedDatabase
 
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
     adminDevice = Device{-1, "userservice/internal", "", true, "", "userservice/internal", true, -1, nil}
@@ -544,7 +544,7 @@ func createDataPoint(request *http.Request, requestingDevice *Device, user *User
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    dtype,ok := timebatchdb.GetType("text")
+    dtype,ok := dtypes.GetType("text")
     if !ok {
         log.Printf("Unrecognized datatype")
         return http.StatusInternalServerError, errorGenericResult
@@ -556,9 +556,12 @@ func createDataPoint(request *http.Request, requestingDevice *Device, user *User
         return http.StatusInternalServerError, errorGenericResult
     }
 
+    if (!dtype.IsValid(result)) {
+        log.Printf("Datapoint type invalid -> incorrect length/range")
+        return http.StatusInternalServerError, errorGenericResult
+    }
 
-    //Automatically unmarshals result
-    err := timedb.InsertKey(createDataKey(user, device, stream), result,"text", "")
+    err := timedb.InsertKey(createDataKey(user, device, stream), result, "")
 
     if err != nil {
         log.Printf("Timedb error while inserting|err:%v", err)
@@ -640,7 +643,7 @@ func readDataByIndex(request *http.Request, requestingDevice *Device, user *User
 
 
 // Creates a subrouter available to
-func GetSubrouter(udb *UserDatabase, tdb  *timebatchdb.Database, subroutePrefix *mux.Router) {
+func GetSubrouter(udb *UserDatabase, tdb  *dtypes.TypedDatabase, subroutePrefix *mux.Router) {
 
     userdb = udb
     timedb = tdb

@@ -2,7 +2,7 @@ package users
 
 import (
     "net/http"
-    "streamdb/timebatchdb"
+    "streamdb/dtypes"
     )
 
 type GenericResult struct {
@@ -34,7 +34,7 @@ type CreateSuccessResult struct {
 }
 
 type DatapointResult struct {
-    Data []timebatchdb.TypedDatapoint
+    Data []dtypes.TypedDatapoint
     GenericResult
 }
 

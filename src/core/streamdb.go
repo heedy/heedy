@@ -10,7 +10,7 @@ import (
     "os"
     "plugins/web_client"
     "streamdb/timebatchdb"
-    "streamdb/timebatchdb/datastore"
+    "streamdb/dtypes"
     )
 
 var (
@@ -43,8 +43,8 @@ func main() {
         log.Print("Cannot open user database")
     }
 
-    go datastore.DataStoreWriter(*msgserver, *mgoserver, *mgodb, *routes)
-    timedb, err := timebatchdb.Open(*msgserver,*mgoserver,*mgodb)
+    go timebatchdb.DatabaseWriter(*msgserver, *mgoserver, *mgodb, *routes)
+    timedb, err := dtypes.Open(*msgserver,*mgoserver,*mgodb)
 
     if err != nil {
         timedb = nil

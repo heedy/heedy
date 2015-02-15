@@ -1,7 +1,7 @@
 package main
 
 import (
-    "streamdb/timebatchdb/datastore"
+    "streamdb/timebatchdb"
     "fmt"
     "log"
     "flag"
@@ -26,7 +26,7 @@ func main() {
         return
     }
 
-    log.Fatal(datastore.DataStoreWriter(*msgserver,*mgodb,*mgodb, *routes))
+    log.Fatal(timebatchdb.DatabaseWriter(*msgserver,*mgodb,*mgodb, *routes))
 
 
 }
