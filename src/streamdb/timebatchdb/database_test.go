@@ -1,13 +1,15 @@
 package timebatchdb
 
 import (
-    "time"
     "testing"
-    "streamdb/timebatchdb/datastore"
+    "time"
     )
 
 func TestDatabase(t *testing.T) {
-    m,err := datastore.OpenMongoStore("localhost","testdb")
+    //Turn on the Database writer
+    go DatabaseWriter("localhost:4222","localhost","testdb", "testing/>")
+
+    m,err := OpenMongoStore("localhost","testdb")
     if (err!=nil) {
        t.Errorf("Couldn't open MongoStore")
        return
@@ -17,9 +19,6 @@ func TestDatabase(t *testing.T) {
     //First drop the collection - so that tests are fresh
     m.DropCollection("0")
 
-    //Turn on the DataStore writer
-    go datastore.DataStoreWriter("localhost:4222","localhost","testdb", "testing/>")
-
     db,err := Open("localhost:4222","localhost","testdb")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
@@ -27,50 +26,84 @@ func TestDatabase(t *testing.T) {
     }
     defer db.Close()
 
-    //Wait for the DataStoreWriter to initialize
+    //Wait one second for the DatabaseWriter to initialize
     time.Sleep(500 * time.Millisecond)
 
-    //Now we test the database
-    v := struct {K string; T int64; D string}{"testing/key1",1,"Hello World!"}
+    timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 
-    err = db.Insert(v,"text","")
-    if err!=nil {
-        t.Errorf("Insert failed: %s",err)
-        return
-    }
-    v.T=2
-    v.D = "hi"
-    v.K = "key2"
-    err = db.InsertKey("testing/key1",v,"text","")
-    if err!=nil {
-        t.Errorf("Insert failed: %s",err)
-        return
+    for i:=0;i<len(timestamps);i++ {
+        err = db.Insert("user1/device1/stream1",timestamps[i],data[i],"testing/test")
+        if err!=nil {
+            t.Errorf("Insert Failed: %s",err)
+        }
     }
 
-    r := db.GetTimeRange("testing/randomkey","text",0,505785867)
+    //Wait one second for the datapoints to be committed to the Database
+    time.Sleep(500 * time.Millisecond)
 
-    if r.Next()!=nil {
-        t.Errorf("Get nonexisting failed")
-        return
-    }
-
-    //Wait for the DataStoreWriter to write the earlier data
-    time.Sleep(200 * time.Millisecond)
-
-    r = db.GetIndexRange("testing/key1","text",0,50)
+    //Now check a data range by index, and then by timestamp
+    r := db.GetTimeRange("user1/device1/stream2",0,1000)
     defer r.Close()
-    ok := r.UnmarshalNext(&v)
-    if !ok || v.T!=1 || v.D!="Hello World!" {
-        t.Errorf("Get incorrect datapoint %v %v",v,ok)
+    dp:= r.Next()
+    if (dp!=nil) {
+        t.Errorf("Insert wrong key")
         return
     }
-    ok = r.UnmarshalNext(&v)
-    if !ok || v.T!=2 || v.D!="hi" {
-        t.Errorf("Get incorrect datapoint %v %v",v,ok)
+
+    //Now check a data range by index, and then by timestamp
+    r = db.GetIndexRange("user1/device1/stream2",0,1000)
+    defer r.Close()
+    dp = r.Next()
+    if (dp!=nil) {
+        t.Errorf("Insert wrong key")
         return
     }
-    if r.UnmarshalNext(&v) {
-        t.Errorf("Got more than I bargained for")
+
+    r = db.GetTimeRange("user1/device1/stream1",2,5)
+    defer r.Close()
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=3) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=4) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=5) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp!=nil) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+
+    r = db.GetIndexRange("user1/device1/stream1",2,5)
+    defer r.Close()
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=3) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=4) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp==nil || dp.Timestamp()!=5) {
+        t.Errorf("Insert wrong key")
+        return
+    }
+    dp= r.Next()
+    if (dp!=nil) {
+        t.Errorf("Insert wrong key")
         return
     }
 

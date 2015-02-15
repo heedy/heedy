@@ -1,4 +1,4 @@
-package datastore
+package timebatchdb
 
 import (
     "github.com/apcera/nats"

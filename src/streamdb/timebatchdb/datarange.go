@@ -1,4 +1,4 @@
-package datastore
+package timebatchdb
 
 import (
     "container/list"

@@ -2,67 +2,61 @@
 //enormous quantities of data.
 package timebatchdb
 
-import (
-    "streamdb/timebatchdb/datastore"
-    "log"
-    "errors"
-    )
-
-//This is the object which handles all querying/inserting of data into the DataStore
+//This is the object which handles all querying/inserting of data into the Database
 type Database struct {
-    ds *datastore.DataStore
+    //hc HotCache     //The cache of the most recent datapoints
+    ws WarmStore    //The intermediate storage of the Database
+    ms *Messenger    //The messaging system
 }
 
 func (d *Database) Close() {
-    d.ds.Close()
+    //d.hc.Close()
+    d.ws.Close()
+    d.ms.Close()
 }
 
 //Returns the DataRange associated with the given time range
-func (d *Database) GetTimeRange(key string, dtype string, starttime int64, endtime int64) TypedRange {
-    t,ok := GetType(dtype)
-    if (!ok) {
-        log.Printf("TimeBatchDB.Get: Unrecognized type '%s'\n",dtype)
-        return TypedRange{datastore.EmptyRange{},NilType{}}
+func (d *Database) GetTimeRange(key string, starttime int64, endtime int64) DataRange {
+    drl := NewRangeList()
+    if (endtime <=starttime) {
+        return drl  //The RangeList is empty on invalid params
     }
-    return TypedRange{d.ds.GetTimeRange(key,starttime,endtime),t}
+    drl.Append(d.ws.GetTime(key,starttime))
+    //drl.Append(hc.Get(key))
+    return NewTimeRange(drl,starttime,endtime)
 }
 
 //Returns the DataRange associated with the given index range
-func (d *Database) GetIndexRange(key string, dtype string, startindex uint64, endindex uint64) TypedRange {
-    t,ok := GetType(dtype)
-    if (!ok) {
-        log.Printf("TimeBatchDB.Get: Unrecognized type '%s'\n",dtype)
-        return TypedRange{datastore.EmptyRange{},NilType{}}
+func (d *Database) GetIndexRange(key string, startindex uint64, endindex uint64) DataRange {
+    //BUG(daniel): Getting ranges makes the critical assumption that each element in the stream
+    //has a STRICTLY increasing timestamp. That means that no two elements share the same time stamp.
+    //This allows us to make the range-getting code incredibly simple
+
+    drl := NewRangeList()
+    if (endindex <=startindex) {
+        return drl  //The RangeList is empty on invalid params
     }
-    return TypedRange{d.ds.GetIndexRange(key,startindex,endindex),t}
+    drl.Append(d.ws.GetIndex(key,startindex))
+    //drl.Append(hc.Get(key))
+    return NewNumRange(drl,endindex-startindex)
 }
 
-//Inserts the given data into the DataStore, and uses the given routing address for data
-func (d *Database) Insert(datapoint interface{}, dtype string,routing string) error {
-    s := ExtractKey(datapoint)
-    if (s=="") {
-        return errors.New("Key not found in datapoint")
-    }
-    return d.InsertKey(s,datapoint,dtype,routing)
-}
-func (d *Database) InsertKey(key string, datapoint interface{}, dtype string,routing string) error {
-    t,ok := GetType(dtype)
-    if (!ok) {
-        log.Printf("TimeBatchDB.Insert: Unrecognized type '%s'\n",dtype)
-        return errors.New("Unrecognized data type")
-    }
-    timestamp,data,err := t.Unload(datapoint)
-    if err!=nil {
-        return err
-    }
-    return d.ds.Insert(key,timestamp,data,routing)
+//Inserts the given data into the Database, and uses the given routing address for data
+func (d *Database) Insert(key string, timestamp int64, data []byte,routing string) error {
+    return d.ms.Publish(NewKeyedDatapoint(key,timestamp,data),routing)
 }
 
-//Opens the DataStore.
+//Opens the Database.
 func Open(msgurl string, mongourl string, mongoname string) (*Database,error) {
-    ds,err := datastore.Open(msgurl,mongourl,mongoname)
+    ms,err := ConnectMessenger(msgurl)
     if err!=nil {
         return nil,err
     }
-    return &Database{ds},nil
+    ws,err := OpenMongoStore(mongourl,mongoname)
+    if err!=nil {
+        ms.Close()
+        return nil,err
+    }
+
+    return &Database{ws,ms},nil
 }

@@ -1,4 +1,4 @@
-package datastore
+package timebatchdb
 
 import (
     "gopkg.in/mgo.v2"
