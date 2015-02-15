@@ -20,8 +20,6 @@ var (
                         "int": &IntType{},
                         "float": &FloatType{},
                         "bool": &BoolType{}}
-    ArrayTypes = map[string]DataType{"binary": &BinaryType{},
-                        "text": &TextType{}}
     )
 
 
@@ -92,9 +90,13 @@ func GetType(t string) (DataType,bool) {
             return nil,false
         }
         //Great - it exists! now let's give it its limit
-        lim,err := strconv.ParseInt(t[i+1:len(t)-1],10,32)
-        if err!=nil {
-            return nil,false
+        lim := int64(0)
+        if i+2!=len(t) {    //There is a number
+            l2,err := strconv.ParseInt(t[i+1:len(t)-1],10,32)
+            if err!=nil {
+                return nil,false
+            }
+            lim = l2
         }
         return dp.Len(int(lim)),true
     }

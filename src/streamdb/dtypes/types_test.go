@@ -25,6 +25,11 @@ func TestGetType(t *testing.T) {
         t.Errorf("Validity check failed")
         return
     }
+    typ,ok = GetType("text[]/html")
+    if ok!=true || !typ.IsValid(dpt) {
+        t.Errorf("Validity check failed")
+        return
+    }
     typ,ok = GetType("text[-12]/html")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
