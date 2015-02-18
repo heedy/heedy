@@ -6,7 +6,7 @@
         android:fragment="com.connectordb.dataconnect.SettingsActivity$GeneralPreferenceFragment"
         android:title="@string/pref_header_general" />
     <header
-        android:fragment="com.connectordb.dataconnect.SettingsActivity$GPSPreferenceFragment"
+        android:fragment="com.connectordb.dataconnect.SettingsActivity$LocationPreferenceFragment"
         android:title="@string/pref_header_gps" />
     <header
         android:fragment="com.connectordb.dataconnect.SettingsActivity$DataSyncPreferenceFragment"

@@ -67,7 +67,7 @@ public class SettingsActivity extends PreferenceActivity {
         PreferenceCategory fakeHeader = new PreferenceCategory(this);
         fakeHeader.setTitle(R.string.pref_header_gps);
         getPreferenceScreen().addPreference(fakeHeader);
-        addPreferencesFromResource(R.xml.pref_gps);
+        addPreferencesFromResource(R.xml.pref_location);
         //Add sync prefs
         fakeHeader = new PreferenceCategory(this);
         fakeHeader.setTitle(R.string.pref_header_data_sync);
@@ -85,7 +85,7 @@ public class SettingsActivity extends PreferenceActivity {
         // to reflect the new value, per the Android Design guidelines.
         bindPreferenceSummaryToValue(findPreference("connectordb_username"));
         bindPreferenceSummaryToValue(findPreference("connectordb_server"));
-        bindPreferenceSummaryToValue(findPreference("gps_frequency"));
+        bindPreferenceSummaryToValue(findPreference("location_frequency"));
         bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
         bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
     }
@@ -234,12 +234,12 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class GPSPreferenceFragment extends PreferenceFragment {
+    public static class LocationPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_gps);
-            bindPreferenceSummaryToValue(findPreference("gps_frequency"));
+            addPreferencesFromResource(R.xml.pref_location);
+            bindPreferenceSummaryToValue(findPreference("location_frequency"));
         }
     }
     /**
