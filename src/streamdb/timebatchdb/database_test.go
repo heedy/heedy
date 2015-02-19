@@ -27,7 +27,7 @@ func TestDatabase(t *testing.T) {
     defer db.Close()
 
     //Wait one second for the DatabaseWriter to initialize
-    time.Sleep(500 * time.Millisecond)
+    time.Sleep(1000 * time.Millisecond)
 
     timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
@@ -41,7 +41,7 @@ func TestDatabase(t *testing.T) {
     }
 
     //Wait one second for the datapoints to be committed to the Database
-    time.Sleep(500 * time.Millisecond)
+    time.Sleep(1000 * time.Millisecond)
 
     //Now check a data range by index, and then by timestamp
     r := db.GetTimeRange("user1/device1/stream2",0,1000)
@@ -65,22 +65,22 @@ func TestDatabase(t *testing.T) {
     defer r.Close()
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=3) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("time range get failed")
         return
     }
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=4) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("time range get failed")
         return
     }
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=5) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("time range get failed")
         return
     }
     dp= r.Next()
     if (dp!=nil) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("time range get failed")
         return
     }
 
@@ -88,22 +88,22 @@ func TestDatabase(t *testing.T) {
     defer r.Close()
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=3) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("Index get failed")
         return
     }
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=4) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("Index get failed")
         return
     }
     dp= r.Next()
     if (dp==nil || dp.Timestamp()!=5) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("Index get failed")
         return
     }
     dp= r.Next()
     if (dp!=nil) {
-        t.Errorf("Insert wrong key")
+        t.Errorf("Index get failed")
         return
     }
 
