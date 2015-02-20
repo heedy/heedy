@@ -14,6 +14,7 @@ var (
     helpflag = flag.Bool("help", false, "Prints this help message")
     subcommands_path = flag.String("subcommands_path", "./config/subcommands.json", "Specifies the path to the subcommands json config file.")
     subcommandlist SubcommandList
+    running_forever bool
 )
 
 
@@ -29,7 +30,6 @@ type Subcommand struct{
 type SubcommandList struct {
     Env map[string]string  // the default environment params
     Subcommands []Subcommand
-    running_forever bool
 }
 
 func (sl SubcommandList) ParseEnv(env string) {
@@ -108,11 +108,11 @@ func (sl SubcommandList) RunCommand(cmd string) {
         }
     }
 
-    fmt.Printf("Running: %v\n", sc.Command)
+    fmt.Printf("Running: %v\n", sc)
 
     if sc.Run_forever {
+        running_forever = true
         go sc.RunForever()
-        sl.running_forever = true
         return
     } else {
         sc.RunOnce()
@@ -129,6 +129,7 @@ func (s Subcommand) RunOnce() string {
 }
 
 func (s Subcommand) RunForever() {
+    fmt.Printf("Running Forever")
     for {
         s.RunOnce()
         fmt.Printf("%v crashed!\n", s.Name)
@@ -166,7 +167,7 @@ func main() {
         }
     }
 
-    if subcommandlist.running_forever{
+    if running_forever{
         select{} // sleep forever.
     } else {
         fmt.Printf("Finished Executing")
