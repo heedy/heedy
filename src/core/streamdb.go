@@ -55,7 +55,7 @@ func main() {
     log.Printf("Starting Server on port %d", *serverport)
 
     r := mux.NewRouter()
-    users.GetSubrouter(userdb, timedb, r)
+    web_client.GetSubrouter(userdb, timedb, r)
     web_client.Setup(r, userdb)
     //r.HandleFunc("/", HomeHandler)
     http.Handle("/", r)

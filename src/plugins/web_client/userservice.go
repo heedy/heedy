@@ -1,4 +1,4 @@
-package users
+package web_client
 
 import (
     "encoding/json"
@@ -13,6 +13,7 @@ import (
     "strconv"
     "streamdb/dtypes"
     "time"
+    "streamdb/users"
 )
 
 const (
@@ -27,18 +28,17 @@ var (
     badRequestResult     = GenericResult{http.StatusBadRequest, "Something in the URL is wrong, do the user, device, or stream doesn't exist?"}
     unauthorizedResult   = GenericResult{http.StatusUnauthorized, "The API key provided either doesn't exist our records or is disabled."}
     forbiddenResult      = GenericResult{http.StatusForbidden, "You do not have sufficient privliges to perform this action"}
-    userdb               *UserDatabase
     timedb               *dtypes.TypedDatabase
 
     ignoreBadApiKeys = flag.Bool("ignoreBadApiKeys", false, "Ignores bad api keys and processes all requests as superuser.")
-    adminDevice = Device{-1, "userservice/internal", "", true, "", "userservice/internal", true, -1, nil}
+    adminDevice = users.Device{Id:-1, Name:"userservice/internal", Enabled:true, Superdevice:true, OwnerId:-1, CanWrite:true, CanWriteAnywhere:true, UserProxy:true}
 )
 
 type UserServiceRequest struct {
-    requestingDevice *Device // the device that originally requested this service, may not represent a "real" device in the database
-    user *User // the user specified in the upload URL or nil if none
-    device *Device // the device specified in the upload URL or nil if none
-    stream *Stream // the stream in the upload or nil
+    requestingDevice *users.Device // the device that originally requested this service, may not represent a "real" device in the database
+    user *users.User // the user specified in the upload URL or nil if none
+    device *users.Device // the device specified in the upload URL or nil if none
+    stream *users.Stream // the stream in the upload or nil
 
     uploadText string // the body that was uploaded
     uploadType string // json, xml, bson, etc.
@@ -46,12 +46,12 @@ type UserServiceRequest struct {
 
 // The user service handler receives all variavbles and does some processing returning
 // a plain object to be marshalled and returned.
-type UserServiceHandler func(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{})
+type UserServiceHandler func(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{})
 
-func decodeUrlParams(username, deviceid, streamid string) (*User, *Device, *Stream, error) {
-    var user *User
-    var device *Device
-    var stream *Stream
+func decodeUrlParams(username, deviceid, streamid string) (*users.User, *users.Device, *users.Stream, error) {
+    var user *users.User
+    var device *users.Device
+    var stream *users.Stream
     var reserr error
     var err error
 
@@ -86,10 +86,10 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 
     return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
         var err error
-        var requester *Device
-        var user *User
-        var device *Device
-        var stream *Stream
+        var requester *users.Device
+        var user *users.User
+        var device *users.Device
+        var stream *users.Stream
 
 
         var resultcode int
@@ -144,7 +144,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
         }
 
 
-        if ! requester.isActive() {
+        if ! requester.IsActive() {
             resultcode, result = http.StatusForbidden, forbiddenResult
             // TODO throttle/notify if too many weird requests.
             log.Printf("Denied inactive device request | device:%v", requester)
@@ -153,7 +153,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 
 
         // Check for superdevices.
-        if requesterIsSuperdevice && !requester.isAdmin() {
+        if requesterIsSuperdevice && !requester.IsAdmin() {
             resultcode = http.StatusForbidden
             result = forbiddenResult
 
@@ -163,7 +163,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 
         }
 
-        if ! requester.isAdmin() {
+        if ! requester.IsAdmin() {
             if userOwnsReqeuster && (user == nil || user.Id != requester.OwnerId) ||
                requesterIsDevice && (device == nil || device.Id != requester.Id) ||
                requesterOwnsStream && (stream == nil || stream.OwnerId != requester.Id) {
@@ -222,7 +222,7 @@ FinishOutput:
 
 
 
-func readAllUsers(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readAllUsers(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result ReadUserResult
     result.Status = 200
 
@@ -232,7 +232,7 @@ func readAllUsers(request *http.Request, requestingDevice *Device, user *User, d
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    is_super := requestingDevice.isAdmin()
+    is_super := requestingDevice.IsAdmin()
 
     for _, u := range users {
         if is_super {
@@ -245,7 +245,7 @@ func readAllUsers(request *http.Request, requestingDevice *Device, user *User, d
     return http.StatusOK, result
 }
 
-func readUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readUser(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result ReadUserResult
     result.Status = 200
 
@@ -253,10 +253,7 @@ func readUser(request *http.Request, requestingDevice *Device, user *User, devic
         return http.StatusBadRequest, badRequestResult
     }
 
-    can_read_unsanitized := requestingDevice.isAdmin() || requestingDevice.IsOwnedBy(user)
-
-
-    if can_read_unsanitized {
+    if requestingDevice.IsAdmin() || requestingDevice.IsOwnedBy(user) {
         result.Users = append(result.Users, *user)
     } else {
         result.Users = append(result.Users, user.ToClean())
@@ -268,9 +265,9 @@ func readUser(request *http.Request, requestingDevice *Device, user *User, devic
 
 // Requires a user struct with the name, email, password filled in. The password
 // should be plaintext.
-func createUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func createUser(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
 
-    var userUpload User
+    var userUpload users.User
 
     if err := readBodyUnmarshalAndError(request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
@@ -280,9 +277,9 @@ func createUser(request *http.Request, requestingDevice *Device, user *User, dev
     id, err := userdb.CreateUser(userUpload.Name, userUpload.Email, userUpload.Password)
 
     switch {
-        case err == ERR_EMAIL_EXISTS:
+        case err == users.ERR_EMAIL_EXISTS:
             return http.StatusInternalServerError, emailExistsResult
-        case err == ERR_USERNAME_EXISTS:
+        case err == users.ERR_USERNAME_EXISTS:
             return http.StatusInternalServerError, usernameExistsResult
         case err != nil:
             log.Printf("Could not service create user request |err:%v", err)
@@ -310,15 +307,15 @@ func readBodyUnmarshalAndError(request *http.Request, tofill interface{}) (error
 }
 
 
-func updateUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
-    var userUpload User
+func updateUser(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
+    var userUpload users.User
 
     if err := readBodyUnmarshalAndError( request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    if ! requestingDevice.isAdmin() {
+    if ! requestingDevice.IsAdmin() {
         userUpload.Admin = false
     }
 
@@ -331,8 +328,8 @@ func updateUser(request *http.Request, requestingDevice *Device, user *User, dev
 }
 
 
-func deleteUser(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
-    var userUpload User
+func deleteUser(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
+    var userUpload users.User
 
     if err := readBodyUnmarshalAndError( request, &userUpload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
@@ -348,12 +345,12 @@ func deleteUser(request *http.Request, requestingDevice *Device, user *User, dev
 }
 
 
-func readDevices(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readDevices(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     //var result ReadUserResult
     var result ReadDeviceResult
     result.Status = 200
 
-    is_super := requestingDevice.isAdmin()
+    is_super := requestingDevice.IsAdmin()
     devs, err := userdb.ReadDevicesForUserId(user.Id)
 
     if err != nil {
@@ -361,25 +358,27 @@ func readDevices(request *http.Request, requestingDevice *Device, user *User, de
     }
 
     for _, d := range devs {
-        result.Devices = append(result.Devices, d.ToClean())
 
         if is_super {
-            result.Unsanitized = append(result.Unsanitized, *d)
+            result.Devices = append(result.Devices, *d)
+        } else {
+            result.Devices = append(result.Devices, d.ToClean())
         }
     }
 
     return http.StatusOK, result
 }
 
-func readDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readDevice(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     //var result ReadUserResult
     var result ReadDeviceResult
     result.Status = 200
 
-    result.Devices = append(result.Devices, device.ToClean())
 
-    if requestingDevice.isAdmin() || device.IsOwnedBy(user) {
-        result.Unsanitized = append(result.Unsanitized, *device)
+    if requestingDevice.IsAdmin() || device.IsOwnedBy(user) {
+        result.Devices = append(result.Devices, *device)
+    } else {
+        result.Devices = append(result.Devices, device.ToClean())
     }
 
     return http.StatusOK, result
@@ -387,9 +386,9 @@ func readDevice(request *http.Request, requestingDevice *Device, user *User, dev
 
 
 
-func createDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func createDevice(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     //var result ReadUserResult
-    var upload CleanDevice
+    var upload users.Device
 
     if err := readBodyUnmarshalAndError(request, &upload); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
@@ -408,8 +407,8 @@ func createDevice(request *http.Request, requestingDevice *Device, user *User, d
 }
 
 
-func updateDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
-    var upload Device
+func updateDevice(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
+    var upload users.Device
     upload = *device
 
     if err := readBodyUnmarshalAndError(request, &upload); err != nil {
@@ -419,7 +418,7 @@ func updateDevice(request *http.Request, requestingDevice *Device, user *User, d
 
     log.Printf("Modified device is now: %v", upload)
 
-    if ! requestingDevice.isAdmin() {
+    if ! requestingDevice.IsAdmin() {
         upload.Superdevice = false
     }
 
@@ -432,7 +431,7 @@ func updateDevice(request *http.Request, requestingDevice *Device, user *User, d
 }
 
 
-func deleteDevice(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func deleteDevice(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     err := userdb.DeleteDevice(device.Id)
 
     if err != nil {
@@ -443,23 +442,24 @@ func deleteDevice(request *http.Request, requestingDevice *Device, user *User, d
 }
 
 
-func readStream(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readStream(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result ReadStreamResult
 
-    is_super := requestingDevice.isAdmin()
-    result.Streams = append(result.Streams, stream.ToClean())
+    is_super := requestingDevice.IsAdmin()
 
     if is_super || requestingDevice.IsOwnedBy(user) {
-        result.Unsanitized = append(result.Unsanitized, *stream)
+        result.Streams = append(result.Streams, *stream)
+    } else {
+        result.Streams = append(result.Streams, stream.ToClean())
     }
 
     return http.StatusOK, result
 }
 
-func readAllStreams(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readAllStreams(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result ReadStreamResult
 
-    is_super := requestingDevice.isAdmin()
+    is_super := requestingDevice.IsAdmin()
     streams, err := userdb.ReadStreamsByDevice(device)
 
     if err != nil {
@@ -467,10 +467,11 @@ func readAllStreams(request *http.Request, requestingDevice *Device, user *User,
     }
 
     for _, s := range streams {
-        result.Streams = append(result.Streams, s.ToClean())
 
         if is_super || requestingDevice.IsOwnedBy(user) {
-            result.Unsanitized = append(result.Unsanitized, *s)
+            result.Streams = append(result.Streams, *s)
+        } else {
+            result.Streams = append(result.Streams, s.ToClean())
         }
     }
 
@@ -478,8 +479,8 @@ func readAllStreams(request *http.Request, requestingDevice *Device, user *User,
 }
 
 
-func createStream(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
-    var result CleanStream
+func createStream(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
+    var result users.Stream
 
     if err := readBodyUnmarshalAndError(request, &result); err != nil {
         log.Printf("Could not unmarshal|err:%v", err)
@@ -487,7 +488,7 @@ func createStream(request *http.Request, requestingDevice *Device, user *User, d
     }
 
     // todo return id
-    id, err := userdb.CreateStream(result.Name, result.Schema_Json, result.Defaults_Json, device)
+    id, err := userdb.CreateStream(result.Name, result.Type, device)
 
     if err != nil {
         return http.StatusInternalServerError, errorGenericResult
@@ -497,7 +498,7 @@ func createStream(request *http.Request, requestingDevice *Device, user *User, d
 }
 
 
-func deleteStream(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func deleteStream(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
 
     err := userdb.DeleteStream(stream.Id)
 
@@ -510,7 +511,7 @@ func deleteStream(request *http.Request, requestingDevice *Device, user *User, d
 
 
 
-func createDataKey(user *User, device *Device, stream *Stream) string {
+func createDataKey(user *users.User, device *users.Device, stream *users.Stream) string {
     return user.Name + "/" + device.Name + "/" + stream.Name
 }
 
@@ -538,7 +539,7 @@ func nanoToTimestamp(nano int64) string {
     }
 }
 
-func createDataPoint(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func createDataPoint(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     if user == nil || device == nil || stream == nil {
         log.Printf("user, device, or stream is nil|usr:%v dev:%v stream:%v", user, device, stream)
         return http.StatusInternalServerError, errorGenericResult
@@ -573,7 +574,7 @@ func createDataPoint(request *http.Request, requestingDevice *Device, user *User
 
 
 // Reads the data between two indexes.
-func readDataByTime(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readDataByTime(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result DatapointResult
 
     vars := mux.Vars(request)
@@ -611,7 +612,7 @@ func readDataByTime(request *http.Request, requestingDevice *Device, user *User,
 }
 
 // Reads the data between two indexes.
-func readDataByIndex(request *http.Request, requestingDevice *Device, user *User, device *Device, stream *Stream) (int, interface{}) {
+func readDataByIndex(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
     var result DatapointResult
 
     vars := mux.Vars(request)
@@ -643,7 +644,7 @@ func readDataByIndex(request *http.Request, requestingDevice *Device, user *User
 
 
 // Creates a subrouter available to
-func GetSubrouter(udb *UserDatabase, tdb  *dtypes.TypedDatabase, subroutePrefix *mux.Router) {
+func GetSubrouter(udb *users.UserDatabase, tdb  *dtypes.TypedDatabase, subroutePrefix *mux.Router) {
 
     userdb = udb
     timedb = tdb

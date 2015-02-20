@@ -53,7 +53,7 @@ func TestUpdateDevice(t *testing.T) {
 
     obj, err := testdb.ReadDeviceById(id)
     if err != nil || obj == nil {
-        t.Errorf("Cannot read object back with id: {}, err: {}, obj:{}", id, err, obj)
+        t.Errorf("Cannot read object back with id: %v, err: %v, obj:%v", id, err, obj)
         return
     }
 

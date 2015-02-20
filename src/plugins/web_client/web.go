@@ -16,7 +16,7 @@ import (
 
 var(
     userdb               *users.UserDatabase
-    timedb               *timebatchdb.Database
+    tdb               *timebatchdb.Database
     templates *template.Template
 	store = sessions.NewCookieStore([]byte("web-service-special-key"))
 )

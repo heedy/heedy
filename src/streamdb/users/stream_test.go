@@ -53,7 +53,7 @@ func init() {
     if err != nil {
         log.Print(err)
     }
-    
+
     usrid, err = testdb.CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
     if err != nil {
         log.Print(err)
@@ -79,20 +79,20 @@ func init() {
 
 
 func TestCreateStream(t *testing.T) {
-    _, err := testdb.CreateStream("TestCreateStream", "{}", "{}", dev)
+    _, err := testdb.CreateStream("TestCreateStream", "{}" , dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
     }
 
-    _, err = testdb.CreateStream("TestCreateStream", "{}", "{}", dev)
+    _, err = testdb.CreateStream("TestCreateStream", "{}", dev)
     if(err == nil) {
         t.Errorf("Created stream with duplicate name")
     }
 }
 
 func TestReadStreamById(t *testing.T) {
-    streamid, err := testdb.CreateStream("TestReadStreamById", "{}", "{}", dev)
+    streamid, err := testdb.CreateStream("TestReadStreamById", "{}", dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
@@ -107,7 +107,7 @@ func TestReadStreamById(t *testing.T) {
 }
 
 func TestUpdateStream(t *testing.T) {
-    streamid, err := testdb.CreateStream("TestUpdateStream", "{}", "{}", dev)
+    streamid, err := testdb.CreateStream("TestUpdateStream", "{}", dev)
     if(err != nil) {
         t.Errorf("Cannot create stream %v", err)
         return
@@ -123,8 +123,7 @@ func TestUpdateStream(t *testing.T) {
     stream.Name = "A"
     stream.Active = false
     stream.Public = true
-    stream.Schema_Json = "{a:'string'}"
-    stream.Defaults_Json = "{a:'b'}"
+    stream.Type = "{a:'string'}"
     //stream.OwnerId = dev
 
     err = testdb.UpdateStream(stream)
@@ -148,7 +147,7 @@ func TestUpdateStream(t *testing.T) {
 
 
 func TestDeleteStream(t *testing.T) {
-    id, err := testdb.CreateStream("TestDeleteStream", "{}", "{}", dev)
+    id, err := testdb.CreateStream("TestDeleteStream", "{}", dev)
 
     if nil != err {
         t.Errorf("Cannot create stream to test delete")

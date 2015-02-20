@@ -178,6 +178,8 @@ func TestUpdateUser(t *testing.T){
     }
 
     usr2, err := testdb.ReadUserById(id)
+
+    usr.ModifyTime = usr2.ModifyTime // have to do this because we update it each time!
     if err != nil {
         t.Errorf("got an error when trying to get a user that should exist %v", err)
         return

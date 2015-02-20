@@ -1,4 +1,4 @@
-package users
+package web_client
 
 import(
     "fmt"

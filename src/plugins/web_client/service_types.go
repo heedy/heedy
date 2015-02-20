@@ -1,8 +1,9 @@
-package users
+package web_client
 
 import (
     "net/http"
     "streamdb/dtypes"
+    "streamdb/users"
     )
 
 type GenericResult struct {
@@ -12,19 +13,17 @@ type GenericResult struct {
 
 
 type ReadUserResult struct {
-    Users []User
+    Users []users.User
     GenericResult
 }
 
 type ReadDeviceResult struct {
-    Devices []CleanDevice
-    Unsanitized []Device
+    Devices []users.Device
     GenericResult
 }
 
 type ReadStreamResult struct {
-    Streams []CleanStream
-    Unsanitized []Stream
+    Streams []users.Stream
     GenericResult
 }
 

@@ -6,20 +6,27 @@ type User struct {
     Id int64  // The primary key
     Name string  // The public username of the user
     Email string  // The user's email address
+
     Password string  // A hash of the user's password
     PasswordSalt string  // The password salt to be attached to the end of the password
     PasswordHashScheme string // A string representing the hashing scheme used
+
     Admin bool  // True/False if this is an administrator
     Phone string  // The user's phone number
     PhoneCarrier int // phone carrier id
+
     UploadLimit_Items int // upload limit in items/day
     ProcessingLimit_S int // processing limit in seconds/day
     StorageLimit_Gb int // storage limit in GB
+
+    CreateTime int64 // The time the user was created
+    ModifyTime int64 // the last time the user was modified
+    UserGroup  int  // Unused for now, in the future we can place certain users into gropus for testing new features
 }
 
 // Converts a user to a sanitized version
 func (u User) ToClean() User {
-    return User{0, u.Name, "","","","",false,"",0,0,0,0}
+    return User{Name:u.Name}
 }
 
 
@@ -76,6 +83,10 @@ type Device struct {
     Superdevice bool  // Whether or not this is a "superdevice" which has access to the whole API
     OwnerId int64  // the user that owns this device
 
+    CanWrite bool // Can this device write to streams? (inactive right now)
+    CanWriteAnywhere bool // Can this device write to others streams? (inactive right now)
+    UserProxy bool // Can this device operate as a user? (inactive right now)
+
     user *User // If this device is a user in disguise
 }
 
@@ -91,57 +102,46 @@ func (d Device) Unmask() *User {
 }
 
 // Check if the device is enabled
-func (d Device) isActive() bool {
+func (d Device) IsActive() bool {
     return d.Enabled
 }
 
 // Checks if the device is enabled and a superdevice
-func (d Device) isAdmin() bool {
-    return d.isActive() && d.Superdevice
+func (d Device) IsAdmin() bool {
+    return d.IsActive() && d.Superdevice
 }
 
 func (d Device) IsOwnedBy(user *User) bool {
     return d.OwnerId == user.Id
 }
 
-func (d Device) ToClean() CleanDevice {
-    return CleanDevice{Id: d.Id,
-        Name:d.Name,
-        Enabled:d.Enabled,
-        Icon_PngB64:d.Icon_PngB64,
-        Shortname:d.Shortname}
-}
+func (d Device) ToClean() Device {
+    var tmp Device
 
-// A cleaned up version of the device that is publically accessable.
-type CleanDevice struct {
-    Id int64  // The primary key of the device
-    Name string  // The name of the device
-    Enabled bool  // Whether or not this device is enabled
-    Icon_PngB64 string  // The icon of this device
-    Shortname string  // The human readable shortname of this device.
-}
+    tmp.Id = d.Id
+    tmp.Name = d.Name
+    tmp.Enabled = d.Enabled
+    tmp.Icon_PngB64 = d.Icon_PngB64
+    tmp.Shortname = d.Shortname
 
+    return tmp
+}
 
 type Stream struct {
     Id int64
     Name string
     Active bool
     Public bool
-    Schema_Json string
-    Defaults_Json string
+    Type string
     OwnerId int64
+    Ephemeral bool // Currently inactive
+    Output bool // Currently inactive
 }
 
-type CleanStream struct {
-    Id int64
-    Name string
-    Schema_Json string
-    Defaults_Json string
-}
-
-func (d Stream) ToClean() CleanStream {
-    return CleanStream{Id: d.Id,
+func (d Stream) ToClean() Stream {
+    return Stream{Id: d.Id,
         Name:d.Name,
-        Schema_Json:d.Schema_Json,
-        Defaults_Json:d.Defaults_Json}
+        Type:d.Type,
+        Ephemeral:d.Ephemeral,
+        Output:d.Output}
 }
