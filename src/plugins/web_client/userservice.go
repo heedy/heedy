@@ -655,10 +655,6 @@ func GetSubrouter(udb *users.UserDatabase, tdb  *dtypes.TypedDatabase, subrouteP
         *ignoreBadApiKeys = true
     }
 
-    //    r := mux.NewRouter()
-    if *ignoreBadApiKeys {
-        subroutePrefix.HandleFunc("/firstrun/", firstRunHandler)
-    }
 
     s := subroutePrefix.PathPrefix("/api/v1/{style}").Subrouter()
 

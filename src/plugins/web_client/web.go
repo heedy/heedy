@@ -19,6 +19,7 @@ var(
     tdb               *timebatchdb.Database
     templates *template.Template
 	store = sessions.NewCookieStore([]byte("web-service-special-key"))
+	firstrun bool
 )
 
 
@@ -38,6 +39,22 @@ func generateMainPage(writer http.ResponseWriter, request *http.Request, user *u
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+
+
+
+func firstRunHandler(writer http.ResponseWriter, r *http.Request) {
+	pageData := make(map[string] interface{})
+
+	pageData["alert"] = "All actions are admin, you should restart the server."
+
+
+	err := templates.ExecuteTemplate(writer, "firstrun.html", pageData)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 
 func generateDevicePage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	pageData := make(map[string] interface{})
@@ -99,6 +116,15 @@ type WebHandler func(writer http.ResponseWriter, request *http.Request, user *us
 func authWrapper(h WebHandler) http.HandlerFunc {
 
     return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+		// all stuff redirects to firstrun
+		if firstrun {
+			if updateFirstrun() == true {
+				firstRunHandler(writer, request)
+				return
+			}
+		}
+
         // Get a session. We're ignoring the error resulted from decoding an
         // existing session: Get() always returns a session, even if empty.
         session, _ := store.Get(request, "web-session")
@@ -137,6 +163,13 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 }
 
 
+func updateFirstrun() bool {
+	usr, _ := userdb.ReadAllUsers()
+	firstrun = len(usr) == 0
+	return firstrun
+}
+
+
 
 func Setup(subroutePrefix *mux.Router, udb *users.UserDatabase) {
     SetWdToExecutable()
@@ -148,7 +181,8 @@ func Setup(subroutePrefix *mux.Router, udb *users.UserDatabase) {
 	log.Printf("Include path set to: %v", includepath)
 	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
 
-    subroutePrefix.HandleFunc("/", authWrapper(generateMainPage))
-	subroutePrefix.HandleFunc("/device/{id:[0-9]+}", authWrapper(generateDevicePage))
+	updateFirstrun()
 
+	subroutePrefix.HandleFunc("/", authWrapper(generateMainPage))
+	subroutePrefix.HandleFunc("/device/{id:[0-9]+}", authWrapper(generateDevicePage))
 }

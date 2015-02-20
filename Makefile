@@ -18,6 +18,8 @@ bin:
 	mkdir bin/dep
 	mkdir bin/test_coverage
 	cp -r config bin/config
+	cp -r src/plugins/web_client/static/ bin/
+	cp -r src/plugins/web_client/templates/ bin/
 
 #Rule to go from source go file to binary
 bin/%: src/core/%.go bin
