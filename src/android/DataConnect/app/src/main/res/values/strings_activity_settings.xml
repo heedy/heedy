@@ -13,24 +13,27 @@
     <string name="pref_connectordb_password">Password</string>
     <string name="pref_password_summary">The password to your ConnectorDB account</string>
 
-    <string name="pref_header_gps">Location</string>
-    <string name="pref_location_enabled">GPS Logging</string>
-    <string name="pref_location_frequency">Log Interval</string>
+    <string name="pref_header_sensors">Sensors</string>
+    <string name="pref_location_frequency">GPS Logging</string>
     <string-array name="pref_location_frequency_titles">
-        <item>Battery Saver</item>
+        <item>10 seconds</item>
         <item>1 minute</item>
         <item>5 minutes</item>
         <item>15 minutes</item>
         <item>30 minutes</item>
         <item>1 hour</item>
+        <item>Battery Saver</item>
+        <item>Off</item>
     </string-array>
     <string-array name="pref_location_frequency_values">
+        <item>10000</item>
+        <item>60000</item>
+        <item>300000</item>
+        <item>900000</item>
+        <item>1800000</item>
+        <item>3600000</item>
+        <item>0</item>
         <item>-1</item>
-        <item>1</item>
-        <item>5</item>
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
     </string-array>
 
     <string name="pref_header_data_sync">Data &amp; sync</string>

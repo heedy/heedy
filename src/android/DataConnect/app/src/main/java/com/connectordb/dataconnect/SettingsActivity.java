@@ -2,6 +2,7 @@ package com.connectordb.dataconnect;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -16,6 +17,7 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
+import android.util.Log;
 
 
 import java.util.List;
@@ -32,6 +34,10 @@ import java.util.List;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends PreferenceActivity {
+
+    private static final String TAG = "SettingsActivity";
+
+
     /**
      * Determines whether to always show the simplified settings UI, where
      * settings are presented in a single list. When false, settings are shown
@@ -41,11 +47,63 @@ public class SettingsActivity extends PreferenceActivity {
     private static final boolean ALWAYS_SIMPLE_PREFS = false;
 
 
+    private Preference.OnPreferenceChangeListener sLocation = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set GPS Logging: " + stringValue);
+
+            // For list preferences, look up the correct display value in
+            // the preference's 'entries' list.
+            ListPreference listPreference = (ListPreference) preference;
+            int index = listPreference.findIndexOfValue(stringValue);
+
+            // Set the summary to reflect the new value.
+            preference.setSummary(
+                    index >= 0
+                            ? listPreference.getEntries()[index]
+                            : null);
+
+
+            //Now notify the location service of the changed values
+            Intent i = new Intent(SettingsActivity.this,LocationService.class);
+            i.putExtra("value",stringValue);
+            startService(i);
+            return true;
+        }
+    };
+
+
+    private void setupLocation() {
+        Preference location_pref = findPreference("location_frequency");
+        String stringValue = PreferenceManager
+                .getDefaultSharedPreferences(location_pref.getContext())
+                .getString(location_pref.getKey(), "");
+
+        //Now notify the location service of the changed values
+        Intent i = new Intent(SettingsActivity.this,LocationService.class);
+        i.putExtra("value",stringValue);
+        startService(i);
+
+        sLocation.onPreferenceChange(location_pref,stringValue);
+
+        location_pref.setOnPreferenceChangeListener(sLocation);
+
+
+    }
+
+    private void doStuff() {
+        setupLocation();
+    }
+
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
+        Log.v(TAG, "PostCreate");
         super.onPostCreate(savedInstanceState);
 
         setupSimplePreferencesScreen();
+
+        doStuff();
     }
 
     /**
@@ -54,6 +112,7 @@ public class SettingsActivity extends PreferenceActivity {
      * shown.
      */
     private void setupSimplePreferencesScreen() {
+
         if (!isSimplePreferences(this)) {
             return;
         }
@@ -65,9 +124,9 @@ public class SettingsActivity extends PreferenceActivity {
         addPreferencesFromResource(R.xml.pref_general);
         // Add GPS preferences
         PreferenceCategory fakeHeader = new PreferenceCategory(this);
-        fakeHeader.setTitle(R.string.pref_header_gps);
+        fakeHeader.setTitle(R.string.pref_header_sensors);
         getPreferenceScreen().addPreference(fakeHeader);
-        addPreferencesFromResource(R.xml.pref_location);
+        addPreferencesFromResource(R.xml.pref_sensors);
         //Add sync prefs
         fakeHeader = new PreferenceCategory(this);
         fakeHeader.setTitle(R.string.pref_header_data_sync);
@@ -85,7 +144,6 @@ public class SettingsActivity extends PreferenceActivity {
         // to reflect the new value, per the Android Design guidelines.
         bindPreferenceSummaryToValue(findPreference("connectordb_username"));
         bindPreferenceSummaryToValue(findPreference("connectordb_server"));
-        bindPreferenceSummaryToValue(findPreference("location_frequency"));
         bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
         bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
     }
@@ -234,12 +292,12 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class LocationPreferenceFragment extends PreferenceFragment {
+    public static class SensorsPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_location);
-            bindPreferenceSummaryToValue(findPreference("location_frequency"));
+            addPreferencesFromResource(R.xml.pref_sensors);
+            //bindPreferenceSummaryToValue(findPreference("location_frequency"));
         }
     }
     /**

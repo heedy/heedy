@@ -1,16 +1,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <CheckBoxPreference
-        android:key="location_enabled"
-        android:title="@string/pref_location_enabled"
-        android:defaultValue="true" />
     <ListPreference
-        android:dependency="location_enabled"
         android:key="location_frequency"
         android:title="@string/pref_location_frequency"
         android:entries="@array/pref_location_frequency_titles"
         android:entryValues="@array/pref_location_frequency_values"
-        android:defaultValue="15"
+        android:defaultValue="0"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
     <!-- Allows the user to choose a ringtone in the 'notification' category. -->
