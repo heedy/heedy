@@ -3,9 +3,10 @@ package com.connectordb.dataconnect;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 //import com.google.android.gms.common.GooglePlayServicesClient;
@@ -35,20 +36,16 @@ public class LocationService extends Service implements LocationListener, Connec
         return null;
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        String stringValue = intent.getStringExtra("value");
-        int value = Integer.parseInt(stringValue);
-        if (value==-1) {
+    private void makeRequest(int value) {
+        if (value == -1) {
             stopSelf();
-            return START_STICKY;
-        } else if (value==0) {
+        } else if (value == 0) {
             Log.i(TAG, "Setting Battery Saver Mode");
             mLocationRequest = new LocationRequest();
             mLocationRequest.setFastestInterval(100);
             mLocationRequest.setPriority(LocationRequest.PRIORITY_NO_POWER);
         } else {
-            Log.i(TAG, "Setting location ms: "+stringValue);
+            Log.i(TAG, "Setting location ms: " + Integer.toString(value));
             mLocationRequest = new LocationRequest();
             mLocationRequest.setInterval(value);
             mLocationRequest.setFastestInterval(5000);
@@ -58,12 +55,35 @@ public class LocationService extends Service implements LocationListener, Connec
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, mLocationRequest, this);
         } else {
-            Log.v(TAG, "Not connected to google play - can't update request.");
+            Log.v(TAG, "Not connected to google play - can't request GPS updates.");
         }
-        // We want this service to continue running until it is explicitly
-        // stopped, so return sticky.
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        int value = PreferenceManager.getDefaultSharedPreferences(this).getInt("location_update_frequency",0);
+        int newvalue;
+        try {
+            newvalue = intent.getIntExtra("location_update_frequency", -2);
+        } catch (NullPointerException ex) {
+            newvalue = -2;
+        }
+
+        if (newvalue >= -1 && newvalue!=value) {
+            Log.v(TAG,"Updating GPS settings: "+Integer.toString(value)+"->"+Integer.toString(newvalue));
+            //Update the value in the settings
+            PreferenceManager.getDefaultSharedPreferences(this).edit().putInt("location_update_frequency",newvalue).commit();
+            value = newvalue;
+
+        }
+        makeRequest(value);
+
+
         return START_STICKY;
     }
+
+
+
 
     @Override
     public void onCreate() {
@@ -83,7 +103,7 @@ public class LocationService extends Service implements LocationListener, Connec
 
     }
     public void onConnected(Bundle connectionHint) {
-        Log.i(TAG,"Requesting GPS updates.");
+        Log.i(TAG,"Connected. Requesting GPS updates.");
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
     }

@@ -3,6 +3,7 @@ package com.connectordb.dataconnect;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -26,10 +27,8 @@ public class SetupReceiver extends BroadcastReceiver {
 
         //throw new UnsupportedOperationException("Not yet implemented");
         Log.v(TAG,"RECEIVED BOOT");
-
         //Start the GPS location service
         Intent i = new Intent(context,LocationService.class);
-        i.putExtra("value","0");
         context.startService(i);
     }
 

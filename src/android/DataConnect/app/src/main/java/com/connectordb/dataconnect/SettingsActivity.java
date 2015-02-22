@@ -67,7 +67,7 @@ public class SettingsActivity extends PreferenceActivity {
 
             //Now notify the location service of the changed values
             Intent i = new Intent(SettingsActivity.this,LocationService.class);
-            i.putExtra("value",stringValue);
+            i.putExtra("location_update_frequency",Integer.parseInt(stringValue));
             startService(i);
             return true;
         }
@@ -79,11 +79,6 @@ public class SettingsActivity extends PreferenceActivity {
         String stringValue = PreferenceManager
                 .getDefaultSharedPreferences(location_pref.getContext())
                 .getString(location_pref.getKey(), "");
-
-        //Now notify the location service of the changed values
-        Intent i = new Intent(SettingsActivity.this,LocationService.class);
-        i.putExtra("value",stringValue);
-        startService(i);
 
         sLocation.onPreferenceChange(location_pref,stringValue);
 
