@@ -55,19 +55,9 @@ func (userdb *UserDatabase) open() (error){
 
 func NewSqliteUserDatabase(path string) (*UserDatabase, error) {
 	n := new(UserDatabase)
+	err := n.InitSqliteUserDatabase(path)
 
-	n.driverstr = "sqlite3"
-	n.filepath = path
-
-	if err := n.open(); err != nil {
-		return nil, err
-	}
-
-	if err := n.setupDatabase(); err != nil {
-		return nil, err
-	}
-
-	return n, nil
+	return n, err
 }
 
 func NewMariaUserDatabase(url, dbname string, port int) (*UserDatabase, error) {
@@ -75,6 +65,21 @@ func NewMariaUserDatabase(url, dbname string, port int) (*UserDatabase, error) {
 	return nil, nil
 }
 
+
+func (n *UserDatabase) InitSqliteUserDatabase(path string) error {
+	n.driverstr = "sqlite3"
+	n.filepath = path
+
+	if err := n.open(); err != nil {
+		return  err
+	}
+
+	if err := n.setupDatabase(); err != nil {
+		return  err
+	}
+
+	return nil
+}
 
 
 
@@ -98,13 +103,12 @@ func (userdb *UserDatabase) setupDatabase() error{
 		return err
 	}
 
-	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, "None", "")`);
+	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
 
     /** mysql
-    CREATE TABLE IF NOT EXISTS User(   Id INTEGER PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(50) UNIQUE NOT NULL, Email VARCHAR(100) UNIQUE NOT NULL, Password VARCHAR(100) NOT NULL, PasswordSalt VARCHAR(100) NOT NULL, PasswordHashScheme VARCHAR(50) NOT NULL, Admin BOOLEAN DEFAULT FALSE, Phone VARCHAR(50) DEFAULT "", PhoneCarrier INTEGER DEFAULT 0, UploadLimit_Items INTEGER DEFAULT 24000, ProcessingLimit_S INTEGER DEFAULT 86400, StorageLimit_Gb INTEGER DEFAULT 4,  FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL );
+    CREATE TABLE IF NOT EXISTS User(   Id SERIAL PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(50) UNIQUE NOT NULL, Email VARCHAR(100) UNIQUE NOT NULL, Password VARCHAR(100) NOT NULL, PasswordSalt VARCHAR(100) NOT NULL, PasswordHashScheme VARCHAR(50) NOT NULL, Admin BOOLEAN DEFAULT FALSE, Phone VARCHAR(50) DEFAULT "", PhoneCarrier INTEGER DEFAULT 0, UploadLimit_Items INTEGER DEFAULT 24000, ProcessingLimit_S INTEGER DEFAULT 86400, StorageLimit_Gb INTEGER DEFAULT 4,  FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL );
     **/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS User
-		(   Id INTEGER PRIMARY KEY,
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id INTEGER PRIMARY KEY,
 			Name VARCHAR(50) UNIQUE NOT NULL,
 			Email VARCHAR(100) UNIQUE NOT NULL,
 
@@ -113,7 +117,7 @@ func (userdb *UserDatabase) setupDatabase() error{
 			PasswordHashScheme VARCHAR NOT NULL,
 
 			Admin BOOLEAN DEFAULT FALSE,
-			Phone VARCHAR DEFAULT "",
+			Phone VARCHAR DEFAULT '',
 			PhoneCarrier INTEGER DEFAULT 0,
 
 			UploadLimit_Items INTEGER DEFAULT 24000,
@@ -132,18 +136,42 @@ func (userdb *UserDatabase) setupDatabase() error{
 		return err
 	}
     // mysql: CREATE INDEX UserNameIndex ON User (Name);
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON User (Name);`)
+	// postgres CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);
+	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);`)
 	if err != nil {
 		return err
 	}
 
+
+	/**
+	psql:
+	CREATE TABLE IF NOT EXISTS Device
+	(   Id SERIAL PRIMARY KEY,
+	Name VARCHAR(100) NOT NULL,
+	ApiKey VARCHAR(100) UNIQUE NOT NULL,
+	Enabled BOOLEAN DEFAULT TRUE,
+	Icon_PngB64 VARCHAR(512000) DEFAULT '',
+	Shortname VARCHAR(100) DEFAULT '',
+	Superdevice BOOL DEFAULT FALSE,
+	OwnerId INTEGER,
+
+	CanWrite BOOL DEFAULT TRUE,
+	CanWriteAnywhere BOOL DEFAULT TRUE,
+	UserProxy BOOL DEFAULT FALSE,
+
+	FOREIGN KEY(OwnerId) REFERENCES Users(Id) ON DELETE CASCADE,
+	UNIQUE(Name, OwnerId)
+	);
+
+	512kb icon
+	**/
 	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Device
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			ApiKey STRING UNIQUE NOT NULL,
 			Enabled BOOLEAN DEFAULT TRUE,
-			Icon_PngB64 STRING DEFAULT "",
-			Shortname STRING DEFAULT "",
+			Icon_PngB64 STRING DEFAULT '',
+			Shortname STRING DEFAULT '',
 			Superdevice BOOL DEFAULT FALSE,
 			OwnerId INTEGER,
 
@@ -151,7 +179,7 @@ func (userdb *UserDatabase) setupDatabase() error{
 			CanWriteAnywhere BOOL DEFAULT TRUE,
 			UserProxy BOOL DEFAULT FALSE,
 
-			FOREIGN KEY(OwnerId) REFERENCES User(Id) ON DELETE CASCADE,
+			FOREIGN KEY(OwnerId) REFERENCES Users(Id) ON DELETE CASCADE,
 			UNIQUE(Name, OwnerId)
 			);`)
 
@@ -159,28 +187,45 @@ func (userdb *UserDatabase) setupDatabase() error{
 		return err
 	}
 
+	//psql `CREATE INDEX DeviceNameIndex ON Device (Name);`
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
 	if err != nil {
 		return err
 	}
 
+	//psql no ine: CREATE INDEX DeviceAPIIndex ON Device (ApiKey);
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
 	if err != nil {
 		return err
 	}
 
+	// `CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
 	if err != nil {
 		return err
 	}
 
+	/**
+	CREATE TABLE IF NOT EXISTS Stream
+	(   Id SERIAL PRIMARY KEY,
+	Name VARCHAR(100) NOT NULL,
+	Active BOOLEAN DEFAULT TRUE,
+	Public BOOLEAN DEFAULT FALSE,
+	Type VARCHAR(512) NOT NULL,
+	OwnerId INTEGER,
+	Ephemeral BOOL DEFAULT FALSE,
+	Output BOOL DEFAULT FALSE,
+	FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
+	UNIQUE(Name, OwnerId)
+	);
+	**/
 
 	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Stream
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			Active BOOLEAN DEFAULT TRUE,
 			Public BOOLEAN DEFAULT FALSE,
-			Type STRING NOT NULL,
+			Type VARCHAR(512) NOT NULL,
 			OwnerId INTEGER,
 			Ephemeral BOOL DEFAULT FALSE,
 			Output BOOL DEFAULT FALSE,

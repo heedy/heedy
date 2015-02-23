@@ -80,7 +80,7 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) (id int64, 
 	// may not match up with hash generators found online!
 	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
 
-	res, err := userdb.db.Exec(`INSERT INTO User (
+	res, err := userdb.db.Exec(`INSERT INTO Users (
         Name,
         Email,
         Password,
@@ -159,26 +159,26 @@ func constructUsersFromRows(rows *sql.Rows) ([]*User, error) {
 // ReadUserByEmail returns a User instance if a user exists with the given
 // email address.
 func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM User WHERE Email = ? LIMIT 1", Email)
+	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Email = ? LIMIT 1", Email)
 	return constructUserFromRow(rows, err)
 }
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
 func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM User WHERE Name = ? LIMIT 1", Name)
+	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Name = ? LIMIT 1", Name)
 	return constructUserFromRow(rows, err)
 }
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
 func (userdb *UserDatabase) ReadUserById(Id int64) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM User WHERE Id = ? LIMIT 1", Id)
+	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Id = ? LIMIT 1", Id)
 	return constructUserFromRow(rows, err)
 }
 
 func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM User")
+	rows, err := userdb.db.Query("SELECT * FROM Users")
 
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := userdb.db.Exec(`UPDATE User SET
+	_, err := userdb.db.Exec(`UPDATE Users SET
                     Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
                     Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
                     ProcessingLimit_S=?, StorageLimit_Gb=?, CreateTime = ?, ModifyTime = ?,
@@ -221,6 +221,6 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 
 // DeleteUser removes a user from the database
 func (userdb *UserDatabase) DeleteUser(id int64) error {
-	_, err := userdb.db.Exec(`DELETE FROM User WHERE Id = ?;`, id)
+	_, err := userdb.db.Exec(`DELETE FROM Users WHERE Id = ?;`, id)
 	return err
 }

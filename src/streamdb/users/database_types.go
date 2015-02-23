@@ -107,8 +107,20 @@ func (d Device) IsActive() bool {
 }
 
 // Checks if the device is enabled and a superdevice
-func (d Device) IsAdmin() bool {
+func (d *Device) IsAdmin() bool {
     return d.IsActive() && d.Superdevice
+}
+
+func (d *Device) WriteAllowed() bool {
+    return d.CanWrite
+}
+
+func (d *Device) WriteAnywhereAllowed() bool {
+    return d.CanWriteAnywhere
+}
+
+func (d *Device) CanModifyUser() bool {
+    return d.UserProxy
 }
 
 func (d Device) IsOwnedBy(user *User) bool {

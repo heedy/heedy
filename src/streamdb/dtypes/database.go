@@ -85,9 +85,32 @@ func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint,routing s
 
 //Opens the DataStore.
 func Open(msgurl string, mongourl string, mongoname string) (*TypedDatabase,error) {
+
+    var td  TypedDatabase
+    err := td.InitTypedDB(msgurl, mongourl, mongoname)
+
+    if err != nil {
+        return nil, err
+    }
+
+    return &td, nil
+    /**
+    TODO removeme when all tests check out.
+
     ds,err := timebatchdb.Open(msgurl,mongourl,mongoname)
     if err!=nil {
         return nil,err
     }
     return &TypedDatabase{ds},nil
+    **/
+}
+
+// Initializes a Typed Database that already exists.
+func (d *TypedDatabase) InitTypedDB(msgurl string, mongourl string, mongoname string) (error) {
+    ds, err := timebatchdb.Open(msgurl, mongourl, mongoname)
+    if err != nil {
+        return err
+    }
+    d.db = ds
+    return nil
 }
