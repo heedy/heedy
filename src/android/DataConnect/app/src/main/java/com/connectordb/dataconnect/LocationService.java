@@ -23,11 +23,13 @@ public class LocationService extends Service implements LocationListener, Connec
 
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
+    private DataCache dc = new DataCache(this);
 
     @Override
     public void onLocationChanged(Location location)
     {
-        Log.d(TAG, "GPS: " + location.toString() +"speed=" + location.getSpeed()+" t=" + location.getTime());
+        String data = "["+Double.toString(location.getLatitude())+","+Double.toString(location.getLongitude())+"]";
+        dc.Insert("gps",location.getTime(),data);
     }
 
 
