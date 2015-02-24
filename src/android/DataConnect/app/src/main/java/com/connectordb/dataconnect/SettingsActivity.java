@@ -73,6 +73,20 @@ public class SettingsActivity extends PreferenceActivity {
         }
     };
 
+    private Preference.OnPreferenceChangeListener sMonitor = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set Monitor Logging: " + stringValue);
+
+            //Now set up the service
+            Intent i = new Intent(SettingsActivity.this,MonitorService.class);
+            i.putExtra("enabled",stringValue=="true");
+            startService(i);
+            return true;
+        }
+    };
+
 
     private void setupLocation() {
         Preference location_pref = findPreference("location_frequency");
@@ -84,6 +98,12 @@ public class SettingsActivity extends PreferenceActivity {
 
         location_pref.setOnPreferenceChangeListener(sLocation);
 
+        Preference monitor_pref = findPreference("monitor_frequency");
+        Boolean boolValue = PreferenceManager
+                .getDefaultSharedPreferences(monitor_pref.getContext())
+                .getBoolean(monitor_pref.getKey(), true);
+        sMonitor.onPreferenceChange(monitor_pref,boolValue);
+        monitor_pref.setOnPreferenceChangeListener(sMonitor);
 
     }
 

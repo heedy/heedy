@@ -37,19 +37,14 @@
             android:name=".LocationService"
             android:enabled="true"
             android:exported="true"
-            android:process=":services_location" >
+            android:process=":DataServices" >
         </service>
-
-        <receiver
-            android:name=".MessageReceiver"
+        <service
+            android:name=".MonitorService"
             android:enabled="true"
-            android:permission="com.google.android.c2dm.permission.SEND" >
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-
-                <category android:name="com.connectordb.dataconnect" />
-            </intent-filter>
-        </receiver>
+            android:exported="true"
+            android:process=":DataServices" >
+        </service>
 
         <service
             android:name=".MessageIntentService"
@@ -62,9 +57,12 @@
         <receiver
             android:name=".SetupReceiver"
             android:enabled="true"
-            android:exported="true" >
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="com.connectordb.dataconnect" />
             </intent-filter>
         </receiver>
 
