@@ -27,9 +27,10 @@ public class SetupReceiver extends BroadcastReceiver {
 
         //throw new UnsupportedOperationException("Not yet implemented");
         Log.v(TAG,"RECEIVED BOOT");
-        //Start the GPS location service
-        Intent i = new Intent(context,LocationService.class);
-        context.startService(i);
+
+        //Start all of the necessary services
+        context.startService(new Intent(context,LocationService.class));
+        context.startService(new Intent(context,MonitorService.class));
     }
 
     /**

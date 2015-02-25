@@ -13,8 +13,19 @@ import android.util.Log;
  */
 public class DataCache extends SQLiteOpenHelper {
     public static final int DATABASE_VERSION = 1;
-    private static final String TAG = "LocationService";
+    private static final String TAG = "DataCache";
     public static final String DATABASE_NAME = "DataCache.db";
+
+    //Make this shit a singleton
+    private static DataCache dc;
+    public static synchronized DataCache get(Context c) {
+        if (dc==null) {
+            Log.v(TAG,"Initializing DataCache");
+            dc = new DataCache(c);
+        }
+        return dc;
+    }
+
 
     public DataCache(Context context)
     {
