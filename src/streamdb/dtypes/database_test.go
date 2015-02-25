@@ -13,9 +13,9 @@ func TestTypedRange(t *testing.T) {
 
     da := timebatchdb.CreateDatapointArray(timestamps,datab)
 
-    dtype,ok := GetType("text")
+    dtype,ok := GetType("s")
     if (!ok) {
-        t.Errorf("Type text not found")
+        t.Errorf("Type s not found")
         return
     }
     da.Init()
@@ -73,7 +73,7 @@ func TestTypedDatabase(t *testing.T) {
     time.Sleep(500 * time.Millisecond)
 
     //Now we test the database
-    dt,ok := GetType("text")
+    dt,ok := GetType("s")
     if !ok {
         t.Errorf("Bad type")
         return
@@ -97,7 +97,7 @@ func TestTypedDatabase(t *testing.T) {
         return
     }
 
-    r := db.GetTimeRange("testing/randomkey","text",0,505785867)
+    r := db.GetTimeRange("testing/randomkey","s",0,505785867)
 
     if r.Next()!=nil {
         t.Errorf("Get nonexisting failed")
@@ -107,7 +107,7 @@ func TestTypedDatabase(t *testing.T) {
     //Wait for the DataStoreWriter to write the earlier data
     time.Sleep(200 * time.Millisecond)
 
-    r = db.GetIndexRange("testing/key1","text",0,50)
+    r = db.GetIndexRange("testing/key1","s",0,50)
     defer r.Close()
 
     v := r.Next()

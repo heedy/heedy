@@ -10,42 +10,42 @@ import (
 
 func TestGetType(t *testing.T) {
     dpt := &TextDatapoint{BaseDatapoint{"",1.234},"Hello World!"}
-    typ,ok := GetType("text[12]/html/someother[43]")
+    typ,ok := GetType("s[12]/html/someother[43]")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[-18]/html")
+    typ,ok = GetType("s[-18]/html")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[0]/html")
+    typ,ok = GetType("s[0]/html")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[]/html")
+    typ,ok = GetType("s[]/html")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[-12]/html")
+    typ,ok = GetType("s[-12]/html")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[3]/html/someot")
+    typ,ok = GetType("s[3]/html/someot")
     if ok!=true || typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[-11]/html/someot")
+    typ,ok = GetType("s[-11]/html/someot")
     if ok!=true || typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return
     }
-    typ,ok = GetType("text[-12]/html/someot")
+    typ,ok = GetType("s[-12]/html/someot")
     if ok!=true || !typ.IsValid(dpt) {
         t.Errorf("Validity check failed")
         return

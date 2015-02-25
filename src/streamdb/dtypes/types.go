@@ -15,11 +15,11 @@ var (
     ERROR_TIME_UNKNOWN = errors.New("Failed to parse unknown type")
     ERROR_CANTLOADNIL = errors.New("Can't load to a nil-typed datapoint")
 
-    CoreTypes = map[string]DataType{"binary": &BinaryType{},
-                        "text": &TextType{},
-                        "int": &IntType{},
-                        "float": &FloatType{},
-                        "bool": &BoolType{}}
+    CoreTypes = map[string]DataType{"x": &BinaryType{},
+                        "s": &TextType{},
+                        "i": &IntType{},
+                        "f": &FloatType{},
+                        "b": &BoolType{}}
     )
 
 

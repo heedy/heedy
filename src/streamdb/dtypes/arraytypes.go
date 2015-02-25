@@ -9,10 +9,10 @@ import (
 
 var (
     ERROR_CORRUPTED_TYPES = errors.New("Data corrupted - types don't match")
-    ArrayTypes = map[string]DataType{"binary": &BinaryType{},
-                        "text": &TextType{},
-                        "float": &FloatArrayType{},
-                        "int": &IntArrayType{}}
+    ArrayTypes = map[string]DataType{"x": &BinaryType{},
+                        "s": &TextType{},
+                        "f": &FloatArrayType{},
+                        "i": &IntArrayType{}}
 )
 
 
