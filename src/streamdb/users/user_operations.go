@@ -188,6 +188,19 @@ func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
 	return constructUsersFromRows(rows)
 }
 
+
+func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
+    rows, err := userdb.db.Query(`SELECT u.*
+                                  FROM Users u, Stream s, Device d
+                                  WHERE s.Id = ?
+                                    AND d.Id = s.OwnerId
+                                    AND u.Id = d.OwnerId
+                                  LIMIT 1;`, StreamId)
+    
+    return constructUserFromRow(rows, err)
+}
+
+
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
 func (userdb *UserDatabase) UpdateUser(user *User) error {
