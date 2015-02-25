@@ -1,6 +1,7 @@
 package main
 
 import (
+    "streamdb/messenger"
     "streamdb/timebatchdb"
     "fmt"
     "log"
@@ -18,7 +19,7 @@ func MessageView(url string,route string) error {
 
     log.Printf("MessageViewer (%s,%s)",url,route)
 
-    msg,err := timebatchdb.ConnectMessenger(url)
+    msg,err := messenger.Connect(url)
     if (err != nil) {
         return err
     }

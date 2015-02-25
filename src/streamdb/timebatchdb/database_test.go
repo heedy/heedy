@@ -2,13 +2,9 @@ package timebatchdb
 
 import (
     "testing"
-    "time"
     )
 
 func TestDatabase(t *testing.T) {
-    //Turn on the Database writer
-    go DatabaseWriter("localhost:4222","localhost","testdb", "testing/>")
-
     m,err := OpenMongoStore("localhost","testdb")
     if (err!=nil) {
        t.Errorf("Couldn't open MongoStore")
@@ -19,29 +15,23 @@ func TestDatabase(t *testing.T) {
     //First drop the collection - so that tests are fresh
     m.DropCollection("0")
 
-    db,err := Open("localhost:4222","localhost","testdb")
+    db,err := Open("localhost","testdb")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
     }
     defer db.Close()
 
-    //Wait one second for the DatabaseWriter to initialize
-    time.Sleep(1000 * time.Millisecond)
-
     timestamps := []int64{1,2,3,4,5,6,3000,3100,3200}
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 
     for i:=0;i<len(timestamps);i++ {
-        err = db.Insert("user1/device1/stream1",timestamps[i],data[i],"testing/test")
+        err = db.Insert("user1/device1/stream1",timestamps[i],data[i])
         if err!=nil {
             t.Errorf("Insert Failed: %s",err)
         }
     }
-
-    //Wait one second for the datapoints to be committed to the Database
-    time.Sleep(1000 * time.Millisecond)
 
     //Now check a data range by index, and then by timestamp
     r := db.GetTimeRange("user1/device1/stream2",0,1000)

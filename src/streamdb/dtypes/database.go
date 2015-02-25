@@ -67,27 +67,27 @@ func (d *TypedDatabase) GetIndexRange(key string, dtype string, startindex uint6
 }
 
 //Inserts the given data into the DataStore, and uses the given routing address for data
-func (d *TypedDatabase) Insert(datapoint TypedDatapoint,routing string) error {
+func (d *TypedDatabase) Insert(datapoint TypedDatapoint) error {
     s := datapoint.Key()
     if (s=="") {
         return ERROR_KEYNOTFOUND
     }
-    return d.InsertKey(s,datapoint,routing)
+    return d.InsertKey(s,datapoint)
 }
-func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint,routing string) error {
+func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint) error {
     timestamp,err := datapoint.Timestamp()
     data := datapoint.Data()
     if err!=nil {
         return err
     }
-    return d.db.Insert(key,timestamp,data,routing)
+    return d.db.Insert(key,timestamp,data)
 }
 
 //Opens the DataStore.
-func Open(msgurl string, mongourl string, mongoname string) (*TypedDatabase,error) {
+func Open(mongourl string, mongoname string) (*TypedDatabase,error) {
 
     var td  TypedDatabase
-    err := td.InitTypedDB(msgurl, mongourl, mongoname)
+    err := td.InitTypedDB( mongourl, mongoname)
 
     if err != nil {
         return nil, err
@@ -106,8 +106,8 @@ func Open(msgurl string, mongourl string, mongoname string) (*TypedDatabase,erro
 }
 
 // Initializes a Typed Database that already exists.
-func (d *TypedDatabase) InitTypedDB(msgurl string, mongourl string, mongoname string) (error) {
-    ds, err := timebatchdb.Open(msgurl, mongourl, mongoname)
+func (d *TypedDatabase) InitTypedDB(mongourl string, mongoname string) (error) {
+    ds, err := timebatchdb.Open( mongourl, mongoname)
     if err != nil {
         return err
     }

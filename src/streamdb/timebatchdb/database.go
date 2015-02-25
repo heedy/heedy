@@ -6,13 +6,11 @@ package timebatchdb
 type Database struct {
     //hc HotCache     //The cache of the most recent datapoints
     ws WarmStore    //The intermediate storage of the Database
-    ms *Messenger    //The messaging system
 }
 
 func (d *Database) Close() {
     //d.hc.Close()
     d.ws.Close()
-    d.ms.Close()
 }
 
 //Returns the DataRange associated with the given time range
@@ -41,22 +39,17 @@ func (d *Database) GetIndexRange(key string, startindex uint64, endindex uint64)
     return NewNumRange(drl,endindex-startindex)
 }
 
-//Inserts the given data into the Database, and uses the given routing address for data
-func (d *Database) Insert(key string, timestamp int64, data []byte,routing string) error {
-    return d.ms.Publish(NewKeyedDatapoint(key,timestamp,data),routing)
+//Inserts the given data into the Database
+func (d *Database) Insert(key string, timestamp int64, data []byte) error {
+    return d.ws.Append(key,NewDatapointArray([]Datapoint{NewDatapoint(timestamp,data)}))
 }
 
 //Opens the Database.
-func Open(msgurl string, mongourl string, mongoname string) (*Database,error) {
-    ms,err := ConnectMessenger(msgurl)
-    if err!=nil {
-        return nil,err
-    }
+func Open(mongourl string, mongoname string) (*Database,error) {
     ws,err := OpenMongoStore(mongourl,mongoname)
     if err!=nil {
-        ms.Close()
         return nil,err
     }
 
-    return &Database{ws,ms},nil
+    return &Database{ws},nil
 }

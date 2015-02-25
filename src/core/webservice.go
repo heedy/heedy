@@ -44,7 +44,7 @@ func main() {
     }
 
     go timebatchdb.DatabaseWriter(*msgserver, *mgoserver, *mgodb, *routes)
-    timedb, err := dtypes.Open(*msgserver,*mgoserver,*mgodb)
+    timedb, err := dtypes.Open(*mgoserver,*mgodb)
 
     if err != nil {
         timedb = nil

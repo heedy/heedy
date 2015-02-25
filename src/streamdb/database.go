@@ -114,7 +114,7 @@ type UnifiedDB struct {
 func CreateLocalUnifiedDB(msgUrl, mongoUrl, mongoName, userdbPath string) (*UnifiedDB, error) {
     var udb UnifiedDB
 
-    err := udb.InitTypedDB(msgUrl, mongoUrl, mongoName)
+    err := udb.InitTypedDB(mongoUrl, mongoName)
     if err != nil {
         return nil, err
     }

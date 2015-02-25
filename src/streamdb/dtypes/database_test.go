@@ -59,10 +59,7 @@ func TestTypedDatabase(t *testing.T) {
     //First drop the collection - so that tests are fresh
     m.DropCollection("0")
 
-    //Turn on the DataStore writer
-    go timebatchdb.DatabaseWriter("localhost:4222","localhost","testdb", "testing/>")
-
-    db,err := Open("localhost:4222","localhost","testdb")
+    db,err := Open("localhost","testdb")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
@@ -83,7 +80,7 @@ func TestTypedDatabase(t *testing.T) {
     dpoint.K = "testing/key1"
     dpoint.T = int64(1)
     dpoint.D = "Hello World!"
-    err = db.Insert(dpoint,"")
+    err = db.Insert(dpoint)
     if err!=nil {
         t.Errorf("Insert failed: %s",err)
         return
@@ -91,7 +88,7 @@ func TestTypedDatabase(t *testing.T) {
     dpoint.T=int64(2)
     dpoint.K="key2"
     dpoint.D = "hi"
-    err = db.InsertKey("testing/key1",dpoint,"")
+    err = db.InsertKey("testing/key1",dpoint)
     if err!=nil {
         t.Errorf("Insert failed: %s",err)
         return

@@ -562,7 +562,7 @@ func createDataPoint(request *http.Request, requestingDevice *users.Device, user
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    err := timedb.InsertKey(createDataKey(user, device, stream), result, "")
+    err := timedb.InsertKey(createDataKey(user, device, stream), result)
 
     if err != nil {
         log.Printf("Timedb error while inserting|err:%v", err)

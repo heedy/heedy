@@ -1,27 +1,28 @@
-package timebatchdb
+package messenger
 
 import (
     "testing"
+    "streamdb/timebatchdb"
     "time"
     )
 
 func TestMessenger(t *testing.T) {
 
-    msg,err := ConnectMessenger("localhost:4222")
+    msg,err := Connect("localhost:4222")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
     }
     defer msg.Close()
 
-    msg2,err := ConnectMessenger("localhost:4222")
+    msg2,err := Connect("localhost:4222")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
     }
     defer msg2.Close()
 
-    recvchan := make(chan KeyedDatapoint)
+    recvchan := make(chan timebatchdb.KeyedDatapoint)
     _,err = msg2.SubChannel("user1/>",recvchan)
     if err != nil {
         t.Errorf("Couldn't bind channel: %s",err)
@@ -32,7 +33,7 @@ func TestMessenger(t *testing.T) {
     msg2.Flush()
 
     //Now, publish a message
-    err = msg.Publish(NewKeyedDatapoint("user1/item1/stream1",1000,[]byte("Hello World!")),"")
+    err = msg.Publish(timebatchdb.NewKeyedDatapoint("user1/item1/stream1",1000,[]byte("Hello World!")),"")
     if (err != nil) {
         t.Errorf("Couldn't publish: %s",err)
         return
@@ -40,7 +41,7 @@ func TestMessenger(t *testing.T) {
 
     go func() {
         time.Sleep(1*time.Second)
-        recvchan <- NewKeyedDatapoint("TIMEOUT",0,nil)
+        recvchan <- timebatchdb.NewKeyedDatapoint("TIMEOUT",0,nil)
     }()
 
     m := <- recvchan
