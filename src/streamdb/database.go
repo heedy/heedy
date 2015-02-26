@@ -111,10 +111,10 @@ type UnifiedDB struct {
 
 
 // Initializes the database with a local sqlite user store
-func CreateLocalUnifiedDB(msgUrl, mongoUrl, mongoName, userdbPath string) (*UnifiedDB, error) {
+func CreateLocalUnifiedDB(msgUrl, redisUrl, mongoUrl, mongoName, userdbPath string) (*UnifiedDB, error) {
     var udb UnifiedDB
 
-    err := udb.InitTypedDB(mongoUrl, mongoName)
+    err := udb.InitTypedDB(redisUrl, mongoUrl, mongoName)
     if err != nil {
         return nil, err
     }

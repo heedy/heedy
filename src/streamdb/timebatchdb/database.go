@@ -4,12 +4,12 @@ package timebatchdb
 
 //This is the object which handles all querying/inserting of data into the Database
 type Database struct {
-    //hc HotCache     //The cache of the most recent datapoints
+    hc *RedisCache     //The cache of the most recent datapoints
     ws WarmStore    //The intermediate storage of the Database
 }
 
 func (d *Database) Close() {
-    //d.hc.Close()
+    d.hc.Close()
     d.ws.Close()
 }
 
@@ -20,7 +20,7 @@ func (d *Database) GetTimeRange(key string, starttime int64, endtime int64) Data
         return drl  //The RangeList is empty on invalid params
     }
     drl.Append(d.ws.GetTime(key,starttime))
-    //drl.Append(hc.Get(key))
+    drl.Append(d.hc.Get(key))
     return NewTimeRange(drl,starttime,endtime)
 }
 
@@ -35,21 +35,26 @@ func (d *Database) GetIndexRange(key string, startindex uint64, endindex uint64)
         return drl  //The RangeList is empty on invalid params
     }
     drl.Append(d.ws.GetIndex(key,startindex))
-    //drl.Append(hc.Get(key))
+    drl.Append(d.hc.GetIndex(key,startindex))
     return NewNumRange(drl,endindex-startindex)
 }
 
 //Inserts the given data into the Database
 func (d *Database) Insert(key string, timestamp int64, data []byte) error {
-    return d.ws.Append(key,NewDatapointArray([]Datapoint{NewDatapoint(timestamp,data)}))
+    return d.hc.InsertOne(key,NewDatapoint(timestamp,data))
 }
 
 //Opens the Database.
-func Open(mongourl string, mongoname string) (*Database,error) {
+func Open(redisurl string, mongourl string, mongoname string) (*Database,error) {
     ws,err := OpenMongoStore(mongourl,mongoname)
     if err!=nil {
         return nil,err
     }
+    hs,err := OpenRedisCache(redisurl)
+    if err!=nil {
+        ws.Close()
+        return nil,err
+    }
 
-    return &Database{ws},nil
+    return &Database{hs,ws},nil
 }

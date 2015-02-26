@@ -1,7 +1,6 @@
 package dtypes
 
 import (
-    "time"
     "testing"
     "streamdb/timebatchdb"
     )
@@ -59,15 +58,21 @@ func TestTypedDatabase(t *testing.T) {
     //First drop the collection - so that tests are fresh
     m.DropCollection("0")
 
-    db,err := Open("localhost","testdb")
+    rc,err := timebatchdb.OpenRedisCache("localhost:6379")
+    if (err!=nil) {
+       t.Errorf("Couldn't open RedisCache")
+       return
+    }
+    defer rc.Close()
+
+    rc.Clear()
+
+    db,err := Open("localhost:6379","localhost","testdb")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
     }
     defer db.Close()
-
-    //Wait for the DataStoreWriter to initialize
-    time.Sleep(500 * time.Millisecond)
 
     //Now we test the database
     dt,ok := GetType("s")
@@ -101,9 +106,6 @@ func TestTypedDatabase(t *testing.T) {
         return
     }
 
-    //Wait for the DataStoreWriter to write the earlier data
-    time.Sleep(200 * time.Millisecond)
-
     r = db.GetIndexRange("testing/key1","s",0,50)
     defer r.Close()
 
@@ -134,4 +136,6 @@ func TestTypedDatabase(t *testing.T) {
         t.Errorf("Get nonexisting type failed")
         return
     }
+
+    rc.Clear()
 }

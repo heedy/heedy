@@ -84,10 +84,10 @@ func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint) error {
 }
 
 //Opens the DataStore.
-func Open(mongourl string, mongoname string) (*TypedDatabase,error) {
+func Open(redisurl string, mongourl string, mongoname string) (*TypedDatabase,error) {
 
     var td  TypedDatabase
-    err := td.InitTypedDB( mongourl, mongoname)
+    err := td.InitTypedDB(redisurl, mongourl, mongoname)
 
     if err != nil {
         return nil, err
@@ -106,8 +106,8 @@ func Open(mongourl string, mongoname string) (*TypedDatabase,error) {
 }
 
 // Initializes a Typed Database that already exists.
-func (d *TypedDatabase) InitTypedDB(mongourl string, mongoname string) (error) {
-    ds, err := timebatchdb.Open( mongourl, mongoname)
+func (d *TypedDatabase) InitTypedDB(redisurl string, mongourl string, mongoname string) (error) {
+    ds, err := timebatchdb.Open(redisurl, mongourl, mongoname)
     if err != nil {
         return err
     }

@@ -15,7 +15,16 @@ func TestDatabase(t *testing.T) {
     //First drop the collection - so that tests are fresh
     m.DropCollection("0")
 
-    db,err := Open("localhost","testdb")
+    rc,err := OpenRedisCache("localhost:6379")
+    if (err!=nil) {
+       t.Errorf("Couldn't open RedisCache")
+       return
+    }
+    defer rc.Close()
+
+    rc.Clear()
+
+    db,err := Open("localhost:6379","localhost","testdb")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return
@@ -96,5 +105,5 @@ func TestDatabase(t *testing.T) {
         t.Errorf("Index get failed")
         return
     }
-
+    rc.Clear()
 }

@@ -16,7 +16,8 @@ import (
 var (
     serverport = flag.Int("port", 8080, "The port number for the server to listen on.")
     helpflag = flag.Bool("help", false, "Prints this help message")
-
+    
+    redisserver      = flag.String("redis","localhost:6379", "The address to the redis instance")
     msgserver        = flag.String("msg", "localhost:4222", "The address of the messenger server")
     mgoserver        = flag.String("mgo", "localhost", "The address of the MongoDB server")
     mgodb            = flag.String("mgodb", "production_timebatchdb", "The name of the MongoDB database")
@@ -44,7 +45,7 @@ func main() {
     }
 
     go timebatchdb.DatabaseWriter(*msgserver, *mgoserver, *mgodb, *routes)
-    timedb, err := dtypes.Open(*mgoserver,*mgodb)
+    timedb, err := dtypes.Open(*redisserver, *mgoserver,*mgodb)
 
     if err != nil {
         timedb = nil
