@@ -6,18 +6,20 @@ import (
     "compress/gzip"
     )
 
+//Represents an array of Datapoints. It can be used as a DataRange, and has methods for reading and writing
+//from/to binary.
 type DatapointArray struct {
     Datapoints []Datapoint          //The array of datapoints
     array []byte                    //A (possibly nil) single byte array which holds all of the datapoints
     iloc int                        //Allows to make this a DataRange object
 }
 
-//The number of datapoints contained in the page
+//The number of datapoints contained in the array
 func (d *DatapointArray) Len() int {
     return len(d.Datapoints)
 }
 
-//Total size of the page in bytes (uncompressed)
+//Total size of the array in bytes (uncompressed)
 func (d *DatapointArray) Size() int {
     if (d.array!=nil) {
         return len(d.array)
@@ -29,31 +31,26 @@ func (d *DatapointArray) Size() int {
     return size
 }
 
-//Dummy function - allows datapointArray to conform to the DataRange interface
-func (d *DatapointArray) Init() {
-
+//Dummy function - allows datapointArray to conform to the DataRange interface. It doesn't actually do anything.
+func (d *DatapointArray) Init() error {
+    return nil
 }
-//Dummy function - allows datapointArray to conform to the DataRange interface.
-//This doesn't actually do anything, and you don't need to call this
+//DataRange function - allows DatapointArray to conform to the DataRange interface.
+//The DatapointArray doesn't need closing - this method resets the DataRange iterator.
 func (d *DatapointArray) Close() {
-
+    d.iloc = 0
 }
 
 //Allows to use DatapointArray as a DataRange - starts from the first datapoint, and
 //successively returns datapoint ptrs until there are none left, at which point it returns nil.
-//It is an iterator
-func (d *DatapointArray) Next() *Datapoint {
+//It is an iterator.
+func (d *DatapointArray) Next() (*Datapoint, error) {
     if d.iloc >= d.Len() {
-        return nil
+        return nil,nil
     }
     dp := &d.Datapoints[d.iloc]
     d.iloc++
-    return dp
-}
-
-//Resets the iterator back to 0
-func (d *DatapointArray) Reset() {
-    d.iloc = 0
+    return dp,nil
 }
 
 //Returns the timestamps associated with the index range
@@ -198,7 +195,7 @@ func (d *DatapointArray) Bytes() []byte {
     return arr
 }
 
-//Returns the gzipped bytes of the entire page of datapoints
+//Returns the gzipped bytes of the entire array of datapoints
 func (d *DatapointArray) CompressedBytes() []byte {
     var b bytes.Buffer
     w := gzip.NewWriter(&b)
@@ -208,12 +205,12 @@ func (d *DatapointArray) CompressedBytes() []byte {
 }
 
 
-//Creates a DatapointArray given an actual datapoint array
+//Creates a DatapointArray given an actual array of Datapoint
 func NewDatapointArray(d []Datapoint) *DatapointArray {
     return &DatapointArray{d,nil,0}
 }
 
-//Creates DatapointArray from the raw stuff
+//Creates DatapointArray from the raw data
 func CreateDatapointArray(timestamps []int64, data [][]byte) *DatapointArray {
     arr := make([]Datapoint,len(timestamps))
 
@@ -224,7 +221,8 @@ func CreateDatapointArray(timestamps []int64, data [][]byte) *DatapointArray {
 }
 
 //Creates a datapoint array from its associated bytes. Note that the Datapoint array assumes
-//that the bytes are correctly sized, unlike the Datapoint and KeyedDatapoint functions.
+//that the bytes are correctly sized. The DatapointArray does not actually store its size, so
+//this function just keeps trying to read data until there are no Bytes left.
 func DatapointArrayFromBytes(data []byte) *DatapointArray {
     if (len(data) ==0) {
         return nil
@@ -243,7 +241,7 @@ func DatapointArrayFromBytes(data []byte) *DatapointArray {
     return dp
 }
 
-//Given a linked list, create the DatapointArray
+//Given a linked list containing Datapoint, create the DatapointArray
 func DatapointArrayFromList(l *list.List) *DatapointArray {
     //Now create the points array
     points := make([]Datapoint,l.Len())
@@ -276,15 +274,19 @@ func DatapointArrayFromCompressedBytes(cdata []byte) *DatapointArray {
 
 
 //Given a DataRange, creates a DatapointArray based upon it. Closes the DataRAnge when done
-func DatapointArrayFromDataRange(dr DataRange) *DatapointArray {
+func DatapointArrayFromDataRange(dr DataRange) (*DatapointArray,error) {
     l := list.New()
 
-    d := dr.Next()
+    d,err := dr.Next()
     for d!=nil {
         l.PushBack(*d)
-        d = dr.Next()
+        d,err = dr.Next()
     }
     dr.Close()
 
-    return DatapointArrayFromList(l)
+    if err!=nil {
+        return nil,err
+    }
+
+    return DatapointArrayFromList(l),nil
 }

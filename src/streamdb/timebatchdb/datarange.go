@@ -5,33 +5,35 @@ import (
     )
 
 //The DataRange interface - this is the object that is returned from different caches/stores - it represents
-//a range of data values stored in a certain way, and Next() gets the next datapoint in the range
+//a range of data values stored in a certain way, and Next() gets the next datapoint in the range.
 type DataRange interface {
-    Init()              //Does the necessary steps to get the datarange ready for returning datapoints
-    Next() *Datapoint   //Returns the next datapoint in sequence - or nil if the sequence is finished
-    Close()             //Closes the datarange - can be called before Init. But Init does not have to work after close.
+    Init() error                //Does the necessary steps to get the datarange ready for returning datapoints
+    Next() (*Datapoint,error)   //Returns the next datapoint in sequence - or nil if the sequence is finished
+    Close()                     //Closes the datarange - can be called before Init. But Init does not have to work after close.
 }
 
-
+//The EmptyRange is a range that always returns nil - as if there were no datapoints left.
+//It is the DataRange equivalent of nil
 type EmptyRange struct {}
 func (r EmptyRange) Close() {}
-func (r EmptyRange) Init() {}
-func (r EmptyRange) Next() *Datapoint {
+func (r EmptyRange) Init() error {
     return nil
 }
-
-//The RangeList - it is a list of DataRanges, and acts as one large DataRange. In particular, it can combine
-//datasets with certain data overlap, since it makes sure that timestamps are strictly increasing.
-type RangeList struct {
-    rlist *list.List    //A list of DataRange objects
-    prevpt *Datapoint   //The previous datapoint - to make sure timestamps are ordered
+func (r EmptyRange) Next() (*Datapoint,error) {
+    return nil,nil
 }
 
-func (r *RangeList) Init() {
+//The RangeList - it is a list of DataRanges, and acts as one large DataRange.
+type RangeList struct {
+    rlist *list.List    //A list of DataRange objects
+}
+
+func (r *RangeList) Init() error {
     if (r.rlist.Len()!=0) {
         //Initialize the first in the list
-        r.rlist.Front().Value.(DataRange).Init()
+        return r.rlist.Front().Value.(DataRange).Init()
     }
+    return nil
 }
 
 func (r *RangeList) Close() {
@@ -46,15 +48,15 @@ func (r *RangeList) Close() {
     }
 }
 
-//Returns the next available value from the list, initializing and closing the necessary stuff
-func (r *RangeList) getnextvalue() *Datapoint {
+//Returns the next available datapoint value from the list, initializing and closing the necessary stuff
+func (r *RangeList) Next() (*Datapoint,error) {
     if (r.rlist.Len()==0) {
-        return nil
+        return nil,nil
     }
     e := r.rlist.Front().Value.(DataRange)
-    d := e.Next()
-    if (d!=nil) {
-        return d
+    d,err := e.Next()
+    if (d!=nil || err!=nil) {
+        return d,err
     }
 
     //Okay, this element of the list is empty, we close it, remove it from the list,
@@ -62,39 +64,19 @@ func (r *RangeList) getnextvalue() *Datapoint {
     e.Close()
     r.rlist.Remove(r.rlist.Front())
     if (r.rlist.Len()==0) {
-        return nil
+        return nil,nil
     }
     //Initialize the next element
-    r.rlist.Front().Value.(DataRange).Init()
+    err = r.rlist.Front().Value.(DataRange).Init()
+    if err!=nil {
+        return nil,err
+    }
 
     //repeat the procedure
-    return r.getnextvalue()
+    return r.Next()
 
 }
 
-//Returns the next datapoint
-func (r *RangeList) Next() *Datapoint {
-    d := r.getnextvalue()
-    if d==nil {
-        return d
-    }
-    if (r.prevpt==nil) {
-        r.prevpt = d
-        return d
-    }
-
-    //A previous datapoint exists: make sure that the next datapoint
-    //has a timestamp > than the last timestamp
-    //BUG(daniel): There is no way to check multiple points with same time stamp
-    for d.Timestamp() <= r.prevpt.Timestamp() {
-        d = r.getnextvalue()
-        if (d==nil) {
-            return d
-        }
-    }
-    r.prevpt = d
-    return d
-}
 
 //Appends to the end of the rangelist an uninitialized datarange
 func (r *RangeList) Append(d DataRange) {
@@ -103,7 +85,7 @@ func (r *RangeList) Append(d DataRange) {
 
 //Creates empty RangeList
 func NewRangeList() *RangeList {
-    return &RangeList{list.New(),nil}
+    return &RangeList{list.New()}
 }
 
 
@@ -120,22 +102,22 @@ func (r *TimeRange) Close() {
     r.dr.Close()
 }
 
-func (r *TimeRange) Init() {
-    r.dr.Init()
+func (r *TimeRange) Init() error {
+    return r.dr.Init()
 }
 
-func (r *TimeRange) Next() *Datapoint {
-    dp := r.dr.Next()
+func (r *TimeRange) Next() (*Datapoint,error) {
+    dp,err := r.dr.Next()
     //Skip datapoints before the starttime
     for (dp!=nil && dp.Timestamp()<= r.starttime) {
-        dp = r.dr.Next()
+        dp,err = r.dr.Next()
     }
     //Return nil if the timestamp is beyond our range
     if (dp != nil && dp.Timestamp()>r.endtime) {
         //The datapoint is beyond our range.
-        return nil
+        return nil,nil
     }
-    return dp
+    return dp,err
 }
 
 func NewTimeRange(dr DataRange, starttime int64, endtime int64) *TimeRange {
@@ -152,23 +134,27 @@ func (r *NumRange) Close() {
     r.dr.Close()
 }
 
-func (r *NumRange) Init() {
-    r.dr.Init()
+func (r *NumRange) Init() error {
+    return r.dr.Init()
 }
 
-func (r *NumRange) Next() *Datapoint {
+func (r *NumRange) Next() (*Datapoint,error) {
     if (r.numleft==0) {
-        return nil
+        return nil,nil
     }
     r.numleft--
     return r.dr.Next()
 }
 
 //Skip the given number of datapoints without changing the number of datapoints left to return
-func (r *NumRange) Skip(num int) {
+func (r *NumRange) Skip(num int) error {
     for i:=0;i<num;i++ {
-        r.dr.Next()
+        _,err := r.dr.Next()
+        if err!= nil {
+            return err
+        }
     }
+    return nil
 }
 
 //Gets a new NumRange which will return up to the given amount of datapoints.

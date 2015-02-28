@@ -30,6 +30,7 @@ func (d Datapoint) Bytes() []byte {
     return d.Buf
 }
 
+//Returns a nice pretty-printed representation of the datapoint
 func (d Datapoint) String() string {
     return "[TIME="+time.Unix(0,int64(d.Timestamp())).String()+" DATA="+string(d.Data())+"]"
 }
@@ -79,6 +80,7 @@ func DatapointIntoBuffer(w *bytes.Buffer, timestamp int64,data []byte) {
     w.Write(data)
 }
 
+//Creates a datapoint from a timetamp and data byte array
 func NewDatapoint(timestamp int64, data []byte) Datapoint {
     buf := new(bytes.Buffer)
     DatapointIntoBuffer(buf,timestamp,data)
@@ -91,78 +93,4 @@ func DatapointFromBytes(buf [] byte) (d Datapoint, bytesread uint64) {
     size,bytes_read := binary.Uvarint(buf[8:]) //We just need to know how large the data is
     bytesread = 8+uint64(bytes_read)+size
     return Datapoint{buf[:bytesread]},bytesread
-}
-
-
-//Same as datapoint, but also contains its key.
-//The format is as follows:
-//  [keylen uvarint][key bytes][datapoint]
-type KeyedDatapoint struct {
-    Buf []byte                 //The binary bytes associated with a datapoint (along with its key)
-}
-
-//Returns the byte array associated with the keyed datapoint
-func (d KeyedDatapoint) Bytes() []byte {
-    return d.Buf
-}
-
-//Gets the datapoint from a keyed-datapoint
-func (d KeyedDatapoint) Datapoint() Datapoint {
-    //Find the location of the datapoint
-    size,bytes_read := binary.Uvarint(d.Buf)
-    return Datapoint{d.Buf[bytes_read+int(size):]}
-}
-
-func (d KeyedDatapoint) Key() string {
-    size,bytes_read := binary.Uvarint(d.Buf)
-    return string(d.Buf[bytes_read:bytes_read+int(size)])
-}
-
-func (d KeyedDatapoint) Timestamp() int64 {
-    return d.Datapoint().Timestamp()
-}
-func (d KeyedDatapoint) Data() []byte {
-    return d.Datapoint().Data()
-}
-
-//A standard way to create a datapoint
-func NewKeyedDatapoint(key string, timestamp int64, data []byte) KeyedDatapoint {
-    buf := new(bytes.Buffer)
-    bytekey := []byte(key)
-    WriteUvarint(buf,uint64(len(bytekey)))
-    buf.Write(bytekey)
-    DatapointIntoBuffer(buf,timestamp,data)
-    return KeyedDatapoint{buf.Bytes()}
-
-}
-
-//Reads the datapoint from file
-func ReadKeyedDatapoint(r io.Reader) (KeyedDatapoint,error) {
-    w := new(bytes.Buffer)
-    n,err := ReadUvarint(r)
-    if err!=nil {
-        return KeyedDatapoint{nil},err
-    }
-    WriteUvarint(w,n)
-    _,err  = io.CopyN(w,r,int64(n))
-    if err!=nil {
-        return KeyedDatapoint{nil},err
-    }
-    err = ReadDatapointIntoBuffer(r,w)
-    return KeyedDatapoint{w.Bytes()},err //The bytes the buffer read are our datapoint
-
-}
-
-func (d KeyedDatapoint) String() string {
-    return "[KEY="+d.Key()+" TIME="+time.Unix(0,int64(d.Timestamp())).String()+" DATA="+string(d.Data())+"]"
-}
-
-//Total size in bytes of the datapoint
-func (d KeyedDatapoint) Len() int {
-    return len(d.Buf)
-}
-
-//The length of the data of the databuffer
-func (d KeyedDatapoint) DataLen() int {
-    return len(d.Data())
 }

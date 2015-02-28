@@ -46,8 +46,12 @@ func TestDatapointArray(t *testing.T) {
         return
     }
 
+    dplen := da.Size()
     //It looks like the basics are working. Now let's test going to bytes and back
     da.Bytes()
+    if dplen != da.Size() {
+        t.Errorf("Error finding size of dataArray")
+    }
 
     //da was reloaded when Bytes() was called. Make sure things are fine
     if (!assertData(t,da,"nochangebytes")) {
@@ -84,17 +88,69 @@ func TestDatapointArray(t *testing.T) {
         t.Errorf("Wrong TRange")
         return
     }
+    if (len(da.DataTRange(1200,2000))!=4) {
+        t.Errorf("Wrong TRange")
+        return
+    }
+    if (len(da.TimestampTRange(1200,2000))!=4) {
+        t.Errorf("Wrong TRange")
+        return
+    }
+    if (da.DatapointTRange(1200,3500).Len()!=8) {
+        t.Errorf("Wrong TRange")
+        return
+    }
+    if (len(da.DataTRange(1200,3500))!=8) {
+        t.Errorf("Wrong TRange")
+        return
+    }
+    if (len(da.TimestampTRange(1200,3500))!=8) {
+        t.Errorf("Wrong TRange")
+        return
+    }
+
+    if len(da.DataIRange(0,50))!=da.Len() {
+        t.Errorf("DataIRange doesn't return correct number of values")
+        return
+    }
+    if len(da.DataIRange(40,50))!=0 {
+        t.Errorf("DataIRange doesn't return correct number of values")
+        return
+    }
+    if len(da.TimestampIRange(0,50))!=da.Len() {
+        t.Errorf("DataIRange doesn't return correct number of values")
+        return
+    }
+    if len(da.TimestampIRange(40,50))!=0 {
+        t.Errorf("DataIRange doesn't return correct number of values")
+        return
+    }
+
+
+    datat,datad := da.GetTRange(1200,3500)
+    if len(datat)!=8 || len(datad)!=8 {
+        t.Errorf("Wrong TRange")
+        return
+    }
 
     if (da.TStart(2000).Len()!=4) {
         t.Errorf("Wrong TStart")
         return
     }
 
-    dp := da.Next()
+    dp,err := da.Next()
+    if err!=nil {
+        t.Errorf("Error: %s",err)
+        return
+    }
     if (dp == nil || dp.Timestamp()!=1000) {
         t.Errorf("Iterator wrong")
     }
-    dp = da.Next()
+    dp,err = da.Next()
+    if err!=nil {
+        t.Errorf("Error: %s",err)
+        return
+    }
     if (dp == nil || dp.Timestamp()!=1500) {
         t.Errorf("Iterator wrong")
     }
@@ -104,22 +160,68 @@ func TestDatapointArray(t *testing.T) {
     da.Next()
     da.Next()
     da.Next()
-    dp = da.Next()
+    dp,err = da.Next()
+    if err!=nil {
+        t.Errorf("Error: %s",err)
+        return
+    }
     if (dp == nil || dp.Timestamp()!=3000) {
         t.Errorf("Iterator wrong")
     }
-    dp = da.Next()
+    dp,err = da.Next()
+    if err!=nil {
+        t.Errorf("Error: %s",err)
+        return
+    }
     if (dp != nil) {
         t.Errorf("Iterator wrong")
     }
-    da.Reset()
-    dp = da.Next()
+    da.Close()
+    dp,err = da.Next()
+    if err!=nil {
+        t.Errorf("Error: %s",err)
+        return
+    }
     if (dp == nil || dp.Timestamp()!=1000) {
         t.Errorf("Iterator wrong")
     }
-    da.Reset()
+    da.Close()
     //Lastly, make sure loading from DataRange is functional
-    if (!assertData(t,DatapointArrayFromDataRange(da),"fromdatarange")) {
+    da2,err := DatapointArrayFromDataRange(da)
+    if err!=nil {
+        t.Errorf("Error: %s",err)
         return
+    }
+    if (!assertData(t,da2,"fromdatarange")) {
+        return
+    }
+}
+
+
+func BenchmarkDatapointArrayRange(b *testing.B) {
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+
+    da := CreateDatapointArray(timestamps,data)
+
+    for n := 0; n < b.N; n++ {
+        da.Init()
+        for dp,_ := da.Next(); dp!= nil ;dp,_ = da.Next() {
+            dp.Timestamp()
+            dp.Data()
+        }
+        da.Close()
+    }
+}
+
+func BenchmarkDatapointArrayByteConversion(b *testing.B) {
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+
+    for n := 0; n < b.N; n++ {
+        da := CreateDatapointArray(timestamps,data)
+        da.Bytes()
     }
 }

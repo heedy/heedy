@@ -1,53 +1,19 @@
 package timebatchdb
 
+/*
+Varitnt allows variable-length integers to be read from and written to io.reader and io.writer objects
+*/
+
 import (
-    "os"
-    "path/filepath"
     "errors"
     "io"
 )
-
-//Checks if the given path exists
-func PathExists(path string) bool {
-    if _, err := os.Stat(path); err == nil {
-        return true
-    }
-    return false
-}
-
-//Given the path to a file, it checks if the parent directories exist, and if they don't, creates them.
-func MakeParentDirs(path string) (err error) {
-    //Check if the directory exists
-    parentdir := filepath.Dir(path)
-    return MakeDirs(parentdir)
-}
-
-//Given the path of a directory, makes sure the entire path exists, and creates it if not.
-func MakeDirs(parentdir string) (err error) {
-    if PathExists(parentdir) == false {
-        err = os.MkdirAll(parentdir,0777)
-        if (err != nil) {
-            return err
-        }
-    }
-    return nil
-}
-
-//Returns the size of the file pointed to by path
-func DataSize(path string) (int64,error) {
-    s, err := os.Stat(path)
-    if (err != nil) {
-        return 0,err
-    }
-    return s.Size(),nil
-}
-
 
 //
 //For Fuck's sake, go, why do you make it so freaking annoying to read/write varints
 //Most of the stuff here is copied straight from go source code and modified not to be fail
 
-var overflow = errors.New("binary: varint overflows a 64-bit integer")
+var overflow = errors.New("varint: 64-bit unsigned varint overflow")
 
 // ReadUvarint reads an encoded unsigned integer from r and returns it as a uint64.
 func ReadUvarint(r io.Reader) (uint64, error) {
