@@ -225,3 +225,23 @@ func BenchmarkDatapointArrayByteConversion(b *testing.B) {
         da.Bytes()
     }
 }
+
+func BenchmarkDatapointArrayCompress(b *testing.B) {
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+
+    for n := 0; n < b.N; n++ {
+        CreateDatapointArray(timestamps,data).CompressedBytes()
+    }
+}
+
+func BenchmarkDatapointArrayUncompress(b *testing.B) {
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+    dpb := CreateDatapointArray(timestamps,data).CompressedBytes()
+    for n := 0; n < b.N; n++ {
+        DatapointArrayFromCompressedBytes(dpb)
+    }
+}

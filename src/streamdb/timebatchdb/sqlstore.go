@@ -186,11 +186,12 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
     }
 
     _,err = tx.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
-        (   Id INTEGER PRIMARY KEY,
+        (
             Key STRING NOT NULL,
             EndTime INTEGER,
             EndIndex INTEGER,
-            Data BLOB
+            Data BLOB,
+            PRIMARY KEY (Key, EndIndex)
             );`)
     if err != nil {
         tx.Rollback()
@@ -203,12 +204,6 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
         return nil,err
     }
 
-    _,err = tx.Exec("CREATE INDEX IF NOT EXISTS KeyIndex ON timebatchtable (Key,EndIndex ASC)")
-    if err != nil {
-        tx.Rollback()
-        return nil,err
-    }
-
     err = tx.Commit()
     if err!=nil {
         return nil,err
@@ -216,7 +211,7 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
 
     //Now that tables are all set up, prepare the queries to run on the database
 
-    inserter, err := db.Prepare("INSERT INTO timebatchtable VALUES (NULL,?,?,?,?);")
+    inserter, err := db.Prepare("INSERT INTO timebatchtable VALUES (?,?,?,?);")
     if err != nil {
         return nil,err
     }
