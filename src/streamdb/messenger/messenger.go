@@ -1,5 +1,5 @@
 package messenger
-
+/*
 import (
     "github.com/apcera/nats"
     "streamdb/timebatchdb"
@@ -53,3 +53,4 @@ func (m *Messenger) SubChannel(router string, chn chan timebatchdb.KeyedDatapoin
 func (m *Messenger) Flush() {
     m.econn.Flush()
 }
+*/

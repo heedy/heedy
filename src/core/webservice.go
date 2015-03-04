@@ -2,21 +2,21 @@ package main
 
 import (
     "log"
-    "net/http"
-    "github.com/gorilla/mux"
+    //"net/http"
+    //"github.com/gorilla/mux"
     "flag"
-    "fmt"
-    "streamdb/users"
-    "os"
-    "plugins/web_client"
-    "streamdb/timebatchdb"
-    "streamdb/dtypes"
+    //"fmt"
+    //"streamdb/users"
+    //"os"
+    //"plugins/web_client"
+    //"streamdb/timebatchdb"
+    //"streamdb/dtypes"
     )
 
 var (
     serverport = flag.Int("port", 8080, "The port number for the server to listen on.")
     helpflag = flag.Bool("help", false, "Prints this help message")
-    
+
     redisserver      = flag.String("redis","localhost:6379", "The address to the redis instance")
     msgserver        = flag.String("msg", "localhost:4222", "The address of the messenger server")
     mgoserver        = flag.String("mgo", "localhost", "The address of the MongoDB server")
@@ -27,6 +27,8 @@ var (
 
 
 func main() {
+    log.Fatal("UNIMPLEMENTED")
+    /*
     flag.Parse()
 
 
@@ -44,8 +46,8 @@ func main() {
         log.Print("Cannot open user database")
     }
 
-    go timebatchdb.DatabaseWriter(*msgserver, *mgoserver, *mgodb, *routes)
-    timedb, err := dtypes.Open(*redisserver, *mgoserver,*mgodb)
+
+    timedb, err := nil,errors.New("UNIMPLEMENTED")//dtypes.Open(*redisserver, *mgoserver,*mgodb)
 
     if err != nil {
         timedb = nil
@@ -62,4 +64,5 @@ func main() {
     http.Handle("/", r)
 
     log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
+    */
 }

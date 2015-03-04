@@ -6,6 +6,7 @@ import (
     "streamdb/timebatchdb"
     "log"
     "errors"
+    "database/sql"
     )
 
 var (
@@ -23,7 +24,7 @@ func (tr TypedRange) Close() {
     tr.dr.Close()
 }
 func (tr TypedRange) Next() TypedDatapoint {
-    d := tr.dr.Next()
+    d,_ := tr.dr.Next()
     if d==nil {
         return nil
     }
@@ -53,7 +54,8 @@ func (d *TypedDatabase) GetTimeRange(key string, dtype string, starttime int64, 
         log.Printf("TypedDatabase.Get: Unrecognized type '%s'\n",dtype)
         return TypedRange{timebatchdb.EmptyRange{},NilType{}}
     }
-    return TypedRange{d.db.GetTimeRange(key,starttime,endtime),t}
+    val,_:=d.db.GetTimeRange(key,starttime,endtime)
+    return TypedRange{val,t}
 }
 
 //Returns the DataRange associated with the given index range
@@ -63,7 +65,8 @@ func (d *TypedDatabase) GetIndexRange(key string, dtype string, startindex uint6
         log.Printf("TypedDatabase.Get: Unrecognized type '%s'\n",dtype)
         return TypedRange{timebatchdb.EmptyRange{},NilType{}}
     }
-    return TypedRange{d.db.GetIndexRange(key,startindex,endindex),t}
+    val,_:=d.db.GetIndexRange(key,startindex,endindex)
+    return TypedRange{val,t}
 }
 
 //Inserts the given data into the DataStore, and uses the given routing address for data
@@ -80,14 +83,14 @@ func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint) error {
     if err!=nil {
         return err
     }
-    return d.db.Insert(key,timestamp,data)
+    return d.db.Insert(key,timebatchdb.CreateDatapointArray([]int64{timestamp},[][]byte{data}))
 }
 
 //Opens the DataStore.
-func Open(redisurl string, mongourl string, mongoname string) (*TypedDatabase,error) {
+func Open(sdb *sql.DB, sqlstring string, redisurl string) (*TypedDatabase,error) {
 
     var td  TypedDatabase
-    err := td.InitTypedDB(redisurl, mongourl, mongoname)
+    err := td.InitTypedDB(sdb,sqlstring,redisurl)
 
     if err != nil {
         return nil, err
@@ -106,8 +109,8 @@ func Open(redisurl string, mongourl string, mongoname string) (*TypedDatabase,er
 }
 
 // Initializes a Typed Database that already exists.
-func (d *TypedDatabase) InitTypedDB(redisurl string, mongourl string, mongoname string) (error) {
-    ds, err := timebatchdb.Open(redisurl, mongourl, mongoname)
+func (d *TypedDatabase) InitTypedDB(sdb *sql.DB, sqlstring string, redisurl string) (error) {
+    ds, err := timebatchdb.Open(sdb,sqlstring,redisurl,10,nil)
     if err != nil {
         return err
     }

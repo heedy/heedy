@@ -3,6 +3,9 @@ package dtypes
 import (
     "testing"
     "streamdb/timebatchdb"
+    "database/sql"
+    _ "github.com/mattn/go-sqlite3"
+    "os"
     )
 
 
@@ -48,26 +51,25 @@ func TestTypedRange(t *testing.T) {
 }
 
 func TestTypedDatabase(t *testing.T) {
-    m,err := timebatchdb.OpenMongoStore("localhost","testdb")
-    if (err!=nil) {
-       t.Errorf("Couldn't open MongoStore")
-       return
+    os.Remove("testing.db")
+    sdb,err := sql.Open("sqlite3","testing.db")
+    if err!=nil {
+        t.Errorf("Couldn't open database: %v",err)
+        return
     }
-    defer m.Close()
+    defer sdb.Close()
 
-    //First drop the collection - so that tests are fresh
-    m.DropCollection("0")
-
-    rc,err := timebatchdb.OpenRedisCache("localhost:6379")
-    if (err!=nil) {
-       t.Errorf("Couldn't open RedisCache")
-       return
+    rc,err := timebatchdb.OpenRedisCache("localhost:6379",nil)
+    if err!= nil {
+        t.Errorf("Open Redis error %v",err)
+        return
     }
     defer rc.Close()
 
+    //Cleans the cache
     rc.Clear()
 
-    db,err := Open("localhost:6379","localhost","testdb")
+    db,err := Open(sdb,"sqlite3","localhost:6379")
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return

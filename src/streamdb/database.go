@@ -12,7 +12,7 @@ import (
     "streamdb/users"
     "errors"
     //"streamdb/timebatchdb"
-    "streamdb/dtypes"
+    //"streamdb/dtypes"
     )
 
 
@@ -106,23 +106,24 @@ func HasAnyPermission(d *users.Device, permissions []Permission) bool {
 
 type UnifiedDB struct {
     users.UserDatabase
-    dtypes.TypedDatabase
+    //dtypes.TypedDatabase
 }
 
 
 // Initializes the database with a local sqlite user store
-func CreateLocalUnifiedDB(msgUrl, redisUrl, mongoUrl, mongoName, userdbPath string) (*UnifiedDB, error) {
+func CreateLocalUnifiedDB(msgUrl, redisUrl, userdbPath string) (*UnifiedDB, error) {
     var udb UnifiedDB
 
-    err := udb.InitTypedDB(redisUrl, mongoUrl, mongoName)
+    err := udb.InitSqliteUserDatabase(userdbPath)
     if err != nil {
         return nil, err
     }
-
-    err = udb.InitSqliteUserDatabase(userdbPath)
+    /*
+    err := udb.InitTypedDB(redisUrl)
     if err != nil {
         return nil, err
     }
+    */
 
     return &udb, nil
 }

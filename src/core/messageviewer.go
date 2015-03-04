@@ -1,8 +1,8 @@
 package main
 
 import (
-    "streamdb/messenger"
-    "streamdb/timebatchdb"
+    //"streamdb/messenger"
+    //"streamdb/timebatchdb"
     "fmt"
     "log"
     "flag"
@@ -14,7 +14,7 @@ var (
     routes = flag.String("routes", ">", "The routes to watch")
     helpflag = flag.Bool("help", false, "Prints this help message")
 )
-
+/*
 func MessageView(url string,route string) error {
 
     log.Printf("MessageViewer (%s,%s)",url,route)
@@ -37,7 +37,7 @@ func MessageView(url string,route string) error {
 
     return nil
 }
-
+*/
 
 func main() {
     flag.Parse()
@@ -49,7 +49,7 @@ func main() {
         return
     }
 
-    log.Fatal(MessageView(*server,*routes))
-
+    //log.Fatal(MessageView(*server,*routes))
+    log.Fatal("UNIMPLEMENTED")
 
 }

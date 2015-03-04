@@ -1,7 +1,7 @@
 package main
 
 import (
-    "streamdb/timebatchdb"
+    //"streamdb/timebatchdb"
     "fmt"
     "log"
     "flag"
@@ -26,7 +26,7 @@ func main() {
         return
     }
 
-    log.Fatal(timebatchdb.DatabaseWriter(*msgserver,*mgodb,*mgodb, *routes))
-
+    //log.Fatal(timebatchdb.DatabaseWriter(*msgserver,*mgodb,*mgodb, *routes))
+    log.Fatal("UNIMPLEMENTED")
 
 }

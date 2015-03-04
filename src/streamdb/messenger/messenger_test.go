@@ -1,5 +1,5 @@
 package messenger
-
+/*
 import (
     "testing"
     "streamdb/timebatchdb"
@@ -55,3 +55,4 @@ func TestMessenger(t *testing.T) {
         return
     }
 }
+*/
