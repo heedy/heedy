@@ -53,6 +53,22 @@ func (d *DatapointArray) Next() (*Datapoint, error) {
     return dp,nil
 }
 
+//Checks if the DatapointArray is ordered with strictly increasing timestamps
+func (d *DatapointArray) IsTimestampOrdered() bool {
+    if d.Len()<=1 {
+        return true
+    }
+    prevt := d.Datapoints[0].Timestamp()
+    for i:=1 ; i < d.Len() ; i++ {
+        ts := d.Datapoints[i].Timestamp()
+        if (ts<=prevt) {
+            return false
+        }
+        prevt = ts
+    }
+    return true
+}
+
 //Returns the timestamps associated with the index range
 func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []int64) {
     if (end > d.Len()) {

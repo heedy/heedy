@@ -3,11 +3,13 @@ package timebatchdb
 import (
     "github.com/garyburd/redigo/redis"
     "time"
+    "math"
     "errors"
     )
 
 var (
     ERROR_REDIS_WRONGSIZE = errors.New("Data array sized incorrectly")
+    ERROR_REDIS_DNE = errors.New("The key does not exist")
 )
 
 
@@ -70,11 +72,65 @@ func (rc *RedisCache) GetIndices(key string) (startindex uint64,cachelength uint
     return startindex,cachelength,err
 }
 
+//Gets the most recently inserted datapoint from the cache
+func (rc *RedisCache) GetMostRecent(key string) (Datapoint,error) {
+    c := rc.cpool.Get()
+    v,err := redis.Values(c.Do("LRANGE",key,-1,-1))
+    c.Close()
+    if len(v)==0 {
+        return Datapoint{},ERROR_REDIS_DNE
+    }
+    dbytes,err := redis.Bytes(v[0],err)
+    if err!=nil {
+        return Datapoint{}, err
+    }
+    dp,_ := DatapointFromBytes(dbytes)
+    return dp,nil
+}
 
+//Gets the time of the last inserted datapoint for the given key
+func (rc *RedisCache) GetEndTime(key string) (t int64,err error) {
+    c := rc.cpool.Get()
+    t,err = redis.Int64(c.Do("GET","{T}>"+key))
+    c.Close()
+    if err==redis.ErrNil {  //If it returns nil, it means that the key DNE - so the timestamp is min
+        return math.MinInt64,nil
+    }
+    return t,err
+}
+
+//Gets the oldest datapoint existing in the cache
+func (rc *RedisCache) GetOldest(key string) (Datapoint,error) {
+    c := rc.cpool.Get()
+    v,err := redis.Values(c.Do("LRANGE",key,0,0))
+    c.Close()
+    if len(v)==0 {
+        return Datapoint{},ERROR_REDIS_DNE
+    }
+    dbytes,err := redis.Bytes(v[0],err)
+    if err!=nil {
+        return Datapoint{}, err
+    }
+    dp,_ := DatapointFromBytes(dbytes)
+    return dp,nil
+}
+
+//Gets the timestamp of the oldest datapoint that exists in the cache
+func (rc *RedisCache) GetStartTime(key string) (t int64,err error) {
+    dp,err := rc.GetOldest(key)
+    if err==ERROR_REDIS_DNE {
+        return math.MaxInt64,nil    //We want to bound the starttime
+    } else if err!=nil {
+        return 0,err
+    }
+    return dp.Timestamp(),err
+}
 
 //Insert the DatapointArray to the end of the cache for the given key
 func (rc *RedisCache) Insert(key string,da *DatapointArray) (keysize int, err error) {
     c := rc.cpool.Get()
+    //iterate the most recent timestamp
+    c.Send("SET","{T}>"+key,da.Datapoints[da.Len()-1].Timestamp())
     for i:= 0 ; i < da.Len() ; i++ {
         c.Send("RPUSH",key,da.Datapoints[i].Bytes())
     }
@@ -96,7 +152,10 @@ func (rc *RedisCache) BatchWait() (key string, err error) {
     c := rc.cpool.Get()
     keys,err := redis.Strings(c.Do("BRPOP","{{READY_Q}}",0))    //Blocking pop without timeout
     c.Close()
-    return keys[1],err
+    if err!=nil {   //The array might not exist on error
+        return "",err
+    }
+    return keys[1],nil
 }
 
 //Mark the most recent n datapoints for the given key as "processed", and delete them from the cache.
@@ -149,8 +208,22 @@ func (rc *RedisCache) Get(key string) (da *DatapointArray, startindex uint64, er
     return rc.BatchGet(key,0)
 }
 
-//Opens the redis cache given the URL to the server
-func OpenRedisCache(url string) (*RedisCache, error) {
+//Get the cache starting from the given index
+func (rc *RedisCache) GetByIndex(key string, index uint64) (dr DataRange, startindex uint64, err error) {
+    dp,si,err := rc.Get(key)
+    if err!=nil || si >= index {
+        return dp,si,err
+    } else if si+uint64(dp.Len())<=index {  //If index is out of bounds, return an empty range
+        return EmptyRange{},index,nil
+    }
+    return  NewDatapointArray(dp.Datapoints[index-si:]),index,nil
+}
+
+//Opens the redis cache given the URL to the server. The err parameter allows daisychains of errors
+func OpenRedisCache(url string, err error) (*RedisCache, error) {
+    if err!=nil {
+        return nil,err
+    }
     rp := &redis.Pool{
         MaxIdle: 3,
         IdleTimeout: 240 * time.Second,
@@ -169,7 +242,7 @@ func OpenRedisCache(url string) (*RedisCache, error) {
 
     //Check if we can connect to redis
     c := rp.Get()
-    err := c.Err()
+    err = c.Err()
     c.Close()
     if err!=nil {
         rp.Close()

@@ -2,6 +2,7 @@ package timebatchdb
 
 import (
     "testing"
+    "errors"
     "os"
     "database/sql"
     _ "github.com/mattn/go-sqlite3"
@@ -101,7 +102,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 
     r,si,err = s.GetByTime("hello/world",1)
     defer r.Close()
-    if si!=0 || err!=nil {
+    if si!=1 || err!=nil {
         t.Errorf("get failed %v %v",si,err)
         return
     }
@@ -137,7 +138,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 
     r,si,err = s.GetByIndex("hello/world",1)
     defer r.Close()
-    if si!=0 || err!=nil {
+    if si!=1 || err!=nil {
         t.Errorf("get failed %v %v",si,err)
         return
     }
@@ -305,6 +306,20 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 }
 
 
+func TestNoDriver(t *testing.T) {
+    err2 := errors.New("FAILTEST")
+    _,err := OpenSqlStore(nil,"",err2)
+    if err!=err2 {
+        t.Errorf("Fail error chain")
+        return
+    }
+    _,err = OpenSqlStore(nil,"notavaliddriver",nil)
+    if err!=ERROR_DATABASE_DRIVER {
+        t.Errorf("Bad database driver reaction")
+        return
+    }
+}
+
 func TestSQLiteStore(t *testing.T) {
     os.Remove("testing.db")
     db,err := sql.Open("sqlite3","testing.db")
@@ -313,7 +328,7 @@ func TestSQLiteStore(t *testing.T) {
         return
     }
     defer db.Close()
-    s,err := OpenSQLiteStore(db)
+    s,err := OpenSqlStore(db,"sqlite3",nil)
     if err!=nil {
         t.Errorf("Couldn't create SQLiteStore: %v",err)
         return

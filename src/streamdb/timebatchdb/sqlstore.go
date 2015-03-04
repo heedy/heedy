@@ -6,6 +6,7 @@ import (
     )
 
 var (
+    ERROR_DATABASE_DRIVER = errors.New("Database driver not supported")
     ERROR_DATABASE_CORRUPTED = errors.New("Database is corrupted!")
     ERROR_WTF = errors.New("Something is seriously wrong. A internal assertion failed.")
     )
@@ -119,7 +120,11 @@ func (s *SqlStore) GetByTime(key string, starttime int64) (dr DataRange, startin
     }
 
     if !rows.Next() {    //Check if there is any data to read
-        return EmptyRange{},0,rows.Err()
+        startindex,err = s.GetEndIndex(key)
+        if rows.Err()!=nil {
+            err = rows.Err()
+        }
+        return EmptyRange{},startindex,rows.Err()
     }
 
     //There is some data!
@@ -146,7 +151,11 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
     }
 
     if !rows.Next() {    //Check if there is any data to read
-        return EmptyRange{},0,rows.Err()
+        dataindex,err = s.GetEndIndex(key)
+        if rows.Err()!=nil {
+            err = rows.Err()
+        }
+        return EmptyRange{},dataindex,rows.Err()
     }
 
     //There is some data!
@@ -238,4 +247,15 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
     }
 
     return &SqlStore{inserter,timequery,indexquery,endindex},nil
+}
+
+//Uses the correct initializer for the given database driver. The err parameter allows daisychains of errors
+func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore,error) {
+    if err!=nil {
+        return nil,err
+    }
+    if sqldriver=="sqlite3" {
+        return OpenSQLiteStore(db)
+    }
+    return nil,ERROR_DATABASE_DRIVER
 }

@@ -3,6 +3,8 @@ package timebatchdb
 import (
     "testing"
     "bytes"
+    "math"
+    "errors"
     )
 
 func ensureValidityTest(t *testing.T, timestamps []int64, data [][]byte, dr DataRange) bool {
@@ -32,15 +34,22 @@ func ensureValidityTest(t *testing.T, timestamps []int64, data [][]byte, dr Data
 }
 
 func TestRedisCache(t *testing.T) {
+    err2 := errors.New("FAILTEST")
     //First try dialing an invalid redis cache
-    rc,err := OpenRedisCache("localhost:12324")
+    rc,err := OpenRedisCache("",err2)
+    if err!=err2 {
+        t.Errorf("OpenFail",err)
+        return
+    }
+    //First try dialing an invalid redis cache
+    rc,err = OpenRedisCache("localhost:12324",nil)
     if err== nil {
         rc.Close()
         t.Errorf("Open invalid Redis error %v",err)
         return
     }
 
-    rc,err = OpenRedisCache("localhost:6379")
+    rc,err = OpenRedisCache("localhost:6379",nil)
     if err!= nil {
         t.Errorf("Open Redis error %v",err)
         return
@@ -49,6 +58,27 @@ func TestRedisCache(t *testing.T) {
 
     //Cleans the cache
     rc.Clear()
+
+    dp,err := rc.GetMostRecent("hello/world")
+    if err != ERROR_REDIS_DNE {
+        t.Errorf("Get most recent failed: %v %v",err,dp)
+        return
+    }
+    dp,err = rc.GetOldest("hello/world")
+    if err != ERROR_REDIS_DNE {
+        t.Errorf("Get oldest failed: %v %v",err,dp)
+        return
+    }
+    tme,err := rc.GetEndTime("hello/world")
+    if err != nil || tme!=math.MinInt64 {
+        t.Errorf("Get most recent failed: %v %v",err,tme)
+        return
+    }
+    tme,err = rc.GetStartTime("hello/world")
+    if err != nil || tme!=math.MaxInt64 {
+        t.Errorf("Get oldest failed: %v %v",err,tme)
+        return
+    }
 
     idx, err := rc.EndIndex("hello/world")
     if idx!=0 || err!=nil {
@@ -159,6 +189,27 @@ func TestRedisCache(t *testing.T) {
     if !ensureValidityTest(t,timestamps[5:],data[5:],dpa) {
         return
     }
+    dr,idx,err := rc.GetByIndex("hello/world",5)
+    if err!=nil || idx!=5  {
+        t.Errorf("Get error %d %v",idx,err)
+        return
+    }
+    if !ensureValidityTest(t,timestamps[5:],data[5:],dr) {
+        return
+    }
+    dr,idx,err = rc.GetByIndex("hello/world",6)
+    if err!=nil || idx!=6  {
+        t.Errorf("Get error %d %v",idx,err)
+        return
+    }
+    if !ensureValidityTest(t,timestamps[6:],data[6:],dr) {
+        return
+    }
+    dr,idx,err = rc.GetByIndex("hello/world",20)
+    if val,_ := dr.Next(); err!=nil || idx!=20 || val!=nil  {
+        t.Errorf("Get error %d %v",idx,err)
+        return
+    }
 
     idx, err = rc.EndIndex("hello/world")
     if idx!=9 || err!=nil {
@@ -173,6 +224,27 @@ func TestRedisCache(t *testing.T) {
     idx, err = rc.CacheLength("hello/world")
     if idx!=4 || err!=nil {
         t.Errorf("get cache length failed %d %v",idx,err)
+        return
+    }
+
+    dp,err = rc.GetMostRecent("hello/world")
+    if err != nil || dp.Timestamp()!=8 {
+        t.Errorf("Get most recent failed: %v %v",err,dp)
+        return
+    }
+    tme,err = rc.GetEndTime("hello/world")
+    if err != nil || tme!=8 {
+        t.Errorf("Get most recent failed: %v %v",err,tme)
+        return
+    }
+    dp,err = rc.GetOldest("hello/world")
+    if err != nil || dp.Timestamp()!=6 {
+        t.Errorf("Get most recent failed: %v %v",err,dp)
+        return
+    }
+    tme,err = rc.GetStartTime("hello/world")
+    if err != nil || tme!=6 {
+        t.Errorf("Get most recent failed: %v %v",err,tme)
         return
     }
 
@@ -195,7 +267,7 @@ func TestRedisCache(t *testing.T) {
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
 func BenchmarkThousandRedis(b *testing.B) {
-    rc,err := OpenRedisCache("localhost:6379")
+    rc,err := OpenRedisCache("localhost:6379",nil)
     if err!= nil {
         b.Errorf("Open Redis error %v",err)
         return
@@ -229,7 +301,7 @@ func BenchmarkThousandRedis(b *testing.B) {
 }
 
 func BenchmarkRedisInsert(b *testing.B) {
-    rc,err := OpenRedisCache("localhost:6379")
+    rc,err := OpenRedisCache("localhost:6379",nil)
     if err!= nil {
         b.Errorf("Open Redis error %v",err)
         return

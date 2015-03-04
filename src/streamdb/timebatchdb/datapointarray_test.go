@@ -40,10 +40,21 @@ func TestDatapointArray(t *testing.T) {
     data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
         []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8")}
 
+    if !CreateDatapointArray(timestamps[0:1],data[0:1]).IsTimestampOrdered() {
+        t.Errorf("Timestamp ordering failure")
+    }
+    if !CreateDatapointArray(timestamps[0:3],data[0:3]).IsTimestampOrdered() {
+        t.Errorf("Timestamp ordering failure")
+    }
+
     da := CreateDatapointArray(timestamps,data) //This internally tests fromlist
 
     if (!assertData(t,da,"creation")) {
         return
+    }
+
+    if da.IsTimestampOrdered() {
+        t.Errorf("Timestamp ordering should fail due to duplicate stamps")
     }
 
     dplen := da.Size()
