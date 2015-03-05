@@ -272,8 +272,8 @@ func TestDatabaseRead(t *testing.T) {
     }
 }
 
-//This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
-func BenchmarkThousand(b *testing.B) {
+//This is a benchmark of how fast we can read out a thousand-datapoint range from sql in chunks of 100
+func BenchmarkThousandS(b *testing.B) {
     os.Remove("testing.db")
     sdb,err := sql.Open("sqlite3","testing.db")
     if err!=nil {
@@ -292,7 +292,7 @@ func BenchmarkThousand(b *testing.B) {
     //Cleans the cache
     rc.Clear()
 
-    db,err := Open(sdb,"sqlite3","localhost:6379",10,nil)
+    db,err := Open(sdb,"sqlite3","localhost:6379",100,nil)
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return
@@ -304,7 +304,57 @@ func BenchmarkThousand(b *testing.B) {
     for n := int64(0);n<100;n++ {
         timestamps := []int64{0+n*10,1+n*10,2+n*10,3+n*10,4+n*10,5+n*10,6+n*10,7+n*10,8+n*10,9+n*10}
         db.Insert("testkey",CreateDatapointArray(timestamps,data))
+        //db.WriteDatabaseIteration()
+    }
+    for i:=0;i<10;i++ {
         db.WriteDatabaseIteration()
+    }
+    b.ResetTimer()
+    for n := 0; n < b.N; n++ {
+        r,_ := db.GetIndexRange("testkey",0,1000)
+
+        r.Init()
+        for dp,_ := r.Next(); dp!= nil ;dp,_ = r.Next() {
+            dp.Timestamp()
+            dp.Data()
+        }
+        r.Close()
+    }
+}
+
+//This is a benchmark of how fast we can read out a thousand-datapoint range from redis
+func BenchmarkThousandR(b *testing.B) {
+    os.Remove("testing.db")
+    sdb,err := sql.Open("sqlite3","testing.db")
+    if err!=nil {
+        b.Errorf("Couldn't open database: %v",err)
+        return
+    }
+    defer sdb.Close()
+
+    rc,err := OpenRedisCache("localhost:6379",nil)
+    if err!= nil {
+        b.Errorf("Open Redis error %v",err)
+        return
+    }
+    defer rc.Close()
+
+    //Cleans the cache
+    rc.Clear()
+
+    db,err := Open(sdb,"sqlite3","localhost:6379",100,nil)
+    if err!=nil {
+        b.Errorf("Couldn't open database: %v",err)
+        return
+    }
+    defer db.Close()
+
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+    for n := int64(0);n<100;n++ {
+        timestamps := []int64{0+n*10,1+n*10,2+n*10,3+n*10,4+n*10,5+n*10,6+n*10,7+n*10,8+n*10,9+n*10}
+        db.Insert("testkey",CreateDatapointArray(timestamps,data))
+        //db.WriteDatabaseIteration()
     }
     b.ResetTimer()
     for n := 0; n < b.N; n++ {

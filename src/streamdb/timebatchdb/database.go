@@ -143,21 +143,16 @@ func (d *Database) Insert(key string, dpa *DatapointArray) error {
     if !dpa.IsTimestampOrdered() || dpa.Len()==0 {
         return ERROR_UNORDERED
     }
-    if et,_ := d.rc.GetEndTime(key); et >= dpa.Datapoints[0].Timestamp() {
+    et,clen,err := d.rc.GetEndTimeAndCacheLength(key)
+    if et >= dpa.Datapoints[0].Timestamp() {
         return ERROR_TIMESTAMP
-    }
-
-    clen, err := d.rc.Insert(key,dpa)
-    if err!= nil {
+    } else if err!=nil {
         return err
     }
     //If the batch size was exceeded on this insert, add it to the queue (this only adds
     //to the write queue on change in division, so that a batch is only written once to the database)
-    batches_written := clen/d.batchsize - (clen-dpa.Len())/d.batchsize
-    for i:=0; i< batches_written; i++ {
-        d.rc.BatchPush(key)
-    }
-    return nil
+    batchnum := (clen+dpa.Len())/d.batchsize - clen/d.batchsize
+    return d.rc.InsertAndBatchPush(key,dpa,batchnum)
 }
 
 //This runs one iteration of WriteDatabase - it blocks until a batch is ready, processes the batch, and returns.

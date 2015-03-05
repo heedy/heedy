@@ -139,10 +139,57 @@ func (rc *RedisCache) Insert(key string,da *DatapointArray) (keysize int, err er
     return keysize,err
 }
 
+//This is a custom command made to speed up inserts of the full database. It is equivalent to running GetEndTime
+//and CacheLength in one command
+func (rc *RedisCache) GetEndTimeAndCacheLength(key string) (t int64,keysize int,err error) {
+    c := rc.cpool.Get()
+    c.Send("GET","{T}>"+key)
+    c.Send("LLEN",key)
+    c.Flush()
+    t,err = redis.Int64(c.Receive())
+    if err==redis.ErrNil {  //If it returns nil, it means that the key DNE - so the timestamp is min
+        t= math.MinInt64
+    } else if err!=nil {
+        return t,0,err
+    }
+    keysize,err = redis.Int(c.Receive())
+    c.Close()
+    return t,keysize,err
+}
+
+//This is a custom command made to speed up inserts of the full database. It is equivalent to calling
+//Insert and then BatchPushMany
+//Insert the DatapointArray to the end of the cache for the given key
+func (rc *RedisCache) InsertAndBatchPush(key string,da *DatapointArray, pushnum int) (err error) {
+    c := rc.cpool.Get()
+    //iterate the most recent timestamp
+    c.Send("SET","{T}>"+key,da.Datapoints[da.Len()-1].Timestamp())
+    for i:= 0 ; i < da.Len() ; i++ {
+        c.Send("RPUSH",key,da.Datapoints[i].Bytes())
+    }
+    for i:=0 ; i < pushnum ; i++ {
+        c.Send("LPUSH","{{READY_Q}}",key)
+    }
+    _,err = c.Do("")
+    c.Close()
+    return err
+}
+
+
+
+
 //Adds the given key to the ready-queue - the queue of keys that have a batch ready to dump to disk storage
 func (rc *RedisCache) BatchPush(key string) error {
+    return rc.BatchPushMany(key,1)
+}
+
+//Same as BatchPush, but actually pushes a key the given number of times.
+func (rc *RedisCache) BatchPushMany(key string,num int) error {
     c := rc.cpool.Get()
-    _,err := c.Do("LPUSH","{{READY_Q}}",key)
+    for i:=0 ; i < num ; i++ {
+        c.Send("LPUSH","{{READY_Q}}",key)
+    }
+    _,err:= c.Do("")
     c.Close()
     return err
 }
