@@ -114,7 +114,7 @@ type UnifiedDB struct {
 func CreateLocalUnifiedDB(msgUrl, redisUrl, userdbPath string) (*UnifiedDB, error) {
     var udb UnifiedDB
 
-    err := udb.InitSqliteUserDatabase(userdbPath)
+    err := udb.InitUserDatabase(users.SQLITE3, userdbPath)
     if err != nil {
         return nil, err
     }
