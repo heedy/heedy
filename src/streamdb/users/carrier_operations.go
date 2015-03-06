@@ -43,61 +43,62 @@ func constructPhoneCarrierFromRow(rows *sql.Rows, err error) (*PhoneCarrier, err
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
     out := []*PhoneCarrier{}
 
-        if rows == nil {
-            return out, ERR_INVALID_PTR
-        }
-
-
-        for rows.Next() {
-            u := new(PhoneCarrier)
-            err := rows.Scan(&u.Id, &u.Name, &u.EmailDomain)
-
-            if err != nil {
-                return out, err
-            }
-
-            out = append(out, u)
-        }
-
-        return out, nil
+    if rows == nil {
+        return out, ERR_INVALID_PTR
     }
 
-    // ReadPhoneCarrierById selects a phone carrier from the database given its ID
-    func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
-        rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
-        return constructPhoneCarrierFromRow(rows, err)
-    }
 
-    func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
-        rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier")
+    for rows.Next() {
+        u := new(PhoneCarrier)
+        err := rows.Scan(&u.Id, &u.Name, &u.EmailDomain)
 
         if err != nil {
-            return nil, err
+            return out, err
         }
 
-        defer rows.Close()
-        return constructPhoneCarriersFromRows(rows)
+        out = append(out, u)
     }
 
-    // UpdatePhoneCarrier updates the database's phone carrier data with that of the
-    // struct provided.
-    func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
-        if carrier == nil {
-            return ERR_INVALID_PTR
-        }
+    return out, nil
+}
+
+// ReadPhoneCarrierById selects a phone carrier from the database given its ID
+func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
+    rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
+    return constructPhoneCarrierFromRow(rows, err)
+}
+
+func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
+    rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier")
+
+    if err != nil {
+        return nil, err
+    }
+
+    defer rows.Close()
+    return constructPhoneCarriersFromRows(rows)
+}
+
+// UpdatePhoneCarrier updates the database's phone carrier data with that of the
+// struct provided.
+func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
+    if carrier == nil {
+        return ERR_INVALID_PTR
+    }
 
 
-        _, err := userdb.db.Exec(`UPDATE PhoneCarrier SET
-            Name=?, EmailDomain=? WHERE Id = ?;`,
-            carrier.Name,
-            carrier.EmailDomain,
-            carrier.Id);
-            return err
-        }
+    _, err := userdb.db.Exec(`UPDATE PhoneCarrier SET
+        Name=?, EmailDomain=? WHERE Id = ?;`,
+        carrier.Name,
+        carrier.EmailDomain,
+        carrier.Id)
 
-        // DeletePhoneCarrier removes a phone carrier from the database, this will set
-        // all users carrier with this phone carrier as a foreign key to NULL
-        func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) (error) {
-            _, err := userdb.db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId );
-            return err
-        }
+    return err
+}
+
+// DeletePhoneCarrier removes a phone carrier from the database, this will set
+// all users carrier with this phone carrier as a foreign key to NULL
+func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) (error) {
+    _, err := userdb.db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId )
+    return err
+}
