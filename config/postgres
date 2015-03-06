@@ -1,0 +1,69 @@
+#!/bin/bash
+
+if [[ $1 == "" ]] ; then
+    echo 'Usage: setup_postgres (setup|run|interact) databasefolder'
+    exit 0
+fi
+
+CMD=$1
+DBDIR=$2
+
+# the next line should work regardless of the postgres type, it should choose
+# the highest installed verson and work with that.
+
+POSTGRESBIN=`find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/postgres`
+PORT=52592
+
+if [[ $CMD == "setup" ]] ; then
+
+    if [ -d "$DBDIR" ]; then
+        echo "Error, database directory already exists, delete it and try again."
+        exit 1
+    fi
+
+    
+
+
+    mkdir $DBDIR -m 0700
+
+    /usr/lib/postgresql/9.3/bin/initdb -D $DBDIR
+
+    # start listening on port
+    echo -e "port = $PORT" >> $DBDIR/postgresql.conf
+    echo -e "listen_addresses = 'localhost'" >> $DBDIR/postgresql.conf
+
+    # setup a unix socket
+    echo -e "unix_socket_directories = '/tmp'\\n" >> $DBDIR/postgresql.conf
+
+
+    $POSTGRESBIN -D $DBDIR -p $PORT &
+    echo "Started, waiting for port to become available"
+
+    while ! nc -vz localhost $PORT; do sleep 1; done
+    echo "Now Running"
+
+    psql -h localhost -p $PORT -d postgres -c "CREATE DATABASE connectordb;"
+
+    echo "Initial database is now set up"
+    exit 0
+fi
+
+if [[ $CMD == "run" ]] ; then
+    $POSTGRESBIN -D $DBDIR -p $PORT &
+    echo "Started, waiting for port to become available"
+
+    while ! nc -vz localhost $PORT; do sleep 1; done
+
+    echo "Now Running"
+    exit 0
+fi
+
+echo "Error in your syntax!"
+
+
+## interactive shell
+
+if [[ $CMD == "interact" ]] ; then
+    psql -h localhost -p $PORT -d $DBDIR
+fi
+#
