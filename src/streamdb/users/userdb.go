@@ -8,7 +8,8 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"errors"
-
+	_ "github.com/lib/pq"
+	"log"
 )
 
 
@@ -97,9 +98,12 @@ Sets up the SQLITE databse.
 **/
 func (userdb *UserDatabase) setupSqliteDatabase() error{
 
+	log.Printf("setting up squlite db")
+
 	_, err := userdb.db.Exec("PRAGMA foreign_keys = ON;")
 
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
@@ -109,6 +113,7 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 	    emaildomain CHAR(50) UNIQUE NOT NULL);`);
 
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
@@ -142,12 +147,14 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 			);`)
 
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
     // mysql: CREATE INDEX UserNameIndex ON User (Name);
 	// postgres CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
@@ -193,41 +200,30 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 			);`)
 
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
 	//psql `CREATE INDEX DeviceNameIndex ON Device (Name);`
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
 	//psql no ine: CREATE INDEX DeviceAPIIndex ON Device (ApiKey);
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
 	// `CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
-
-	/**
-	CREATE TABLE IF NOT EXISTS Stream
-	(   Id SERIAL PRIMARY KEY,
-	Name VARCHAR(100) NOT NULL,
-	Active BOOLEAN DEFAULT TRUE,
-	Public BOOLEAN DEFAULT FALSE,
-	Type VARCHAR(512) NOT NULL,
-	OwnerId INTEGER,
-	Ephemeral BOOL DEFAULT FALSE,
-	Output BOOL DEFAULT FALSE,
-	FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
-	UNIQUE(Name, OwnerId)
-	);
-	**/
 
 	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Stream
 		(   Id INTEGER PRIMARY KEY,
@@ -243,16 +239,19 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 			);`)
 
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
 	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
 	if err != nil {
+		log.Printf("Error %v", err)
 		return err
 	}
 
@@ -264,6 +263,8 @@ Sets up the PostgreSQL databse.
 **/
 func (userdb *UserDatabase) setupPostgresDatabase() error{
 
+	log.Printf("setting up postgres db")
+
 
 	_, err := userdb.db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier (
 	    id integer primary key,
@@ -271,46 +272,40 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	    emaildomain CHAR(50) UNIQUE NOT NULL);`);
 
 	if err != nil {
+		log.Printf("Error phone carrier %v", err)
 		return err
 	}
+
 
 	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
 
     /** mysql
     CREATE TABLE IF NOT EXISTS User(   Id SERIAL PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(50) UNIQUE NOT NULL, Email VARCHAR(100) UNIQUE NOT NULL, Password VARCHAR(100) NOT NULL, PasswordSalt VARCHAR(100) NOT NULL, PasswordHashScheme VARCHAR(50) NOT NULL, Admin BOOLEAN DEFAULT FALSE, Phone VARCHAR(50) DEFAULT "", PhoneCarrier INTEGER DEFAULT 0, UploadLimit_Items INTEGER DEFAULT 24000, ProcessingLimit_S INTEGER DEFAULT 86400, StorageLimit_Gb INTEGER DEFAULT 4,  FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL );
     **/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id INTEGER PRIMARY KEY,
+	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id SERIAL PRIMARY KEY,
 			Name VARCHAR(50) UNIQUE NOT NULL,
 			Email VARCHAR(100) UNIQUE NOT NULL,
-
 			Password VARCHAR(100) NOT NULL,
 			PasswordSalt VARCHAR(100) NOT NULL,
 			PasswordHashScheme VARCHAR NOT NULL,
-
 			Admin BOOLEAN DEFAULT FALSE,
 			Phone VARCHAR DEFAULT '',
 			PhoneCarrier INTEGER DEFAULT 0,
-
 			UploadLimit_Items INTEGER DEFAULT 24000,
 			ProcessingLimit_S INTEGER DEFAULT 86400,
 			StorageLimit_Gb INTEGER DEFAULT 4,
-
 			CreateTime INTEGER DEFAULT 0,
 			ModifyTime INTEGER DEFAULT 0,
-
 			UserGroup INTEGER DEFAULT 0,
-
-			FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL
-			);`)
+			FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL);`)
 
 	if err != nil {
+		log.Printf("Error users %v", err)
 		return err
 	}
 
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);`)
-	if err != nil {
-		return err
-	}
+
+	userdb.db.Exec(`CREATE INDEX UserNameIndex ON Users (Name);`)
 
 
 	/**
@@ -338,8 +333,10 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	);`)
 
 	if err != nil {
+		log.Printf("Error device %v", err)
 		return err
 	}
+
 
 	// ignore errors b/c we don't have if not exists
 	userdb.db.Exec(`CREATE INDEX DeviceNameIndex ON Device (Name);`)
@@ -360,8 +357,10 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	);`)
 
 	if err != nil {
+		log.Printf("Error stream %v", err)
 		return err
 	}
+
 
 	userdb.db.Exec(`CREATE INDEX StreamNameIndex ON Stream (Name);`)
 	userdb.db.Exec(`CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);`)
