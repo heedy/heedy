@@ -1,6 +1,7 @@
 package users
 
 import "testing"
+import "errors"
 
 func TestCreatePhoneCarrier(t *testing.T) {
     _, err := testdb.CreatePhoneCarrier("Test", "example.com")
@@ -149,4 +150,32 @@ func TestDeletePhoneCarrier(t *testing.T) {
     if carrier != nil {
         t.Errorf("Expected nil, but we got back a carrier meaning the delete failed %v", carrier)
     }
+}
+
+
+func TestCarrierSanityChecks(t *testing.T) {
+
+    testerr := errors.New("foobarbaz")
+
+    _, err := constructPhoneCarrierFromRow(nil, testerr)
+    if err == nil && err != ERR_INVALID_PTR {
+        t.Errorf("Passed in error and got nothing back.")
+    }
+
+    if err == ERR_INVALID_PTR {
+        t.Errorf("Got a further down error than expecting, should have got the same one back.")
+    }
+
+    _, err = constructPhoneCarriersFromRows(nil)
+
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Didn't stop a nil pointer")
+    }
+
+    err = testdb.UpdatePhoneCarrier(nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Didn't stop a nil pointer for update")
+    }
+
+
 }

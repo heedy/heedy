@@ -89,6 +89,20 @@ func TestCreateStream(t *testing.T) {
     if(err == nil) {
         t.Errorf("Created stream with duplicate name")
     }
+
+    _, err = testdb.CreateStream("", "", nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Function safeguards failed")
+    }
+}
+
+func TestConstructStreamsFromRows(t *testing.T) {
+    _, err := constructStreamsFromRows(nil)
+
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Function safeguards failed")
+    }
+
 }
 
 func TestReadStreamById(t *testing.T) {
@@ -142,9 +156,13 @@ func TestUpdateStream(t *testing.T) {
     if ! reflect.DeepEqual(stream, stream2) {
         t.Errorf("The original and updated objects don't match orig: %v updated %v", stream, stream2)
     }
+
+    err = testdb.UpdateStream(nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Function safeguards failed")
+    }
+
 }
-
-
 
 func TestDeleteStream(t *testing.T) {
     id, err := testdb.CreateStream("TestDeleteStream", "{}", dev)
@@ -170,5 +188,29 @@ func TestDeleteStream(t *testing.T) {
 
     if stream != nil {
         t.Errorf("Expected nil, but we got back %v meaning the delete failed", stream)
+    }
+}
+
+func TestReadStreamByDevice(t *testing.T) {
+    testdb.CreateStream("TestReadStreamByDevice", "{}", dev)
+    testdb.CreateStream("TestReadStreamByDevice2", "{}", dev)
+
+    streams, err := testdb.ReadStreamsByDevice(dev)
+
+    if err != nil {
+        t.Errorf("Got error while reading streams by device")
+        return
+    }
+
+    // TODO change this to look for proper streams once we have a set test db
+    // with fixed items
+    if len(streams) < 2 {
+        t.Errorf("didn't get enough streams")
+    }
+
+    _, err = testdb.ReadStreamsByDevice(nil)
+
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Function safeguards failed")
     }
 }
