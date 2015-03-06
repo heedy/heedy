@@ -44,7 +44,7 @@ func init() {
     //ApiKey, _ := uuid.NewV4()
     postgres_folder = "TESTING_postgresdb" //+ ApiKey.String()
 
-    _ = os.Remove(postgres_folder)
+    _ = os.RemoveAll(postgres_folder)
 
     ModePerm := os.FileMode(0700)
     os.Mkdir(postgres_folder, ModePerm)
