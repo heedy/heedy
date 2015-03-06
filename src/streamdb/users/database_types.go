@@ -25,30 +25,30 @@ type User struct {
 }
 
 // Converts a user to a sanitized version
-func (u User) ToClean() User {
+func (u *User) ToClean() User {
     return User{Name:u.Name}
 }
 
 
 // Sets a new password for an account
-func (u User) SetNewPassword(newPass string) {
+func (u *User) SetNewPassword(newPass string) {
     u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
 }
 
 
 // Checks if the device is enabled and a superdevice
-func (u User) IsAdmin() bool {
+func (u *User) IsAdmin() bool {
     return u.Admin
 }
 
 
-func (u User) OwnsDevice(device *Device) bool {
+func (u *User) OwnsDevice(device *Device) bool {
     return u.Id == device.OwnerId
 }
 
 
 // converts a user to a device for handling requests with a username/password
-func (usr User) ToDevice() *Device {
+func (usr *User) ToDevice() *Device {
     requester := new(Device)
     requester.Superdevice = usr.IsAdmin()
     requester.Enabled = true
@@ -57,7 +57,7 @@ func (usr User) ToDevice() *Device {
     requester.OwnerId = usr.Id
     requester.Id = -1
 
-    requester.user = &usr
+    requester.user = usr
 
     return requester
 }
@@ -91,18 +91,18 @@ type Device struct {
 }
 
 // Checks to see if this is a pseudo-device created with User.ToDevice()
-func (d Device) IsUser() bool {
+func (d *Device) IsUser() bool {
     return d.user != nil
 }
 
 // If this device was created from a user, get it otherwise return nil
 // Scooby dooby doo!
-func (d Device) Unmask() *User {
+func (d *Device) Unmask() *User {
     return d.user
 }
 
 // Check if the device is enabled
-func (d Device) IsActive() bool {
+func (d *Device) IsActive() bool {
     return d.Enabled
 }
 
@@ -123,11 +123,11 @@ func (d *Device) CanModifyUser() bool {
     return d.UserProxy
 }
 
-func (d Device) IsOwnedBy(user *User) bool {
+func (d *Device) IsOwnedBy(user *User) bool {
     return d.OwnerId == user.Id
 }
 
-func (d Device) ToClean() Device {
+func (d *Device) ToClean() Device {
     var tmp Device
 
     tmp.Id = d.Id
@@ -150,7 +150,7 @@ type Stream struct {
     Output bool // Currently inactive
 }
 
-func (d Stream) ToClean() Stream {
+func (d *Stream) ToClean() Stream {
     return Stream{Id: d.Id,
         Name:d.Name,
         Type:d.Type,
