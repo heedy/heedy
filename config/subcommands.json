@@ -55,6 +55,20 @@
             "depends":["mongo", "gnatsd"],
             "envflags":{"timeseries|hostname":"localhost", "timeseries|port":"9001"},
             "run_forever":true
+        },
+        {
+            "name":"run_postgres",
+            "command":["./config/postgres", "run", "postgres|folder"],
+            "depends":["setup_postgres"],
+            "envflags":{},
+            "run_forever":false
+        }
+        {
+            "name":"setup_postgres",
+            "command":["./config/postgres", "setup", "postgres|folder"],
+            "depends":[],
+            "envflags":{"postgres|folder": "sql_database"},
+            "run_forever":false
         }
     ]
 }
