@@ -44,6 +44,15 @@ dependencies:
 	go get gopkg.in/mgo.v2
 	go get github.com/gorilla/sessions
 
+############################################################################################################
+#Packages the project requires (not included in all because it needs sudo)
+############################################################################################################
+
+packages:
+	apt-get install redis-server
+	apt-get install mongodb
+	apt-get install postgres
+
 coverage:
 	go get golang.org/x/tools/cmd/cover
 
