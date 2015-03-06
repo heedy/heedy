@@ -43,6 +43,7 @@ dependencies:
 	go get github.com/gorilla/context
 	go get gopkg.in/mgo.v2
 	go get github.com/gorilla/sessions
+	go get github.com/lib/pq
 
 ############################################################################################################
 #Packages the project requires (not included in all because it needs sudo)
