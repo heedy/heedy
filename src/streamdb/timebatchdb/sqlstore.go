@@ -186,6 +186,37 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 }
 
 
+//Sets up the inserts (it assumes that the database was already prepared)
+func prepareSqlStore(db *sql.DB,insert_s,timequery_s,indexquery_s,endindex_s string) (*SqlStore,error) {
+    inserter, err := db.Prepare(insert_s)
+    if err != nil {
+        return nil,err
+    }
+
+    timequery, err := db.Prepare(timequery_s)
+    if err != nil {
+        inserter.Close()
+        return nil,err
+    }
+
+    indexquery, err := db.Prepare(indexquery_s)
+    if err != nil {
+        inserter.Close()
+        timequery.Close()
+        return nil,err
+    }
+
+    endindex, err := db.Prepare(endindex_s)
+    if err != nil {
+        inserter.Close()
+        timequery.Close()
+        indexquery.Close()
+        return nil,err
+    }
+
+    return &SqlStore{inserter,timequery,indexquery,endindex},nil
+}
+
 //Initializes an sqlite database to work with an SqlStore.
 func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
     if err := db.Ping(); err != nil {
@@ -222,33 +253,64 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore,error) {
 
     //Now that tables are all set up, prepare the queries to run on the database
 
-    inserter, err := db.Prepare("INSERT INTO timebatchtable VALUES (?,?,?,?);")
+    return prepareSqlStore(db,"INSERT INTO timebatchtable VALUES (?,?,?,?);",
+            "SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
+            "SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
+            "SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?")
+}
+
+//Initializes an sqlite database to work with an SqlStore.
+func OpenPostgresStore(db *sql.DB) (*SqlStore,error) {
+    if err := db.Ping(); err != nil {
+        return nil,err
+    }
+    tx,err := db.Begin()
+    if err!=nil {
+        return nil, err
+    }
+
+    _,err = tx.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
+        (
+            Key VARCHAR NOT NULL,
+            EndTime BIGINT,
+            EndIndex BIGINT,
+            Data BYTEA,
+            PRIMARY KEY (Key, EndIndex)
+            );`)
     if err != nil {
+        tx.Rollback()
+        return nil, err
+    }
+
+    //As of writing this code, postgres does not have CREATE INDEX IF NOT EXISTS, so we manually check it.
+    //Based upon http://stackoverflow.com/questions/24674281/create-unique-index-if-not-exists-in-postgresql
+    _,err = tx.Exec(`DO
+        $$
+        DECLARE
+            l_count integer;
+        BEGIN
+            select count(*) into l_count from pg_indexes where schemaname = 'public'
+                        and tablename = 'timebatchtable' and indexname = 'keytime';
+            if l_count = 0 then
+                CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
+            end if;
+        END;
+        $$`)
+    if err != nil {
+        tx.Rollback()
         return nil,err
     }
 
-    timequery, err := db.Prepare("SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC")
-    if err != nil {
-        inserter.Close()
+    err = tx.Commit()
+    if err!=nil {
         return nil,err
     }
 
-    indexquery, err := db.Prepare("SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC")
-    if err != nil {
-        inserter.Close()
-        timequery.Close()
-        return nil,err
-    }
-
-    endindex, err := db.Prepare("SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?")
-    if err != nil {
-        inserter.Close()
-        timequery.Close()
-        indexquery.Close()
-        return nil,err
-    }
-
-    return &SqlStore{inserter,timequery,indexquery,endindex},nil
+    //Now that tables are all set up, prepare the queries to run on the database
+    return prepareSqlStore(db,"INSERT INTO timebatchtable VALUES ($1,$2,$3,$4);",
+            "SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndTime > $2 ORDER BY EndTime ASC;",
+            "SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndIndex > $2 ORDER BY EndIndex ASC;",
+            "SELECT COALESCE(MAX(EndIndex),0) FROM timebatchtable WHERE Key=$1;")
 }
 
 //Uses the correct initializer for the given database driver. The err parameter allows daisychains of errors
@@ -256,8 +318,11 @@ func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore,error) {
     if err!=nil {
         return nil,err
     }
-    if sqldriver=="sqlite3" {
-        return OpenSQLiteStore(db)
+    switch sqldriver {
+        case "sqlite3":
+            return OpenSQLiteStore(db)
+        case "postgres":
+            return OpenPostgresStore(db)
     }
     return nil,ERROR_DATABASE_DRIVER
 }

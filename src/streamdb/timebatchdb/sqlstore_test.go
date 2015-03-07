@@ -8,6 +8,11 @@ import (
     _ "github.com/mattn/go-sqlite3"
     )
 
+
+var (
+    TEST_postgresString = "sslmode=disable dbname=connectordb port=52592"
+    )
+
 func SqlStoreTest(s *SqlStore, t *testing.T) {
 
     //First check returning empties
@@ -339,6 +344,25 @@ func TestSQLiteStore(t *testing.T) {
 
 }
 
+func TestPostgresStore(t *testing.T) {
+    db,err := sql.Open("postgres",TEST_postgresString)
+    if err!=nil {
+        t.Errorf("Couldn't open database: %v",err)
+        return
+    }
+    db.Exec("DROP TABLE timebatchtable")
+    defer db.Close()
+    s,err := OpenSqlStore(db,"postgres",nil)
+    if err!=nil {
+        t.Errorf("Couldn't create PostgresStore: %v",err)
+        return
+    }
+    defer s.Close()
+
+    SqlStoreTest(s,t)
+
+}
+
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
 func BenchmarkThousandSQLite(b *testing.B) {
@@ -386,6 +410,68 @@ func BenchmarkSQLiteInsert(b *testing.B) {
     s,err := OpenSQLiteStore(db)
     if err!=nil {
         b.Errorf("Couldn't create SQLiteStore: %v",err)
+        return
+    }
+    defer s.Close()
+
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    b.ResetTimer()
+    for n := 0; n < b.N; n++ {
+        s.Append("testkey",CreateDatapointArray(timestamps,data))
+    }
+
+
+}
+
+
+//This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
+func BenchmarkThousandPostgres(b *testing.B) {
+    db,err := sql.Open("postgres",TEST_postgresString)
+    if err!=nil {
+        b.Errorf("Couldn't open database: %v",err)
+        return
+    }
+    db.Exec("DROP TABLE timebatchtable")
+    defer db.Close()
+    s,err := OpenPostgresStore(db)
+    if err!=nil {
+        b.Errorf("Couldn't create PostgresStore: %v",err)
+        return
+    }
+    defer s.Close()
+
+    data := [][]byte{[]byte("test0"),[]byte("test1"),[]byte("test2"),[]byte("test3"),
+        []byte("test4"),[]byte("test5"),[]byte("test6"),[]byte("test7"),[]byte("test8"),[]byte("test9")}
+    timestamps := []int64{0,1,2,3,4,5,6,7,8,9}
+    for i := int64(0);i<100;i++ {
+        s.Append("testkey",CreateDatapointArray(timestamps,data))
+    }
+    b.ResetTimer()
+    for n := 0; n < b.N; n++ {
+        r,_,_ := s.GetByIndex("testkey",0)
+
+        r.Init()
+        for dp,_ := r.Next(); dp!= nil ;dp,_ = r.Next() {
+            dp.Timestamp()
+            dp.Data()
+        }
+        r.Close()
+    }
+}
+
+func BenchmarkPostgresInsert(b *testing.B) {
+    db,err := sql.Open("postgres",TEST_postgresString)
+    if err!=nil {
+        b.Errorf("Couldn't open database: %v",err)
+        return
+    }
+    db.Exec("DROP TABLE timebatchtable")
+    defer db.Close()
+    s,err := OpenPostgresStore(db)
+    if err!=nil {
+        b.Errorf("Couldn't create PostgresStore: %v",err)
         return
     }
     defer s.Close()

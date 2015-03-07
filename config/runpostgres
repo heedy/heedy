@@ -9,10 +9,17 @@ CMD=$1
 DBDIR=$2
 
 # the next line should work regardless of the postgres type, it should choose
-# the highest installed verson and work with that.
+# the highest installed version and work with that.
 
 POSTGRESBIN=`find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/postgres`
+POSTGRESINIT=`find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/initdb`
 PORT=52592
+
+#If postgres can't be found in the search dirs, assume it is in path.
+if [ -z $POSTGRESBIN ] ; then
+    POSTGRESBIN=postgres
+    POSTGRESINIT=initdb
+fi
 
 if [[ $CMD == "setup" ]] ; then
 
@@ -21,12 +28,10 @@ if [[ $CMD == "setup" ]] ; then
         exit 1
     fi
 
-    
-
-
+   
     mkdir $DBDIR -m 0700
 
-    /usr/lib/postgresql/9.3/bin/initdb -D $DBDIR
+    $POSTGRESINIT -D $DBDIR
 
     # start listening on port
     echo -e "port = $PORT" >> $DBDIR/postgresql.conf
