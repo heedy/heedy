@@ -350,7 +350,7 @@ func TestPostgresStore(t *testing.T) {
         t.Errorf("Couldn't open database: %v",err)
         return
     }
-    db.Exec("DROP TABLE timebatchtable")
+    db.Exec("DROP TABLE IF EXISTS timebatchtable")
     defer db.Close()
     s,err := OpenSqlStore(db,"postgres",nil)
     if err!=nil {
@@ -433,7 +433,7 @@ func BenchmarkThousandPostgres(b *testing.B) {
         b.Errorf("Couldn't open database: %v",err)
         return
     }
-    db.Exec("DROP TABLE timebatchtable")
+    db.Exec("DROP TABLE IF EXISTS timebatchtable")
     defer db.Close()
     s,err := OpenPostgresStore(db)
     if err!=nil {
@@ -467,7 +467,7 @@ func BenchmarkPostgresInsert(b *testing.B) {
         b.Errorf("Couldn't open database: %v",err)
         return
     }
-    db.Exec("DROP TABLE timebatchtable")
+    db.Exec("DROP TABLE IF EXISTS timebatchtable")
     defer db.Close()
     s,err := OpenPostgresStore(db)
     if err!=nil {

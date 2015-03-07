@@ -330,7 +330,7 @@ func BenchmarkThousandS_P(b *testing.B) {
         b.Errorf("Couldn't open database: %v",err)
         return
     }
-    sdb.Exec("DROP TABLE timebatchtable")
+    sdb.Exec("DROP TABLE IF EXISTS timebatchtable")
     defer sdb.Close()
 
     rc,err := OpenRedisCache("localhost:6379",nil)
