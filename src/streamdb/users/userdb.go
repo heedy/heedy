@@ -91,6 +91,11 @@ func (n *UserDatabase) InitUserDatabase(ds DRIVERSTR, cxn string) error {
 	return nil
 }
 
+func (userdb *UserDatabase) UnderlyingDb() *sql.DB {
+	return userdb.db
+}
+
+
 
 
 /**
