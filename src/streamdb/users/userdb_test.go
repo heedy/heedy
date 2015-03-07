@@ -10,19 +10,22 @@ package users
 
 
 import (
-    "os/exec"
+    //"os/exec"
     //"github.com/nu7hatch/gouuid"
-    "os"
-    "net"
+    //"os"
+    //"net"
     "log"
     "testing"
-    "time"
+    //"time"
     )
 
 var (
     postgres_folder string
-    portnum = "7327"
+    portnum = "52592"
 )
+
+/*BUG(daniel): hard-coding the postgres version and location causes explosion on my computer (my pgres is 9.4).
+I also switched the port to the one used by the postgres run script
 
 func start_psql() {
     log.Printf("Starting postgres, port: %v, dir: %v", portnum, postgres_folder)
@@ -91,7 +94,7 @@ func init() {
         log.Printf("Could not create database %v", err)
     }
 }
-
+*/
 
 
 func TestPostgresInit(t *testing.T) {
