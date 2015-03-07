@@ -30,8 +30,7 @@ func start_psql() {
     err := cmd.Run()
 
     if err != nil {
-        log.Printf("Postgres Crashed")
-        log.Fatal(err)
+        log.Printf("Postgres Crashed %v", err)
     }
     log.Printf("Postgres Quit")
 
@@ -68,9 +67,6 @@ func init() {
 
     go start_psql()
 
-    if err != nil {
-        log.Fatal(err)
-    }
 
     var conn net.Conn
     for i := 0; i < 30; i += 1 {
@@ -92,8 +88,7 @@ func init() {
 
     err = exec.Command("psql", "-h", "localhost", "-p", portnum, "-d", "postgres", "-c", "CREATE DATABASE connectordb;").Run()
     if err != nil {
-        log.Printf("Could not create database")
-    	log.Fatal(err)
+        log.Printf("Could not create database %v", err)
     }
 }
 

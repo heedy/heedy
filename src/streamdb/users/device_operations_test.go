@@ -25,6 +25,11 @@ func TestCreateDevice(t *testing.T) {
         t.Errorf("Could not create device with secnod user %v", err)
         return
     }
+
+    _, err = testdb.CreateDevice("TestCreateDevice2", nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("allowed user to be nil")
+    }
 }
 
 
@@ -78,6 +83,24 @@ func TestUpdateDevice(t *testing.T) {
 
     if ! reflect.DeepEqual(obj, obj2) {
         t.Errorf("The original and updated objects don't match orig: %v updated %v", obj, obj2)
+    }
+
+    err = testdb.UpdateDevice(nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Allowed nil pointer through")
+    }
+}
+
+func TestConstructDevicesFromRows(t *testing.T) {
+    _, err := constructDevicesFromRows(nil, nil)
+
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Allowed nil pointer through")
+    }
+
+    _, err = constructDevicesFromRows(nil, ERR_INVALID_PTR)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Passed up error checking")
     }
 }
 

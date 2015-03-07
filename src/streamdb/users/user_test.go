@@ -3,6 +3,7 @@ package users
 import(
     "testing"
     "reflect"
+    "errors"
     )
 
 func TestCreateUser(t *testing.T) {
@@ -24,6 +25,42 @@ func TestCreateUser(t *testing.T) {
         return
     }
 }
+
+func TestReadAllUsers(t *testing.T) {
+    users, err := testdb.ReadAllUsers()
+
+    if err != nil {
+        t.Errorf("Exception while reading all users %v", err)
+    }
+
+    if users == nil {
+        t.Errorf("users is nil")
+        return
+    }
+
+    _, err = testdb.CreateUser("TestReadAllUsers", "TestReadAllUsers_email", "TestReadAllUsers_pass")
+    if err != nil {
+        t.Errorf("Could not complete test due to: %v", err)
+        return
+    }
+
+    users2, err := testdb.ReadAllUsers()
+
+    if err != nil {
+        t.Errorf("Exception while reading all users %v", err)
+    }
+
+    if users2 == nil {
+        t.Errorf("users is nil")
+        return
+    }
+
+    if len(users2) - len(users) != 1 {
+        t.Errorf("not taking into account changes")
+    }
+}
+
+
 
 func TestReadUserByEmail(t *testing.T){
     // test failures on non existance
@@ -163,6 +200,11 @@ func TestUpdateUser(t *testing.T){
         return
     }
 
+    err = testdb.UpdateUser(nil)
+    if err != ERR_INVALID_PTR {
+        t.Errorf("Didn't catch nil")
+    }
+
     usr.Name = "Hello"
     usr.Email = "hello@example.com"
     usr.Admin = true
@@ -187,6 +229,24 @@ func TestUpdateUser(t *testing.T){
 
     if ! reflect.DeepEqual(usr, usr2) {
         t.Errorf("The original and updated objects don't match orig: %v updated %v", usr, usr2)
+    }
+}
+
+func TestConstructUserFrom(t *testing.T) {
+    teste := errors.New("blah")
+    _, err := constructUserFromRow(nil, teste)
+
+    if err != teste {
+        t.Errorf("Construct user did not allow error passthrough.")
+    }
+
+
+    // Different Method
+
+    _, err = constructUsersFromRows(nil)
+
+    if err != ERR_INVALID_PTR {
+        t.Errorf("allowed an illegal pointer through")
     }
 }
 
@@ -215,5 +275,45 @@ func TestDeleteUser(t *testing.T) {
     }
     if user != nil {
         t.Errorf("Expected nil, but we got back a user meaning the delete failed %v", user)
+    }
+}
+
+
+func TestReadStreamOwner(t *testing.T) {
+    id, err := testdb.CreateUser("TestReadStreamOwner_name", "TestReadStreamOwner_email", "TestReadStreamOwner_pass")
+    if err != nil {
+        t.Errorf("Could not create user for test owners... %v", err)
+        return
+    }
+
+    user, err := testdb.ReadUserById(id)
+    if err != nil || user == nil {
+        t.Errorf("The user with ID %v does not exist or err %v", id, err)
+        return
+    }
+
+    devid, err := testdb.CreateDevice("Devname", user)
+    if err != nil {
+        t.Errorf("Could not create device for test owners... %v", err)
+        return
+    }
+
+    device, err := testdb.ReadDeviceById(devid)
+    if err != nil || device == nil {
+        t.Errorf("The device with ID %v does not exist or err %v", id, err)
+        return
+    }
+
+    streamid, _ := testdb.CreateStream("TestReadStreamOwner", "" , device)
+
+
+    owner, err := testdb.ReadStreamOwner(streamid)
+
+    if err != nil {
+        t.Errorf("Could not read stream owner %v", err)
+    }
+
+    if owner.Id != user.Id {
+        t.Errorf("Wrong stream owner got %v, expected %v", owner, user)
     }
 }
