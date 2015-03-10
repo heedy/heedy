@@ -7,7 +7,9 @@ import (
     "io/ioutil"
     "os/exec"
     "strings"
+    "log"
     "encoding/json"
+    "time"
     )
 
 var (
@@ -15,6 +17,10 @@ var (
     subcommands_path = flag.String("subcommands_path", "./config/subcommands.json", "Specifies the path to the subcommands json config file.")
     subcommandlist SubcommandList
     running_forever bool
+
+    running bool // is the process running?
+    pids []int // pids of all running processes
+    LOGDIR = "logs"
 )
 
 
@@ -66,6 +72,7 @@ func (sl SubcommandList) HasAllKeys(s Subcommand) bool {
 
 func (sl SubcommandList) RunCommand(cmd string) {
 
+    log.Printf("RunCommand %v", cmd)
     var sc Subcommand
 
     found := false
@@ -78,18 +85,19 @@ func (sl SubcommandList) RunCommand(cmd string) {
     }
 
     if ! found {
-        fmt.Printf("Cannot find subcommand: '%v'\n", cmd)
+        log.Printf("Cannot find subcommand: '%v'\n", cmd)
         os.Exit(1)
     }
 
+    log.Printf("Command Found: %v", sc)
+
+
+    /**
     if sl.HasAllKeys(sc) {
         fmt.Printf("Already have all env vars for: %v, not running.\n", cmd)
         return
     }
-
-    for _, cmd := range sc.Depends {
-        sl.RunCommand(cmd)
-    }
+    **/
 
     // add all of our commands to the envflags, ignore those that already exist
     for k, v := range sc.Envflags {
@@ -98,6 +106,11 @@ func (sl SubcommandList) RunCommand(cmd string) {
             sl.Env[k] = v
         }
     }
+
+    for _, cmd := range sc.Depends {
+        sl.RunCommand(cmd)
+    }
+
 
     // Replace all replacable arguments in the command.
     for pos, arg := range sc.Command {
@@ -108,7 +121,12 @@ func (sl SubcommandList) RunCommand(cmd string) {
         }
     }
 
-    fmt.Printf("Running: %v\n", sc)
+    log.Printf("Running: %v", sc)
+
+    if len(sc.Command) == 0 {
+        log.Printf("No command found.")
+        return
+    }
 
     if sc.Run_forever {
         running_forever = true
@@ -119,20 +137,46 @@ func (sl SubcommandList) RunCommand(cmd string) {
     }
 }
 
-func (s Subcommand) RunOnce() string {
+// Runs the subcommand, returns the exit status of the process
+func (s Subcommand) RunOnce() bool {
     cmd := exec.Command(s.Command[0], s.Command[1:]...)
-    out, err := cmd.Output()
+
+    // this will overwrite whenever needed
+    outfile, err := os.Create(LOGDIR + "/" + s.Name + ".log")
     if err != nil {
-        return ""
+        panic(err)
     }
-    return string(out)
+    defer outfile.Close()
+    cmd.Stdout = outfile
+    cmd.Stderr = outfile
+
+    cmd.Start()
+
+    for {
+        switch {
+            case running == false:
+                cmd.Process.Kill()
+                return false // not success
+            case cmd.ProcessState.Exited():
+                success := cmd.ProcessState.Success()
+                log.Printf("Process %v exited, success? %v", cmd.ProcessState.Pid(), success)
+                return success
+            default:
+                // arbitrary sleep so we don't hog the CPU
+                time.Sleep(time.Duration(1) * time.Second)
+        }
+    }
 }
 
 func (s Subcommand) RunForever() {
-    fmt.Printf("Running Forever")
+    log.Printf("Running %s Forever", s.Name)
     for {
+        if ! running {
+            return
+        }
+
         s.RunOnce()
-        fmt.Printf("%v crashed!\n", s.Name)
+        log.Printf("%v crashed!", s.Name)
     }
 }
 
@@ -145,6 +189,8 @@ func main() {
         flag.PrintDefaults()
         return
     }
+
+    os.Mkdir(LOGDIR, 0777)
 
     content, err := ioutil.ReadFile(*subcommands_path)
     if err != nil {
