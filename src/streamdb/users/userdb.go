@@ -28,6 +28,68 @@ var (
 	ERR_EMAIL_EXISTS = errors.New("A user already exists with this email")
 	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
 	ERR_INVALID_PTR = errors.New("The provided pointer is nil")
+
+
+	// statements
+	CREATE_PHONE_CARRIER_STMT = `INSERT INTO PhoneCarrier (Name, EmailDomain) VALUES (?,?);`
+	SELECT_PHONE_CARRIER_BY_ID_STMT = "SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1"
+	UPDATE_PHONE_CARRIER_STMT = `UPDATE PhoneCarrier SET Name=?, EmailDomain=? WHERE Id = ?;`
+	DELETE_PHONE_CARRIER_BY_ID_STMT = `DELETE FROM PhoneCarrier WHERE Id = ?;`
+	CREATE_DEVICE_STMT = `INSERT INTO Device
+	    (	Name,
+	        ApiKey,
+	        Icon_PngB64,
+	        OwnerId)
+	        VALUES (?,?,?,?)`
+
+	SELECT_DEVICE_BY_USER_ID_STMT = "SELECT * FROM Device WHERE OwnerId = ?"
+	SELECT_DEVICE_BY_ID_STMT = "SELECT * FROM Device WHERE Id = ? LIMIT 1"
+	SELECT_DEVICE_BY_API_KEY_STMT = "SELECT * FROM Device WHERE ApiKey = ? LIMIT 1"
+	UPDATE_DEVICE_STMT = `UPDATE Device SET
+	    Name = ?, ApiKey = ?, Enabled = ?,
+	    Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
+	    OwnerId = ?, CanWrite = ?, CanWriteAnywhere = ?, UserProxy = ? WHERE Id = ?;`
+	DELETE_DEVICE_BY_ID_STMT = `DELETE FROM Device WHERE Id = ?;`
+	CREATE_STREAM_STMT = `INSERT INTO Stream
+	    (	Name,
+	        Type,
+	        OwnerId) VALUES (?,?,?);`
+	SELECT_STREAM_BY_ID_STMT = "SELECT * FROM Stream WHERE Id = ? LIMIT 1"
+	SELECT_STREAM_BY_DEVICE_STMT = "SELECT * FROM Stream WHERE OwnerId = ?"
+	UPDATE_STREAM_STMT = `UPDATE Stream SET
+	    Name = ?,
+	    Active = ?,
+	    Public = ?,
+	    Type = ?,
+	    OwnerId = ?,
+	    Ephemeral = ?,
+	    Output = ?
+	    WHERE Id = ?;`
+	DELETE_STREAM_BY_ID_STMT = `DELETE FROM Stream WHERE Id = ?;`
+	CREATE_USER_STMT = `INSERT INTO Users (
+	    Name,
+	    Email,
+	    Password,
+	    PasswordSalt,
+	    PasswordHashScheme,
+	    CreateTime) VALUES (?,?,?,?,?,?);`
+	SELECT_USER_BY_EMAIL_STMT = "SELECT * FROM Users WHERE Email = ? LIMIT 1"
+	SELECT_USER_BY_NAME_STMT = "SELECT * FROM Users WHERE Name = ? LIMIT 1"
+	SELECT_USER_BY_ID_STMT = "SELECT * FROM Users WHERE Id = ? LIMIT 1"
+	SELECT_ALL_USERS_STMT = "SELECT * FROM Users"
+	SELECT_OWNER_OF_STREAM_BY_ID_STMT = `SELECT u.*
+	                              FROM Users u, Stream s, Device d
+	                              WHERE s.Id = ?
+	                                AND d.Id = s.OwnerId
+	                                AND u.Id = d.OwnerId
+	                              LIMIT 1;`
+	UPDATE_USER_STMT = `UPDATE Users SET
+	                Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
+	                Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
+	                ProcessingLimit_S=?, StorageLimit_Gb=?, CreateTime = ?, ModifyTime = ?,
+	                UserGroup = ? WHERE Id = ?;`
+	DELETE_USER_BY_ID_STMT = `DELETE FROM Users WHERE Id = ?;`
+
 )
 
 type DRIVERSTR string;
@@ -42,7 +104,8 @@ type UserDatabase struct {
 	driverstr DRIVERSTR
 	filepath string
 	port int
-	db *sql.DB
+	//db *sql.DB // TODO remove this.
+	Db *sql.DB
 }
 
 
@@ -60,28 +123,29 @@ func NewPostgresUserDatabase(cxnString string) (*UserDatabase, error) {
 }
 
 
-func (n *UserDatabase) InitUserDatabase(ds DRIVERSTR, cxn string) error {
-	n.driverstr = ds
-	n.filepath = cxn
+func (userdb *UserDatabase) InitUserDatabase(ds DRIVERSTR, cxn string) error {
+	userdb.driverstr = ds
+	userdb.filepath = cxn
 
 	var err error
-	n.db, err = sql.Open(string(n.driverstr), n.filepath)
+	userdb.Db, err = sql.Open(string(userdb.driverstr), userdb.filepath)
+	//userdb.db = userdb.Db
 	if err != nil {
 		return err
 	}
 
-	err = n.db.Ping()
+	err = userdb.Db.Ping()
 	if err != nil {
 		return err
 	}
 
 	switch ds {
 		case SQLITE3:
-			if err := n.setupSqliteDatabase(); err != nil {
+			if err := userdb.setupSqliteDatabase(); err != nil {
 				return err
 			}
 		case POSTGRES:
-			if err := n.setupPostgresDatabase(); err != nil {
+			if err := userdb.setupPostgresDatabase(); err != nil {
 				return err
 			}
 		default:
@@ -92,7 +156,7 @@ func (n *UserDatabase) InitUserDatabase(ds DRIVERSTR, cxn string) error {
 }
 
 func (userdb *UserDatabase) UnderlyingDb() *sql.DB {
-	return userdb.db
+	return userdb.Db
 }
 
 
@@ -105,14 +169,14 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 
 	log.Printf("setting up squlite db")
 
-	_, err := userdb.db.Exec("PRAGMA foreign_keys = ON;")
+	_, err := userdb.Db.Exec("PRAGMA foreign_keys = ON;")
 
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
 	}
 
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier (
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier (
 	    id integer primary key,
 	    name CHAR(100) UNIQUE NOT NULL,
 	    emaildomain CHAR(50) UNIQUE NOT NULL);`);
@@ -122,12 +186,12 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 		return err
 	}
 
-	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
+	_, _ = userdb.Db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
 
     /** mysql
     CREATE TABLE IF NOT EXISTS User(   Id SERIAL PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(50) UNIQUE NOT NULL, Email VARCHAR(100) UNIQUE NOT NULL, Password VARCHAR(100) NOT NULL, PasswordSalt VARCHAR(100) NOT NULL, PasswordHashScheme VARCHAR(50) NOT NULL, Admin BOOLEAN DEFAULT FALSE, Phone VARCHAR(50) DEFAULT "", PhoneCarrier INTEGER DEFAULT 0, UploadLimit_Items INTEGER DEFAULT 24000, ProcessingLimit_S INTEGER DEFAULT 86400, StorageLimit_Gb INTEGER DEFAULT 4,  FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL );
     **/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id INTEGER PRIMARY KEY,
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id INTEGER PRIMARY KEY,
 			Name VARCHAR(50) UNIQUE NOT NULL,
 			Email VARCHAR(100) UNIQUE NOT NULL,
 
@@ -157,7 +221,7 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 	}
     // mysql: CREATE INDEX UserNameIndex ON User (Name);
 	// postgres CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS UserNameIndex ON Users (Name);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
@@ -186,7 +250,7 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 
 	512kb icon
 	**/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Device
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Device
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			ApiKey STRING UNIQUE NOT NULL,
@@ -210,27 +274,27 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 	}
 
 	//psql `CREATE INDEX DeviceNameIndex ON Device (Name);`
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS DeviceNameIndex ON Device (Name);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
 	}
 
 	//psql no ine: CREATE INDEX DeviceAPIIndex ON Device (ApiKey);
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS DeviceAPIIndex ON Device (ApiKey);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
 	}
 
 	// `CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS DeviceOwnerIndex ON Device (OwnerId);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
 	}
 
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Stream
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Stream
 		(   Id INTEGER PRIMARY KEY,
 			Name STRING NOT NULL,
 			Active BOOLEAN DEFAULT TRUE,
@@ -248,13 +312,13 @@ func (userdb *UserDatabase) setupSqliteDatabase() error{
 		return err
 	}
 
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
 	}
 
-	_, err = userdb.db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
+	_, err = userdb.Db.Exec(`CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);`)
 	if err != nil {
 		log.Printf("Error %v", err)
 		return err
@@ -271,7 +335,7 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	log.Printf("setting up postgres db")
 
 
-	_, err := userdb.db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier (
+	_, err := userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS PhoneCarrier (
 	    id integer primary key,
 	    name CHAR(100) UNIQUE NOT NULL,
 	    emaildomain CHAR(50) UNIQUE NOT NULL);`);
@@ -282,12 +346,12 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	}
 
 
-	_, _ = userdb.db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
+	_, _ = userdb.Db.Exec(`INSERT INTO PhoneCarrier VALUES (0, 'None', '')`);
 
     /** mysql
     CREATE TABLE IF NOT EXISTS User(   Id SERIAL PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(50) UNIQUE NOT NULL, Email VARCHAR(100) UNIQUE NOT NULL, Password VARCHAR(100) NOT NULL, PasswordSalt VARCHAR(100) NOT NULL, PasswordHashScheme VARCHAR(50) NOT NULL, Admin BOOLEAN DEFAULT FALSE, Phone VARCHAR(50) DEFAULT "", PhoneCarrier INTEGER DEFAULT 0, UploadLimit_Items INTEGER DEFAULT 24000, ProcessingLimit_S INTEGER DEFAULT 86400, StorageLimit_Gb INTEGER DEFAULT 4,  FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL );
     **/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id SERIAL PRIMARY KEY,
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Users (Id SERIAL PRIMARY KEY,
 			Name VARCHAR(50) UNIQUE NOT NULL,
 			Email VARCHAR(100) UNIQUE NOT NULL,
 			Password VARCHAR(100) NOT NULL,
@@ -310,7 +374,7 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	}
 
 
-	userdb.db.Exec(`CREATE INDEX UserNameIndex ON Users (Name);`)
+	userdb.Db.Exec(`CREATE INDEX UserNameIndex ON Users (Name);`)
 
 
 	/**
@@ -319,7 +383,7 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 
 	512kb icon
 	**/
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Device
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Device
 	(   Id SERIAL PRIMARY KEY,
 	Name VARCHAR(100) NOT NULL,
 	ApiKey VARCHAR(100) UNIQUE NOT NULL,
@@ -344,11 +408,11 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 
 
 	// ignore errors b/c we don't have if not exists
-	userdb.db.Exec(`CREATE INDEX DeviceNameIndex ON Device (Name);`)
-	userdb.db.Exec(`CREATE INDEX DeviceAPIIndex ON Device (ApiKey);`)
-	userdb.db.Exec(`CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);`)
+	userdb.Db.Exec(`CREATE INDEX DeviceNameIndex ON Device (Name);`)
+	userdb.Db.Exec(`CREATE INDEX DeviceAPIIndex ON Device (ApiKey);`)
+	userdb.Db.Exec(`CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);`)
 
-	_, err = userdb.db.Exec(`CREATE TABLE IF NOT EXISTS Stream
+	_, err = userdb.Db.Exec(`CREATE TABLE IF NOT EXISTS Stream
 	(   Id SERIAL PRIMARY KEY,
 	Name VARCHAR(100) NOT NULL,
 	Active BOOLEAN DEFAULT TRUE,
@@ -367,8 +431,70 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	}
 
 
-	userdb.db.Exec(`CREATE INDEX StreamNameIndex ON Stream (Name);`)
-	userdb.db.Exec(`CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);`)
+	userdb.Db.Exec(`CREATE INDEX StreamNameIndex ON Stream (Name);`)
+	userdb.Db.Exec(`CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);`)
+
+
+	// setup our statements to work with postgres
+	CREATE_PHONE_CARRIER_STMT = `INSERT INTO PhoneCarrier (Name, EmailDomain) VALUES ($1,$2);`
+	SELECT_PHONE_CARRIER_BY_ID_STMT = "SELECT * FROM PhoneCarrier WHERE Id = $1 LIMIT 1"
+	UPDATE_PHONE_CARRIER_STMT = `UPDATE PhoneCarrier SET Name=$1, EmailDomain=$2 WHERE Id = $3;`
+	DELETE_PHONE_CARRIER_BY_ID_STMT = `DELETE FROM PhoneCarrier WHERE Id = $1;`
+	CREATE_DEVICE_STMT = `INSERT INTO Device
+	    (	Name,
+	        ApiKey,
+	        Icon_PngB64,
+	        OwnerId)
+	        VALUES ($1,$2,$3,$4)`
+
+	SELECT_DEVICE_BY_USER_ID_STMT = "SELECT * FROM Device WHERE OwnerId = $1"
+	SELECT_DEVICE_BY_ID_STMT = "SELECT * FROM Device WHERE Id = $1 LIMIT 1"
+	SELECT_DEVICE_BY_API_KEY_STMT = "SELECT * FROM Device WHERE ApiKey = $1 LIMIT 1"
+	UPDATE_DEVICE_STMT = `UPDATE Device SET
+	    Name = $1, ApiKey = $2, Enabled = $3,
+	    Icon_PngB64 = $4, Shortname = $5, Superdevice = $6,
+	    OwnerId = $7, CanWrite = $8, CanWriteAnywhere = $9, UserProxy = $10 WHERE Id = $11;`
+	DELETE_DEVICE_BY_ID_STMT = `DELETE FROM Device WHERE Id = $1;`
+	CREATE_STREAM_STMT = `INSERT INTO Stream
+	    (	Name,
+	        Type,
+	        OwnerId) VALUES ($1,$2,$3);`
+	SELECT_STREAM_BY_ID_STMT = "SELECT * FROM Stream WHERE Id = $1 LIMIT 1"
+	SELECT_STREAM_BY_DEVICE_STMT = "SELECT * FROM Stream WHERE OwnerId = $1"
+	UPDATE_STREAM_STMT = `UPDATE Stream SET
+	    Name = $1,
+	    Active = $2,
+	    Public = $3,
+	    Type = $4,
+	    OwnerId = $5,
+	    Ephemeral = $6,
+	    Output = $7
+	    WHERE Id = $8;`
+	DELETE_STREAM_BY_ID_STMT = `DELETE FROM Stream WHERE Id = $1;`
+	CREATE_USER_STMT = `INSERT INTO Users (
+	    Name,
+	    Email,
+	    Password,
+	    PasswordSalt,
+	    PasswordHashScheme,
+	    CreateTime) VALUES ($1,$2,$3,$4,$5,$6);`
+	SELECT_USER_BY_EMAIL_STMT = "SELECT * FROM Users WHERE Email = $1 LIMIT 1"
+	SELECT_USER_BY_NAME_STMT = "SELECT * FROM Users WHERE Name = $1 LIMIT 1"
+	SELECT_USER_BY_ID_STMT = "SELECT * FROM Users WHERE Id = $1 LIMIT 1"
+	SELECT_ALL_USERS_STMT = "SELECT * FROM Users"
+	SELECT_OWNER_OF_STREAM_BY_ID_STMT = `SELECT u.*
+	                              FROM Users u, Stream s, Device d
+	                              WHERE s.Id = $1
+	                                AND d.Id = s.OwnerId
+	                                AND u.Id = d.OwnerId
+	                              LIMIT 1;`
+	UPDATE_USER_STMT = `UPDATE Users SET
+	                Name=$1, Email=$2, Password=$3, PasswordSalt=$4, PasswordHashScheme=$5,
+	                Admin=$6, Phone=$7, PhoneCarrier=$8, UploadLimit_Items=$9,
+	                ProcessingLimit_S=$10, StorageLimit_Gb=$11, CreateTime = $12, ModifyTime = $13,
+	                UserGroup = $14 WHERE Id = $15;`
+	DELETE_USER_BY_ID_STMT = `DELETE FROM Users WHERE Id = $1;`
+
 
 	return nil
 }

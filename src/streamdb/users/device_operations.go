@@ -15,12 +15,7 @@ func (userdb *UserDatabase) CreateDevice(Name string, OwnerId *User) (int64, err
 
     ApiKey, _ := uuid.NewV4()
 
-    res, err := userdb.db.Exec(`INSERT INTO Device
-        (	Name,
-            ApiKey,
-            Icon_PngB64,
-            OwnerId)
-            VALUES (?,?,?,?)`,
+    res, err := userdb.Db.Exec(CREATE_DEVICE_STMT,
             Name, ApiKey.String(), DEFAULT_ICON, OwnerId.Id)
 
     if err != nil {
@@ -86,14 +81,14 @@ func constructDevicesFromRows(rows *sql.Rows, err error) ([]*Device, error) {
 }
 
 func (userdb *UserDatabase) ReadDevicesForUserId(Id int64) ([]*Device, error) {
-    rows, err := userdb.db.Query("SELECT * FROM Device WHERE OwnerId = ?", Id)
+    rows, err := userdb.Db.Query(SELECT_DEVICE_BY_USER_ID_STMT, Id)
 
     return constructDevicesFromRows(rows, err)
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
 func (userdb *UserDatabase) ReadDeviceById(Id int64) (*Device, error) {
-    rows, err := userdb.db.Query("SELECT * FROM Device WHERE Id = ? LIMIT 1", Id)
+    rows, err := userdb.Db.Query(SELECT_DEVICE_BY_ID_STMT, Id)
     return constructDeviceFromRow(rows, err)
 
 }
@@ -101,7 +96,7 @@ func (userdb *UserDatabase) ReadDeviceById(Id int64) (*Device, error) {
 // ReadDeviceByApiKey reads a device by an api key and returns it, it will be
 // nil if an error was encountered and error will be set.
 func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
-    rows, err := userdb.db.Query("SELECT * FROM Device WHERE ApiKey = ? LIMIT 1", Key)
+    rows, err := userdb.Db.Query(SELECT_DEVICE_BY_API_KEY_STMT, Key)
     return constructDeviceFromRow(rows, err)
 }
 
@@ -112,10 +107,7 @@ if device == nil {
     return ERR_INVALID_PTR
 }
 
-_, err := userdb.db.Exec(`UPDATE Device SET
-    Name = ?, ApiKey = ?, Enabled = ?,
-    Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
-    OwnerId = ?, CanWrite = ?, CanWriteAnywhere = ?, UserProxy = ? WHERE Id = ?;`,
+_, err := userdb.Db.Exec(UPDATE_DEVICE_STMT,
     device.Name,
     device.ApiKey,
     device.Enabled,
@@ -133,6 +125,6 @@ _, err := userdb.db.Exec(`UPDATE Device SET
 
 // DeleteDevice removes a device from the system.
 func (userdb *UserDatabase) DeleteDevice(Id int64) (error) {
-    _, err := userdb.db.Exec(`DELETE FROM Device WHERE Id = ?;`, Id );
+    _, err := userdb.Db.Exec(DELETE_DEVICE_BY_ID_STMT, Id );
     return err
 }

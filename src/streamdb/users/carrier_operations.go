@@ -8,8 +8,7 @@ import("database/sql"
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
 func (userdb *UserDatabase) CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
-    res, err := userdb.db.Exec(`INSERT INTO PhoneCarrier (Name, EmailDomain)
-    VALUES (?,?);`,
+    res, err := userdb.Db.Exec(CREATE_PHONE_CARRIER_STMT,
     Name,
     EmailDomain)
 
@@ -64,12 +63,12 @@ func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
 func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
-    rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier WHERE Id = ? LIMIT 1", Id)
+    rows, err := userdb.Db.Query(SELECT_PHONE_CARRIER_BY_ID_STMT, Id)
     return constructPhoneCarrierFromRow(rows, err)
 }
 
 func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
-    rows, err := userdb.db.Query("SELECT * FROM PhoneCarrier")
+    rows, err := userdb.Db.Query("SELECT * FROM PhoneCarrier")
 
     if err != nil {
         return nil, err
@@ -87,8 +86,7 @@ func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
     }
 
 
-    _, err := userdb.db.Exec(`UPDATE PhoneCarrier SET
-        Name=?, EmailDomain=? WHERE Id = ?;`,
+    _, err := userdb.Db.Exec(UPDATE_PHONE_CARRIER_STMT,
         carrier.Name,
         carrier.EmailDomain,
         carrier.Id)
@@ -99,6 +97,6 @@ func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
 // DeletePhoneCarrier removes a phone carrier from the database, this will set
 // all users carrier with this phone carrier as a foreign key to NULL
 func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) (error) {
-    _, err := userdb.db.Exec(`DELETE FROM PhoneCarrier WHERE Id = ?;`, carrierId )
+    _, err := userdb.Db.Exec(DELETE_PHONE_CARRIER_BY_ID_STMT, carrierId )
     return err
 }

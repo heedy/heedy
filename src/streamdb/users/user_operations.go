@@ -80,13 +80,7 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) (id int64, 
 	// may not match up with hash generators found online!
 	//log.Print("passwordtest ", saltedpass, []byte(saltedpass), dbpass)
 
-	res, err := userdb.db.Exec(`INSERT INTO Users (
-        Name,
-        Email,
-        Password,
-        PasswordSalt,
-        PasswordHashScheme,
-        CreateTime) VALUES (?,?,?,?,?,?);`,
+	res, err := userdb.Db.Exec(CREATE_USER_STMT,
 		Name,
 		Email,
 		dbpass,
@@ -159,26 +153,27 @@ func constructUsersFromRows(rows *sql.Rows) ([]*User, error) {
 // ReadUserByEmail returns a User instance if a user exists with the given
 // email address.
 func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Email = ? LIMIT 1", Email)
+	rows, err := userdb.Db.Query(SELECT_USER_BY_EMAIL_STMT, Email)
 	return constructUserFromRow(rows, err)
 }
+
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
 func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Name = ? LIMIT 1", Name)
+	rows, err := userdb.Db.Query(SELECT_USER_BY_NAME_STMT, Name)
 	return constructUserFromRow(rows, err)
 }
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
 func (userdb *UserDatabase) ReadUserById(Id int64) (*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM Users WHERE Id = ? LIMIT 1", Id)
+	rows, err := userdb.Db.Query(SELECT_USER_BY_ID_STMT, Id)
 	return constructUserFromRow(rows, err)
 }
 
 func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
-	rows, err := userdb.db.Query("SELECT * FROM Users")
+	rows, err := userdb.Db.Query(SELECT_ALL_USERS_STMT)
 
 	if err != nil {
 		return nil, err
@@ -189,14 +184,10 @@ func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
 }
 
 
+
 func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
-    rows, err := userdb.db.Query(`SELECT u.*
-                                  FROM Users u, Stream s, Device d
-                                  WHERE s.Id = ?
-                                    AND d.Id = s.OwnerId
-                                    AND u.Id = d.OwnerId
-                                  LIMIT 1;`, StreamId)
-    
+    rows, err := userdb.Db.Query(SELECT_OWNER_OF_STREAM_BY_ID_STMT, StreamId)
+
     return constructUserFromRow(rows, err)
 }
 
@@ -209,11 +200,7 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := userdb.db.Exec(`UPDATE Users SET
-                    Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
-                    Admin=?, Phone=?, PhoneCarrier=?, UploadLimit_Items=?,
-                    ProcessingLimit_S=?, StorageLimit_Gb=?, CreateTime = ?, ModifyTime = ?,
-                    UserGroup = ? WHERE Id = ?;`,
+	_, err := userdb.Db.Exec( UPDATE_USER_STMT,
 		user.Name,
 		user.Email,
 		user.Password,
@@ -234,6 +221,6 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 
 // DeleteUser removes a user from the database
 func (userdb *UserDatabase) DeleteUser(id int64) error {
-	_, err := userdb.db.Exec(`DELETE FROM Users WHERE Id = ?;`, id)
+	_, err := userdb.Db.Exec(DELETE_USER_BY_ID_STMT, id)
 	return err
 }

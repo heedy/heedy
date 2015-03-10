@@ -12,10 +12,7 @@ func (userdb *UserDatabase) CreateStream(Name, Type string, owner *Device) (int6
         return -1, ERR_INVALID_PTR
     }
 
-    res, err := userdb.db.Exec(`INSERT INTO Stream
-        (	Name,
-            Type,
-            OwnerId) VALUES (?,?,?);`,
+    res, err := userdb.Db.Exec(CREATE_STREAM_STMT,
             Name, Type, owner.Id)
 
     if err != nil {
@@ -60,7 +57,7 @@ func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
 func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
-    rows, err := userdb.db.Query("SELECT * FROM Stream WHERE Id = ? LIMIT 1", id)
+    rows, err := userdb.Db.Query(SELECT_STREAM_BY_ID_STMT, id)
 
     if err != nil {
         return nil, err
@@ -82,7 +79,7 @@ func (userdb *UserDatabase) ReadStreamsByDevice(device *Device) ([]*Stream, erro
         return nil, ERR_INVALID_PTR
     }
 
-    rows, err := userdb.db.Query("SELECT * FROM Stream WHERE OwnerId = ?", device.Id)
+    rows, err := userdb.Db.Query(SELECT_STREAM_BY_DEVICE_STMT, device.Id)
 
     if err != nil {
         return nil, err
@@ -99,15 +96,7 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) (error) {
     }
 
 
-    _, err := userdb.db.Exec(`UPDATE Stream SET
-        Name = ?,
-        Active = ?,
-        Public = ?,
-        Type = ?,
-        OwnerId = ?,
-        Ephemeral = ?,
-        Output = ?
-        WHERE Id = ?;`,
+    _, err := userdb.Db.Exec(UPDATE_STREAM_STMT,
         stream.Name,
         stream.Active,
         stream.Public,
@@ -123,6 +112,6 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) (error) {
 
 // DeleteStream removes a stream from the database
 func (userdb *UserDatabase) DeleteStream(Id int64) (error) {
-    _, err := userdb.db.Exec(`DELETE FROM Stream WHERE Id = ?;`, Id );
+    _, err := userdb.Db.Exec(DELETE_STREAM_BY_ID_STMT, Id );
     return err
 }
