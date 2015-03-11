@@ -11,6 +11,11 @@ import (
     "strings"
     )
 
+const (
+    SQLITE_PREFIX = "sqlite://"
+    POSTGRES_PREFIX = "postgres://"
+)
+
 var (
     BATCH_SIZE = 100    //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
     )
@@ -21,8 +26,6 @@ type Database struct {
     tdb *timebatchdb.Database       //timebatchdb holds methods for inserting datapoints into streams
 
     sqldb *sql.DB       //Connection to the sql database
-    SqlType string    //The sql database type string
-
 }
 
 //This function closes all database connections and releases all resources.
@@ -67,25 +70,26 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
     //First, we check if the user wants to use sqlite or postgres. If the url given
     //has the hallmarks of a file or sqlite database, then set that as the database type
 
-    db.SqlType = "postgres"   //The default is postgres.
+    db.SqlType = users.POSTGRES   //The default is postgres.
 
     switch {
         // TODO just check if this is a file
-        case strings.HasSuffix(sqluri,".db") ||
-        strings.HasSuffix(sqluri,".sqlite") ||
-        strings.HasSuffix(sqluri,".sqlite3") ||
-        strings.HasPrefix(sqluri,"sqlite://"):
+        // How I wish there were a "blah" in [] like Python!
+        case strings.HasSuffix(sqluri, ".db") ||
+        strings.HasSuffix(sqluri, ".sqlite") ||
+        strings.HasSuffix(sqluri, ".sqlite3") ||
+        strings.HasPrefix(sqluri, SQLITE_PREFIX):
 
-            db.SqlType = "sqlite3"
+            db.SqlType = users.SQLITE3
 
             //The sqlite driver doesn't like starting with sqlite://
-            if strings.HasPrefix(sqluri,"sqlite://") {
-                sqluri = sqluri[9:]
+            if strings.HasPrefix(sqluri, SQLITE_PREFIX) {
+                sqluri = sqluri[len(SQLITE_PREFIX):]
             }
             break
-        case strings.HasPrefix(sqluri,"postgres://"):
-            db.SqlType = "postgres"
-            sqluri = sqluri[len("postgres://"):]
+        case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
+            db.SqlType = users.POSTGRES
+            sqluri = sqluri[len(POSTGRES_PREFIX):]
     }
 
 
@@ -101,32 +105,23 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 
     log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
-    err = db.InitUserDatabase(users.DRIVERSTR(db.SqlType), sqluri)
+    err = db.InitUserDatabase(db.SqlType, sqluri)
     db.sqldb = db.Db
 
-    if redisuri != "" {
-        log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
-        db.tdb, err = timebatchdb.Open(db.Db, db.SqlType, redisuri, BATCH_SIZE, err)
+    log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
+    db.tdb, err = timebatchdb.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
 
-        if err != nil {
-            db.Close()
-            return nil, err
-        }
+    if err != nil {
+        db.Close()
+        return nil, err
     }
 
-    /**
-    // This is going to be automatically set up by our invocation environment,
-    // let's not do this right now. - DK: I am not sure if I understand - WriteDatabase actually NEEDS to run
-    // from this process if using sqlite. It can't run the databasewriter.
-
-    //If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-    if sqltype == "sqlite3" {
-        go tdb.WriteDatabase()
+    // If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
+    if db.SqlType == users.SQLITE3 {
+        go db.tdb.WriteDatabase()
     }
-    **/
 
-
-    return &db,nil
+    return &db, nil
 
 }
 

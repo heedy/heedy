@@ -2,11 +2,21 @@
 echo "Waiting for servers to start..."
 
 DBDIR="postgres_test"
-PGRES_CMD="setup"
-if [ -d "$DBDIR" ]; then
-    PGRES_CMD="run"
+
+if [ "$EUID" -eq 0 ]
+  then echo "Do not run this script as root!"
+  exit 1
 fi
-source ./config/runpostgres $PGRES_CMD $DBDIR
+
+
+killall postgres
+if [ -d "$DBDIR" ]; then
+    rm -rf $DBDIR
+fi
+
+# we setup every time for a clean environment
+source ./config/runpostgres setup $DBDIR
+
 #The run script sets the global variable POSTGRES_PID to the pid of postgres
 ./bin/dep/gnatsd -c ./config/gnatsd.conf &
 gnatsd_pid=$!

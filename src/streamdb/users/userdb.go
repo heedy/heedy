@@ -101,7 +101,7 @@ const(
 
 // The main UserDatabase type
 type UserDatabase struct {
-	driverstr DRIVERSTR
+	SqlType DRIVERSTR
 	filepath string
 	port int
 	//db *sql.DB // TODO remove this.
@@ -124,11 +124,11 @@ func NewPostgresUserDatabase(cxnString string) (*UserDatabase, error) {
 
 
 func (userdb *UserDatabase) InitUserDatabase(ds DRIVERSTR, cxn string) error {
-	userdb.driverstr = ds
+	userdb.SqlType = ds
 	userdb.filepath = cxn
 
 	var err error
-	userdb.Db, err = sql.Open(string(userdb.driverstr), userdb.filepath)
+	userdb.Db, err = sql.Open(string(userdb.SqlType), userdb.filepath)
 	//userdb.db = userdb.Db
 	if err != nil {
 		return err
