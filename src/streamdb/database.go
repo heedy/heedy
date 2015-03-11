@@ -305,7 +305,7 @@ func (udb *UnifiedDB) CreateDeviceAs(device *users.Device, Name string, Owner *u
         return 0, InvalidParameterError
     }
 
-    if ! HasPermissions(device, super_privlige) || device.OwnerId == Owner.Id {
+    if ! HasPermissions(device, super_privlige) || device.OwnerId != Owner.Id {
         return 0, PrivligeError
     }
 
@@ -366,6 +366,13 @@ func (udb *UnifiedDB) UpdateDeviceAs(device *users.Device, update *users.Device)
 
     // same device or appropriate permissions
     if HasPermissions(device, active_privlige) && (device.Id == update.Id || HasAnyPermission(device, user_authorized_privlige)) {
+
+        // remove important bits
+        if ! HasPermissions(device, super_privlige) {
+            update.Superdevice = false
+            update.OwnerId = device.OwnerId
+        }
+
         return udb.UpdateDevice(update)
     }
 
