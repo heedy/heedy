@@ -1,0 +1,91 @@
+
+{{define "title"}}Editing User{{end}}
+
+{{define "body"}}
+
+<div class="panel panel-default">
+    <div class="panel-heading">Account Information</div>
+    <div class="panel-body">
+        <table class="table">
+            <tr><th>Daily Allowed Uploads</th><td> {{ .user.UploadLimit_Items }} items</td></tr>
+            <tr><th>Daily Processing Limit</th><td> {{ .user.ProcessingLimit_S }} seconds</td></tr>
+            <tr><th>Total Storage Limit</th><td> {{ .user.StorageLimit_Gb}} gigabytes</td></tr>
+        </table>
+    </div>
+</div>
+
+
+<div class="panel panel-default">
+    <div class="panel-heading">Edit {{ $.user.Name }}</div>
+    <div class="panel-body">
+
+        <form action="/secure/user/action/modify" method="POST">
+            <div class="form-group">
+                <label for="inputEmail">Email address</label>
+                <input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email Address" value="{{ .user.Email }}">
+            </div>
+
+            <!--
+            <div class="form-group">
+              <label for="inputPhone">Phone Number</label>
+              <input class="form-control" id="inputPhone" placeholder="Phone Number" value="{{ .user.Email }}">
+            </div>
+            -->
+            <input class="btn btn-primary" type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">Change Password</div>
+    <div class="panel-body">
+        <form action="/secure/user/action/changepass" method="POST">
+            <div class="form-group">
+              <label for="inputPassword0">Current Password</label>
+              <input name="current_password" type="password" class="form-control" id="inputPassword0" placeholder="Password" >
+            </div>
+
+            <div class="form-group">
+              <label for="inputPassword1">New Password</label>
+              <input name="password1" type="password" class="form-control" id="inputPassword1" placeholder="Password" >
+            </div>
+
+            <div class="form-group">
+              <label for="inputPassword2">Repeat New Password</label>
+              <input name="password2" type="password" class="form-control" id="inputPassword2" placeholder="Repeat Password" >
+            </div>
+            <input class="btn btn-primary" type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+
+
+
+
+<div class="panel panel-success">
+    <div class="panel-heading">Download Data</div>
+    <div class="panel-body">
+        <a class="btn btn-primary">Download .tar.gz</a>
+        <a class="btn btn-primary">Download .zip (bigger)</a>
+
+    </div>
+</div>
+
+<div class="panel panel-danger">
+    <div class="panel-heading">Delete Account</div>
+    <div class="panel-body">
+        <h3>This cannot be undone and you will lose all data.</h3>
+        <form action="/secure/user/action/delete" method="POST">
+            <div class="form-group">
+              <label for="delpass">Enter Password To Delete</label>
+              <input name="password" type="password" class="form-control" id="delpass" placeholder="Password" >
+            </div>
+            <input class="btn btn-error" type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+
+{{end}}
+
+
+{{template "base" . }}

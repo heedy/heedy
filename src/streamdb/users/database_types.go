@@ -46,6 +46,9 @@ func (u *User) OwnsDevice(device *Device) bool {
     return u.Id == device.OwnerId
 }
 
+func (u *User) ValidatePassword(password string) bool {
+    return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
+}
 
 // converts a user to a device for handling requests with a username/password
 func (usr *User) ToDevice() *Device {
@@ -56,6 +59,10 @@ func (usr *User) ToDevice() *Device {
     requester.Name = usr.Name
     requester.OwnerId = usr.Id
     requester.Id = -1
+
+    requester.CanWrite = true
+    requester.CanWriteAnywhere = true
+    requester.UserProxy = true
 
     requester.user = usr
 

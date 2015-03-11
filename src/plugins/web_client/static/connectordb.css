@@ -66,3 +66,8 @@ abbr {
 .panel-heading {
     font-size: 1.5em;
 }
+
+/* To combat container fluid on desktops where it gets insanely huge */
+body {
+    max-width:1170px;
+}

@@ -1,39 +1,43 @@
-<html>
-    <head>
-        <title>ConnectorDB Overview</title>
-        {{template "includes"}}
-    </head>
-    <body class='container'>
+{{define "title"}}Overview{{end}}
 
-        {{template "heading"}}
+{{define "body"}}
+    <div class="panel panel-default">
+        <div class="panel-heading">Devices</div>
+        <div class="panel-body">
+            <table class="table table-striped">
+            <tr><th>Icon</th><th>Name</th>><th>Enabled</th><th></th><th></th></tr>
+            {{ range $dev := .devices }}
+                <tr>
+                    <td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ $dev.Icon_PngB64 }}" /></td>
+                    <td>
+                    {{if $dev.Shortname}}
+                        <abbr title="{{ $dev.Name }}">{{ $dev.Shortname }}</abbr>
+                    {{else}}
+                        <abbr title="{{ $dev.Name }}">{{ $dev.Name }}</abbr>
+                    {{end}}
+                    </td>
+                    <td>{{if $dev.Enabled}}<div class="yes" />{{else}}<div class="no" />{{end}}</td>
+                    <td>{{if $dev.Superdevice}}<div class="super" />{{end}}</td>
 
-        <div class="alert alert-gray"><a href="/" class="breadcrumb">Home</a></div>
+                    <td><a href="/secure/device/{{ $dev.Id }}" class="btn btn-default">View</a></td>
+                </tr>
+            {{ end }}
+
+            </table>
 
 
-        <div class="panel panel-default">
-            <div class="panel-heading">Devices</div>
-            <div class="panel-body">
-                <table class="table table-striped">
-                <tr><th>Icon</th><th>Name</th><th>API Key</th><th>Enabled</th><th></th><th></th></tr>
-                {{ range $dev := .devices }}
-                    <tr>
-                        <td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ $dev.Icon_PngB64 }}" /></td>
-                        <td>
-                        {{if $dev.Shortname}} 
-                            <abbr title="{{ $dev.Name }}">{{ $dev.Shortname }}</abbr>
-                        {{else}}
-                            <abbr title="{{ $dev.Name }}">{{ $dev.Name }}</abbr>
-                        {{end}}
-                        </td>
-                        <td>{{ $dev.ApiKey }}</td>
-                        <td>{{if $dev.Enabled}}<div class="yes" />{{else}}<div class="no" />{{end}}</td>
-                        <td>{{if $dev.Superdevice}}<div class="super" />{{end}}</td>
+            <form action="/secure/device/action/create" method="POST">
+                <div class="form-group">
+                    <label for="inputEmail">Device Name</label>
+                    <input type="text" name="name" class="form-control" id="inputEmail" placeholder="Device Name" >
+                </div>
+                <input class="btn btn-primary" type="submit" value="Create">
+            </form>
 
-                        <td><a href="/" class="btn btn-default">Edit</a><a href="/device/{{ $dev.Id }}" class="btn btn-default">View</a></td>
-                    </tr>
-                {{ end }}
-                </table>
-            </div>
         </div>
-</body>
-</html>
+    </div>
+
+{{end}}
+
+
+{{template "base" . }}

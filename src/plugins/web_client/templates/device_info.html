@@ -1,69 +1,111 @@
-<html>
-    <head>
-        <title>ConnectorDB Device | {{ .device.Name }}</title>
-        {{template "includes"}}
-    </head>
-    <body class='container'>
+{{define "title"}} {{ .device.Name }} {{end}}
 
-        {{template "heading"}}
-
-        
-        <div class="alert alert-gray"><a href="/" class="breadcrumb">Home</a> <a href="/device/{{.device.Id}}" class="breadcrumb">{{ .device.Name }}</a></div>
-
-        
-        <div class="panel panel-default panel-primary">
-            <div class="panel-heading">Device Information</div>
-            <div class="panel-body">
-                <table class="table">
-                <tr><td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ .device.Icon_PngB64 }}" /></td>
-                    <th><h2>                        
-                        {{if .device.Shortname}} 
-                            <abbr title="{{ .device.Name }}">{{ .device.Shortname }}</abbr>
-                        {{else}}
-                            <abbr title="{{ .device.Name }}">{{ .device.Name }}</abbr>
-                        {{end}}
-                    </h2></th></tr>
-                <tr><th>API Key</th><td>{{ .device.ApiKey }}</td></tr>
-                <tr><td></td><td><canvas id="qrapi" width="80px" height="80px"></div></td></tr>
-                </table>
-                <script type='text/javascript'>
-                $("#qrapi").qrcode({
-                    "render": "canvas",
-                    "size": 80,
-                    "text": "{{ .device.ApiKey }}"
-                });
-                </script>
-            </div>
+{{define "body"}}
+    <div class="panel panel-default panel-primary">
+        <div class="panel-heading">Device Information</div>
+        <div class="panel-body">
+            <table class="table">
+            <tr><td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ .device.Icon_PngB64 }}" /></td>
+                <th><h2>
+                    {{if .device.Shortname}}
+                        <abbr title="{{ .device.Name }}">{{ .device.Shortname }}</abbr>
+                    {{else}}
+                        <abbr title="{{ .device.Name }}">{{ .device.Name }}</abbr>
+                    {{end}}
+                </h2></th></tr>
+            <tr><th>API Key</th><td>{{ .device.ApiKey }}</td></tr>
+            <tr><td></td><td><canvas id="qrapi" width="80px" height="80px"></div></td></tr>
+            </table>
+            <script type='text/javascript'>
+            $("#qrapi").qrcode({
+                "render": "canvas",
+                "size": 80,
+                "text": "{{ .device.ApiKey }}"
+            });
+            </script>
         </div>
+    </div>
 
-        
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Streams</div>
+        <div class="panel-body">
+            <table class="table table-striped">
+            <tr><th>Name</th><th>Active?</th><th>Public?</th><th></th></tr>
+            {{ range $stream := .streams }}
+                <tr>
+                    <td>{{ $stream.Name }}</td>
+                    <td>
+                    {{if $stream.Active}}
+                        <div class="yes" />
+                    {{else}}
+                        <div class="no" />
+                    {{end}}
+                    </td>
+                    <td>
+                    {{if $stream.Public}}
+                        <div class="yes" />
+                    {{else}}
+                        <div class="no" />
+                    {{end}}
+                    </td>
+                    <td><a href="/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
+                </tr>
+            {{ end }}
+            </table>
+        </div>
+    </div>
+
+
+
+
+
+
         <div class="panel panel-default">
-            <div class="panel-heading">Streams</div>
+            <div class="panel-heading">Edit Device</div>
             <div class="panel-body">
-                <table class="table table-striped">
-                <tr><th>Name</th><th>Active?</th><th>Public?</th><th></th></tr>
-                {{ range $stream := .streams }}
-                    <tr>
-                        <td>{{ $stream.Name }}</td>
-                        <td>
-                        {{if $stream.Active}} 
-                            <div class="yes" />
-                        {{else}}
-                            <div class="no" />
-                        {{end}}
-                        </td>
-                        <td>
-                        {{if $stream.Public}}
-                            <div class="yes" />
-                        {{else}}
-                            <div class="no" />
-                        {{end}}
-                        </td>
-                        <td><a href="/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
-                    </tr>
-                {{ end }}
-                </table>
+                <form action="/secure/device/{{ .device.Id }}/action/edit" method="POST">
+                    <div class="form-group">
+                        <label for="shortname">Device Nickname (if blank you'll see the long name)</label>
+                        <input type="text" name="shortname" class="form-control" id="shortname" placeholder="Nickname" value="{{.device.Shortname}}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="enabled">Enabled (allow this device to read your data)</label>
+                        <input type="checkbox" name="enabled" class="checkbox" id="enabled" value='checked' {{if .device.Enabled}}checked="checked"{{end}}>
+                    </div>
+
+                    {{ if .user.Admin }}
+                        <div class="form-group">
+                            <label for="superdevice">Superdevice (allow this device to do anything)</label>
+                            <input type="checkbox" name="superdevice" class="checkbox" id="superdevice" value='checked' {{if .device.Superdevice}}checked="checked"{{end}}>
+                        </div>
+                    {{ end }}
+
+                    <div class="form-group">
+                        <label for="canwrite">Write Access (allows this device to send data to the server for its streams)</label>
+                        <input type="checkbox" name="canwrite" class="checkbox" id="canwrite" value='checked' {{if .device.CanWrite}}checked="checked"{{end}}>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="canwriteanywhere">Write Anywhere (allows this device save data to any device's streams)</label>
+                        <input type="checkbox" name="canwriteanywhere" class="checkbox" id="canwriteanywhere" value='checked' {{if .device.CanWriteAnywhere}}checked="checked"{{end}}>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userproxy">User Proxy (allows this device to do everything you can do, e.g. create devices, delete information, etc.)</label>
+                        <input type="checkbox" name="userproxy" class="checkbox" id="userproxy" value='checked' {{if .device.UserProxy}}checked="checked"{{end}}>
+                    </div>
+
+                    <input class="btn btn-primary" type="submit" value="Update">
+                </form>
+
+            </table>
             </div>
         </div>
-</body>
-</html>
+
+{{end}}
+
+
+{{template "base" . }}

@@ -14,6 +14,7 @@ import (
     "streamdb/dtypes"
     "time"
     "streamdb/users"
+    "streamdb"
 )
 
 const (
@@ -644,10 +645,9 @@ func readDataByIndex(request *http.Request, requestingDevice *users.Device, user
 
 
 // Creates a subrouter available to
-func GetSubrouter(udb *users.UserDatabase, tdb  *dtypes.TypedDatabase, subroutePrefix *mux.Router) {
+func GetSubrouter(udb *streamdb.UnifiedDB, subroutePrefix *mux.Router) {
 
     userdb = udb
-    timedb = tdb
 
     usr, _ := userdb.ReadAllUsers()
     if len(usr) == 0 {

@@ -2,13 +2,14 @@ package main
 
 import (
     "log"
-    //"net/http"
-    //"github.com/gorilla/mux"
+    "net/http"
+    "github.com/gorilla/mux"
     "flag"
-    //"fmt"
+    "fmt"
     //"streamdb/users"
-    //"os"
-    //"plugins/web_client"
+    "os"
+    "plugins/web_client"
+    "streamdb"
     //"streamdb/timebatchdb"
     //"streamdb/dtypes"
     )
@@ -20,15 +21,12 @@ var (
     redisserver      = flag.String("redis","localhost:6379", "The address to the redis instance")
     msgserver        = flag.String("msg", "localhost:4222", "The address of the messenger server")
     mgoserver        = flag.String("mgo", "localhost", "The address of the MongoDB server")
-    mgodb            = flag.String("mgodb", "production_timebatchdb", "The name of the MongoDB database")
     routes           = flag.String("route", ">", "The routes to write to database")
 
 )
 
 
 func main() {
-    log.Fatal("UNIMPLEMENTED")
-    /*
     flag.Parse()
 
 
@@ -39,7 +37,7 @@ func main() {
     }
 
     var err error
-    userdb, err := users.NewSqliteUserDatabase("production.sqlite")
+    userdb, err := streamdb.CreateLocalUnifiedDB("","","production.sqlite3")
 
     if err != nil {
         userdb = nil
@@ -47,22 +45,13 @@ func main() {
     }
 
 
-    timedb, err := nil,errors.New("UNIMPLEMENTED")//dtypes.Open(*redisserver, *mgoserver,*mgodb)
-
-    if err != nil {
-        timedb = nil
-        log.Print("Cannot open timeseries database")
-
-    }
-
     log.Printf("Starting Server on port %d", *serverport)
 
     r := mux.NewRouter()
-    web_client.GetSubrouter(userdb, timedb, r)
+    web_client.GetSubrouter(userdb, r)
     web_client.Setup(r, userdb)
     //r.HandleFunc("/", HomeHandler)
     http.Handle("/", r)
 
     log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
-    */
 }
