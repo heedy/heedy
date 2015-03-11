@@ -86,6 +86,11 @@ func (userdb *UserDatabase) ReadDevicesForUserId(Id int64) ([]*Device, error) {
     return constructDevicesFromRows(rows, err)
 }
 
+func (userdb *UserDatabase) ReadDeviceForUserByName(userid int64, name string) (*Device, error) {
+    rows, err := userdb.Db.Query(READ_DEVICE_BY_USER_AND_NAME, userid, name)
+    return constructDeviceFromRow(rows, err)
+}
+
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
 func (userdb *UserDatabase) ReadDeviceById(Id int64) (*Device, error) {
     rows, err := userdb.Db.Query(SELECT_DEVICE_BY_ID_STMT, Id)

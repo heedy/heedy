@@ -65,6 +65,10 @@ writes the database's internal data.
 **/
 func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
+    /**
+    TODO migrate all sql userdb stuff into this file.
+    **/
+
     var db Database
 
     //First, we check if the user wants to use sqlite or postgres. If the url given

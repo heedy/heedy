@@ -413,6 +413,38 @@ func (db *Database) ReadStreamByIdAs(device *users.Device, id int64) (*users.Str
     return nil, PrivilegeError
 }
 
+func (db *Database) ReadStreamByDeviceAndNameAs(device *users.Device, dev *users.Device, name string) (*users.Stream, error) {
+    if device == nil {
+        return nil, InvalidParameterError
+    }
+
+    // ignore inactive devices
+    if ! HasPermissions(device, active_privilege) {
+        return nil, PrivilegeError
+    }
+
+    stream, err := db.ReadStreamByDeviceIdAndName(dev.Id, name)
+    if err != nil {
+        return nil, err
+    }
+
+    // grant all superusers
+    if HasPermissions(device, super_privilege) {
+        return stream, nil
+    }
+
+    // Check the owners for the last bit
+    owner, err := db.ReadStreamOwner(stream.Id)
+
+    // If the device is owned by the user
+    if err == nil && owner.Id == device.OwnerId {
+        return stream, nil
+    }
+
+    return nil, PrivilegeError
+}
+
+
 func (db *Database) ReadStreamByDeviceAs(device *users.Device, operand *users.Device) ([]*users.Stream, error) {
     if device == nil {
         return nil, InvalidParameterError
@@ -497,4 +529,32 @@ func (db *Database) DeleteStreamAs(device *users.Device, Id int64) error {
     }
 
     return PrivilegeError
+}
+
+func (db *Database) ReadStreamByUriAs(proxy *users.Device, user, device, stream string) (*users.User, *users.Device, *users.Stream, error){
+    if proxy == nil || user == "" || device == "" || stream == "" {
+        return nil, nil, nil, InvalidParameterError
+    }
+
+    if ! HasPermissions(proxy, active_privilege) {
+        return nil, nil, nil, PrivilegeError
+    }
+
+    userobj, err := db.ReadUserByNameAs(proxy, user)
+    if err != nil {
+        return nil, nil , nil, err
+    }
+
+    // TODO convert this to an as
+    deviceobj, err := db.ReadDeviceForUserByName(userobj.Id, device)
+    if err != nil {
+        return nil, nil , nil, err
+    }
+
+    streamobj, err := db.ReadStreamByDeviceAndNameAs(proxy, deviceobj, stream)
+    if err != nil {
+        return nil, nil , nil, err
+    }
+
+    return userobj, deviceobj, streamobj, nil
 }

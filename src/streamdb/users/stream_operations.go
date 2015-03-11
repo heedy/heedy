@@ -74,6 +74,26 @@ func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
     return streams[0], nil
 }
 
+// ReadStreamById fetches the stream with the given id and returns it, or nil if
+// no such stream exists.
+func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(id int64, name string) (*Stream, error) {
+    rows, err := userdb.Db.Query(READ_STREAM_BY_DEVICE_AND_NAME, id, name)
+
+    if err != nil {
+        return nil, err
+    }
+
+    defer rows.Close()
+
+    streams, err := constructStreamsFromRows(rows)
+
+    if(len(streams) != 1) {
+        return nil, errors.New("Wrong number of streams returned")
+    }
+
+    return streams[0], nil
+}
+
 func (userdb *UserDatabase) ReadStreamsByDevice(device *Device) ([]*Stream, error) {
     if device == nil {
         return nil, ERR_INVALID_PTR
