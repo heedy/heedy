@@ -31,7 +31,7 @@ func (db *Database) Close() {
     if db.tdb != nil {
         db.tdb.Close()
     }
-    //db.Usr.Close()    //users.UserDatabase has no close??? // JAL - not needed, you can just call close on the underlying sql object.
+
     if db.Db != nil {
         db.Db.Close()
     }
@@ -73,14 +73,16 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
         // TODO just check if this is a file
         case strings.HasSuffix(sqluri,".db") ||
         strings.HasSuffix(sqluri,".sqlite") ||
-        strings.HasSuffix(sqluri,".sqlite3"):
+        strings.HasSuffix(sqluri,".sqlite3") ||
+        strings.HasPrefix(sqluri,"sqlite://"):
 
             db.SqlType = "sqlite3"
 
-        case strings.HasPrefix(sqluri,"sqlite://"):
-            db.SqlType = "sqlite3"
-            sqluri = sqluri[9:]
-
+            //The sqlite driver doesn't like starting with sqlite://
+            if strings.HasPrefix(sqluri,"sqlite://") {
+                sqluri = sqluri[9:]
+            }
+            break
         case strings.HasPrefix(sqluri,"postgres://"):
             db.SqlType = "postgres"
             sqluri = sqluri[len("postgres://"):]
@@ -103,7 +105,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
     db.sqldb = db.Db
 
     if redisuri != "" {
-        log.Printf("Opening timebatch with redis url %v batch size: %v", redisuri, sqluri)
+        log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
         db.tdb, err = timebatchdb.Open(db.Db, db.SqlType, redisuri, BATCH_SIZE, err)
 
         if err != nil {
@@ -114,7 +116,8 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
     /**
     // This is going to be automatically set up by our invocation environment,
-    // let's not do this right now.
+    // let's not do this right now. - DK: I am not sure if I understand - WriteDatabase actually NEEDS to run
+    // from this process if using sqlite. It can't run the databasewriter.
 
     //If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
     if sqltype == "sqlite3" {
