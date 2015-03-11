@@ -167,7 +167,7 @@ Sets up the SQLITE databse.
 **/
 func (userdb *UserDatabase) setupSqliteDatabase() error{
 
-	log.Printf("setting up squlite db")
+	log.Printf("setting up sqlite db")
 
 	_, err := userdb.Db.Exec("PRAGMA foreign_keys = ON;")
 

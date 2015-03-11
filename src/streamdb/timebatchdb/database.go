@@ -12,7 +12,7 @@ var (
     ERROR_UNORDERED = errors.New("Datapoints not ordered by timestamp")
     ERROR_TIMESTAMP = errors.New("A datapoint with a greater or equal timestamp already exists for the stream")
     ERROR_INDEX_MISMATCH = errors.New("Database internal index mismatch - possible data loss!")
-    ERROR_USERFAIL = errors.New("U FAIL AT LIFE (Check your inputs)")
+    ERROR_USERFAIL = errors.New("U FAIL @ LYFE (Check your data range)")
     )
 
 //This structure conforms to the DataRange interface
@@ -213,7 +213,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 
 //This function blocks indefinitely, reading from the data cache and writing to the SQL database.
 //If running as part of a larger application, you probably want this as a goroutine or as its own process.
-//In order for the database to function properly, ther eneeds to be an instance of this function running somewhere in the background
+//In order for the database to function properly, there needs to be an instance of this function running somewhere in the background
 //Please note that while I think that the function will function concurrently, this was not stress-tested for concurrency issues.
 func (d *Database) WriteDatabase() (err error) {
     log.Println("TimebatchDB:WriteDatabase:RUNNING")

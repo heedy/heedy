@@ -645,7 +645,7 @@ func readDataByIndex(request *http.Request, requestingDevice *users.Device, user
 
 
 // Creates a subrouter available to
-func GetSubrouter(udb *streamdb.UnifiedDB, subroutePrefix *mux.Router) {
+func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 
     userdb = udb
 

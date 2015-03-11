@@ -15,7 +15,7 @@ import (
 )
 
 var(
-    userdb               *streamdb.UnifiedDB
+    userdb               *streamdb.Database
 
 	user_edit_template *template.Template
 	login_home_template *template.Template
@@ -305,7 +305,7 @@ func updateFirstrun() bool {
 
 
 
-func Setup(subroutePrefix *mux.Router, udb *streamdb.UnifiedDB) {
+func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
     SetWdToExecutable()
 	user_edit_template = template.Must(template.ParseFiles("./templates/user_edit.html", "./templates/base.html"))
 	login_home_template = template.Must(template.ParseFiles("./templates/root.html", "./templates/base.html"))

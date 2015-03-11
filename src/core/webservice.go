@@ -37,11 +37,12 @@ func main() {
     }
 
     var err error
-    userdb, err := streamdb.CreateLocalUnifiedDB("","","production.sqlite3")
+    userdb, err := streamdb.Open("production.sqlite3","","")
 
     if err != nil {
         userdb = nil
         log.Print("Cannot open user database")
+        panic(err.Error())
     }
 
 
