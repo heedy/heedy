@@ -132,7 +132,24 @@ There is about a 99% chance that it won't work right away. The nginx error logs 
 
 # ConnectorDB
 
-These instructions show how to set up ConnectorDB to auto-deploy on push
+These instructions show how to set up ConnectorDB to auto-deploy on push.
+
+
+First off, you need postgres and redis installed.
+```
+sudo apt-get install postgresql redis-server
+```
+
+And they need to be disabled on startup not to conflict with ConnectorDB
+
+```
+sudo update-rc.d postgres disable
+sudo update-rc.d redis-server disable
+sudo service postgres stop
+sudo service redis-server stop
+```
+
+Next, we prepare the repository for pushing:
 
 ```
 cd ~
