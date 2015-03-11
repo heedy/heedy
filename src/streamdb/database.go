@@ -1,519 +1,123 @@
 package streamdb
 
-/**
-This file provides the unified database public interface for the timebatchdb and
-the users database.
-
-If you want to connect to either of these, it is probably best to use this
-package as it provides many conveniences.
-**/
-
 import (
+    "database/sql"
+    _ "github.com/mattn/go-sqlite3"
+    _ "github.com/lib/pq"
+
     "streamdb/users"
-    "errors"
-    //"streamdb/timebatchdb"
-    //"streamdb/dtypes"
+    "streamdb/timebatchdb"
+
+    "strings"
     )
 
-
-type Permission int
-
-const (
-    USER Permission = iota // the device is a user
-    ACTIVE  // The device is enabled
-    ADMIN // The device is a superdevice (global superuser)
-    WRITE // The device can write to user feeds
-    WRITE_ANYWHERE // The device can write to any of a user's feeds
-    MODIFY_USER // The device can modify it's owner
-)
-
 var (
-    PrivligeError = errors.New("Insufficient privileges")
-    InvalidParameterError = errors.New("Invalid Parameter Recieved")
-    super_privlige = []Permission{ACTIVE, ADMIN}
-    modify_user_privlige = []Permission{ACTIVE, MODIFY_USER}
-    active_privlige = []Permission{ACTIVE}
-    user_authorized_privlige = []Permission{ADMIN, USER, MODIFY_USER}
-)
+    BATCH_SIZE = 100    //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
+    )
 
-// Checks to see if the device has the listed permissions
-func HasPermissions(d *users.Device, permissions []Permission) bool {
-    for _, p := range permissions {
-        switch p {
-            case USER:
-                if ! d.IsUser() {
-                    return false
-                }
-            case ACTIVE:
-                if ! d.IsActive() {
-                    return false
-                }
-            case ADMIN:
-                if ! d.IsAdmin() {
-                    return false
-                }
-            case WRITE:
-                if ! d.WriteAllowed() {
-                    return false
-                }
-            case WRITE_ANYWHERE:
-                if ! d.WriteAnywhereAllowed() {
-                    return false
-                }
-            case MODIFY_USER:
-                if ! d.CanModifyUser() {
-                    return false
-                }
-        }
-    }
+//This is a StreamDB database object which holds the methods
+type Database struct {
+    sqldb *sql.DB       //Connection to the sql database
+    SqlType string    //The sql database type string
 
-    return true
+    Usr *users.UserDatabase         //UserDatabase holds the methods needed to CRUD users/devices/streams
+    tdb *timebatchdb.Database       //timebatchdb holds methods for inserting datapoints into streams
 }
 
-func HasAnyPermission(d *users.Device, permissions []Permission) bool {
-    for _, p := range permissions {
-        switch p {
-            case USER:
-            if d.IsUser() {
-                return true
-            }
-            case ACTIVE:
-            if d.IsActive() {
-                return true
-            }
-            case ADMIN:
-            if d.IsAdmin() {
-                return true
-            }
-            case WRITE:
-            if d.WriteAllowed() {
-                return true
-            }
-            case WRITE_ANYWHERE:
-            if d.WriteAnywhereAllowed() {
-                return true
-            }
-            case MODIFY_USER:
-            if d.CanModifyUser() {
-                return true
-            }
-        }
-    }
-
-    return false
+//This function closes all database connections and releases all resources.
+//A word of warning though: If RunWriter() is functional, then RunWriter will crash
+func (db *Database) Close() {
+    db.tdb.Close()
+    //db.Usr.Close()    //users.UserDatabase has no close???
+    db.sqldb.Close()
 }
 
 
-type UnifiedDB struct {
-    users.UserDatabase
-    //dtypes.TypedDatabase
-}
+//Opens StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
+//server.
+//
+//StreamDB can use both postgres and sqlite as its storage engine. To run StreamDB with sqlite, give a
+//path to the database file ending with .db. If the file does not end in .db, use "sqlite://" in the path
+//to make sure that is the database engine used:
+//  streamdb.Open("sqlite://path/to/database","localhost:6379","localhost:4222")
+//One important thing to note when running StreamDB with sqlite: Open() automatically starts RunWriter() in a goroutine
+//on open, since it is assumed that this is the only object from which the database is accessed.
+//
+//The normal use case for StreamDB is postgres. For postgres, just use the url of the connection. If you are worried
+//that StreamDB will mistake your url for a sqlite location, you can start your database string with "postgres://".
+//An example of a postgres url will be:
+//  streamdb.Open("postgres://username:password@localhost:port/databasename?sslmode=verify-full","localhost:6379","localhost:4222")
+//If just running locally, then you can use:
+//  streamdb.Open("postgres://localhost:52592/connectordb?sslmode=disable","localhost:6379","localhost:4222")
+//The preceding command will use the database "connectordb" (which is assumed to have been created already) on the local machine.
+//
+//Finally, if running in postgres, then at least one process must be running the function RunWriter(). This function
+//writes the database's internal data.
+func Open(sqlurl, redisurl, msgurl string) (db *Database, err error) {
+    var sdb *sql.DB
 
+    //First, we check if the user wants to use sqlite or postgres. If the url given
+    //has the hallmarks of a file or sqlite database, then set that as the database type
 
-// Initializes the database with a local sqlite user store
-func CreateLocalUnifiedDB(msgUrl, redisUrl, userdbPath string) (*UnifiedDB, error) {
-    var udb UnifiedDB
-
-    err := udb.InitUserDatabase(users.SQLITE3, userdbPath)
-    if err != nil {
-        return nil, err
+    sqltype := "postgres"   //The default is postgres.
+    if strings.HasSuffix(sqlurl,".db") {
+        sqltype = "sqlite3"
     }
-    /*
-    err := udb.InitTypedDB(redisUrl)
-    if err != nil {
-        return nil, err
+    if strings.HasPrefix(sqlurl,"sqlite://") {
+        sqltype="sqlite3"
+        sqlurl = sqlurl[9:]
+    }
+    if strings.HasPrefix(sqlurl,"postgres://") {
+        sqltype="postgres"
+    }
+
+    /*TODO: Right now UserDB has no way to pass in an sql object without bypassing all constructors. So we let UserDB open the connection, then steal the database object
+    //Now open the correct type of database.
+    sdb,err := sql.Open(sqltype,sqlurl)
+    if err!=nil {
+        return nil,err
     }
     */
 
-    return &udb, nil
+    usr := new(users.UserDatabase)
+    err = usr.InitUserDatabase(users.DRIVERSTR(sqltype),sqlurl)
+    sdb = usr.Db   //Re: TODO.
+
+    tdb, err := timebatchdb.Open(sdb,sqltype,redisurl,BATCH_SIZE,err)
+
+    if err!=nil {
+        if sdb!=nil {
+            sdb.Close()
+        }
+    }
+
+    //If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
+    if sqltype == "sqlite3" {
+        go tdb.WriteDatabase()
+    }
+
+    return &Database{sdb,sqltype,usr,tdb},nil
 }
 
-
-// Create user as a proxy.
-func (udb *UnifiedDB) CreateUserAs(device *users.Device, Name, Email, Password string) (id int64, err error) {
-    if device == nil {
-        return -1, InvalidParameterError
+//StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
+//an sql database in batches of size BATCH_SIZE (global var). This allows great insert speed as well as fantastic read speed on large
+//ranges of data. RunWriter runs this 'batching' process, which happens in the background.
+//When running a single instance with posgres, you need to call RunWriter once manually (as a goroutine). You do not need to
+//run it if on sqlite, since it is run automatically.
+//If running as a cluster, then it is probably a good idea to have RunWriter be run as an entirely separate process.
+//
+//For example:
+//  db,_ := streamdb.Open("postgres://...",...)
+//  go db.RunWriter()   //Run this right after starting StreamDB
+//  ...
+//  db.Close()
+//
+//If unsure as to whether you should call RunWriter, this is a good way to decide:
+//Are you running StreamDB manually by yourself using postgres, and this is the only process? If so then yes.
+//If you are just connecting to an already-running StreamDB and RunWriter is already running somewhere on
+//this database, then NO.
+func (db *Database) RunWriter() {
+    if db.SqlType!="sqlite3" {
+        db.tdb.WriteDatabase()
     }
-
-    if ! HasPermissions(device, super_privlige) {
-        return -1, PrivligeError
-    }
-
-    return udb.CreateUser(Name, Email, Password)
-}
-
-
-// Returns a User instance if a user exists with the given email address
-func (udb *UnifiedDB) ReadUserByEmailAs(device *users.Device, email string) (*users.User, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return nil, PrivligeError
-    }
-
-    return udb.ReadUserByEmail(email)
-}
-
-// Attempts to read the user by name as the given device.
-func(udb *UnifiedDB) ReadUserByNameAs(device *users.Device, name string) (*users.User, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return nil, PrivligeError
-    }
-
-    return udb.ReadUserByName(name)
-}
-
-// Attempts to read the user by id as the given device
-func(udb *UnifiedDB) ReadUserByIdAs(device *users.Device, id int64) (*users.User, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return nil, PrivligeError
-    }
-
-    return udb.ReadUserById(id)
-
-}
-
-// Reads all users, or the device's owner if not allowed all
-func (udb *UnifiedDB) ReadAllUsersAs(device *users.Device) ([]*users.User, error) {
-    if device == nil {
-        return []*users.User{}, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return udb.ReadAllUsers()
-    }
-    user, err := udb.ReadUserById(device.OwnerId)
-
-    if err != nil {
-        return []*users.User{}, err
-    }
-
-    return []*users.User{user}, nil
-}
-
-// Attempts to update a user as the given device.
-func (udb *UnifiedDB) UpdateUserAs(device *users.Device, user *users.User) error {
-    if device == nil || user == nil {
-        return InvalidParameterError
-    }
-
-    if ! HasPermissions(device, modify_user_privlige) || device.OwnerId != user.Id {
-        return PrivligeError
-    }
-
-    return udb.UpdateUser(user)
-}
-
-// Attempts to delete a user as the given device.
-func (udb *UnifiedDB) DeleteUserAs(device *users.Device, id int64) error {
-    if device == nil {
-        return InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return PrivligeError
-    }
-
-    return udb.DeleteUser(id)
-}
-
-
-// Attempts to create a phone carrier as the given device
-func (udb *UnifiedDB) CreatePhoneCarrierAs(device *users.Device, name, emailDomain string) (int64, error) {
-    if device == nil {
-        return -1, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return -1, PrivligeError
-    }
-
-    return udb.CreatePhoneCarrier(name, emailDomain)
-}
-
-
-// ReadPhoneCarrierByIdAs attempts to select a phone carrier from the database given its ID
-func (udb *UnifiedDB) ReadPhoneCarrierByIdAs(device *users.Device, Id int64) (*users.PhoneCarrier, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, active_privlige) {
-        return nil, PrivligeError
-    }
-
-    // currently no permissions needed for this
-    return udb.ReadPhoneCarrierById(Id)
-}
-
-// Attempts to read phone carriers as the given device
-func (udb *UnifiedDB) ReadAllPhoneCarriersAs(device *users.Device) ([]*users.PhoneCarrier, error) {
-    if device == nil {
-        return []*users.PhoneCarrier{}, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, active_privlige) {
-        return []*users.PhoneCarrier{}, PrivligeError
-    }
-
-    return udb.ReadAllPhoneCarriers()
-}
-
-// Attempts to update the phone carrier as the given device
-func (udb *UnifiedDB) UpdatePhoneCarrierAs(device *users.Device, carrier *users.PhoneCarrier) error {
-    if carrier == nil || device == nil {
-        return InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return PrivligeError
-    }
-
-    return udb.UpdatePhoneCarrier(carrier)
-}
-
-// Attempts to delete the phone carrier as the given device
-func (udb *UnifiedDB) DeletePhoneCarrierAs(device *users.Device, carrierId int64) error {
-    if device == nil {
-        return InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return PrivligeError
-    }
-
-    if carrierId < 0 {
-        return InvalidParameterError
-    }
-
-    return udb.DeletePhoneCarrier(carrierId)
-}
-
-
-func (udb *UnifiedDB) CreateDeviceAs(device *users.Device, Name string, Owner *users.User) (int64, error) {
-    if device == nil || Owner == nil {
-        return 0, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) || device.OwnerId == Owner.Id {
-        return 0, PrivligeError
-    }
-
-    return udb.CreateDevice(Name, Owner)
-}
-
-func (udb *UnifiedDB) ReadDevicesForUserIdAs(device *users.Device, Id int64) ([]*users.Device, error) {
-    if device == nil {
-        return []*users.Device{}, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, active_privlige) || device.OwnerId != Id {
-        return []*users.Device{}, PrivligeError
-    }
-
-    return udb.ReadDevicesForUserId(Id)
-}
-
-func (udb *UnifiedDB) ReadDeviceByIdAs(device *users.Device, Id int64) (*users.Device, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, active_privlige){
-        return nil, PrivligeError
-    }
-
-    dev, err := udb.ReadDeviceById(Id)
-
-    if err != nil {
-        return nil, err
-    }
-
-    if device.OwnerId != dev.OwnerId {
-        return nil, PrivligeError
-    }
-
-    return dev, nil
-
-}
-
-func (udb *UnifiedDB) ReadDeviceByApiKeyAs(device *users.Device, Key string) (*users. Device, error) {
-    if device == nil || Key == "" {
-        return nil, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, super_privlige) {
-        return nil, PrivligeError
-    }
-
-    return udb.ReadDeviceByApiKey(Key)
-}
-
-func (udb *UnifiedDB) UpdateDeviceAs(device *users.Device, update *users.Device) error {
-    if device == nil || update == nil {
-        return InvalidParameterError
-    }
-
-    // same device or appropriate permissions
-    if HasPermissions(device, active_privlige) && (device.Id == update.Id || HasAnyPermission(device, user_authorized_privlige)) {
-        return udb.UpdateDevice(update)
-    }
-
-    return PrivligeError
-}
-
-
-func (udb *UnifiedDB) DeleteDeviceAs(device *users.Device, Id int64) error {
-    if device == nil {
-        return InvalidParameterError
-    }
-
-    if HasPermissions(device, active_privlige) && HasAnyPermission(device, user_authorized_privlige) {
-        return udb.DeleteDevice(Id)
-    }
-
-    return PrivligeError
-}
-
-
-func (udb *UnifiedDB) CreateStreamAs(device *users.Device, Name, Type string, owner *users.Device) (int64, error) {
-    if device == nil || owner == nil {
-        return 0, InvalidParameterError
-    }
-
-    if ! HasPermissions(device, active_privlige) {
-        return 0, PrivligeError
-    }
-
-    if HasAnyPermission(device, user_authorized_privlige) {
-        return udb.CreateStream(Name, Type, owner)
-    }
-
-    if HasPermissions(device, []Permission{WRITE}) && device.Id == owner.Id {
-        return udb.CreateStream(Name, Type, owner)
-    }
-
-    return 0, PrivligeError
-}
-
-func (udb *UnifiedDB) ReadStreamByIdAs(device *users.Device, id int64) (*users.Stream, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    // ignore inactive devices
-    if ! HasPermissions(device, active_privlige) {
-        return nil, PrivligeError
-    }
-
-    // grant all superusers
-    if HasPermissions(device, super_privlige) {
-        return udb.ReadStreamById(id)
-    }
-
-    // Check the owners for the last bit
-    owner, err := udb.ReadStreamOwner(id)
-
-    // If the device is owned by the user
-    if err == nil && owner.Id == device.OwnerId {
-        return udb.ReadStreamById(id)
-    }
-
-    return nil, PrivligeError
-}
-
-func (udb *UnifiedDB) ReadStreamByDeviceAs(device *users.Device, operand *users.Device) ([]*users.Stream, error) {
-    if device == nil {
-        return nil, InvalidParameterError
-    }
-
-    // ignore inactive devices
-    if ! HasPermissions(device, active_privlige) {
-        return nil, PrivligeError
-    }
-
-    // grant all superusers
-    if HasPermissions(device, super_privlige) {
-        return udb.ReadStreamsByDevice(operand)
-    }
-
-    // If the device is owned by the user
-    if device.OwnerId == operand.OwnerId {
-        return udb.ReadStreamsByDevice(operand)
-    }
-
-    return nil, PrivligeError
-}
-
-
-func (udb *UnifiedDB) UpdateStreamAs(device *users.Device, stream *users.Stream) error {
-    if device == nil || stream == nil{
-        return InvalidParameterError
-    }
-
-    // ignore inactive devices
-    if ! HasPermissions(device, active_privlige) {
-        return PrivligeError
-    }
-
-    // grant all superusers
-    if HasPermissions(device, super_privlige) {
-        return udb.UpdateStream(stream)
-    }
-
-    // Must be able to modify user information
-    if ! HasAnyPermission(device, user_authorized_privlige) {
-        return PrivligeError
-    }
-
-    // Check the owners for the last bit
-    owner, err := udb.ReadStreamOwner(stream.Id)
-
-    // If the device is owned by the user
-    if err == nil && owner.Id == device.OwnerId {
-        return udb.UpdateStream(stream)
-    }
-
-    return PrivligeError
-}
-
-func (udb *UnifiedDB) DeleteStreamAs(device *users.Device, Id int64) error {
-    if device == nil {
-        return InvalidParameterError
-    }
-
-    // ignore inactive devices
-    if ! HasPermissions(device, active_privlige) {
-        return PrivligeError
-    }
-
-    // grant all superusers
-    if HasPermissions(device, super_privlige) {
-        return udb.DeleteStream(Id)
-    }
-
-    // Must be able to modify user information
-    if ! HasAnyPermission(device, user_authorized_privlige) {
-        return PrivligeError
-    }
-
-    // Check the owners for the last bit
-    owner, err := udb.ReadStreamOwner(Id)
-
-    // If the device is owned by the user
-    if err == nil && owner.Id == device.OwnerId {
-        return udb.DeleteStream(Id)
-    }
-
-    return PrivligeError
 }
