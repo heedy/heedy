@@ -17,11 +17,14 @@ var (
 
 //This is a StreamDB database object which holds the methods
 type Database struct {
+    users.UserDatabase          //UserDatabase holds the methods needed to CRUD users/devices/streams
+    tdb *timebatchdb.Database       //timebatchdb holds methods for inserting datapoints into streams
+
     sqldb *sql.DB       //Connection to the sql database
     SqlType string    //The sql database type string
 
-    Usr *users.UserDatabase         //UserDatabase holds the methods needed to CRUD users/devices/streams
-    tdb *timebatchdb.Database       //timebatchdb holds methods for inserting datapoints into streams
+
+
 }
 
 //This function closes all database connections and releases all resources.
@@ -53,7 +56,7 @@ func (db *Database) Close() {
 //
 //Finally, if running in postgres, then at least one process must be running the function RunWriter(). This function
 //writes the database's internal data.
-func Open(sqlurl, redisurl, msgurl string) (db *Database, err error) {
+func Open(sqlurl, redisurl, msgurl string) (dbp *Database, err error) {
     var sdb *sql.DB
 
     //First, we check if the user wants to use sqlite or postgres. If the url given
@@ -79,9 +82,10 @@ func Open(sqlurl, redisurl, msgurl string) (db *Database, err error) {
     }
     */
 
-    usr := new(users.UserDatabase)
-    err = usr.InitUserDatabase(users.DRIVERSTR(sqltype),sqlurl)
-    sdb = usr.Db   //Re: TODO.
+    var db Database
+
+    err = db.InitUserDatabase(users.DRIVERSTR(sqltype),sqlurl)
+    sdb = db.Db   //Re: TODO.
 
     tdb, err := timebatchdb.Open(sdb,sqltype,redisurl,BATCH_SIZE,err)
 
@@ -89,6 +93,7 @@ func Open(sqlurl, redisurl, msgurl string) (db *Database, err error) {
         if sdb!=nil {
             sdb.Close()
         }
+        return nil,err
     }
 
     //If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
@@ -96,7 +101,12 @@ func Open(sqlurl, redisurl, msgurl string) (db *Database, err error) {
         go tdb.WriteDatabase()
     }
 
-    return &Database{sdb,sqltype,usr,tdb},nil
+    db.sqldb = sdb
+    db.SqlType = sqltype
+    db.tdb = tdb
+
+    return &db,nil
+
 }
 
 //StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to

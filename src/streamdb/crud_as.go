@@ -114,7 +114,7 @@ func (db *Database) CreateUserAs(device *users.Device, Name, Email, Password str
         return -1, PrivilegeError
     }
 
-    return db.Usr.CreateUser(Name, Email, Password)
+    return db.CreateUser(Name, Email, Password)
 }
 
 
@@ -128,7 +128,7 @@ func (db *Database) ReadUserByEmailAs(device *users.Device, email string) (*user
         return nil, PrivilegeError
     }
 
-    return db.Usr.ReadUserByEmail(email)
+    return db.ReadUserByEmail(email)
 }
 
 // Attempts to read the user by name as the given device.
@@ -141,7 +141,7 @@ func(db *Database) ReadUserByNameAs(device *users.Device, name string) (*users.U
         return nil, PrivilegeError
     }
 
-    return db.Usr.ReadUserByName(name)
+    return db.ReadUserByName(name)
 }
 
 // Attempts to read the user by id as the given device
@@ -154,7 +154,7 @@ func(db *Database) ReadUserByIdAs(device *users.Device, id int64) (*users.User, 
         return nil, PrivilegeError
     }
 
-    return db.Usr.ReadUserById(id)
+    return db.ReadUserById(id)
 
 }
 
@@ -165,9 +165,9 @@ func (db *Database) ReadAllUsersAs(device *users.Device) ([]*users.User, error) 
     }
 
     if ! HasPermissions(device, super_privilege) {
-        return db.Usr.ReadAllUsers()
+        return db.ReadAllUsers()
     }
-    user, err := db.Usr.ReadUserById(device.OwnerId)
+    user, err := db.ReadUserById(device.OwnerId)
 
     if err != nil {
         return []*users.User{}, err
@@ -186,7 +186,7 @@ func (db *Database) UpdateUserAs(device *users.Device, user *users.User) error {
         return PrivilegeError
     }
 
-    return db.Usr.UpdateUser(user)
+    return db.UpdateUser(user)
 }
 
 // Attempts to delete a user as the given device.
@@ -199,7 +199,7 @@ func (db *Database) DeleteUserAs(device *users.Device, id int64) error {
         return PrivilegeError
     }
 
-    return db.Usr.DeleteUser(id)
+    return db.DeleteUser(id)
 }
 
 
@@ -213,7 +213,7 @@ func (db *Database) CreatePhoneCarrierAs(device *users.Device, name, emailDomain
         return -1, PrivilegeError
     }
 
-    return db.Usr.CreatePhoneCarrier(name, emailDomain)
+    return db.CreatePhoneCarrier(name, emailDomain)
 }
 
 
@@ -228,7 +228,7 @@ func (db *Database) ReadPhoneCarrierByIdAs(device *users.Device, Id int64) (*use
     }
 
     // currently no permissions needed for this
-    return db.Usr.ReadPhoneCarrierById(Id)
+    return db.ReadPhoneCarrierById(Id)
 }
 
 // Attempts to read phone carriers as the given device
@@ -241,7 +241,7 @@ func (db *Database) ReadAllPhoneCarriersAs(device *users.Device) ([]*users.Phone
         return []*users.PhoneCarrier{}, PrivilegeError
     }
 
-    return db.Usr.ReadAllPhoneCarriers()
+    return db.ReadAllPhoneCarriers()
 }
 
 // Attempts to update the phone carrier as the given device
@@ -254,7 +254,7 @@ func (db *Database) UpdatePhoneCarrierAs(device *users.Device, carrier *users.Ph
         return PrivilegeError
     }
 
-    return db.Usr.UpdatePhoneCarrier(carrier)
+    return db.UpdatePhoneCarrier(carrier)
 }
 
 // Attempts to delete the phone carrier as the given device
@@ -271,7 +271,7 @@ func (db *Database) DeletePhoneCarrierAs(device *users.Device, carrierId int64) 
         return InvalidParameterError
     }
 
-    return db.Usr.DeletePhoneCarrier(carrierId)
+    return db.DeletePhoneCarrier(carrierId)
 }
 
 
@@ -284,7 +284,7 @@ func (db *Database) CreateDeviceAs(device *users.Device, Name string, Owner *use
         return 0, PrivilegeError
     }
 
-    return db.Usr.CreateDevice(Name, Owner)
+    return db.CreateDevice(Name, Owner)
 }
 
 func (db *Database) ReadDevicesForUserIdAs(device *users.Device, Id int64) ([]*users.Device, error) {
@@ -296,7 +296,7 @@ func (db *Database) ReadDevicesForUserIdAs(device *users.Device, Id int64) ([]*u
         return []*users.Device{}, PrivilegeError
     }
 
-    return db.Usr.ReadDevicesForUserId(Id)
+    return db.ReadDevicesForUserId(Id)
 }
 
 func (db *Database) ReadDeviceByIdAs(device *users.Device, Id int64) (*users.Device, error) {
@@ -308,7 +308,7 @@ func (db *Database) ReadDeviceByIdAs(device *users.Device, Id int64) (*users.Dev
         return nil, PrivilegeError
     }
 
-    dev, err := db.Usr.ReadDeviceById(Id)
+    dev, err := db.ReadDeviceById(Id)
 
     if err != nil {
         return nil, err
@@ -331,7 +331,7 @@ func (db *Database) ReadDeviceByApiKeyAs(device *users.Device, Key string) (*use
         return nil, PrivilegeError
     }
 
-    return db.Usr.ReadDeviceByApiKey(Key)
+    return db.ReadDeviceByApiKey(Key)
 }
 
 func (db *Database) UpdateDeviceAs(device *users.Device, update *users.Device) error {
@@ -341,7 +341,7 @@ func (db *Database) UpdateDeviceAs(device *users.Device, update *users.Device) e
 
     // same device or appropriate permissions
     if HasPermissions(device, active_privilege) && (device.Id == update.Id || HasAnyPermission(device, user_authorized_privilege)) {
-        return db.Usr.UpdateDevice(update)
+        return db.UpdateDevice(update)
     }
 
     return PrivilegeError
@@ -354,7 +354,7 @@ func (db *Database) DeleteDeviceAs(device *users.Device, Id int64) error {
     }
 
     if HasPermissions(device, active_privilege) && HasAnyPermission(device, user_authorized_privilege) {
-        return db.Usr.DeleteDevice(Id)
+        return db.DeleteDevice(Id)
     }
 
     return PrivilegeError
@@ -371,11 +371,11 @@ func (db *Database) CreateStreamAs(device *users.Device, Name, Type string, owne
     }
 
     if HasAnyPermission(device, user_authorized_privilege) {
-        return db.Usr.CreateStream(Name, Type, owner)
+        return db.CreateStream(Name, Type, owner)
     }
 
     if HasPermissions(device, []Permission{WRITE}) && device.Id == owner.Id {
-        return db.Usr.CreateStream(Name, Type, owner)
+        return db.CreateStream(Name, Type, owner)
     }
 
     return 0, PrivilegeError
@@ -393,15 +393,15 @@ func (db *Database) ReadStreamByIdAs(device *users.Device, id int64) (*users.Str
 
     // grant all superusers
     if HasPermissions(device, super_privilege) {
-        return db.Usr.ReadStreamById(id)
+        return db.ReadStreamById(id)
     }
 
     // Check the owners for the last bit
-    owner, err := db.Usr.ReadStreamOwner(id)
+    owner, err := db.ReadStreamOwner(id)
 
     // If the device is owned by the user
     if err == nil && owner.Id == device.OwnerId {
-        return db.Usr.ReadStreamById(id)
+        return db.ReadStreamById(id)
     }
 
     return nil, PrivilegeError
@@ -419,12 +419,12 @@ func (db *Database) ReadStreamByDeviceAs(device *users.Device, operand *users.De
 
     // grant all superusers
     if HasPermissions(device, super_privilege) {
-        return db.Usr.ReadStreamsByDevice(operand)
+        return db.ReadStreamsByDevice(operand)
     }
 
     // If the device is owned by the user
     if device.OwnerId == operand.OwnerId {
-        return db.Usr.ReadStreamsByDevice(operand)
+        return db.ReadStreamsByDevice(operand)
     }
 
     return nil, PrivilegeError
@@ -443,7 +443,7 @@ func (db *Database) UpdateStreamAs(device *users.Device, stream *users.Stream) e
 
     // grant all superusers
     if HasPermissions(device, super_privilege) {
-        return db.Usr.UpdateStream(stream)
+        return db.UpdateStream(stream)
     }
 
     // Must be able to modify user information
@@ -452,11 +452,11 @@ func (db *Database) UpdateStreamAs(device *users.Device, stream *users.Stream) e
     }
 
     // Check the owners for the last bit
-    owner, err := db.Usr.ReadStreamOwner(stream.Id)
+    owner, err := db.ReadStreamOwner(stream.Id)
 
     // If the device is owned by the user
     if err == nil && owner.Id == device.OwnerId {
-        return db.Usr.UpdateStream(stream)
+        return db.UpdateStream(stream)
     }
 
     return PrivilegeError
@@ -474,7 +474,7 @@ func (db *Database) DeleteStreamAs(device *users.Device, Id int64) error {
 
     // grant all superusers
     if HasPermissions(device, super_privilege) {
-        return db.Usr.DeleteStream(Id)
+        return db.DeleteStream(Id)
     }
 
     // Must be able to modify user information
@@ -483,11 +483,11 @@ func (db *Database) DeleteStreamAs(device *users.Device, Id int64) error {
     }
 
     // Check the owners for the last bit
-    owner, err := db.Usr.ReadStreamOwner(Id)
+    owner, err := db.ReadStreamOwner(Id)
 
     // If the device is owned by the user
     if err == nil && owner.Id == device.OwnerId {
-        return db.Usr.DeleteStream(Id)
+        return db.DeleteStream(Id)
     }
 
     return PrivilegeError
