@@ -6,7 +6,7 @@ server {
 	listen [::]:80 default_server ipv6only=on;
 
 	server_name connectordb.com;
-	return 301 https://connectordb.com$request_uri;
+	return 301 https://$host$request_uri;
 }
 
 #The https server serves from a jekyll website, and shows an "app is down" message if
@@ -15,15 +15,15 @@ server {
 	listen 443;
 	server_name connectordb.com;
 
-	root /www/connectordb.com/static/;
+	root {{CONNECTORDB_DIR}}/www/;
 	index index.html index.htm;
 
-	error_page 404 /static/404/index.html;
-	error_page 502 /static/404/index.html;
+	error_page 404 /public/404/index.html;
+	error_page 502 /public/404/index.html;
 
 	ssl on;
-	ssl_certificate /etc/nginx/ssl/connectordb.com.crt;
-	ssl_certificate_key /etc/nginx/ssl/connectordb.com.key;
+	ssl_certificate {{CONNECTORDB_DIR}}/ssl/connectordb.crt;
+	ssl_certificate_key {{CONNECTORDB_DIR}}/ssl/connectordb.key;
 
 	ssl_session_timeout 5m;
 
@@ -32,12 +32,14 @@ server {
 	ssl_prefer_server_ciphers on;
 
 	location /static/ {
-		rewrite ^/static/?(.*)$ /$1 break;
+		try_files $uri $uri/ =404;
+	}
+    location /public/ {
 		try_files $uri $uri/ =404;
 	}
 
 	location / {
-		proxy_pass http://127.0.0.1:8080;
+		proxy_pass http://127.0.0.1:8000;
 		proxy_set_header Host $host;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

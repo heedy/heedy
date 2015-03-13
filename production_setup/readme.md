@@ -10,74 +10,22 @@ Starting off:
 ```
 apt-get update
 apt-get dist-upgrade
-apt-get install nginx base-devel git golang golang-go.tools
 ```
 
-Then create the user:
+Then create the support user:
 ```
 adduser support
 gpasswd -a sudo support
 ```
 
-log in as the user, and copy the dotfiles from this repo to the home directory.
+log in as the support user, and copy the dotfiles from this repo to the home directory.
 Then, disable root login (`PermitRootLogin no`):
 ```
 sudo vim /etc/ssh/sshd_config
 sudo service ssh restart
 ```
 
-Now make sure you can log in to the server as `support` user
-
-# Static Website
-
-Static pages, such as the 404 page and the greeting screen are served at `connectordb.com/static/*`.
-To set this up:
-
-The static website uses jekyll. We need to install it:
-```
-sudo apt-get install rubygems ruby-dev
-sudo gem install jekyll
-sudo gem install typogruby
-sudo gem install python-pygments
-```
-
-Now that jekyll is installed, we set up the static pages location
-
-```
-sudo mkdir /www
-cd /www
-sudo mkdir connectordb.com
-cd connectordb.com
-sudo mkdir static
-sudo chmod 777 static
-```
-
-The chmod is needed so nginx can read the files
-
-Next, set up the git repo for the site:
-
-```
-cd ~
-git init --bare connectordb_static.git
-
-```
-
-Copy the files from static_site_hooks in repo to `./connectordb_static/hooks`. The hooks auto-deploy the website on push.
-
-Lastly, push a jekyll site to `support@connectordb.com:connectordb_static.git` with at least a 404 page.
-
-# NGINX
-
-Nginx is used as an SSL proxy for the web app at port 8080, and also serves the jekyll website set up above at `/static/`.
-
-To start off, copy `nginx/connectordb.com` from this folder into /etc/nginx/sites-available
-
-Then link it to sites-enabled:
-```
-cd /etc/nginx/sites-enabled
-sudo ln -s /etc/nginx/sites-available/connectordb.com ./connectordb.com
-```
-
+Now make sure you can log in to the server as `support` user. From now on, instructions are run as support user.
 
 ### SSL Certificate
 
@@ -87,7 +35,7 @@ Namecheap PositiveSSL is the one we used before, so instructions are for that.
 
 ```
 cd ~
-openssl req -newkey rsa:2048 -nodes -keyout connectordb.com.key -out connectordb.com.csr
+openssl req -newkey rsa:2048 -nodes -keyout connectordb.key -out connectordb.com.csr
 ```
 
 The csr was sent to Comodo for issuing, and a large chain of files was returned:
@@ -102,58 +50,41 @@ connectordb_com.crt
 This command created the pem key:
 
 ```
-cat connectordb_com.crt COMODORSADomainValidationSecureServerCA.crt COMODORSAAddTrustCA.crt AddTrustExternalCARoot.crt > connectordb.com.crt
+cat connectordb_com.crt COMODORSADomainValidationSecureServerCA.crt COMODORSAAddTrustCA.crt AddTrustExternalCARoot.crt > connectordb.crt
 ```
 
 This pem file needs to be put in the correct folder:
 
+
+
+
+# Install Script
+
+After having the `connectordb.crt` and `connectordb.key` files, you need to copy the productionfiles directory to the server, and put the two ssl files in it.
+
+Then, you can run the install script (NOTE: Install script was not yet tested!!!):
 ```
-cd ~
-sudo mkdir /etc/nginx/ssl
-sudo mv ./connectordb.com.crt /etc/nginx/ssl/
-sudo mv ./connectordb.com.key /etc/nginx/ssl/
-cd /etc/nginx/ssl
-sudo chown root:root ./*
-chmod 000 ./*
-cd ..
-chmod 000 ./ssl
-```
-
-
-
-
-### Finishing up...
-```
-sudo service nginx restart
+mv connectordb.key productionfiles/
+mv connectordb.crt productionfiles/
+cd productionfiles
+chmod +x install.sh
+sudo ./install.sh
 ```
 
-There is about a 99% chance that it won't work right away. The nginx error logs are in `/var/log/nginx`
+After the install script finishes, you will have the prerequisites for running connectordb installed.
+Check to make sure that everything is working by navigating to http://{{nameHere}}.com.
 
+Two things should happen: the http should be redirected to https, and the https should be green (valid).
+Furthermore, the page should be a 404 explicitly saying something about connectordb.
 
-# ConnectorDB
-
-These instructions show how to set up ConnectorDB to auto-deploy on push.
-
-
-First off, you need postgres and redis installed.
+At that point, create a password for the connectordb user
 ```
-sudo apt-get install postgresql redis-server
+passwd connectordb
 ```
-
-And they need to be disabled on startup not to conflict with ConnectorDB
-
+and that will allow you to push-to-deploy:
 ```
-sudo update-rc.d postgres disable
-sudo update-rc.d redis-server disable
-sudo service postgres stop
-sudo service redis-server stop
+connectordb@connectordb.com/git/public.git #Jekyll website at /public . Must have a 404 page.
+connectordb@connectordb.com/git/connectordb.git #The connectordb repo - auto-deploys a production repository on push.
 ```
 
-Next, we prepare the repository for pushing:
-
-```
-cd ~
-git init --bare connectordb.git
-```
-
-*TODO: This, and the hooks to deploy*
+There is about a chance that something won't work right away. The nginx error logs are in `/var/log/nginx`
