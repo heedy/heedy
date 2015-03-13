@@ -19,8 +19,8 @@ func TestDatabasError(t *testing.T) {
 }
 
 func TestDatabaseInsert(t *testing.T) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         t.Errorf("Couldn't open database: %v",err)
         return
@@ -95,8 +95,8 @@ func TestDatabaseInsert(t *testing.T) {
 
 
 func TestDatabaseWrite(t *testing.T) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         t.Errorf("Couldn't open database: %v",err)
         return
@@ -169,8 +169,8 @@ func TestDatabaseWrite(t *testing.T) {
 
 
 func TestDatabaseRead(t *testing.T) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         t.Errorf("Couldn't open database: %v",err)
         return
@@ -275,8 +275,8 @@ func TestDatabaseRead(t *testing.T) {
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range from sqlite in chunks of 100
 func BenchmarkThousandS_S(b *testing.B) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return
@@ -375,8 +375,8 @@ func BenchmarkThousandS_P(b *testing.B) {
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range from redis
 func BenchmarkThousandR(b *testing.B) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return
@@ -421,8 +421,8 @@ func BenchmarkThousandR(b *testing.B) {
 }
 
 func BenchmarkInsert(b *testing.B) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return

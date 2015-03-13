@@ -326,8 +326,8 @@ func TestNoDriver(t *testing.T) {
 }
 
 func TestSQLiteStore(t *testing.T) {
-    os.Remove("testing.db")
-    db,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    db,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         t.Errorf("Couldn't open database: %v",err)
         return
@@ -366,8 +366,8 @@ func TestPostgresStore(t *testing.T) {
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
 func BenchmarkThousandSQLite(b *testing.B) {
-    os.Remove("testing.db")
-    db,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    db,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return
@@ -400,8 +400,8 @@ func BenchmarkThousandSQLite(b *testing.B) {
 }
 
 func BenchmarkSQLiteInsert(b *testing.B) {
-    os.Remove("testing.db")
-    db,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    db,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         b.Errorf("Couldn't open database: %v",err)
         return

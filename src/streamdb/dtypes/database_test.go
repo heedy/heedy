@@ -51,8 +51,8 @@ func TestTypedRange(t *testing.T) {
 }
 
 func TestTypedDatabase(t *testing.T) {
-    os.Remove("testing.db")
-    sdb,err := sql.Open("sqlite3","testing.db")
+    os.Remove("TESTING_timebatch.db")
+    sdb,err := sql.Open("sqlite3","TESTING_timebatch.db")
     if err!=nil {
         t.Errorf("Couldn't open database: %v",err)
         return
