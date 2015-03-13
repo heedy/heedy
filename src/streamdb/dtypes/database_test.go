@@ -69,7 +69,7 @@ func TestTypedDatabase(t *testing.T) {
     //Cleans the cache
     rc.Clear()
 
-    db,err := Open(sdb,"sqlite3","localhost:6379")
+    db,err := Open(sdb,"sqlite3","localhost:6379",10,nil)
     if err!=nil {
         t.Errorf("Couldn't connect: %s",err)
         return

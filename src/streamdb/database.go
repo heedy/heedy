@@ -6,7 +6,7 @@ import (
     _ "github.com/lib/pq"
 
     "streamdb/users"
-    "streamdb/timebatchdb"
+    "streamdb/dtypes"
     "log"
     "strings"
     )
@@ -23,7 +23,7 @@ var (
 //This is a StreamDB database object which holds the methods
 type Database struct {
     users.UserDatabase          //UserDatabase holds the methods needed to CRUD users/devices/streams
-    tdb *timebatchdb.Database       //timebatchdb holds methods for inserting datapoints into streams
+    tdb *dtypes.TypedDatabase       //timebatchdb holds methods for inserting datapoints into streams
 
     sqldb *sql.DB       //Connection to the sql database
 }
@@ -113,7 +113,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
     db.sqldb = db.Db
 
     log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
-    db.tdb, err = timebatchdb.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
+    db.tdb, err = dtypes.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
 
     if err != nil {
         db.Close()

@@ -87,10 +87,9 @@ func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint) error {
 }
 
 //Opens the DataStore.
-func Open(sdb *sql.DB, sqlstring string, redisurl string) (*TypedDatabase,error) {
-
+func Open(sdb *sql.DB, sqlstring string, redisurl string, batchsize int, err error) (*TypedDatabase,error) {
     var td  TypedDatabase
-    err := td.InitTypedDB(sdb,sqlstring,redisurl)
+    err = td.InitTypedDB(sdb,sqlstring,redisurl,batchsize,err)
 
     if err != nil {
         return nil, err
@@ -109,11 +108,15 @@ func Open(sdb *sql.DB, sqlstring string, redisurl string) (*TypedDatabase,error)
 }
 
 // Initializes a Typed Database that already exists.
-func (d *TypedDatabase) InitTypedDB(sdb *sql.DB, sqlstring string, redisurl string) (error) {
-    ds, err := timebatchdb.Open(sdb,sqlstring,redisurl,10,nil)
+func (d *TypedDatabase) InitTypedDB(sdb *sql.DB, sqlstring string, redisurl string,batchsize int, err error) (error) {
+    ds, err := timebatchdb.Open(sdb,sqlstring,redisurl,batchsize,err)
     if err != nil {
         return err
     }
     d.db = ds
     return nil
+}
+
+func (d *TypedDatabase) WriteDatabase() (err error) {
+    return d.db.WriteDatabase()
 }
