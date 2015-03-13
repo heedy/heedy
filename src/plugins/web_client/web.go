@@ -21,6 +21,7 @@ var(
 	login_home_template *template.Template
 	device_info_template *template.Template
 	firstrun_template *template.Template
+	stream_read_template *template.Template
 
 	store = sessions.NewCookieStore([]byte("web-service-special-key"))
 	firstrun bool
@@ -191,6 +192,93 @@ redirect:
 }
 
 
+func readStreamPage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
+
+	pageData := make(map[string] interface{})
+
+	vars := mux.Vars(request)
+	streamids := vars["id"]
+	streamid, _ := strconv.Atoi(streamids)
+	stream, err := userdb.ReadStreamByIdAs(user.ToDevice(),int64(streamid))
+
+	if err != nil {
+		pageData["alert"] = "Error getting stream."
+	}
+
+	pageData["stream"] = stream
+	pageData["user"] = user
+	pageData["flashes"] = session.Flashes()
+
+	device, err := userdb.ReadDeviceByIdAs(user.ToDevice(), int64(stream.OwnerId))
+	if err != nil {
+		pageData["alert"] = "Error getting device"
+	}
+
+	pageData["device"] = device
+
+
+	err = stream_read_template.ExecuteTemplate(writer, "stream.html", pageData)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+
+
+func editStreamAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
+	vars := mux.Vars(request)
+	streamids := vars["id"]
+	streamid, _ := strconv.Atoi(streamids)
+	stream, err := userdb.ReadStreamByIdAs(user.ToDevice(), int64(streamid))
+
+	if err != nil {
+		session.AddFlash("Error getting stream, maybe it was deleted?")
+		goto redirect
+	}
+
+	stream.Active = request.PostFormValue("enabled") == "checked"
+
+	err = userdb.UpdateStreamAs(user.ToDevice(), stream)
+
+	if err != nil {
+		log.Printf(err.Error())
+		session.AddFlash(err.Error())
+	} else {
+		session.AddFlash("Created Device")
+	}
+
+redirect:
+	http.Redirect(writer, request, "/secure/stream/" + streamids, http.StatusTemporaryRedirect)
+}
+
+
+
+func createStreamAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
+	vars := mux.Vars(request)
+	devids := vars["id"]
+
+	devid, _ := strconv.Atoi(devids)
+	device, err := userdb.ReadDeviceByIdAs(user.ToDevice(), int64(devid))
+
+	if err != nil {
+		log.Printf(err.Error())
+		session.AddFlash("Error getting device, maybe it was deleted?")
+		http.Redirect(writer, request, "/secure/device/" + devids, http.StatusTemporaryRedirect)
+	}
+
+	name := request.PostFormValue("name")
+	sid, err := userdb.CreateStreamAs(user.ToDevice(), name, "x", device)
+
+	if err != nil {
+		log.Printf(err.Error())
+		session.AddFlash("Error creating stream.")
+		http.Redirect(writer, request, "/secure/device/" + devids, http.StatusTemporaryRedirect)
+	}
+
+	http.Redirect(writer, request, "/secure/stream/" + strconv.Itoa(int(sid)), http.StatusTemporaryRedirect)
+}
+
+
 
 func firstRunHandler(writer http.ResponseWriter, r *http.Request) {
 	pageData := make(map[string] interface{})
@@ -334,4 +422,10 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/device/action/create", authWrapper(createDeviceAction))
 	subroutePrefix.HandleFunc("/secure/device/{id:[0-9]+}/action/edit", authWrapper(editDevicePage))
 
+	// CRUD Stream
+	stream_read_template = template.Must(template.ParseFiles("./templates/stream.html", "./templates/base.html"))
+
+	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}", authWrapper(readStreamPage))
+	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))
+	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
 }

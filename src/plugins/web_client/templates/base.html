@@ -6,6 +6,8 @@
       <script src='/inc/js/bootstrap.min.js' type='text/javascript'></script>
       <link href="/inc/bootstrap.min.css" rel="stylesheet">
       <link href="/inc/connectordb.css" rel="stylesheet">
+      <script src="/inc/js/connectordb.js" type='text/javascript'></script>
+
       <title>ConnectorDB | {{template "title" .}}</title>
     </head>
 
@@ -44,7 +46,7 @@
         {{end}}
 
         {{ range $flash := .flashes }}
-        <div class="alert alert-warning">{{$flash}}</div>
+        <div class="alert alert-warning">{{ $flash }}</div>
         {{ end }}
 
         {{template "body" .}}

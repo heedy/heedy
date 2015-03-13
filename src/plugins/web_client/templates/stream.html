@@ -1,0 +1,56 @@
+{{define "title"}} {{ .stream.Name }} {{end}}
+
+{{define "body"}}
+    <div class="panel panel-default panel-primary">
+        <div class="panel-heading">{{ .stream.Name }} Overview</div>
+        <div class="panel-body">
+            <table class="table">
+                <tr>
+                    <th>Parent Device</th>
+                    <td><a href="/secure/device/{{ .stream.OwnerId }}">{{ .device.Name }}</a></td>
+                </tr>
+                <tr>
+                    <th>Name</th><td>{{ .stream.Name }}</td>
+                </tr>
+                <tr>
+                    <th>Identifier #</th><td>{{ .stream.Id }}</td>
+                </tr>
+                <tr>
+                    <th>Active?</th>
+                    <td>{{ .stream.Active }}</td>
+                </tr>
+                <tr>
+                    <th>Type of Data</th>
+                    <td>{{ .stream.Type }}</td>
+                </tr>
+                <tr>
+                    <th>Is the data stored?</th>
+                    <td>{{ .stream.Ephemeral }}</td>
+                </tr>
+                <tr>
+                    <th>Is the stream an output?</th>
+                    <td>{{ .stream.Output }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Edit Stream</div>
+        <div class="panel-body">
+            <form action="/secure/stream/{{ .stream.Id }}/action/edit" method="POST">
+                <div class="form-group">
+                    <label for="enabled">Enabled (allow this stream to get new data)</label>
+                    <input type="checkbox" name="enabled" class="checkbox" id="enabled" value='checked' {{if .stream.Active}}checked="checked"{{end}}>
+                </div>
+                <input class="btn btn-primary" type="submit" value="Update">
+            </form>
+        </table>
+        </div>
+    </div>
+
+{{end}}
+
+
+{{template "base" . }}

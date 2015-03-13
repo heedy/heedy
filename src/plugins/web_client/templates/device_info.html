@@ -31,7 +31,7 @@
         <div class="panel-heading">Streams</div>
         <div class="panel-body">
             <table class="table table-striped">
-            <tr><th>Name</th><th>Active?</th><th>Public?</th><th></th></tr>
+            <tr><th>Name</th><th>Active?</th><th></th></tr>
             {{ range $stream := .streams }}
                 <tr>
                     <td>{{ $stream.Name }}</td>
@@ -42,22 +42,27 @@
                         <div class="no" />
                     {{end}}
                     </td>
-                    <td>
-                    {{if $stream.Public}}
-                        <div class="yes" />
-                    {{else}}
-                        <div class="no" />
-                    {{end}}
-                    </td>
-                    <td><a href="/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
+                    <td><a href="/secure/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
                 </tr>
             {{ end }}
             </table>
+
+
         </div>
     </div>
 
-
-
+    <div class="panel panel-default">
+        <div class="panel-heading">Create Stream for {{ .device.Name }}</div>
+        <div class="panel-body">
+            <form action="/secure/stream/action/create/devid/{{ .device.Id }}" method="POST">
+                <div class="form-group">
+                    <label for="streamName">Stream Name</label>
+                    <input type="text" name="name" class="form-control" id="streamName" placeholder="Stream Name">
+                </div>
+                <input class="btn btn-primary" type="submit" value="Create">
+            </form>
+        </div>
+    </div>
 
 
 
