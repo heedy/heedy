@@ -150,7 +150,7 @@ type Stream struct {
     Id int64
     Name string
     Active bool
-    Public bool
+    Public bool // TODO kill me off
     Type string
     OwnerId int64
     Ephemeral bool // Currently inactive

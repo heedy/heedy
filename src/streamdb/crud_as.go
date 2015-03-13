@@ -34,6 +34,9 @@ var (
     modify_user_privilege = []Permission{ACTIVE, MODIFY_USER}
     active_privilege = []Permission{ACTIVE}
     user_authorized_privilege = []Permission{ADMIN, USER, MODIFY_USER}
+    write_privilege = []Permission{WRITE, ACTIVE}
+    write_anywhere_privilege = []Permission{WRITE_ANYWHERE, ACTIVE}
+    read_privilege = []Permission{ACTIVE}
 )
 
 // Checks to see if the device has the listed permissions
