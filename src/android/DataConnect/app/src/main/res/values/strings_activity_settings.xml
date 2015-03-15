@@ -59,6 +59,9 @@
 
 
     <string name="pref_ringtone_silent">Silent</string>
+
+    <string name="pref_syncnow">Sync Now</string>
+    <string name="pref_syncnow_summary">Sync data with the server right now</string>
     <!--
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string-array name="pref_example_list_titles">

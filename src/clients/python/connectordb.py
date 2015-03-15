@@ -46,8 +46,7 @@ class Device(object):
         if not self.url.endswith("/api/v1/json/"):
             self.url = url+"/api/v1/json/"
     def query(self,q,getval):
-        print self.url+self.name+"/"+q
-        r = requests.get(self.url+self.name+"/"+q,auth=HTTPBasicAuth(self.dname,self.apikey))
+        r = requests.get(self.url+self.name+"/"+q,auth=HTTPBasicAuth("",self.apikey))
         if r.status_code!=200:
             return None
         return r.json()[getval]
@@ -65,10 +64,10 @@ class Device(object):
         
         raise Exception("Could not find stream")
     def addStream(self,name,type="s"):
-        r = requests.post(self.url+self.name+"/stream/",json.dumps({'Name':name,"Type":type}),auth=HTTPBasicAuth(self.dname,self.apikey),headers={'content-type': 'application/json'})
+        r = requests.post(self.url+self.name+"/stream/",json.dumps({'Name':name,"Type":type}),auth=HTTPBasicAuth("",self.apikey),headers={'content-type': 'application/json'})
         return r.status_code==200
     def delete(self):
-        r= requests.delete(self.url+self.name+"/",auth=HTTPBasicAuth(self.dname,self.apikey))
+        r= requests.delete(self.url+self.name+"/",auth=HTTPBasicAuth("",self.apikey))
     def __str__(self):
         return "Device("+self.dname+")"
 
@@ -79,15 +78,17 @@ class Stream(object):
     def __str__(self):
         return "Stream("+self.stream["Name"]+","+stream["Type"],")"
     def delete(self):
-        r= requests.delete(self.dev.url+self.dev.name+"/"+str(self.stream["Id"])+"/",auth=HTTPBasicAuth(self.dev.dname,self.dev.apikey))
+        r= requests.delete(self.dev.url+self.dev.name+"/"+str(self.stream["Id"])+"/",auth=HTTPBasicAuth("",self.dev.apikey))
     def insert(self,point):
-        r= requests.post(self.dev.url+self.dev.name+"/"+str(self.stream["Id"])+"/point/",json.dumps({'D':point,'T': str(time.time())}),auth=HTTPBasicAuth(self.dev.dname,self.dev.apikey))
+        r= requests.post(self.dev.url+self.dev.name+"/"+str(self.stream["Id"])+"/point/",json.dumps({'D':point,'T': str(time.time())}),auth=HTTPBasicAuth("",self.dev.apikey))
         return r.status_code==200
     def getslice(self,stype,start,stop):
         
         result = self.dev.query("/"+str(self.stream["Id"])+"/point/"+stype+"/"+str(start)+"/"+str(stop)+"/","Data")
         timestamps = []
         data = []
+        if result is None:
+            return ([],[])
         for i in xrange(len(result)):
             timestamps.append(result[i]["T"])
             data.append(result[i]["D"])
@@ -105,13 +106,13 @@ class Stream(object):
 
 
 if (__name__=="__main__"):
-    usr = User("test","test","http://192.168.137.9:8080")
-    usr.addDevice("hello")
+    usr = User("test","test","http://localhost:8080")
+    print usr.addDevice("hello")
     dev = usr["hello"]
-    dev.addStream("world","s")
+    print dev.addStream("world","s")
     s = dev["world"]
-    #print s.insert("hi!")
-    print s(1426405673.9,1426406936.68)
-    s.delete()
-    dev.delete()
+    print s.insert("hi!")
+    print s[0:5]
+    print s.delete()
+    print dev.delete()
 

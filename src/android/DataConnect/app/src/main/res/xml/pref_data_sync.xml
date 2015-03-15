@@ -16,5 +16,9 @@
         android:defaultValue="5"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
-
+    <Preference
+        android:title="@string/pref_syncnow"
+        android:key="syncbutton"
+        android:summary="@string/pref_syncnow_summary"
+        />
 </PreferenceScreen>
