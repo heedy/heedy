@@ -59,13 +59,17 @@ func decodeUrlParams(username, deviceid, streamid string) (*users.User, *users.D
 
     if username != "" {
         user, reserr = userdb.ReadUserByName(username)
+        if err != nil {
+            reserr = err
+        }
+
     }
 
     if deviceid != "" {
         devicei, _ := strconv.Atoi(deviceid)
         device,  err = userdb.ReadDeviceById(int64(devicei))
 
-        if reserr != nil {
+        if err != nil {
             reserr = err
         }
     }
@@ -74,12 +78,12 @@ func decodeUrlParams(username, deviceid, streamid string) (*users.User, *users.D
         streami, _ := strconv.Atoi(streamid)
         stream, err = userdb.ReadStreamById(int64(streami))
 
-        if reserr != nil {
+        if err != nil {
             reserr = err
         }
     }
 
-    return user, device, stream, err
+    return user, device, stream, reserr
 }
 
 // Runs an authorization check on the api before calling the function
