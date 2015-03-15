@@ -20,6 +20,7 @@
         android:title="@string/pref_connectordb_password"
         android:summary="@string/pref_password_summary"
         android:selectAllOnFocus="true"
+        android:defaultValue="@string/pref_default_connectordb_password"
         android:inputType="textPassword"
         android:password="true"
         />

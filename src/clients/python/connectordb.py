@@ -106,13 +106,9 @@ class Stream(object):
 
 
 if (__name__=="__main__"):
+    import getpass
     usr = User("test","test","http://localhost:8080")
-    print usr.addDevice("hello")
-    dev = usr["hello"]
-    print dev.addStream("world","s")
-    s = dev["world"]
-    print s.insert("hi!")
-    print s[0:5]
-    print s.delete()
-    print dev.delete()
+    print usr["AndroidSDKbuiltforx86"]["plugged_in"].insert(False)
+    print usr["AndroidSDKbuiltforx86"]["plugged_in"][0:20]
+    
 

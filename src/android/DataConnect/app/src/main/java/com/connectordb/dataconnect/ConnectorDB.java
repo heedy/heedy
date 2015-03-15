@@ -4,6 +4,8 @@ package com.connectordb.dataconnect;
 import android.util.Base64;
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
@@ -11,6 +13,9 @@ import retrofit.http.Body;
 import retrofit.http.GET;
 import retrofit.http.POST;
 import retrofit.http.Path;
+import retrofit.mime.TypedByteArray;
+import retrofit.mime.TypedInput;
+
 /**
  * Created by Daniel on 3/15/2015.
  */
@@ -36,6 +41,7 @@ public class ConnectorDB {
             this.Name=name;
         }
     }
+
     public class genericresult {
         final String Status;
         final String Message;
@@ -51,6 +57,9 @@ public class ConnectorDB {
 
         @POST("/api/v1/json/byname/{user}/{device}/stream/")
         genericresult makestream(@Path("user") String user, @Path("device") String device, @Body streammaker mkr);
+
+        @POST("/api/v1/json/byname/{user}/{device}/{stream}/point/")
+        genericresult makestream(@Path("user") String user, @Path("device") String device,@Path("stream") String stream, @Body TypedInput obj);
     }
 
     private DBAPI dbapi;
@@ -62,7 +71,8 @@ public class ConnectorDB {
             @Override
             public void intercept(RequestInterceptor.RequestFacade request) {
                 String credentials = ConnectorDB.this.user+":"+ConnectorDB.this.password;
-                request.addHeader("Authentication","Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP));
+                String basicauth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+                request.addHeader("Authorization", basicauth);
             }
         };
         RestAdapter restAdapter = new RestAdapter.Builder()
@@ -86,11 +96,15 @@ public class ConnectorDB {
         }
     }
 
-    void users() {
+    boolean insert(String device, String stream, String jsondata) {
         try {
-            //Log.d(TAG, this.dbapi.users());
+            TypedInput in = new TypedByteArray("application/json", jsondata.getBytes());
+            this.dbapi.makestream(this.user,device,stream,in );
+            return true;
         } catch (RetrofitError e) {
-            Log.e(TAG,e.getCause().toString());
+            Log.e(TAG,"insert:"+e.toString());
         }
+        return false;
     }
+
 }

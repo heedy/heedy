@@ -7,12 +7,12 @@
 
     <string name="pref_header_connectordb">ConnectorDB</string>
     <string name="pref_connectordb_server">Server</string>
-    <string name="pref_default_connectordb_server">connectordb.com</string>
+    <string name="pref_default_connectordb_server">https://connectordb.com</string>
     <string name="pref_connectordb_username">Username</string>
-    <string name="pref_default_connectordb_username">Eve</string>
+    <string name="pref_default_connectordb_username">test</string>
     <string name="pref_connectordb_password">Password</string>
     <string name="pref_password_summary">The password to your ConnectorDB account</string>
-
+    <string name="pref_default_connectordb_password">test</string>
     <string name="pref_header_sensors">Sensors</string>
     <string name="pref_monitor_enabled">Device Status</string>
     <string name="pref_location_frequency">GPS Logging</string>

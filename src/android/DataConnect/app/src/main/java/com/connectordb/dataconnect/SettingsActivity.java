@@ -113,7 +113,20 @@ public class SettingsActivity extends PreferenceActivity {
         button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference arg0) {
-                new asyncConnect().execute("http://10.184.160.246:8080","test","test");
+                Preference db = findPreference("connectordb_server");
+                String dbaddress = PreferenceManager
+                        .getDefaultSharedPreferences(SettingsActivity.this)
+                        .getString(db.getKey(), "");
+                Preference usrname = findPreference("connectordb_username");
+                String dbusr = PreferenceManager
+                        .getDefaultSharedPreferences(SettingsActivity.this)
+                        .getString(usrname.getKey(), "");
+                Preference usrpass = findPreference("connectordb_password");
+                String dbpass = PreferenceManager
+                        .getDefaultSharedPreferences(SettingsActivity.this)
+                        .getString(usrpass.getKey(), "");
+
+                new asyncConnect(SettingsActivity.this).execute(dbaddress,dbusr,dbpass);
                 return true;
             }
         });

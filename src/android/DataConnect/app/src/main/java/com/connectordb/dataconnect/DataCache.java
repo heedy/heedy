@@ -77,4 +77,10 @@ public class DataCache extends SQLiteOpenHelper {
         Cursor res =  db.rawQuery( "SELECT timestamp FROM datacache WHERE stream=? AND timestamp>=?;", new String[] {stream,Long.toString(timestamp)});
         return res.getCount()>0;
     }
+
+    public void Delete(long id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete("datacache","id=?",new String[] {Long.toString(id)});
+    }
+
 }
