@@ -9,6 +9,7 @@ install:
 script:
     - make coverage
     - make
+    - make test
 
 notifications:
     email:
