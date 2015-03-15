@@ -735,4 +735,9 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	sname.HandleFunc("/", apiAuth(createStream, false, true, true, true)).Methods("POST")
 	sname.HandleFunc("/", apiAuth(deleteStream, true, false, false, false)).Methods("DELETE")
 
+	sname.HandleFunc("/point/i/{index1:[0-9]+}/{index2:[0-9]+}/", apiAuth(readDataByIndex, false, true, false, false)).Methods("GET")
+	sname.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
+	sname.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
+
+
 }

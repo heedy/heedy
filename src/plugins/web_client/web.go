@@ -22,6 +22,7 @@ var(
 	device_info_template *template.Template
 	firstrun_template *template.Template
 	stream_read_template *template.Template
+	adduser_template	*template.Template
 
 	store = sessions.NewCookieStore([]byte("web-service-special-key"))
 	firstrun bool
@@ -293,6 +294,16 @@ func firstRunHandler(writer http.ResponseWriter, r *http.Request) {
 }
 
 
+func newUserPage(writer http.ResponseWriter, r *http.Request) {
+	pageData := make(map[string] interface{})
+
+	err := adduser_template.ExecuteTemplate(writer, "newuser.html", pageData)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+
 func getDevicePage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	pageData := make(map[string] interface{})
 
@@ -399,6 +410,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	login_home_template = template.Must(template.ParseFiles("./templates/root.html", "./templates/base.html"))
 	device_info_template = template.Must(template.ParseFiles("./templates/device_info.html", "./templates/base.html"))
 	firstrun_template = template.Must(template.ParseFiles("./templates/firstrun.html", "./templates/base.html"))
+	adduser_template = template.Must(template.ParseFiles("./templates/newuser.html", "./templates/base.html"))
 
 	userdb = udb
 
@@ -412,6 +424,8 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/", authWrapper(getUserPage))
 	subroutePrefix.HandleFunc("/secure/edit", authWrapper(editUserPage))
 	subroutePrefix.HandleFunc("/secure/device/{id:[0-9]+}", authWrapper(getDevicePage))
+
+	subroutePrefix.HandleFunc("/newuser/", newUserPage)
 
 	// CRUD user
 	subroutePrefix.HandleFunc("/secure/user/action/modify", authWrapper(modifyUserAction))
