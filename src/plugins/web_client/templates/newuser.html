@@ -1,0 +1,37 @@
+{{define "title"}}Firstrun{{end}}
+
+{{define "body"}}
+
+    <script src="/inc/js/firstrun.js"></script>
+
+    <div class="panel panel-default">
+        <h1>Welcome to ConnectorDB</h1>
+
+        <p>So we can keep your data safe, please set up a username and password.</p>
+
+        <form class="form-signin" onsubmit="return checkForm(this);">
+            <h2 class="form-signin-heading">Create a user</h2>
+            <label for="inputEmail" class="sr-only">Email address</label>
+            <input type="email" id="inputEmail" class="form-control" placeholder="Email address" name="email" required autofocus>
+            <br>
+            <label for="inputPassword" class="sr-only">Username</label>
+            <input type="text" id="inputUsername" class="form-control" placeholder="Username" name="username" required>
+            <br>
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Password" name="password1" required>
+            <br>
+            <label for="inputPassword" class="sr-only">Password (Repeat)</label>
+            <input type="password" id="inputPassword2" class="form-control" placeholder="Password" name="password2" required>
+            <br>
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Create</button>
+        </form>
+
+        <p><b>Stuff for Geeks:</b> </p>
+        <p>We use at least a SHA256 hashing mechanism with salted keys. As better methods become
+            available we'll securely upgrade your password in the background the next time you log in.</p>
+
+    </div>
+{{end}}
+
+
+{{template "base" . }}
