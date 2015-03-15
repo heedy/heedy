@@ -109,6 +109,14 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void doStuff() {
         setupLocation();
+        Preference button = (Preference)findPreference("syncbutton");
+        button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference arg0) {
+                new asyncConnect().execute("http://10.184.160.246:8080","test","test");
+                return true;
+            }
+        });
     }
 
     @Override
