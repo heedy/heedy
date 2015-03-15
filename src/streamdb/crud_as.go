@@ -448,7 +448,7 @@ func (db *Database) ReadStreamByDeviceAndNameAs(device *users.Device, dev *users
 }
 
 
-func (db *Database) ReadStreamByDeviceAs(device *users.Device, operand *users.Device) ([]*users.Stream, error) {
+func (db *Database) ReadStreamsByDeviceAs(device *users.Device, operand *users.Device) ([]*users.Stream, error) {
     if device == nil {
         return nil, InvalidParameterError
     }
@@ -534,8 +534,10 @@ func (db *Database) DeleteStreamAs(device *users.Device, Id int64) error {
     return PrivilegeError
 }
 
+// Reads a stream by URI, returing all components up to an error, blank
+// items will be returned as nil
 func (db *Database) ReadStreamByUriAs(proxy *users.Device, user, device, stream string) (*users.User, *users.Device, *users.Stream, error){
-    if proxy == nil || user == "" || device == "" || stream == "" {
+    if proxy == nil {
         return nil, nil, nil, InvalidParameterError
     }
 
@@ -545,19 +547,15 @@ func (db *Database) ReadStreamByUriAs(proxy *users.Device, user, device, stream 
 
     userobj, err := db.ReadUserByNameAs(proxy, user)
     if err != nil {
-        return nil, nil , nil, err
+        return userobj, nil , nil, err
     }
 
     // TODO convert this to an as
     deviceobj, err := db.ReadDeviceForUserByName(userobj.Id, device)
     if err != nil {
-        return nil, nil , nil, err
+        return userobj, deviceobj, nil, err
     }
 
     streamobj, err := db.ReadStreamByDeviceAndNameAs(proxy, deviceobj, stream)
-    if err != nil {
-        return nil, nil , nil, err
-    }
-
-    return userobj, deviceobj, streamobj, nil
+    return userobj, deviceobj, streamobj, err
 }

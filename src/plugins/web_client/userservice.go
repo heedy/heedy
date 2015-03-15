@@ -112,12 +112,6 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 			goto FinishOutput
 		}
 
-		user, device, stream, err = decodeUrlParams(vars["username"], vars["deviceid"], vars["streamid"])
-		if err != nil {
-			resultcode, result = http.StatusInternalServerError, errorGenericResult
-			goto FinishOutput
-		}
-
 		// username means nothing to us
 		if *ignoreBadApiKeys {
 			requester = &adminDevice
@@ -144,6 +138,18 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 					goto FinishOutput
 				}
 			}
+		}
+
+		if vars["devicename"] != "" {
+			// we're doing by name
+			user, device, stream, err = userdb.ReadStreamByUriAs(requester, vars["username"], vars["devicename"], vars["streamname"])
+		} else {
+			user, device, stream, err = decodeUrlParams(vars["username"], vars["deviceid"], vars["streamid"])
+		}
+
+		if err != nil {
+			resultcode, result = http.StatusInternalServerError, errorGenericResult
+			goto FinishOutput
 		}
 
 		if !requester.IsActive() {
@@ -628,6 +634,42 @@ func readDataByIndex(request *http.Request, requestingDevice *users.Device, user
 	return http.StatusOK, result
 }
 
+type Routes struct {
+	User *users.User
+	Device *users.Device
+	Streams []*users.Stream
+}
+
+func readMyRoutes(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{}) {
+	var result Routes
+	var userGrab *users.User
+	var err error
+
+	if requestingDevice.IsUser(){
+		userGrab = requestingDevice.Unmask()
+		return http.StatusInternalServerError, errorGenericResult
+		// TODO allow users
+	} else {
+		userGrab, err = userdb.ReadUserById(requestingDevice.OwnerId)
+		if err != nil {
+			return http.StatusInternalServerError, errorGenericResult
+		}
+	}
+
+	streams, err := userdb.ReadStreamsByDeviceAs(requestingDevice, requestingDevice)
+	if err != nil {
+		log.Printf("Error getting data|err:%v\n", err)
+		return http.StatusInternalServerError, errorGenericResult
+	}
+
+	// fill out struct
+	result.User = userGrab
+	result.Device = requestingDevice
+	result.Streams = streams
+
+	return http.StatusOK, result
+}
+
 // Creates a subrouter available to
 func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 
@@ -640,6 +682,8 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	}
 
 	s := subroutePrefix.PathPrefix("/api/v1/{style}").Subrouter()
+
+	s.HandleFunc("/myroutes/", apiAuth(readMyRoutes, false, false, false, false)).Methods("GET")
 
 	s.HandleFunc("/user/", apiAuth(readAllUsers, false, false, false, false)).Methods("GET")
 	s.HandleFunc("/user/", apiAuth(createUser, true, false, false, false)).Methods("POST")
@@ -654,7 +698,6 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	// Requires params of username and password, username may be an email
 	//s.HandleFunc("/{AuthKey}/user/authenticate/").Methods("POST")
 	// validate user?
-
 	s.HandleFunc("/{username}/device/", apiAuth(readDevices, false, true, false, false)).Methods("GET")
 	s.HandleFunc("/{username}/device/", apiAuth(createDevice, false, true, false, false)).Methods("POST")
 	s.HandleFunc("/{username}/{deviceid:[0-9]+}/", apiAuth(readDevice, false, true, false, false)).Methods("GET")
@@ -673,4 +716,20 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	u.HandleFunc("/point/i/{index1:[0-9]+}/{index2:[0-9]+}/", apiAuth(readDataByIndex, false, true, false, false)).Methods("GET")
 	u.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
 	u.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
+
+
+	dname := s.PathPrefix("/byname/{username}/{devicename}").Subrouter()
+	sname := s.PathPrefix("/byname/{username}/{devicename}/{streamname}").Subrouter()
+
+	dname.HandleFunc("/", apiAuth(readDevice, false, true, false, false)).Methods("GET")
+	dname.HandleFunc("/", apiAuth(updateDevice, false, true, false, false)).Methods("PUT")
+	dname.HandleFunc("/", apiAuth(deleteDevice, true, false, false, false)).Methods("DELETE")
+
+	dname.HandleFunc("/stream/", apiAuth(readAllStreams, false, true, false, false)).Methods("GET")
+	dname.HandleFunc("/stream/", apiAuth(createStream, false, true, true, false)).Methods("POST")
+
+	sname.HandleFunc("/", apiAuth(readStream, false, false, false, false)).Methods("GET")
+	sname.HandleFunc("/", apiAuth(createStream, false, true, true, true)).Methods("POST")
+	sname.HandleFunc("/", apiAuth(deleteStream, true, false, false, false)).Methods("DELETE")
+
 }
