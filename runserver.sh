@@ -20,4 +20,5 @@ redis-server ./config/redis.conf > /dev/null 2>&1 &
 redis_pid=$!
 sleep 1
 
-./bin/webservice --sql "sslmode=disable dbname=connectordb port=52592"
+#./bin/webservice --sql "sslmode=disable dbname=connectordb port=52592"
+./bin/webservice --sql "database.sqlite3"
