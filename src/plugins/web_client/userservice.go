@@ -105,6 +105,7 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 
 		// Do HTTP Authentication
 		authUser, authPass, ok := request.BasicAuth()
+		log.Printf("Authorization Handler got Username: %v, Password: %v, Ok? %v", authUser, authPass, ok)
 
 		if !ok && !*ignoreBadApiKeys {
 			writer.Header().Set("WWW-Authenticate", "Basic")
