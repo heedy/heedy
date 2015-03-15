@@ -546,7 +546,8 @@ func createDataPoint(request *http.Request, requestingDevice *users.Device, user
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    dtype,ok := dtypes.GetType("text")
+
+    dtype,ok := dtypes.GetType(stream.Type)
     if !ok {
         log.Printf("Unrecognized datatype")
         return http.StatusInternalServerError, errorGenericResult
@@ -563,7 +564,8 @@ func createDataPoint(request *http.Request, requestingDevice *users.Device, user
         return http.StatusInternalServerError, errorGenericResult
     }
 
-    err := timedb.InsertKey(createDataKey(user, device, stream), result)
+    streamobject := streamdb.Stream{stream,&streamdb.Device{userdb,requestingDevice},createDataKey(user, device, stream)}
+    err := streamobject.Write(result)
 
     if err != nil {
         log.Printf("Timedb error while inserting|err:%v", err)
@@ -596,7 +598,12 @@ func readDataByTime(request *http.Request, requestingDevice *users.Device, user 
 
     log.Printf("Requesting ts (%v, %v] from %v", ts1, ts2, createDataKey(user, device, stream))
 
-    dataReader := timedb.GetTimeRange(createDataKey(user, device, stream), "text", ts1, ts2)
+    streamobject := streamdb.Stream{stream,&streamdb.Device{userdb,requestingDevice},createDataKey(user, device, stream)}
+    dataReader,err := streamobject.ReadTime(ts1,ts2)
+    if err != nil {
+        log.Printf("Error getting data|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
     defer dataReader.Close()
 
     for {
@@ -627,7 +634,12 @@ func readDataByIndex(request *http.Request, requestingDevice *users.Device, user
 
     log.Printf("Requesting data (%v, %v] from %v", i1, i2, createDataKey(user, device, stream))
 
-    dataReader := timedb.GetIndexRange(createDataKey(user, device, stream),"text", uint64(i1), uint64(i2))
+    streamobject := streamdb.Stream{stream,&streamdb.Device{userdb,requestingDevice},createDataKey(user, device, stream)}
+    dataReader,err := streamobject.ReadTime(int64(i1),int64(i2))
+    if err != nil {
+        log.Printf("Error getting data|err:%v", err)
+        return http.StatusInternalServerError, errorGenericResult
+    }
     defer dataReader.Close()
 
     for {

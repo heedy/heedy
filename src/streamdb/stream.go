@@ -9,8 +9,8 @@ import (
 
 type Stream struct {
     Stream *users.Stream
-    dev *Device
-    uri string
+    Dev *Device
+    Uri string
 }
 
 
@@ -21,7 +21,7 @@ func (dev *Device) GetStream(streamuri string) (*Stream, error) {
     if len(uds)!=3 {
         return nil,errors.New("Could not get stream: incorrect number of arguments.")
     }
-    _,_,s,err :=dev.db.ReadStreamByUriAs(dev.Device,uds[0],uds[1],uds[2])
+    _,_,s,err :=dev.Db.ReadStreamByUriAs(dev.Device,uds[0],uds[1],uds[2])
 
     if err!=nil {
         return nil,err
@@ -34,21 +34,21 @@ func (s *Stream) Write(pt dtypes.TypedDatapoint) error {
     //Check for write permission of the device to the stream
     stream := s.Stream
 
-    if HasPermissions(s.dev.Device, write_privilege) && s.Stream.OwnerId == s.dev.Device.Id{
-        return s.dev.db.tdb.Insert(pt)
+    if HasPermissions(s.Dev.Device, write_privilege) && s.Stream.OwnerId == s.Dev.Device.Id{
+        return s.Dev.Db.tdb.Insert(pt)
     }
 
-    if HasPermissions(s.dev.Device, super_privilege) {
-        return s.dev.db.tdb.Insert(pt)
+    if HasPermissions(s.Dev.Device, super_privilege) {
+        return s.Dev.Db.tdb.Insert(pt)
     }
 
-    owner, err := s.dev.db.ReadStreamOwner(stream.Id) // user
+    owner, err := s.Dev.Db.ReadStreamOwner(stream.Id) // user
     if err != nil {
         return err
     }
 
-    if s.dev.Device.OwnerId == owner.Id && HasPermissions(s.dev.Device, write_anywhere_privilege) {
-        return s.dev.db.tdb.Insert(pt)
+    if s.Dev.Device.OwnerId == owner.Id && HasPermissions(s.Dev.Device, write_anywhere_privilege) {
+        return s.Dev.Db.tdb.Insert(pt)
     }
 
     return nil
@@ -79,7 +79,7 @@ func canReadStream(dev *users.Device, stream *users.Stream, db *Database) (bool,
 func (s *Stream) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange,err error) {
     //Check for read permission of the device to the stream
 
-    read, err := canReadStream(s.dev.Device, s.Stream, s.dev.db)
+    read, err := canReadStream(s.Dev.Device, s.Stream, s.Dev.Db)
 
     if err != nil {
         return nil, err
@@ -90,7 +90,7 @@ func (s *Stream) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange,err error) {
     }
 
     //Write using the uri as key to timebatchDB
-    tr, err := s.dev.db.tdb.GetIndexRange(s.uri,s.Stream.Type,i1,i2),nil
+    tr, err := s.Dev.Db.tdb.GetIndexRange(s.Uri,s.Stream.Type,i1,i2),nil
     return &tr, err
 }
 
@@ -98,7 +98,7 @@ func (s *Stream) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange,err error) {
 func (s *Stream) ReadTime(t1, t2 int64) (d *dtypes.TypedRange,err error) {
     //Check for read permission of the device to the stream
 
-    read, err := canReadStream(s.dev.Device, s.Stream, s.dev.db)
+    read, err := canReadStream(s.Dev.Device, s.Stream, s.Dev.Db)
 
     if err != nil {
         return nil, err
@@ -108,7 +108,7 @@ func (s *Stream) ReadTime(t1, t2 int64) (d *dtypes.TypedRange,err error) {
         return nil, PrivilegeError
     }
     //Write using the uri as key to timebatchDB
-    tr, err := s.dev.db.tdb.GetTimeRange(s.uri,s.Stream.Type,t1,t2),nil
+    tr, err := s.Dev.Db.tdb.GetTimeRange(s.Uri,s.Stream.Type,t1,t2),nil
     return &tr, err
 }
 
