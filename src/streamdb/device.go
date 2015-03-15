@@ -5,7 +5,7 @@ import (
     )
 
 type Device struct {
-    db *Database
+    Db *Database
     Device *users.Device
 }
 

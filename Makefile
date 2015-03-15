@@ -9,7 +9,7 @@ OBJ=$(TMPO:.go=)
 
 
 
-all: clean dependencies $(OBJ) bin/dep/gnatsd test
+all: clean dependencies $(OBJ) bin/dep/gnatsd
 
 build: $(OBJ)
 
