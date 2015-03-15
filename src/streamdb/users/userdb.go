@@ -495,8 +495,8 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	                ProcessingLimit_S=$10, StorageLimit_Gb=$11, CreateTime = $12, ModifyTime = $13,
 	                UserGroup = $14 WHERE Id = $15;`
 	DELETE_USER_BY_ID_STMT = `DELETE FROM Users WHERE Id = $1;`
-	READ_DEVICE_BY_USER_AND_NAME = "SELECT * FROM Device WHERE OwnerId = $1 AND Name = $2"
-	READ_STREAM_BY_DEVICE_AND_NAME = "SELECT * FROM Stream WHERE OwnerId = $1 AND Name = $2"
+	READ_DEVICE_BY_USER_AND_NAME = "SELECT * FROM Device WHERE OwnerId = $1 AND Name = $2 LIMIT 1"
+	READ_STREAM_BY_DEVICE_AND_NAME = "SELECT * FROM Stream WHERE OwnerId = $1 AND Name = $2 LIMIT 1"
 
 	return nil
 }

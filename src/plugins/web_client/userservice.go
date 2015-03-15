@@ -142,12 +142,14 @@ func apiAuth(h UserServiceHandler, requesterIsSuperdevice, userOwnsReqeuster, re
 
 		if vars["devicename"] != "" {
 			// we're doing by name
-			user, device, stream, err = userdb.ReadStreamByUriAs(requester, vars["username"], vars["devicename"], vars["streamname"])
+			user, device, stream, _ = userdb.ReadStreamByUriAs(requester, vars["username"], vars["devicename"], vars["streamname"])
 		} else {
 			user, device, stream, err = decodeUrlParams(vars["username"], vars["deviceid"], vars["streamid"])
 		}
 
 		if err != nil {
+			log.Printf("Error when fetching values | error:%v", err.Error())
+
 			resultcode, result = http.StatusInternalServerError, errorGenericResult
 			goto FinishOutput
 		}

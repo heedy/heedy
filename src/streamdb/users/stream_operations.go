@@ -2,6 +2,7 @@ package users
 
 import("database/sql"
 "errors"
+"log"
 )
 
 
@@ -68,6 +69,7 @@ func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
     streams, err := constructStreamsFromRows(rows)
 
     if(len(streams) != 1) {
+        log.Printf("Read stream by device id and name failed: streamid:%v", id)
         return nil, errors.New("Wrong number of streams returned")
     }
 
@@ -88,6 +90,7 @@ func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(id int64, name string) (
     streams, err := constructStreamsFromRows(rows)
 
     if(len(streams) != 1) {
+        log.Printf("Read stream by device id and name failed: streamid:%v streamname:%v", id, name)
         return nil, errors.New("Wrong number of streams returned")
     }
 
