@@ -389,7 +389,7 @@ func (userdb *UserDatabase) setupPostgresDatabase() error{
 	Name VARCHAR(100) NOT NULL,
 	ApiKey VARCHAR(100) UNIQUE NOT NULL,
 	Enabled BOOLEAN DEFAULT TRUE,
-	Icon_PngB64 VARCHAR(512000) DEFAULT '',
+	Icon_PngB64 VARCHAR DEFAULT '',
 	Shortname VARCHAR(100) DEFAULT '',
 	Superdevice BOOL DEFAULT FALSE,
 	OwnerId INTEGER,

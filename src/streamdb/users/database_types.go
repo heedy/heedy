@@ -1,27 +1,36 @@
 // Package users provides an API for managing user information.
 package users
 
+// modifiable
+// - nobody - nobody can modify
+// - root   - only the superuser
+// - user   - users can modify
+
+// visible
+// - user   - only the user (or those acting on its behalf) can see this field
+// - anyone - the user's devices can read this field
+
 // User is the storage type for rows of the database.
 type User struct {
-    Id int64  // The primary key
-    Name string  // The public username of the user
-    Email string  // The user's email address
+    Id int64  `modifiable:"nobody"`// The primary key
+    Name string `modifiable:"root"` // The public username of the user
+    Email string `modifiable:"user"` // The user's email address
 
-    Password string  // A hash of the user's password
-    PasswordSalt string  // The password salt to be attached to the end of the password
-    PasswordHashScheme string // A string representing the hashing scheme used
+    Password string  `modifiable:"user"` // A hash of the user's password
+    PasswordSalt string  `modifiable:"user"` // The password salt to be attached to the end of the password
+    PasswordHashScheme string `modifiable:"user"` // A string representing the hashing scheme used
 
-    Admin bool  // True/False if this is an administrator
-    Phone string  // The user's phone number
-    PhoneCarrier int // phone carrier id
+    Admin bool  `modifiable:"root"` // True/False if this is an administrator
+    Phone string  `modifiable:"user"` // The user's phone number
+    PhoneCarrier int  `modifiable:"user"` // phone carrier id
 
-    UploadLimit_Items int // upload limit in items/day
-    ProcessingLimit_S int // processing limit in seconds/day
-    StorageLimit_Gb int // storage limit in GB
+    UploadLimit_Items int `modifiable:"root"`// upload limit in items/day
+    ProcessingLimit_S int `modifiable:"root"`// processing limit in seconds/day
+    StorageLimit_Gb int `modifiable:"root"`// storage limit in GB
 
-    CreateTime int64 // The time the user was created
-    ModifyTime int64 // the last time the user was modified
-    UserGroup  int  // Unused for now, in the future we can place certain users into gropus for testing new features
+    CreateTime int64 `modifiable:"nobody"`// The time the user was created
+    ModifyTime int64 `modifiable:"nobody"`// the last time the user was modified
+    UserGroup  int  `modifiable:"root"`// Unused for now, in the future we can place certain users into gropus for testing new features
 }
 
 // Converts a user to a sanitized version
@@ -49,6 +58,7 @@ func (u *User) OwnsDevice(device *Device) bool {
 func (u *User) ValidatePassword(password string) bool {
     return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
 }
+
 
 // converts a user to a device for handling requests with a username/password
 func (usr *User) ToDevice() *Device {
@@ -81,18 +91,18 @@ type PhoneCarrier struct {
 // Devices are general purposed external and internal data users,
 //
 type Device struct {
-    Id int64  // The primary key of this device
-    Name string  // The registered name of this device, should be universally unique like "Devicename_serialnum"
-    ApiKey string  // A uuid used as an api key to verify against
-    Enabled bool  // Whether or not this device can do reading and writing
-    Icon_PngB64 string  // a png image in base64
-    Shortname string  // The human readable name of this device
-    Superdevice bool  // Whether or not this is a "superdevice" which has access to the whole API
-    OwnerId int64  // the user that owns this device
+    Id int64 `modifiable:"nobody"` // The primary key of this device
+    Name string `modifiable:"nobody"` // The registered name of this device, should be universally unique like "Devicename_serialnum"
+    ApiKey string `modifiable:"user"` // A uuid used as an api key to verify against
+    Enabled bool  `modifiable:"user"` // Whether or not this device can do reading and writing
+    Icon_PngB64 string `modifiable:"user"` // a png image in base64
+    Shortname string `modifiable:"user"` // The human readable name of this device
+    Superdevice bool `modifiable:"root"` // Whether or not this is a "superdevice" which has access to the whole API
+    OwnerId int64 `modifiable:"root"` // the user that owns this device
 
-    CanWrite bool // Can this device write to streams? (inactive right now)
-    CanWriteAnywhere bool // Can this device write to others streams? (inactive right now)
-    UserProxy bool // Can this device operate as a user? (inactive right now)
+    CanWrite bool `modifiable:"user"` // Can this device write to streams? (inactive right now)
+    CanWriteAnywhere bool `modifiable:"user"` // Can this device write to others streams? (inactive right now)
+    UserProxy bool `modifiable:"user"` // Can this device operate as a user? (inactive right now)
 
     user *User // If this device is a user in disguise
 }
@@ -147,14 +157,14 @@ func (d *Device) ToClean() Device {
 }
 
 type Stream struct {
-    Id int64
-    Name string
-    Active bool
-    Public bool // TODO kill me off
-    Type string
-    OwnerId int64
-    Ephemeral bool // Currently inactive
-    Output bool // Currently inactive
+    Id int64 `modifiable:"nobody"`
+    Name string `modifiable:"nobody"`
+    Active bool `modifiable:"user"`
+    Public bool `modifiable:"user"` // TODO kill me off
+    Type string `modifiable:"root"`
+    OwnerId int64 `modifiable:"root"`
+    Ephemeral bool `modifiable:"user"` // Currently inactive
+    Output bool `modifiable:"user"` // Currently inactive
 }
 
 func (d *Stream) ToClean() Stream {
