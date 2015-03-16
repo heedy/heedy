@@ -21,4 +21,9 @@
         android:key="syncbutton"
         android:summary="@string/pref_syncnow_summary"
         />
+    <Preference
+        android:title="@string/pref_cachesize"
+        android:key="cachebutton"
+        android:summary="@string/pref_cachesize_summary"
+        />
 </PreferenceScreen>
