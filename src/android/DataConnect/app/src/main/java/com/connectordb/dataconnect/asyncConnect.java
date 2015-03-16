@@ -29,21 +29,42 @@ public class asyncConnect extends AsyncTask<String, Integer, Long> {
         //Now add ALL the data
         Cursor cursor = c.getCache();
         boolean val = cursor.moveToFirst();
+        double prevtime = 1.424813077181E9;
         while (val) {
             long id = cursor.getLong(0);
             double timestamp = ((double)cursor.getLong(1))/1000;
+
+
             String stream = cursor.getString(2);
             String dataval = cursor.getString(3);
             String jsonInsert = "{\"T\":"+Double.toString(timestamp)+",\"D\":"+dataval+"}";
             Log.d(TAG, jsonInsert);
+            while (timestamp<=prevtime) {
+                timestamp += 1e-4;
+                jsonInsert = "{\"T\":"+Double.toString(timestamp)+",\"D\":"+dataval+"}";
+                Log.d(TAG, "CORRECTED TIME: "+jsonInsert);
+            }
+
+
             if (cdb.insert(devicename,stream,jsonInsert)) {
                 //The insert was successful! Delete the value from the database
                 c.Delete(id);
             } else {
                 //The insert failed.
-                return Long.valueOf(1);
-            }
 
+                //Check to see if the insert failed because of a duplicate timestamp
+                timestamp += 1e-4;
+                jsonInsert = "{\"T\":"+Double.toString(timestamp)+",\"D\":"+dataval+"}";
+                Log.d(TAG, "ATTEMPT CORRECT TIME: "+jsonInsert);
+                if (cdb.insert(devicename,stream,jsonInsert)) {
+                    //The insert was successful! Delete the value from the database
+                    c.Delete(id);
+                } else {
+                    //Nope - something is fukt
+                    return Long.valueOf(1);
+                }
+            }
+            prevtime=timestamp;
             val = cursor.moveToNext();
         }
 
