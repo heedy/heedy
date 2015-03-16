@@ -1,36 +1,35 @@
 package web_client
 
 import (
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"html/template"
+	"log"
 	"net/http"
-	"path/filepath"
 	"os"
 	"os/exec"
-    "streamdb/users"
-	"streamdb"
-    "github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"log"
+	"path/filepath"
 	"strconv"
+	"streamdb"
+	"streamdb/users"
 )
 
-var(
-    userdb               *streamdb.Database
+var (
+	userdb *streamdb.Database
 
-	user_edit_template *template.Template
-	login_home_template *template.Template
+	user_edit_template   *template.Template
+	login_home_template  *template.Template
 	device_info_template *template.Template
-	firstrun_template *template.Template
+	firstrun_template    *template.Template
 	stream_read_template *template.Template
-	adduser_template	*template.Template
+	adduser_template     *template.Template
 
-	store = sessions.NewCookieStore([]byte("web-service-special-key"))
+	store    = sessions.NewCookieStore([]byte("web-service-special-key"))
 	firstrun bool
 )
 
-
 func getUserPage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	devices, err := userdb.ReadDevicesForUserId(user.Id)
 	pageData["devices"] = devices
@@ -48,7 +47,7 @@ func getUserPage(writer http.ResponseWriter, request *http.Request, user *users.
 }
 
 func editUserPage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	log.Printf("Editing %v", user.Name)
 	devices, err := userdb.ReadDevicesForUserId(user.Id)
@@ -96,7 +95,6 @@ func modifyPasswordAction(writer http.ResponseWriter, request *http.Request, use
 
 	log.Printf("Modifying user %v, new password: %v", user.Name, p1)
 
-
 	if p1 == p2 && p1 != "" && user.ValidatePassword(p0) {
 		user.SetNewPassword(p1)
 		//err := userdb.UpdateUser(user)
@@ -114,12 +112,10 @@ func modifyPasswordAction(writer http.ResponseWriter, request *http.Request, use
 	http.Redirect(writer, request, "/secure/edit", http.StatusTemporaryRedirect)
 }
 
-
 func deleteUserAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	p0 := request.PostFormValue("password")
 
 	log.Printf("Deleting user %v", user.Name)
-
 
 	if user.ValidatePassword(p0) {
 		user.SetNewPassword(p0)
@@ -137,12 +133,10 @@ func deleteUserAction(writer http.ResponseWriter, request *http.Request, user *u
 	http.Redirect(writer, request, "/secure/edit", http.StatusTemporaryRedirect)
 }
 
-
 func createDeviceAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	devname := request.PostFormValue("name")
 
 	log.Printf("Creating device %v", devname)
-
 
 	if devname != "" {
 		devid, err := userdb.CreateDeviceAs(user.ToDevice(), devname, user)
@@ -152,7 +146,7 @@ func createDeviceAction(writer http.ResponseWriter, request *http.Request, user 
 			session.AddFlash(err.Error())
 		} else {
 			session.AddFlash("Created Device")
-			http.Redirect(writer, request, "/secure/device/" + strconv.Itoa(int(devid)), http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/secure/device/"+strconv.Itoa(int(devid)), http.StatusTemporaryRedirect)
 		}
 	} else {
 		session.AddFlash("You must enter a device name.")
@@ -172,12 +166,12 @@ func editDevicePage(writer http.ResponseWriter, request *http.Request, user *use
 		goto redirect
 	}
 
-	device.Shortname 	 = request.PostFormValue("shortname")
-	device.Enabled   	 = request.PostFormValue("enabled") == "checked"
-	device.Superdevice   = request.PostFormValue("superdevice") == "checked"
-	device.CanWrite		 = request.PostFormValue("canwrite") == "checked"
-	device.CanWriteAnywhere	= request.PostFormValue("canwriteanywhere") == "checked"
-	device.UserProxy     = request.PostFormValue("userproxy") == "checked"
+	device.Shortname = request.PostFormValue("shortname")
+	device.Enabled = request.PostFormValue("enabled") == "checked"
+	device.Superdevice = request.PostFormValue("superdevice") == "checked"
+	device.CanWrite = request.PostFormValue("canwrite") == "checked"
+	device.CanWriteAnywhere = request.PostFormValue("canwriteanywhere") == "checked"
+	device.UserProxy = request.PostFormValue("userproxy") == "checked"
 
 	err = userdb.UpdateDeviceAs(user.ToDevice(), device)
 
@@ -189,18 +183,17 @@ func editDevicePage(writer http.ResponseWriter, request *http.Request, user *use
 	}
 
 redirect:
-	http.Redirect(writer, request, "/secure/device/" + devids, http.StatusTemporaryRedirect)
+	http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 }
-
 
 func readStreamPage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	vars := mux.Vars(request)
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
-	stream, err := userdb.ReadStreamByIdAs(user.ToDevice(),int64(streamid))
+	stream, err := userdb.ReadStreamByIdAs(user.ToDevice(), int64(streamid))
 
 	if err != nil {
 		pageData["alert"] = "Error getting stream."
@@ -217,14 +210,11 @@ func readStreamPage(writer http.ResponseWriter, request *http.Request, user *use
 
 	pageData["device"] = device
 
-
 	err = stream_read_template.ExecuteTemplate(writer, "stream.html", pageData)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 }
-
-
 
 func editStreamAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	vars := mux.Vars(request)
@@ -249,10 +239,8 @@ func editStreamAction(writer http.ResponseWriter, request *http.Request, user *u
 	}
 
 redirect:
-	http.Redirect(writer, request, "/secure/stream/" + streamids, http.StatusTemporaryRedirect)
+	http.Redirect(writer, request, "/secure/stream/"+streamids, http.StatusTemporaryRedirect)
 }
-
-
 
 func createStreamAction(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
 	vars := mux.Vars(request)
@@ -264,7 +252,7 @@ func createStreamAction(writer http.ResponseWriter, request *http.Request, user 
 	if err != nil {
 		log.Printf(err.Error())
 		session.AddFlash("Error getting device, maybe it was deleted?")
-		http.Redirect(writer, request, "/secure/device/" + devids, http.StatusTemporaryRedirect)
+		http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 	}
 
 	name := request.PostFormValue("name")
@@ -273,19 +261,16 @@ func createStreamAction(writer http.ResponseWriter, request *http.Request, user 
 	if err != nil {
 		log.Printf(err.Error())
 		session.AddFlash("Error creating stream.")
-		http.Redirect(writer, request, "/secure/device/" + devids, http.StatusTemporaryRedirect)
+		http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 	}
 
-	http.Redirect(writer, request, "/secure/stream/" + strconv.Itoa(int(sid)), http.StatusTemporaryRedirect)
+	http.Redirect(writer, request, "/secure/stream/"+strconv.Itoa(int(sid)), http.StatusTemporaryRedirect)
 }
 
-
-
 func firstRunHandler(writer http.ResponseWriter, r *http.Request) {
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	pageData["alert"] = "All actions are admin, you should restart the server."
-
 
 	err := firstrun_template.ExecuteTemplate(writer, "firstrun.html", pageData)
 	if err != nil {
@@ -293,9 +278,8 @@ func firstRunHandler(writer http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func newUserPage(writer http.ResponseWriter, r *http.Request) {
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	err := adduser_template.ExecuteTemplate(writer, "newuser.html", pageData)
 	if err != nil {
@@ -303,16 +287,13 @@ func newUserPage(writer http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func getDevicePage(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session) {
-	pageData := make(map[string] interface{})
+	pageData := make(map[string]interface{})
 
 	vars := mux.Vars(request)
 	devids := vars["id"]
 
-
 	devid, _ := strconv.Atoi(devids)
-
 
 	device, err := userdb.ReadDeviceById(int64(devid))
 	pageData["device"] = device
@@ -330,7 +311,6 @@ func getDevicePage(writer http.ResponseWriter, request *http.Request, user *user
 		pageData["alert"] = "Error getting device streams"
 	}
 
-
 	err = device_info_template.ExecuteTemplate(writer, "device_info.html", pageData)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -339,16 +319,16 @@ func getDevicePage(writer http.ResponseWriter, request *http.Request, user *user
 
 func SetWdToExecutable() error {
 	path, _ := exec.LookPath(os.Args[0])
-    fp, _ := filepath.Abs(path)
-    dir, _ := filepath.Split(fp)
-    return os.Chdir(dir)
+	fp, _ := filepath.Abs(path)
+	dir, _ := filepath.Split(fp)
+	return os.Chdir(dir)
 }
 
 type WebHandler func(writer http.ResponseWriter, request *http.Request, user *users.User, session *sessions.Session)
 
 func authWrapper(h WebHandler) http.HandlerFunc {
 
-    return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 
 		// all stuff redirects to firstrun
 		if firstrun {
@@ -358,31 +338,31 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 			}
 		}
 
-        // Get a session. We're ignoring the error resulted from decoding an
-        // existing session: Get() always returns a session, even if empty.
-        session, _ := store.Get(request, "web-session")
-        // Set some session values.
+		// Get a session. We're ignoring the error resulted from decoding an
+		// existing session: Get() always returns a session, even if empty.
+		session, _ := store.Get(request, "web-session")
+		// Set some session values.
 
-        // Do HTTP Authentication
-        au, ap, _ := request.BasicAuth()
+		// Do HTTP Authentication
+		au, ap, _ := request.BasicAuth()
 
 		var usr *users.User
 
-        if au != "" && ap != "" {
+		if au != "" && ap != "" {
 
 			log.Printf("Got user %v pass %v", au, ap)
 
 			var val bool
-            val, usr = userdb.ValidateUser(au, ap)
+			val, usr = userdb.ValidateUser(au, ap)
 
-            if ! val {
-                writer.Header().Set("Content-Type", "text/plain")
-                writer.Header().Set("WWW-Authenticate", "Basic")
-                writer.WriteHeader(http.StatusUnauthorized)
-                writer.Write([]byte("Username/Password wrong, please try again."))
-                return
-            }
-        } else {
+			if !val {
+				writer.Header().Set("Content-Type", "text/plain")
+				writer.Header().Set("WWW-Authenticate", "Basic")
+				writer.WriteHeader(http.StatusUnauthorized)
+				writer.Write([]byte("Username/Password wrong, please try again."))
+				return
+			}
+		} else {
 			writer.Header().Set("Content-Type", "text/plain")
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
@@ -390,11 +370,10 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 			return
 		}
 
-        h(writer, request, usr, session)
+		h(writer, request, usr, session)
 
-    })
+	})
 }
-
 
 func updateFirstrun() bool {
 	usr, _ := userdb.ReadAllUsers()
@@ -402,10 +381,8 @@ func updateFirstrun() bool {
 	return firstrun
 }
 
-
-
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
-    SetWdToExecutable()
+	SetWdToExecutable()
 	user_edit_template = template.Must(template.ParseFiles("./templates/user_edit.html", "./templates/base.html"))
 	login_home_template = template.Must(template.ParseFiles("./templates/root.html", "./templates/base.html"))
 	device_info_template = template.Must(template.ParseFiles("./templates/device_info.html", "./templates/base.html"))

@@ -1,45 +1,44 @@
 package streamdb
 
 import (
-    "database/sql"
-    _ "github.com/mattn/go-sqlite3"
-    _ "github.com/lib/pq"
+	"database/sql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 
-    "streamdb/users"
-    "streamdb/dtypes"
-    "log"
-    "strings"
-    )
+	"log"
+	"streamdb/dtypes"
+	"streamdb/users"
+	"strings"
+)
 
 const (
-    SQLITE_PREFIX = "sqlite://"
-    POSTGRES_PREFIX = "postgres://"
+	SQLITE_PREFIX   = "sqlite://"
+	POSTGRES_PREFIX = "postgres://"
 )
 
 var (
-    BATCH_SIZE = 100    //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
-    )
+	BATCH_SIZE = 100 //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
+)
 
 //This is a StreamDB database object which holds the methods
 type Database struct {
-    users.UserDatabase          //UserDatabase holds the methods needed to CRUD users/devices/streams
-    tdb *dtypes.TypedDatabase       //timebatchdb holds methods for inserting datapoints into streams
+	users.UserDatabase                       //UserDatabase holds the methods needed to CRUD users/devices/streams
+	tdb                *dtypes.TypedDatabase //timebatchdb holds methods for inserting datapoints into streams
 
-    sqldb *sql.DB       //Connection to the sql database
+	sqldb *sql.DB //Connection to the sql database
 }
 
 //This function closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
 func (db *Database) Close() {
-    if db.tdb != nil {
-        db.tdb.Close()
-    }
+	if db.tdb != nil {
+		db.tdb.Close()
+	}
 
-    if db.Db != nil {
-        db.Db.Close()
-    }
+	if db.Db != nil {
+		db.Db.Close()
+	}
 }
-
 
 /**
 Opens StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
@@ -65,67 +64,65 @@ writes the database's internal data.
 **/
 func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
-    /**
-    TODO migrate all sql userdb stuff into this file.
-    **/
+	/**
+	  TODO migrate all sql userdb stuff into this file.
+	  **/
 
-    var db Database
+	var db Database
 
-    //First, we check if the user wants to use sqlite or postgres. If the url given
-    //has the hallmarks of a file or sqlite database, then set that as the database type
+	//First, we check if the user wants to use sqlite or postgres. If the url given
+	//has the hallmarks of a file or sqlite database, then set that as the database type
 
-    db.SqlType = users.POSTGRES   //The default is postgres.
+	db.SqlType = users.POSTGRES //The default is postgres.
 
-    switch {
-        // TODO just check if this is a file
-        // How I wish there were a "blah" in [] like Python!
-        case strings.HasSuffix(sqluri, ".db") ||
-        strings.HasSuffix(sqluri, ".sqlite") ||
-        strings.HasSuffix(sqluri, ".sqlite3") ||
-        strings.HasPrefix(sqluri, SQLITE_PREFIX):
+	switch {
+	// TODO just check if this is a file
+	// How I wish there were a "blah" in [] like Python!
+	case strings.HasSuffix(sqluri, ".db") ||
+		strings.HasSuffix(sqluri, ".sqlite") ||
+		strings.HasSuffix(sqluri, ".sqlite3") ||
+		strings.HasPrefix(sqluri, SQLITE_PREFIX):
 
-            db.SqlType = users.SQLITE3
+		db.SqlType = users.SQLITE3
 
-            //The sqlite driver doesn't like starting with sqlite://
-            if strings.HasPrefix(sqluri, SQLITE_PREFIX) {
-                sqluri = sqluri[len(SQLITE_PREFIX):]
-            }
-            break
-        case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
-            db.SqlType = users.POSTGRES
-            sqluri = sqluri[len(POSTGRES_PREFIX):]
-    }
+		//The sqlite driver doesn't like starting with sqlite://
+		if strings.HasPrefix(sqluri, SQLITE_PREFIX) {
+			sqluri = sqluri[len(SQLITE_PREFIX):]
+		}
+		break
+	case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
+		db.SqlType = users.POSTGRES
+		sqluri = sqluri[len(POSTGRES_PREFIX):]
+	}
 
+	/*TODO: Right now UserDB has no way to pass in an sql object without
+	  bypassing all constructors.
+	  So we let UserDB open the connection, then steal the database object
+	  //Now open the correct type of database.
+	  sdb,err := sql.Open(sqltype,sqluri)
+	  if err!=nil {
+	      return nil,err
+	  }
+	*/
 
-    /*TODO: Right now UserDB has no way to pass in an sql object without
-    bypassing all constructors.
-    So we let UserDB open the connection, then steal the database object
-    //Now open the correct type of database.
-    sdb,err := sql.Open(sqltype,sqluri)
-    if err!=nil {
-        return nil,err
-    }
-    */
+	log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
+	err = db.InitUserDatabase(db.SqlType, sqluri)
+	db.sqldb = db.Db
 
+	log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
+	db.tdb, err = dtypes.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
 
-    log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
-    err = db.InitUserDatabase(db.SqlType, sqluri)
-    db.sqldb = db.Db
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
 
-    log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
-    db.tdb, err = dtypes.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
+	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
+	if db.SqlType == users.SQLITE3 {
+		go db.tdb.WriteDatabase()
+	}
 
-    if err != nil {
-        db.Close()
-        return nil, err
-    }
-
-    // If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-    if db.SqlType == users.SQLITE3 {
-        go db.tdb.WriteDatabase()
-    }
-
-    return &db, nil
+	return &db, nil
 
 }
 
@@ -149,7 +146,7 @@ If you are just connecting to an already-running StreamDB and RunWriter is alrea
 this database, then NO.
 **/
 func (db *Database) RunWriter() {
-    if db.SqlType!="sqlite3" {
-        db.tdb.WriteDatabase()
-    }
+	if db.SqlType != "sqlite3" {
+		db.tdb.WriteDatabase()
+	}
 }

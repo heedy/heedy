@@ -57,10 +57,10 @@ func (d *TypedDatabase) GetTimeRange(key string, dtype string, starttime int64, 
 		return TypedRange{timebatchdb.EmptyRange{}, NilType{}}
 	}
 	log.Printf("Requesting timestamp data (%v, %v] from '%v'", starttime, endtime, key)
-	val,err := d.db.GetTimeRange(key, starttime, endtime)
-    if err!=nil {
-        log.Printf("Error getting by timestamps: %s", err)
-    }
+	val, err := d.db.GetTimeRange(key, starttime, endtime)
+	if err != nil {
+		log.Printf("Error getting by timestamps: %s", err)
+	}
 	return TypedRange{val, t}
 }
 
@@ -73,9 +73,9 @@ func (d *TypedDatabase) GetIndexRange(key string, dtype string, startindex uint6
 	}
 	log.Printf("Requesting data (%v, %v] from '%v'", startindex, endindex, key)
 	val, err := d.db.GetIndexRange(key, startindex, endindex)
-    if err!=nil {
-        log.Printf("Error getting index: %s", err)
-    }
+	if err != nil {
+		log.Printf("Error getting index: %s", err)
+	}
 	return TypedRange{val, t}
 }
 
