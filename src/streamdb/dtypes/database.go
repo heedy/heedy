@@ -94,7 +94,7 @@ func (d *TypedDatabase) InsertKey(key string, datapoint TypedDatapoint) error {
 	if err != nil {
 		return err
 	}
-	dpa := timebatchdb.CreateDatapointArray([]int64{timestamp}, [][]byte{data})
+	dpa := timebatchdb.CreateDatapointArray([]int64{timestamp}, [][]byte{data}, "")
 	return d.db.Insert(key, dpa)
 }
 

@@ -2,17 +2,18 @@ package dtypes
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"streamdb/timebatchdb"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestTypedRange(t *testing.T) {
 	timestamps := []int64{1, 2}
 	datab := [][]byte{[]byte("test0"), []byte("test1")}
 
-	da := timebatchdb.CreateDatapointArray(timestamps, datab)
+	da := timebatchdb.CreateDatapointArray(timestamps, datab, "")
 
 	dtype, ok := GetType("s")
 	if !ok {

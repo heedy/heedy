@@ -13,7 +13,7 @@ func TestFloatArray(t *testing.T) {
 		return
 	}
 	tim, _ := tdp.Timestamp()
-	dp := timebatchdb.NewDatapoint(tim, tdp.Data())
+	dp := timebatchdb.NewDatapoint(tim, tdp.Data(), "")
 	tdp.D = nil
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
@@ -38,7 +38,7 @@ func TestIntArray(t *testing.T) {
 		return
 	}
 	tim, _ := tdp.Timestamp()
-	dp := timebatchdb.NewDatapoint(tim, tdp.Data())
+	dp := timebatchdb.NewDatapoint(tim, tdp.Data(), "")
 	tdp.D = nil
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {

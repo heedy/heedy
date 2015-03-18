@@ -117,7 +117,7 @@ func TestBaseDatapoint(t *testing.T) {
 }
 
 func TestBinaryDatapoint(t *testing.T) {
-	dp := timebatchdb.NewDatapoint(1337000000, []byte("Hello World!"))
+	dp := timebatchdb.NewDatapoint(1337000000, []byte("Hello World!"), "")
 	tdp := BinaryDatapoint{}
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
@@ -132,7 +132,7 @@ func TestBinaryDatapoint(t *testing.T) {
 }
 
 func TestTextDatapoint(t *testing.T) {
-	dp := timebatchdb.NewDatapoint(1337000000, []byte("Hello World!"))
+	dp := timebatchdb.NewDatapoint(1337000000, []byte("Hello World!"), "")
 	tdp := TextDatapoint{}
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
@@ -157,7 +157,7 @@ func TestIntDatapoint(t *testing.T) {
 		return
 	}
 	tim, _ := tdp.Timestamp()
-	dp := timebatchdb.NewDatapoint(tim, tdp.Data())
+	dp := timebatchdb.NewDatapoint(tim, tdp.Data(), "")
 	tdp.D = 101
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
@@ -182,7 +182,7 @@ func TestFloatDatapoint(t *testing.T) {
 		return
 	}
 	tim, _ := tdp.Timestamp()
-	dp := timebatchdb.NewDatapoint(tim, tdp.Data())
+	dp := timebatchdb.NewDatapoint(tim, tdp.Data(), "")
 	tdp.D = 101
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
@@ -207,7 +207,7 @@ func TestBoolDatapoint(t *testing.T) {
 		return
 	}
 	tim, _ := tdp.Timestamp()
-	dp := timebatchdb.NewDatapoint(tim, tdp.Data())
+	dp := timebatchdb.NewDatapoint(tim, tdp.Data(), "")
 	tdp.D = false
 	err := tdp.Load(dp)
 	if err != nil || tdp.T.(float64) != 1.337 || 0 != bytes.Compare(dp.Data(), tdp.Data()) {
