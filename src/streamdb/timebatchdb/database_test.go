@@ -3,10 +3,11 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
+
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestDatabasError(t *testing.T) {
@@ -49,11 +50,11 @@ func TestDatabaseInsert(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	if db.Insert("hello", CreateDatapointArray(timestamps, data)) != ERROR_UNORDERED {
+	if db.Insert("hello", CreateDatapointArray(timestamps, data, "")) != ERROR_UNORDERED {
 		t.Errorf("Wrong error on insert: %v", err)
 		return
 	}
-	err = db.Insert("hello", CreateDatapointArray(timestamps[:1], data[:1]))
+	err = db.Insert("hello", CreateDatapointArray(timestamps[:1], data[:1], ""))
 	if err != nil {
 		t.Errorf("error on insert: %v", err)
 		return
@@ -62,13 +63,13 @@ func TestDatabaseInsert(t *testing.T) {
 	if 1 != l || err != nil {
 		t.Errorf("Data length not correct %v %v", l, err)
 	}
-	err = db.Insert("hello", CreateDatapointArray(timestamps[:1], data[:1]))
+	err = db.Insert("hello", CreateDatapointArray(timestamps[:1], data[:1], ""))
 	if err != ERROR_TIMESTAMP {
 		t.Errorf("wrong error on insert: %v", err)
 		return
 	}
 
-	err = db.Insert("hello", CreateDatapointArray(timestamps[1:8], data[1:8]))
+	err = db.Insert("hello", CreateDatapointArray(timestamps[1:8], data[1:8], ""))
 	if err != nil {
 		t.Errorf("error on insert: %v", err)
 		return
@@ -128,7 +129,7 @@ func TestDatabaseWrite(t *testing.T) {
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000, 3100}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7")}
-	err = db.Insert("hello", CreateDatapointArray(timestamps, data))
+	err = db.Insert("hello", CreateDatapointArray(timestamps, data, ""))
 	if err != nil {
 		t.Errorf("error on insert: %v", err)
 		return
@@ -195,7 +196,7 @@ func TestDatabaseRead(t *testing.T) {
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6")}
-	err = db.Insert("hello", CreateDatapointArray(timestamps, data))
+	err = db.Insert("hello", CreateDatapointArray(timestamps, data, ""))
 	if err != nil {
 		t.Errorf("error on insert: %v", err)
 		return
@@ -302,7 +303,7 @@ func BenchmarkThousandS_S(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data))
+		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 		//db.WriteDatabaseIteration()
 	}
 	for i := 0; i < 10; i++ {
@@ -352,7 +353,7 @@ func BenchmarkThousandS_P(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data))
+		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 		//db.WriteDatabaseIteration()
 	}
 	for i := 0; i < 10; i++ {
@@ -402,7 +403,7 @@ func BenchmarkThousandR(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data))
+		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 		//db.WriteDatabaseIteration()
 	}
 	b.ResetTimer()
@@ -450,7 +451,7 @@ func BenchmarkInsert(b *testing.B) {
 	b.ResetTimer()
 	for n := int64(0); n < int64(b.N); n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data))
+		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 	}
 
 }

@@ -108,7 +108,7 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	keysize, err := rc.Insert("hello/world", CreateDatapointArray(timestamps[:4], data[:4]))
+	keysize, err := rc.Insert("hello/world", CreateDatapointArray(timestamps[:4], data[:4], ""))
 	if keysize != 4 || err != nil {
 		t.Errorf("Insert error %d %v", keysize, err)
 		return
@@ -123,7 +123,7 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	keysize, err = rc.Insert("hello/world", CreateDatapointArray(timestamps[4:], data[4:]))
+	keysize, err = rc.Insert("hello/world", CreateDatapointArray(timestamps[4:], data[4:], ""))
 	if keysize != 9 || err != nil {
 		t.Errorf("Insert error %d %v", keysize, err)
 		return
@@ -276,7 +276,7 @@ func BenchmarkThousandRedis(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	for i := int64(0); i < 100; i++ {
-		_, err = rc.Insert("testkey", CreateDatapointArray(timestamps, data))
+		_, err = rc.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 		if err != nil {
 			b.Errorf("Insert Error: %v", err)
 			return
@@ -311,7 +311,7 @@ func BenchmarkRedisInsert(b *testing.B) {
 		if n%10000 == 0 {
 			rc.Clear() //Make sure we don't overflow the ram
 		}
-		rc.Insert("testkey", CreateDatapointArray(timestamps, data))
+		rc.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
 
 	}
 }

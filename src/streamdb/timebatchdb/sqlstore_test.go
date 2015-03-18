@@ -3,9 +3,10 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
-	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -59,7 +60,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	err = s.Append("hello/world", CreateDatapointArray(timestamps[0:1], data[0:1]))
+	err = s.Append("hello/world", CreateDatapointArray(timestamps[0:1], data[0:1], ""))
 	if err != nil {
 		t.Errorf("Error in append: %s", err)
 		return
@@ -152,7 +153,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 		return
 	}
 
-	err = s.Append("hello/world", CreateDatapointArray(timestamps[1:3], data[1:3]))
+	err = s.Append("hello/world", CreateDatapointArray(timestamps[1:3], data[1:3], ""))
 	if err != nil {
 		t.Errorf("Error in append: %s", err)
 		return
@@ -251,7 +252,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 		return
 	}
 
-	err = s.Append("hello/world", CreateDatapointArray(timestamps[3:], data[3:]))
+	err = s.Append("hello/world", CreateDatapointArray(timestamps[3:], data[3:], ""))
 	if err != nil {
 		t.Errorf("Error in append: %s", err)
 		return
@@ -381,7 +382,7 @@ func BenchmarkThousandSQLite(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	for i := int64(0); i < 100; i++ {
-		s.Append("testkey", CreateDatapointArray(timestamps, data))
+		s.Append("testkey", CreateDatapointArray(timestamps, data, ""))
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -416,7 +417,7 @@ func BenchmarkSQLiteInsert(b *testing.B) {
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		s.Append("testkey", CreateDatapointArray(timestamps, data))
+		s.Append("testkey", CreateDatapointArray(timestamps, data, ""))
 	}
 
 }
@@ -441,7 +442,7 @@ func BenchmarkThousandPostgres(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	for i := int64(0); i < 100; i++ {
-		s.Append("testkey", CreateDatapointArray(timestamps, data))
+		s.Append("testkey", CreateDatapointArray(timestamps, data, ""))
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -476,7 +477,7 @@ func BenchmarkPostgresInsert(b *testing.B) {
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		s.Append("testkey", CreateDatapointArray(timestamps, data))
+		s.Append("testkey", CreateDatapointArray(timestamps, data, ""))
 	}
 
 }

@@ -225,12 +225,13 @@ func NewDatapointArray(d []Datapoint) *DatapointArray {
 	return &DatapointArray{d, nil, 0}
 }
 
-//Creates DatapointArray from the raw data
-func CreateDatapointArray(timestamps []int64, data [][]byte) *DatapointArray {
+//Creates DatapointArray from the raw data - it is assumed that there is only one key for the array (which is an
+//assumption that is valid for the major use case of timebatchdb)
+func CreateDatapointArray(timestamps []int64, data [][]byte, key string) *DatapointArray {
 	arr := make([]Datapoint, len(timestamps))
 
 	for i := 0; i < len(arr); i++ {
-		arr[i] = NewDatapoint(timestamps[i], data[i])
+		arr[i] = NewDatapoint(timestamps[i], data[i], key)
 	}
 	return NewDatapointArray(arr)
 }

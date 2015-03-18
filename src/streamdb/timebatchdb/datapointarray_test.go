@@ -32,6 +32,11 @@ func assertData(t *testing.T, da *DatapointArray, try string) bool {
 		t.Errorf("%s: DatapointArray timestamp fail: %d", try, len(timestamps))
 		return false
 	}
+
+	if da.Datapoints[0].Key() != "test" {
+		t.Errorf("%s: DatapointArray data key fail: %d", try, len(timestamps))
+		return false
+	}
 	return true
 }
 
@@ -40,14 +45,14 @@ func TestDatapointArray(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	if !CreateDatapointArray(timestamps[0:1], data[0:1]).IsTimestampOrdered() {
+	if !CreateDatapointArray(timestamps[0:1], data[0:1], "").IsTimestampOrdered() {
 		t.Errorf("Timestamp ordering failure")
 	}
-	if !CreateDatapointArray(timestamps[0:3], data[0:3]).IsTimestampOrdered() {
+	if !CreateDatapointArray(timestamps[0:3], data[0:3], "").IsTimestampOrdered() {
 		t.Errorf("Timestamp ordering failure")
 	}
 
-	da := CreateDatapointArray(timestamps, data) //This internally tests fromlist
+	da := CreateDatapointArray(timestamps, data, "test") //This internally tests fromlist
 
 	if !assertData(t, da, "creation") {
 		return
@@ -212,7 +217,7 @@ func BenchmarkDatapointArrayRange(b *testing.B) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 
-	da := CreateDatapointArray(timestamps, data)
+	da := CreateDatapointArray(timestamps, data, "")
 
 	for n := 0; n < b.N; n++ {
 		da.Init()
@@ -230,7 +235,7 @@ func BenchmarkDatapointArrayByteConversion(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 
 	for n := 0; n < b.N; n++ {
-		da := CreateDatapointArray(timestamps, data)
+		da := CreateDatapointArray(timestamps, data, "")
 		da.Bytes()
 	}
 }
@@ -241,7 +246,7 @@ func BenchmarkDatapointArrayCompress(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 
 	for n := 0; n < b.N; n++ {
-		CreateDatapointArray(timestamps, data).CompressedBytes()
+		CreateDatapointArray(timestamps, data, "test").CompressedBytes()
 	}
 }
 
@@ -249,7 +254,7 @@ func BenchmarkDatapointArrayUncompress(b *testing.B) {
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
-	dpb := CreateDatapointArray(timestamps, data).CompressedBytes()
+	dpb := CreateDatapointArray(timestamps, data, "test").CompressedBytes()
 	for n := 0; n < b.N; n++ {
 		DatapointArrayFromCompressedBytes(dpb)
 	}

@@ -11,8 +11,8 @@ func TestRangeList(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	da := CreateDatapointArray(timestamps[:5], data[:5])
-	db := CreateDatapointArray(timestamps[5:], data[5:])
+	da := CreateDatapointArray(timestamps[:5], data[:5], "")
+	db := CreateDatapointArray(timestamps[5:], data[5:], "")
 
 	rl := NewRangeList()
 	rl.Append(da)
@@ -67,7 +67,7 @@ func TestTimeRange(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	da := CreateDatapointArray(timestamps, data)
+	da := CreateDatapointArray(timestamps, data, "")
 
 	tr := NewTimeRange(da, 3, 6)
 	defer tr.Close()
@@ -123,7 +123,7 @@ func TestNumRange(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	da := CreateDatapointArray(timestamps, data)
+	da := CreateDatapointArray(timestamps, data, "")
 
 	tr := NewNumRange(da, 5)
 	defer tr.Close()
@@ -214,7 +214,7 @@ func BenchmarkThousandRangeList(b *testing.B) {
 		rl := NewRangeList()
 		for i := int64(0); i < 100; i++ {
 			timestamps := []int64{i, i + 1, i + 1, i + 3, i + 4, i + 5, i + 6, i + 7, i + 8, i + 9}
-			rl.Append(CreateDatapointArray(timestamps, data))
+			rl.Append(CreateDatapointArray(timestamps, data, ""))
 		}
 		rl.Init()
 		for dp, _ := rl.Next(); dp != nil; dp, _ = rl.Next() {

@@ -6,9 +6,9 @@ import (
 )
 
 func TestDatapoint(t *testing.T) {
-	d := NewDatapoint(1337, []byte("Hello World!"))
+	d := NewDatapoint(1337, []byte("Hello World!"), "world/hello")
 
-	if d.Len() != len(d.Bytes()) || d.Timestamp() != 1337 || string(d.Data()) != "Hello World!" || d.DataLen() != 12 {
+	if d.Len() != len(d.Bytes()) || d.Timestamp() != 1337 || string(d.Data()) != "Hello World!" || d.DataLen() != 12 || d.Key() != "world/hello" {
 		t.Errorf("Datapoint read error: %s", d)
 		return
 	}
@@ -24,12 +24,12 @@ func TestDatapoint(t *testing.T) {
 		return
 	}
 
-	if string(buf.Next(3)) != "END" {
-		t.Errorf("Datapoint reading went out of bounds")
+	if d2.Len() != d.Len() || d2.Timestamp() != 1337 || string(d2.Data()) != "Hello World!" || d2.DataLen() != 12 || d2.Key() != "world/hello" {
+		t.Errorf("Datapoint read error: %s", d2)
 		return
 	}
-	if d2.Len() != d.Len() || d2.Timestamp() != 1337 || string(d2.Data()) != "Hello World!" || d2.DataLen() != 12 {
-		t.Errorf("Datapoint read error: %s", d2)
+	if string(buf.Next(3)) != "END" {
+		t.Errorf("Datapoint reading went out of bounds")
 		return
 	}
 
@@ -43,7 +43,7 @@ func TestDatapoint(t *testing.T) {
 		return
 	}
 
-	if d3.Len() != d.Len() || d3.Timestamp() != 1337 || string(d3.Data()) != "Hello World!" || d3.DataLen() != 12 {
+	if d3.Len() != d.Len() || d3.Timestamp() != 1337 || string(d3.Data()) != "Hello World!" || d3.DataLen() != 12 || d2.Key() != "world/hello" {
 		t.Errorf("Datapoint read error: %s", d3)
 		return
 	}
@@ -61,8 +61,8 @@ func TestLargeDatapoint(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		datastring = datastring + "HelloWorld"
 	}
-	d := NewDatapoint(1337, []byte(datastring))
-	if d.Len() != len(d.Bytes()) || d.Timestamp() != 1337 || string(d.Data()) != datastring || d.DataLen() != len(datastring) {
+	d := NewDatapoint(1337, []byte(datastring), "")
+	if d.Len() != len(d.Bytes()) || d.Timestamp() != 1337 || string(d.Data()) != datastring || d.DataLen() != len(datastring) || d.Key() != "" {
 		t.Errorf("Datapoint read error: %s", d)
 		return
 	}
@@ -71,16 +71,17 @@ func TestLargeDatapoint(t *testing.T) {
 func BenchmarkDatapointCreate(b *testing.B) {
 	//Create the datapoint and get the Bytes from it
 	for n := 0; n < b.N; n++ {
-		d := NewDatapoint(1337, []byte("Hello World!"))
+		d := NewDatapoint(1337, []byte("Hello World!"), "")
 		d.Bytes()
 	}
 }
 
 func BenchmarkDatapointRead(b *testing.B) {
 	//Read stuff from the datapoint
-	d := NewDatapoint(1337, []byte("Hello World!"))
+	d := NewDatapoint(1337, []byte("Hello World!"), "")
 	for n := 0; n < b.N; n++ {
 		d.Timestamp()
 		d.Data()
+		d.Key()
 	}
 }
