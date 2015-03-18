@@ -317,7 +317,7 @@ func TestDatabaseDelete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to delete %v", err)
 	}
-	dr, err = db.GetIndexRange("hello", 0, 6)
+	dr, err := db.GetIndexRange("hello", 0, 6)
 	dr.Init()
 	if err != nil {
 		t.Errorf("Get deleted by index range failure: %v", err)

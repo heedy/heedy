@@ -272,7 +272,7 @@ func TestRedisCache(t *testing.T) {
 		t.Errorf("Get oldest failed: %v %v", err, dp)
 		return
 	}
-	tme, err := rc.GetEndTime("hello/world")
+	tme, err = rc.GetEndTime("hello/world")
 	if err != nil || tme != math.MinInt64 {
 		t.Errorf("Get most recent failed: %v %v", err, tme)
 		return
