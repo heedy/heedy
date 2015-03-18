@@ -87,6 +87,15 @@ func (d *Database) Close() {
 	d.ss.Close()
 }
 
+//Deletes the given key from the database
+func (d *Database) Delete(key string) error {
+	err := d.rc.Delete(key)
+	if err != nil {
+		return err
+	}
+	return d.ss.Delete(key)
+}
+
 //Gets the total number of datapoints for the given key
 func (d *Database) Len(key string) (uint64, error) {
 	return d.rc.EndIndex(key)

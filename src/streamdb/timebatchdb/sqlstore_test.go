@@ -308,6 +308,24 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 		return
 	}
 	r.Close()
+
+	err = s.Delete("hello/world")
+	if err != nil {
+		t.Errorf("Delete failed: %v", err)
+	}
+
+	//Check returning empties
+	i, err = s.GetEndIndex("hello/world")
+	if err != nil || i != 0 {
+		t.Errorf("EndIndex of deleted failed: %d %s", i, err)
+		return
+	}
+
+	r, si, err = s.GetByTime("hello/world", 0)
+	if si != 0 || err != nil {
+		t.Errorf("get failed %v %v", si, err)
+		return
+	}
 }
 
 func TestNoDriver(t *testing.T) {

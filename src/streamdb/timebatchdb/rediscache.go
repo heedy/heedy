@@ -2,9 +2,10 @@ package timebatchdb
 
 import (
 	"errors"
-	"github.com/garyburd/redigo/redis"
 	"math"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 var (
@@ -259,6 +260,14 @@ func (rc *RedisCache) GetByIndex(key string, index uint64) (dr DataRange, starti
 		return EmptyRange{}, index, nil
 	}
 	return NewDatapointArray(dp.Datapoints[index-si:]), index, nil
+}
+
+//Deletes all data associated with the given key stored within the cache.
+func (rc *RedisCache) Delete(key string) error {
+	c := rc.cpool.Get()
+	defer c.Close()
+	_, err := c.Do("DEL", key, "{I}>"+key, "{T}>"+key)
+	return err
 }
 
 //Opens the redis cache given the URL to the server. The err parameter allows daisychains of errors

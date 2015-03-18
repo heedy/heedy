@@ -272,6 +272,64 @@ func TestDatabaseRead(t *testing.T) {
 	}
 }
 
+func TestDatabaseDelete(t *testing.T) {
+	os.Remove("TESTING_timebatch.db")
+	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
+	if err != nil {
+		t.Errorf("Couldn't open database: %v", err)
+		return
+	}
+	defer sdb.Close()
+
+	rc, err := OpenRedisCache("localhost:6379", nil)
+	if err != nil {
+		t.Errorf("Open Redis error %v", err)
+		return
+	}
+	defer rc.Close()
+
+	//Cleans the cache
+	rc.Clear()
+
+	db, err := Open(sdb, "sqlite3", "localhost:6379", 4, nil)
+	if err != nil {
+		t.Errorf("Couldn't open database: %v", err)
+		return
+	}
+	defer db.Close()
+
+	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000}
+	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
+		[]byte("test4"), []byte("test5"), []byte("test6")}
+	err = db.Insert("hello", CreateDatapointArray(timestamps, data, ""))
+	if err != nil {
+		t.Errorf("error on insert: %v", err)
+		return
+	}
+	//Write to the sql database
+	err = db.WriteDatabaseIteration()
+	if err != nil {
+		t.Errorf("error on write: %v", err)
+		return
+	}
+
+	err = db.Delete("hello")
+	if err != nil {
+		t.Errorf("Failed to delete %v", err)
+	}
+	dr, err = db.GetIndexRange("hello", 0, 6)
+	dr.Init()
+	if err != nil {
+		t.Errorf("Get deleted by index range failure: %v", err)
+		return
+	}
+	dp, err := dr.Next()
+	if dp != nil || err != nil {
+		t.Errorf("Next on deleted: %v %v", err, dp)
+		return
+	}
+}
+
 //This is a benchmark of how fast we can read out a thousand-datapoint range from sqlite in chunks of 100
 func BenchmarkThousandS_S(b *testing.B) {
 	os.Remove("TESTING_timebatch.db")

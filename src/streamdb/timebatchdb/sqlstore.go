@@ -70,6 +70,7 @@ type SqlStore struct {
 	timequery  *sql.Stmt
 	indexquery *sql.Stmt
 	endindex   *sql.Stmt
+	delkey     *sql.Stmt
 }
 
 //Closes all resources associated with the SqlStore.
@@ -78,6 +79,7 @@ func (s *SqlStore) Close() {
 	s.timequery.Close()
 	s.indexquery.Close()
 	s.endindex.Close()
+	s.delkey.Close()
 }
 
 //Returns the first index point outside of the most recent datapointarray stored within the database.
@@ -111,6 +113,12 @@ func (s *SqlStore) Append(key string, dp *DatapointArray) error {
 		return err
 	}
 	return s.Insert(key, i, dp)
+}
+
+//Deletes all data associated with the given key in the database
+func (s *SqlStore) Delete(key string) error {
+	_, err := s.delkey.Exec(key)
+	return err
 }
 
 //Returns an SqlRange of datapoints starting at the starttime
@@ -186,7 +194,7 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 }
 
 //Sets up the inserts (it assumes that the database was already prepared)
-func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s string) (*SqlStore, error) {
+func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s string, delkey_s string) (*SqlStore, error) {
 	inserter, err := db.Prepare(insert_s)
 	if err != nil {
 		return nil, err
@@ -213,7 +221,16 @@ func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s
 		return nil, err
 	}
 
-	return &SqlStore{inserter, timequery, indexquery, endindex}, nil
+	delkey, err := db.Prepare(delkey_s)
+	if err != nil {
+		inserter.Close()
+		timequery.Close()
+		indexquery.Close()
+		endindex.Close()
+		return nil, err
+	}
+
+	return &SqlStore{inserter, timequery, indexquery, endindex, delkey}, nil
 }
 
 //Initializes an sqlite database to work with an SqlStore.
@@ -255,7 +272,8 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES (?,?,?,?);",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
-		"SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?")
+		"SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?",
+		"DELETE FROM timebatchtable WHERE Key=?")
 }
 
 //Initializes an sqlite database to work with an SqlStore.
@@ -309,7 +327,8 @@ func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES ($1,$2,$3,$4);",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndTime > $2 ORDER BY EndTime ASC;",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndIndex > $2 ORDER BY EndIndex ASC;",
-		"SELECT COALESCE(MAX(EndIndex),0) FROM timebatchtable WHERE Key=$1;")
+		"SELECT COALESCE(MAX(EndIndex),0) FROM timebatchtable WHERE Key=$1;",
+		"DELETE FROM timebatchtable WHERE Key=$1;")
 }
 
 //Uses the correct initializer for the given database driver. The err parameter allows daisychains of errors

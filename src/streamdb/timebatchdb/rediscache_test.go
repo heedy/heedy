@@ -258,6 +258,46 @@ func TestRedisCache(t *testing.T) {
 		t.Errorf("Error in batch queue: %v, %s", err, k)
 		return
 	}
+
+	//Lastly, make sure that deleting works
+	rc.Delete("hello/world")
+
+	dp, err = rc.GetMostRecent("hello/world")
+	if err != ERROR_REDIS_DNE {
+		t.Errorf("Get most recent failed: %v %v", err, dp)
+		return
+	}
+	dp, err = rc.GetOldest("hello/world")
+	if err != ERROR_REDIS_DNE {
+		t.Errorf("Get oldest failed: %v %v", err, dp)
+		return
+	}
+	tme, err := rc.GetEndTime("hello/world")
+	if err != nil || tme != math.MinInt64 {
+		t.Errorf("Get most recent failed: %v %v", err, tme)
+		return
+	}
+	tme, err = rc.GetStartTime("hello/world")
+	if err != nil || tme != math.MaxInt64 {
+		t.Errorf("Get oldest failed: %v %v", err, tme)
+		return
+	}
+
+	idx, err = rc.EndIndex("hello/world")
+	if idx != 0 || err != nil {
+		t.Errorf("Index get failed %d %v", idx, err)
+		return
+	}
+	idx, err = rc.StartIndex("hello/world")
+	if idx != 0 || err != nil {
+		t.Errorf("Index get failed %d %v", idx, err)
+		return
+	}
+	idx, err = rc.CacheLength("hello/world")
+	if idx != 0 || err != nil {
+		t.Errorf("get cache length failed %d %v", idx, err)
+		return
+	}
 }
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
