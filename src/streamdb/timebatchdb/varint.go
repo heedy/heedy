@@ -13,7 +13,7 @@ import (
 //For Fuck's sake, go, why do you make it so freaking annoying to read/write varints
 //Most of the stuff here is copied straight from go source code and modified not to be fail
 
-var overflow = errors.New("varint: 64-bit unsigned varint overflow")
+var errOverflow = errors.New("varint: 64-bit unsigned varint overflow")
 
 // ReadUvarint reads an encoded unsigned integer from r and returns it as a uint64.
 func ReadUvarint(r io.Reader) (uint64, error) {
@@ -30,7 +30,7 @@ func ReadUvarint(r io.Reader) (uint64, error) {
 		b = barr[0]
 		if b < 0x80 {
 			if i > 9 || i == 9 && b > 1 {
-				return x, overflow
+				return x, errOverflow
 			}
 			return x | uint64(b)<<s, nil
 		}

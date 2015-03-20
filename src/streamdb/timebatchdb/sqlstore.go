@@ -6,19 +6,22 @@ import (
 )
 
 var (
-	ERROR_DATABASE_DRIVER    = errors.New("Database driver not supported")
-	ERROR_DATABASE_CORRUPTED = errors.New("Database is corrupted!")
-	ERROR_WTF                = errors.New("Something is seriously wrong. A internal assertion failed.")
+	//ErrorDatabaseDriver is called when the database driver given when initializing is unrecognized
+	ErrorDatabaseDriver = errors.New("Database driver not supported")
+	//ErrorDatabaseCorrupted is returned when there is data loss or inconsistency in the database
+	ErrorDatabaseCorrupted = errors.New("Database is corrupted!")
+	//ErrorWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
+	ErrorWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
 )
 
 //The DataRange which handles retrieving data from an Sql database
-type SqlRange struct {
+type sqlRange struct {
 	r  *sql.Rows
 	da *DatapointArray
 }
 
-//Clears all resources used by the SqlRange
-func (s *SqlRange) Close() {
+//Clears all resources used by the sqlRange
+func (s *sqlRange) Close() {
 	if s.r != nil {
 		s.r.Close()
 		s.r = nil
@@ -26,13 +29,13 @@ func (s *SqlRange) Close() {
 }
 
 //A dummy function, it doesn't actually do anything.
-//It exists just so that SqlRange fits the DataRange interface
-func (s *SqlRange) Init() error {
+//It exists just so that sqlRange fits the DataRange interface
+func (s *sqlRange) Init() error {
 	return nil
 }
 
-//Returns the next datapoint from the SqlRange
-func (s *SqlRange) Next() (*Datapoint, error) {
+//Returns the next datapoint from the sqlRange
+func (s *sqlRange) Next() (*Datapoint, error) {
 	d, _ := s.da.Next() //Next on DatapointArray never returns error
 	if d != nil {
 		return d, nil
@@ -73,7 +76,7 @@ type SqlStore struct {
 	delkey     *sql.Stmt
 }
 
-//Closes all resources associated with the SqlStore.
+//Close all resources associated with the SqlStore.
 func (s *SqlStore) Close() {
 	s.inserter.Close()
 	s.timequery.Close()
@@ -82,7 +85,7 @@ func (s *SqlStore) Close() {
 	s.delkey.Close()
 }
 
-//Returns the first index point outside of the most recent datapointarray stored within the database.
+//GetEndIndex returns the first index point outside of the most recent datapointarray stored within the database.
 //In effect, if the datapoints in a key were all in one huge array, returns array.length
 //(not including the datapoints which are not yet committed to the SqlStore)
 func (s *SqlStore) GetEndIndex(key string) (ei uint64, err error) {
@@ -91,14 +94,14 @@ func (s *SqlStore) GetEndIndex(key string) (ei uint64, err error) {
 		return 0, err
 	}
 	if !rows.Next() {
-		return 0, ERROR_WTF //This should never happen
+		return 0, ErrorWTF //This should never happen
 	}
 	err = rows.Scan(&ei)
 	rows.Close()
 	return ei, err
 }
 
-//Inserts the given DatapointArray into the sql database given the startindex of the array for the key.
+//Insert the given DatapointArray into the sql database given the startindex of the array for the key.
 func (s *SqlStore) Insert(key string, startindex uint64, da *DatapointArray) error {
 	_, err := s.inserter.Exec(key, da.Datapoints[da.Len()-1].Timestamp(),
 		startindex+uint64(da.Len()), da.Bytes())
@@ -106,7 +109,7 @@ func (s *SqlStore) Insert(key string, startindex uint64, da *DatapointArray) err
 	return err
 }
 
-//Appends the given DatapointArray to the data stream for key
+//Append the given DatapointArray to the data stream for key
 func (s *SqlStore) Append(key string, dp *DatapointArray) error {
 	i, err := s.GetEndIndex(key)
 	if err != nil {
@@ -115,13 +118,13 @@ func (s *SqlStore) Append(key string, dp *DatapointArray) error {
 	return s.Insert(key, i, dp)
 }
 
-//Deletes all data associated with the given key in the database
+//Delete all data associated with the given key in the database
 func (s *SqlStore) Delete(key string) error {
 	_, err := s.delkey.Exec(key)
 	return err
 }
 
-//Returns an SqlRange of datapoints starting at the starttime
+//GetByTime returns a DataRange of datapoints starting at the starttime
 func (s *SqlStore) GetByTime(key string, starttime int64) (dr DataRange, startindex uint64, err error) {
 	rows, err := s.timequery.Query(key, starttime)
 	if err != nil {
@@ -147,13 +150,13 @@ func (s *SqlStore) GetByTime(key string, starttime int64) (dr DataRange, startin
 	//da := DatapointArrayFromCompressedBytes(data).TStart(starttime)
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
-		return EmptyRange{}, endindex, ERROR_DATABASE_CORRUPTED
+		return EmptyRange{}, endindex, ErrorDatabaseCorrupted
 	}
 
-	return &SqlRange{rows, da}, endindex - uint64(da.Len()), nil
+	return &sqlRange{rows, da}, endindex - uint64(da.Len()), nil
 }
 
-//Returns an SqlRange of datapoints starting at the nearest dataindex to the given startindex
+//GetByIndex returns a DataRange of datapoints starting at the nearest dataindex to the given startindex
 func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, dataindex uint64, err error) {
 	rows, err := s.indexquery.Query(key, startindex)
 	if err != nil {
@@ -179,7 +182,7 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
-		return EmptyRange{}, endindex, ERROR_DATABASE_CORRUPTED
+		return EmptyRange{}, endindex, ErrorDatabaseCorrupted
 	}
 
 	//Lastly, we start the DatapointArray from the correct index
@@ -190,30 +193,30 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 		da = NewDatapointArray(da.Datapoints[da.Len()-int(fromend):])
 	}
 
-	return &SqlRange{rows, da}, endindex - uint64(da.Len()), nil
+	return &sqlRange{rows, da}, endindex - uint64(da.Len()), nil
 }
 
-//Sets up the inserts (it assumes that the database was already prepared)
-func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s string, delkey_s string) (*SqlStore, error) {
-	inserter, err := db.Prepare(insert_s)
+//prepareSqlStore sets up the inserts (it assumes that the database was already prepared)
+func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexqueryStatement, endindexStatement string, delkeyStatement string) (*SqlStore, error) {
+	inserter, err := db.Prepare(insertStatement)
 	if err != nil {
 		return nil, err
 	}
 
-	timequery, err := db.Prepare(timequery_s)
+	timequery, err := db.Prepare(timequeryStatement)
 	if err != nil {
 		inserter.Close()
 		return nil, err
 	}
 
-	indexquery, err := db.Prepare(indexquery_s)
+	indexquery, err := db.Prepare(indexqueryStatement)
 	if err != nil {
 		inserter.Close()
 		timequery.Close()
 		return nil, err
 	}
 
-	endindex, err := db.Prepare(endindex_s)
+	endindex, err := db.Prepare(endindexStatement)
 	if err != nil {
 		inserter.Close()
 		timequery.Close()
@@ -221,7 +224,7 @@ func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s
 		return nil, err
 	}
 
-	delkey, err := db.Prepare(delkey_s)
+	delkey, err := db.Prepare(delkeyStatement)
 	if err != nil {
 		inserter.Close()
 		timequery.Close()
@@ -233,7 +236,7 @@ func prepareSqlStore(db *sql.DB, insert_s, timequery_s, indexquery_s, endindex_s
 	return &SqlStore{inserter, timequery, indexquery, endindex, delkey}, nil
 }
 
-//Initializes an sqlite database to work with an SqlStore.
+//OpenSQLiteStore initializes an sqlite database to work with an SqlStore.
 func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
@@ -276,7 +279,7 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 		"DELETE FROM timebatchtable WHERE Key=?")
 }
 
-//Initializes an sqlite database to work with an SqlStore.
+//OpenPostgresStore initializes a postgres database to work with an SqlStore.
 func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
@@ -331,7 +334,7 @@ func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 		"DELETE FROM timebatchtable WHERE Key=$1;")
 }
 
-//Uses the correct initializer for the given database driver. The err parameter allows daisychains of errors
+//OpenSqlStore uses the correct initializer for the given database driver. The err parameter allows daisychains of errors
 func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore, error) {
 	if err != nil {
 		return nil, err
@@ -342,5 +345,5 @@ func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore, error) {
 	case "postgres":
 		return OpenPostgresStore(db)
 	}
-	return nil, ERROR_DATABASE_DRIVER
+	return nil, ErrorDatabaseDriver
 }

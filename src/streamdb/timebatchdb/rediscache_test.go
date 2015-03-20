@@ -60,12 +60,12 @@ func TestRedisCache(t *testing.T) {
 	rc.Clear()
 
 	dp, err := rc.GetMostRecent("hello/world")
-	if err != ERROR_REDIS_DNE {
+	if err != ErrorRedisDNE {
 		t.Errorf("Get most recent failed: %v %v", err, dp)
 		return
 	}
 	dp, err = rc.GetOldest("hello/world")
-	if err != ERROR_REDIS_DNE {
+	if err != ErrorRedisDNE {
 		t.Errorf("Get oldest failed: %v %v", err, dp)
 		return
 	}
@@ -148,7 +148,7 @@ func TestRedisCache(t *testing.T) {
 	}
 
 	dpa, idx, err = rc.BatchGet("hello/world", 20)
-	if err != ERROR_REDIS_WRONGSIZE || dpa == nil || dpa.Len() != 9 || idx != 0 {
+	if err != ErrorRedisWrongSize || dpa == nil || dpa.Len() != 9 || idx != 0 {
 		t.Errorf("Get too big error %d %v", idx, err)
 		return
 	}
@@ -263,12 +263,12 @@ func TestRedisCache(t *testing.T) {
 	rc.Delete("hello/world")
 
 	dp, err = rc.GetMostRecent("hello/world")
-	if err != ERROR_REDIS_DNE {
+	if err != ErrorRedisDNE {
 		t.Errorf("Get most recent failed: %v %v", err, dp)
 		return
 	}
 	dp, err = rc.GetOldest("hello/world")
-	if err != ERROR_REDIS_DNE {
+	if err != ErrorRedisDNE {
 		t.Errorf("Get oldest failed: %v %v", err, dp)
 		return
 	}

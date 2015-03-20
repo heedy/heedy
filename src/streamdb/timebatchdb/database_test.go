@@ -50,7 +50,7 @@ func TestDatabaseInsert(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	if db.Insert("hello", CreateDatapointArray(timestamps, data, "")) != ERROR_UNORDERED {
+	if db.Insert("hello", CreateDatapointArray(timestamps, data, "")) != ErrorUnordered {
 		t.Errorf("Wrong error on insert: %v", err)
 		return
 	}
@@ -64,7 +64,7 @@ func TestDatabaseInsert(t *testing.T) {
 		t.Errorf("Data length not correct %v %v", l, err)
 	}
 	err = db.Insert("hello", CreateDatapointArray(timestamps[:1], data[:1], ""))
-	if err != ERROR_TIMESTAMP {
+	if err != ErrorTimestamp {
 		t.Errorf("wrong error on insert: %v", err)
 		return
 	}
@@ -208,12 +208,12 @@ func TestDatabaseRead(t *testing.T) {
 		return
 	}
 	_, err = db.GetIndexRange("hello", 0, 0)
-	if err != ERROR_USERFAIL {
+	if err != ErrorUserFail {
 		t.Errorf("Get by index range failure: %v", err)
 		return
 	}
 	_, err = db.GetTimeRange("hello", 0, 0)
-	if err != ERROR_USERFAIL {
+	if err != ErrorUserFail {
 		t.Errorf("Get by index range failure: %v", err)
 		return
 	}

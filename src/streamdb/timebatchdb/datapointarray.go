@@ -6,20 +6,20 @@ import (
 	"container/list"
 )
 
-//Represents an array of Datapoints. It can be used as a DataRange, and has methods for reading and writing
+//DatapointArray represents an array of Datapoints. It can be used as a DataRange, and has methods for reading and writing
 //from/to binary.
 type DatapointArray struct {
 	Datapoints []Datapoint //The array of datapoints
 	array      []byte      //A (possibly nil) single byte array which holds all of the datapoints
-	iloc       int         //Allows to make this a DataRange object
+	rangeindex int         //Allows to make this a DataRange object
 }
 
-//The number of datapoints contained in the array
+//Len gives the number of datapoints contained in the array
 func (d *DatapointArray) Len() int {
 	return len(d.Datapoints)
 }
 
-//Total size of the array in bytes (uncompressed)
+//Size returns total size of the array in bytes (uncompressed)
 func (d *DatapointArray) Size() int {
 	if d.array != nil {
 		return len(d.array)
@@ -31,30 +31,30 @@ func (d *DatapointArray) Size() int {
 	return size
 }
 
-//Dummy function - allows datapointArray to conform to the DataRange interface. It doesn't actually do anything.
+//Init is a dummy function - it allows datapointArray to conform to the DataRange interface. It doesn't actually do anything.
 func (d *DatapointArray) Init() error {
 	return nil
 }
 
-//DataRange function - allows DatapointArray to conform to the DataRange interface.
+//Close is a DataRange function - allows DatapointArray to conform to the DataRange interface.
 //The DatapointArray doesn't need closing - this method resets the DataRange iterator.
 func (d *DatapointArray) Close() {
-	d.iloc = 0
+	d.rangeindex = 0
 }
 
-//Allows to use DatapointArray as a DataRange - starts from the first datapoint, and
+//Next allows to use DatapointArray as a DataRange - starts from the first datapoint, and
 //successively returns datapoint ptrs until there are none left, at which point it returns nil.
 //It is an iterator.
 func (d *DatapointArray) Next() (*Datapoint, error) {
-	if d.iloc >= d.Len() {
+	if d.rangeindex >= d.Len() {
 		return nil, nil
 	}
-	dp := &d.Datapoints[d.iloc]
-	d.iloc++
+	dp := &d.Datapoints[d.rangeindex]
+	d.rangeindex++
 	return dp, nil
 }
 
-//Checks if the DatapointArray is ordered with strictly increasing timestamps
+//IsTimestampOrdered checks if the DatapointArray is ordered with strictly increasing timestamps
 func (d *DatapointArray) IsTimestampOrdered() bool {
 	if d.Len() <= 1 {
 		return true
@@ -70,7 +70,7 @@ func (d *DatapointArray) IsTimestampOrdered() bool {
 	return true
 }
 
-//Returns the timestamps associated with the index range
+//TimestampIRange returns the timestamps associated with the index range
 func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []int64) {
 	if end > d.Len() {
 		end = d.Len()
@@ -85,12 +85,12 @@ func (d *DatapointArray) TimestampIRange(start int, end int) (timestamps []int64
 	return timestamps
 }
 
-//Returns the array of timestamps
+//Timestamps returns the array of timestamps
 func (d *DatapointArray) Timestamps() (timestamps []int64) {
 	return d.TimestampIRange(0, d.Len())
 }
 
-//Returns the data associated with the index range
+//DataIRange returns the data associated with the index range
 func (d *DatapointArray) DataIRange(start int, end int) (data [][]byte) {
 	if end > d.Len() {
 		end = d.Len()
@@ -105,17 +105,17 @@ func (d *DatapointArray) DataIRange(start int, end int) (data [][]byte) {
 	return data
 }
 
-//Returns the array of data
+//Data returns the array of data for all the datapoints in the array
 func (d *DatapointArray) Data() (data [][]byte) {
 	return d.DataIRange(0, d.Len())
 }
 
-//Returns the array of timestamps and the array of associated data
+//Get returns the array of timestamps and the array of associated data
 func (d *DatapointArray) Get() (timestamps []int64, data [][]byte) {
 	return d.Timestamps(), d.Data()
 }
 
-//Find the index of the first datapoint in the array which has a timestamp strictly greater
+//FindTimeIndex finds the index of the first datapoint in the array which has a timestamp strictly greater
 //than the given reference timestamp.
 //If no datapoints fit this, returns -1
 //(ie, no datapoint in array has a timestamp greater than the given time)
@@ -155,7 +155,7 @@ func (d *DatapointArray) FindTimeIndex(timestamp int64) int {
 	return rightbound
 }
 
-//Returns a DatapointArray which has the given starting bound (like DatapointTRange, but without upperbound)
+//TStart returns a DatapointArray which has the given starting bound (like DatapointTRange, but without upperbound)
 func (d *DatapointArray) TStart(timestamp int64) *DatapointArray {
 	i := d.FindTimeIndex(timestamp)
 	if i == -1 {
@@ -164,7 +164,7 @@ func (d *DatapointArray) TStart(timestamp int64) *DatapointArray {
 	return NewDatapointArray(d.Datapoints[i:])
 }
 
-//Returns the DatapointArray of datapoints which fit within the time range:
+//DatapointTRange returns the DatapointArray of datapoints which fit within the time range:
 //  (timestamp1,timestamp2]
 func (d *DatapointArray) DatapointTRange(timestamp1 int64, timestamp2 int64) *DatapointArray {
 	i1 := d.FindTimeIndex(timestamp1)
@@ -179,20 +179,23 @@ func (d *DatapointArray) DatapointTRange(timestamp1 int64, timestamp2 int64) *Da
 	return NewDatapointArray(d.Datapoints[i1:i2])
 }
 
+//DataTRange returns the data array of datapoint between the two given timestamps
 func (d *DatapointArray) DataTRange(timestamp1 int64, timestamp2 int64) [][]byte {
 	return d.DatapointTRange(timestamp1, timestamp2).Data()
 }
+
+//TimestampTRange returns the array of timestamps of dataponits between the two given timestamps
 func (d *DatapointArray) TimestampTRange(timestamp1 int64, timestamp2 int64) []int64 {
 	return d.DatapointTRange(timestamp1, timestamp2).Timestamps()
 }
 
-//Returns the array of timestamps and data which fit in the given time range:
+//GetTRange returns the array of timestamps and data which fit in the given time range:
 //  (timestamp1,timestamp2]
 func (d *DatapointArray) GetTRange(timestamp1 int64, timestamp2 int64) ([]int64, [][]byte) {
 	return d.DatapointTRange(timestamp1, timestamp2).Get()
 }
 
-//Returns the byte array associated with the entire page of datapoints (uncompressed)
+//Bytes returns the byte array associated with the entire page of datapoints (uncompressed)
 func (d *DatapointArray) Bytes() []byte {
 	if d.array != nil {
 		return d.array
@@ -201,17 +204,17 @@ func (d *DatapointArray) Bytes() []byte {
 	arr := make([]byte, d.Size())
 	n := 0
 	for i := 0; i < len(d.Datapoints); i++ {
-		num_written := copy(arr[n:], d.Datapoints[i].Bytes())
+		numWritten := copy(arr[n:], d.Datapoints[i].Bytes())
 		//In the interest of saving memory, have the datapoints refer to slices of the newly created
 		//byte array, rather than having multiple copies of the same data
-		d.Datapoints[i] = Datapoint{arr[n : n+num_written]}
-		n += num_written
+		d.Datapoints[i] = Datapoint{arr[n : n+numWritten]}
+		n += numWritten
 	}
 	d.array = arr
 	return arr
 }
 
-//Returns the gzipped bytes of the entire array of datapoints
+//CompressedBytes returns the gzipped bytes of the entire array of datapoints
 func (d *DatapointArray) CompressedBytes() []byte {
 	var b bytes.Buffer
 	w := gzip.NewWriter(&b)
@@ -220,12 +223,12 @@ func (d *DatapointArray) CompressedBytes() []byte {
 	return b.Bytes()
 }
 
-//Creates a DatapointArray given an actual array of Datapoint
+//NewDatapointArray creates a DatapointArray given an actual array of Datapoint
 func NewDatapointArray(d []Datapoint) *DatapointArray {
 	return &DatapointArray{d, nil, 0}
 }
 
-//Creates DatapointArray from the raw data - it is assumed that there is only one key for the array (which is an
+//CreateDatapointArray creates DatapointArray from the raw data - it is assumed that there is only one key for the array (which is an
 //assumption that is valid for the major use case of timebatchdb)
 func CreateDatapointArray(timestamps []int64, data [][]byte, key string) *DatapointArray {
 	arr := make([]Datapoint, len(timestamps))
@@ -236,7 +239,7 @@ func CreateDatapointArray(timestamps []int64, data [][]byte, key string) *Datapo
 	return NewDatapointArray(arr)
 }
 
-//Creates a datapoint array from its associated bytes. Note that the Datapoint array assumes
+//DatapointArrayFromBytes creates a datapoint array from its associated bytes. Note that the Datapoint array assumes
 //that the bytes are correctly sized. The DatapointArray does not actually store its size, so
 //this function just keeps trying to read data until there are no Bytes left.
 func DatapointArrayFromBytes(data []byte) *DatapointArray {
@@ -257,7 +260,7 @@ func DatapointArrayFromBytes(data []byte) *DatapointArray {
 	return dp
 }
 
-//Given a linked list containing Datapoint, create the DatapointArray
+//DatapointArrayFromList creates a DatapointArray given a linked list containing Datapoint
 func DatapointArrayFromList(l *list.List) *DatapointArray {
 	//Now create the points array
 	points := make([]Datapoint, l.Len())
@@ -271,8 +274,7 @@ func DatapointArrayFromList(l *list.List) *DatapointArray {
 	return &DatapointArray{points, nil, 0}
 }
 
-//Given the correctly sized byte array for the compressed representation of a DatapointArray,
-//decompress it.
+//DatapointArrayFromCompressedBytes decmpresses the correctly sized byte array for the compressed representation of a DatapointArray
 func DatapointArrayFromCompressedBytes(cdata []byte) *DatapointArray {
 	r, _ := gzip.NewReader(bytes.NewBuffer(cdata))
 
@@ -288,7 +290,7 @@ func DatapointArrayFromCompressedBytes(cdata []byte) *DatapointArray {
 	return DatapointArrayFromList(l)
 }
 
-//Given a DataRange, creates a DatapointArray based upon it. Closes the DataRAnge when done
+//DatapointArrayFromDataRange creates a DatapointArray based upon a given DataRange. Closes the DataRange when done
 func DatapointArrayFromDataRange(dr DataRange) (*DatapointArray, error) {
 	l := list.New()
 

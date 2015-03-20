@@ -16,10 +16,15 @@ type DataRange interface {
 //It is the DataRange equivalent of nil
 type EmptyRange struct{}
 
+//Close does absolutely nothing
 func (r EmptyRange) Close() {}
+
+//Init just returns nil
 func (r EmptyRange) Init() error {
 	return nil
 }
+
+//Next always just returns nil,nil
 func (r EmptyRange) Next() (*Datapoint, error) {
 	return nil, nil
 }
@@ -29,6 +34,7 @@ type RangeList struct {
 	rlist *list.List //A list of DataRange objects
 }
 
+//Init initializes the RangeList as well as the first element in the actual range list
 func (r *RangeList) Init() error {
 	if r.rlist.Len() != 0 {
 		//Initialize the first in the list
@@ -37,6 +43,7 @@ func (r *RangeList) Init() error {
 	return nil
 }
 
+//Close calls close on all elements of the RangeList, and closes itself.
 func (r *RangeList) Close() {
 	if r.rlist.Len() > 0 {
 		//Closes all child DataRanges
@@ -49,7 +56,7 @@ func (r *RangeList) Close() {
 	}
 }
 
-//Returns the next available datapoint value from the list, initializing and closing the necessary stuff
+//Next returns the next available datapoint value from the list, initializing and closing the necessary stuff
 func (r *RangeList) Next() (*Datapoint, error) {
 	if r.rlist.Len() == 0 {
 		return nil, nil
@@ -78,12 +85,12 @@ func (r *RangeList) Next() (*Datapoint, error) {
 
 }
 
-//Appends to the end of the rangelist an uninitialized datarange
+//Append to the end of the rangelist an uninitialized datarange
 func (r *RangeList) Append(d DataRange) {
 	r.rlist.PushBack(d)
 }
 
-//Creates empty RangeList
+//NewRangeList creates empty RangeList
 func NewRangeList() *RangeList {
 	return &RangeList{list.New()}
 }
@@ -97,14 +104,18 @@ type TimeRange struct {
 	endtime   int64     //The time at which to stop returning datapoints
 }
 
+//Close closes the internal DataRange
 func (r *TimeRange) Close() {
 	r.dr.Close()
 }
 
+//Init runs Init on the internal DataRange
 func (r *TimeRange) Init() error {
 	return r.dr.Init()
 }
 
+//Next returns the next datapoint in sequence from the underlying DataRange, so long as it is within the
+//correct timestamp bounds
 func (r *TimeRange) Next() (*Datapoint, error) {
 	dp, err := r.dr.Next()
 	//Skip datapoints before the starttime
@@ -119,24 +130,29 @@ func (r *TimeRange) Next() (*Datapoint, error) {
 	return dp, err
 }
 
+//NewTimeRange creates a time range given the time range of valid datapoints
 func NewTimeRange(dr DataRange, starttime int64, endtime int64) *TimeRange {
 	return &TimeRange{dr, starttime, endtime}
 }
 
-//Given a DataRange, it returns only the firt given number of datapoints (with an optional skip param)
+//NumRange returns only the first given number of datapoints (with an optional skip param) from a DataRange
 type NumRange struct {
 	dr      DataRange
 	numleft uint64 //The number of dtapoints left to return
 }
 
+//Close closes the internal DataRange
 func (r *NumRange) Close() {
 	r.dr.Close()
 }
 
+//Init runs Init on the internal DataRange
 func (r *NumRange) Init() error {
 	return r.dr.Init()
 }
 
+//Next returns the next datapoint from the underlying DataRange so long as the datapoint is within the
+//amonut of datapoints to return.
 func (r *NumRange) Next() (*Datapoint, error) {
 	if r.numleft == 0 {
 		return nil, nil
@@ -156,7 +172,7 @@ func (r *NumRange) Skip(num int) error {
 	return nil
 }
 
-//Gets a new NumRange which will return up to the given amount of datapoints.
+//NewNumRange initializes a new NumRange which will return up to the given amount of datapoints.
 func NewNumRange(dr DataRange, datapoints uint64) *NumRange {
 	return &NumRange{dr, datapoints}
 }

@@ -9,11 +9,14 @@ import (
 )
 
 var (
-	ERROR_REDIS_WRONGSIZE = errors.New("Data array sized incorrectly")
-	ERROR_REDIS_DNE       = errors.New("The key does not exist")
+	//ErrorRedisWrongSize means that there might be corruption in the database. The functions detected a DatapointArray
+	//returned from cache was of inconsistent size.
+	ErrorRedisWrongSize = errors.New("Data array sized incorrectly")
+	//ErrorRedisDNE is thrown when get is run on a key that does not exist in the database yet
+	ErrorRedisDNE = errors.New("The key does not exist")
 )
 
-//The redis-based cache of data which allows buffering of batches before committing to timebatchdb
+//RedisCache is the redis-based cache of data which allows buffering of batches before committing to a long-term store
 type RedisCache struct {
 	cpool *redis.Pool //The redis connection pool
 }
@@ -31,14 +34,14 @@ func (rc *RedisCache) Clear() {
 	c.Close()
 }
 
-//Get the index at which the key data currently ends. This is equivalent to querying the total number of datapoints
+//EndIndex gets the index at which the key data currently ends. This is equivalent to querying the total number of datapoints
 //for the given key in the entire timebatchdb
 func (rc *RedisCache) EndIndex(key string) (endindex uint64, err error) {
 	si, cl, err := rc.GetIndices(key)
 	return si + cl, err
 }
 
-//Get the index at which redis caching begins. This basically allows to check if all datapoints of the query can be
+//StartIndex gets the index at which redis caching begins. This basically allows to check if all datapoints of the query can be
 //satisfied by redis, or if querying the database is necessary
 func (rc *RedisCache) StartIndex(key string) (startindex uint64, err error) {
 	c := rc.cpool.Get()
@@ -50,14 +53,14 @@ func (rc *RedisCache) StartIndex(key string) (startindex uint64, err error) {
 	return startindex, err
 }
 
-//Returns the number of datapoints cached for the given key
+//CacheLength returns the number of datapoints cached for the given key
 func (rc *RedisCache) CacheLength(key string) (clen uint64, err error) {
 	c := rc.cpool.Get()
 	defer c.Close()
 	return redis.Uint64(c.Do("LLEN", key))
 }
 
-//Returns the startindex and the number of datapoints currently cached in redis
+//GetIndices returns the startindex and the number of datapoints currently cached in redis
 func (rc *RedisCache) GetIndices(key string) (startindex uint64, cachelength uint64, err error) {
 	c := rc.cpool.Get()
 	c.Send("MULTI")
@@ -72,13 +75,13 @@ func (rc *RedisCache) GetIndices(key string) (startindex uint64, cachelength uin
 	return startindex, cachelength, err
 }
 
-//Gets the most recently inserted datapoint from the cache
+//GetMostRecent gets the most recently inserted datapoint from the cache
 func (rc *RedisCache) GetMostRecent(key string) (Datapoint, error) {
 	c := rc.cpool.Get()
 	v, err := redis.Values(c.Do("LRANGE", key, -1, -1))
 	c.Close()
 	if len(v) == 0 {
-		return Datapoint{}, ERROR_REDIS_DNE
+		return Datapoint{}, ErrorRedisDNE
 	}
 	dbytes, err := redis.Bytes(v[0], err)
 	if err != nil {
@@ -88,7 +91,7 @@ func (rc *RedisCache) GetMostRecent(key string) (Datapoint, error) {
 	return dp, nil
 }
 
-//Gets the time of the last inserted datapoint for the given key
+//GetEndTime gets the time of the last inserted datapoint for the given key
 func (rc *RedisCache) GetEndTime(key string) (t int64, err error) {
 	c := rc.cpool.Get()
 	t, err = redis.Int64(c.Do("GET", "{T}>"+key))
@@ -99,13 +102,13 @@ func (rc *RedisCache) GetEndTime(key string) (t int64, err error) {
 	return t, err
 }
 
-//Gets the oldest datapoint existing in the cache
+//GetOldest gets the oldest datapoint existing in the cache
 func (rc *RedisCache) GetOldest(key string) (Datapoint, error) {
 	c := rc.cpool.Get()
 	v, err := redis.Values(c.Do("LRANGE", key, 0, 0))
 	c.Close()
 	if len(v) == 0 {
-		return Datapoint{}, ERROR_REDIS_DNE
+		return Datapoint{}, ErrorRedisDNE
 	}
 	dbytes, err := redis.Bytes(v[0], err)
 	if err != nil {
@@ -115,10 +118,10 @@ func (rc *RedisCache) GetOldest(key string) (Datapoint, error) {
 	return dp, nil
 }
 
-//Gets the timestamp of the oldest datapoint that exists in the cache
+//GetStartTime gets the timestamp of the oldest datapoint that exists in the cache
 func (rc *RedisCache) GetStartTime(key string) (t int64, err error) {
 	dp, err := rc.GetOldest(key)
-	if err == ERROR_REDIS_DNE {
+	if err == ErrorRedisDNE {
 		return math.MaxInt64, nil //We want to bound the starttime
 	} else if err != nil {
 		return 0, err
@@ -139,7 +142,7 @@ func (rc *RedisCache) Insert(key string, da *DatapointArray) (keysize int, err e
 	return keysize, err
 }
 
-//This is a custom command made to speed up inserts of the full database. It is equivalent to running GetEndTime
+//GetEndTimeAndCacheLength is a custom command made to speed up inserts of the full database. It is equivalent to running GetEndTime
 //and CacheLength in one command
 func (rc *RedisCache) GetEndTimeAndCacheLength(key string) (t int64, keysize int, err error) {
 	c := rc.cpool.Get()
@@ -157,7 +160,7 @@ func (rc *RedisCache) GetEndTimeAndCacheLength(key string) (t int64, keysize int
 	return t, keysize, err
 }
 
-//This is a custom command made to speed up inserts of the full database. It is equivalent to calling
+//InsertAndBatchPush is a custom command made to speed up inserts of the full database. It is equivalent to calling
 //Insert and then BatchPushMany
 //Insert the DatapointArray to the end of the cache for the given key
 func (rc *RedisCache) InsertAndBatchPush(key string, da *DatapointArray, pushnum int) (err error) {
@@ -175,12 +178,12 @@ func (rc *RedisCache) InsertAndBatchPush(key string, da *DatapointArray, pushnum
 	return err
 }
 
-//Adds the given key to the ready-queue - the queue of keys that have a batch ready to dump to disk storage
+//BatchPush adds the given key to the ready-queue - the queue of keys that have a batch ready to dump to disk storage
 func (rc *RedisCache) BatchPush(key string) error {
 	return rc.BatchPushMany(key, 1)
 }
 
-//Same as BatchPush, but actually pushes a key the given number of times.
+//BatchPushMany works same as BatchPush, but actually pushes a key the given number of times.
 func (rc *RedisCache) BatchPushMany(key string, num int) error {
 	c := rc.cpool.Get()
 	for i := 0; i < num; i++ {
@@ -191,7 +194,7 @@ func (rc *RedisCache) BatchPushMany(key string, num int) error {
 	return err
 }
 
-//Waits until there is a key in the ready-queue, and pops it
+//BatchWait waits until there is a key in the ready-queue, and pops it
 func (rc *RedisCache) BatchWait() (key string, err error) {
 	c := rc.cpool.Get()
 	keys, err := redis.Strings(c.Do("BRPOP", "{{READY_Q}}", 0)) //Blocking pop without timeout
@@ -202,7 +205,7 @@ func (rc *RedisCache) BatchWait() (key string, err error) {
 	return keys[1], nil
 }
 
-//Mark the most recent n datapoints for the given key as "processed", and delete them from the cache.
+//BatchRemove marks the most recent n datapoints for the given key as "processed", and delete them from the cache.
 //This means that the datapoints no longer need to be in the cache - they are already saved and committed
 //to long term storage. This also increments the index marker in redis
 func (rc *RedisCache) BatchRemove(key string, batchsize int) error {
@@ -214,7 +217,7 @@ func (rc *RedisCache) BatchRemove(key string, batchsize int) error {
 	return err
 }
 
-//Returns the last batchsize elements from the cache of the given key.
+//BatchGet returns the last batchsize elements from the cache of the given key.
 func (rc *RedisCache) BatchGet(key string, batchsize int) (da *DatapointArray, startindex uint64, err error) {
 	c := rc.cpool.Get()
 	defer c.Close()
@@ -241,17 +244,17 @@ func (rc *RedisCache) BatchGet(key string, batchsize int) (da *DatapointArray, s
 	da = NewDatapointArray(dpa)
 
 	if batchsize > 0 && da.Len() < batchsize {
-		return da, startindex, ERROR_REDIS_WRONGSIZE
+		return da, startindex, ErrorRedisWrongSize
 	}
 	return da, startindex, nil
 }
 
-//Returns all of the elements in the cache for the given key
+//Get returns all of the elements in the cache for the given key
 func (rc *RedisCache) Get(key string) (da *DatapointArray, startindex uint64, err error) {
 	return rc.BatchGet(key, 0)
 }
 
-//Get the cache starting from the given index
+//GetByIndex returns the cache starting from the given index
 func (rc *RedisCache) GetByIndex(key string, index uint64) (dr DataRange, startindex uint64, err error) {
 	dp, si, err := rc.Get(key)
 	if err != nil || si >= index {
@@ -262,7 +265,7 @@ func (rc *RedisCache) GetByIndex(key string, index uint64) (dr DataRange, starti
 	return NewDatapointArray(dp.Datapoints[index-si:]), index, nil
 }
 
-//Deletes all data associated with the given key stored within the cache.
+//Delete all data associated with the given key stored within the cache.
 func (rc *RedisCache) Delete(key string) error {
 	c := rc.cpool.Get()
 	defer c.Close()
@@ -270,7 +273,7 @@ func (rc *RedisCache) Delete(key string) error {
 	return err
 }
 
-//Opens the redis cache given the URL to the server. The err parameter allows daisychains of errors
+//OpenRedisCache opens the redis cache given the URL to the server. The err parameter allows daisychains of errors
 func OpenRedisCache(url string, err error) (*RedisCache, error) {
 	if err != nil {
 		return nil, err

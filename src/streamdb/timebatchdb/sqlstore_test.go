@@ -336,7 +336,7 @@ func TestNoDriver(t *testing.T) {
 		return
 	}
 	_, err = OpenSqlStore(nil, "notavaliddriver", nil)
-	if err != ERROR_DATABASE_DRIVER {
+	if err != ErrorDatabaseDriver {
 		t.Errorf("Bad database driver reaction")
 		return
 	}
