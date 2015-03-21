@@ -12,7 +12,4 @@ script:
     - make test
 
 notifications:
-    email:
-        recipients:
-            - daniel@dkumor.com
-            - joseph@josephlewis.net
+    slack: connectordb:3YIEG5E8KpOqaNbScZv0Rs0r
