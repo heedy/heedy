@@ -326,6 +326,34 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 		t.Errorf("get failed %v %v", si, err)
 		return
 	}
+
+	err = s.Append("hello/world", CreateDatapointArray(timestamps, data, ""))
+	if err != nil {
+		t.Errorf("Error in append: %s", err)
+		return
+	}
+	err = s.DeletePrefix("hi")
+	if err != nil {
+		t.Errorf("DeletePrefix failed: %v", err)
+	}
+
+	i, err = s.GetEndIndex("hello/world")
+	if err != nil || i != 9 {
+		t.Errorf("EndIndex of nonempty failed: %d %s", i, err)
+		return
+	}
+
+	err = s.DeletePrefix("hello")
+	if err != nil {
+		t.Errorf("DeletePrefix failed: %v", err)
+	}
+
+	//Check returning empties
+	i, err = s.GetEndIndex("hello/world")
+	if err != nil || i != 0 {
+		t.Errorf("EndIndex of deleted failed: %d %s", i, err)
+		return
+	}
 }
 
 func TestNoDriver(t *testing.T) {

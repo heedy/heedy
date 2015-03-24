@@ -102,6 +102,15 @@ func (d *Database) Delete(key string) error {
 	return d.store.Delete(key)
 }
 
+//DeletePrefix deletes all keys which start with prefix from the database
+func (d *Database) DeletePrefix(prefix string) error {
+	err := d.cache.DeletePrefix(prefix)
+	if err != nil {
+		return err
+	}
+	return d.store.DeletePrefix(prefix)
+}
+
 //Len gets the total number of datapoints for the given key
 func (d *Database) Len(key string) (uint64, error) {
 	return d.cache.EndIndex(key)

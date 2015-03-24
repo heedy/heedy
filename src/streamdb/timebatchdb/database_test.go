@@ -328,6 +328,34 @@ func TestDatabaseDelete(t *testing.T) {
 		t.Errorf("Next on deleted: %v %v", err, dp)
 		return
 	}
+
+	err = db.Insert("hello/world", CreateDatapointArray(timestamps, data, ""))
+	if err != nil {
+		t.Errorf("error on insert: %v", err)
+		return
+	}
+	//Write to the sql database
+	err = db.WriteDatabaseIteration()
+	if err != nil {
+		t.Errorf("error on write: %v", err)
+		return
+	}
+
+	err = db.DeletePrefix("hello/")
+	if err != nil {
+		t.Errorf("Failed to delete %v", err)
+	}
+	dr, err = db.GetIndexRange("hello/world", 0, 6)
+	dr.Init()
+	if err != nil {
+		t.Errorf("Get deleted by index range failure: %v", err)
+		return
+	}
+	dp, err = dr.Next()
+	if dp != nil || err != nil {
+		t.Errorf("Next on deleted: %v %v", err, dp)
+		return
+	}
 }
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range from sqlite in chunks of 100

@@ -74,6 +74,7 @@ type SqlStore struct {
 	indexquery *sql.Stmt
 	endindex   *sql.Stmt
 	delkey     *sql.Stmt
+	delprefix  *sql.Stmt
 }
 
 //Close all resources associated with the SqlStore.
@@ -121,6 +122,13 @@ func (s *SqlStore) Append(key string, dp *DatapointArray) error {
 //Delete all data associated with the given key in the database
 func (s *SqlStore) Delete(key string) error {
 	_, err := s.delkey.Exec(key)
+	return err
+}
+
+//DeletePrefix removes all data associated with the given prefix in the database. It allows to delete
+//data which has keys ordered in a heirarchy.
+func (s *SqlStore) DeletePrefix(prefix string) error {
+	_, err := s.delprefix.Exec(prefix + "%")
 	return err
 }
 
@@ -197,7 +205,8 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 }
 
 //prepareSqlStore sets up the inserts (it assumes that the database was already prepared)
-func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexqueryStatement, endindexStatement string, delkeyStatement string) (*SqlStore, error) {
+func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexqueryStatement,
+	endindexStatement, delkeyStatement, delprefixStatement string) (*SqlStore, error) {
 	inserter, err := db.Prepare(insertStatement)
 	if err != nil {
 		return nil, err
@@ -233,7 +242,17 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 		return nil, err
 	}
 
-	return &SqlStore{inserter, timequery, indexquery, endindex, delkey}, nil
+	delprefix, err := db.Prepare(delprefixStatement)
+	if err != nil {
+		inserter.Close()
+		timequery.Close()
+		indexquery.Close()
+		endindex.Close()
+		delkey.Close()
+		return nil, err
+	}
+
+	return &SqlStore{inserter, timequery, indexquery, endindex, delkey, delprefix}, nil
 }
 
 //OpenSQLiteStore initializes an sqlite database to work with an SqlStore.
@@ -276,7 +295,8 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
 		"SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?",
-		"DELETE FROM timebatchtable WHERE Key=?")
+		"DELETE FROM timebatchtable WHERE Key=?",
+		"DELETE FROM timebatchtable WHERE Key LIKE ?")
 }
 
 //OpenPostgresStore initializes a postgres database to work with an SqlStore.
@@ -331,7 +351,8 @@ func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndTime > $2 ORDER BY EndTime ASC;",
 		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndIndex > $2 ORDER BY EndIndex ASC;",
 		"SELECT COALESCE(MAX(EndIndex),0) FROM timebatchtable WHERE Key=$1;",
-		"DELETE FROM timebatchtable WHERE Key=$1;")
+		"DELETE FROM timebatchtable WHERE Key=$1;",
+		"DELETE FROM timebatchtable WHERE Key LIKE $1;")
 }
 
 //OpenSqlStore uses the correct initializer for the given database driver. The err parameter allows daisychains of errors

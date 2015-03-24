@@ -273,6 +273,23 @@ func (rc *RedisCache) Delete(key string) error {
 	return err
 }
 
+//DeletePrefix deletes all data associated with all keys which start with the given prefix.
+//Warning: This is a pretty expensive operation, since redis has no built-in wildcard delete.
+func (rc *RedisCache) DeletePrefix(prefix string) error {
+	c := rc.cpool.Get()
+	defer c.Close()
+	//Redis does not have an explicit wildcard deletion method, so we eval a lua script
+	//which lists the keys matching the prefix and deletes all of them.
+	//This is not a very efficient method of doing things, since it requires iterating through all
+	//of the keys in redis to match the wildcard. I would hope that we figure out something better some time
+	//in the future.
+	_, err := c.Do("EVAL", `local keys = redis.call('keys',ARGV[1])
+		for i=1,#keys do
+			redis.call('del', keys[i], '{I}>' .. keys[i], '{T}>' .. keys[i])
+		end`, 0, prefix+"*")
+	return err
+}
+
 //OpenRedisCache opens the redis cache given the URL to the server. The err parameter allows daisychains of errors
 func OpenRedisCache(url string, err error) (*RedisCache, error) {
 	if err != nil {
