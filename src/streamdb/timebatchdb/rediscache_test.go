@@ -108,7 +108,7 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	keysize, err := rc.Insert("hello/world", CreateDatapointArray(timestamps[:4], data[:4], ""))
+	keysize, err := rc.InsertSimple("hello/world", CreateDatapointArray(timestamps[:4], data[:4], ""))
 	if keysize != 4 || err != nil {
 		t.Errorf("Insert error %d %v", keysize, err)
 		return
@@ -123,7 +123,7 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	keysize, err = rc.Insert("hello/world", CreateDatapointArray(timestamps[4:], data[4:], ""))
+	keysize, err = rc.InsertSimple("hello/world", CreateDatapointArray(timestamps[4:], data[4:], ""))
 	if keysize != 9 || err != nil {
 		t.Errorf("Insert error %d %v", keysize, err)
 		return
@@ -299,7 +299,7 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	keysize, err = rc.Insert("hello/world", CreateDatapointArray(timestamps, data, ""))
+	keysize, err = rc.InsertSimple("hello/world", CreateDatapointArray(timestamps, data, ""))
 	if keysize != 9 || err != nil {
 		t.Errorf("Insert error %d %v", keysize, err)
 		return
@@ -312,8 +312,12 @@ func TestRedisCache(t *testing.T) {
 		return
 	}
 
-	//Lastly, make sure that deleting works
-	rc.DeletePrefix("hello")
+	//Lastly, make sure that deleting prefix works
+	num, err := rc.DeletePrefix("hello/")
+	if err != nil || num != 1 {
+		t.Errorf("DeletePrefix Failed: %v %v", err, num)
+		return
+	}
 
 	dp, err = rc.GetMostRecent("hello/world")
 	if err != ErrorRedisDNE {
@@ -351,10 +355,16 @@ func TestRedisCache(t *testing.T) {
 		t.Errorf("get cache length failed %d %v", idx, err)
 		return
 	}
+
+	startindex, cachelength, err := rc.GetIndices("hello/world")
+	if startindex != 0 || cachelength != 0 || err != nil {
+		t.Errorf("get cache length failed %d %d %v", startindex, cachelength, err)
+		return
+	}
 }
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range in chunks of 10 datapoints.
-func BenchmarkThousandRedis(b *testing.B) {
+func BenchmarkThousandSimpleRedis(b *testing.B) {
 	rc, err := OpenRedisCache("localhost:6379", nil)
 	if err != nil {
 		b.Errorf("Open Redis error %v", err)
@@ -369,7 +379,7 @@ func BenchmarkThousandRedis(b *testing.B) {
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
 	timestamps := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	for i := int64(0); i < 100; i++ {
-		_, err = rc.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
+		_, err = rc.InsertSimple("testkey", CreateDatapointArray(timestamps, data, ""))
 		if err != nil {
 			b.Errorf("Insert Error: %v", err)
 			return
@@ -404,7 +414,7 @@ func BenchmarkRedisInsert(b *testing.B) {
 		if n%10000 == 0 {
 			rc.Clear() //Make sure we don't overflow the ram
 		}
-		rc.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
+		rc.InsertSimple("testkey", CreateDatapointArray(timestamps, data, ""))
 
 	}
 }

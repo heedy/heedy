@@ -201,13 +201,20 @@ func TestDatapointArray(t *testing.T) {
 		t.Errorf("Iterator wrong")
 	}
 	da.Close()
-	//Lastly, make sure loading from DataRange is functional
+
+	// make sure loading from DataRange is functional
 	da2, err := DatapointArrayFromDataRange(da)
 	if err != nil {
 		t.Errorf("Error: %s", err)
 		return
 	}
 	if !assertData(t, da2, "fromdatarange") {
+		return
+	}
+
+	// make sure loading from ByteDatapoints is functional
+	da3 := DatapointArrayFromByteDatapoints(da.ByteDatapoints())
+	if !assertData(t, da3, "bytedatapoints") {
 		return
 	}
 }

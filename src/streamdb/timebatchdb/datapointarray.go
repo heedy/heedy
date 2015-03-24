@@ -214,6 +214,16 @@ func (d *DatapointArray) Bytes() []byte {
 	return arr
 }
 
+//ByteDatapoints returns the DatapointArray as an array of byte arrays, where each element of the array
+//is the bytes of the given datapoint.
+func (d *DatapointArray) ByteDatapoints() [][]byte {
+	result := make([][]byte, len(d.Datapoints))
+	for i := 0; i < len(d.Datapoints); i++ {
+		result[i] = d.Datapoints[i].Bytes()
+	}
+	return result
+}
+
 //CompressedBytes returns the gzipped bytes of the entire array of datapoints
 func (d *DatapointArray) CompressedBytes() []byte {
 	var b bytes.Buffer
@@ -258,6 +268,16 @@ func DatapointArrayFromBytes(data []byte) *DatapointArray {
 	dp.array = data[:n] //We can set the array too
 
 	return dp
+}
+
+//DatapointArrayFromByteDatapoints is basicaly a wrapper functino for NewDatapointArray which does
+//the necessary byte[] conversion to Datapoint
+func DatapointArrayFromByteDatapoints(d [][]byte) *DatapointArray {
+	result := make([]Datapoint, len(d))
+	for i := 0; i < len(d); i++ {
+		result[i] = Datapoint{d[i]}
+	}
+	return NewDatapointArray(result)
 }
 
 //DatapointArrayFromList creates a DatapointArray given a linked list containing Datapoint

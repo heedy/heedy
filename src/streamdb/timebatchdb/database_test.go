@@ -3,6 +3,7 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
+
 	"os"
 	"testing"
 
@@ -75,17 +76,13 @@ func TestDatabaseInsert(t *testing.T) {
 		return
 	}
 
-	//Now make sure that the key was pushed twice to the batch queue
+	//Now make sure that the key was pushed to the batch queue
 	k, err := rc.BatchWait()
 	if err != nil || k != "hello" {
 		t.Errorf("Error in batch queue: %v, %s", err, k)
 		return
 	}
-	k, err = rc.BatchWait()
-	if err != nil || k != "hello" {
-		t.Errorf("Error in batch queue: %v, %s", err, k)
-		return
-	}
+
 	rc.BatchPush("END")
 	k, err = rc.BatchWait()
 	if err != nil || k != "END" {
@@ -140,12 +137,7 @@ func TestDatabaseWrite(t *testing.T) {
 		t.Errorf("error on write: %v", err)
 		return
 	}
-	err = db.WriteDatabaseIteration()
-	if err != nil {
-		t.Errorf("error on write: %v", err)
-		return
-	}
-	if i, _ := rc.CacheLength("hello"); i != 2 {
+	if i, _ := rc.CacheLength("hello"); i != 0 {
 		t.Errorf("cache length wrong: %v", i)
 		return
 	}
@@ -162,7 +154,7 @@ func TestDatabaseWrite(t *testing.T) {
 		return
 	}
 	//Now make sure that the data actually exists in the sql database
-	if !ensureValidityTest(t, timestamps[:6], data[:6], dr) {
+	if !ensureValidityTest(t, timestamps, data, dr) {
 		return
 	}
 }
@@ -312,10 +304,19 @@ func TestDatabaseDelete(t *testing.T) {
 		t.Errorf("error on write: %v", err)
 		return
 	}
-
+	l, err := db.Len("hello")
+	if l != 7 || err != nil {
+		t.Errorf("wrong length: %v %v", l, err)
+		return
+	}
 	err = db.Delete("hello")
 	if err != nil {
 		t.Errorf("Failed to delete %v", err)
+	}
+	l, err = db.Len("hello")
+	if l != 0 || err != nil {
+		t.Errorf("wrong length: %v %v", l, err)
+		return
 	}
 	dr, err := db.GetIndexRange("hello", 0, 6)
 	dr.Init()
@@ -340,10 +341,20 @@ func TestDatabaseDelete(t *testing.T) {
 		t.Errorf("error on write: %v", err)
 		return
 	}
+	l, err = db.Len("hello/world")
+	if l != 7 || err != nil {
+		t.Errorf("wrong length: %v %v", l, err)
+		return
+	}
 
 	err = db.DeletePrefix("hello/")
 	if err != nil {
 		t.Errorf("Failed to delete %v", err)
+	}
+	l, err = db.Len("hello/world")
+	if l != 0 || err != nil {
+		t.Errorf("wrong length: %v %v", l, err)
+		return
 	}
 	dr, err = db.GetIndexRange("hello/world", 0, 6)
 	dr.Init()
@@ -351,6 +362,7 @@ func TestDatabaseDelete(t *testing.T) {
 		t.Errorf("Get deleted by index range failure: %v", err)
 		return
 	}
+
 	dp, err = dr.Next()
 	if dp != nil || err != nil {
 		t.Errorf("Next on deleted: %v %v", err, dp)
@@ -390,10 +402,9 @@ func BenchmarkThousandS_S(b *testing.B) {
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
 		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-		//db.WriteDatabaseIteration()
-	}
-	for i := 0; i < 10; i++ {
-		db.WriteDatabaseIteration()
+		if n > 5 && (n-1)%10 == 0 {
+			db.WriteDatabaseIteration()
+		}
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -440,11 +451,11 @@ func BenchmarkThousandS_P(b *testing.B) {
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
 		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-		//db.WriteDatabaseIteration()
+		if n > 5 && (n-1)%10 == 0 {
+			db.WriteDatabaseIteration()
+		}
 	}
-	for i := 0; i < 10; i++ {
-		db.WriteDatabaseIteration()
-	}
+
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		r, _ := db.GetIndexRange("testkey", 0, 1000)

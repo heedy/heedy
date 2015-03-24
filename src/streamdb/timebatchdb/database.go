@@ -10,10 +10,7 @@ import (
 )
 
 var (
-	//ErrorUnordered is thrown when the datapoints are not ordered by strictly increasing timestamp
-	ErrorUnordered = errors.New("Datapoints not ordered by timestamp")
-	//ErrorTimestamp is thrown when the data stream already contains at least one data ponit with a greater or equal timestamp to the ones being inserted
-	ErrorTimestamp = errors.New("Greater or equal timestamp already exists for the stream")
+
 	//ErrorIndexMismatch is thrown when the index in RedisCache does not match index in SqlStore. It means that there seems to be data missing from the database
 	ErrorIndexMismatch = errors.New("Database internal index mismatch")
 	//ErrorUserFail is returned when the data ranges requested are either both the same, or are somehow invalid.
@@ -63,6 +60,16 @@ func (d *databaseRange) Next() (*Datapoint, error) {
 		if startindex != d.index {
 			return nil, ErrorIndexMismatch
 		}
+
+		//The sqlrange can be empty in certain cases. We therefore check for database corruption
+		dp, err = d.dr.Next()
+		if err != nil || dp != nil {
+			d.index++
+			return dp, err
+		}
+		//If it gets here there was no error and dp was nil. This means that the database is corrupted
+		return nil, ErrorDatabaseCorrupted
+
 	} else if d.index >= startindex+cachelength {
 		return nil, nil //The index is out of bounds - return nil
 	} else {
@@ -104,7 +111,7 @@ func (d *Database) Delete(key string) error {
 
 //DeletePrefix deletes all keys which start with prefix from the database
 func (d *Database) DeletePrefix(prefix string) error {
-	err := d.cache.DeletePrefix(prefix)
+	_, err := d.cache.DeletePrefix(prefix)
 	if err != nil {
 		return err
 	}
@@ -164,19 +171,7 @@ func (d *Database) GetTimeRange(key string, t1 int64, t2 int64) (DataRange, erro
 
 //Insert the given datapoint array to the stream given at key.
 func (d *Database) Insert(key string, datapointarray *DatapointArray) error {
-	if !datapointarray.IsTimestampOrdered() || datapointarray.Len() == 0 {
-		return ErrorUnordered
-	}
-	endtime, cachelength, err := d.cache.GetEndTimeAndCacheLength(key)
-	if endtime >= datapointarray.Datapoints[0].Timestamp() {
-		return ErrorTimestamp
-	} else if err != nil {
-		return err
-	}
-	//If the batch size was exceeded on this insert, add it to the queue (this only adds
-	//to the write queue on change in division, so that a batch is only written once to the database)
-	batchnum := (cachelength+datapointarray.Len())/d.batchsize - cachelength/d.batchsize
-	return d.cache.InsertAndBatchPush(key, datapointarray, batchnum)
+	return d.cache.Insert(key, datapointarray, d.batchsize)
 }
 
 //WriteDatabaseIteration runs one iteration of WriteDatabase - it blocks until a batch is ready, processes the batch, and returns.
@@ -192,9 +187,9 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 		return err
 	}
 
-	datapointarray, cacheStartIndex, err := d.cache.BatchGet(key, d.batchsize)
-	if err == ErrorRedisWrongSize { //If WrongSize, it means that the key was pushed needlessly - ignore the key
-		log.Println("TimebatchDB:WriteDatabase:WARNING: Got batch where there is none:", key)
+	datapointarray, cacheStartIndex, err := d.cache.BatchGet(key, 0)
+	if err == ErrorRedisWrongSize || datapointarray.Len() < d.batchsize { //If WrongSize, it means that the key was pushed needlessly - ignore the key
+		log.Printf("TimebatchDB:WriteDatabase:IGNORING: Got small batch: key=%v #=%v\n", key, datapointarray.Len())
 	} else if err != nil {
 		d.cache.BatchPush(key)
 		return err
@@ -208,7 +203,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 				return err
 			}
 
-			err = d.cache.BatchRemove(key, d.batchsize)
+			err = d.cache.BatchRemove(key, datapointarray.Len())
 			if err != nil {
 				d.cache.BatchPush(key)
 				return err

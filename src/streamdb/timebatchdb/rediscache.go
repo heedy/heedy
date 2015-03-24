@@ -14,11 +14,16 @@ var (
 	ErrorRedisWrongSize = errors.New("Data array sized incorrectly")
 	//ErrorRedisDNE is thrown when get is run on a key that does not exist in the database yet
 	ErrorRedisDNE = errors.New("The key does not exist")
+	//ErrorUnordered is thrown when the datapoints are not ordered by strictly increasing timestamp
+	ErrorUnordered = errors.New("Datapoints not ordered by timestamp")
+	//ErrorTimestamp is thrown when the data stream already contains at least one data ponit with a greater or equal timestamp to the ones being inserted
+	ErrorTimestamp = errors.New("Greater or equal timestamp already exists for the stream")
 )
 
 //RedisCache is the redis-based cache of data which allows buffering of batches before committing to a long-term store
 type RedisCache struct {
-	cpool *redis.Pool //The redis connection pool
+	cpool    *redis.Pool //The redis connection pool
+	inserter *redis.Script
 }
 
 //Close all the connections to redis.
@@ -129,8 +134,8 @@ func (rc *RedisCache) GetStartTime(key string) (t int64, err error) {
 	return dp.Timestamp(), err
 }
 
-//Insert the DatapointArray to the end of the cache for the given key
-func (rc *RedisCache) Insert(key string, da *DatapointArray) (keysize int, err error) {
+//InsertSimple adds the DatapointArray to the end of the cache for the given key
+func (rc *RedisCache) InsertSimple(key string, da *DatapointArray) (keysize int, err error) {
 	c := rc.cpool.Get()
 	//iterate the most recent timestamp
 	c.Send("SET", "{T}>"+key, da.Datapoints[da.Len()-1].Timestamp())
@@ -142,39 +147,27 @@ func (rc *RedisCache) Insert(key string, da *DatapointArray) (keysize int, err e
 	return keysize, err
 }
 
-//GetEndTimeAndCacheLength is a custom command made to speed up inserts of the full database. It is equivalent to running GetEndTime
-//and CacheLength in one command
-func (rc *RedisCache) GetEndTimeAndCacheLength(key string) (t int64, keysize int, err error) {
-	c := rc.cpool.Get()
-	c.Send("GET", "{T}>"+key)
-	c.Send("LLEN", key)
-	c.Flush()
-	t, err = redis.Int64(c.Receive())
-	if err == redis.ErrNil { //If it returns nil, it means that the key DNE - so the timestamp is min
-		t = math.MinInt64
-	} else if err != nil {
-		return t, 0, err
+//Insert checks timestamp orderedness, inserts the datpointArray, and performs a batch push, all in one Redis query.
+func (rc *RedisCache) Insert(key string, da *DatapointArray, pushsize int) error {
+	if !da.IsTimestampOrdered() || da.Len() == 0 {
+		return ErrorUnordered
 	}
-	keysize, err = redis.Int(c.Receive())
-	c.Close()
-	return t, keysize, err
-}
+	c := rc.cpool.Get()
 
-//InsertAndBatchPush is a custom command made to speed up inserts of the full database. It is equivalent to calling
-//Insert and then BatchPushMany
-//Insert the DatapointArray to the end of the cache for the given key
-func (rc *RedisCache) InsertAndBatchPush(key string, da *DatapointArray, pushnum int) (err error) {
-	c := rc.cpool.Get()
-	//iterate the most recent timestamp
-	c.Send("SET", "{T}>"+key, da.Datapoints[da.Len()-1].Timestamp())
+	// go's variadic args are a bit annoying - we need the wrapper array for Do to accept the variadic array.
+	args := []interface{}{key, "{T}>" + key, "{{READY_Q}}",
+		da.Datapoints[0].Timestamp(), da.Datapoints[da.Len()-1].Timestamp(), pushsize}
 	for i := 0; i < da.Len(); i++ {
-		c.Send("RPUSH", key, da.Datapoints[i].Bytes())
+		args = append(args, interface{}(da.Datapoints[i].Bytes()))
 	}
-	for i := 0; i < pushnum; i++ {
-		c.Send("LPUSH", "{{READY_Q}}", key)
-	}
-	_, err = c.Do("")
+
+	//Actually execute the inserter script (the code for it is located in the initializer)
+	_, err := rc.inserter.Do(c, args...)
+
 	c.Close()
+	if err != nil && err.Error() == "TSM" {
+		err = ErrorTimestamp
+	}
 	return err
 }
 
@@ -275,7 +268,8 @@ func (rc *RedisCache) Delete(key string) error {
 
 //DeletePrefix deletes all data associated with all keys which start with the given prefix.
 //Warning: This is a pretty expensive operation, since redis has no built-in wildcard delete.
-func (rc *RedisCache) DeletePrefix(prefix string) error {
+//Furthermore: this does not work with redis cluster.
+func (rc *RedisCache) DeletePrefix(prefix string) (numberdeleted int, err error) {
 	c := rc.cpool.Get()
 	defer c.Close()
 	//Redis does not have an explicit wildcard deletion method, so we eval a lua script
@@ -283,11 +277,15 @@ func (rc *RedisCache) DeletePrefix(prefix string) error {
 	//This is not a very efficient method of doing things, since it requires iterating through all
 	//of the keys in redis to match the wildcard. I would hope that we figure out something better some time
 	//in the future.
-	_, err := c.Do("EVAL", `local keys = redis.call('keys',ARGV[1])
+	//The first keys call looks for timestamp, because if the array is empty, the key is not returned,
+	//so the data is not deleted... It took me a good 3 hours to figure out why this wasn't deleting properly.
+	return redis.Int(c.Do("EVAL", `local keys = redis.call('keys','{T}>' .. ARGV[1])
+		local key = ""
 		for i=1,#keys do
-			redis.call('del', keys[i], '{I}>' .. keys[i], '{T}>' .. keys[i])
-		end`, 0, prefix+"*")
-	return err
+			key = string.sub(keys[i],5)
+			redis.call('DEL', key, '{T}>' .. key, '{I}>' .. key)
+		end
+		return #keys`, 0, prefix+"*"))
 }
 
 //OpenRedisCache opens the redis cache given the URL to the server. The err parameter allows daisychains of errors
@@ -320,5 +318,23 @@ func OpenRedisCache(url string, err error) (*RedisCache, error) {
 		return nil, err
 	}
 
-	return &RedisCache{rp}, nil
+	//Load the inserter script. This script is used for fast insert.
+	//This command first checks for timestamp validity. If valid, it sets the end time to the timestamp of
+	//the most recent datapoint. Then, it pushes all the datapoints into the key's list in chunks, because
+	//redis lua has an argument limit. Lastly, if the number of datapoints is large, perform a batch push of
+	//the key, so that the database writer can notice the batch.
+	inserter := redis.NewScript(3, `local endtime = tonumber(redis.call('get',KEYS[2]))
+	if (endtime~=nil and endtime >= tonumber(ARGV[1])) then
+		return {["err"]="TSM"}
+	end
+	redis.call('set',KEYS[2],ARGV[2])
+	for i=4,#ARGV,5000 do
+		redis.call('rpush',KEYS[1],unpack(ARGV,i,math.min(i+4999,#ARGV)))
+	end
+	local datanum = tonumber(redis.call('llen',KEYS[1]))
+	if datanum >= tonumber(ARGV[3]) then
+		redis.call('lpush',KEYS[3],KEYS[1])
+	end`)
+
+	return &RedisCache{rp, inserter}, nil
 }

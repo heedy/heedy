@@ -176,7 +176,7 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 		if rows.Err() != nil {
 			err = rows.Err()
 		}
-		return EmptyRange{}, dataindex, rows.Err()
+		return EmptyRange{}, dataindex, err
 	}
 
 	//There is some data!
