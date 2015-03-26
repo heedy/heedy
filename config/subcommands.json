@@ -61,23 +61,9 @@
 
         {
             "name":"user_web",
-            "command":["./web"],
-            "depends":["user_service", "ts_service"],
+            "command":["./webservice"],
+            "depends":["production_environment"],
             "envflags":{"web|hostname":"localhost", "web|port":"8080"},
-            "run_forever":true
-        },
-        {
-            "name":"user_service",
-            "command":["./usersservice"],
-            "depends":[],
-            "envflags":{"usersservice|hostname":"localhost", "usersservice|port":"9002"},
-            "run_forever":true
-        },
-        {
-            "name":"timeseries_service",
-            "command":["./timeseriesservice"],
-            "depends":["mongo", "gnatsd"],
-            "envflags":{"timeseries|hostname":"localhost", "timeseries|port":"9001"},
             "run_forever":true
         }
     ]

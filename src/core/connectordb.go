@@ -18,7 +18,7 @@ var (
     subcommandlist SubcommandList
     running_forever bool
 
-    running bool // is the process running?
+    running = true // is the process running?
     pids []int // pids of all running processes
     LOGDIR = "logs"
 )
@@ -141,6 +141,8 @@ func (sl SubcommandList) RunCommand(cmd string) {
 func (s Subcommand) RunOnce() bool {
     cmd := exec.Command(s.Command[0], s.Command[1:]...)
 
+    log.Printf("Running %v once, cmd: %v", s.Command[0], cmd)
+
     // this will overwrite whenever needed
     outfile, err := os.Create(LOGDIR + "/" + s.Name + ".log")
     if err != nil {
@@ -151,12 +153,14 @@ func (s Subcommand) RunOnce() bool {
     cmd.Stderr = outfile
 
     cmd.Start()
+    time.Sleep(time.Duration(5) * time.Second)
+
 
     for {
         switch {
-            case running == false:
-                cmd.Process.Kill()
-                return false // not success
+            //case running == false && cmd.Process != nil:
+            //    cmd.Process.Kill()
+            //    return false // not success
             case cmd.ProcessState.Exited():
                 success := cmd.ProcessState.Success()
                 log.Printf("Process %v exited, success? %v", cmd.ProcessState.Pid(), success)
@@ -181,6 +185,7 @@ func (s Subcommand) RunForever() {
 }
 
 func main() {
+    running = true
 
     flag.Parse()
 
