@@ -1,102 +1,100 @@
 package users
 
-import("database/sql"
-"errors")
-
+import (
+	"database/sql"
+	"errors"
+)
 
 // CreatePhoneCarrier creates a phone carrier from the carrier name and
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
 func (userdb *UserDatabase) CreatePhoneCarrier(Name, EmailDomain string) (int64, error) {
 
-    res, err := userdb.Db.Exec(CREATE_PHONE_CARRIER_STMT,
-    Name,
-    EmailDomain)
+	res, err := userdb.Db.Exec(CREATE_PHONE_CARRIER_STMT,
+		Name,
+		EmailDomain)
 
-    if err != nil {
-        return 0, err
-    }
+	if err != nil {
+		return 0, err
+	}
 
-    return res.LastInsertId()
+	return res.LastInsertId()
 }
-
 
 // constructPhoneCarrierFromRow creates a single PhoneCarrier instance from
 // the given rows.
 func constructPhoneCarrierFromRow(rows *sql.Rows, err error) (*PhoneCarrier, error) {
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    defer rows.Close()
+	defer rows.Close()
 
-    result, err := constructPhoneCarriersFromRows(rows)
+	result, err := constructPhoneCarriersFromRows(rows)
 
-    if err == nil && len(result) > 0 {
-        return result[0], err
-    }
+	if err == nil && len(result) > 0 {
+		return result[0], err
+	}
 
-    return nil, errors.New("No carrier supplied")
+	return nil, errors.New("No carrier supplied")
 }
 
 // constructPhoneCarriersFromRows constructs a series of phone carriers
 func constructPhoneCarriersFromRows(rows *sql.Rows) ([]*PhoneCarrier, error) {
-    out := []*PhoneCarrier{}
+	out := []*PhoneCarrier{}
 
-    if rows == nil {
-        return out, ERR_INVALID_PTR
-    }
+	if rows == nil {
+		return out, ERR_INVALID_PTR
+	}
 
+	for rows.Next() {
+		u := new(PhoneCarrier)
+		err := rows.Scan(&u.Id, &u.Name, &u.EmailDomain)
 
-    for rows.Next() {
-        u := new(PhoneCarrier)
-        err := rows.Scan(&u.Id, &u.Name, &u.EmailDomain)
+		if err != nil {
+			return out, err
+		}
 
-        if err != nil {
-            return out, err
-        }
+		out = append(out, u)
+	}
 
-        out = append(out, u)
-    }
-
-    return out, nil
+	return out, nil
 }
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
 func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
-    rows, err := userdb.Db.Query(SELECT_PHONE_CARRIER_BY_ID_STMT, Id)
-    return constructPhoneCarrierFromRow(rows, err)
+	rows, err := userdb.Db.Query(SELECT_PHONE_CARRIER_BY_ID_STMT, Id)
+	return constructPhoneCarrierFromRow(rows, err)
 }
 
 func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]*PhoneCarrier, error) {
-    rows, err := userdb.Db.Query("SELECT * FROM PhoneCarrier")
+	rows, err := userdb.Db.Query("SELECT * FROM PhoneCarrier")
 
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    defer rows.Close()
-    return constructPhoneCarriersFromRows(rows)
+	defer rows.Close()
+	return constructPhoneCarriersFromRows(rows)
 }
 
 // UpdatePhoneCarrier updates the database's phone carrier data with that of the
 // struct provided.
-func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) (error) {
-    if carrier == nil {
-        return ERR_INVALID_PTR
-    }
+func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) error {
+	if carrier == nil {
+		return ERR_INVALID_PTR
+	}
 
+	_, err := userdb.Db.Exec(UPDATE_PHONE_CARRIER_STMT,
+		carrier.Name,
+		carrier.EmailDomain,
+		carrier.Id)
 
-    _, err := userdb.Db.Exec(UPDATE_PHONE_CARRIER_STMT,
-        carrier.Name,
-        carrier.EmailDomain,
-        carrier.Id)
-
-    return err
+	return err
 }
 
 // DeletePhoneCarrier removes a phone carrier from the database, this will set
 // all users carrier with this phone carrier as a foreign key to NULL
-func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) (error) {
-    _, err := userdb.Db.Exec(DELETE_PHONE_CARRIER_BY_ID_STMT, carrierId )
-    return err
+func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) error {
+	_, err := userdb.Db.Exec(DELETE_PHONE_CARRIER_BY_ID_STMT, carrierId)
+	return err
 }

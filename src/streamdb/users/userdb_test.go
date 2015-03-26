@@ -8,20 +8,19 @@ All Rights Reserved
 
 package users
 
-
 import (
-    //"os/exec"
-    //"github.com/nu7hatch/gouuid"
-    //"os"
-    //"net"
-    "log"
-    "testing"
-    //"time"
-    )
+	//"os/exec"
+	//"github.com/nu7hatch/gouuid"
+	//"os"
+	//"net"
+	"log"
+	"testing"
+	//"time"
+)
 
 var (
-    postgres_folder string
-    portnum = "52592"
+	postgres_folder string
+	portnum         = "52592"
 )
 
 /*BUG(daniel): hard-coding the postgres version and location causes explosion on my computer (my pgres is 9.4).
@@ -96,19 +95,16 @@ func init() {
 }
 */
 
-
 func TestPostgresInit(t *testing.T) {
 
-    log.Printf("Testing postgres init")
-    db, err := NewPostgresUserDatabase("sslmode=disable dbname=connectordb port=" + portnum)
+	log.Printf("Testing postgres init")
+	db, err := NewPostgresUserDatabase("sslmode=disable dbname=connectordb port=" + portnum)
 
+	if db == nil {
+		t.Errorf("DB was returned nil")
+	}
 
-    if db == nil {
-        t.Errorf("DB was returned nil")
-    }
-
-
-    if err != nil  && db != nil {
-        t.Errorf("Err was not nil %v", err)
-    }
+	if err != nil && db != nil {
+		t.Errorf("Err was not nil %v", err)
+	}
 }

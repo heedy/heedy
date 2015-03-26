@@ -51,40 +51,39 @@ type UserServiceRequest struct {
 type UserServiceHandler func(request *http.Request, requestingDevice *users.Device, user *users.User, device *users.Device, stream *users.Stream) (int, interface{})
 
 func decodeUrlParams(username, deviceid, streamid string) (*users.User, *users.Device, *users.Stream, error) {
-    var user *users.User
-    var device *users.Device
-    var stream *users.Stream
-    var reserr error
-    var err error
+	var user *users.User
+	var device *users.Device
+	var stream *users.Stream
+	var reserr error
+	var err error
 
+	if username != "" {
+		user, reserr = userdb.ReadUserByName(username)
+		if err != nil {
+			reserr = err
+		}
 
-    if username != "" {
-        user, reserr = userdb.ReadUserByName(username)
-        if err != nil {
-            reserr = err
-        }
+	}
 
-    }
+	if deviceid != "" {
+		devicei, _ := strconv.Atoi(deviceid)
+		device, err = userdb.ReadDeviceById(int64(devicei))
 
-    if deviceid != "" {
-        devicei, _ := strconv.Atoi(deviceid)
-        device,  err = userdb.ReadDeviceById(int64(devicei))
+		if err != nil {
+			reserr = err
+		}
+	}
 
-        if err != nil {
-            reserr = err
-        }
-    }
+	if streamid != "" {
+		streami, _ := strconv.Atoi(streamid)
+		stream, err = userdb.ReadStreamById(int64(streami))
 
-    if streamid != "" {
-        streami, _ := strconv.Atoi(streamid)
-        stream, err = userdb.ReadStreamById(int64(streami))
+		if err != nil {
+			reserr = err
+		}
+	}
 
-        if err != nil {
-            reserr = err
-        }
-    }
-
-    return user, device, stream, reserr
+	return user, device, stream, reserr
 }
 
 // Runs an authorization check on the api before calling the function
@@ -638,8 +637,8 @@ func readDataByIndex(request *http.Request, requestingDevice *users.Device, user
 }
 
 type Routes struct {
-	User *users.User
-	Device *users.Device
+	User    *users.User
+	Device  *users.Device
 	Streams []*users.Stream
 }
 
@@ -648,7 +647,7 @@ func readMyRoutes(request *http.Request, requestingDevice *users.Device, user *u
 	var userGrab *users.User
 	var err error
 
-	if requestingDevice.IsUser(){
+	if requestingDevice.IsUser() {
 		userGrab = requestingDevice.Unmask()
 		return http.StatusInternalServerError, errorGenericResult
 		// TODO allow users
@@ -720,7 +719,6 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	u.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
 	u.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
 
-
 	dname := s.PathPrefix("/byname/{username}/{devicename}").Subrouter()
 	sname := s.PathPrefix("/byname/{username}/{devicename}/{streamname}").Subrouter()
 
@@ -738,6 +736,5 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	sname.HandleFunc("/point/i/{index1:[0-9]+}/{index2:[0-9]+}/", apiAuth(readDataByIndex, false, true, false, false)).Methods("GET")
 	sname.HandleFunc("/point/t/{time1}/{time2}/", apiAuth(readDataByTime, false, true, false, false)).Methods("GET")
 	sname.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
-
 
 }

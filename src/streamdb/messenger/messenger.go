@@ -1,4 +1,5 @@
 package messenger
+
 /*
 import (
     "github.com/apcera/nats"

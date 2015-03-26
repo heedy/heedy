@@ -130,6 +130,16 @@ public class SettingsActivity extends PreferenceActivity {
                 return true;
             }
         });
+        button = (Preference)findPreference("cachebutton");
+        button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference arg0) {
+                DataCache c = DataCache.get(SettingsActivity.this);
+                Preference button = (Preference)SettingsActivity.this.findPreference("cachebutton");
+                button.setTitle(Integer.toString(c.Size()));
+                return true;
+            }
+        });
     }
 
     @Override

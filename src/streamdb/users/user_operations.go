@@ -1,13 +1,14 @@
 // Package users provides an API for managing user information.
 package users
 
-import ("time"
-    "database/sql"
-    "errors"
-    "crypto/sha512"
-    "encoding/hex"
-    "log"
-    "github.com/nu7hatch/gouuid"
+import (
+	"crypto/sha512"
+	"database/sql"
+	"encoding/hex"
+	"errors"
+	"github.com/nu7hatch/gouuid"
+	"log"
+	"time"
 )
 
 // calcHash calculates the user hash for the given password, salt and hashing
@@ -86,14 +87,13 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) (id int64, 
 		dbpass,
 		PasswordSalt.String(),
 		DEFAULT_PASSWORD_HASH,
-        int64(time.Now().Unix())) // current time is creation time
+		int64(time.Now().Unix())) // current time is creation time
 
 	if err != nil {
 		return -1, err
 	}
 
-    log.Printf("Created user %v", Name)
-
+	log.Printf("Created user %v", Name)
 
 	return res.LastInsertId()
 }
@@ -136,9 +136,9 @@ func constructUsersFromRows(rows *sql.Rows) ([]*User, error) {
 			&u.UploadLimit_Items,
 			&u.ProcessingLimit_S,
 			&u.StorageLimit_Gb,
-            &u.CreateTime,
-            &u.ModifyTime,
-            &u.UserGroup)
+			&u.CreateTime,
+			&u.ModifyTime,
+			&u.UserGroup)
 
 		if err != nil {
 			return out, err
@@ -156,7 +156,6 @@ func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
 	rows, err := userdb.Db.Query(SELECT_USER_BY_EMAIL_STMT, Email)
 	return constructUserFromRow(rows, err)
 }
-
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
@@ -183,14 +182,11 @@ func (userdb *UserDatabase) ReadAllUsers() ([]*User, error) {
 	return constructUsersFromRows(rows)
 }
 
-
-
 func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
-    rows, err := userdb.Db.Query(SELECT_OWNER_OF_STREAM_BY_ID_STMT, StreamId)
+	rows, err := userdb.Db.Query(SELECT_OWNER_OF_STREAM_BY_ID_STMT, StreamId)
 
-    return constructUserFromRow(rows, err)
+	return constructUserFromRow(rows, err)
 }
-
 
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
@@ -200,7 +196,7 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := userdb.Db.Exec( UPDATE_USER_STMT,
+	_, err := userdb.Db.Exec(UPDATE_USER_STMT,
 		user.Name,
 		user.Email,
 		user.Password,
@@ -212,9 +208,9 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 		user.UploadLimit_Items,
 		user.ProcessingLimit_S,
 		user.StorageLimit_Gb,
-        user.CreateTime,
-        int64(time.Now().Unix()),        // user.ModifyTime,
-        user.UserGroup,
+		user.CreateTime,
+		int64(time.Now().Unix()), // user.ModifyTime,
+		user.UserGroup,
 		user.Id)
 	return err
 }
