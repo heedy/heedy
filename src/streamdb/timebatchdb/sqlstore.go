@@ -59,8 +59,8 @@ func (s *sqlRange) Next() (*Datapoint, error) {
 		s.Close()
 		return nil, err
 	}
-	s.da = DatapointArrayFromBytes(data)
-	//s.da = DatapointArrayFromCompressedBytes(data)
+	//s.da = DatapointArrayFromBytes(data)
+	s.da = DatapointArrayFromCompressedBytes(data)
 
 	//Repeat the procedure.
 	return s.Next()
@@ -104,9 +104,9 @@ func (s *SqlStore) GetEndIndex(key string) (ei uint64, err error) {
 
 //Insert the given DatapointArray into the sql database given the startindex of the array for the key.
 func (s *SqlStore) Insert(key string, startindex uint64, da *DatapointArray) error {
-	_, err := s.inserter.Exec(key, da.Datapoints[da.Len()-1].Timestamp(),
-		startindex+uint64(da.Len()), da.Bytes())
-	//startindex+uint64(da.Len()),da.CompressedBytes())
+	_, err := s.inserter.Exec(key, da.Datapoints[da.Len()-1].Timestamp(), startindex+uint64(da.Len()),
+		//da.Bytes())
+		da.CompressedBytes())
 	return err
 }
 
@@ -154,8 +154,8 @@ func (s *SqlStore) GetByTime(key string, starttime int64) (dr DataRange, startin
 		return EmptyRange{}, endindex, err
 	}
 
-	da := DatapointArrayFromBytes(data).TStart(starttime)
-	//da := DatapointArrayFromCompressedBytes(data).TStart(starttime)
+	//da := DatapointArrayFromBytes(data).TStart(starttime)
+	da := DatapointArrayFromCompressedBytes(data).TStart(starttime)
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
 		return EmptyRange{}, endindex, ErrorDatabaseCorrupted
@@ -185,8 +185,8 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 	if err = rows.Scan(&endindex, &data); err != nil {
 		return EmptyRange{}, endindex, err
 	}
-	da := DatapointArrayFromBytes(data)
-	//da := DatapointArrayFromCompressedBytes(data)
+	//da := DatapointArrayFromBytes(data)
+	da := DatapointArrayFromCompressedBytes(data)
 
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
