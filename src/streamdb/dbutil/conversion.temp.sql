@@ -93,8 +93,8 @@ CREATE TABLE Stream (
     );
     
 
-CREATE INDEX IF NOT EXISTS StreamNameIndex ON Stream (Name);
-CREATE INDEX IF NOT EXISTS StreamOwnerIndex ON Stream (OwnerId);
+CREATE INDEX StreamNameIndex ON Stream (Name);
+CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 {{end}}
 
