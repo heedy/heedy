@@ -31,7 +31,7 @@ CREATE TABLE PhoneCarrier (
 	    name CHAR(100) UNIQUE NOT NULL,
 	    emaildomain CHAR(50) UNIQUE NOT NULL);
 
-    
+
 
 CREATE TABLE IF NOT EXISTS Users (
     Id {{$pkey_exp}},
@@ -50,11 +50,11 @@ CREATE TABLE IF NOT EXISTS Users (
 	ModifyTime INTEGER DEFAULT 0,
 	UserGroup INTEGER DEFAULT 0,
 	FOREIGN KEY(PhoneCarrier) REFERENCES PhoneCarrier(Id) ON DELETE SET NULL);
-    
+
 CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
 
-CREATE TABLE IF NOT EXISTS Device (   
+CREATE TABLE IF NOT EXISTS Device (
     Id INTEGER {{$pkey_exp}},
 	Name VARCHAR NOT NULL,
 	ApiKey VARCHAR UNIQUE NOT NULL,
@@ -91,10 +91,22 @@ CREATE TABLE Stream (
     FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
     UNIQUE(Name, OwnerId)
     );
-    
+
 
 CREATE INDEX StreamNameIndex ON Stream (Name);
 CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
+
+
+CREATE TABLE IF NOT EXISTS timebatchtable (
+    Key VARCHAR NOT NULL,
+    EndTime BIGINT,
+    EndIndex BIGINT,
+    Data BYTEA,
+    PRIMARY KEY (Key, EndIndex)
+    );
+
+--Index creation should only be run once.
+CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
 
 {{end}}
 
@@ -107,7 +119,7 @@ CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 -- This table won't exist for the first one.
 CREATE TABLE IF NOT EXISTS StreamdbMeta (
-     Key VARCHAR UNIQUE NOT NULL, 
+     Key VARCHAR UNIQUE NOT NULL,
      Value VARCHAR NOT NULL);
 
 -- If we use this format date, we can just test < using lexocographic comparisons
@@ -140,31 +152,31 @@ CREATE TABLE Users (
 
 
 CREATE TABLE Devices (
-    DeviceId INTEGER PRIMARY KEY, 
-    Name STRING NOT NULL, 
-    Nickname STRING DEFAULT '', 
-    UserId INTEGER, 
-    ApiKey STRING UNIQUE NOT NULL, 
-    Enabled BOOLEAN DEFAULT TRUE, 
-    IsAdmin BOOL DEFAULT FALSE, 
-    CanWrite BOOL DEFAULT TRUE, 
-    CanWriteAnywhere BOOL DEFAULT TRUE, 
-    CanActAsUser BOOL DEFAULT FALSE, 
-    IsVisible BOOL DEFAULT TRUE, 
-    UserEditable BOOL DEFAULT TRUE, 
-    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE, 
+    DeviceId INTEGER PRIMARY KEY,
+    Name STRING NOT NULL,
+    Nickname STRING DEFAULT '',
+    UserId INTEGER,
+    ApiKey STRING UNIQUE NOT NULL,
+    Enabled BOOLEAN DEFAULT TRUE,
+    IsAdmin BOOL DEFAULT FALSE,
+    CanWrite BOOL DEFAULT TRUE,
+    CanWriteAnywhere BOOL DEFAULT TRUE,
+    CanActAsUser BOOL DEFAULT FALSE,
+    IsVisible BOOL DEFAULT TRUE,
+    UserEditable BOOL DEFAULT TRUE,
+    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE,
     UNIQUE(Name, UserId));
 
 
 CREATE TABLE Streams (
-    StreamId {{.pkey_expression}}, 
-    Name STRING NOT NULL, 
+    StreamId {{.pkey_expression}},
+    Name STRING NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
-    Type VARCHAR NOT NULL, 
-    DeviceId INTEGER, 
-    Ephemeral BOOL DEFAULT FALSE, 
-    Downlink BOOL DEFAULT FALSE, 
-    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE, 
+    Type VARCHAR NOT NULL,
+    DeviceId INTEGER,
+    Ephemeral BOOL DEFAULT FALSE,
+    Downlink BOOL DEFAULT FALSE,
+    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE,
     UNIQUE(Name, DeviceId));
 
 -- Construct Indexes
@@ -183,7 +195,7 @@ INSERT INTO Users VALUES SELECT
     ProcessingLimit_S,
     StorageLimit_Gb FROM Users20150328;
 
-INSERT INTO Devices (DeviceId, Name, Nickname,  UserId,  ApiKey, Enabled, IsAdmin,   CanWrite, CanWriteAnywhere, CanActAsUser) 
+INSERT INTO Devices (DeviceId, Name, Nickname,  UserId,  ApiKey, Enabled, IsAdmin,   CanWrite, CanWriteAnywhere, CanActAsUser)
               SELECT Id,       Name, Shortname, OwnerId, ApiKey, Enabled, Superuser, CanWrite, CanWriteAnywhere, UserProxy FROM Devices20150328;
 
 
@@ -192,10 +204,10 @@ INSERT INTO Streams (StreamId, Name, Type, DeviceId, Ephemeral, Downlink) SELECT
 -- Insert Data
 
 -- Default Carriers
-INSERT INTO PhoneCarrier (name, emaildomain) VALUES 
-    ('Alltel US', '@message.alltel.com'), 
+INSERT INTO PhoneCarrier (name, emaildomain) VALUES
+    ('Alltel US', '@message.alltel.com'),
     ('AT&T US', '@txt.att.net'),
-    ('Nextel US', '@messaging.nextel.com'), 
+    ('Nextel US', '@messaging.nextel.com'),
     ('T-mobile US', '@tmomail.net'),
     ('Verizon US', '@vtext.com');
 
