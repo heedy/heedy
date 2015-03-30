@@ -1,5 +1,6 @@
 package streamdb
 
+/*
 import (
 	"errors"
 	"streamdb/dtypes"
@@ -116,3 +117,4 @@ func (s *Stream) EmptyDatapoint() dtypes.TypedDatapoint {
 	}
 	return d.New()
 }
+*/

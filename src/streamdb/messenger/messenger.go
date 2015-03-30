@@ -26,8 +26,12 @@ func (m *Messenger) Close() {
 	m.conn.Close()
 }
 
-//Connect initializes a connection with the gnatsd messenger.
-func Connect(url string) (*Messenger, error) {
+//Connect initializes a connection with the gnatsd messenger. Allows daisy-chaining errors
+func Connect(url string, err error) (*Messenger, error) {
+	if err != nil {
+		return nil, err
+	}
+
 	conn, err := nats.Connect("nats://" + url)
 	if err != nil {
 		return nil, err

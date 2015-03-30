@@ -1,20 +1,27 @@
 package messenger
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
 
 func TestMessenger(t *testing.T) {
+	newerr := errors.New("FAIL")
+	_, err := Connect("localhost:4222", newerr)
+	if err != newerr {
+		t.Errorf("Error chain failed: %s", err)
+		return
+	}
 
-	msg, err := Connect("localhost:4222")
+	msg, err := Connect("localhost:4222", nil)
 	if err != nil {
 		t.Errorf("Couldn't connect: %s", err)
 		return
 	}
 	defer msg.Close()
 
-	msg2, err := Connect("localhost:4222")
+	msg2, err := Connect("localhost:4222", nil)
 	if err != nil {
 		t.Errorf("Couldn't connect: %s", err)
 		return
