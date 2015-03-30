@@ -1,5 +1,6 @@
 package web_client
 
+/*
 import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -420,3 +421,4 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
 }
+*/

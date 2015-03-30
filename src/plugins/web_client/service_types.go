@@ -1,5 +1,6 @@
 package web_client
 
+/*
 import (
 	"net/http"
 	"streamdb/dtypes"
@@ -44,3 +45,4 @@ func NewCreateSuccessResult(id int64) CreateSuccessResult {
 
 	return res
 }
+*/

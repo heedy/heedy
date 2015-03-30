@@ -1,5 +1,6 @@
 package web_client
 
+/*
 import (
 	"encoding/json"
 	"encoding/xml"
@@ -738,3 +739,4 @@ func GetSubrouter(udb *streamdb.Database, subroutePrefix *mux.Router) {
 	sname.HandleFunc("/point/", apiAuth(createDataPoint, false, true, true, true)).Methods("POST")
 
 }
+*/

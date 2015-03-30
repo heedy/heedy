@@ -3,15 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
 	"log"
-	"net/http"
-	//"streamdb/users"
 	"os"
-	"plugins/web_client"
+
+	//"plugins/web_client"
 	"streamdb"
-	//"streamdb/timebatchdb"
-	//"streamdb/dtypes"
 )
 
 var (
@@ -33,21 +29,23 @@ func main() {
 	}
 
 	var err error
-	userdb, err := streamdb.Open(*sqlserver, *redisserver, *msgserver)
+	db, err := streamdb.Open(*sqlserver, *redisserver, *msgserver)
 
 	if err != nil {
-		userdb = nil
-		log.Print("Cannot open user database")
+		log.Print("Cannot open StreamDB")
 		panic(err.Error())
 	}
+	defer db.Close()
+	log.Fatal("This program is disabled until v0.2 StreamDB API is complete.")
+	/*
+		log.Printf("Starting Server on port %d", *serverport)
 
-	log.Printf("Starting Server on port %d", *serverport)
+		r := mux.NewRouter()
+		web_client.GetSubrouter(userdb, r)
+		web_client.Setup(r, userdb)
+		//r.HandleFunc("/", HomeHandler)
+		http.Handle("/", r)
 
-	r := mux.NewRouter()
-	web_client.GetSubrouter(userdb, r)
-	web_client.Setup(r, userdb)
-	//r.HandleFunc("/", HomeHandler)
-	http.Handle("/", r)
-
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
+	*/
 }
