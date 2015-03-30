@@ -79,11 +79,22 @@ type SqlStore struct {
 
 //Close all resources associated with the SqlStore.
 func (s *SqlStore) Close() {
-	s.inserter.Close()
-	s.timequery.Close()
-	s.indexquery.Close()
-	s.endindex.Close()
-	s.delkey.Close()
+	//The if statements allow to close a partially initialized store
+	if s.inserter != nil {
+		s.inserter.Close()
+	}
+	if s.timequery != nil {
+		s.timequery.Close()
+	}
+	if s.indexquery != nil {
+		s.indexquery.Close()
+	}
+	if s.endindex != nil {
+		s.endindex.Close()
+	}
+	if s.delkey != nil {
+		s.delkey.Close()
+	}
 }
 
 //GetEndIndex returns the first index point outside of the most recent datapointarray stored within the database.
@@ -204,55 +215,33 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 	return &sqlRange{rows, da}, endindex - uint64(da.Len()), nil
 }
 
+//This function is to allow daisy-chaining errors from statement creation
+func prepStatement(db *sql.DB, statement string, err error) (*sql.Stmt, error) {
+	if err != nil {
+		return nil, err
+	}
+	return db.Prepare(statement)
+}
+
 //prepareSqlStore sets up the inserts (it assumes that the database was already prepared)
 func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexqueryStatement,
 	endindexStatement, delkeyStatement, delprefixStatement string) (*SqlStore, error) {
-	inserter, err := db.Prepare(insertStatement)
+
+	inserter, err := prepStatement(db, insertStatement, nil)
+	timequery, err := prepStatement(db, timequeryStatement, err)
+	indexquery, err := prepStatement(db, indexqueryStatement, err)
+	endindex, err := prepStatement(db, endindexStatement, err)
+	delkey, err := prepStatement(db, delkeyStatement, err)
+	delprefix, err := prepStatement(db, delprefixStatement, err)
+
+	ss := &SqlStore{inserter, timequery, indexquery, endindex, delkey, delprefix}
+
 	if err != nil {
+		ss.Close()
 		return nil, err
 	}
 
-	timequery, err := db.Prepare(timequeryStatement)
-	if err != nil {
-		inserter.Close()
-		return nil, err
-	}
-
-	indexquery, err := db.Prepare(indexqueryStatement)
-	if err != nil {
-		inserter.Close()
-		timequery.Close()
-		return nil, err
-	}
-
-	endindex, err := db.Prepare(endindexStatement)
-	if err != nil {
-		inserter.Close()
-		timequery.Close()
-		indexquery.Close()
-		return nil, err
-	}
-
-	delkey, err := db.Prepare(delkeyStatement)
-	if err != nil {
-		inserter.Close()
-		timequery.Close()
-		indexquery.Close()
-		endindex.Close()
-		return nil, err
-	}
-
-	delprefix, err := db.Prepare(delprefixStatement)
-	if err != nil {
-		inserter.Close()
-		timequery.Close()
-		indexquery.Close()
-		endindex.Close()
-		delkey.Close()
-		return nil, err
-	}
-
-	return &SqlStore{inserter, timequery, indexquery, endindex, delkey, delprefix}, nil
+	return ss, nil
 }
 
 //OpenSQLiteStore initializes an sqlite database to work with an SqlStore.
