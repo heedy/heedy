@@ -12,7 +12,35 @@ var (
 	ErrorDatabaseCorrupted = errors.New("Database is corrupted!")
 	//ErrorWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
 	ErrorWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
+	//ErrorVersion is returned when the data returned from the database is of an unknown binary version
+	ErrorVersion = errors.New("Unrecognized binary data version.")
 )
+
+//decodeDatapointArray is a convenience function that given a byte array, and the encoding version, returns the DatapointArray
+func decodeDatapointArray(version int, data []byte) (*DatapointArray,error) {
+	switch version {
+		default:
+			return nil,ErrorVersion
+		case 1:
+			return DatapointArrayFromBytes(data),nil
+		case 2:
+			return DatapointArrayFromCompressedBytes(data),nil
+
+	}
+}
+
+//encodeDatapointArray is a convenience function that given a DatapointArray and the chosen encoding version, returns the byte array
+func encodeDatapointArray(version int, da *DatapointArray) ([]byte,error) {
+	switch version {
+		default:
+			return nil,ErrorVersion
+		case 1:
+			return da.Bytes(),nil
+		case 2:
+			return da.CompressedBytes(),nil
+	}
+}
+
 
 //The DataRange which handles retrieving data from an Sql database
 type sqlRange struct {
@@ -35,8 +63,8 @@ func (s *sqlRange) Init() error {
 }
 
 //Returns the next datapoint from the sqlRange
-func (s *sqlRange) Next() (*Datapoint, error) {
-	d, _ := s.da.Next() //Next on DatapointArray never returns error
+func (s *sqlRange) Next() (d *Datapoint,err error) {
+	d, _ = s.da.Next() //Next on DatapointArray never returns error
 	if d != nil {
 		return d, nil
 	}
@@ -53,14 +81,17 @@ func (s *sqlRange) Next() (*Datapoint, error) {
 	}
 
 	//There is more data to read!
+	var version int
 	var endindex uint64 //We don't actually care about this in our case - but we need to scan it
 	var data []byte
-	if err := s.r.Scan(&endindex, &data); err != nil {
+	if err = s.r.Scan(&version,&endindex, &data); err != nil {
 		s.Close()
 		return nil, err
 	}
-	//s.da = DatapointArrayFromBytes(data)
-	s.da = DatapointArrayFromCompressedBytes(data)
+	if s.da,err = decodeDatapointArray(version,data); err!=nil {
+		s.Close()
+		return nil,err
+	}
 
 	//Repeat the procedure.
 	return s.Next()
@@ -75,6 +106,8 @@ type SqlStore struct {
 	endindex   *sql.Stmt
 	delkey     *sql.Stmt
 	delprefix  *sql.Stmt
+
+	insertversion int	//The version of encoding to insert data as
 }
 
 //Close all resources associated with the SqlStore.
@@ -115,9 +148,12 @@ func (s *SqlStore) GetEndIndex(key string) (ei uint64, err error) {
 
 //Insert the given DatapointArray into the sql database given the startindex of the array for the key.
 func (s *SqlStore) Insert(key string, startindex uint64, da *DatapointArray) error {
-	_, err := s.inserter.Exec(key, da.Datapoints[da.Len()-1].Timestamp(), startindex+uint64(da.Len()),
-		//da.Bytes())
-		da.CompressedBytes())
+	dbytes,err := encodeDatapointArray(s.insertversion,da)
+	if err!=nil {
+		return err
+	}
+	_, err = s.inserter.Exec(key, da.Datapoints[da.Len()-1].Timestamp(), startindex+uint64(da.Len()),
+				s.insertversion,dbytes)
 	return err
 }
 
@@ -159,14 +195,19 @@ func (s *SqlStore) GetByTime(key string, starttime int64) (dr DataRange, startin
 	}
 
 	//There is some data!
+	var version int
 	var endindex uint64
 	var data []byte
-	if err = rows.Scan(&endindex, &data); err != nil {
+	if err = rows.Scan(&version,&endindex, &data); err != nil {
 		return EmptyRange{}, endindex, err
 	}
 
-	//da := DatapointArrayFromBytes(data).TStart(starttime)
-	da := DatapointArrayFromCompressedBytes(data).TStart(starttime)
+	da,err := decodeDatapointArray(version,data)
+	if err!=nil {
+		rows.Close()
+		return EmptyRange{}, endindex, err
+	}
+	da = da.TStart(starttime)
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
 		return EmptyRange{}, endindex, ErrorDatabaseCorrupted
@@ -191,13 +232,18 @@ func (s *SqlStore) GetByIndex(key string, startindex uint64) (dr DataRange, data
 	}
 
 	//There is some data!
+	var version int
 	var endindex uint64
 	var data []byte
-	if err = rows.Scan(&endindex, &data); err != nil {
+	if err = rows.Scan(&version,&endindex, &data); err != nil {
 		return EmptyRange{}, endindex, err
 	}
-	//da := DatapointArrayFromBytes(data)
-	da := DatapointArrayFromCompressedBytes(data)
+
+	da,err := decodeDatapointArray(version,data)
+	if err!=nil {
+		rows.Close()
+		return EmptyRange{}, endindex, err
+	}
 
 	if da == nil || uint64(da.Len()) > endindex {
 		rows.Close()
@@ -234,7 +280,7 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 	delkey, err := prepStatement(db, delkeyStatement, err)
 	delprefix, err := prepStatement(db, delprefixStatement, err)
 
-	ss := &SqlStore{inserter, timequery, indexquery, endindex, delkey, delprefix}
+	ss := &SqlStore{inserter, timequery, indexquery, endindex, delkey, delprefix,2}
 
 	if err != nil {
 		ss.Close()
@@ -259,6 +305,7 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
             Key STRING NOT NULL,
             EndTime INTEGER,
             EndIndex INTEGER,
+			Version INTEGER,
             Data BLOB,
             PRIMARY KEY (Key, EndIndex)
             );`)
@@ -280,9 +327,9 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 
 	//Now that tables are all set up, prepare the queries to run on the database
 
-	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES (?,?,?,?);",
-		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
-		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
+	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES (?,?,?,?,?);",
+		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
+		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
 		"SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?",
 		"DELETE FROM timebatchtable WHERE Key=?",
 		"DELETE FROM timebatchtable WHERE Key LIKE ?")
@@ -303,6 +350,7 @@ func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
             Key VARCHAR NOT NULL,
             EndTime BIGINT,
             EndIndex BIGINT,
+			Version INTEGER,
             Data BYTEA,
             PRIMARY KEY (Key, EndIndex)
             );`)
@@ -336,9 +384,9 @@ func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 	}
 
 	//Now that tables are all set up, prepare the queries to run on the database
-	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES ($1,$2,$3,$4);",
-		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndTime > $2 ORDER BY EndTime ASC;",
-		"SELECT EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndIndex > $2 ORDER BY EndIndex ASC;",
+	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES ($1,$2,$3,$4,$5);",
+		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndTime > $2 ORDER BY EndTime ASC;",
+		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=$1 AND EndIndex > $2 ORDER BY EndIndex ASC;",
 		"SELECT COALESCE(MAX(EndIndex),0) FROM timebatchtable WHERE Key=$1;",
 		"DELETE FROM timebatchtable WHERE Key=$1;",
 		"DELETE FROM timebatchtable WHERE Key LIKE $1;")
