@@ -9,12 +9,10 @@ import (
 	"streamdb/dtypes"
 	"streamdb/users"
 	"strings"
+	"streamdb/dbutil"
 )
 
-const (
-	SQLITE_PREFIX   = "sqlite://"
-	POSTGRES_PREFIX = "postgres://"
-)
+
 
 var (
 	BATCH_SIZE = 100 //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
@@ -23,9 +21,12 @@ var (
 //This is a StreamDB database object which holds the methods
 type Database struct {
 	users.UserDatabase                       //UserDatabase holds the methods needed to CRUD users/devices/streams
-	tdb                *dtypes.TypedDatabase //timebatchdb holds methods for inserting datapoints into streams
+	tdb  *dtypes.TypedDatabase //timebatchdb holds methods for inserting datapoints into streams
 
 	sqldb *sql.DB //Connection to the sql database
+	SqlType dbutil.DRIVERSTR
+
+	dbutil.SqlxMixin
 }
 
 //This function closes all database connections and releases all resources.
@@ -35,8 +36,8 @@ func (db *Database) Close() {
 		db.tdb.Close()
 	}
 
-	if db.Db != nil {
-		db.Db.Close()
+	if db.sqldb != nil {
+		db.sqldb.Close()
 	}
 }
 
@@ -70,47 +71,21 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 	var db Database
 
-	//First, we check if the user wants to use sqlite or postgres. If the url given
-	//has the hallmarks of a file or sqlite database, then set that as the database type
 
-	db.SqlType = users.POSTGRES //The default is postgres.
+	db.sqldb, db.SqlType, err = dbutil.OpenSqlDatabase(sqluri)
 
-	switch {
-	// TODO just check if this is a file
-	// How I wish there were a "blah" in [] like Python!
-	case strings.HasSuffix(sqluri, ".db") ||
-		strings.HasSuffix(sqluri, ".sqlite") ||
-		strings.HasSuffix(sqluri, ".sqlite3") ||
-		strings.HasPrefix(sqluri, SQLITE_PREFIX):
-
-		db.SqlType = users.SQLITE3
-
-		//The sqlite driver doesn't like starting with sqlite://
-		if strings.HasPrefix(sqluri, SQLITE_PREFIX) {
-			sqluri = sqluri[len(SQLITE_PREFIX):]
-		}
-		break
-	case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
-		db.SqlType = users.POSTGRES
-		sqluri = sqluri[len(POSTGRES_PREFIX):]
+	if err != nil {
+		db.Close()
+		return nil, err
 	}
 
-	/*TODO: Right now UserDB has no way to pass in an sql object without
-	  bypassing all constructors.
-	  So we let UserDB open the connection, then steal the database object
-	  //Now open the correct type of database.
-	  sdb,err := sql.Open(sqltype,sqluri)
-	  if err!=nil {
-	      return nil,err
-	  }
-	*/
+	db.InitSqlxMixin(db.sqldb, string(db.SqlType))
+	db.InitUserDatabase(db.sqldb, string(db.SqlType))
 
-	log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
-	err = db.InitUserDatabase(db.SqlType, sqluri)
-	db.sqldb = db.Db
+
 
 	log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
-	db.tdb, err = dtypes.Open(db.Db, string(db.SqlType), redisuri, BATCH_SIZE, err)
+	db.tdb, err = dtypes.Open(db.sqldb, string(db.SqlType), redisuri, BATCH_SIZE, err)
 
 	if err != nil {
 		db.Close()
@@ -118,7 +93,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if db.SqlType == users.SQLITE3 {
+	if db.SqlType == SQLITE3 {
 		go db.tdb.WriteDatabase()
 	}
 

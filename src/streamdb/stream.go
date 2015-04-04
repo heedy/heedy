@@ -7,46 +7,47 @@ import (
 	"strings"
 )
 
-type Stream struct {
+type StreamOperator struct {
 	Stream *users.Stream
-	Dev    *Device
+	Dev    *Operator
 	Uri    string
 }
 
 //Returns the stream object
-func (dev *Device) GetStream(streamuri string) (*Stream, error) {
+func (dev *Operator) GetStream(streamuri string) (*StreamOperator, error) {
 	uds := strings.Split(streamuri, "/")
 	if len(uds) != 3 {
 		return nil, errors.New("Could not get stream: incorrect number of arguments.")
 	}
-	_, _, s, err := dev.Db.ReadStreamByUriAs(dev.Device, uds[0], uds[1], uds[2])
+	_, _, s, err := dev.ReadStreamByUri(uds[0], uds[1], uds[2])
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &Stream{s, dev, streamuri}, nil
+	return &StreamOperator{s, dev, streamuri}, nil
 }
 
-func (s *Stream) Write(pt dtypes.TypedDatapoint) error {
+
+func (s *StreamOperator) Write(pt dtypes.TypedDatapoint) error {
 	//Check for write permission of the device to the stream
 	stream := s.Stream
 
-	if HasPermissions(s.Dev.Device, write_privilege) && s.Stream.OwnerId == s.Dev.Device.Id {
-		return s.Dev.Db.tdb.InsertKey(s.Uri, pt)
+	if HasPermissions(s.Dev.GetDevice(), write_privilege) && s.Stream.DeviceId == s.Dev.GetDevice().DeviceId {
+		return s.Dev.GetDatabase().tdb.InsertKey(s.Uri, pt)
 	}
 
-	if HasPermissions(s.Dev.Device, super_privilege) {
-		return s.Dev.Db.tdb.InsertKey(s.Uri, pt)
+	if HasPermissions(s.Dev.GetDevice(), super_privilege) {
+		return s.Dev.GetDatabase().tdb.InsertKey(s.Uri, pt)
 	}
 
-	owner, err := s.Dev.Db.ReadStreamOwner(stream.Id) // user
+	owner, err := s.Dev.GetDatabase().ReadStreamOwner(stream.StreamId) // user
 	if err != nil {
 		return err
 	}
 
-	if s.Dev.Device.OwnerId == owner.Id && HasPermissions(s.Dev.Device, write_anywhere_privilege) {
-		return s.Dev.Db.tdb.InsertKey(s.Uri, pt)
+	if s.Dev.GetDevice().UserId == owner.UserId && HasPermissions(s.Dev.GetDevice(), write_anywhere_privilege) {
+		return s.Dev.GetDatabase().tdb.InsertKey(s.Uri, pt)
 	}
 
 	return nil
@@ -57,27 +58,27 @@ func canReadStream(dev *users.Device, stream *users.Stream, db *Database) (bool,
 		return true, nil
 	}
 
-	if HasPermissions(dev, read_privilege) && stream.OwnerId == dev.Id {
+	if HasPermissions(dev, read_privilege) && stream.DeviceId == dev.DeviceId {
 		return true, nil
 	}
 
-	owner, err := db.ReadStreamOwner(stream.Id) // user
+	owner, err := db.ReadStreamOwner(stream.StreamId) // user
 
 	if err != nil {
 		return false, err
 	}
 
-	if dev.OwnerId == owner.Id {
+	if dev.UserId == owner.UserId {
 		return true, nil
 	}
 
 	return false, nil
 }
 
-func (s *Stream) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange, err error) {
+func (s *StreamOperator) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange, err error) {
 	//Check for read permission of the device to the stream
 
-	read, err := canReadStream(s.Dev.Device, s.Stream, s.Dev.Db)
+	read, err := canReadStream(s.Dev.GetDevice(), s.Stream, s.Dev.GetDatabase())
 
 	if err != nil {
 		return nil, err
@@ -88,14 +89,14 @@ func (s *Stream) ReadIndex(i1, i2 uint64) (d *dtypes.TypedRange, err error) {
 	}
 
 	//Write using the uri as key to timebatchDB
-	tr, err := s.Dev.Db.tdb.GetIndexRange(s.Uri, s.Stream.Type, i1, i2), nil
+	tr, err := s.Dev.GetDatabase().tdb.GetIndexRange(s.Uri, s.Stream.Type, i1, i2), nil
 	return &tr, err
 }
 
-func (s *Stream) ReadTime(t1, t2 int64) (d *dtypes.TypedRange, err error) {
+func (s *StreamOperator) ReadTime(t1, t2 int64) (d *dtypes.TypedRange, err error) {
 	//Check for read permission of the device to the stream
 
-	read, err := canReadStream(s.Dev.Device, s.Stream, s.Dev.Db)
+	read, err := canReadStream(s.Dev.GetDevice(), s.Stream, s.Dev.GetDatabase())
 
 	if err != nil {
 		return nil, err
@@ -105,11 +106,11 @@ func (s *Stream) ReadTime(t1, t2 int64) (d *dtypes.TypedRange, err error) {
 		return nil, PrivilegeError
 	}
 	//Write using the uri as key to timebatchDB
-	tr, err := s.Dev.Db.tdb.GetTimeRange(s.Uri, s.Stream.Type, t1, t2), nil
+	tr, err := s.Dev.GetDatabase().tdb.GetTimeRange(s.Uri, s.Stream.Type, t1, t2), nil
 	return &tr, err
 }
 
-func (s *Stream) EmptyDatapoint() dtypes.TypedDatapoint {
+func (s *StreamOperator) EmptyDatapoint() dtypes.TypedDatapoint {
 	d, ok := dtypes.GetType(s.Stream.Type)
 	if !ok {
 		return nil
