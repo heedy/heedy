@@ -45,6 +45,7 @@ dependencies:
 	go get github.com/gorilla/sessions
 	go get github.com/lib/pq
 	go get github.com/josephlewis42/sqlx # our own so we don't depend on someone who claims the library will change in the future
+	go get github.com/xeipuuv/gojsonschema
 
 ############################################################################################################
 #Packages the project requires (not included in all because it needs sudo)

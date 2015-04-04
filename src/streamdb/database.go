@@ -2,11 +2,14 @@ package streamdb
 
 import (
 	"database/sql"
+
+	//The blank imports are used to automatically register the database handlers
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 
 	"log"
-	"streamdb/dtypes"
+	"streamdb/messenger"
+	"streamdb/timebatchdb"
 	"streamdb/users"
 	"strings"
 	"streamdb/dbutil"
@@ -15,21 +18,23 @@ import (
 
 
 var (
-	BATCH_SIZE = 100 //The batch size that StreamDB uses for its batching process. See Database.RunWriter()
+	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
+	BatchSize = 250
 )
 
-//This is a StreamDB database object which holds the methods
+//Database is a StreamDB database object which holds the methods
 type Database struct {
-	users.UserDatabase                       //UserDatabase holds the methods needed to CRUD users/devices/streams
-	tdb  *dtypes.TypedDatabase //timebatchdb holds methods for inserting datapoints into streams
+	users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
-	sqldb *sql.DB //Connection to the sql database
+	tdb   *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
+	msg   *messenger.Messenger  //messenger is a connectino to the messaging client
+	sqldb *sql.DB               //Connection to the sql database
 	SqlType dbutil.DRIVERSTR
 
 	dbutil.SqlxMixin
 }
 
-//This function closes all database connections and releases all resources.
+//Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
 func (db *Database) Close() {
 	if db.tdb != nil {
@@ -39,10 +44,14 @@ func (db *Database) Close() {
 	if db.sqldb != nil {
 		db.sqldb.Close()
 	}
+
+	if db.msg != nil {
+		db.msg.Close()
+	}
 }
 
 /**
-Opens StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
+Open StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
 server.
 
 StreamDB can use both postgres and sqlite as its storage engine. To run StreamDB with sqlite, give a
@@ -84,8 +93,15 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 
 
-	log.Printf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BATCH_SIZE)
-	db.tdb, err = dtypes.Open(db.sqldb, string(db.SqlType), redisuri, BATCH_SIZE, err)
+	log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
+	err = db.InitUserDatabase(db.SqlType, sqluri)
+	db.sqldb = db.Db
+
+	log.Printf("Opening messenger with uri %s\n", msguri)
+	db.msg, err = messenger.Connect(msguri, err)
+
+	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
+	db.tdb, err = timebatchdb.Open(db.Db, string(db.SqlType), redisuri, BatchSize, err)
 
 	if err != nil {
 		db.Close()
@@ -102,8 +118,8 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 }
 
 /**
-StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
-an sql database in batches of size BATCH_SIZE (global var). This allows great insert speed as well as fantastic read speed on large
+RunWriter exists because StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
+an sql database in batches of size BatchSize (global var). This allows great insert speed as well as fantastic read speed on large
 ranges of data. RunWriter runs this 'batching' process, which happens in the background.
 When running a single instance with posgres, you need to call RunWriter once manually (as a goroutine). You do not need to
 run it if on sqlite, since it is run automatically.
