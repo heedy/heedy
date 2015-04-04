@@ -4,37 +4,31 @@
 -- DroppingTables, boolean, should we drop old tables?
 
 
-{/* These variables need to be defined for all databases */}
+{{/* These variables need to be defined for all databases */}}
 
-
-{{ if eq .DBType "postgres" }}
-    {{$pkey_exp := "SERIAL PRIMARY KEY"}}
-{{ end }}
 
 {{ if eq .DBType "sqlite3" }}
-    {{$pkey_exp := "INTEGER PRIMARY KEY"}}
-
 -- Turn on fkey support so we don't do shitty things without realizing it
 PRAGMA foreign_keys = ON;
 {{ end }}
 
 
 -- {{.DBType}} specific template features
--- Primary Key Expression: {{$pkey_exp}}
+-- Primary Key Expression: {{.pkey_exp}}
 
 
 
-{{if eq .DBVersion "init"}}
+{{if eq .DBVersion "00000000"}}
 
 CREATE TABLE PhoneCarrier (
-	    id {{$pkey_exp}},
+	    id {{.pkey_exp}},
 	    name CHAR(100) UNIQUE NOT NULL,
 	    emaildomain CHAR(50) UNIQUE NOT NULL);
 
 
 
 CREATE TABLE IF NOT EXISTS Users (
-    Id {{$pkey_exp}},
+    Id {{.pkey_exp}},
 	Name VARCHAR UNIQUE NOT NULL,
 	Email VARCHAR UNIQUE NOT NULL,
 	Password VARCHAR NOT NULL,
@@ -55,7 +49,7 @@ CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
 
 CREATE TABLE IF NOT EXISTS Device (
-    Id INTEGER {{$pkey_exp}},
+    Id INTEGER {{.pkey_exp}},
 	Name VARCHAR NOT NULL,
 	ApiKey VARCHAR UNIQUE NOT NULL,
 	Enabled BOOLEAN DEFAULT TRUE,
@@ -80,7 +74,7 @@ CREATE INDEX DeviceOwnerIndex ON Device (OwnerId);
 
 
 CREATE TABLE Stream (
-    Id INTEGER PRIMARY KEY,
+    Id {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Active BOOLEAN DEFAULT TRUE,
     Public BOOLEAN DEFAULT FALSE,
@@ -102,6 +96,7 @@ CREATE TABLE IF NOT EXISTS timebatchtable (
     EndTime BIGINT,
     EndIndex BIGINT,
     Data BYTEA,
+    UNIQUE (Key, EndIndex),
     PRIMARY KEY (Key, EndIndex)
     );
 
@@ -112,7 +107,7 @@ CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
 
 
 
-{{if .DBVersion lt "20150328"}}
+{{if lt .DBVersion "20150328"}}
 
 -- POSTGRES 9.1 should work with If Not Exists
 
@@ -121,6 +116,8 @@ CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
 CREATE TABLE IF NOT EXISTS StreamdbMeta (
      Key VARCHAR UNIQUE NOT NULL,
      Value VARCHAR NOT NULL);
+
+CREATE INDEX sdb_meta ON StreamdbMeta (Key);
 
 -- If we use this format date, we can just test < using lexocographic comparisons
 INSERT INTO StreamdbMeta VALUES ('DBVersion', '20150328');
@@ -142,7 +139,7 @@ CREATE TABLE Users (
 
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,
-	PasswordHashScheme INTEGER NOT NULL,
+	PasswordHashScheme VARCHAR NOT NULL,
 
 	Admin BOOLEAN DEFAULT FALSE,
 
@@ -152,7 +149,7 @@ CREATE TABLE Users (
 
 
 CREATE TABLE Devices (
-    DeviceId INTEGER PRIMARY KEY,
+    DeviceId {{.pkey_exp}},
     Name STRING NOT NULL,
     Nickname STRING DEFAULT '',
     UserId INTEGER,
@@ -169,7 +166,7 @@ CREATE TABLE Devices (
 
 
 CREATE TABLE Streams (
-    StreamId {{.pkey_expression}},
+    StreamId {{.pkey_exp}},
     Name STRING NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
     Type VARCHAR NOT NULL,
@@ -179,11 +176,40 @@ CREATE TABLE Streams (
     FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE,
     UNIQUE(Name, DeviceId));
 
+
+CREATE TABLE UserKeyValues (
+    UserId INTEGER,
+    Key VARCHAR NOT NULL,
+    Value VARCHAR NOT NULL DEFAULT '',
+    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE,
+    UNIQUE(UserId, Key),
+    PRIMARY KEY (UserId, Key)
+);
+
+CREATE TABLE DeviceKeyValues (
+    DeviceId INTEGER,
+    Key VARCHAR NOT NULL,
+    Value VARCHAR NOT NULL DEFAULT '',
+    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE,
+    UNIQUE(DeviceId, Key),
+    PRIMARY KEY (DeviceId, Key)
+);
+
+
+CREATE TABLE StreamKeyValues (
+    StreamId INTEGER,
+    Key VARCHAR NOT NULL,
+    Value VARCHAR NOT NULL DEFAULT '',
+    FOREIGN KEY(StreamId) REFERENCES Streams(StreamId) ON DELETE CASCADE,
+    UNIQUE(StreamId, Key),
+    PRIMARY KEY (StreamId, Key)
+);
+
 -- Construct Indexes
 
 -- Transfer Data
 
-INSERT INTO Users VALUES SELECT
+INSERT INTO Users SELECT
     Id,
     Name,
     Email,
@@ -196,7 +222,7 @@ INSERT INTO Users VALUES SELECT
     StorageLimit_Gb FROM Users20150328;
 
 INSERT INTO Devices (DeviceId, Name, Nickname,  UserId,  ApiKey, Enabled, IsAdmin,   CanWrite, CanWriteAnywhere, CanActAsUser)
-              SELECT Id,       Name, Shortname, OwnerId, ApiKey, Enabled, Superuser, CanWrite, CanWriteAnywhere, UserProxy FROM Devices20150328;
+              SELECT Id,       Name, Shortname, OwnerId, ApiKey, Enabled, Superdevice, CanWrite, CanWriteAnywhere, UserProxy FROM Devices20150328;
 
 
 INSERT INTO Streams (StreamId, Name, Type, DeviceId, Ephemeral, Downlink) SELECT Id, Name, Type, OwnerId, Ephemeral, Output FROM Streams20150328;
@@ -204,7 +230,7 @@ INSERT INTO Streams (StreamId, Name, Type, DeviceId, Ephemeral, Downlink) SELECT
 -- Insert Data
 
 -- Default Carriers
-INSERT INTO PhoneCarrier (name, emaildomain) VALUES
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES
     ('Alltel US', '@message.alltel.com'),
     ('AT&T US', '@txt.att.net'),
     ('Nextel US', '@messaging.nextel.com'),
@@ -219,4 +245,7 @@ DROP TABLE Devices20150328;
 DROP TABLE Users20150328;
 {{end}}
 
-{{end}} {/*end conversion 20150328*/}
+
+
+{{end}}
+{{/*end conversion 20150328*/}}
