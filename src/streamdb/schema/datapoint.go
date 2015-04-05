@@ -1,5 +1,10 @@
 package schema
 
+import (
+	"fmt"
+	"time"
+)
+
 //The Datapoint struct is used to encode a single element of information, ready to be Marshalled/unmarshalled into any of the various types
 type Datapoint struct {
 	Timestamp float64     `json:"t" xml:"t,attr"`
@@ -18,6 +23,15 @@ func (d *Datapoint) DataBytes() ([]byte, error) {
 //IntTimestamp returns the unix nanoseconds timestamp
 func (d *Datapoint) IntTimestamp() int64 {
 	return int64(1e9 * d.Timestamp)
+}
+
+//String prints out a pretty string representation of the datapoint
+func (d *Datapoint) String() string {
+	s := fmt.Sprintf("[T=%s D=%v S=%s", time.Unix(0, d.IntTimestamp()), d.Data, d.Stream)
+	if d.Sender != "" {
+		s += " O=" + d.Sender
+	}
+	return s + "]"
 }
 
 //NewDatapoint reates a new uninitialized datapoint (which can be marshalled to)

@@ -32,7 +32,7 @@ func (d Datapoint) Bytes() []byte {
 
 //String returns a nice pretty-printed representation of the datapoint
 func (d Datapoint) String() string {
-	s := "[TIME=" + time.Unix(0, int64(d.Timestamp())).String() + " DATA=" + string(d.Data())
+	s := "[TIME=" + time.Unix(0, d.Timestamp()).String() + " DATA=" + string(d.Data())
 	if k := d.Key(); k != "" { //The key is optional
 		s += " KEY=" + k
 	}
