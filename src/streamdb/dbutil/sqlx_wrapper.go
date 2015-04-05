@@ -14,6 +14,7 @@ type SqlxMixin struct {
 
 // Initializes a sqlx mixin
 func (db *SqlxMixin) InitSqlxMixin(sqldb *sql.DB, dbtype string) {
+    db.sqlxPreparedStmtCache = make(map[string] *sqlx.Stmt)
 	db.sqlxdb = sqlx.NewDb(sqldb, dbtype)
     db.sqlxdbtype = dbtype
 }

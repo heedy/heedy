@@ -1,10 +1,10 @@
 package dbutil
 
 import (
-	//"database/sql"
+	"database/sql"
 	"text/template"
-	"os"
-	"fmt"
+	"bytes"
+	"log"
     )
 
 const (
@@ -21,7 +21,7 @@ type meta struct {
 }
 
 // Gets the conversion script for the given params.
-func GetConversion(dbtype, dbversion string, dropOld bool) string {
+func GetConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) string {
 	templateParams := make(map[string] string)
 
 	if dbversion == "" {
@@ -29,7 +29,7 @@ func GetConversion(dbtype, dbversion string, dropOld bool) string {
 	}
 
 	templateParams["DBVersion"] = dbversion
-	templateParams["DBType"] = dbtype
+	templateParams["DBType"] = dbtype.String()
 	if dropOld {
 		templateParams["DroppingTables"] = "true"
 	} else {
@@ -43,16 +43,33 @@ func GetConversion(dbtype, dbversion string, dropOld bool) string {
 	}
 
 
-	conversion_template := template.Must(template.ParseFiles("conversion.temp.sql"))
+	conversion_template, err := template.New("modifier").Parse(dbconversion)
 
-	err := conversion_template.Execute(os.Stdout, templateParams)
-	if err != nil { panic(err) }
-    return ""
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var doc bytes.Buffer
+	conversion_template.Execute(&doc, templateParams)
+    return doc.String()
 }
 
+func DoConversion(db *sql.DB, dbtype DRIVERSTR, deleteold bool) error {
+	version := "00000000"
 
+	var mixin SqlxMixin
+	mixin.InitSqlxMixin(db, dbtype.String())
 
-func main() {
-	GetConversion("sqlite3", "00000000", true)
-	fmt.Printf("done")
+	err := mixin.Get(&version, "SELECT Value FROM StreamdbMeta WHERE Key = 'DBVersion'")
+
+	if err != nil {
+		version = "00000000"
+	}
+
+	conversionstr := GetConversion(dbtype, version, deleteold)
+
+	log.Printf("Conversion string\n\n%v", conversionstr)
+
+	_, err = mixin.Exec(conversionstr)
+	return err
 }
