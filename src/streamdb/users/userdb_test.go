@@ -13,8 +13,8 @@ import (
 	//"github.com/nu7hatch/gouuid"
 	//"os"
 	//"net"
-	"log"
-	"testing"
+	//"log"
+	//"testing"
 	//"time"
 )
 
@@ -93,7 +93,7 @@ func init() {
         log.Printf("Could not create database %v", err)
     }
 }
-*/
+
 
 func TestPostgresInit(t *testing.T) {
 
@@ -108,3 +108,4 @@ func TestPostgresInit(t *testing.T) {
 		t.Errorf("Err was not nil %v", err)
 	}
 }
+*/

@@ -1,10 +1,10 @@
 package users
-
+/**
 import (
 	"log"
 	"os"
-	"reflect"
 	"testing"
+	"streamdb/dbutil"
 )
 
 var (
@@ -23,52 +23,64 @@ func init() {
 	var err error
 
 	_ = os.Remove(testdbname)
-	testdb, err = NewSqliteUserDatabase(testdbname)
+
+	testdb = &UserDatabase{}
+
+	sql, dbtype, err := dbutil.OpenSqlDatabase(testdbname)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = dbutil.DoConversion(sql, dbtype, false)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	testdb.InitUserDatabase(sql, dbtype.String())
+
+
+
+	err = testdb.CreatePhoneCarrier("StreamTestPhoneCarrier", "StreamTestPhoneCarrier.com")
 	if err != nil {
 		log.Print(err)
 	}
 
-	carid, err = testdb.CreatePhoneCarrier("StreamTestPhoneCarrier", "StreamTestPhoneCarrier.com")
+	err = testdb.CreateUser("StreamTestUserName", "StreamTestUserEmail", "StreamTestUserPassword")
 	if err != nil {
 		log.Print(err)
 	}
 
-	usrid, err = testdb.CreateUser("StreamTestUserName", "StreamTestUserEmail", "StreamTestUserPassword")
+	usr, err = testdb.ReadUserByName("StreamTestUserName")
 	if err != nil {
 		log.Print(err)
 	}
 
-	usr, err = testdb.ReadUserById(usrid)
+	err = testdb.CreateDevice("StreamTestDevice", usr.UserId)
 	if err != nil {
 		log.Print(err)
 	}
 
-	devid, err = testdb.CreateDevice("StreamTestDevice", usr)
+	dev, err = testdb.ReadDeviceForUserByName(usr.UserId, "StreamTestDevice")
 	if err != nil {
 		log.Print(err)
 	}
 
-	dev, err = testdb.ReadDeviceById(devid)
+	err = testdb.CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
 	if err != nil {
 		log.Print(err)
 	}
 
-	usrid, err = testdb.CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
+	usr, err = testdb.ReadUserByName("DeviceTestUserName")
 	if err != nil {
 		log.Print(err)
 	}
 
-	usr, err = testdb.ReadUserById(usrid)
+	err = testdb.CreateUser("DeviceTestUserName2", "DeviceTestUserEmail2", "DeviceTestUserPassword2")
 	if err != nil {
 		log.Print(err)
 	}
 
-	usrid2, err = testdb.CreateUser("DeviceTestUserName2", "DeviceTestUserEmail2", "DeviceTestUserPassword2")
-	if err != nil {
-		log.Print(err)
-	}
-
-	usr2, err = testdb.ReadUserById(usrid2)
+	usr2, err = testdb.ReadUserByName("DeviceTestUserName2")
 	if err != nil {
 		log.Print(err)
 	}
@@ -76,49 +88,20 @@ func init() {
 }
 
 func TestCreateStream(t *testing.T) {
-	_, err := testdb.CreateStream("TestCreateStream", "{}", dev)
+	err := testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
 	if err != nil {
 		t.Errorf("Cannot create stream %v", err)
 		return
 	}
 
-	_, err = testdb.CreateStream("TestCreateStream", "{}", dev)
+	err = testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
 	if err == nil {
 		t.Errorf("Created stream with duplicate name")
 	}
-
-	_, err = testdb.CreateStream("", "", nil)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Function safeguards failed")
-	}
 }
-
-func TestConstructStreamsFromRows(t *testing.T) {
-	_, err := constructStreamsFromRows(nil)
-
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Function safeguards failed")
-	}
-
-}
-
-func TestReadStreamById(t *testing.T) {
-	streamid, err := testdb.CreateStream("TestReadStreamById", "{}", dev)
-	if err != nil {
-		t.Errorf("Cannot create stream %v", err)
-		return
-	}
-
-	stream, err := testdb.ReadStreamById(streamid)
-
-	if err != nil || stream == nil {
-		t.Errorf("Cannot read stream back with returned id %v", streamid)
-		return
-	}
-}
-
+/**
 func TestUpdateStream(t *testing.T) {
-	streamid, err := testdb.CreateStream("TestUpdateStream", "{}", dev)
+	err := testdb.CreateStream("TestUpdateStream", "{}", dev.DeviceId)
 	if err != nil {
 		t.Errorf("Cannot create stream %v", err)
 		return
@@ -159,10 +142,10 @@ func TestUpdateStream(t *testing.T) {
 		t.Errorf("Function safeguards failed")
 	}
 
-}
-
+}**/
+/**
 func TestDeleteStream(t *testing.T) {
-	id, err := testdb.CreateStream("TestDeleteStream", "{}", dev)
+	id, err := testdb.CreateStream("TestDeleteStream", "{}", dev.DeviceId)
 
 	if nil != err {
 		t.Errorf("Cannot create stream to test delete")
@@ -176,7 +159,7 @@ func TestDeleteStream(t *testing.T) {
 		return
 	}
 
-	stream, err := testdb.ReadStreamById(id)
+	stream, err := testdb.ReadStreamByName(id)
 
 	if err == nil {
 		t.Errorf("The stream with the selected ID should have errored out, but it was not")
@@ -189,10 +172,10 @@ func TestDeleteStream(t *testing.T) {
 }
 
 func TestReadStreamByDevice(t *testing.T) {
-	testdb.CreateStream("TestReadStreamByDevice", "{}", dev)
-	testdb.CreateStream("TestReadStreamByDevice2", "{}", dev)
+	testdb.CreateStream("TestReadStreamByDevice", "{}", dev.DeviceId)
+	testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
 
-	streams, err := testdb.ReadStreamsByDevice(dev)
+	streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
 
 	if err != nil {
 		t.Errorf("Got error while reading streams by device")
@@ -204,10 +187,5 @@ func TestReadStreamByDevice(t *testing.T) {
 	if len(streams) < 2 {
 		t.Errorf("didn't get enough streams")
 	}
-
-	_, err = testdb.ReadStreamsByDevice(nil)
-
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Function safeguards failed")
-	}
 }
+**/

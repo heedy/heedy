@@ -1,112 +1,65 @@
 package users
 
-import (
-	"database/sql"
-	"errors"
-	"log"
-)
+/** Package users provides an API for managing user information.
+
+Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
+                 Daniel Kumor <rdkumor@gmail.com>
+
+All Rights Reserved
+**/
+
+
+type Stream struct {
+	StreamId  int64  `modifiable:"nobody"`
+	Name      string `modifiable:"nobody"`
+	Nickname  string `modifiable:"user"`
+	Type      string `modifiable:"root"`
+	DeviceId  int64  `modifiable:"nobody"`
+	Ephemeral bool   `modifiable:"user"`
+	Downlink  bool   `modifiable:"user"`
+}
+
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
-func (userdb *UserDatabase) CreateStream(Name, Type string, owner *Device) (int64, error) {
-	if owner == nil {
-		return -1, ERR_INVALID_PTR
+func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
+	if userdb.IsReadOnly() {
+		return READONLY_ERR
 	}
 
-	res, err := userdb.Db.Exec(CREATE_STREAM_STMT,
-		Name, Type, owner.Id)
+	_, err := userdb.Exec(`INSERT INTO Stream
+	    (	Name,
+	        Type,
+	        DeviceId) VALUES (?,?,?);`, Name, Type, DeviceId)
 
-	if err != nil {
-		return 0, err
-	}
-
-	return res.LastInsertId()
-}
-
-// constructStreamsFromRows converts a rows statement to an array of streams
-func constructStreamsFromRows(rows *sql.Rows) ([]*Stream, error) {
-	out := []*Stream{}
-
-	// defensive programming
-	if rows == nil {
-		return out, ERR_INVALID_PTR
-	}
-
-	for rows.Next() {
-		u := new(Stream)
-		err := rows.Scan(
-			&u.Id,
-			&u.Name,
-			&u.Active,
-			&u.Public,
-			&u.Type,
-			&u.OwnerId,
-			&u.Ephemeral,
-			&u.Output)
-
-		out = append(out, u)
-
-		if err != nil {
-			return out, err
-		}
-	}
-
-	return out, nil
+	return err
 }
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *UserDatabase) ReadStreamById(id int64) (*Stream, error) {
-	rows, err := userdb.Db.Query(SELECT_STREAM_BY_ID_STMT, id)
+func (userdb *UserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
+	var stream Stream
 
-	if err != nil {
-		return nil, err
-	}
+	err := userdb.Get(&stream, "SELECT * FROM Stream WHERE StreamId = ? LIMIT 1;", StreamId)
 
-	defer rows.Close()
-
-	streams, err := constructStreamsFromRows(rows)
-
-	if len(streams) != 1 {
-		log.Printf("Read stream by device id and name failed: streamid:%v", id)
-		return nil, errors.New("Wrong number of streams returned")
-	}
-
-	return streams[0], nil
+	return &stream, err
 }
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(id int64, name string) (*Stream, error) {
-	rows, err := userdb.Db.Query(READ_STREAM_BY_DEVICE_AND_NAME, id, name)
+func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
+	var stream Stream
 
-	if err != nil {
-		return nil, err
-	}
+	err := userdb.Get(&stream, "SELECT * FROM Stream WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
 
-	defer rows.Close()
-
-	streams, err := constructStreamsFromRows(rows)
-
-	if len(streams) != 1 {
-		log.Printf("Read stream by device id and name failed: streamid:%v streamname:%v", id, name)
-		return nil, errors.New("Wrong number of streams returned")
-	}
-
-	return streams[0], nil
+	return &stream, err
 }
 
-func (userdb *UserDatabase) ReadStreamsByDevice(device *Device) ([]*Stream, error) {
-	if device == nil {
-		return nil, ERR_INVALID_PTR
-	}
+func (userdb *UserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
+	var streams []Stream
 
-	rows, err := userdb.Db.Query(SELECT_STREAM_BY_DEVICE_STMT, device.Id)
+	err := userdb.Select(&streams, "SELECT * FROM Stream WHERE DeviceId = ?;", DeviceId)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return constructStreamsFromRows(rows)
+	return streams, err
 }
 
 // UpdateStream updates the stream with the given ID with the provided data
@@ -116,21 +69,35 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 		return ERR_INVALID_PTR
 	}
 
-	_, err := userdb.Db.Exec(UPDATE_STREAM_STMT,
+	if userdb.IsReadOnly() {
+		return READONLY_ERR
+	}
+
+	_, err := userdb.Exec(`UPDATE Stream SET
+	    Name = ?,
+		Nickname = ?,
+	    Type = ?,
+	    DeviceId = ?,
+	    Ephemeral = ?,
+	    Downlink = ?
+	    WHERE StreamId = ?;`,
 		stream.Name,
-		stream.Active,
-		stream.Public,
+		stream.Nickname,
 		stream.Type,
-		stream.OwnerId,
+		stream.DeviceId,
 		stream.Ephemeral,
-		stream.Output,
-		stream.Id)
+		stream.Downlink,
+		stream.StreamId)
 
 	return err
 }
 
 // DeleteStream removes a stream from the database
 func (userdb *UserDatabase) DeleteStream(Id int64) error {
-	_, err := userdb.Db.Exec(DELETE_STREAM_BY_ID_STMT, Id)
+	if userdb.IsReadOnly() {
+		return READONLY_ERR
+	}
+
+	_, err := userdb.Exec(`DELETE FROM Stream WHERE StreamId = ?;`, Id)
 	return err
 }

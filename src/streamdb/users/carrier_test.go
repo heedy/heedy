@@ -1,21 +1,28 @@
 package users
 
+/** Package users provides an API for managing user information.
+
+Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
+                 Daniel Kumor <rdkumor@gmail.com>
+
+All Rights Reserved
+**/
+/**
 import "testing"
-import "errors"
 
 func TestCreatePhoneCarrier(t *testing.T) {
-	_, err := testdb.CreatePhoneCarrier("Test", "example.com")
+	err := testdb.CreatePhoneCarrier("Test", "example.com")
 	if err != nil {
 		t.Errorf("Cannot create phone carrier %v", err)
 		return
 	}
 
-	_, err = testdb.CreatePhoneCarrier("Test", "example2.com")
+	err = testdb.CreatePhoneCarrier("Test", "example2.com")
 	if err == nil {
 		t.Errorf("Created carrier with duplicate name")
 	}
 
-	_, err = testdb.CreatePhoneCarrier("Test2", "example.com")
+	err = testdb.CreatePhoneCarrier("Test2", "example.com")
 	if err == nil {
 		t.Errorf("Created carrier with duplicate domain")
 	}
@@ -23,8 +30,8 @@ func TestCreatePhoneCarrier(t *testing.T) {
 
 func TestReadAllPhoneCarriers(t *testing.T) {
 
-	_, _ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier1", "TestReadAllPhoneCarrier1.com")
-	_, _ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier2", "TestReadAllPhoneCarrier2.com")
+	_ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier1", "TestReadAllPhoneCarrier1.com")
+	_ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier2", "TestReadAllPhoneCarrier2.com")
 
 	carriers, err := testdb.ReadAllPhoneCarriers()
 
@@ -60,13 +67,19 @@ func TestReadAllPhoneCarriers(t *testing.T) {
 
 func TestReadPhoneCarrierById(t *testing.T) {
 
-	id, err := testdb.CreatePhoneCarrier("TestReadPhoneCarrierById", "TestReadPhoneCarrierById.com")
-
+	err := testdb.CreatePhoneCarrier("TestReadPhoneCarrierById", "TestReadPhoneCarrierById.com")
 	if nil != err {
 		t.Errorf("Cannot create phone carrier to test")
 	}
 
-	carrier, err := testdb.ReadPhoneCarrierById(id)
+	pc, err  := testdb.ReadPhoneCarrierByName("TestReadPhoneCarrierById")
+	if nil != err {
+		t.Errorf("Cannot read carrier by name %v", err)
+	}
+
+	id := pc.Id
+
+	carrier, err := testdb.ReadPhoneCarrierById(pc.Id)
 
 	if err != nil {
 		t.Errorf("Cannot read phone carrier back with returned id %v", id)
@@ -89,11 +102,19 @@ func TestReadPhoneCarrierById(t *testing.T) {
 func TestUpdatePhoneCarrier(t *testing.T) {
 	teststring := "Hello, World!"
 
-	id, err := testdb.CreatePhoneCarrier("TestUpdatePhoneCarrier", "TestUpdatePhoneCarrier.com")
+	err := testdb.CreatePhoneCarrier("TestUpdatePhoneCarrier", "TestUpdatePhoneCarrier.com")
 
 	if nil != err {
 		t.Errorf("Cannot create phone carrier to test")
 	}
+
+	pc, err  := testdb.ReadPhoneCarrierByName("TestUpdatePhoneCarrier")
+	if nil != err {
+		t.Errorf("Cannot read carrier by name")
+	}
+
+	id := pc.Id
+
 
 	carrier, err := testdb.ReadPhoneCarrierById(id)
 
@@ -123,7 +144,16 @@ func TestUpdatePhoneCarrier(t *testing.T) {
 }
 
 func TestDeletePhoneCarrier(t *testing.T) {
-	id, err := testdb.CreatePhoneCarrier("TestDeletePhoneCarrier", "TestDeletePhoneCarrier.com")
+	err := testdb.CreatePhoneCarrier("TestDeletePhoneCarrier", "TestDeletePhoneCarrier.com")
+
+
+
+	pc, err  := testdb.ReadPhoneCarrierByName("TestDeletePhoneCarrier")
+	if nil != err {
+		t.Errorf("Cannot read carrier by name")
+	}
+
+	id := pc.Id
 
 	if nil != err {
 		t.Errorf("Cannot create phone carrier to test delete")
@@ -148,29 +178,4 @@ func TestDeletePhoneCarrier(t *testing.T) {
 		t.Errorf("Expected nil, but we got back a carrier meaning the delete failed %v", carrier)
 	}
 }
-
-func TestCarrierSanityChecks(t *testing.T) {
-
-	testerr := errors.New("foobarbaz")
-
-	_, err := constructPhoneCarrierFromRow(nil, testerr)
-	if err == nil && err != ERR_INVALID_PTR {
-		t.Errorf("Passed in error and got nothing back.")
-	}
-
-	if err == ERR_INVALID_PTR {
-		t.Errorf("Got a further down error than expecting, should have got the same one back.")
-	}
-
-	_, err = constructPhoneCarriersFromRows(nil)
-
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Didn't stop a nil pointer")
-	}
-
-	err = testdb.UpdatePhoneCarrier(nil)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Didn't stop a nil pointer for update")
-	}
-
-}
+**/

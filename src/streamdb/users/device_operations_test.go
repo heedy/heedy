@@ -1,43 +1,44 @@
 package users
-
+/**
 import (
 	"reflect"
 	"testing"
 )
 
 func TestCreateDevice(t *testing.T) {
-	_, err := testdb.CreateDevice("TestCreateDevice", usr)
+	err := testdb.CreateDevice("TestCreateDevice", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create device %v", err)
 		return
 	}
 
 	// DeviceName/Usernames must be unique
-	_, err = testdb.CreateDevice("TestCreateDevice", usr)
+ 	err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
 	if err == nil {
 		t.Errorf("Created device with duplicate name under the same user")
 	}
 
 	// but should work with different users
-	_, err = testdb.CreateDevice("TestCreateDevice", usr2)
+	err = testdb.CreateDevice("TestCreateDevice", usr2.UserId)
 	if err != nil {
 		t.Errorf("Could not create device with secnod user %v", err)
 		return
 	}
-
-	_, err = testdb.CreateDevice("TestCreateDevice2", nil)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("allowed user to be nil")
-	}
 }
 
 func TestReadDeviceById(t *testing.T) {
-	id, err := testdb.CreateDevice("TestReadStreamById", usr)
-
+	err := testdb.CreateDevice("TestReadStreamById", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create object %v", err)
 		return
 	}
+
+	devforid, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestReadStreamById")
+	if err != nil {
+		t.Errorf("Cannot get id %v", err)
+		return
+	}
+	id := devforid.UserId
 
 	obj, err := testdb.ReadDeviceById(id)
 
@@ -48,24 +49,23 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	id, err := testdb.CreateDevice("TestUpdateDevice", usr)
+	err := testdb.CreateDevice("TestUpdateDevice", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create object %v", err)
 		return
 	}
 
-	obj, err := testdb.ReadDeviceById(id)
+	obj, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestUpdateDevice")
 	if err != nil || obj == nil {
-		t.Errorf("Cannot read object back with id: %v, err: %v, obj:%v", id, err, obj)
+		t.Errorf("Cannot read object back with err: %v, obj:%v", err, obj)
 		return
 	}
 
 	obj.Name = "Test"
 	obj.ApiKey = obj.ApiKey + "Testing" // should work with all UUIDs, still will be unique
 	obj.Enabled = false
-	obj.Icon_PngB64 = ""
-	obj.Shortname = "My Wifi Router"
-	obj.Superdevice = true
+	obj.Nickname = "My Wifi Router"
+	obj.IsAdmin = true
 
 	err = testdb.UpdateDevice(obj)
 	if err != nil {
@@ -73,9 +73,9 @@ func TestUpdateDevice(t *testing.T) {
 		return
 	}
 
-	obj2, err := testdb.ReadDeviceById(id)
+	obj2, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestUpdateDevice")
 	if err != nil || obj2 == nil {
-		t.Errorf("Cannot read object back with id: {}, err: {}, obj:{}", id, err, obj2)
+		t.Errorf("Cannot read object back with err: {}, obj:{}", err, obj2)
 		return
 	}
 
@@ -89,35 +89,28 @@ func TestUpdateDevice(t *testing.T) {
 	}
 }
 
-func TestConstructDevicesFromRows(t *testing.T) {
-	_, err := constructDevicesFromRows(nil, nil)
-
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Allowed nil pointer through")
-	}
-
-	_, err = constructDevicesFromRows(nil, ERR_INVALID_PTR)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Passed up error checking")
-	}
-}
-
 func TestDeleteDevice(t *testing.T) {
-	id, err := testdb.CreateDevice("TestDeleteDevice", usr)
+	err := testdb.CreateDevice("TestDeleteDevice", usr.UserId)
 
 	if nil != err {
 		t.Errorf("Cannot create object to test delete err: %v", err)
 		return
 	}
 
-	err = testdb.DeleteDevice(id)
+	obj, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestDeleteDevice")
+	if nil != err {
+		t.Errorf("Cannot create object to test delete err: %v", err)
+		return
+	}
+
+	err = testdb.DeleteDevice(obj.DeviceId)
 
 	if nil != err {
 		t.Errorf("Error when attempted delete %v", err)
 		return
 	}
 
-	obj, err := testdb.ReadDeviceById(id)
+	obj, err = testdb.ReadDeviceForUserByName(usr.UserId, "TestDeleteDevice")
 
 	if err == nil {
 		t.Errorf("The object with the selected ID should have errored out, but it did not")
@@ -128,3 +121,4 @@ func TestDeleteDevice(t *testing.T) {
 		t.Errorf("Expected nil, but we got back %v meaning the delete failed", obj)
 	}
 }
+**/
