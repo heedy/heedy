@@ -11,7 +11,6 @@ import (
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
-	"strings"
 	"streamdb/dbutil"
 )
 
@@ -91,17 +90,11 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	db.InitSqlxMixin(db.sqldb, string(db.SqlType))
 	db.InitUserDatabase(db.sqldb, string(db.SqlType))
 
-
-
-	log.Printf("Opening %v database with cxn string: %v", db.SqlType, sqluri)
-	err = db.InitUserDatabase(db.SqlType, sqluri)
-	db.sqldb = db.Db
-
 	log.Printf("Opening messenger with uri %s\n", msguri)
 	db.msg, err = messenger.Connect(msguri, err)
 
 	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
-	db.tdb, err = timebatchdb.Open(db.Db, string(db.SqlType), redisuri, BatchSize, err)
+	db.tdb, err = timebatchdb.Open(db.sqldb, string(db.SqlType), redisuri, BatchSize, err)
 
 	if err != nil {
 		db.Close()
@@ -109,7 +102,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if db.SqlType == SQLITE3 {
+	if db.SqlType == dbutil.SQLITE3 {
 		go db.tdb.WriteDatabase()
 	}
 
