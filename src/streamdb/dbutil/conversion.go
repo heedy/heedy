@@ -1,10 +1,13 @@
 package dbutil
 
 import (
-	"database/sql"
 	"text/template"
 	"bytes"
 	"log"
+	"os/exec"
+    "io/ioutil"
+	"errors"
+	"os"
     )
 
 const (
@@ -54,22 +57,72 @@ func GetConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) string {
     return doc.String()
 }
 
-func DoConversion(db *sql.DB, dbtype DRIVERSTR, deleteold bool) error {
-	version := "00000000"
+/** Upgrades the database with the given connection string, returns an error if anything goes wrong.
 
-	var mixin SqlxMixin
-	mixin.InitSqlxMixin(db, dbtype.String())
 
-	err := mixin.Get(&version, "SELECT Value FROM StreamdbMeta WHERE Key = 'DBVersion'")
+Note that sqlite3 databases rely on a lot of moving parts and can go very wrong
+due to an implementation decision that they can't do more than one statement
+in an Exec() call; thus we dump the update to a file, close the database,
+invoke sqlite3 with the proper command to execute the sql file.
 
-	if err != nil {
-		version = "00000000"
-	}
+Postgres just uses the existing connection.
 
-	conversionstr := GetConversion(dbtype, version, deleteold)
+**/
+func UpgradeDatabase(cxnstring string, dropold bool) error {
 
-	log.Printf("Conversion string\n\n%v", conversionstr)
+    db, driver, err := OpenSqlDatabase(cxnstring)
+    if err != nil {
+        return err
+    }
 
-	_, err = mixin.Exec(conversionstr)
-	return err
+    // Check version of database
+    version := GetDatabaseVersion(db, driver)
+    log.Printf("Upgrading DB From Version: %v\n", version)
+
+	conversionstr := GetConversion(driver, version, dropold)
+
+    switch driver {
+        case SQLITE3:
+            // sqlite doesn't allow direct exec of multiple lines, so we do it
+            // from the cli and hope for the best.
+
+            f, err := ioutil.TempFile("", "initdb_")
+            if err != nil {
+                return err
+            }
+
+			// Tempfile says we're responsible for closing and deleting this
+            defer f.Close()
+            defer os.Remove(f.Name())
+
+            _, err = f.WriteString(conversionstr)
+            if err != nil {
+                return err
+            }
+
+			// So we don't get any race conditions on the database
+            db.Close()
+
+			// Strip anything from sqlite connection string that isn't a path
+            cmd := exec.Command("sqlite3", "-init", f.Name(), SqliteURIToPath(cxnstring))
+            err = cmd.Run()
+            if err != nil {
+                return err
+            }
+
+
+        case POSTGRES:
+            defer db.Close()
+            _, err = db.Exec(conversionstr)
+
+            if err != nil {
+                return err
+            }
+
+        default:
+			log.Printf("Unknown Driver %v\n", driver.String())
+            return errors.New("The connection driver is unknown, cowardly failing.")
+    }
+
+	return nil
 }
