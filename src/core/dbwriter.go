@@ -1,20 +1,19 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
-	_ "github.com/lib/pq"
 	"log"
 	"os"
-	"streamdb/timebatchdb"
+	"streamdb"
 )
 
 var (
-	sql_server   = flag.String("postgres", "localhost:52592", "location of postgres server")
-	redis_server = flag.String("redis", "localhost:6379", "location of redis server")
-	batch_size   = flag.Int("batchsize", 100, "The number of datapoints per batch of data")
-	helpflag     = flag.Bool("help", false, "Prints this help message")
+	helpflag = flag.Bool("help", false, "Prints this message")
+
+	sqlserver   = flag.String("sql", "webservice.sqlite3", "")
+	redisserver = flag.String("redis", "localhost:6379", "The address to the redis instance")
+	msgserver   = flag.String("msg", "localhost:4222", "The address of the messenger server")
 )
 
 func main() {
@@ -27,22 +26,16 @@ func main() {
 	}
 
 	//First create the postgres connection string
-	postgres_conn := fmt.Sprintf("postgres://%s/connectordb?sslmode=disable", *sql_server)
+	postgresConn := fmt.Sprintf("postgres://%s/connectordb?sslmode=disable", *sqlserver)
 
-	pdb, err := sql.Open("postgres", postgres_conn)
-	if err != nil {
-		log.Fatal("Couldn't connect to postgres: ", err)
-		return
-	}
-	defer pdb.Close()
+	db, err := streamdb.Open(postgresConn, *redisserver, *msgserver)
 
-	db, err := timebatchdb.Open(pdb, "postgres", *redis_server, *batch_size, nil)
 	if err != nil {
-		log.Fatal("Couldn't open TimebatchDB: ", err)
-		return
+		log.Print("Cannot open StreamDB")
+		panic(err.Error())
 	}
 	defer db.Close()
 
-	log.Fatal(db.WriteDatabase())
+	db.RunWriter()
 
 }
