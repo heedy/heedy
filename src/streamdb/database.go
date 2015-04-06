@@ -2,11 +2,6 @@ package streamdb
 
 import (
 	"database/sql"
-
-	//The blank imports are used to automatically register the database handlers
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
-
 	"log"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
