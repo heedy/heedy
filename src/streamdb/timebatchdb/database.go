@@ -187,7 +187,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 		return err
 	}
 
-	datapointarray, cacheStartIndex, err := d.cache.BatchGet(key, 0)
+	datapointarray, cacheStartIndex, err := d.cache.BatchGet(key, d.batchsize)
 	if err == ErrorRedisWrongSize || datapointarray.Len() < d.batchsize { //If WrongSize, it means that the key was pushed needlessly - ignore the key
 		log.Printf("TimebatchDB:WriteDatabase:IGNORING: Got small batch: key=%v #=%v\n", key, datapointarray.Len())
 	} else if err != nil {
@@ -196,7 +196,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 	} else {
 
 		if storeEndIndex == cacheStartIndex {
-			//Looks like all is well - write the datapoint to database
+			//Looks like all is well - write the datapoints to database
 			err = d.store.Insert(key, cacheStartIndex, datapointarray)
 			if err != nil {
 				d.cache.BatchPush(key)

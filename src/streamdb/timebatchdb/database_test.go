@@ -77,14 +77,17 @@ func TestDatabaseInsert(t *testing.T) {
 	}
 
 	//Now make sure that the key was pushed to the batch queue
-	k, err := rc.BatchWait()
-	if err != nil || k != "hello" {
-		t.Errorf("Error in batch queue: %v, %s", err, k)
-		return
+	rc.BatchPush("END")
+
+	for i := 0; i < 2; i++ {
+		k, err := rc.BatchWait()
+		if err != nil || k != "hello" {
+			t.Errorf("Error in batch queue: %v, %s %v", err, k, i)
+			return
+		}
 	}
 
-	rc.BatchPush("END")
-	k, err = rc.BatchWait()
+	k, err := rc.BatchWait()
 	if err != nil || k != "END" {
 		t.Errorf("Error in batch queue: %v, %s", err, k)
 		return
@@ -131,19 +134,20 @@ func TestDatabaseWrite(t *testing.T) {
 		t.Errorf("error on insert: %v", err)
 		return
 	}
-
-	err = db.WriteDatabaseIteration()
-	if err != nil {
-		t.Errorf("error on write: %v", err)
-		return
+	for i := 0; i < 2; i++ {
+		err = db.WriteDatabaseIteration()
+		if err != nil {
+			t.Errorf("error on write: %v %v", i, err)
+			return
+		}
 	}
-	if i, _ := rc.CacheLength("hello"); i != 0 {
+	if i, _ := rc.CacheLength("hello"); i != 2 {
 		t.Errorf("cache length wrong: %v", i)
 		return
 	}
 
 	rc.BatchPush("NOTAKEY")
-	err = db.WriteDatabaseIteration() //Should repush the key and give an error
+	err = db.WriteDatabaseIteration() //Should just ignore the bad key
 	if err != nil {
 		t.Errorf("error on write: %v", err)
 		return
@@ -154,7 +158,7 @@ func TestDatabaseWrite(t *testing.T) {
 		return
 	}
 	//Now make sure that the data actually exists in the sql database
-	if !ensureValidityTest(t, timestamps, data, dr) {
+	if !ensureValidityTest(t, timestamps[:6], data[:6], dr) {
 		return
 	}
 }

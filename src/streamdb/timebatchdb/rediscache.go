@@ -322,7 +322,7 @@ func OpenRedisCache(url string, err error) (*RedisCache, error) {
 	//This command first checks for timestamp validity. If valid, it sets the end time to the timestamp of
 	//the most recent datapoint. Then, it pushes all the datapoints into the key's list in chunks, because
 	//redis lua has an argument limit. Lastly, if the number of datapoints is large, perform a batch push of
-	//the key, so that the database writer can notice the batch.
+	//the key, so that the database writer can notice the batch. There is one batch push for each batchsize.
 	inserter := redis.NewScript(3, `local endtime = tonumber(redis.call('get',KEYS[2]))
 	if (endtime~=nil and endtime >= tonumber(ARGV[1])) then
 		return {["err"]="TSM"}
@@ -333,7 +333,12 @@ func OpenRedisCache(url string, err error) (*RedisCache, error) {
 	end
 	local datanum = tonumber(redis.call('llen',KEYS[1]))
 	if datanum >= tonumber(ARGV[3]) then
-		redis.call('lpush',KEYS[3],KEYS[1])
+		for i=1,math.floor((#ARGV-3)/tonumber(ARGV[3])) do
+			redis.call('lpush',KEYS[3],KEYS[1])
+		end
+		if (#ARGV-3)%tonumber(ARGV[3])+(datanum-#ARGV+3)%tonumber(ARGV[3]) > tonumber(ARGV[3]) then
+			redis.call('lpush',KEYS[3],KEYS[1])
+		end
 	end`)
 
 	return &RedisCache{rp, inserter}, nil
