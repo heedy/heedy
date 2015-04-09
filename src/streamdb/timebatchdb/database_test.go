@@ -406,9 +406,9 @@ func BenchmarkThousandS_S(b *testing.B) {
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
 		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-		if n > 5 && (n-1)%10 == 0 {
-			db.WriteDatabaseIteration()
-		}
+	}
+	for i := 0; i < 10; i++ {
+		db.WriteDatabaseIteration()
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -455,9 +455,10 @@ func BenchmarkThousandS_P(b *testing.B) {
 	for n := int64(0); n < 100; n++ {
 		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
 		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-		if n > 5 && (n-1)%10 == 0 {
-			db.WriteDatabaseIteration()
-		}
+
+	}
+	for i := 0; i < 10; i++ {
+		db.WriteDatabaseIteration()
 	}
 
 	b.ResetTimer()

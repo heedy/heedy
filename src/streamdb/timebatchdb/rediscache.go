@@ -336,7 +336,7 @@ func OpenRedisCache(url string, err error) (*RedisCache, error) {
 		for i=1,math.floor((#ARGV-3)/tonumber(ARGV[3])) do
 			redis.call('lpush',KEYS[3],KEYS[1])
 		end
-		if (#ARGV-3)%tonumber(ARGV[3])+(datanum-#ARGV+3)%tonumber(ARGV[3]) > tonumber(ARGV[3]) then
+		if (#ARGV-3)%tonumber(ARGV[3])+(datanum-#ARGV+3)%tonumber(ARGV[3]) >= tonumber(ARGV[3]) then
 			redis.call('lpush',KEYS[3],KEYS[1])
 		end
 	end`)
