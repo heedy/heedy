@@ -8,8 +8,8 @@ android {
         applicationId "com.connectordb.dataconnect"
         minSdkVersion 19
         targetSdkVersion 21
-        versionCode 3
-        versionName "1.0"
+        versionCode 4
+        versionName "0.2"
     }
     buildTypes {
         release {

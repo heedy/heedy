@@ -12,7 +12,7 @@ import android.util.Log;
  * Created by Daniel on 2/22/2015.
  */
 public class DataCache extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;   //Version 2: ConnectorDB 0.1 had different schema types - so want to purge data
     private static final String TAG = "DataCache";
     public static final String DATABASE_NAME = "DataCache.db";
 

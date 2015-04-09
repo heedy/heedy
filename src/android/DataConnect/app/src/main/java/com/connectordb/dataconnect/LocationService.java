@@ -27,7 +27,13 @@ public class LocationService extends Service implements LocationListener, Connec
     @Override
     public void onLocationChanged(Location location)
     {
-        String data = "["+Double.toString(location.getLatitude())+","+Double.toString(location.getLongitude())+"]";
+        String data = "{\"lat\": "+Double.toString(location.getLatitude())+
+                ", \"long\": "+Double.toString(location.getLongitude())+
+                ", \"alt\": "+Double.toString(location.getAltitude())+
+                ", \"acc\": "+Double.toString(location.getAccuracy())+
+                ", \"speed\": "+Double.toString(location.getSpeed())+
+                ", \"bearing\": "+Double.toString(location.getBearing())+
+                "}";
         DataCache.get(this).Insert("gps",location.getTime(),data);
     }
 
