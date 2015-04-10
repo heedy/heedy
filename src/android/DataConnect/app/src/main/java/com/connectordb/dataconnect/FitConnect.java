@@ -117,8 +117,13 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
-        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_activity"),2000);
+        String longtext = DataCache.get(cont).GetKey("fit_starttime_activity");
+        if (longtext.length()==0) {
+            longtext = "2000";
+        }
+        long startTime = Long.parseLong(longtext);
         long endTime = cal.getTimeInMillis();
+        Log.v(TAG,"Start time: "+startTime);
         DataReadRequest readRequest = new DataReadRequest.Builder()
                 .read(DataType.TYPE_ACTIVITY_SAMPLE)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
@@ -126,14 +131,18 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         // Invoke the History API to fetch the data with the query and await the result of
         // the read request.
         DataReadResult dataReadResult =
-                Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
+                Fitness.HistoryApi.readData(mClient, readRequest).await(1, TimeUnit.MINUTES);
         endTime = 0;
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
             String data = "{";
             for(Field field : dp.getDataType().getFields()) {
-                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+                if (field.getName().equals("activity")) {
+                    data += "\"" + field.getName() + "\": \"" + dp.getValue(field).asActivity() + "\",";
+                } else{
+                    data += "\"" + field.getName() + "\": " + dp.getValue(field) + ",";
+                }
             }
-            DataCache.get(cont).Insert("activity_name", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+            DataCache.get(cont).Insert("activity_name", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0, data.length() - 1) + "}");
 
             if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
                 endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
@@ -141,15 +150,19 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         }
 
         Log.v(TAG,"Endtime:"+endTime);
-        if (endTime > startTime) {
-            DataCache.get(cont).SetKey("fit_starttime_activity",Long.toString(endTime));
+        if (endTime >= startTime) {
+            DataCache.get(cont).SetKey("fit_starttime_activity",Long.toString(endTime+1));
         }
     }
     public void writeStepCount() {
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
-        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_steps"),2000);
+        String longtext = DataCache.get(cont).GetKey("fit_starttime_steps");
+        if (longtext.length()==0) {
+            longtext = "2000";
+        }
+        long startTime = Long.parseLong(longtext);
         long endTime = cal.getTimeInMillis();
         DataReadRequest readRequest = new DataReadRequest.Builder()
                 .read(DataType.TYPE_STEP_COUNT_DELTA)
@@ -160,12 +173,13 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         DataReadResult dataReadResult =
                 Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
         endTime = 0;
+        Log.v(TAG,"Start time: "+startTime);
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_DELTA).getDataPoints()) {
             String data = "{";
             for(Field field : dp.getDataType().getFields()) {
                 data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
             }
-            DataCache.get(cont).Insert("stepcount", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+            DataCache.get(cont).Insert("stepcount", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0, data.length() - 1) + "}");
 
             if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
                 endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
@@ -173,17 +187,20 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
 
 
         }
-        Log.v(TAG,"Endtime:"+endTime);
-        if (endTime > startTime) {
-            DataCache.get(cont).SetKey("fit_starttime_steps", Long.toString(endTime));
+        if (endTime >= startTime) {
+            DataCache.get(cont).SetKey("fit_starttime_steps", Long.toString(endTime+1));
         }
     }
     public void writeHeartRate() {
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
-        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_heartrate"),2000);
-
+        String longtext = DataCache.get(cont).GetKey("fit_starttime_heartrate");
+        if (longtext.length()==0) {
+            longtext = "2000";
+        }
+        long startTime = Long.parseLong(longtext);
+        Log.v(TAG,"Start time: "+startTime);
         long endTime = cal.getTimeInMillis();
         DataReadRequest readRequest = new DataReadRequest.Builder()
                 .read(DataType.TYPE_HEART_RATE_BPM)
@@ -199,15 +216,14 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
             for(Field field : dp.getDataType().getFields()) {
                 data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
             }
-            DataCache.get(cont).Insert("heartrate", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+            DataCache.get(cont).Insert("heartrate", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0, data.length() - 1) + "}");
 
             if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
                 endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
             }
         }
-        Log.v(TAG,"Endtime:"+endTime);
         if (endTime > startTime) {
-            DataCache.get(cont).SetKey("fit_starttime_heartrate",Long.toString(endTime));
+            DataCache.get(cont).SetKey("fit_starttime_heartrate",Long.toString(endTime+1));
         }
     }
 

@@ -12,7 +12,7 @@ import android.util.Log;
  * Created by Daniel on 2/22/2015.
  */
 public class DataCache extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 3;   //Version 2: ConnectorDB 0.1 had different schema types - so want to purge data
+    public static final int DATABASE_VERSION = 5;   //Version 2: ConnectorDB 0.1 had different schema types - so want to purge data
     private static final String TAG = "DataCache";
     public static final String DATABASE_NAME = "DataCache.db";
 
@@ -41,7 +41,7 @@ public class DataCache extends SQLiteOpenHelper {
         );
         db.execSQL(
                 "create table kvstore " +
-                        "(key text primary key, value text)"
+                        "(dkey text primary key not null, value text)"
         );
     }
 
@@ -50,6 +50,7 @@ public class DataCache extends SQLiteOpenHelper {
         // TODO Auto-generated method stub
         Log.w(TAG,"Upgrading DataCache - deleting cached table");
         db.execSQL("DROP TABLE IF EXISTS datacache");
+        db.execSQL("DROP TABLE IF EXISTS kvstore");
         onCreate(db);
     }
 
@@ -89,17 +90,22 @@ public class DataCache extends SQLiteOpenHelper {
 
     public String GetKey(String key) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery( "SELECT value FROM kvstore WHERE key=?;", new String[] {key});
+        Cursor res = db.rawQuery( "SELECT value FROM kvstore WHERE dkey=?;", new String[] {key});
         if (res.getCount() ==0 ) {
             return "";
         } else {
             res.moveToNext();
+            Log.v(TAG,"Got: "+res.getString(0));
             return res.getString(0);
         }
     }
     public void SetKey(String key,String value) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery( "INSERT OR REPLACE INTO kvstore (key,value) VALUES (?,?);", new String[] {key,value});
+        Log.v(TAG,"SET "+key+" TO "+value);
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("dkey", key);
+        contentValues.put("value", value);
+        db.replace("kvstore",null,contentValues);
     }
 
 }
