@@ -87,6 +87,22 @@ public class SettingsActivity extends PreferenceActivity {
         }
     };
 
+    FitConnect fit;
+    private Preference.OnPreferenceChangeListener sFit = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set Fitness Logging: " + stringValue);
+
+            if (stringValue=="true") {
+                fit.subscribe();
+            } else {
+                fit.unsubscribe();
+            }
+            return true;
+        }
+    };
+
 
     private void setupLocation() {
         Preference location_pref = findPreference("location_frequency");
@@ -104,6 +120,14 @@ public class SettingsActivity extends PreferenceActivity {
                 .getBoolean(monitor_pref.getKey(), true);
         sMonitor.onPreferenceChange(monitor_pref,boolValue);
         monitor_pref.setOnPreferenceChangeListener(sMonitor);
+
+        fit = new FitConnect(this,this,true);
+        Preference fit_pref = findPreference("fitness_monitor");
+        boolValue = PreferenceManager
+                .getDefaultSharedPreferences(fit_pref.getContext())
+                .getBoolean(fit_pref.getKey(), true);
+        sFit.onPreferenceChange(monitor_pref,boolValue);
+        fit_pref.setOnPreferenceChangeListener(sFit);
 
     }
 
@@ -140,6 +164,15 @@ public class SettingsActivity extends PreferenceActivity {
                 return true;
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                fit.reconnect();
+            }
+        }
     }
 
     @Override

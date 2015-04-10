@@ -18,6 +18,12 @@ public class asyncConnect extends AsyncTask<String, Integer, Long> {
         this.context = c;
     }
     protected Long doInBackground(String... data) { //This is shit - don't have time to figure out how it works
+
+        FitConnect fit = new FitConnect(this.context,null,true);
+
+        fit.getdata();
+
+        /*
         ConnectorDB cdb = new ConnectorDB(data[0],data[1],data[2]);
         String devicename = android.os.Build.MODEL.replaceAll(" ","");
         cdb.makedevice(devicename);
@@ -67,6 +73,7 @@ public class asyncConnect extends AsyncTask<String, Integer, Long> {
             prevtime=timestamp;
             val = cursor.moveToNext();
         }
+        */
 
         Log.d(TAG, "SYNC DONE");
 

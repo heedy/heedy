@@ -15,7 +15,17 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessStatusCodes;
+import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.result.DataReadResult;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Daniel on 4/8/2015.
@@ -36,26 +46,181 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
     private GoogleApiClient mClient = null;
     private Context cont;
     private Activity act;
-    FitConnect(Context c,Activity a) {
+    private Boolean hadSubscribe = false;
+    private Boolean isSubscribe = true;
+
+    FitConnect(Context c,Activity a,Boolean isSubscribed) {
         cont = c;
         act = a;
-        mClient = new GoogleApiClient.Builder(c).addConnectionCallbacks(this)
+        isSubscribe = isSubscribed;
+        mClient = new GoogleApiClient.Builder(cont).addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(Fitness.SENSORS_API)
                 .addApi(Fitness.RECORDING_API)
+                .addApi(Fitness.HISTORY_API)
+                .addScope(Fitness.SCOPE_ACTIVITY_READ)
+                .addScope(Fitness.SCOPE_BODY_READ)
+                .addScope(Fitness.SCOPE_LOCATION_READ)
                 .build();
         mClient.connect();
+    }
+
+    public void reconnect() {
+
+        if (!mClient.isConnected() && !mClient.isConnecting()) {
+            Log.i(TAG,"Reconnecting");
+            mClient.connect();
+        }
+    }
+
+    public void subscribe() {
+        hadSubscribe=true;
+        isSubscribe = true;
+
+        if (mClient!=null) {
+            if (mClient.isConnected()) {
+                Log.i(TAG,"subscribing");
+                Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_ACTIVITY_SAMPLE)
+                        .setResultCallback(this);
+                Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_STEP_COUNT_DELTA)
+                        .setResultCallback(this);
+                Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_HEART_RATE_BPM)
+                        .setResultCallback(this);
+            }
+        }
+    }
+
+    public void unsubscribe() {
+        hadSubscribe=true;
+        isSubscribe = false;
+        if (mClient!=null) {
+            if (mClient.isConnected()) {
+                Log.i(TAG,"unsubscribing");
+                Fitness.RecordingApi.unsubscribe(mClient, DataType.TYPE_ACTIVITY_SAMPLE)
+                        .setResultCallback(this);
+                Fitness.RecordingApi.unsubscribe(mClient, DataType.TYPE_STEP_COUNT_DELTA)
+                        .setResultCallback(this);
+                Fitness.RecordingApi.unsubscribe(mClient, DataType.TYPE_HEART_RATE_BPM)
+                        .setResultCallback(this);
+            }
+        }
+    }
+
+    //Writes the data to the data cache - and returns the end time of the data
+    public void getdata() {
+        writeActivitySample();
+        writeStepCount();
+        writeHeartRate();
+
+    }
+
+    public void writeActivitySample() {
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_activity"),2000);
+        long endTime = cal.getTimeInMillis();
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .read(DataType.TYPE_ACTIVITY_SAMPLE)
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                .build();
+        // Invoke the History API to fetch the data with the query and await the result of
+        // the read request.
+        DataReadResult dataReadResult =
+                Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
+        endTime = 0;
+        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
+            String data = "{";
+            for(Field field : dp.getDataType().getFields()) {
+                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+            }
+            DataCache.get(cont).Insert("activity_name", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+
+            if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
+                endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+            }
+        }
+
+        Log.v(TAG,"Endtime:"+endTime);
+        if (endTime > startTime) {
+            DataCache.get(cont).SetKey("fit_starttime_activity",Long.toString(endTime));
+        }
+    }
+    public void writeStepCount() {
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_steps"),2000);
+        long endTime = cal.getTimeInMillis();
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .read(DataType.TYPE_STEP_COUNT_DELTA)
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                .build();
+        // Invoke the History API to fetch the data with the query and await the result of
+        // the read request.
+        DataReadResult dataReadResult =
+                Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
+        endTime = 0;
+        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_DELTA).getDataPoints()) {
+            String data = "{";
+            for(Field field : dp.getDataType().getFields()) {
+                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+            }
+            DataCache.get(cont).Insert("stepcount", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+
+            if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
+                endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+            }
+
+
+        }
+        Log.v(TAG,"Endtime:"+endTime);
+        if (endTime > startTime) {
+            DataCache.get(cont).SetKey("fit_starttime_steps", Long.toString(endTime));
+        }
+    }
+    public void writeHeartRate() {
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        long startTime = Long.getLong(DataCache.get(cont).GetKey("fit_starttime_heartrate"),2000);
+
+        long endTime = cal.getTimeInMillis();
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .read(DataType.TYPE_HEART_RATE_BPM)
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                .build();
+        // Invoke the History API to fetch the data with the query and await the result of
+        // the read request.
+        DataReadResult dataReadResult =
+                Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
+        endTime = 0;
+        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_HEART_RATE_BPM).getDataPoints()) {
+            String data = "{";
+            for(Field field : dp.getDataType().getFields()) {
+                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+            }
+            DataCache.get(cont).Insert("heartrate", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0,data.length()-1) + "}");
+
+            if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
+                endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+            }
+        }
+        Log.v(TAG,"Endtime:"+endTime);
+        if (endTime > startTime) {
+            DataCache.get(cont).SetKey("fit_starttime_heartrate",Long.toString(endTime));
+        }
     }
 
 
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected.");
-        Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_ACTIVITY_SAMPLE)
-                .setResultCallback(this);
-        Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_STEP_COUNT_DELTA)
-                .setResultCallback(this);
-        Fitness.RecordingApi.subscribe(mClient, DataType.TYPE_HEART_RATE_BPM)
-                .setResultCallback(this);
+        if (hadSubscribe) {
+            if (isSubscribe) {
+                subscribe();
+            } else {
+                unsubscribe();
+            }
+        }
 
     }
 
@@ -63,14 +228,13 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
     @Override
     public void onResult(Status status) {
         if (status.isSuccess()) {
-            if (status.getStatusCode()
-                    == FitnessStatusCodes.SUCCESS_ALREADY_SUBSCRIBED) {
-                Log.i(TAG, "Existing subscription for activity detected.");
-            } else {
-                Log.i(TAG, "Successfully subscribed!");
-            }
+            Log.i(TAG, "subscription success" );
         } else {
-            Log.i(TAG, "There was a problem subscribing.");
+            if (status.getStatusMessage()!=null) {
+                Log.e(TAG, status.getStatusMessage());
+            } else {
+                Log.e(TAG, "subscribe failed");
+            }
         }
     }
 
@@ -106,4 +270,5 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
             }
         }
     }
+
 }

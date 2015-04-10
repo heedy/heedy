@@ -28,13 +28,20 @@ public class LocationService extends Service implements LocationListener, Connec
     public void onLocationChanged(Location location)
     {
         String data = "{\"lat\": "+Double.toString(location.getLatitude())+
-                ", \"long\": "+Double.toString(location.getLongitude())+
-                ", \"alt\": "+Double.toString(location.getAltitude())+
-                ", \"acc\": "+Double.toString(location.getAccuracy())+
-                ", \"speed\": "+Double.toString(location.getSpeed())+
-                ", \"bearing\": "+Double.toString(location.getBearing())+
-                "}";
-        DataCache.get(this).Insert("gps",location.getTime(),data);
+                ", \"long\": "+Double.toString(location.getLongitude());
+        if (location.hasAltitude()) {
+            data += ", \"alt\": " + Double.toString(location.getAltitude());
+        }
+        if (location.hasAccuracy()) {
+            data+= ", \"acc\": "+Double.toString(location.getAccuracy());
+        }
+        if (location.hasSpeed()) {
+            data+= ", \"speed\": " + Double.toString(location.getSpeed());
+        }
+        if (location.hasBearing()) {
+            data+= ", \"bearing\": " + Double.toString(location.getBearing());
+        }
+        DataCache.get(this).Insert("gps",location.getTime(),data+"}");
     }
 
 

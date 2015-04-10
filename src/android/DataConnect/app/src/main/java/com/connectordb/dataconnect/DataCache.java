@@ -12,7 +12,7 @@ import android.util.Log;
  * Created by Daniel on 2/22/2015.
  */
 public class DataCache extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 2;   //Version 2: ConnectorDB 0.1 had different schema types - so want to purge data
+    public static final int DATABASE_VERSION = 3;   //Version 2: ConnectorDB 0.1 had different schema types - so want to purge data
     private static final String TAG = "DataCache";
     public static final String DATABASE_NAME = "DataCache.db";
 
@@ -39,6 +39,10 @@ public class DataCache extends SQLiteOpenHelper {
                 "create table datacache " +
                         "(id integer primary key, timestamp integer, stream text, data text )"
         );
+        db.execSQL(
+                "create table kvstore " +
+                        "(key text primary key, value text)"
+        );
     }
 
     @Override
@@ -63,7 +67,7 @@ public class DataCache extends SQLiteOpenHelper {
     }
 
     public void Insert(String stream, long timestamp, String data) {
-            Log.v(TAG,"[s=" + stream + " t=" + Long.toString(timestamp) + " d='" + data + "']");
+            Log.v(TAG,"[s=" + stream + " t=" + Long.toString(timestamp) + " d=" + data + "]");
             SQLiteDatabase db = this.getWritableDatabase();
             ContentValues contentValues = new ContentValues();
             contentValues.put("stream", stream);
@@ -81,6 +85,21 @@ public class DataCache extends SQLiteOpenHelper {
     public void Delete(long id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("datacache","id=?",new String[] {Long.toString(id)});
+    }
+
+    public String GetKey(String key) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery( "SELECT value FROM kvstore WHERE key=?;", new String[] {key});
+        if (res.getCount() ==0 ) {
+            return "";
+        } else {
+            res.moveToNext();
+            return res.getString(0);
+        }
+    }
+    public void SetKey(String key,String value) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery( "INSERT OR REPLACE INTO kvstore (key,value) VALUES (?,?);", new String[] {key,value});
     }
 
 }
