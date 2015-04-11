@@ -17,7 +17,7 @@
     <string name="pref_monitor_enabled">Device Status</string>
     <string name="pref_fitness_enabled">Fitness Data</string>
     <string name="pref_location_frequency">GPS Logging</string>
-    <string-array name="pref_location_frequency_titles">
+    <string-array name="pref_frequency_titles">
         <item>10 seconds</item>
         <item>1 minute</item>
         <item>5 minutes</item>
@@ -27,7 +27,7 @@
         <item>Battery Saver</item>
         <item>Off</item>
     </string-array>
-    <string-array name="pref_location_frequency_values">
+    <string-array name="pref_frequency_values">
         <item>10000</item>
         <item>60000</item>
         <item>300000</item>

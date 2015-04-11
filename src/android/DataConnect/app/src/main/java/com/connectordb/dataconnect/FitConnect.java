@@ -72,6 +72,15 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         }
     }
 
+    public void disconnect() {
+        if (mClient!=null) {
+            if (mClient.isConnected()) {
+                Log.i(TAG, "Disconnecting");
+            }
+        }
+        mClient.disconnect();
+    }
+
     public void subscribe() {
         hadSubscribe=true;
         isSubscribe = true;
@@ -175,11 +184,13 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
         endTime = 0;
         Log.v(TAG,"Start time: "+startTime);
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_DELTA).getDataPoints()) {
-            String data = "{";
+            String data = "";
             for(Field field : dp.getDataType().getFields()) {
-                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+                if (field.getName().equals("steps")) {    //I don't want to deal with making this nice. Just get this shit working.
+                    data += dp.getValue(field);             //Oh god I feel bad for anyone who has to read this copy-paste spaghetti in the future.
+                }
             }
-            DataCache.get(cont).Insert("stepcount", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0, data.length() - 1) + "}");
+            DataCache.get(cont).Insert("stepcount", dp.getEndTime(TimeUnit.MILLISECONDS), data);
 
             if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
                 endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
@@ -212,11 +223,13 @@ public class FitConnect implements GoogleApiClient.ConnectionCallbacks,GoogleApi
                 Fitness.HistoryApi.readData(mClient, readRequest).await(5, TimeUnit.MINUTES);
         endTime = 0;
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_HEART_RATE_BPM).getDataPoints()) {
-            String data = "{";
+            String data = "";
             for(Field field : dp.getDataType().getFields()) {
-                data += "\""+field.getName()+"\": "+dp.getValue(field)+",";
+                if (field.getName().equals("bpm")) {    //I don't want to deal with making this nice. Just get this shit working.
+                    data += dp.getValue(field);
+                }
             }
-            DataCache.get(cont).Insert("heartrate", dp.getEndTime(TimeUnit.MILLISECONDS), data.substring(0, data.length() - 1) + "}");
+            DataCache.get(cont).Insert("heartrate", dp.getEndTime(TimeUnit.MILLISECONDS), data);
 
             if (dp.getEndTime(TimeUnit.MILLISECONDS)>endTime) {
                 endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
