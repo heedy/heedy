@@ -92,3 +92,14 @@ func (db *SqlxMixin) Exec(query string, args ...interface{}) (sql.Result, error)
 
 	return prep.Exec(args...)
 }
+
+// The identify function for sql name mapping
+func sqlxMapper(s string) string {
+    return s
+}
+
+func init() {
+    // sqlx by default requires database field names to be lower case,
+    // this fixes that by allowing them to be the identity
+    sqlx.NameMapper = sqlxMapper
+}

@@ -1,8 +1,6 @@
 // Package users provides an API for managing user information.
 package users
 
-
-
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
 func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
@@ -10,21 +8,21 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
 		return READONLY_ERR
 	}
 
-	existing, err := userdb.ReadByNameOrEmail(Name, Email)
+
+	existing, _ := userdb.ReadByNameOrEmail(Name, Email)
 
 	// Check for existance of user to provide helpful notices
 	switch {
-		case err != nil:
-			return  err
 		case existing.Email == Email:
 			return ERR_EMAIL_EXISTS
 		case existing.Name == Name:
 			return ERR_USERNAME_EXISTS
 	}
 
+
 	dbpass, salt, hashtype := UpgradePassword(Password)
 
-	_, err = userdb.Exec(`INSERT INTO Users (
+	_, err := userdb.Exec(`INSERT INTO Users (
 	    Name,
 	    Email,
 	    Password,
@@ -66,7 +64,6 @@ func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
 	var user User
 
 	err := userdb.Get(&user, "SELECT * FROM Users WHERE Name = ? LIMIT 1;", Name)
-
 	return &user, err
 }
 
@@ -74,7 +71,6 @@ func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
 // id.
 func (userdb *UserDatabase) ReadUserById(UserId int64) (*User, error) {
 	var user User
-
 	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserId = ? LIMIT 1;", UserId)
 
 	return &user, err
@@ -126,7 +122,7 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 		user.ProcessingLimit_S,
 		user.StorageLimit_Gb,
 		user.UserId)
-	
+
 	return err
 }
 

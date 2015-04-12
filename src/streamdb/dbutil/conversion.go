@@ -42,7 +42,7 @@ func GetConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) string {
 	if dbversion == "postgres" {
 		templateParams["pkey_exp"] = "SERIAL PRIMARY KEY"
 	} else {
-		templateParams["pkey_exp"] = "INTEGER PRIMARY KEY"
+		templateParams["pkey_exp"] = "INTEGER PRIMARY KEY AUTOINCREMENT"
 	}
 
 

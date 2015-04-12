@@ -9,24 +9,19 @@ var (
 	PERMISSION_ERROR = errors.New("Insufficient Privileges")
 )
 
-type Device struct {
-	Db     *Database
-	Device *users.Device
-}
-
 //Returns the Administrator device (which has all possible permissions)
 //Having a nil users.Device means that it is administrator
-func (db *Database) GetAdminDevice() *Device {
-	return &Device{db, nil}
+func (db *Database) GetAdminOperator() *Operator {
+	return &Operator{db, nil}
 }
 
 //Given an API key, returns the  Device object
-func (db *Database) GetDevice(apikey string) (*Device, error) {
+func (db *Database) GetOperator(apikey string) (*Operator, error) {
 	dev, err := db.ReadDeviceByApiKey(apikey)
 	if err != nil {
 		return nil, err
 	}
-	return &Device{db, dev}, nil
+	return &Operator{db, dev}, nil
 }
 
 
@@ -165,16 +160,6 @@ func (o *Operator) ReadAllPhoneCarriers() ([]users.PhoneCarrier, error) {
 
 	return o.db.ReadAllPhoneCarriers()
 }
-
-
-
-
-
-
-
-
-
-
 
 
 // Attempts to update the phone carrier as the given device
@@ -447,9 +432,9 @@ func (o *Operator) ReadStreamByUri(user, device, stream string) (*users.User, *u
 /**
 Converts a path like user/device/stream into the literal user, device and stream
 
-The path may only fill from the left, e.g. "/user//" meaning it will only return
+The path may only fill from the left, e.g. "user//" meaning it will only return
 the user and nil for the others. Otherwise, the path may fill from the right,
-e.g. "/devname/stream" in which case the user is implicitly the user belonging
+e.g. "/devicename/stream" in which case the user is implicitly the user belonging
 to the operator's device.
 
 **/

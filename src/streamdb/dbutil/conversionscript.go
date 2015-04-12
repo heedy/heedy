@@ -53,7 +53,7 @@ CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
 
 CREATE TABLE IF NOT EXISTS Device (
-    Id INTEGER {{.pkey_exp}},
+    Id {{.pkey_exp}},
 	Name VARCHAR NOT NULL,
 	ApiKey VARCHAR UNIQUE NOT NULL,
 	Enabled BOOLEAN DEFAULT TRUE,
@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS Device (
 	CanWriteAnywhere BOOL DEFAULT TRUE,
 	UserProxy BOOL DEFAULT FALSE,
 
-	FOREIGN KEY(OwnerId) REFERENCES Users(Id) ON DELETE CASCADE,
-	UNIQUE(Name, OwnerId)
+	UNIQUE(Name, OwnerId),
+	FOREIGN KEY(OwnerId) REFERENCES Users(Id) ON DELETE CASCADE
 	);
 
 
@@ -86,8 +86,8 @@ CREATE TABLE Stream (
     OwnerId INTEGER,
     Ephemeral BOOL DEFAULT FALSE,
     Output BOOL DEFAULT FALSE,
-    FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE,
-    UNIQUE(Name, OwnerId)
+    UNIQUE(Name, OwnerId),
+    FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE
     );
 
 
@@ -161,12 +161,12 @@ CREATE TABLE Devices (
     Enabled BOOLEAN DEFAULT TRUE,
     IsAdmin BOOL DEFAULT FALSE,
     CanWrite BOOL DEFAULT TRUE,
-    CanWriteAnywhere BOOL DEFAULT TRUE,
+    CanWriteAnywhere BOOL DEFAULT FALSE,
     CanActAsUser BOOL DEFAULT FALSE,
     IsVisible BOOL DEFAULT TRUE,
     UserEditable BOOL DEFAULT TRUE,
-    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE,
-    UNIQUE(Name, UserId));
+    UNIQUE(UserId, Name),
+    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE);
 
 
 CREATE TABLE Streams (
@@ -177,8 +177,8 @@ CREATE TABLE Streams (
     DeviceId INTEGER,
     Ephemeral BOOL DEFAULT FALSE,
     Downlink BOOL DEFAULT FALSE,
-    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE,
-    UNIQUE(Name, DeviceId));
+    UNIQUE(Name, DeviceId),
+    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE);
 
 
 CREATE TABLE UserKeyValues (
@@ -209,7 +209,38 @@ CREATE TABLE StreamKeyValues (
     PRIMARY KEY (StreamId, Key)
 );
 
+{{ if eq .DBType "sqlite3"}}
+CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
+BEGIN
+INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable) VALUES ('User', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, 1, 0);
+END;
+{{end}}
+
+{{ if eq .DBType "postgres"}}
+
+CREATE FUNCTION AddUserdev20150328Func() RETURNS TRIGGER AS $_$
+BEGIN
+	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable) VALUES ('User', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE);
+    RETURN NEW;
+END $_$ LANGUAGE 'plpgsql';
+
+
+CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
+    EXECUTE PROCEDURE AddUserdev20150328Func();
+
+{{end}}
+
 -- Construct Indexes
+
+CREATE UNIQUE INDEX UserNameIndex20150328 ON Users (Name);
+CREATE INDEX DeviceNameIndex20150328 ON Devices (Name);
+CREATE UNIQUE INDEX DeviceAPIIndex20150328 ON Devices (ApiKey);
+CREATE INDEX DeviceOwnerIndex20150328 ON Devices (UserId);
+CREATE INDEX StreamNameIndex20150328 ON Streams (Name);
+CREATE INDEX StreamOwnerIndex20150328 ON Streams (DeviceId);
+CREATE INDEX keytime20150328 ON timebatchtable (Key, EndTime ASC);
+
+
 
 -- Transfer Data
 

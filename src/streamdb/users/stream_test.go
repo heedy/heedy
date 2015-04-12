@@ -1,94 +1,29 @@
 package users
 /**
+
 import (
-	"log"
-	"os"
 	"testing"
-	"streamdb/dbutil"
 )
 
-var (
-	carid      int64
-	usrid      int64
-	usr        *User
-	devid      int64
-	dev        *Device
-	testdb     *UserDatabase
-	testdbname = "testing.sqlite3"
-	usrid2     int64
-	usr2       *User
-)
 
-func init() {
-	var err error
-
-	_ = os.Remove(testdbname)
-
-	testdb = &UserDatabase{}
-
-	sql, dbtype, err := dbutil.OpenSqlDatabase(testdbname)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	err = dbutil.DoConversion(sql, dbtype, false)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	testdb.InitUserDatabase(sql, dbtype.String())
-
-
-
-	err = testdb.CreatePhoneCarrier("StreamTestPhoneCarrier", "StreamTestPhoneCarrier.com")
-	if err != nil {
-		log.Print(err)
-	}
-
-	err = testdb.CreateUser("StreamTestUserName", "StreamTestUserEmail", "StreamTestUserPassword")
-	if err != nil {
-		log.Print(err)
-	}
-
-	usr, err = testdb.ReadUserByName("StreamTestUserName")
-	if err != nil {
-		log.Print(err)
-	}
-
-	err = testdb.CreateDevice("StreamTestDevice", usr.UserId)
-	if err != nil {
-		log.Print(err)
-	}
-
-	dev, err = testdb.ReadDeviceForUserByName(usr.UserId, "StreamTestDevice")
-	if err != nil {
-		log.Print(err)
-	}
-
-	err = testdb.CreateUser("DeviceTestUserName", "DeviceTestUserEmail", "DeviceTestUserPassword")
-	if err != nil {
-		log.Print(err)
-	}
-
-	usr, err = testdb.ReadUserByName("DeviceTestUserName")
-	if err != nil {
-		log.Print(err)
-	}
-
-	err = testdb.CreateUser("DeviceTestUserName2", "DeviceTestUserEmail2", "DeviceTestUserPassword2")
-	if err != nil {
-		log.Print(err)
-	}
-
-	usr2, err = testdb.ReadUserByName("DeviceTestUserName2")
-	if err != nil {
-		log.Print(err)
-	}
-
-}
 
 func TestCreateStream(t *testing.T) {
-	err := testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
+
+	CleanTestDB()
+
+	u, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("%v\n", err)
+		return
+	}
+
+	dev, err := CreateTestDevice(u)
+	if err != nil {
+		t.Errorf("%v\n", err)
+	}
+
+
+	err = testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
 	if err != nil {
 		t.Errorf("Cannot create stream %v", err)
 		return
@@ -99,7 +34,8 @@ func TestCreateStream(t *testing.T) {
 		t.Errorf("Created stream with duplicate name")
 	}
 }
-/**
+
+
 func TestUpdateStream(t *testing.T) {
 	err := testdb.CreateStream("TestUpdateStream", "{}", dev.DeviceId)
 	if err != nil {

@@ -1,10 +1,12 @@
 package users
-/**
+
 import (
 	"testing"
 )
 
 func TestCreateUser(t *testing.T) {
+	CleanTestDB()
+
 	err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass")
 	if err != nil {
 		t.Errorf("Cannot create user %v", err)
@@ -13,18 +15,35 @@ func TestCreateUser(t *testing.T) {
 
 	err = testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email2", "TestCreateUser_pass2")
 	if err == nil {
-		t.Errorf("Created duplicate user name %v", err)
+		t.Errorf("Wrong error returned %v", err)
 		return
 	}
 
 	err = testdb.CreateUser("TestCreateUser_name2", "TestCreateUser_email", "TestCreateUser_pass2")
 	if err == nil {
-		t.Errorf("Created duplicate email %v", err)
+		t.Errorf("Wrong err returned %v", err)
 		return
 	}
 }
 
+func BenchmarkCreateUser(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        testdb.CreateUser(GetNextName(), GetNextEmail(), "TestCreateUser_pass2")
+    }
+}
+
+
 func TestReadAllUsers(t *testing.T) {
+	CleanTestDB()
+
+	for i := 0; i < 5; i++{
+		_, err := CreateTestUser()
+		if err != nil {
+			t.Errorf(err.Error())
+			return
+		}
+	}
+
 	users, err := testdb.ReadAllUsers()
 
 	if err != nil {
@@ -57,7 +76,7 @@ func TestReadAllUsers(t *testing.T) {
 		t.Errorf("not taking into account changes")
 	}
 }
-
+/**
 func TestReadUserByEmail(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserByEmail("doesnotexist   because spaces")
