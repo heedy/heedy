@@ -31,6 +31,7 @@ public class SetupReceiver extends BroadcastReceiver {
         //Start all of the necessary services
         context.startService(new Intent(context,LocationService.class));
         context.startService(new Intent(context,MonitorService.class));
+        context.startService(new Intent(context,FitService.class));
     }
 
     /**

@@ -92,13 +92,24 @@ public class SettingsActivity extends PreferenceActivity {
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
             String stringValue = value.toString();
-            Log.v(TAG, "Set Fitness Logging: " + stringValue);
+            Log.v(TAG, "Set Fit Logging: " + stringValue);
 
-            if (stringValue=="true") {
-                fit.subscribe();
-            } else {
-                fit.unsubscribe();
-            }
+            // For list preferences, look up the correct display value in
+            // the preference's 'entries' list.
+            ListPreference listPreference = (ListPreference) preference;
+            int index = listPreference.findIndexOfValue(stringValue);
+
+            // Set the summary to reflect the new value.
+            preference.setSummary(
+                    index >= 0
+                            ? listPreference.getEntries()[index]
+                            : null);
+
+
+            //Now notify the location service of the changed values
+            Intent i = new Intent(SettingsActivity.this,FitService.class);
+            i.putExtra("fit_update_frequency",Integer.parseInt(stringValue));
+            startService(i);
             return true;
         }
     };
@@ -123,10 +134,10 @@ public class SettingsActivity extends PreferenceActivity {
 
         fit = new FitConnect(this,this,true);
         Preference fit_pref = findPreference("fitness_monitor");
-        boolValue = PreferenceManager
+        stringValue = PreferenceManager
                 .getDefaultSharedPreferences(fit_pref.getContext())
-                .getBoolean(fit_pref.getKey(), true);
-        sFit.onPreferenceChange(monitor_pref,boolValue);
+                .getString(fit_pref.getKey(), "");
+        sFit.onPreferenceChange(fit_pref,stringValue);
         fit_pref.setOnPreferenceChangeListener(sFit);
 
     }

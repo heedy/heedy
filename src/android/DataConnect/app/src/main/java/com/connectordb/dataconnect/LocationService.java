@@ -27,13 +27,13 @@ public class LocationService extends Service implements LocationListener, Connec
     @Override
     public void onLocationChanged(Location location)
     {
-        String data = "{\"lat\": "+Double.toString(location.getLatitude())+
-                ", \"long\": "+Double.toString(location.getLongitude());
+        String data = "{\"latitude\": "+Double.toString(location.getLatitude())+
+                ", \"longitude\": "+Double.toString(location.getLongitude());
         if (location.hasAltitude()) {
-            data += ", \"alt\": " + Double.toString(location.getAltitude());
+            data += ", \"altitude\": " + Double.toString(location.getAltitude());
         }
         if (location.hasAccuracy()) {
-            data+= ", \"acc\": "+Double.toString(location.getAccuracy());
+            data+= ", \"accuracy\": "+Double.toString(location.getAccuracy());
         }
         if (location.hasSpeed()) {
             data+= ", \"speed\": " + Double.toString(location.getSpeed());
