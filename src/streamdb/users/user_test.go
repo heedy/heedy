@@ -1,9 +1,10 @@
 package users
 
 import (
-	"testing"
+	//"testing"
 )
 
+/**
 func TestCreateUser(t *testing.T) {
 	CleanTestDB()
 

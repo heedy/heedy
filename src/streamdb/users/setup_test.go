@@ -11,9 +11,9 @@ All Rights Reserved
 
 import (
     "strconv"
-    "os"
-    "streamdb/dbutil"
-    "log"
+//    "os"
+//    "streamdb/dbutil"
+//    "log"
     )
 
 var (
@@ -36,6 +36,7 @@ func GetNextEmail() string {
     return "name" + strconv.Itoa(nextNameId) + "@domain.com"
 }
 
+/**
 
 func init() {
 	var err error
@@ -109,3 +110,4 @@ func CreateTestStream(dev *Device) (*Stream, error) {
 
     return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
 }
+**/
