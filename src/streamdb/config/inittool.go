@@ -11,6 +11,10 @@ All Rights Reserved
 
 **/
 
+import (
+    "streamdb"
+    )
+
 type Environment struct {
 	Streamdb *streamdb.Database
 }
