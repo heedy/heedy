@@ -45,11 +45,6 @@
             android:exported="true"
             android:process=":DataServices" >
         </service>
-        <service
-            android:name=".MessageIntentService"
-            android:exported="false"
-            android:process=":services_message" >
-        </service>
 
         <!-- SetupReceiver sets up the app -->
 

@@ -95,12 +95,20 @@ public class DataCache extends SQLiteOpenHelper {
             return "";
         } else {
             res.moveToNext();
-            Log.v(TAG,"Got: "+res.getString(0));
+            if (key.startsWith("__")) {
+                Log.v(TAG, "Got: *****");
+            } else {
+                Log.v(TAG, "Got: " + res.getString(0));
+            }
             return res.getString(0);
         }
     }
     public void SetKey(String key,String value) {
-        Log.v(TAG,"SET "+key+" TO "+value);
+        if (key.startsWith("__")) {
+            Log.v(TAG, "SET " + key + " TO ********");
+        }else{
+            Log.v(TAG, "SET " + key + " TO " + value);
+        }
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("dkey", key);
