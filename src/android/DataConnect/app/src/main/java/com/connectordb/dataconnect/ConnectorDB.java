@@ -1,10 +1,13 @@
 package com.connectordb.dataconnect;
 
 
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
@@ -22,11 +25,55 @@ import retrofit.mime.TypedInput;
 
 public class ConnectorDB {
     private static final String TAG = "ConnectorDB";
+
+    //Make this shit a singleton
+    private static ConnectorDB db;
+    public static synchronized ConnectorDB get(Context c) {
+        if (db==null) {
+            Log.v(TAG,"Initializing ConnectorDB");
+            db = new ConnectorDB(c);
+        }
+        return db;
+    }
+
+
+
+    public ConnectorDB(Context c) {
+
+    }
+
+    public void Sync() {
+        Log.v(TAG,"Running sync");
+        if (isbusy.get()) {
+            if (donext.get()) {
+                Log.v(TAG,"Another process is already waiting to insert. On my merry way.");
+            } else {
+                donext.set(true);
+                netpush();  //netpush is synchronized
+            }
+        } else {
+                netpush();
+        }
+    }
+
+    //I have no idea how these work in java. Just sorta hoping this does what I think it does.
+    //Yes, I should check, but idgaf atm.
+    private final AtomicBoolean donext = new AtomicBoolean(false);
+    private final AtomicBoolean isbusy = new AtomicBoolean(false);
+
+    public synchronized void netpush() {
+        isbusy.set(true);
+        donext.set(false);
+
+        Log.v(TAG,"Pushing data to server.");
+        Log.v(TAG,"Done pushing");
+
+        isbusy.set(false);
+    }
+
+    /*
     public final String user;
     public final String password;
-
-
-
     public class devicemaker {
         final String Name;
         devicemaker(String name) {
@@ -106,5 +153,5 @@ public class ConnectorDB {
         }
         return false;
     }
-
+    */
 }

@@ -5,7 +5,7 @@
         android:title="@string/pref_wifi_sync_frequency"
         android:entries="@array/pref_sync_frequency_titles"
         android:entryValues="@array/pref_sync_frequency_values"
-        android:defaultValue="0"
+        android:defaultValue="-1"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
     <ListPreference
@@ -13,7 +13,7 @@
         android:title="@string/pref_mobile_sync_frequency"
         android:entries="@array/pref_sync_frequency_titles"
         android:entryValues="@array/pref_sync_frequency_values"
-        android:defaultValue="5"
+        android:defaultValue="-1"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null" />
     <Preference

@@ -26,12 +26,20 @@ public class SetupReceiver extends BroadcastReceiver {
         */
 
         //throw new UnsupportedOperationException("Not yet implemented");
-        Log.v(TAG,"RECEIVED BOOT");
+        if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
+            Log.v(TAG, "RECEIVED BOOT");
 
-        //Start all of the necessary services
-        context.startService(new Intent(context,LocationService.class));
-        context.startService(new Intent(context,MonitorService.class));
-        context.startService(new Intent(context,FitService.class));
+            //Start all of the necessary services
+            context.startService(new Intent(context, LocationService.class));
+            context.startService(new Intent(context, MonitorService.class));
+            context.startService(new Intent(context, FitService.class));
+            context.startService(new Intent(context, SyncService.class));
+        } else if (intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+            Log.v(TAG, "CONNECTIVITY CHANGE");
+            context.startService(new Intent(context, SyncService.class));
+        } else {
+            Log.v(TAG, "Unrecognized event: " + intent.getAction());
+        }
     }
 
     /**
