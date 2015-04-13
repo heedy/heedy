@@ -114,6 +114,94 @@ public class SettingsActivity extends PreferenceActivity {
         }
     };
 
+    private Preference.OnPreferenceChangeListener sMobileSync = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set Mobile Sync: " + stringValue);
+
+            // For list preferences, look up the correct display value in
+            // the preference's 'entries' list.
+            ListPreference listPreference = (ListPreference) preference;
+            int index = listPreference.findIndexOfValue(stringValue);
+
+            // Set the summary to reflect the new value.
+            preference.setSummary(
+                    index >= 0
+                            ? listPreference.getEntries()[index]
+                            : null);
+
+
+            //Now notify the location service of the changed values
+            Intent i = new Intent(SettingsActivity.this,SyncService.class);
+            i.putExtra("mobile_sync_update_frequency",Integer.parseInt(stringValue));
+            startService(i);
+            return true;
+        }
+    };
+
+    private Preference.OnPreferenceChangeListener sWifiSync = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set Wifi Sync: " + stringValue);
+
+            // For list preferences, look up the correct display value in
+            // the preference's 'entries' list.
+            ListPreference listPreference = (ListPreference) preference;
+            int index = listPreference.findIndexOfValue(stringValue);
+
+            // Set the summary to reflect the new value.
+            preference.setSummary(
+                    index >= 0
+                            ? listPreference.getEntries()[index]
+                            : null);
+
+
+            //Now notify the location service of the changed values
+            Intent i = new Intent(SettingsActivity.this,SyncService.class);
+            i.putExtra("wifi_sync_update_frequency",Integer.parseInt(stringValue));
+            startService(i);
+            return true;
+        }
+    };
+
+
+    private Preference.OnPreferenceChangeListener sServer = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set server: " + stringValue);
+
+            preference.setSummary(stringValue);
+
+            DataCache.get(SettingsActivity.this).SetKey("server",stringValue);
+            return true;
+        }
+    };
+    private Preference.OnPreferenceChangeListener sUser = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set user: " + stringValue);
+
+            preference.setSummary(stringValue);
+
+            DataCache.get(SettingsActivity.this).SetKey("user",stringValue);
+            return true;
+        }
+    };
+    private Preference.OnPreferenceChangeListener sKey = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object value) {
+            String stringValue = value.toString();
+            Log.v(TAG, "Set apikey.");
+
+            DataCache.get(SettingsActivity.this).SetKey("__apikey",stringValue);
+            return true;
+        }
+    };
+
 
     private void setupLocation() {
         Preference location_pref = findPreference("location_frequency");
@@ -140,6 +228,49 @@ public class SettingsActivity extends PreferenceActivity {
         sFit.onPreferenceChange(fit_pref,stringValue);
         fit_pref.setOnPreferenceChangeListener(sFit);
 
+
+        //Sync stuff
+        Preference mobile_pref = findPreference("sync_mobile_frequency");
+        stringValue = PreferenceManager
+                .getDefaultSharedPreferences(mobile_pref.getContext())
+                .getString(mobile_pref.getKey(), "");
+        sMobileSync.onPreferenceChange(mobile_pref,stringValue);
+        mobile_pref.setOnPreferenceChangeListener(sMobileSync);
+
+
+        Preference wifi_pref = findPreference("sync_wifi_frequency");
+        stringValue = PreferenceManager
+                .getDefaultSharedPreferences(wifi_pref.getContext())
+                .getString(wifi_pref.getKey(), "");
+
+        sWifiSync.onPreferenceChange(wifi_pref,stringValue);
+        wifi_pref.setOnPreferenceChangeListener(sWifiSync);
+
+
+        Preference user_pref = findPreference("connectordb_username");
+        stringValue = PreferenceManager
+                .getDefaultSharedPreferences(user_pref.getContext())
+                .getString(user_pref.getKey(), "");
+
+        sUser.onPreferenceChange(user_pref,stringValue);
+        user_pref.setOnPreferenceChangeListener(sUser);
+
+        Preference server_pref = findPreference("connectordb_server");
+        stringValue = PreferenceManager
+                .getDefaultSharedPreferences(server_pref.getContext())
+                .getString(server_pref.getKey(), "");
+
+        sServer.onPreferenceChange(server_pref,stringValue);
+        server_pref.setOnPreferenceChangeListener(sServer);
+
+        Preference pass_pref = findPreference("connectordb_password");
+        stringValue = PreferenceManager
+                .getDefaultSharedPreferences(pass_pref.getContext())
+                .getString(pass_pref.getKey(), "");
+
+        sKey.onPreferenceChange(pass_pref,stringValue);
+        pass_pref.setOnPreferenceChangeListener(sKey);
+
     }
 
     private void doStuff() {
@@ -148,20 +279,7 @@ public class SettingsActivity extends PreferenceActivity {
         button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference arg0) {
-                Preference db = findPreference("connectordb_server");
-                String dbaddress = PreferenceManager
-                        .getDefaultSharedPreferences(SettingsActivity.this)
-                        .getString(db.getKey(), "");
-                Preference usrname = findPreference("connectordb_username");
-                String dbusr = PreferenceManager
-                        .getDefaultSharedPreferences(SettingsActivity.this)
-                        .getString(usrname.getKey(), "");
-                Preference usrpass = findPreference("connectordb_password");
-                String dbpass = PreferenceManager
-                        .getDefaultSharedPreferences(SettingsActivity.this)
-                        .getString(usrpass.getKey(), "");
-
-                new asyncConnect(SettingsActivity.this).execute(dbaddress,dbusr,dbpass);
+                ConnectorDB.get(SettingsActivity.this).Sync();
                 return true;
             }
         });
@@ -232,10 +350,10 @@ public class SettingsActivity extends PreferenceActivity {
         // Bind the summaries of EditText/List/Dialog/Ringtone preferences to
         // their values. When their values change, their summaries are updated
         // to reflect the new value, per the Android Design guidelines.
-        bindPreferenceSummaryToValue(findPreference("connectordb_username"));
-        bindPreferenceSummaryToValue(findPreference("connectordb_server"));
-        bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
-        bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
+        //bindPreferenceSummaryToValue(findPreference("connectordb_username"));
+        //bindPreferenceSummaryToValue(findPreference("connectordb_server"));
+        //bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
+        //bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
     }
 
     /**
@@ -377,8 +495,8 @@ public class SettingsActivity extends PreferenceActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_connectordb);
-            bindPreferenceSummaryToValue(findPreference("connectordb_server"));
-            bindPreferenceSummaryToValue(findPreference("connectordb_username"));
+            //bindPreferenceSummaryToValue(findPreference("connectordb_server"));
+            //bindPreferenceSummaryToValue(findPreference("connectordb_username"));
         }
     }
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -405,8 +523,8 @@ public class SettingsActivity extends PreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
-            bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
+            //bindPreferenceSummaryToValue(findPreference("sync_wifi_frequency"));
+            //bindPreferenceSummaryToValue(findPreference("sync_mobile_frequency"));
         }
     }
 }
