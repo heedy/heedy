@@ -55,6 +55,7 @@ packages:
 	apt-get install redis-server
 	apt-get install mongodb
 	apt-get install postgres
+	apt-get install sqlite3
 
 coverage:
 	go get golang.org/x/tools/cmd/cover

@@ -5,6 +5,7 @@ go:
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - make dependencies
+    - make packages
 
 script:
     - make coverage
