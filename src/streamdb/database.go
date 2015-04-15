@@ -14,6 +14,7 @@ import (
 var (
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 250
+	db *Database
 )
 
 //Database is a StreamDB database object which holds the methods
@@ -28,21 +29,6 @@ type Database struct {
 	dbutil.SqlxMixin
 }
 
-//Close closes all database connections and releases all resources.
-//A word of warning though: If RunWriter() is functional, then RunWriter will crash
-func (db *Database) Close() {
-	if db.tdb != nil {
-		db.tdb.Close()
-	}
-
-	if db.sqldb != nil {
-		db.sqldb.Close()
-	}
-
-	if db.msg != nil {
-		db.msg.Close()
-	}
-}
 
 /**
 Open StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
@@ -103,6 +89,23 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 	return &db, nil
 
+}
+
+
+//Close closes all database connections and releases all resources.
+//A word of warning though: If RunWriter() is functional, then RunWriter will crash
+func (db *Database) Close() {
+	if db.tdb != nil {
+		db.tdb.Close()
+	}
+
+	if db.sqldb != nil {
+		db.sqldb.Close()
+	}
+
+	if db.msg != nil {
+		db.msg.Close()
+	}
 }
 
 /**

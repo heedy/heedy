@@ -3,36 +3,41 @@ package users
 
 import (
 	"errors"
-	"log"
+	"reflect"
 	)
 
-type PermissionLevel string
+type PermissionLevel uint
 
+type DatabaseType struct {
+
+}
 
 const (
-	NOBODY = PermissionLevel("nobody") // Highest permission level, no device can modify must do it straight in DB
-	ROOT = PermissionLevel("root")  // Highest interface permission level or above
-	USER = PermissionLevel("user") // Users can modify their own stuff or above
-	DEVICE = PermissionLevel("device") // the owning device of a given stream or above
-	ENABLED = PermissionLevel("enabled") // any enabled device
-	ANYBODY = PermissionLevel("anybody") // lowest permission level, any user logged in or not
+	NOBODY = PermissionLevel(6) // Highest permission level, no device can modify must do it straight in DB
+	ROOT = PermissionLevel(5)  // Highest interface permission level or above
+	USER = PermissionLevel(4) // Users can modify their own stuff or above
+	DEVICE = PermissionLevel(3) // the owning device of a given stream or above
+	FAMILY = PermissionLevel(2) // a device that is a sibbling of the given device or an aunt to a stream
+	ENABLED = PermissionLevel(1) // any enabled device
+	ANYBODY = PermissionLevel(0) // lowest permission level, any user logged in or not
 )
 
 
 func strToPermissionLevel(s string) (PermissionLevel, error) {
-	pl := PermissionLevel(s)
-	switch pl {
-		case NOBODY:
+	switch s {
+		case "nobody":
 			return NOBODY, nil
-		case ROOT:
+		case "root":
 			return ROOT, nil
-		case USER:
+		case "user":
 			return USER, nil
-		case DEVICE:
+		case "device":
 			return DEVICE, nil
-		case ENABLED:
+		case "family":
+			return FAMILY, nil
+		case "enabled":
 			return ENABLED, nil
-		case ANYBODY:
+		case "anybody":
 			return ANYBODY, nil
 	}
 
@@ -40,24 +45,8 @@ func strToPermissionLevel(s string) (PermissionLevel, error) {
 }
 
 // Checks that the given permission is at least what the desired one should be
-func PermissionLevelGte(actual, desired PermissionLevel) bool {
-	switch desired {
-		case NOBODY:
-			return false
-		case ROOT:
-			return actual == ROOT
-		case USER:
-			return actual == ROOT || actual == USER
-		case DEVICE:
-			return actual == ROOT || actual == USER || actual == DEVICE
-		case ENABLED:
-			return actual == ROOT || actual == USER || actual == DEVICE || actual == ENABLED
-		case ANYBODY:
-			return true
-	}
-
-	log.Printf("Error, used invalid permission level actual: %v, desired: %v", actual, desired)
-	return false
+func (actual PermissionLevel)Gte(desired PermissionLevel) bool {
+	return uint(actual) >= uint(desired)
 }
 
 
@@ -125,6 +114,7 @@ func (u *User) ValidatePassword(password string) bool {
 // Devices are general purposed external and internal data users,
 //
 type Device struct {
+	DatabaseType
 	DeviceId          int64  `modifiable:"nobody"` // The primary key of this device
 	Name        string `modifiable:"nobody"` // The registered name of this device, should be universally unique like "Devicename_serialnum"
 	Nickname   string `modifiable:"user"`   // The human readable name of this device
@@ -139,69 +129,132 @@ type Device struct {
 	UserEditable bool `modifiable:"root"`
 }
 
-
-func (d *Device) RelationToUser(user *User, err error) (PermissionLevel, error)  {
-	// guards
-	if user == nil {
-		return ANYBODY, errors.New("Nil user")
+func (d *Device) GeneralPermissions() (PermissionLevel) {
+	if ! d.Enabled {
+		return ANYBODY
 	}
 
-	if err != nil {
-		return ANYBODY, err
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	return ENABLED
+}
+
+
+func (d *Device) RelationToUser(user *User) (PermissionLevel)  {
+	// guards
+	if user == nil || ! d.Enabled {
+		return ANYBODY
 	}
 
 	// Permision Levels
 	if d.IsAdmin {
-		return ROOT, err
+		return ROOT
 	}
 
 	if d.UserId == user.UserId {
 		if d.CanActAsUser {
-			return USER, err
+			return USER
 		}
 
-		return DEVICE, err
+		return DEVICE
 	}
 
-	return ANYBODY, nil
+	return ANYBODY
 }
 
-/**
-func (d *Device) RelationToStream(stream *Stream, err error) (PermissionLevel, error)  {
-	// guards
-	if stream == nil {
-		return ANYBODY, errors.New("Nil stream")
-	}
 
-	if err != nil {
-		return ANYBODY, err
+
+func (d *Device) RelationToDevice(device *Device) (PermissionLevel)  {
+	// guards
+	if device == nil || ! d.Enabled {
+		return ANYBODY
 	}
 
 	// Permision Levels
 	if d.IsAdmin {
-		return ROOT, err
+		return ROOT
 	}
 
-	if d.UserId == user.UserId {
-
-		streamUser, err := stream.ReadUser()
-		if err != nil {
-			return err
+	if d.UserId == device.UserId {
+		if d.CanActAsUser {
+			return USER
 		}
 
-		userproxy := d.CanWriteAnywhere && d.UserId == streamUser.UserId
-		if d.CanActAsUser || userproxy {
-			return USER, err
+		if d.DeviceId == device.DeviceId {
+			return DEVICE
 		}
 
-		return DEVICE, err
+		return FAMILY
 	}
 
-	return ANYBODY, err
+
+	if d.Enabled {
+		return ENABLED
+	}
+
+	return ANYBODY
 }
 
 
-**/
+func (d *Device) RelationToStream(stream *Stream, streamParent *Device) (PermissionLevel)  {
+	// guards
+	if stream == nil || streamParent == nil || ! d.Enabled {
+		return ANYBODY
+	}
+
+	// Permision Levels
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	if d.CanActAsUser && d.UserId == streamParent.UserId {
+		return USER
+	}
+
+	if d.DeviceId == stream.DeviceId {
+		return DEVICE
+	}
+
+	if d.UserId == streamParent.UserId {
+		return FAMILY
+	}
+
+	return ENABLED
+}
+
+func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
+	// TODO Introspection
+	revertUneditableFields(d, originalValue, p)
+}
+
+func revertUneditableFields(toChange interface{}, originalValue interface{}, p PermissionLevel) {
+	originalValueReflect := reflect.ValueOf(originalValue).Elem()
+	toChangeReflect  := reflect.ValueOf(toChange).Elem()
+
+	for i := 0; i < originalValueReflect.NumField(); i++ {
+		// Grab the fields for reflection
+		originalValueField := originalValueReflect.Field(i)
+		toChangeValueField := toChangeReflect.Field(i)
+
+		// Check what kind of modifiable permission we need to edit
+		modifiable := originalValueField.Type().Field(i).Tag.Get("modifiable")
+
+		// By default, we don't allow modification
+		if modifiable == "" {
+			modifiable = "nobody"
+		}
+
+		// If we don't have enough permissions, reset the field from original
+		requiredPermissionsForField, _ := strToPermissionLevel(modifiable)
+		if ! p.Gte(requiredPermissionsForField) && originalValueField.IsValid() && originalValueField.CanSet() {
+			toChangeValueField.Set(originalValueField)
+		}
+	}
+
+	// and bob's your uncle!
+}
 
 // Check if the device is enabled
 func (d *Device) IsActive() bool {

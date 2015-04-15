@@ -25,6 +25,7 @@ func TestSchema(t *testing.T) {
 	v_float := 3.14
 	v_obj := map[string]interface{}{"lat": 88.32, "msg": "hi"}
 	v_bobj := map[string]interface{}{"lat": "88.32", "msg": "hi"}
+	duk_obj := map[string]interface{}{"lat": 88.32, "msg": "hi", "testing":123}
 
 	if !s_string.IsValid(v_string) || !s_float.IsValid(v_float) || !s_obj.IsValid(v_obj) {
 		t.Errorf("Validation failed")
@@ -32,6 +33,11 @@ func TestSchema(t *testing.T) {
 	}
 	if s_obj.IsValid(v_bobj) {
 		t.Errorf("Validation wrong")
+		return
+	}
+
+	if !s_obj.IsValid(duk_obj) {
+		t.Errorf("Validation for object %v with schema %v failed", duk_obj, s_obj)
 		return
 	}
 
