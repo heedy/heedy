@@ -2,10 +2,13 @@ language: go
 go:
     - tip
 
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq redis-server mongodb postgres sqlite3
+
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - make dependencies
-    - make packages
 
 script:
     - make coverage
