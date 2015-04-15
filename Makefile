@@ -52,10 +52,8 @@ dependencies:
 ############################################################################################################
 
 packages:
-	apt-get install redis-server
-	apt-get install mongodb
-	apt-get install postgres
-	apt-get install sqlite3
+	sudo apt-get update -qq
+	sudo apt-get install -qq redis-server postgresql sqlite3
 
 coverage:
 	go get golang.org/x/tools/cmd/cover
