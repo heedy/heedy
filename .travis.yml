@@ -15,6 +15,7 @@ addons:
 
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
+    - pip install nose requests
     - make dependencies
 
 script:
