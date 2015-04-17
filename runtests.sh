@@ -26,6 +26,16 @@ sleep 1
 echo "Running tests..."
 go test -cover streamdb/...
 test_status=$?
+
+if [ $test_status -eq 0 ]; then
+    ./bin/restserver &
+    rest_pid=$!
+    sleep 1
+    nosetests src/clients/python/connectordb_test.py
+    test_status=$?
+    kill $rest_pid
+fi
+
 kill $redis_pid
 kill $gnatsd_pid
 kill $POSTGRES_PID

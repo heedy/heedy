@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"streamdb"
+	"plugins/rest"
 )
 
 var (
@@ -34,13 +36,11 @@ func main() {
 	}
 	defer db.Close()
 
-	log.Fatal("RestServer is disabled until v0.2 StreamDB API is complete.")
-	/*
-		log.Printf("Starting Server on port %d", *serverport)
+	log.Printf("Starting REST API on port %d", *serverport)
 
-		r := rest.Router(db,nil)
-		http.Handle("/", r)
+	r := rest.Router(db, nil)
+	http.Handle("/", r)
 
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
-	*/
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
+
 }

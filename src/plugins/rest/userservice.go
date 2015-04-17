@@ -1,4 +1,4 @@
-package web_client
+package rest
 
 /*
 import (
