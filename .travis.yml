@@ -1,17 +1,8 @@
 language:
     - go
-    - python
+    
 go:
     - tip
-
-python:
-    - "2.7"
-
-addons:
-    postgresql: "9.3"
-    apt:
-        packages:
-            - sqlite3
 
             
 virtualenv:
