@@ -95,6 +95,8 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
             defer f.Close()
             defer os.Remove(f.Name())
 
+			log.Printf("Doing Conversion, script is:\n%v\n\n", conversionstr)
+
             _, err = f.WriteString(conversionstr)
             if err != nil {
                 return err
@@ -103,8 +105,15 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 			// So we don't get any race conditions on the database
             db.Close()
 
+			// Print sqlite version
+			log.Printf("Sqlite Version\n")
+			cmd := exec.Command("sqlite3", "--version")
+			cmd.Stdout = os.Stdout
+    		cmd.Stderr = os.Stderr
+            err = cmd.Run()
+
 			// Strip anything from sqlite connection string that isn't a path
-            cmd := exec.Command("sqlite3", "-init", f.Name(), SqliteURIToPath(cxnstring))
+            cmd = exec.Command("sqlite3", "-init", f.Name(), SqliteURIToPath(cxnstring))
 			cmd.Stdout = os.Stdout
     		cmd.Stderr = os.Stderr
 

@@ -4,6 +4,7 @@
 *.so
 *.sqlite
 *.sqlite3
+*.pyc
 
 # Folders
 _obj
