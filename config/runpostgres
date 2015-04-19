@@ -42,6 +42,7 @@ if [[ $CMD == "setup" ]] ; then
 
 
     $POSTGRESBIN -D $DBDIR -p $PORT &
+    export POSTGRES_PID=$!
     echo "Started, waiting for port to become available"
 
     while ! nc -vz localhost $PORT; do sleep 1; done
@@ -56,13 +57,7 @@ if [[ $CMD == "setup" ]] ; then
 fi
 
 if [[ $CMD == "run" ]] ; then
-    $POSTGRESBIN -D $DBDIR -p $PORT &
-    export POSTGRES_PID=$!
-    
-    echo "Started, waiting for port to become available"
-    while ! nc -vz localhost $PORT; do sleep 1; done
-    
-    echo "Now Running"
+    $POSTGRESBIN -D $DBDIR -p $PORT
 fi
 
 ## interactive shell

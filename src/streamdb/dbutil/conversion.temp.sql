@@ -91,14 +91,15 @@ CREATE INDEX StreamNameIndex ON Stream (Name);
 CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 
-CREATE TABLE IF NOT EXISTS timebatchtable (
-    Key VARCHAR NOT NULL,
-    EndTime BIGINT,
-    EndIndex BIGINT,
-    Data BYTEA,
-    UNIQUE (Key, EndIndex),
-    PRIMARY KEY (Key, EndIndex)
-    );
+CREATE TABLE IF NOT EXISTS timebatchtable
+        (
+            Key VARCHAR NOT NULL,
+            EndTime BIGINT,
+            EndIndex BIGINT,
+			Version INTEGER,
+            Data BYTEA,
+            PRIMARY KEY (Key, EndIndex)
+            );
 
 --Index creation should only be run once.
 CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);

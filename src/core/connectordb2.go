@@ -15,13 +15,13 @@ import (
     "streamdb/config"
     "streamdb"
 	"net/http"
-	//"github.com/gorilla/mux"
     "plugins/rest"
     "path/filepath"
     "github.com/kardianos/osext"
 )
 
-const PROG_USAGE = `
+//ProgramUsage is a string describing how to use the program
+const ProgramUsage = `
 
 Usage: connectordb (create|start|stop|shell) directory
 
@@ -39,55 +39,60 @@ stop:
 
 `
 
-const DEFAULT_FOLDER_PERMISSIONS = os.FileMode(0755)
+//DefaultFolderPermissions is The folder permissions to use when creating a database
+const DefaultFolderPermissions = os.FileMode(0755)
 
 const (
-    CONNECTORDB_CONFIG_FILE_NAME = "cdb.ini"
+    //ConnectorDBConfigFileName is the file name to use for the configuration file in the database folder
+    ConnectorDBConfigFileName = "cdb.ini"
 )
 
 var (
-    create_flags = flag.NewFlagSet("create", flag.ContinueOnError)
-    create_user  = flag.String("username", "admin", "The admin user name")
-    create_pass  = flag.String("password", "admin", "The admin default password")
-    create_email = flag.String("email", "root@localhost", "The admin email address")
+    createFlags = flag.NewFlagSet("create", flag.ContinueOnError)
+    createUsernamePassword  = createFlags.String("user", "", "The user in username:password format")
+    createEmail = createFlags.String("email", "root@localhost", "The email address for the root user")
+    createDbType = createFlags.String("dbtype","postgres","The type of database to create.")
+
+    startFlags = flag.NewFlagSet("start",flag.ContinueOnError)
+    startNoComponents = startFlags.Bool("databaseonly",false,"Only start the background servers, and not the interfaces")
+
 )
 
 // The main entrypoint into connectordb
 func main() {
-	flag.Parse()
 
-    if len( flag.Args() ) < 2 {
-        fmt.Printf(PROG_USAGE)
+    if len(os.Args) < 3 {
+        fmt.Printf(ProgramUsage)
         flag.Usage()
         os.Exit(1)
     }
 
-    command_name := flag.Args()[0]
-    process_directory := flag.Args()[1]
+    commandName := os.Args[1]
+    processDirectory := os.Args[2]
 
-    switch command_name {
+    switch commandName {
         case "create":
-            create(process_directory)
+            create(processDirectory)
         case "start":
-            start(process_directory)
+            start(processDirectory)
         case "stop":
-            stop(process_directory)
+            stop(processDirectory)
         case "shell":
             fmt.Printf("Not yet implemented\n")
         default:
-            fmt.Printf("Error: '%v' is not a valid command.\n", command_name)
-            fmt.Printf(PROG_USAGE)
+            fmt.Printf("Error: '%v' is not a valid command.\n", commandName)
+            fmt.Printf(ProgramUsage)
             os.Exit(1)
     }
 }
 
-func waitForPortOpen(host_port string) {
+func waitForPortOpen(hostPort string) {
     var err error
 
-    _, err = net.Dial("tcp", host_port)
+    _, err = net.Dial("tcp", hostPort)
 
     for err != nil {
-        _, err = net.Dial("tcp", host_port)
+        _, err = net.Dial("tcp", hostPort)
     }
 }
 
@@ -95,36 +100,35 @@ func waitForPortOpen(host_port string) {
 // Executes a command, redirecting the stdout and stderr to this program's output
 func executeCommand(command string, args ...string) error {
 
-    return execCommandRedirect(os.Stdout, os.Stderr, command, args...)
+    cmd,_ :=  execCommandRedirect(os.Stdout, os.Stderr, command, args...)
+    return cmd.Wait()
 }
 
 
 
 // Executes a command, redirecting the stdout and stderr to this program's output
-func daemonizeCommand(logpath, command string, args ...string) error {
+func daemonizeCommand(logpath, command string, args ...string) (*exec.Cmd,error) {
 
     file, err := os.Create(logpath) // For read access.
     if err != nil {
-    	return err
+    	return nil,err
     }
 
-    go execCommandRedirect(file, file, command, args...)
-
-    return nil
+    return execCommandRedirect(file, file, command, args...)
 }
 
 // Executes a command doing redirects as necessary
-func execCommandRedirect(stdout, stderr *os.File, command string, args ...string) error {
+func execCommandRedirect(stdout, stderr *os.File, command string, args ...string) (*exec.Cmd,error) {
 	cmd := exec.Command(command, args...)
 
     cmd.Stdout = stdout
     cmd.Stderr = stderr
 
-    return cmd.Run()
+    return cmd,cmd.Start()
 }
 
-
-func create_dev_and_get_key(udb *users.UserDatabase, user *users.User, devname string) (string, error) {
+//TODO: Shouldn't this be part of streamdb? We should not need to use timebatchdb or userdb at all.
+func createDeviceAndGetKey(udb *users.UserDatabase, user *users.User, devname string) (string, error) {
     err := udb.CreateDevice(devname, user.UserId)
     if err != nil {
         return "", err
@@ -140,9 +144,17 @@ func create_dev_and_get_key(udb *users.UserDatabase, user *users.User, devname s
 
 
 func create(ProcessDir string) {
-    create_flags.Parse(os.Args)
+    createFlags.Parse(os.Args[3:])
 
-    exec_folder, _ := osext.ExecutableFolder()
+    userPass := strings.Split(*createUsernamePassword,":")
+    if (len(userPass)!=2) {
+        log.Fatal("Username and password not given in format <username>:<password>\n")
+        return
+    }
+    createUsername := userPass[0]
+    createPassword := userPass[1]
+
+    execFolder, _ := osext.ExecutableFolder()
 
     log.Printf("Initial Setup...\n")
 
@@ -150,95 +162,114 @@ func create(ProcessDir string) {
     log.Printf("> Creating Directory\n")
 
 
-    if err := os.MkdirAll(ProcessDir, DEFAULT_FOLDER_PERMISSIONS); err != nil {
+    if err := os.MkdirAll(ProcessDir, DefaultFolderPermissions); err != nil {
         log.Fatal(err.Error())
     }
 
     // Copy the config files over to the new folder
     log.Printf("> Copying Config\n")
 
-    err := executeCommand("cp", exec_folder + "/config/gnatsd.conf", exec_folder + "/config/redis.conf", ProcessDir)
+    err := executeCommand("cp", execFolder + "/config/gnatsd.conf", execFolder + "/config/redis.conf", ProcessDir)
 
     if err != nil {
         log.Fatal(err.Error())
     }
 
-    database_path := ""
-    dbtype := "sqlite"
+    databasePath := ""
+    dbtype := *createDbType
+    var dbcmd *exec.Cmd
     switch dbtype {
         case "sqlite":
-            database_path = ProcessDir + "/connectordb.sqlite3"
-            executeCommand("touch", database_path)
+            databasePath = filepath.Join(ProcessDir,"connectordb.sqlite3")
+            executeCommand("touch", databasePath)
 
         default: // postgres or misconfigured
 
             // Init the postgres database
-            fmt.Printf("> Setting Up Postgres\n")
+            log.Printf("Setting Up Postgres\n")
 
-            database_setup_dir := ProcessDir + "/connectordb_psql"
+            postgresPath := filepath.Join(ProcessDir,"connectordb_psql")
 
-            err = executeCommand("bash", exec_folder + "/config/runpostgres", "setup", database_setup_dir)
+            err = executeCommand("bash", filepath.Join(execFolder,"config/runpostgres"), "setup", postgresPath)
 
             if err != nil {
                 log.Fatal(err.Error())
             }
 
-            err = daemonizeCommand("bash", exec_folder + "/config/runpostgres", "run", database_setup_dir)
-            if err != nil {
-                log.Fatal(err.Error())
-            }
+            databasePath = "postgres://localhost:52592/connectordb?sslmode=disable"
 
-            database_path = "postgres://localhost:52592/connectordb?sslmode=disable"
+            time.Sleep(time.Second * 3)
+            dbcmd,_ = startPostgres(ProcessDir)
             log.Printf("Waiting for port to open.")
+
             waitForPortOpen("localhost:52592")
-            time.Sleep(time.Second * 5)
+            time.Sleep(time.Second * 2)
     }
 
 
     // Setup the tables
-    err = dbutil.UpgradeDatabase(database_path, true)
+    err = dbutil.UpgradeDatabase(databasePath, true)
 
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("Upgrade failed:"+err.Error())
     }
 
     // Setup the admin user and two main devices
     log.Printf("Setting up the initial admin user.")
-    db, driver, err := dbutil.OpenSqlDatabase(database_path)
+    db, driver, err := dbutil.OpenSqlDatabase(databasePath)
 
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("setup failed:"+err.Error())
     }
 
     var udb users.UserDatabase
     udb.InitUserDatabase(db, string(driver))
 
     // create the initial user
-    err = udb.CreateUser(*create_user, *create_email, *create_pass)
+    err = udb.CreateUser(createUsername, *createEmail, createPassword)
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("create failed:"+err.Error())
     }
 
-    usr, err := udb.ReadUserByName(*create_user)
+    usr, err := udb.ReadUserByName(createUsername)
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("read failed:"+err.Error())
     }
 
-
-    restkey, err := create_dev_and_get_key(&udb ,usr, "REST Api")
+    //dkumor: Since the rest api and website will have streamdb compiled in, they should not need their own devices...
+    //what do you think, @josephlewis42?
+    restkey, err := createDeviceAndGetKey(&udb ,usr, "rest")
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("create failed:"+err.Error())
     }
 
-    webkey, err := create_dev_and_get_key(&udb ,usr, "Website")
+    webkey, err := createDeviceAndGetKey(&udb ,usr, "website")
     if err != nil {
-        log.Fatal(err.Error())
+        if dbcmd!=nil {
+            dbcmd.Process.Kill()
+        }
+        log.Fatal("create failed:"+err.Error())
     }
 
 
 
     // Setup config
-    flag.Set("database.cxn_string", database_path)
+    flag.Set("database.cxn_string", databasePath)
     flag.Set("web.api.key", restkey)
     flag.Set("web.http.key", webkey)
     flag.Set("username", "")
@@ -249,7 +280,7 @@ func create(ProcessDir string) {
 
     config := getConfig()
 
-    file, err := os.Create(ProcessDir + "/" + CONNECTORDB_CONFIG_FILE_NAME) // For read access.
+    file, err := os.Create(ProcessDir + "/" + ConnectorDBConfigFileName) // For read access.
     if err != nil {
     	log.Fatal(err.Error())
     }
@@ -258,6 +289,9 @@ func create(ProcessDir string) {
     file.WriteString(config)
 
     log.Println("Finished all setup, exiting.")
+    if dbcmd!=nil {
+        dbcmd.Process.Kill()
+    }
 }
 
 
@@ -288,40 +322,48 @@ func getConfig() string {
     return config
 }
 
-func start_gnatsd(ProcessDir string) {
-    exec_folder, _ := osext.ExecutableFolder()
+func startPostgres(ProcessDir string) (*exec.Cmd,error) {
+    execFolder, _ := osext.ExecutableFolder()
+    log.Println("Starting postgres")
 
-    log.Println("Starting gnatsd")
-    daemonizeCommand(ProcessDir + "/gnatsd.log", exec_folder + "/dep/gnatsd", "-c", ProcessDir + "/gnatsd.conf")
+    return daemonizeCommand(filepath.Join(ProcessDir,"postgres.log"),"bash", filepath.Join(execFolder,"config/runpostgres"), "run", filepath.Join(ProcessDir,"connectordb_psql"))
 }
 
-func start_redis(ProcessDir string) {
+func startGnatsd(ProcessDir string) (*exec.Cmd,error) {
+    execFolder, _ := osext.ExecutableFolder()
+
+    log.Println("Starting gnatsd")
+    return daemonizeCommand(filepath.Join(ProcessDir,"gnatsd.log"), filepath.Join(execFolder,"dep/gnatsd"), "-c", filepath.Join(ProcessDir,"gnatsd.conf"))
+}
+
+func startRedis(ProcessDir string) (*exec.Cmd,error) {
     log.Println("Starting redis")
-    daemonizeCommand(ProcessDir + "/redis.log", "redis-server", ProcessDir + "/redis.conf")
+    return daemonizeCommand(filepath.Join(ProcessDir,"redis.log"), "redis-server", filepath.Join(ProcessDir,"redis.conf"))
 }
 
 func start(ProcessDir string) {
-    exec_folder, _ := osext.ExecutableFolder()
+    execFolder, _ := osext.ExecutableFolder()
     ProcessDir, _ = filepath.Abs(ProcessDir)
 
-    cdb_config_path := ProcessDir + "/" + CONNECTORDB_CONFIG_FILE_NAME
+    cdbConfigPath := filepath.Join(ProcessDir,ConnectorDBConfigFileName)
 
     fmt.Printf("Starting connectordb...\n\n")
-    fmt.Printf("Exec Folder: %v\n", exec_folder)
+    fmt.Printf("Exec Folder: %v\n", execFolder)
     fmt.Printf("DB Folder  : %v\n", ProcessDir)
-    fmt.Printf("ini path   : %v\n\n\n", cdb_config_path)
+    fmt.Printf("ini path   : %v\n\n\n", cdbConfigPath)
 
     // load configuration, first we start with the flags library so we can
     // specify the loading path...
     flag.Parse()
-    flag.Set("config", cdb_config_path) // the inipath for iniflags
+    flag.Set("config", cdbConfigPath) // the inipath for iniflags
 
     iniflags.Parse() // Now we setup the iniflags which handles the sighup stuff
 
 
     // Start other services
-    start_gnatsd(ProcessDir)
-    start_redis(ProcessDir)
+    startPostgres(ProcessDir)
+    startGnatsd(ProcessDir)
+    startRedis(ProcessDir)
 
     time.Sleep(time.Second * 3)
 
@@ -335,12 +377,15 @@ func start(ProcessDir string) {
 	}
 
 	defer db.Close()
-    r := rest.Router(db, nil)
-	http.Handle("/", r)
+    if (!*startNoComponents) {
+        log.Println("Running REST server")
+        r := rest.Router(db, nil)
+    	http.Handle("/", r)
 
-    serveraddr := fmt.Sprintf(":%d", *config.WebPort)
-    err = http.ListenAndServe(serveraddr, nil)
-	log.Fatal(err)
+        serveraddr := fmt.Sprintf(":%d", *config.WebPort)
+        err = http.ListenAndServe(serveraddr, nil)
+    	log.Fatal(err)
+    }
 }
 
 func stop(ProcessDir string) {

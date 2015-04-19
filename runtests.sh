@@ -26,7 +26,6 @@ test_status=$?
 
 if [ $test_status -eq 0 ]; then
     echo "Starting connectordb api tests..."
-    sleep 3
     nosetests src/clients/python/connectordb_test.py
     test_status=$?
 fi

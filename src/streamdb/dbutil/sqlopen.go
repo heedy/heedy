@@ -70,6 +70,7 @@ func OpenSqlDatabase(sqluri string) (*sql.DB, DRIVERSTR, error) {
 	sqldb, err := sql.Open(sqltype.String(), sqluri)
 
 	if err != nil {
+		log.Printf("Open failed\n")
 		return sqldb, sqltype, err
 	}
 
