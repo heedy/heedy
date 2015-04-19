@@ -292,16 +292,14 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 
 //OpenSQLiteStore initializes an sqlite database to work with an SqlStore.
 func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
-	/**
-
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
 	}
+
 	_, err = tx.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
         (
             Key STRING NOT NULL,
@@ -311,7 +309,6 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
             Data BLOB,
             PRIMARY KEY (Key, EndIndex)
             );`)
-
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -327,7 +324,6 @@ func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	**/
 
 	//Now that tables are all set up, prepare the queries to run on the database
 

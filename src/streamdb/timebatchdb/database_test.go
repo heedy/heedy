@@ -1,6 +1,5 @@
 package timebatchdb
 
-/**
 import (
 	"database/sql"
 	"errors"
@@ -558,4 +557,3 @@ func BenchmarkInsert(b *testing.B) {
 	}
 
 }
-**/

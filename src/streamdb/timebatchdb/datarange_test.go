@@ -1,5 +1,5 @@
 package timebatchdb
-/**
+
 import (
 	"testing"
 )
@@ -224,4 +224,3 @@ func BenchmarkThousandRangeList(b *testing.B) {
 		rl.Close()
 	}
 }
-**/

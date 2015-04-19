@@ -1,10 +1,10 @@
 package timebatchdb
 
 import (
-	//"database/sql"
-	//"errors"
-	//"os"
-	//"testing"
+	"database/sql"
+	"errors"
+	"os"
+	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -12,7 +12,7 @@ import (
 var (
 	TEST_postgresString = "sslmode=disable dbname=connectordb port=52592"
 )
-/**
+
 func SqlStoreTest(s *SqlStore, t *testing.T) {
 
 	//First check returning empties
@@ -527,4 +527,3 @@ func BenchmarkPostgresInsert(b *testing.B) {
 	}
 
 }
-**/

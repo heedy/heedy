@@ -1,5 +1,5 @@
 package timebatchdb
-/**
+
 import (
 	"testing"
 )
@@ -266,4 +266,3 @@ func BenchmarkDatapointArrayUncompress(b *testing.B) {
 		DatapointArrayFromCompressedBytes(dpb)
 	}
 }
-**/
