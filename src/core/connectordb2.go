@@ -17,6 +17,8 @@ import (
 	"net/http"
 	//"github.com/gorilla/mux"
     "plugins/rest"
+    "path/filepath"
+    "github.com/kardianos/osext"
 )
 
 const PROG_USAGE = `
@@ -140,6 +142,8 @@ func create_dev_and_get_key(udb *users.UserDatabase, user *users.User, devname s
 func create(ProcessDir string) {
     create_flags.Parse(os.Args)
 
+    exec_folder, _ := osext.ExecutableFolder()
+
     log.Printf("Initial Setup...\n")
 
     // Create the initial directory
@@ -153,7 +157,7 @@ func create(ProcessDir string) {
     // Copy the config files over to the new folder
     log.Printf("> Copying Config\n")
 
-    err := executeCommand("cp", "config/gnatsd.conf", "config/redis.conf", ProcessDir)
+    err := executeCommand("cp", exec_folder + "/config/gnatsd.conf", exec_folder + "/config/redis.conf", ProcessDir)
 
     if err != nil {
         log.Fatal(err.Error())
@@ -173,13 +177,13 @@ func create(ProcessDir string) {
 
             database_setup_dir := ProcessDir + "/connectordb_psql"
 
-            err = executeCommand("bash", "config/runpostgres", "setup", database_setup_dir)
+            err = executeCommand("bash", exec_folder + "/config/runpostgres", "setup", database_setup_dir)
 
             if err != nil {
                 log.Fatal(err.Error())
             }
 
-            err = daemonizeCommand("bash", "config/runpostgres", "run", database_setup_dir)
+            err = daemonizeCommand("bash", exec_folder + "/config/runpostgres", "run", database_setup_dir)
             if err != nil {
                 log.Fatal(err.Error())
             }
@@ -252,6 +256,8 @@ func create(ProcessDir string) {
 
     defer file.Close()
     file.WriteString(config)
+
+    log.Println("Finished all setup, exiting.")
 }
 
 
@@ -283,8 +289,10 @@ func getConfig() string {
 }
 
 func start_gnatsd(ProcessDir string) {
+    exec_folder, _ := osext.ExecutableFolder()
+
     log.Println("Starting gnatsd")
-    daemonizeCommand(ProcessDir + "/gnatsd.log", "dep/gnatsd", "-c", ProcessDir + "/gnatsd.conf")
+    daemonizeCommand(ProcessDir + "/gnatsd.log", exec_folder + "/dep/gnatsd", "-c", ProcessDir + "/gnatsd.conf")
 }
 
 func start_redis(ProcessDir string) {
@@ -293,13 +301,15 @@ func start_redis(ProcessDir string) {
 }
 
 func start(ProcessDir string) {
-    fmt.Printf("Starting connectordb...")
+    fmt.Printf("Starting connectordb from '%v'\n", ProcessDir)
 
     // load configuration, first we start with the flags library so we can
     // specify the loading path...
 
     flag.Parse()
     cdb_config_path := ProcessDir + "/" + CONNECTORDB_CONFIG_FILE_NAME
+    cdb_config_path, _ = filepath.Abs(cdb_config_path)
+
     flag.Set("config", cdb_config_path) // the inipath for iniflags
 
     iniflags.Parse() // Now we setup the iniflags which handles the sighup stuff
@@ -316,7 +326,7 @@ func start(ProcessDir string) {
 	db, err := streamdb.Open(*config.DatabaseConnection, *config.RedisConnection, *config.MessageConnection)
 
 	if err != nil {
-		log.Print("Cannot open StreamDB")
+		log.Println("Cannot open StreamDB")
 		panic(err.Error())
 	}
 
@@ -330,5 +340,5 @@ func start(ProcessDir string) {
 }
 
 func stop(ProcessDir string) {
-    fmt.Printf("Stopping connectordb...")
+    fmt.Printf("Stopping connectordb...\n")
 }

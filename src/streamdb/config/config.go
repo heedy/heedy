@@ -20,7 +20,7 @@ var (
 	RedisConnection     = flag.String("redis.connection_location", "localhost:6379", "The redis connection string")
 	MessageConnection   = flag.String("gnatsd.connection_location", "localhost:4222", "The gnatsd connection string")
 	DatabaseConnection  = flag.String("database.cxn_string", "", "The database's connection string")
-	WebPort             = flag.Int("web.portnum", 8080, "The port to serve the website on")
+	WebPort             = flag.Int("web.portnum", 8000, "The port to serve the website on")
 	WebInterfaceEnabled = flag.Bool("web.http.enabled", true, "Should the http website be run?")
 	WebApiEnabled       = flag.Bool("web.api.enabled", true, "Should the web api be on?")
 	WebApiKey           = flag.String("web.http.key", "", "The api key for the web interface")

@@ -1,5 +1,5 @@
 package timebatchdb
-
+/**
 import (
 	"bytes"
 	"errors"
@@ -418,3 +418,4 @@ func BenchmarkRedisInsert(b *testing.B) {
 
 	}
 }
+**/

@@ -1,5 +1,5 @@
 package timebatchdb
-
+/***
 import (
 	"bytes"
 	"testing"
@@ -85,3 +85,4 @@ func BenchmarkDatapointRead(b *testing.B) {
 		d.Key()
 	}
 }
+**/
