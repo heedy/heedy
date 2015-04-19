@@ -105,6 +105,9 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 
 			// Strip anything from sqlite connection string that isn't a path
             cmd := exec.Command("sqlite3", "-init", f.Name(), SqliteURIToPath(cxnstring))
+			cmd.Stdout = os.Stdout
+    		cmd.Stderr = os.Stderr
+
             err = cmd.Run()
             if err != nil {
                 return err

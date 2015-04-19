@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS timebatchtable (
     Key VARCHAR NOT NULL,
     EndTime BIGINT,
     EndIndex BIGINT,
+	Version INTEGER,
     Data BYTEA,
     UNIQUE (Key, EndIndex),
     PRIMARY KEY (Key, EndIndex)

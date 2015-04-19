@@ -301,15 +301,19 @@ func start_redis(ProcessDir string) {
 }
 
 func start(ProcessDir string) {
-    fmt.Printf("Starting connectordb from '%v'\n", ProcessDir)
+    exec_folder, _ := osext.ExecutableFolder()
+    ProcessDir, _ = filepath.Abs(ProcessDir)
+
+    cdb_config_path := ProcessDir + "/" + CONNECTORDB_CONFIG_FILE_NAME
+
+    fmt.Printf("Starting connectordb...\n\n")
+    fmt.Printf("Exec Folder: %v\n", exec_folder)
+    fmt.Printf("DB Folder  : %v\n", ProcessDir)
+    fmt.Printf("ini path   : %v\n\n\n", cdb_config_path)
 
     // load configuration, first we start with the flags library so we can
     // specify the loading path...
-
     flag.Parse()
-    cdb_config_path := ProcessDir + "/" + CONNECTORDB_CONFIG_FILE_NAME
-    cdb_config_path, _ = filepath.Abs(cdb_config_path)
-
     flag.Set("config", cdb_config_path) // the inipath for iniflags
 
     iniflags.Parse() // Now we setup the iniflags which handles the sighup stuff
