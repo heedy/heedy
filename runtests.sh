@@ -16,6 +16,7 @@ fi
 
 # we setup every time for a clean environment
 source ./config/runpostgres setup $DBDIR
+source ./config/runpostgres run $DBDIR
 
 #The run script sets the global variable POSTGRES_PID to the pid of postgres
 ./bin/dep/gnatsd -c ./config/gnatsd.conf &

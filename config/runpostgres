@@ -42,7 +42,6 @@ if [[ $CMD == "setup" ]] ; then
 
 
     $POSTGRESBIN -D $DBDIR -p $PORT &
-    export POSTGRES_PID=$!
     echo "Started, waiting for port to become available"
 
     while ! nc -vz localhost $PORT; do sleep 1; done
@@ -51,6 +50,9 @@ if [[ $CMD == "setup" ]] ; then
     psql -h localhost -p $PORT -d postgres -c "CREATE DATABASE connectordb;"
     
     echo "Initial database is now set up"
+    
+    echo "Shutting down postgres"
+    kill $POSTGRES_PID
 fi
 
 if [[ $CMD == "run" ]] ; then
