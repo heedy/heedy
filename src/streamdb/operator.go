@@ -12,12 +12,6 @@ var (
 	InvalidParameterError = errors.New("Invalid Parameter")
 )
 
-//Returns the Administrator device (which has all possible permissions)
-//Having a nil users.Device means that it is administrator
-func (db *Database) GetAdminOperator() *Operator {
-	return &Operator{db, nil}
-}
-
 //Given an API key, returns the  Device object
 func (db *Database) GetOperator(apikey string) (*Operator, error) {
 	dev, err := db.ReadDeviceByApiKey(apikey)
@@ -36,16 +30,6 @@ type Operator struct {
 	dev *users.Device // the device behind this operator
 }
 
-// The operating environment for a particular operator request,
-// the idea is you can construct one using an operator, then perform a plethora
-// of operations using it.
-type OperatorRequestEnv struct {
-	Operator
-
-	RequestUser   *users.User
-	RequestDevice *users.Device
-	RequestStream *users.Stream
-}
 
 func (o *Operator) GetDevice() (*users.Device) {
 	return o.dev
@@ -100,14 +84,17 @@ func (o *Operator) ReadAllUsers() ([]users.User, error){
 }
 
 // Attempts to update a user as the given device.
-func (o *Operator) UpdateUser(user *users.User) error {
-	if user == nil {
+func (o *Operator) UpdateUser(user, originalUser *users.User) error {
+	if user == nil || originalUser == nil {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.RelationToUser(user).Gte(users.ROOT) {
+	permission := o.dev.RelationToUser(user)
+	if ! permission.Gte(users.ROOT) {
 		return PERMISSION_ERROR
 	}
+
+	user.RevertUneditableFields(*originalUser, permission)
 
 	return o.GetDatabase().UpdateUser(user)
 }
@@ -200,14 +187,18 @@ func (o *Operator) ReadDeviceByApiKey(Key string) (*users.Device, error) {
 	return o.db.ReadDeviceByApiKey(Key)
 }
 
-func (o *Operator) UpdateDevice(update *users.Device) error {
-	if update == nil {
+func (o *Operator) UpdateDevice(update *users.Device, original *users.Device) error {
+	if update == nil || original == nil {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.RelationToDevice(update).Gte(users.DEVICE) {
+	permission := o.dev.RelationToDevice(update)
+	if ! permission.Gte(users.DEVICE) {
 		return PERMISSION_ERROR
 	}
+
+	// revert the fields we're not allowed to update
+	update.RevertUneditableFields(*original, permission)
 
 	return o.db.UpdateDevice(update)
 }
@@ -244,21 +235,27 @@ func (o *Operator) ReadStreamsByDevice(operand *users.Device) ([]users.Stream, e
 	return o.db.ReadStreamsByDevice(operand.DeviceId)
 }
 
-func (o *Operator) UpdateStream(d *users.Device, stream *users.Stream) error {
+func (o *Operator) UpdateStream(d *users.Device, stream, originalStream *users.Stream) error {
+	if d == nil || stream == nil || originalStream == nil {
+		return InvalidParameterError
+	}
 
-	if ! o.dev.RelationToStream(stream, d).Gte(users.USER) {
+	permission := o.dev.RelationToStream(stream, d)
+	if ! permission.Gte(users.USER) {
 		return PERMISSION_ERROR
 	}
+
+	stream.RevertUneditableFields(*originalStream, permission)
 
 	return o.db.UpdateStream(stream)
 }
 
-func (o *Operator) DeleteStream(d *users.Device, s *users.Stream) error {
-	if ! o.dev.RelationToStream(s, d).Gte(users.USER) {
+func (o *Operator) DeleteStream(toDeleteOwner *users.Device, toDeleteStream *users.Stream) error {
+	if ! o.dev.RelationToStream(toDeleteStream, toDeleteOwner).Gte(users.USER) {
 		return PERMISSION_ERROR
 	}
 
-	return o.db.DeleteStream(s.StreamId)
+	return o.db.DeleteStream(toDeleteStream.StreamId)
 }
 
 /**
@@ -279,12 +276,16 @@ e.g. "/devicename/stream" in which case the user is implicitly the user belongin
 to the operator's device.
 
 **/
-func (o *Operator) ResolvePath(path string) (user *users.User, device *users.Device, stream *users.Stream, err error) {
-	err = nil
+func (o *Operator) ResolvePath(path string) (*Path, error) {
+	var err error
+	var user   *users.User
+	var device *users.Device
+	var stream *users.Stream
 
 	pathsplit := strings.Split(path, "/")
 	if len(pathsplit) != 3 {
-		return nil, nil, nil, INVALID_PATH_ERROR
+		err = INVALID_PATH_ERROR
+		return &Path{o, user, device, stream}, err
 	}
 
 	uname := pathsplit[0]
@@ -296,13 +297,13 @@ func (o *Operator) ResolvePath(path string) (user *users.User, device *users.Dev
 		user, err = o.ReadUserById(o.GetDevice().UserId)
 
 		if err != nil {
-			return user, device, stream, err
+			goto returnpath
 		}
 	} else {
-		user, err = o.ReadUserById(o.GetDevice().UserId)
+		user, err = o.ReadUser(uname)
 
 		if err != nil {
-			return user, device, stream, err
+			goto returnpath
 		}
 	}
 
@@ -310,9 +311,9 @@ func (o *Operator) ResolvePath(path string) (user *users.User, device *users.Dev
 	if dname == "" {
 		device = o.GetDevice()
 	} else {
-		device, err := o.db.ReadDeviceForUserByName(user.UserId, dname)
+		device, err = o.db.ReadDeviceForUserByName(user.UserId, dname)
 		if err != nil {
-			return user, device, stream, err
+			goto returnpath
 		}
 	}
 
@@ -320,5 +321,6 @@ func (o *Operator) ResolvePath(path string) (user *users.User, device *users.Dev
 		stream, err = o.db.ReadStreamByDeviceIdAndName(device.DeviceId, sname)
 	}
 
-	return user, device, stream, err
+returnpath:
+	return &Path{o, user, device, stream}, err
 }

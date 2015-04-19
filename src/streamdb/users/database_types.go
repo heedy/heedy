@@ -95,6 +95,11 @@ type User struct {
 	StorageLimit_Gb   int `modifiable:"root"` // storage limit in GB
 }
 
+func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
+	revertUneditableFields(d, originalValue, p)
+}
+
+
 // Sets a new password for an account
 func (u *User) SetNewPassword(newPass string) {
 	u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
@@ -225,7 +230,6 @@ func (d *Device) RelationToStream(stream *Stream, streamParent *Device) (Permiss
 }
 
 func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
-	// TODO Introspection
 	revertUneditableFields(d, originalValue, p)
 }
 

@@ -13,10 +13,10 @@ func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
 
 	ApiKey, _ := uuid.NewV4()
 
-	_, err := userdb.Exec(`INSERT INTO Device
+	_, err := userdb.Exec(`INSERT INTO Devices
 	    (	Name,
 	        ApiKey,
-	        OwnerId)
+	        UserId)
 	        VALUES (?,?,?)`, Name, ApiKey.String(), UserId)
 
 	return err
@@ -25,7 +25,7 @@ func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
 func (userdb *UserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error) {
 	var devices []Device
 
-	err := userdb.Select(&devices, "SELECT * FROM Device WHERE UserId = ?;", UserId)
+	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserId = ?;", UserId)
 
 	return devices, err
 }
@@ -33,7 +33,7 @@ func (userdb *UserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error)
 func (userdb *UserDatabase) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Device WHERE UserId = ? AND Name = ? LIMIT 1;", userid, devicename)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserId = ? AND Name = ? LIMIT 1;", userid, devicename)
 
 	return &dev, err
 }
@@ -42,7 +42,7 @@ func (userdb *UserDatabase) ReadDeviceForUserByName(userid int64, devicename str
 func (userdb *UserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Device WHERE DeviceId = ? LIMIT 1", DeviceId)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceId = ? LIMIT 1", DeviceId)
 
 	return &dev, err
 
@@ -53,7 +53,7 @@ func (userdb *UserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Device WHERE ApiKey = ? LIMIT 1;", Key)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE ApiKey = ? LIMIT 1;", Key)
 
 	return &dev, err
 }
@@ -69,10 +69,10 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 		return READONLY_ERR
 	}
 
-	_, err := userdb.Exec(`UPDATE Device SET
+	_, err := userdb.Exec(`UPDATE Devices SET
 	    Name = ?, ApiKey = ?, Enabled = ?,
 	    Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
-	    OwnerId = ?, CanWrite = ?, CanWriteAnywhere = ?, UserProxy = ? WHERE Id = ?;`,
+	    UserId = ?, CanWrite = ?, CanWriteAnywhere = ?, UserProxy = ? WHERE Id = ?;`,
 		device.Name,
 		device.ApiKey,
 		device.Enabled,
@@ -93,6 +93,6 @@ func (userdb *UserDatabase) DeleteDevice(Id int64) error {
 		return READONLY_ERR
 	}
 
-	_, err := userdb.Exec(`DELETE FROM Device WHERE DeviceId = ?;`, Id)
+	_, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
 	return err
 }

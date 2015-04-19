@@ -20,6 +20,12 @@ type Stream struct {
 }
 
 
+func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) {
+	revertUneditableFields(d, originalValue, p)
+}
+
+
+
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
 	if userdb.IsReadOnly() {
