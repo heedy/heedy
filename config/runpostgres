@@ -28,7 +28,7 @@ if [[ $CMD == "setup" ]] ; then
         exit 1
     fi
 
-   
+
     mkdir $DBDIR -m 0700
 
     $POSTGRESINIT -D $DBDIR
@@ -49,9 +49,9 @@ if [[ $CMD == "setup" ]] ; then
     echo "Now Running"
 
     psql -h localhost -p $PORT -d postgres -c "CREATE DATABASE connectordb;"
-    
+
     echo "Initial database is now set up"
-    
+
     echo "Shutting down postgres"
     kill $POSTGRES_PID
 fi

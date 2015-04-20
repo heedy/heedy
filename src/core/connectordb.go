@@ -64,7 +64,7 @@ var (
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
 
 	// TODO change this once postgres is fully working/tested and the SQL is up to code
-	createDbType = createFlags.String("dbtype", "sqlite", "The type of database to create.")
+	createDbType = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
 	startFlags = flag.NewFlagSet("start", flag.ContinueOnError)
 )
@@ -113,30 +113,49 @@ func waitForPortOpen(hostPort string) {
 
 // Executes a command, redirecting the stdout and stderr to this program's output
 func executeCommand(command string, args ...string) error {
-	return execCommandRedirect(os.Stdout, os.Stderr, command, args...)
+	cmd := exec.Command(command, args...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
 
 // Executes a command, redirecting the stdout and stderr to this program's output
-func daemonizeCommand(logpath, command string, args ...string) error {
+func daemonizeCommand(logpidpath, command string, args ...string) error {
 	// TODO setup infinite loop for restarting crashed processes
 
-	file, err := os.Create(logpath) // For read access.
+	file, err := os.Create(logpidpath + ".log") // For read access.
 	if err != nil {
 		return err
 	}
-	go execCommandRedirect(file, file, command, args...)
+
+	go execCommandRedirect(file, file, logpidpath + ".pid", command, args...)
 
 	return nil
 }
 
 // Executes a command doing redirects as necessary
-func execCommandRedirect(stdout, stderr *os.File, command string, args ...string) error {
-	cmd := exec.Command(command, args...)
+func execCommandRedirect(stdout, stderr *os.File, pidpath string, command string, args ...string) {
 
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
+	for {
+		cmd := exec.Command(command, args...)
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
 
-	return cmd.Run()
+		cmd.Start()
+
+		pidfile, err := os.Create(pidpath) // For read access.
+		if err == nil {
+			pidfile.WriteString(fmt.Sprintf("%v", cmd.Process.Pid))
+			pidfile.Close()
+		} else {
+			log.Printf("%v\n", err.Error())
+		}
+		cmd.Wait()
+
+		log.Printf("ERROR: %v failed, restarting.\n", command)
+	}
 
 	// TODO setup a global PID structure to track all pending and past operations
 }
@@ -156,7 +175,7 @@ func createDeviceAndGetKey(udb *users.UserDatabase, user *users.User, devname st
 }
 
 func create(ProcessDir string) {
-	createFlags.Parse(os.Args)
+	createFlags.Parse(os.Args[2:])
 
 	userPass := strings.Split(*createUsernamePassword, ":")
 	if len(userPass) != 2 {
@@ -242,22 +261,22 @@ func create(ProcessDir string) {
 	// create the initial user
 	err = udb.CreateUser(createUsername, *createEmail, createPassword)
 	if err != nil {
-		log.Fatal("create failed:" + err.Error())
+		log.Fatal("user create failed:" + err.Error())
 	}
 
 	usr, err := udb.ReadUserByName(createUsername)
 	if err != nil {
-		log.Fatal("read failed:" + err.Error())
+		log.Fatal("read read failed:" + err.Error())
 	}
 
 	restkey, err := createDeviceAndGetKey(&udb, usr, "rest")
 	if err != nil {
-		log.Fatal("create failed:" + err.Error())
+		log.Fatal("create device failed:" + err.Error())
 	}
 
 	webkey, err := createDeviceAndGetKey(&udb, usr, "website")
 	if err != nil {
-		log.Fatal("create failed:" + err.Error())
+		log.Fatal("create device failed:" + err.Error())
 	}
 
 	// Setup config
@@ -313,20 +332,24 @@ func getConfig() string {
 
 func startPostgres(ProcessDir string) error {
 	log.Println("Starting postgres")
+	logPath := filepath.Join(ProcessDir, "postgres")
+	executablePath := dbutil.FindPostgres()
 
-	execFolder, _ := osext.ExecutableFolder()
-	logPath := filepath.Join(ProcessDir, "postgres.log")
-	executablePath := filepath.Join(execFolder, "config/runpostgres")
+	if executablePath == "" {
+		log.Fatal("Could not find postgres path\n")
+	}
+	log.Printf("Using Postgres at: %v\n", executablePath)
+
 	dbPath := filepath.Join(ProcessDir, "connectordb_psql")
 
-	return daemonizeCommand(logPath, "bash", executablePath, "run", dbPath)
+	return daemonizeCommand(logPath, executablePath, "-p", "52592", "-d", dbPath)
 }
 
 func startGnatsd(ProcessDir string) error {
 	log.Println("Starting gnatsd")
 
 	execFolder, _ := osext.ExecutableFolder()
-	logPath := filepath.Join(ProcessDir, "gnatsd.log")
+	logPath := filepath.Join(ProcessDir, "gnatsd")
 	binaryPath := filepath.Join(execFolder, "dep/gnatsd")
 	configPath := filepath.Join(ProcessDir, "gnatsd.conf")
 
@@ -336,7 +359,7 @@ func startGnatsd(ProcessDir string) error {
 func startRedis(ProcessDir string) error {
 	log.Println("Starting redis")
 
-	logPath := filepath.Join(ProcessDir, "redis.log")
+	logPath := filepath.Join(ProcessDir, "redis")
 	configPath := filepath.Join(ProcessDir, "redis.conf")
 
 	return daemonizeCommand(logPath, "redis-server", configPath)
@@ -433,4 +456,10 @@ func start(ProcessDir string) {
 
 func stop(ProcessDir string) {
 	fmt.Printf("Stopping connectordb...\n")
+
+	postgrespid := filepath.Join(ProcessDir, "connectordb_psql","postmaster.pid")
+	exec.Command("bash", "-c", fmt.Sprintf("kill `head -n 1 %v`", postgrespid)).Run()
+
+	otherpid := filepath.Join(ProcessDir, "*.pid")
+	exec.Command("bash", "-c", fmt.Sprintf("kill `cat %v`", otherpid))
 }

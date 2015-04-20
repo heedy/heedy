@@ -60,7 +60,7 @@ func OpenSqlDatabase(sqluri string) (*sql.DB, DRIVERSTR, error) {
 		break
 	case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
 		sqltype = POSTGRES
-		sqluri = sqluri[len(POSTGRES_PREFIX):]
+		//sqluri = sqluri[len(POSTGRES_PREFIX):]
 	default:
 		log.Printf("Warning, database type was found, defaulting to %v", sqltype)
 	}

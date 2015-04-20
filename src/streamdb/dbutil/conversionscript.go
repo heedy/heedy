@@ -155,10 +155,10 @@ CREATE TABLE Users (
 
 CREATE TABLE Devices (
     DeviceId {{.pkey_exp}},
-    Name STRING NOT NULL,
-    Nickname STRING DEFAULT '',
+    Name VARCHAR NOT NULL,
+    Nickname VARCHAR DEFAULT '',
     UserId INTEGER,
-    ApiKey STRING UNIQUE NOT NULL,
+    ApiKey VARCHAR UNIQUE NOT NULL,
     Enabled BOOLEAN DEFAULT TRUE,
     IsAdmin BOOL DEFAULT FALSE,
     CanWrite BOOL DEFAULT TRUE,
@@ -172,7 +172,7 @@ CREATE TABLE Devices (
 
 CREATE TABLE Streams (
     StreamId {{.pkey_exp}},
-    Name STRING NOT NULL,
+    Name VARCHAR NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
     Type VARCHAR NOT NULL,
     DeviceId INTEGER,

@@ -7,6 +7,7 @@ marks into named queries with the proper query placeholders for postgres.
 
 import (
     "strconv"
+    "os/exec"
 )
 
 var (
@@ -48,4 +49,29 @@ func QueryToPostgres(query string) string {
     }
 
     return output
+}
+
+// finds the postgres binary on the system, isn't very robust in checking though
+// should work on ubuntu variants and when postgres is on $PATH
+func FindPostgres() string {
+    cmd := exec.Command("bash", "-c", "find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/postgres")
+    out, err := cmd.CombinedOutput()
+
+    if err != nil {
+        outstr := string(out)
+        if outstr != "" {
+            return outstr
+        }
+    }
+    cmd = exec.Command("which", "postgres")
+    out, err = cmd.CombinedOutput()
+
+    if err != nil {
+        outstr := string(out)
+        if outstr != "" {
+            return outstr
+        }
+    }
+
+    return ""
 }
