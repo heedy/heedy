@@ -16,7 +16,7 @@ fi
 echo "Setting up environment..."
 
 ./bin/connectordb2 create $DBDIR
-./bin/connectordb2 start $DBDIR &
+./bin/connectordb2 start $DBDIR servers &
 
 echo "Running tests..."
 go test -cover streamdb/...
