@@ -266,7 +266,7 @@ func create(ProcessDir string) {
 
 	usr, err := udb.ReadUserByName(createUsername)
 	if err != nil {
-		log.Fatal("read read failed:" + err.Error())
+		log.Fatal("read user failed:" + err.Error())
 	}
 
 	restkey, err := createDeviceAndGetKey(&udb, usr, "rest")

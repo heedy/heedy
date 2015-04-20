@@ -138,7 +138,7 @@ ALTER TABLE Stream RENAME TO Streams20150328;
 -- We don't use the INE because we need to fail if these exist
 
 CREATE TABLE Users (
-    UserId INTEGER PRIMARY KEY,
+    UserId {{.pkey_exp}},
 	Name VARCHAR UNIQUE NOT NULL,
 	Email VARCHAR UNIQUE NOT NULL,
 
