@@ -1,7 +1,8 @@
-SRC=$(wildcard src/core/*.go)
-TMPO=$(patsubst src/core/%.go,bin/%,$(SRC)) # Get the list of executables from the file list
-OBJ=$(TMPO:.go=)
-CC=gcc
+SRC:=$(wildcard src/core/*.go)
+TMPO:=$(patsubst src/core/%.go,bin/%,$(SRC)) # Get the list of executables from the file list
+OBJ:=$(TMPO:.go=)
+CC:=gcc
+SQLITEVERSION:=sqlite-amalgamation-3080900
 
 .PHONY: all
 
@@ -49,7 +50,8 @@ gnatsd: depfolder
 	go build -o bin/dep/gnatsd github.com/apcera/gnatsd
 
 sqlite: depfolder
-	$(CC) lib/sqlite_3080900/shell.c lib/sqlite_3080900/sqlite3.c -lpthread -ldl -o bin/dep/sqlite3
+	unzip lib/$(SQLITEVERSION).zip -d bin/dep/
+	$(CC) bin/dep/$(SQLITEVERSION)/shell.c bin/dep/$(SQLITEVERSION)/sqlite3.c -lpthread -ldl -o bin/dep/sqlite3
 
 depfolder:
 	mkdir -p bin/dep

@@ -12,10 +12,8 @@ install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests
-    - make dependencies
 
 script:
-    - make coverage
     - make
     - make test
 
