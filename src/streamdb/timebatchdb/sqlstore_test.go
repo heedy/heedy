@@ -13,6 +13,21 @@ var (
 	TEST_postgresString = "sslmode=disable dbname=connectordb port=52592"
 )
 
+func TableMakerTestCreate(db *sql.DB) error {
+	db.Exec("DROP TABLE IF EXISTS timebatchtable")
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
+        (
+            Key VARCHAR NOT NULL,
+            EndTime BIGINT,
+            EndIndex BIGINT,
+			Version INTEGER,
+            Data BYTEA,
+            PRIMARY KEY (Key, EndIndex)
+            );`)
+	db.Exec("CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);")
+	return err
+}
+
 func SqlStoreTest(s *SqlStore, t *testing.T) {
 
 	//First check returning empties
@@ -148,7 +163,7 @@ func SqlStoreTest(s *SqlStore, t *testing.T) {
 		return
 	}
 	dp, err = r.Next()
-	if err != nil || dp != nil || err != nil {
+	if err != nil || dp != nil {
 		t.Errorf("incorrect data for index")
 		return
 	}
@@ -377,6 +392,7 @@ func TestSQLiteStore(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenSqlStore(db, "sqlite3", nil)
 	if err != nil {
@@ -395,7 +411,7 @@ func TestPostgresStore(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
-	db.Exec("DROP TABLE IF EXISTS timebatchtable")
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenSqlStore(db, "postgres", nil)
 	if err != nil {
@@ -416,6 +432,7 @@ func BenchmarkThousandSQLite(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenSQLiteStore(db)
 	if err != nil {
@@ -450,6 +467,7 @@ func BenchmarkSQLiteInsert(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenSQLiteStore(db)
 	if err != nil {
@@ -475,7 +493,7 @@ func BenchmarkThousandPostgres(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
-	db.Exec("DROP TABLE IF EXISTS timebatchtable")
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenPostgresStore(db)
 	if err != nil {
@@ -509,7 +527,7 @@ func BenchmarkPostgresInsert(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
-	db.Exec("DROP TABLE IF EXISTS timebatchtable")
+	TableMakerTestCreate(db)
 	defer db.Close()
 	s, err := OpenPostgresStore(db)
 	if err != nil {

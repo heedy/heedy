@@ -22,11 +22,21 @@ echo "Running tests..."
 go test -cover streamdb/...
 test_status=$?
 
+./bin/connectordb stop $DBDIR
+rm -rf $DBDIR
 
+#Now test the python stuff, while rebuilding the db to make sure that
+#the go tests didn't invalidate the db
+./bin/connectordb create $DBDIR --user test:test
+./bin/connectordb start $DBDIR &
 
 if [ $test_status -eq 0 ]; then
     echo "Starting connectordb api tests..."
     nosetests src/clients/python/connectordb_test.py
     test_status=$?
 fi
+
+./bin/connectordb stop $DBDIR
+rm -rf $DBDIR
+
 exit $test_status

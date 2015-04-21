@@ -27,6 +27,7 @@ func TestDatabaseInsert(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -101,6 +102,7 @@ func TestDatabaseWrite(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 	s, err := OpenSqlStore(sdb, "sqlite3", nil)
 	if err != nil {
@@ -170,6 +172,7 @@ func TestDatabaseRead(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -275,6 +278,7 @@ func TestDatabaseDelete(t *testing.T) {
 		t.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -382,6 +386,7 @@ func BenchmarkThousandS_S(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -430,7 +435,7 @@ func BenchmarkThousandS_P(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
-	sdb.Exec("DROP TABLE IF EXISTS timebatchtable")
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -482,6 +487,7 @@ func BenchmarkThousandR(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)
@@ -528,6 +534,7 @@ func BenchmarkInsert(b *testing.B) {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	TableMakerTestCreate(sdb)
 	defer sdb.Close()
 
 	rc, err := OpenRedisCache("localhost:6379", nil)

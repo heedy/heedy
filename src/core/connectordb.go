@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kardianos/osext"
-	"github.com/vharitonsky/iniflags"
 	"log"
 	"net"
 	"net/http"
@@ -18,6 +16,9 @@ import (
 	"streamdb/users"
 	"strings"
 	"time"
+
+	"github.com/kardianos/osext"
+	"github.com/vharitonsky/iniflags"
 )
 
 //ProgramUsage is a string describing how to use the program
@@ -130,7 +131,7 @@ func daemonizeCommand(logpidpath, command string, args ...string) error {
 		return err
 	}
 
-	go execCommandRedirect(file, file, logpidpath + ".pid", command, args...)
+	go execCommandRedirect(file, file, logpidpath+".pid", command, args...)
 
 	return nil
 }
@@ -196,10 +197,16 @@ func create(ProcessDir string) {
 		log.Fatal(err.Error())
 	}
 
+	//Change to the directory
+	err := os.Chdir(ProcessDir)
+	if err != nil {
+		log.Println("Could not change local directory: ", err)
+	}
+
 	// Copy the config files over to the new folder
 	log.Printf("> Copying Config\n")
 
-	err := executeCommand("cp", execFolder+"/config/gnatsd.conf", execFolder+"/config/redis.conf", ProcessDir)
+	err = executeCommand("cp", filepath.Join(execFolder, "/config/gnatsd.conf"), filepath.Join(execFolder, "/config/redis.conf"), ".")
 
 	if err != nil {
 		log.Fatal(err.Error())
@@ -208,7 +215,7 @@ func create(ProcessDir string) {
 	databasePath := ""
 	switch *createDbType {
 	case "sqlite":
-		databasePath = filepath.Join(ProcessDir, "connectordb.sqlite3")
+		databasePath = "connectordb.sqlite3"
 
 		// because sqlite doesn't always like being started on a file that
 		// doesn't exist
@@ -219,7 +226,7 @@ func create(ProcessDir string) {
 		// Init the postgres database
 		log.Printf("Setting Up Postgres\n")
 
-		postgresPath := filepath.Join(ProcessDir, "connectordb_psql")
+		postgresPath := "connectordb_psql"
 		postgresCmd := filepath.Join(execFolder, "config/runpostgres")
 		err = executeCommand("bash", postgresCmd, "setup", postgresPath)
 
@@ -227,7 +234,7 @@ func create(ProcessDir string) {
 			log.Fatal(err.Error())
 		}
 
-		err = daemonizeCommand("bash", postgresCmd, "run", postgresPath)
+		err = daemonizeCommand("postgres", postgresCmd, "run", postgresPath)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -263,34 +270,20 @@ func create(ProcessDir string) {
 	if err != nil {
 		log.Fatal("user create failed:" + err.Error())
 	}
-
-	usr, err := udb.ReadUserByName(createUsername)
-	if err != nil {
-		log.Fatal("read user failed:" + err.Error())
-	}
-
-	restkey, err := createDeviceAndGetKey(&udb, usr, "rest")
-	if err != nil {
-		log.Fatal("create device failed:" + err.Error())
-	}
-
-	webkey, err := createDeviceAndGetKey(&udb, usr, "website")
-	if err != nil {
-		log.Fatal("create device failed:" + err.Error())
-	}
-
+	/*
+		usr, err := udb.ReadUserByName(createUsername)
+		if err != nil {
+			log.Fatal("read user failed:" + err.Error())
+		}
+	*/
 	// Setup config
 	flag.Set("database.cxn_string", databasePath)
-	flag.Set("web.api.key", restkey)
-	flag.Set("web.http.key", webkey)
 	flag.Set("user", "")
 
 	// Dump config
 	config := getConfig()
 
-	configPath := filepath.Join(ProcessDir, ConnectorDBConfigFileName)
-
-	file, err := os.Create(configPath) // For read access.
+	file, err := os.Create(ConnectorDBConfigFileName) // For read access.
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -330,9 +323,10 @@ func getConfig() string {
 	return config
 }
 
-func startPostgres(ProcessDir string) error {
+func startPostgres() error {
 	log.Println("Starting postgres")
-	logPath := filepath.Join(ProcessDir, "postgres")
+
+	logPath := "postgres"
 	executablePath := dbutil.FindPostgres()
 
 	if executablePath == "" {
@@ -340,27 +334,27 @@ func startPostgres(ProcessDir string) error {
 	}
 	log.Printf("Using Postgres at: %v\n", executablePath)
 
-	dbPath := filepath.Join(ProcessDir, "connectordb_psql")
+	dbPath := "connectordb_psql"
 
 	return daemonizeCommand(logPath, executablePath, "-p", "52592", "-d", dbPath)
 }
 
-func startGnatsd(ProcessDir string) error {
+func startGnatsd() error {
 	log.Println("Starting gnatsd")
 
 	execFolder, _ := osext.ExecutableFolder()
-	logPath := filepath.Join(ProcessDir, "gnatsd")
+	logPath := "gnatsd"
 	binaryPath := filepath.Join(execFolder, "dep/gnatsd")
-	configPath := filepath.Join(ProcessDir, "gnatsd.conf")
+	configPath := "gnatsd.conf"
 
 	return daemonizeCommand(logPath, binaryPath, "-c", configPath)
 }
 
-func startRedis(ProcessDir string) error {
+func startRedis() error {
 	log.Println("Starting redis")
 
-	logPath := filepath.Join(ProcessDir, "redis")
-	configPath := filepath.Join(ProcessDir, "redis.conf")
+	logPath := "redis_s"
+	configPath := "redis.conf"
 
 	return daemonizeCommand(logPath, "redis-server", configPath)
 }
@@ -370,6 +364,12 @@ func start(ProcessDir string) {
 	ProcessDir, _ = filepath.Abs(ProcessDir)
 
 	cdbConfigPath := filepath.Join(ProcessDir, ConnectorDBConfigFileName)
+
+	//Change to the directory
+	err := os.Chdir(ProcessDir)
+	if err != nil {
+		log.Println("Could not change local directory: ", err)
+	}
 
 	fmt.Printf("Starting connectordb...\n\n")
 	fmt.Printf("Exec Folder: %v\n", execFolder)
@@ -421,15 +421,15 @@ func start(ProcessDir string) {
 
 	// Now start all the services we need
 	if gnatsdNeeded {
-		startGnatsd(ProcessDir)
+		startGnatsd()
 	}
 
 	if redisNeeded {
-		startRedis(ProcessDir)
+		startRedis()
 	}
 
 	if dbNeeded && !dbutil.UriIsSqlite(*config.DatabaseConnection) {
-		startPostgres(ProcessDir)
+		startPostgres()
 	}
 
 	if webNeeded || restNeeded {
@@ -437,7 +437,9 @@ func start(ProcessDir string) {
 
 		// start api + webservice
 		var err error
-		db, err := streamdb.Open(*config.DatabaseConnection, *config.RedisConnection, *config.MessageConnection)
+		//db, err := streamdb.Open(*config.DatabaseConnection, *config.RedisConnection, *config.MessageConnection)
+		//NOT dealing with this shit right now - null pointer here in config.
+		db, err := streamdb.Open("postgres://localhost:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 
 		if err != nil {
 			panic(err.Error())
@@ -456,10 +458,21 @@ func start(ProcessDir string) {
 
 func stop(ProcessDir string) {
 	fmt.Printf("Stopping connectordb...\n")
+	//Change to the directory
+	err := os.Chdir(ProcessDir)
+	if err != nil {
+		log.Println("Could not change local directory: ", err)
+	}
 
-	postgrespid := filepath.Join(ProcessDir, "connectordb_psql","postmaster.pid")
+	postgrespid := filepath.Join("connectordb_psql", "postmaster.pid")
 	exec.Command("bash", "-c", fmt.Sprintf("kill `head -n 1 %v`", postgrespid)).Run()
 
-	otherpid := filepath.Join(ProcessDir, "*.pid")
-	exec.Command("bash", "-c", fmt.Sprintf("kill `cat %v`", otherpid))
+	pids, err := filepath.Glob("*.pid")
+	for _, pid := range pids {
+		log.Println("Kill:", pid)
+		err = exec.Command("bash", "-c", fmt.Sprintf("kill `head -n 1 %v`", pid)).Run()
+		if err != nil {
+			log.Println(err)
+		}
+	}
 }
