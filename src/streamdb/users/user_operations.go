@@ -4,10 +4,6 @@ package users
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
 func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 
 	existing, _ := userdb.ReadByNameOrEmail(Name, Email)
 
@@ -88,7 +84,7 @@ func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
 	var user User
 
 	err := userdb.Get(&user, `SELECT u.*
-	                              FROM Users u, Stream s, Device d
+	                              FROM Users u, Streams s, Devices d
 	                              WHERE s.StreamId = ?
 	                                AND d.DeviceId = s.DeviceId
 	                                AND u.UserId = d.UserId
@@ -100,10 +96,6 @@ func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
 func (userdb *UserDatabase) UpdateUser(user *User) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	if user == nil {
 		return ERR_INVALID_PTR
 	}
@@ -128,10 +120,6 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 
 // DeleteUser removes a user from the database
 func (userdb *UserDatabase) DeleteUser(UserId int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	_, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
 	return err
 }

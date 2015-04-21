@@ -35,19 +35,8 @@ var (
 
 type UserDatabase struct {
 	dbutil.SqlxMixin
-	readonly bool
 }
 
 func (db *UserDatabase) InitUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.InitSqlxMixin(sqldb, dbtype)
-	db.readonly = false
-}
-
-
-func (userdb *UserDatabase) SetReadOnly(value bool) {
-	userdb.readonly = value
-}
-
-func (userdb *UserDatabase) IsReadOnly() bool {
-	return userdb.readonly
 }

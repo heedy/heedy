@@ -21,10 +21,6 @@ type PhoneCarrier struct {
 // CreatePhoneCarrier creates a phone carrier from the carrier name and
 // the SMS email domain they provide, for Example "Tmobile US", "tmomail.net"
 func (userdb *UserDatabase) CreatePhoneCarrier(Name, EmailDomain string) (error) {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	_, err := userdb.Exec(`INSERT INTO PhoneCarriers (Name, EmailDomain) VALUES (?,?);`,
 		Name,
 		EmailDomain)
@@ -38,20 +34,20 @@ func (userdb *UserDatabase) CreatePhoneCarrier(Name, EmailDomain string) (error)
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
 func (userdb *UserDatabase) ReadPhoneCarrierById(Id int64) (*PhoneCarrier, error) {
-	var pc *PhoneCarrier
+	var pc PhoneCarrier
 
-	err := userdb.Get(pc, "SELECT * FROM PhoneCarriers WHERE Id = ? LIMIT 1", Id)
+	err := userdb.Get(&pc, "SELECT * FROM PhoneCarriers WHERE Id = ? LIMIT 1", Id)
 
-	return pc, err
+	return &pc, err
 }
 
 // ReadPhoneCarrierById selects a phone carrier from the database given its ID
 func (userdb *UserDatabase) ReadPhoneCarrierByName(name string) (*PhoneCarrier, error) {
-	var pc *PhoneCarrier
+	var pc PhoneCarrier
 
-	err := userdb.Get(pc, "SELECT * FROM PhoneCarriers WHERE Name = ? LIMIT 1", name)
+	err := userdb.Get(&pc, "SELECT * FROM PhoneCarriers WHERE Name = ? LIMIT 1", name)
 
-	return pc, err
+	return &pc, err
 }
 
 func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]PhoneCarrier, error) {
@@ -65,10 +61,6 @@ func (userdb *UserDatabase) ReadAllPhoneCarriers() ([]PhoneCarrier, error) {
 // UpdatePhoneCarrier updates the database's phone carrier data with that of the
 // struct provided.
 func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	if carrier == nil {
 		return ERR_INVALID_PTR
 	}
@@ -84,10 +76,6 @@ func (userdb *UserDatabase) UpdatePhoneCarrier(carrier *PhoneCarrier) error {
 // DeletePhoneCarrier removes a phone carrier from the database, this will set
 // all users carrier with this phone carrier as a foreign key to NULL
 func (userdb *UserDatabase) DeletePhoneCarrier(carrierId int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	_, err := userdb.Exec(`DELETE FROM PhoneCarriers WHERE Id = ?;`, carrierId)
 
 	return err

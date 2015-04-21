@@ -49,6 +49,37 @@ func TestAdmin(t *testing.T) {
 	}
 }
 
+
+type ExpectedPemissions struct {
+    in  string
+    out PermissionLevel
+	errExpected bool
+}
+
+var permissionsTest = []ExpectedPemissions{
+	{"nobody", NOBODY, false},
+	{"root", ROOT, false},
+	{"user", USER, false},
+	{"device", DEVICE, false},
+	{"family", FAMILY, false},
+	{"enabled", ENABLED, false},
+	{"anybody", ANYBODY, false},
+	{"", ANYBODY, true}}
+
+func TestStrToPermissionLevel(t *testing.T) {
+    for _, test := range permissionsTest {
+		pl, err := strToPermissionLevel(test.in)
+
+		if test.errExpected && err == nil || ! test.errExpected && err != nil {
+			t.Errorf("Error failed for test %v", test.in)
+		}
+
+		if pl != test.out {
+			t.Errorf("Wrong permission for %v, got %v expected %v", test.in, pl, test.out)
+		}
+    }
+}
+
 func TestDevicePermissions(t *testing.T) {
 	var all Device
 	all.IsAdmin = true

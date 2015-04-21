@@ -1,12 +1,25 @@
 package users
-/**
+
 import (
 	"reflect"
 	"testing"
 )
 
 func TestCreateDevice(t *testing.T) {
-	err := testdb.CreateDevice("TestCreateDevice", usr.UserId)
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("Cannot create test user %v", err.Error())
+		return
+	}
+
+	usr2, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("Cannot create test user %v", err.Error())
+		return
+	}
+
+
+	err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create device %v", err)
 		return
@@ -27,7 +40,13 @@ func TestCreateDevice(t *testing.T) {
 }
 
 func TestReadDeviceById(t *testing.T) {
-	err := testdb.CreateDevice("TestReadStreamById", usr.UserId)
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("Cannot create test user %v", err.Error())
+		return
+	}
+
+	err = testdb.CreateDevice("TestReadStreamById", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create object %v", err)
 		return
@@ -49,7 +68,13 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	err := testdb.CreateDevice("TestUpdateDevice", usr.UserId)
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("Cannot create test user %v", err.Error())
+		return
+	}
+
+	err = testdb.CreateDevice("TestUpdateDevice", usr.UserId)
 	if err != nil {
 		t.Errorf("Cannot create object %v", err)
 		return
@@ -61,7 +86,6 @@ func TestUpdateDevice(t *testing.T) {
 		return
 	}
 
-	obj.Name = "Test"
 	obj.ApiKey = obj.ApiKey + "Testing" // should work with all UUIDs, still will be unique
 	obj.Enabled = false
 	obj.Nickname = "My Wifi Router"
@@ -90,7 +114,13 @@ func TestUpdateDevice(t *testing.T) {
 }
 
 func TestDeleteDevice(t *testing.T) {
-	err := testdb.CreateDevice("TestDeleteDevice", usr.UserId)
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf("Cannot create test user %v", err.Error())
+		return
+	}
+
+	err = testdb.CreateDevice("TestDeleteDevice", usr.UserId)
 
 	if nil != err {
 		t.Errorf("Cannot create object to test delete err: %v", err)
@@ -116,9 +146,4 @@ func TestDeleteDevice(t *testing.T) {
 		t.Errorf("The object with the selected ID should have errored out, but it did not")
 		return
 	}
-
-	if obj != nil {
-		t.Errorf("Expected nil, but we got back %v meaning the delete failed", obj)
-	}
 }
-**/

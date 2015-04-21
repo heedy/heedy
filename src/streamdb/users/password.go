@@ -4,7 +4,6 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"crypto/sha512"
 	"encoding/hex"
-    "log"
 )
 
 
@@ -45,26 +44,15 @@ func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool
 	var err error
 
 	usr, err = userdb.ReadUserByName(UsernameOrEmail)
-	if err != nil {
-		log.Print(err)
+	if err == nil {
+		return usr.ValidatePassword(Password), usr
 	}
-	if usr != nil {
-		goto gotuser
-	}
+
 
 	usr, err = userdb.ReadUserByEmail(UsernameOrEmail)
-	if err != nil {
-		log.Print(err)
-	}
-	if usr != nil {
-		goto gotuser
+	if err == nil {
+		return usr.ValidatePassword(Password), usr
 	}
 
-gotuser:
-	log.Printf("User: %v", usr)
-	if usr != nil && calcHash(Password, usr.PasswordSalt, usr.PasswordHashScheme) == usr.Password {
-		return true, usr
-	} else {
-		return false, nil
-	}
+	return false, nil
 }

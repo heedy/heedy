@@ -7,10 +7,6 @@ import (
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id
 func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	ApiKey, _ := uuid.NewV4()
 
 	_, err := userdb.Exec(`INSERT INTO Devices
@@ -58,6 +54,7 @@ func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	return &dev, err
 }
 
+
 // UpdateDevice updates the given device in the database with all fields in the
 // struct.
 func (userdb *UserDatabase) UpdateDevice(device *Device) error {
@@ -65,23 +62,29 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 		return ERR_INVALID_PTR
 	}
 
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	_, err := userdb.Exec(`UPDATE Devices SET
-	    Name = ?, ApiKey = ?, Enabled = ?,
-	    Icon_PngB64 = ?, Shortname = ?, Superdevice = ?,
-	    UserId = ?, CanWrite = ?, CanWriteAnywhere = ?, UserProxy = ? WHERE Id = ?;`,
+	    Name = ?,
+		Nickname = ?,
+		UserId = ?,
+		ApiKey = ?,
+		Enabled = ?,
+		IsAdmin = ?,
+		CanWrite = ?,
+		CanWriteAnywhere = ?,
+		CanActAsUser = ?,
+		IsVisible = ?,
+		UserEditable = ? WHERE DeviceId = ?;`,
 		device.Name,
+		device.Nickname,
+		device.UserId,
 		device.ApiKey,
 		device.Enabled,
-		device.Nickname,
 		device.IsAdmin,
-		device.UserId,
 		device.CanWrite,
 		device.CanWriteAnywhere,
 		device.CanActAsUser,
+		device.IsVisible,
+		device.UserEditable,
 		device.DeviceId)
 
 	return err
@@ -89,10 +92,6 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 
 // DeleteDevice removes a device from the system.
 func (userdb *UserDatabase) DeleteDevice(Id int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
 	_, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
 	return err
 }

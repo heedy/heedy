@@ -1,8 +1,8 @@
 package users
-/**
 
 import (
 	"testing"
+	"reflect"
 )
 
 
@@ -37,22 +37,25 @@ func TestCreateStream(t *testing.T) {
 
 
 func TestUpdateStream(t *testing.T) {
-	err := testdb.CreateStream("TestUpdateStream", "{}", dev.DeviceId)
+	usr, err := CreateTestUser()
 	if err != nil {
-		t.Errorf("Cannot create stream %v", err)
+		t.Errorf(err.Error())
 		return
 	}
 
-	stream, err := testdb.ReadStreamById(streamid)
-
-	if err != nil || stream == nil {
-		t.Errorf("Cannot read stream back with returned id %v", streamid)
+	dev, err := CreateTestDevice(usr)
+	if err != nil {
+		t.Errorf(err.Error())
 		return
 	}
 
-	stream.Name = "A"
-	stream.Active = false
-	stream.Public = true
+	stream, err := CreateTestStream(dev)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	stream.Nickname = "true"
 	stream.Type = "{a:'string'}"
 	//stream.OwnerId = dev
 
@@ -62,7 +65,7 @@ func TestUpdateStream(t *testing.T) {
 		t.Errorf("Could not update stream %v", err)
 	}
 
-	stream2, err := testdb.ReadStreamById(streamid)
+	stream2, err := testdb.ReadStreamById(stream.StreamId)
 
 	if err != nil {
 		t.Errorf("got an error when trying to get a stream that should exist %v", err)
@@ -78,32 +81,39 @@ func TestUpdateStream(t *testing.T) {
 		t.Errorf("Function safeguards failed")
 	}
 
-}**/
+}
 /**
 func TestDeleteStream(t *testing.T) {
-	id, err := testdb.CreateStream("TestDeleteStream", "{}", dev.DeviceId)
-
-	if nil != err {
-		t.Errorf("Cannot create stream to test delete")
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf(err.Error())
 		return
 	}
 
-	err = testdb.DeleteStream(id)
-
-	if nil != err {
-		t.Errorf("Error when attempted delete %v", err)
+	dev, err := CreateTestDevice(usr)
+	if err != nil {
+		t.Errorf(err.Error())
 		return
 	}
 
-	stream, err := testdb.ReadStreamByName(id)
+	stream, err := CreateTestStream(dev)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	err = testdb.DeleteStream(stream.StreamId)
+
+	if nil != err {
+		t.Errorf("Error when attempted delete %v", err.Error())
+		return
+	}
+
+	_, err = testdb.ReadStreamByName(stream.StreamId)
 
 	if err == nil {
 		t.Errorf("The stream with the selected ID should have errored out, but it was not")
 		return
-	}
-
-	if stream != nil {
-		t.Errorf("Expected nil, but we got back %v meaning the delete failed", stream)
 	}
 }
 

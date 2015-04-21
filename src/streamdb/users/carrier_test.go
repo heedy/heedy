@@ -7,7 +7,7 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 
 All Rights Reserved
 **/
-/**
+
 import "testing"
 
 func TestCreatePhoneCarrier(t *testing.T) {
@@ -167,15 +167,10 @@ func TestDeletePhoneCarrier(t *testing.T) {
 		return
 	}
 
-	carrier, err := testdb.ReadPhoneCarrierById(id)
+	_, err = testdb.ReadPhoneCarrierById(id)
 
 	if err == nil {
 		t.Errorf("The carrier with the selected ID should have errored out, but it was not")
 		return
 	}
-
-	if carrier != nil {
-		t.Errorf("Expected nil, but we got back a carrier meaning the delete failed %v", carrier)
-	}
 }
-**/

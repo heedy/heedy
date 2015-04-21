@@ -28,11 +28,7 @@ func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel)
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
-	_, err := userdb.Exec(`INSERT INTO Stream
+	_, err := userdb.Exec(`INSERT INTO Streams
 	    (	Name,
 	        Type,
 	        DeviceId) VALUES (?,?,?);`, Name, Type, DeviceId)
@@ -45,7 +41,7 @@ func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) erro
 func (userdb *UserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Stream WHERE StreamId = ? LIMIT 1;", StreamId)
+	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamId = ? LIMIT 1;", StreamId)
 
 	return &stream, err
 }
@@ -55,7 +51,7 @@ func (userdb *UserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
 func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Stream WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
+	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
 
 	return &stream, err
 }
@@ -63,7 +59,7 @@ func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamNa
 func (userdb *UserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
 	var streams []Stream
 
-	err := userdb.Select(&streams, "SELECT * FROM Stream WHERE DeviceId = ?;", DeviceId)
+	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceId = ?;", DeviceId)
 
 	return streams, err
 }
@@ -75,11 +71,7 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 		return ERR_INVALID_PTR
 	}
 
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
-	_, err := userdb.Exec(`UPDATE Stream SET
+	_, err := userdb.Exec(`UPDATE Streams SET
 	    Name = ?,
 		Nickname = ?,
 	    Type = ?,
@@ -100,10 +92,6 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 
 // DeleteStream removes a stream from the database
 func (userdb *UserDatabase) DeleteStream(Id int64) error {
-	if userdb.IsReadOnly() {
-		return READONLY_ERR
-	}
-
-	_, err := userdb.Exec(`DELETE FROM Stream WHERE StreamId = ?;`, Id)
+	_, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
 	return err
 }

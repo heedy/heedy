@@ -1,10 +1,11 @@
 package users
 
 import (
-	//"testing"
+	"testing"
+	"reflect"
 )
 
-/**
+
 func TestCreateUser(t *testing.T) {
 	CleanTestDB()
 
@@ -77,14 +78,10 @@ func TestReadAllUsers(t *testing.T) {
 		t.Errorf("not taking into account changes")
 	}
 }
-/**
+
 func TestReadUserByEmail(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserByEmail("doesnotexist   because spaces")
-
-	if usr != nil {
-		t.Errorf("Selected user that does not exist by email")
-	}
 
 	if err == nil {
 		t.Errorf("no error returned, expected non nil on failing case")
@@ -111,10 +108,6 @@ func TestReadUserByEmail(t *testing.T) {
 func TestReadUserByName(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserByName("")
-
-	if usr != nil {
-		t.Errorf("Selected user that does not exist by name")
-	}
 
 	if err == nil {
 		t.Errorf("no error returned, expected non nil on failing case")
@@ -153,7 +146,7 @@ func TestValidateUser(t *testing.T) {
 	}
 
 	validated, _ = testdb.ValidateUser(email, pass)
-	if !validated {
+	if ! validated {
 		t.Errorf("could not validate a user with email and pass")
 	}
 
@@ -166,10 +159,6 @@ func TestValidateUser(t *testing.T) {
 func TestReadUserById(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserById(-1)
-
-	if usr != nil {
-		t.Errorf("Selected user that does not exist by name")
-	}
 
 	if err == nil {
 		t.Errorf("no error returned, expected non nil on failing case")
@@ -192,24 +181,12 @@ func TestReadUserById(t *testing.T) {
 		t.Errorf("got an error when trying to get a user that should exist %v", err)
 	}
 }
-/**
+
 func TestUpdateUser(t *testing.T) {
-	// setup for reading
-	id, err := testdb.CreateUser("TestUpdateUser_name", "TestUpdateUser_email", "TestUpdateUser_pass")
-	if err != nil {
-		t.Errorf("Could not create user for test reading... %v", err)
-		return
-	}
-
-	usr, err := testdb.ReadUserById(id)
-
-	if usr == nil {
-		t.Errorf("did not get a user by id")
-		return
-	}
+	usr, err := CreateTestUser()
 
 	if err != nil {
-		t.Errorf("got an error when trying to get a user that should exist %v", err)
+		t.Errorf("got an error when trying to create a user %v", err.Error())
 		return
 	}
 
@@ -221,7 +198,6 @@ func TestUpdateUser(t *testing.T) {
 	usr.Name = "Hello"
 	usr.Email = "hello@example.com"
 	usr.Admin = true
-	usr.Phone = "(303) 303-0000" //Non-legal phone number, don't worry
 	usr.UploadLimit_Items = 1
 	usr.ProcessingLimit_S = 1
 	usr.StorageLimit_Gb = 1
@@ -232,97 +208,62 @@ func TestUpdateUser(t *testing.T) {
 		t.Errorf("Could not update user %v", err)
 	}
 
-	usr2, err := testdb.ReadUserById(id)
-
-	usr.ModifyTime = usr2.ModifyTime // have to do this because we update it each time!
-	if err != nil {
-		t.Errorf("got an error when trying to get a user that should exist %v", err)
-		return
-	}
+	usr2, err := testdb.ReadUserByName(usr.Name)
 
 	if !reflect.DeepEqual(usr, usr2) {
 		t.Errorf("The original and updated objects don't match orig: %v updated %v", usr, usr2)
 	}
 }
 
-func TestConstructUserFrom(t *testing.T) {
-	teste := errors.New("blah")
-	_, err := constructUserFromRow(nil, teste)
-
-	if err != teste {
-		t.Errorf("Construct user did not allow error passthrough.")
-	}
-
-	// Different Method
-
-	_, err = constructUsersFromRows(nil)
-
-	if err != ERR_INVALID_PTR {
-		t.Errorf("allowed an illegal pointer through")
-	}
-}
-
 func TestDeleteUser(t *testing.T) {
-	id, err := testdb.CreateUser("a", "b", "c")
+	usr, err := CreateTestUser()
 
 	if nil != err {
 		t.Errorf("Cannot create user to test delete")
 		return
 	}
 
-	err = testdb.DeleteUser(id)
+	err = testdb.DeleteUser(usr.UserId)
 
 	if nil != err {
 		t.Errorf("Error when attempted delete %v", err)
 		return
 	}
 
-	user, err := testdb.ReadUserById(id)
+	_, err = testdb.ReadUserById(usr.UserId)
 
 	if err == nil {
-		t.Errorf("The user with ID %v should have errored out, but it did not", id)
+		t.Errorf("The user with ID %v should have errored out, but it did not", usr.UserId)
 		return
-	}
-	if user != nil {
-		t.Errorf("Expected nil, but we got back a user meaning the delete failed %v", user)
 	}
 }
 
 func TestReadStreamOwner(t *testing.T) {
-	id, err := testdb.CreateUser("TestReadStreamOwner_name", "TestReadStreamOwner_email", "TestReadStreamOwner_pass")
+	user, err := CreateTestUser()
 	if err != nil {
-		t.Errorf("Could not create user for test owners... %v", err)
+		t.Errorf(err.Error())
 		return
 	}
 
-	user, err := testdb.ReadUserById(id)
-	if err != nil || user == nil {
-		t.Errorf("The user with ID %v does not exist or err %v", id, err)
-		return
-	}
-
-	devid, err := testdb.CreateDevice("Devname", user)
+	device, err := CreateTestDevice(user)
 	if err != nil {
-		t.Errorf("Could not create device for test owners... %v", err)
+		t.Errorf(err.Error())
 		return
 	}
 
-	device, err := testdb.ReadDeviceById(devid)
-	if err != nil || device == nil {
-		t.Errorf("The device with ID %v does not exist or err %v", id, err)
+	stream, err := CreateTestStream(device)
+	if err != nil {
+		t.Errorf(err.Error())
 		return
 	}
 
-	streamid, _ := testdb.CreateStream("TestReadStreamOwner", "", device)
-
-	owner, err := testdb.ReadStreamOwner(streamid)
+	owner, err := testdb.ReadStreamOwner(stream.StreamId)
 
 	if err != nil {
 		t.Errorf("Could not read stream owner %v", err)
 	}
 
-	if owner.Id != user.Id {
+	if owner.UserId != user.UserId {
 		t.Errorf("Wrong stream owner got %v, expected %v", owner, user)
 	}
 }
-**/
