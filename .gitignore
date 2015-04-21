@@ -5,6 +5,8 @@
 *.sqlite
 *.sqlite3
 *.pyc
+*.pid
+*.out
 
 # Folders
 _obj
