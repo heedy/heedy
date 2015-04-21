@@ -54,24 +54,37 @@ func QueryToPostgres(query string) string {
 // finds the postgres binary on the system, isn't very robust in checking though
 // should work on ubuntu variants and when postgres is on $PATH
 func FindPostgres() string {
+
+    // Start with which because we prefer a PATH version
+    out := findPostgresWhich()
+
+    if out != "" {
+        return out
+    }
+
+    return findPostgresGrep()
+}
+
+// Find postgres using the lame grep method, works on Ubuntu (for now)
+func findPostgresGrep() string {
     cmd := exec.Command("bash", "-c", "find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/postgres")
     out, err := cmd.CombinedOutput()
 
     if err != nil {
-        outstr := string(out)
-        if outstr != "" {
-            return outstr
-        }
+        return ""
     }
-    cmd = exec.Command("which", "postgres")
-    out, err = cmd.CombinedOutput()
+
+    return string(out)
+}
+
+// Finds postgres on $PATH
+func findPostgresWhich() string {
+    cmd := exec.Command("which", "postgres")
+    out, err := cmd.CombinedOutput()
 
     if err != nil {
-        outstr := string(out)
-        if outstr != "" {
-            return outstr
-        }
+        return ""
     }
 
-    return ""
+    return string(out)
 }

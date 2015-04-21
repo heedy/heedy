@@ -34,3 +34,30 @@ func TestQueryToPostgres(t *testing.T) {
         t.Errorf("Expected the same: %v, %v", query3, answer3, a3)
     }
 }
+
+
+
+// Converts all ? in a query to $n which is the postgres format
+func TestQueryConvert(t *testing.T) {
+    query3  := "INSERT INTO Users VALUES (?,?,?,?,?)"
+    answer3 := "INSERT INTO Users VALUES ($1,$2,$3,$4,$5)"
+
+    a1 := QueryConvert(query3, POSTGRES.String())
+    if a1 != answer3 {
+        t.Errorf("Expected input: %v, output: %v, got: %v", query3, answer3, a1)
+    }
+
+	// identity function
+    a1 = QueryConvert(query3, SQLITE3.String())
+    if a1 != query3 {
+        t.Errorf("Expected input: %v, output: %v, got: %v", query3, query3, a1)
+    }
+}
+
+func TestFindPostgres(t *testing.T) {
+	ppath := FindPostgres()
+
+	if ppath == "" {
+        t.Errorf("could not find postgres")
+	}
+}

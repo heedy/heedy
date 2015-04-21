@@ -13,15 +13,18 @@ import (
 type DRIVERSTR string
 
 const (
+	// The driver strings for the given database types as needed by the sql package
 	SQLITE3  DRIVERSTR = "sqlite3"
 	POSTGRES DRIVERSTR = "postgres"
 )
 
 const (
-	SQLITE_PREFIX   = "sqlite://"
-	POSTGRES_PREFIX = "postgres://"
+	// The URI prefixes for the given drivers
+	sqlitePrefix   = "sqlite://"
+	postgresPrefix = "postgres://"
 )
 
+// Converts a driverstr into a string
 func (d DRIVERSTR) String() string {
     return string(d)
 }
@@ -31,50 +34,52 @@ func UriIsSqlite(sqluri string) bool {
 	return strings.HasSuffix(sqluri, ".db") ||
 		strings.HasSuffix(sqluri, ".sqlite") ||
 		strings.HasSuffix(sqluri, ".sqlite3") ||
-		strings.HasPrefix(sqluri, SQLITE_PREFIX)
+		strings.HasPrefix(sqluri, sqlitePrefix)
 }
 
 // Strips the leading sqlite:// from a sqlite path
 func SqliteURIToPath(sqluri string) string {
 	//The sqlite driver doesn't like starting with sqlite://
-	if strings.HasPrefix(sqluri, SQLITE_PREFIX) {
-		sqluri = sqluri[len(SQLITE_PREFIX):]
+	if strings.HasPrefix(sqluri, sqlitePrefix) {
+		sqluri = sqluri[len(sqlitePrefix):]
 	}
 
 	return sqluri
 }
 
-// Gets the conversion script for the given database.
-func OpenSqlDatabase(sqluri string) (*sql.DB, DRIVERSTR, error) {
-	var err error
+// From a connection string, gets the cleaned connection path and database type
+func processConnectionString(connectionString string) (connector string, dbt DRIVERSTR) {
 
-    sqltype := POSTGRES //The default is postgres.
+    dbt 	  = POSTGRES //The default is postgres.
+	connector = connectionString
 
 	//First, we check if the user wants to use sqlite or postgres. If the url given
 	//has the hallmarks of a file or sqlite database, then set that as the database type
 	switch {
 	// TODO just check if this is a file
-	case UriIsSqlite(sqluri):
-		sqltype = SQLITE3
-		sqluri = SqliteURIToPath(sqluri)
+	case UriIsSqlite(connectionString):
+		dbt = SQLITE3
+		connector = SqliteURIToPath(connectionString)
 		break
-	case strings.HasPrefix(sqluri, POSTGRES_PREFIX):
-		sqltype = POSTGRES
-		//sqluri = sqluri[len(POSTGRES_PREFIX):]
+	case strings.HasPrefix(connectionString, postgresPrefix):
+		dbt = POSTGRES
 	default:
-		log.Printf("Warning, database type was found, defaulting to %v", sqltype)
+		log.Printf("Warning, database type was found, defaulting to %v", dbt)
 	}
 
+	return connector, dbt
+}
+
+
+// Gets the conversion script for the given database.
+func OpenSqlDatabase(connectionString string) (*sql.DB, DRIVERSTR, error) {
+	var err error
+
+	sqluri, sqltype := processConnectionString(connectionString)
 	log.Printf("Opening %v database with cxn string: %v", sqltype, sqluri)
 
 	sqldb, err := sql.Open(sqltype.String(), sqluri)
 
-	if err != nil {
-		log.Printf("Open failed\n")
-		return sqldb, sqltype, err
-	}
-
-	err = sqldb.Ping()
 	return sqldb, sqltype, err
 }
 

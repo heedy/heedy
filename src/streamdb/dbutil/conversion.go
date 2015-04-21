@@ -24,7 +24,7 @@ type meta struct {
 }
 
 // Gets the conversion script for the given params.
-func GetConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) string {
+func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, error) {
 	templateParams := make(map[string] string)
 
 	if dbversion == "" {
@@ -49,12 +49,13 @@ func GetConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) string {
 	conversion_template, err := template.New("modifier").Parse(dbconversion)
 
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
 	var doc bytes.Buffer
 	conversion_template.Execute(&doc, templateParams)
-    return doc.String()
+
+    return doc.String(), nil
 }
 
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.
@@ -79,7 +80,11 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
     version := GetDatabaseVersion(db, driver)
     log.Printf("Upgrading DB From Version: %v\n", version)
 
-	conversionstr := GetConversion(driver, version, dropold)
+	conversionstr, err := getConversion(driver, version, dropold)
+
+	if err != nil {
+		return err
+	}
 
     switch driver {
         case SQLITE3:
