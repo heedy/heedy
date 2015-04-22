@@ -16,6 +16,8 @@ import (
 	"streamdb/users"
 	"strings"
 	"time"
+	"syscall"
+	"os/signal"
 
 	"github.com/kardianos/osext"
 	"github.com/vharitonsky/iniflags"
@@ -58,16 +60,17 @@ const (
 )
 
 var (
-	createFlags = flag.NewFlagSet("create", flag.ContinueOnError)
+	createFlags = flag.NewFlagSet("create", flag.ExitOnError)
 
 	// TODO change this in the future, but until we have the final thing ironed out, leave this as is for testing
 	createUsernamePassword = createFlags.String("user", "admin:admin", "The user in username:password format")
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
+	createDbType 		   = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
-	// TODO change this once postgres is fully working/tested and the SQL is up to code
-	createDbType = createFlags.String("dbtype", "postgres", "The type of database to create.")
+	startFlags = flag.NewFlagSet("start", flag.ExitOnError)
 
-	startFlags = flag.NewFlagSet("start", flag.ContinueOnError)
+	// True if
+	teardownDaemons = false
 )
 
 // The main entrypoint into connectordb
@@ -102,18 +105,29 @@ func main() {
 	}
 }
 
-func waitForPortOpen(hostPort string) {
+
+func waitForPortOpen(host string, port int) {
+
+	hostPort := fmt.Sprintf("%s:%d", host, port)
+
 	var err error
+
+	log.Printf("Waiting for %v to open...\n", hostPort)
+
 
 	_, err = net.Dial("tcp", hostPort)
 
 	for err != nil {
 		_, err = net.Dial("tcp", hostPort)
 	}
+
+	log.Printf("...%v is now open.\n", hostPort)
+
 }
 
 // Executes a command, redirecting the stdout and stderr to this program's output
 func executeCommand(command string, args ...string) error {
+	log.Printf(cmd2Str(command, args...))
 	cmd := exec.Command(command, args...)
 
 	cmd.Stdout = os.Stdout
@@ -122,9 +136,16 @@ func executeCommand(command string, args ...string) error {
 	return cmd.Run()
 }
 
+func cmd2Str(command string, args ...string) string {
+	return fmt.Sprintf("%v %v", command, strings.Join(args, " "))
+}
+
 // Executes a command, redirecting the stdout and stderr to this program's output
 func daemonizeCommand(logpidpath, command string, args ...string) error {
 	// TODO setup infinite loop for restarting crashed processes
+
+	log.Printf("Starting Daemon: %v\n", cmd2Str(command, args...))
+
 
 	file, err := os.Create(logpidpath + ".log") // For read access.
 	if err != nil {
@@ -138,24 +159,58 @@ func daemonizeCommand(logpidpath, command string, args ...string) error {
 
 // Executes a command doing redirects as necessary
 func execCommandRedirect(stdout, stderr *os.File, pidpath string, command string, args ...string) {
-
 	for {
+		log.Printf("Executing: %v\n", cmd2Str(command, args...))
+
 		cmd := exec.Command(command, args...)
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
-
 		cmd.Start()
 
 		pidfile, err := os.Create(pidpath) // For read access.
 		if err == nil {
-			pidfile.WriteString(fmt.Sprintf("%v", cmd.Process.Pid))
+			if cmd.Process != nil {
+				pidfile.WriteString(fmt.Sprintf("%v", cmd.Process.Pid))
+			}
 			pidfile.Close()
 		} else {
 			log.Printf("%v\n", err.Error())
 		}
-		cmd.Wait()
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
-		log.Printf("ERROR: %v failed, restarting.\n", command)
+		cmdexit := make(chan bool)
+		go func() {
+			cmd.Wait()
+		    cmdexit <- true
+		}()
+
+		teardownall := make(chan bool)
+		go func() {
+			for {
+				time.Sleep(100 * time.Millisecond)
+				if teardownDaemons {
+					teardownall <- true
+				}
+			}
+		}()
+
+		select {
+			case <-ch:
+				log.Printf("Stopping process: %v\n", cmd2Str(command, args...))
+				if cmd.Process != nil {
+					cmd.Process.Signal(syscall.SIGTERM)
+				}
+				return
+			case <- teardownall:
+				log.Printf("Global teardown, stopping process: %v\n", cmd2Str(command, args...))
+				if cmd.Process != nil {
+					cmd.Process.Signal(syscall.SIGTERM)
+				}
+				return
+			case <-cmdexit:
+				log.Printf("ERROR: %v failed, restarting.\n", command)
+		}
 	}
 
 	// TODO setup a global PID structure to track all pending and past operations
@@ -173,6 +228,29 @@ func createDeviceAndGetKey(udb *users.UserDatabase, user *users.User, devname st
 	}
 
 	return dev.ApiKey, nil
+}
+
+// Handles an error by logging it fatally if it exists
+func fatalHandleError(err error) {
+	if err != nil {
+		log.Println(err.Error())
+		teardownAll()
+		os.Exit(1)
+	}
+}
+
+func appendLinesToFile(filepath string, lines ...string) error {
+	appendchunk := strings.Join(lines, "\n")
+
+	fd, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND, 0660)
+	if err != nil {
+		return err
+	}
+
+	_, err = fd.WriteString(appendchunk)
+
+	fd.Close()
+	return err
 }
 
 func create(ProcessDir string) {
@@ -193,24 +271,15 @@ func create(ProcessDir string) {
 	// Create the initial directory
 	log.Printf("> Creating Directory\n")
 
-	if err := os.MkdirAll(ProcessDir, DefaultFolderPermissions); err != nil {
-		log.Fatal(err.Error())
-	}
-
-	//Change to the directory
-	err := os.Chdir(ProcessDir)
-	if err != nil {
-		log.Println("Could not change local directory: ", err)
-	}
+	err := os.MkdirAll(ProcessDir, DefaultFolderPermissions)
+	fatalHandleError(err)
 
 	// Copy the config files over to the new folder
 	log.Printf("> Copying Config\n")
 
-	err = executeCommand("cp", filepath.Join(execFolder, "/config/gnatsd.conf"), filepath.Join(execFolder, "/config/redis.conf"), ".")
+	err = executeCommand("cp", filepath.Join(execFolder, "/config/gnatsd.conf"), filepath.Join(execFolder, "/config/redis.conf"), ProcessDir)
+	fatalHandleError(err)
 
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 
 	databasePath := ""
 	switch *createDbType {
@@ -226,41 +295,50 @@ func create(ProcessDir string) {
 		// Init the postgres database
 		log.Printf("Setting Up Postgres\n")
 
-		postgresPath := "connectordb_psql"
-		postgresCmd := filepath.Join(execFolder, "config/runpostgres")
-		err = executeCommand("bash", postgresCmd, "setup", postgresPath)
+		postgresPath := filepath.Join(ProcessDir, "connectordb_psql")
 
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+		err = os.MkdirAll(postgresPath, DefaultFolderPermissions)
+		fatalHandleError(err)
 
-		err = daemonizeCommand("postgres", postgresCmd, "run", postgresPath)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+		err = executeCommand(dbutil.FindPostgresInit(), "-D", postgresPath)
+		fatalHandleError(err)
 
-		databasePath = "postgres://localhost:52592/connectordb?sslmode=disable"
 
+		postgresPortString := fmt.Sprintf("%d", *config.PostgresPort)
+
+		// Setup postgres.conf
+		confPath := filepath.Join(postgresPath, "postgresql.conf")
+		err = appendLinesToFile(confPath, "\n",
+									"port = " + postgresPortString,
+									"listen_addresses = 'localhost'",
+									"unix_socket_directories = '/tmp'",
+									"\n")
+
+		fatalHandleError(err)
+
+		startPostgres(ProcessDir)
+
+		// Wait for the port to open
 		time.Sleep(time.Second * 3)
-		log.Printf("Waiting for port to open.")
-		waitForPortOpen("localhost:52592")
-		time.Sleep(time.Second * 2)
+		waitForPortOpen("localhost", *config.PostgresPort)
+
+		// Create the initial database
+		err = executeCommand(dbutil.FindPostgresPsql(), "-h", "localhost", "-p", postgresPortString, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
+		fatalHandleError(err)
+
+		databasePath = fmt.Sprintf("postgres://localhost:%d/connectordb?sslmode=disable", *config.PostgresPort)
 	}
 
 	// Setup the tables
+	log.Println("Upgrading database")
 	err = dbutil.UpgradeDatabase(databasePath, true)
-
-	if err != nil {
-		log.Fatal("Upgrade failed:" + err.Error())
-	}
+	fatalHandleError(err)
 
 	// Setup the admin user and two main devices
 	log.Printf("Setting up the initial admin user.")
 	db, driver, err := dbutil.OpenSqlDatabase(databasePath)
+	fatalHandleError(err)
 
-	if err != nil {
-		log.Fatal("setup failed:" + err.Error())
-	}
 
 	var udb users.UserDatabase
 	udb.InitUserDatabase(db, string(driver))
@@ -276,6 +354,9 @@ func create(ProcessDir string) {
 			log.Fatal("read user failed:" + err.Error())
 		}
 	*/
+
+	log.Printf("Initializing local configuration.")
+
 	// Setup config
 	flag.Set("database.cxn_string", databasePath)
 	flag.Set("user", "")
@@ -283,17 +364,18 @@ func create(ProcessDir string) {
 	// Dump config
 	config := getConfig()
 
-	file, err := os.Create(ConnectorDBConfigFileName) // For read access.
+
+	cfgfile := filepath.Join(ProcessDir ,ConnectorDBConfigFileName)
+	file, err := os.Create(cfgfile) // For read access.
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
 	defer file.Close()
 	file.WriteString(config)
 
-	log.Println("Finished all setup, exiting.")
+	log.Println("Setup was successful, exiting.")
 
-	// TODO implement proper system teardown
+	teardownAll()
 }
 
 // stolen from iniflags
@@ -323,40 +405,37 @@ func getConfig() string {
 	return config
 }
 
-func startPostgres() error {
+func startPostgres(ProcessDir string) error {
 	log.Println("Starting postgres")
 
-	logPath := "postgres"
 	executablePath := dbutil.FindPostgres()
+	dbPath := filepath.Join(ProcessDir, "connectordb_psql")
+	port := fmt.Sprintf("%d", *config.PostgresPort)
 
 	if executablePath == "" {
 		log.Fatal("Could not find postgres path\n")
 	}
-	log.Printf("Using Postgres at: %v\n", executablePath)
 
-	dbPath := "connectordb_psql"
-
-	return daemonizeCommand(logPath, executablePath, "-p", "52592", "-d", dbPath)
+	//return executeCommand(executablePath, "-p", "52592", "-D", dbPath)
+	return daemonizeCommand("postgres", executablePath, "-p", port, "-D", dbPath)
 }
 
-func startGnatsd() error {
+func startGnatsd(ProcessDir string) error {
 	log.Println("Starting gnatsd")
 
 	execFolder, _ := osext.ExecutableFolder()
-	logPath := "gnatsd"
 	binaryPath := filepath.Join(execFolder, "dep/gnatsd")
-	configPath := "gnatsd.conf"
+	configPath := filepath.Join(ProcessDir, "gnatsd.conf")
 
-	return daemonizeCommand(logPath, binaryPath, "-c", configPath)
+	return daemonizeCommand("gnatsd", binaryPath, "-c", configPath)
 }
 
-func startRedis() error {
+func startRedis(ProcessDir string) error {
 	log.Println("Starting redis")
 
-	logPath := "redis_s"
-	configPath := "redis.conf"
+	configPath := filepath.Join(ProcessDir, "redis.conf")
 
-	return daemonizeCommand(logPath, "redis-server", configPath)
+	return daemonizeCommand("redis", "redis-server", configPath)
 }
 
 func start(ProcessDir string) {
@@ -421,15 +500,15 @@ func start(ProcessDir string) {
 
 	// Now start all the services we need
 	if gnatsdNeeded {
-		startGnatsd()
+		startGnatsd(ProcessDir)
 	}
 
 	if redisNeeded {
-		startRedis()
+		startRedis(ProcessDir)
 	}
 
 	if dbNeeded && !dbutil.UriIsSqlite(*config.DatabaseConnection) {
-		startPostgres()
+		startPostgres(ProcessDir)
 	}
 
 	if webNeeded || restNeeded {
@@ -454,6 +533,7 @@ func start(ProcessDir string) {
 		err = http.ListenAndServe(serveraddr, nil)
 		log.Fatal(err)
 	}
+	teardownAll()
 }
 
 func stop(ProcessDir string) {
@@ -475,4 +555,10 @@ func stop(ProcessDir string) {
 			log.Println(err)
 		}
 	}
+}
+
+func teardownAll(){
+	log.Printf("Sending system teardown request; trying to kill all threads and processes.\n")
+	teardownDaemons = true
+	time.Sleep(3 * time.Second)
 }

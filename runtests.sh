@@ -14,6 +14,7 @@ if [ -d "$DBDIR" ]; then
 fi
 
 echo "Setting up environment..."
+PATH=bin/dep:$PATH
 
 ./bin/connectordb create $DBDIR
 ./bin/connectordb start $DBDIR servers &
@@ -37,6 +38,7 @@ if [ $test_status -eq 0 ]; then
 fi
 
 ./bin/connectordb stop $DBDIR
-rm -rf $DBDIR
-
+if [ $test_status -eq 0 ]; then
+	rm -rf $DBDIR
+fi
 exit $test_status

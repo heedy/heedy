@@ -8,6 +8,8 @@ marks into named queries with the proper query placeholders for postgres.
 import (
     "strconv"
     "os/exec"
+    "fmt"
+    "strings"
 )
 
 var (
@@ -54,20 +56,43 @@ func QueryToPostgres(query string) string {
 // finds the postgres binary on the system, isn't very robust in checking though
 // should work on ubuntu variants and when postgres is on $PATH
 func FindPostgres() string {
-
-    // Start with which because we prefer a PATH version
-    out := findPostgresWhich()
-
-    if out != "" {
-        return out
-    }
-
-    return findPostgresGrep()
+    return findPostgresExecutable("postgres")
 }
 
-// Find postgres using the lame grep method, works on Ubuntu (for now)
-func findPostgresGrep() string {
-    cmd := exec.Command("bash", "-c", "find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/postgres")
+
+// finds the postgres init binary on the system, isn't very robust in checking though
+// should work on ubuntu variants and when postgres is on $PATH
+func FindPostgresInit() string {
+    return findPostgresExecutable("initdb")
+}
+
+// finds the postgres psql binary on the system, isn't very robust in checking though
+// should work on ubuntu variants and when postgres is on $PATH
+func FindPostgresPsql() string {
+    return findPostgresExecutable("psql")
+}
+
+func trimExecutablePath(exepath string) string {
+    return strings.Trim(exepath, " \t\n\r")
+}
+
+func findPostgresExecutable(executableName string) string {
+    // Start with which because we prefer a PATH version
+    out := findPostgresExecutableWhich(executableName)
+
+    if out != "" {
+        return trimExecutablePath(out)
+    }
+
+    return trimExecutablePath(findPostgresExecutableGrep(executableName))
+}
+
+// Find a postgres utility e.g. initdb or postgres using the lame grep method, works on Ubuntu (for now)
+func findPostgresExecutableGrep(executableName string) string {
+
+    findCmd := fmt.Sprintf("find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/%v", executableName)
+
+    cmd := exec.Command("bash", "-c", findCmd)
     out, err := cmd.CombinedOutput()
 
     if err != nil {
@@ -77,9 +102,10 @@ func findPostgresGrep() string {
     return string(out)
 }
 
-// Finds postgres on $PATH
-func findPostgresWhich() string {
-    cmd := exec.Command("which", "postgres")
+
+// Finds a utility on $PATH
+func findPostgresExecutableWhich(executableName string) string {
+    cmd := exec.Command("which", executableName)
     out, err := cmd.CombinedOutput()
 
     if err != nil {

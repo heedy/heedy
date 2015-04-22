@@ -8,6 +8,9 @@ import (
     "io/ioutil"
 	"errors"
 	"os"
+	"path/filepath"
+
+	"github.com/kardianos/osext"
     )
 
 const (
@@ -58,6 +61,11 @@ func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, er
     return doc.String(), nil
 }
 
+func getSqlite3Location() string {
+		execFolder, _ := osext.ExecutableFolder()
+		return filepath.Join(execFolder, "dep", "sqlite3")
+}
+
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.
 
 
@@ -88,6 +96,9 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 
     switch driver {
         case SQLITE3:
+
+			sqliteLocation := getSqlite3Location()
+			log.Printf("Sqlite Location is: %v\n", sqliteLocation)
             // sqlite doesn't allow direct exec of multiple lines, so we do it
             // from the cli and hope for the best.
 
@@ -112,13 +123,13 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 
 			// Print sqlite version
 			log.Printf("Sqlite Version\n")
-			cmd := exec.Command("sqlite3", "--version")
+			cmd := exec.Command(sqliteLocation, "--version")
 			cmd.Stdout = os.Stdout
     		cmd.Stderr = os.Stderr
             err = cmd.Run()
 
 			// Strip anything from sqlite connection string that isn't a path
-            cmd = exec.Command("sqlite3", "-init", f.Name(), SqliteURIToPath(cxnstring))
+            cmd = exec.Command(sqliteLocation, "-init", f.Name(), SqliteURIToPath(cxnstring))
 			cmd.Stdout = os.Stdout
     		cmd.Stderr = os.Stderr
 

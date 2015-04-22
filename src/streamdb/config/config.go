@@ -26,4 +26,5 @@ var (
 	WebApiKey           = flag.String("web.http.key", "", "The api key for the web interface")
 	ApiApiKey           = flag.String("web.api.key", "", "The api key for the web interface")
 	DaisyEnabled        = flag.Bool("web.daisy.enabled", false, "Turn on the daisy components of the web interface")
+	PostgresPort		= flag.Int("postgres.portnum", 52592, "The default port for postgres to run on")
 )
