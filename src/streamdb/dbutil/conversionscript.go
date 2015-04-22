@@ -266,12 +266,12 @@ INSERT INTO Streams (StreamId, Name, Type, DeviceId, Ephemeral, Downlink) SELECT
 -- Insert Data
 
 -- Default Carriers
-INSERT INTO PhoneCarriers (name, emaildomain) VALUES
-    ('Alltel US', '@message.alltel.com'),
-    ('AT&T US', '@txt.att.net'),
-    ('Nextel US', '@messaging.nextel.com'),
-    ('T-mobile US', '@tmomail.net'),
-    ('Verizon US', '@vtext.com');
+-- do one by one because old sqlite doesn't like multiple
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('Alltel US', '@message.alltel.com');
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('AT&T US', '@txt.att.net');
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('Nextel US', '@messaging.nextel.com');
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('T-mobile US', '@tmomail.net');
+INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('Verizon US', '@vtext.com');
 
 
 {{if .DroppingTables}}

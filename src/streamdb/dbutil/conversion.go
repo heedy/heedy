@@ -8,9 +8,9 @@ import (
     "io/ioutil"
 	"errors"
 	"os"
-	"path/filepath"
+	//"path/filepath"
 
-	"github.com/kardianos/osext"
+	//"github.com/kardianos/osext"
     )
 
 const (
@@ -62,8 +62,8 @@ func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, er
 }
 
 func getSqlite3Location() string {
-		execFolder, _ := osext.ExecutableFolder()
-		return filepath.Join(execFolder, "dep", "sqlite3")
+		//execFolder, _ := osext.ExecutableFolder()
+		return "sqlite3" //filepath.Join(execFolder, "dep", "sqlite3")
 }
 
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.
@@ -111,7 +111,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
             defer f.Close()
             defer os.Remove(f.Name())
 
-			log.Printf("Doing Conversion, script is:\n%v\n\n", conversionstr)
+			//log.Printf("Doing Conversion, script is:\n%v\n\n", conversionstr)
 
             _, err = f.WriteString(conversionstr)
             if err != nil {

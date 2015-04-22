@@ -210,6 +210,7 @@ func execCommandRedirect(stdout, stderr *os.File, pidpath string, command string
 				return
 			case <-cmdexit:
 				log.Printf("ERROR: %v failed, restarting.\n", command)
+				time.Sleep(1000 * time.Millisecond)
 		}
 	}
 
@@ -254,6 +255,12 @@ func appendLinesToFile(filepath string, lines ...string) error {
 }
 
 func create(ProcessDir string) {
+	cfgfile := filepath.Join(ProcessDir ,ConnectorDBConfigFileName)
+	execFolder, _ := osext.ExecutableFolder()
+	gnatsdConfig := filepath.Join(execFolder, "config", "gnatsd.conf")
+	redisConfig := filepath.Join(execFolder, "config", "redis.conf")
+	databasePath := ""
+
 	createFlags.Parse(os.Args[2:])
 
 	userPass := strings.Split(*createUsernamePassword, ":")
@@ -264,27 +271,24 @@ func create(ProcessDir string) {
 	createUsername := userPass[0]
 	createPassword := userPass[1]
 
-	execFolder, _ := osext.ExecutableFolder()
 
 	log.Printf("Initial Setup...\n")
 
 	// Create the initial directory
-	log.Printf("> Creating Directory\n")
+	log.Printf("Creating Directory\n")
 
 	err := os.MkdirAll(ProcessDir, DefaultFolderPermissions)
 	fatalHandleError(err)
 
 	// Copy the config files over to the new folder
-	log.Printf("> Copying Config\n")
+	log.Printf("Copying Config\n")
 
-	err = executeCommand("cp", filepath.Join(execFolder, "/config/gnatsd.conf"), filepath.Join(execFolder, "/config/redis.conf"), ProcessDir)
+	err = executeCommand("cp", gnatsdConfig, redisConfig, ProcessDir)
 	fatalHandleError(err)
 
-
-	databasePath := ""
 	switch *createDbType {
 	case "sqlite":
-		databasePath = "connectordb.sqlite3"
+		databasePath = filepath.Join(ProcessDir, "connectordb.sqlite3")
 
 		// because sqlite doesn't always like being started on a file that
 		// doesn't exist
@@ -365,7 +369,6 @@ func create(ProcessDir string) {
 	config := getConfig()
 
 
-	cfgfile := filepath.Join(ProcessDir ,ConnectorDBConfigFileName)
 	file, err := os.Create(cfgfile) // For read access.
 	if err != nil {
 		log.Fatal(err.Error())
@@ -532,8 +535,9 @@ func start(ProcessDir string) {
 		serveraddr := fmt.Sprintf(":%d", *config.WebPort)
 		err = http.ListenAndServe(serveraddr, nil)
 		log.Fatal(err)
+
+		teardownAll()
 	}
-	teardownAll()
 }
 
 func stop(ProcessDir string) {
