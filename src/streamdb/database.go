@@ -3,32 +3,32 @@ package streamdb
 import (
 	"database/sql"
 	"log"
+	"streamdb/dbutil"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
-	"streamdb/dbutil"
 )
 
-
+//The StreamDB version string
+const Version = "0.2.0a"
 
 var (
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 250
-	db *Database
+	db        *Database
 )
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
 	users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
-	tdb   *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg   *messenger.Messenger  //messenger is a connectino to the messaging client
-	sqldb *sql.DB               //Connection to the sql database
+	tdb     *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
+	msg     *messenger.Messenger  //messenger is a connectino to the messaging client
+	sqldb   *sql.DB               //Connection to the sql database
 	SqlType dbutil.DRIVERSTR
 
 	dbutil.SqlxMixin
 }
-
 
 /**
 Open StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
@@ -60,7 +60,6 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 	var db Database
 
-
 	db.sqldb, db.SqlType, err = dbutil.OpenSqlDatabase(sqluri)
 
 	if err != nil {
@@ -90,7 +89,6 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	return &db, nil
 
 }
-
 
 //Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash

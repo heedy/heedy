@@ -1,2 +1,0 @@
-#!/bin/sh
-../bin/dep/gnatsd -c ./gnatsd.conf

@@ -3,7 +3,7 @@ TMPO:=$(patsubst src/core/%.go,bin/%,$(SRC)) # Get the list of executables from 
 OBJ:=$(TMPO:.go=)
 CC:=gcc
 
-.PHONY: all clean build
+.PHONY: all clean build test
 
 all: go-dependencies $(OBJ) bin/dep/gnatsd
 
@@ -11,7 +11,7 @@ build: $(OBJ)
 
 bin:
 	mkdir bin
-	cp -r config bin/config
+	cp -r src/streamdb/dbmaker/config bin/config
 	cp -r src/plugins/web_client/static/ bin/
 	cp -r src/plugins/web_client/templates/ bin/
 
