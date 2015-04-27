@@ -15,7 +15,7 @@ var (
 )
 
 //APIHandler is a function that handles some part of the REST API given a specific operator on the database.
-type APIHandler func(o *streamdb.Operator, writer http.ResponseWriter, request *http.Request) error
+type APIHandler func(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error
 
 func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -29,7 +29,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		}
 
 		//Now, authentication is either by API key or by username/password combo
-		var o *streamdb.Operator
+		var o streamdb.Operator
 		var err error
 
 		if len(authUser) != 0 {

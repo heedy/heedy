@@ -25,7 +25,7 @@ func TestSetNewPassword(t *testing.T) {
 
 	j.SetNewPassword("password")
 
-	if k != j {
+	if k == j {
 		t.Errorf("Second Set Failed")
 		return
 

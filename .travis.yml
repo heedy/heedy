@@ -1,17 +1,19 @@
 language:
     - go
-    
+
 go:
     - tip
 
-            
+
 virtualenv:
     system_site_packages: true
-  
+
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests
+    - go get golang.org/x/tools/cmd/cover
+    - make go-dependencies
 
 script:
     - make
