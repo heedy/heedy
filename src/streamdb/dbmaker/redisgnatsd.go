@@ -15,7 +15,7 @@ func InitializeGnatsd(streamdbDirectory string, err error) error {
 	log.Printf("Setting up Gnatsd server\n")
 
 	//Now copy the configuration file
-	err = CopyConfig(streamdbDirectory, "redis.conf", err)
+	err = CopyConfig(streamdbDirectory, "gnatsd.conf", err)
 
 	return nil
 }
@@ -29,7 +29,7 @@ func InitializeRedis(streamdbDirectory string, err error) error {
 	log.Printf("Setting up Redis server\n")
 
 	//Now copy the configuration file
-	err = CopyConfig(streamdbDirectory, "gnatsd.conf", err)
+	err = CopyConfig(streamdbDirectory, "redis.conf", err)
 
 	return nil
 }

@@ -58,7 +58,6 @@ func main() {
 			PrintUsage()
 			return
 		}
-		fmt.Printf("dbdir %s\nusr: %s\n", createFlags.Arg(0), *createUsernamePassword)
 
 		//extract the username and password from the formatted string
 		usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
