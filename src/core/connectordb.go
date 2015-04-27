@@ -29,7 +29,7 @@ var (
 //PrintUsage gives a nice message of the functionality available from the executable
 func PrintUsage() {
 	fmt.Printf("ConnectorDB Version %v\nCompiled for %v using %v\n\n", streamdb.Version, runtime.GOARCH, runtime.Version())
-	fmt.Printf("Usage:\nconnectordb [command] [path to database folder] [--flags]\n")
+	fmt.Printf("Usage:\nconnectordb [command] [--flags] [path to database folder]\n")
 
 	fmt.Printf("\ncreate: Initialize a new database at the given folder\n")
 	createFlags.PrintDefaults()

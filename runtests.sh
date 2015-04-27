@@ -29,7 +29,7 @@ rm -rf $DBDIR
 if [ $test_status -eq 0 ]; then
 	#Now test the python stuff, while rebuilding the db to make sure that
 	#the go tests didn't invalidate the db
-	./bin/connectordb create $DBDIR --user test:test
+	./bin/connectordb create --user test:test $DBDIR
     ./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
     rest_server=$!
     echo "Starting connectordb api tests..."
