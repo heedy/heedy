@@ -20,7 +20,7 @@ import (
 // the idea is you can construct one using an operator, then perform a plethora
 // of operations using it.
 type Path struct {
-	operator *Operator
+	operator Operator
 
 	RequestUser   *users.User
 	RequestDevice *users.Device
@@ -29,7 +29,7 @@ type Path struct {
 
 
 // Returns the owning operator of this pagh
-func (p *Path) GetOperator() *Operator {
+func (p *Path) GetOperator() Operator {
     return p.operator
 }
 

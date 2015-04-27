@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -125,6 +126,28 @@ func waitForPortOpen(host string, port int) {
 
 }
 
+func waitForPortOpenOrTimeout(host string, port int, timeoutSeconds uint) error {
+	portOpenChan := make(chan bool)
+	go func() {
+		waitForPortOpen(host, port)
+	    portOpenChan <- true
+	}()
+
+	timeoutChan := make(chan bool)
+	go func() {
+		time.Sleep(timeoutSeconds * time.Second)
+		teardownall <- true
+	}()
+
+	select {
+		case <-portOpenChan:
+			return nil
+
+		case <- teardownall:
+			return errors.New("Port dialing timed out.")
+	}
+}
+
 // Executes a command, redirecting the stdout and stderr to this program's output
 func executeCommand(command string, args ...string) error {
 	log.Printf(cmd2Str(command, args...))
@@ -147,10 +170,12 @@ func daemonizeCommand(logpidpath, command string, args ...string) error {
 	log.Printf("Starting Daemon: %v\n", cmd2Str(command, args...))
 
 
-	file, err := os.Create(logpidpath + ".log") // For read access.
+	/**file, err := os.Create(logpidpath + ".log") // For read access.
 	if err != nil {
 		return err
-	}
+	}**/
+
+	file := os.Stdout
 
 	go execCommandRedirect(file, file, logpidpath+".pid", command, args...)
 
@@ -235,8 +260,7 @@ func createDeviceAndGetKey(udb *users.UserDatabase, user *users.User, devname st
 func fatalHandleError(err error) {
 	if err != nil {
 		log.Println(err.Error())
-		teardownAll()
-		os.Exit(1)
+		teardownAll(1)
 	}
 }
 
@@ -378,7 +402,7 @@ func create(ProcessDir string) {
 
 	log.Println("Setup was successful, exiting.")
 
-	teardownAll()
+	teardownAll(0)
 }
 
 // stolen from iniflags
@@ -427,10 +451,16 @@ func startGnatsd(ProcessDir string) error {
 	log.Println("Starting gnatsd")
 
 	execFolder, _ := osext.ExecutableFolder()
-	binaryPath := filepath.Join(execFolder, "dep/gnatsd")
+	binaryPath := filepath.Join(execFolder, "dep", "gnatsd")
 	configPath := filepath.Join(ProcessDir, "gnatsd.conf")
 
-	return daemonizeCommand("gnatsd", binaryPath, "-c", configPath)
+	err := daemonizeCommand("gnatsd", binaryPath, "-c", configPath)
+
+	if err != nil {
+		return err
+	}
+
+	return waitForPortOpenOrTimeout("localhost", )
 }
 
 func startRedis(ProcessDir string) error {
@@ -536,7 +566,7 @@ func start(ProcessDir string) {
 		err = http.ListenAndServe(serveraddr, nil)
 		log.Fatal(err)
 
-		teardownAll()
+		teardownAll(1)
 	}
 }
 
@@ -561,8 +591,9 @@ func stop(ProcessDir string) {
 	}
 }
 
-func teardownAll(){
+func teardownAll(exitStatus int){
 	log.Printf("Sending system teardown request; trying to kill all threads and processes.\n")
 	teardownDaemons = true
 	time.Sleep(3 * time.Second)
+	os.Exit(exitStatus)
 }

@@ -28,12 +28,23 @@ killall redis-server
 
 sleep 4
 
+echo "Looking for postgres proc..."
+ps -aux | grep postgres
+
+
+echo "Looking for redis proc..."
+ps -aux | grep redis-server
+
+
+echo "Looking for gnatsd proc..."
+ps -aux | grep gnatsd
+
 echo "Running tests..."
 go test -cover streamdb/...
 test_status=$?
 
 ./bin/connectordb stop $DBDIR
-rm -rf $DBDIR
+#rm -rf $DBDIR
 
 killall connectordb
 killall postgres
@@ -65,7 +76,5 @@ if [ $test_status -eq 0 ]; then
 fi
 
 
-if [ $test_status -eq 0 ]; then
-	rm -rf $DBDIR
-fi
+#rm -rf $DBDIR
 exit $test_status

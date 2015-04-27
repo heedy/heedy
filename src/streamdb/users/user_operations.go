@@ -1,6 +1,15 @@
 // Package users provides an API for managing user information.
 package users
 
+import (
+	"errors"
+)
+
+var (
+	InvalidPasswordError = errors.New("Invalid Password")
+	InvalidUsernameError = errors.New("Invalid Username")
+)
+
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
 func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
@@ -33,6 +42,38 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
 	return err
 }
 
+/** Performs a login function on the user.
+
+Looks for a user by the (username|email)/password pair.
+Checks the password, if it's a match, tries to upgrade the password.
+Finally, grabs the User device for performing user actions from.
+
+Returns an error along with the user and device if something went wrong
+
+**/
+func (userdb *UserDatabase) Login(Username, Password string) (*User, *Device, error) {
+	user, err := userdb.ReadByNameOrEmail(Username, Username)
+	if err != nil {
+		return nil, nil, InvalidUsernameError
+	}
+
+	if ! user.ValidatePassword(Password) {
+		return user, nil, InvalidPasswordError
+	}
+
+	if user.UpgradePassword(Password) {
+		userdb.UpdateUser(user)
+	}
+
+	opdev, err := userdb.ReadUserOperatingDevice(user)
+
+	return user, opdev, err
+}
+
+// Reads the operating device for the user (the implicity device the user uses)
+func (userdb *UserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
+	return userdb.ReadDeviceForUserByName(user.UserId, "User")
+}
 
 // ReadUserByEmail returns a User instance if a user exists with the given
 // email address.

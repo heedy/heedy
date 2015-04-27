@@ -43,13 +43,7 @@ func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool
 	var usr *User
 	var err error
 
-	usr, err = userdb.ReadUserByName(UsernameOrEmail)
-	if err == nil {
-		return usr.ValidatePassword(Password), usr
-	}
-
-
-	usr, err = userdb.ReadUserByEmail(UsernameOrEmail)
+	usr, err = userdb.ReadByNameOrEmail(UsernameOrEmail, UsernameOrEmail)
 	if err == nil {
 		return usr.ValidatePassword(Password), usr
 	}

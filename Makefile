@@ -13,8 +13,8 @@ build: go-dependencies $(OBJ)
 bin:
 	mkdir bin
 	cp -r config bin/config
-	cp -r src/plugins/web_client/static/ bin/
-	cp -r src/plugins/web_client/templates/ bin/
+	cp -r src/plugins/webclient/static/ bin/
+	cp -r src/plugins/webclient/templates/ bin/
 
 # Rule to go from source go file to binary
 bin/%: src/core/%.go go-dependencies

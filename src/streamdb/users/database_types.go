@@ -102,7 +102,11 @@ func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
 
 // Sets a new password for an account
 func (u *User) SetNewPassword(newPass string) {
-	u.Password = calcHash(newPass, u.PasswordSalt, u.PasswordHashScheme)
+	hash, salt, scheme := UpgradePassword(newPass)
+
+	u.PasswordHashScheme = scheme
+	u.PasswordSalt = salt
+	u.Password = hash
 }
 
 // Checks if the device is enabled and a superdevice
@@ -113,6 +117,22 @@ func (u *User) IsAdmin() bool {
 
 func (u *User) ValidatePassword(password string) bool {
 	return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
+}
+
+// Upgrades the security of the password, returns True if the user needs to be
+// saved again because an upgrade was performed.
+func (u *User) UpgradePassword(password string) bool {
+	hash, salt, scheme := UpgradePassword(password)
+
+	if u.PasswordHashScheme == scheme {
+		return false
+	}
+
+	u.PasswordHashScheme = scheme
+	u.PasswordSalt = salt
+	u.Password = hash
+
+	return true
 }
 
 
