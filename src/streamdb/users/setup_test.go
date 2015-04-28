@@ -27,27 +27,6 @@ var (
 	testdbname = "testing.sqlite3"
     testPassword = "P@$$W0Rd123"
 )
-/**
-// Define the suite, and absorb the built-in basic suite
-// functionality from testify - including assertion methods.
-type UserTestSuite struct {
-    suite.Suite
-    testdb *UserDatabase
-}
-
-// Make sure that VariableThatShouldStartAtFive is set to five
-// before each test
-func (suite *UserTestSuite) SetupTest() {
-    suite.testdb = testSqlite3
-    //CleanTestDB(testdb)
-}
-
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
-func TestUsers(t *testing.T) {
-    suite.Run(t, new(UserTestSuite))
-}
-**/
 
 func GetNextName() string {
     nextNameId++
@@ -58,8 +37,6 @@ func GetNextEmail() string {
     nextEmailId++
     return "name" + strconv.Itoa(nextNameId) + "@domain.com"
 }
-
-
 
 
 func init() {

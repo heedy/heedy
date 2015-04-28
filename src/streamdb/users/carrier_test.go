@@ -8,24 +8,22 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 All Rights Reserved
 **/
 
-import "testing"
+import (
+	"testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+
+	)
 
 func TestCreatePhoneCarrier(t *testing.T) {
 	err := testdb.CreatePhoneCarrier("Test", "example.com")
-	if err != nil {
-		t.Errorf("Cannot create phone carrier %v", err)
-		return
-	}
+	require.Nil(t, err, "Cannot create phone carrier %v", err)
 
 	err = testdb.CreatePhoneCarrier("Test", "example2.com")
-	if err == nil {
-		t.Errorf("Created carrier with duplicate name")
-	}
+	assert.NotNil(t, err, "Created carrier with duplicate name")
 
 	err = testdb.CreatePhoneCarrier("Test2", "example.com")
-	if err == nil {
-		t.Errorf("Created carrier with duplicate domain")
-	}
+	assert.NotNil(t, err, "Created carrier with duplicate domain")
 }
 
 func TestReadAllPhoneCarriers(t *testing.T) {
@@ -34,11 +32,7 @@ func TestReadAllPhoneCarriers(t *testing.T) {
 	_ = testdb.CreatePhoneCarrier("TestReadAllPhoneCarrier2", "TestReadAllPhoneCarrier2.com")
 
 	carriers, err := testdb.ReadAllPhoneCarriers()
-
-	if err != nil {
-		t.Errorf("Cannot read phone carriers %v", err)
-		return
-	}
+	require.Nil(t, err, "Cannot read phone carriers %v", err)
 
 	if len(carriers) < 2 {
 		t.Errorf("Did not read all carriers")
@@ -66,116 +60,58 @@ func TestReadAllPhoneCarriers(t *testing.T) {
 }
 
 func TestReadPhoneCarrierById(t *testing.T) {
-
 	err := testdb.CreatePhoneCarrier("TestReadPhoneCarrierById", "TestReadPhoneCarrierById.com")
-	if nil != err {
-		t.Errorf("Cannot create phone carrier to test")
-	}
+	assert.Nil(t, err, "Cannot create phone carrier to test")
 
 	pc, err  := testdb.ReadPhoneCarrierByName("TestReadPhoneCarrierById")
-	if nil != err {
-		t.Errorf("Cannot read carrier by name %v", err)
-	}
+	assert.Nil(t, err, "Cannot read carrier by name %v", err)
 
 	id := pc.Id
-
 	carrier, err := testdb.ReadPhoneCarrierById(pc.Id)
-
-	if err != nil {
-		t.Errorf("Cannot read phone carrier back with returned id %v", id)
-		return
-	}
-
-	if carrier.Id != id {
-		t.Errorf("Got mismatching id from carrier, got %v expected %v", carrier.Id, id)
-	}
-
-	if carrier.Name != "TestReadPhoneCarrierById" {
-		t.Errorf("Got mismatching name from carrier, got %v expected TestReadPhoneCarrierById", carrier.Name)
-	}
-
-	if carrier.EmailDomain != "TestReadPhoneCarrierById.com" {
-		t.Errorf("Got mismatching name from carrier, got %v expected TestReadPhoneCarrierById.com", carrier.Name)
-	}
+	assert.Nil(t, err, "Cannot read phone carrier back with returned id %v", id)
+	assert.Equal(t, carrier.Id, id)
+	assert.Equal(t, carrier.Name, "TestReadPhoneCarrierById")
+	assert.Equal(t, carrier.EmailDomain, "TestReadPhoneCarrierById.com")
 }
 
 func TestUpdatePhoneCarrier(t *testing.T) {
 	teststring := "Hello, World!"
 
 	err := testdb.CreatePhoneCarrier("TestUpdatePhoneCarrier", "TestUpdatePhoneCarrier.com")
-
-	if nil != err {
-		t.Errorf("Cannot create phone carrier to test")
-	}
+	assert.Nil(t, err, "Cannot create phone carrier to test")
 
 	pc, err  := testdb.ReadPhoneCarrierByName("TestUpdatePhoneCarrier")
-	if nil != err {
-		t.Errorf("Cannot read carrier by name")
-	}
+	require.Nil(t, err, "cannot read phone carrier by name")
 
 	id := pc.Id
-
-
 	carrier, err := testdb.ReadPhoneCarrierById(id)
-
-	if err != nil {
-		t.Errorf("Cannot read phone carrier back with returned id %v", id)
-		return
-	}
+	require.Nil(t, err, "cannot read phone carrier back with id %d", id)
 
 	carrier.Name = teststring
-
 	err = testdb.UpdatePhoneCarrier(carrier)
-
-	if err != nil {
-		t.Errorf("Cannot update carrier %v", err)
-	}
+	assert.Nil(t, err)
 
 	carrier_back, err := testdb.ReadPhoneCarrierById(id)
+	require.Nil(t, err)
 
-	if err != nil {
-		t.Errorf("Cannot read phone carrier back with returned id %v", id)
-		return
-	}
-
-	if carrier_back.Name != teststring {
-		t.Errorf("Update did not work, got back %v expected %v", carrier_back.Name, teststring)
-	}
+	// check if update worked
+	assert.Equal(t, carrier_back.Name, teststring)
 
 	err = testdb.UpdatePhoneCarrier(nil)
-	if err == nil {
-		t.Errorf("updated a nil")
-	}
+	require.NotNil(t, err, "updated a nil")
 }
 
 func TestDeletePhoneCarrier(t *testing.T) {
 	err := testdb.CreatePhoneCarrier("TestDeletePhoneCarrier", "TestDeletePhoneCarrier.com")
-
-
+	assert.Nil(t, err, "Cannot create phone carrier to test")
 
 	pc, err  := testdb.ReadPhoneCarrierByName("TestDeletePhoneCarrier")
-	if nil != err {
-		t.Errorf("Cannot read carrier by name")
-	}
+	require.Nil(t, err, "cannot read phone carrier by name")
 
 	id := pc.Id
-
-	if nil != err {
-		t.Errorf("Cannot create phone carrier to test delete")
-		return
-	}
-
 	err = testdb.DeletePhoneCarrier(id)
-
-	if nil != err {
-		t.Errorf("Error when attempted delete %v", err)
-		return
-	}
+	require.Nil(t, err, "Error when attempted delete %v", err)
 
 	_, err = testdb.ReadPhoneCarrierById(id)
-
-	if err == nil {
-		t.Errorf("The carrier with the selected ID should have errored out, but it was not")
-		return
-	}
+	require.NotNil(t, err, "The carrier with the selected ID should have errored out, but it was not")
 }
