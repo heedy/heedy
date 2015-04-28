@@ -82,7 +82,7 @@ func TestUpdateStream(t *testing.T) {
 	}
 
 }
-/**
+
 func TestDeleteStream(t *testing.T) {
 	usr, err := CreateTestUser()
 	if err != nil {
@@ -109,7 +109,7 @@ func TestDeleteStream(t *testing.T) {
 		return
 	}
 
-	_, err = testdb.ReadStreamByName(stream.StreamId)
+	_, err = testdb.ReadStreamById(stream.StreamId)
 
 	if err == nil {
 		t.Errorf("The stream with the selected ID should have errored out, but it was not")
@@ -118,6 +118,19 @@ func TestDeleteStream(t *testing.T) {
 }
 
 func TestReadStreamByDevice(t *testing.T) {
+
+	usr, err := CreateTestUser()
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	dev, err := CreateTestDevice(usr)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
 	testdb.CreateStream("TestReadStreamByDevice", "{}", dev.DeviceId)
 	testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
 
@@ -134,4 +147,3 @@ func TestReadStreamByDevice(t *testing.T) {
 		t.Errorf("didn't get enough streams")
 	}
 }
-**/

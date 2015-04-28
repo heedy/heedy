@@ -34,19 +34,3 @@ func UpgradePassword(password string) (string, string, string){
 
 	return hashed, saltstr, "SHA512"
 }
-
-
-
-// ValidateUser checks to see if a user going by the username or email
-// matches the given password, returns true if it does false if it does not
-func (userdb *UserDatabase) ValidateUser(UsernameOrEmail, Password string) (bool, *User) {
-	var usr *User
-	var err error
-
-	usr, err = userdb.ReadByNameOrEmail(UsernameOrEmail, UsernameOrEmail)
-	if err == nil {
-		return usr.ValidatePassword(Password), usr
-	}
-
-	return false, nil
-}

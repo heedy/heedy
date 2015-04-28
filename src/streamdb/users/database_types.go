@@ -4,6 +4,7 @@ package users
 import (
 	"errors"
 	"reflect"
+	//"fmt"
 	)
 
 type PermissionLevel uint
@@ -96,7 +97,7 @@ type User struct {
 }
 
 func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
-	revertUneditableFields(d, originalValue, p)
+	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 
@@ -214,12 +215,7 @@ func (d *Device) RelationToDevice(device *Device) (PermissionLevel)  {
 		return FAMILY
 	}
 
-
-	if d.Enabled {
-		return ENABLED
-	}
-
-	return ANYBODY
+	return ENABLED
 }
 
 
@@ -250,30 +246,39 @@ func (d *Device) RelationToStream(stream *Stream, streamParent *Device) (Permiss
 }
 
 func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
-	revertUneditableFields(d, originalValue, p)
+	revertUneditableFields(reflect.ValueOf(*d), reflect.ValueOf(originalValue), p)
 }
 
-func revertUneditableFields(toChange interface{}, originalValue interface{}, p PermissionLevel) {
-	originalValueReflect := reflect.ValueOf(originalValue).Elem()
-	toChangeReflect  := reflect.ValueOf(toChange).Elem()
+func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) {
+
+
+	//fmt.Printf("Getting original elem %v\n", originalValue.Kind())
+	originalValueReflect := originalValue//.Elem()
+
+	//fmt.Println("done getting elem")
 
 	for i := 0; i < originalValueReflect.NumField(); i++ {
 		// Grab the fields for reflection
 		originalValueField := originalValueReflect.Field(i)
-		toChangeValueField := toChangeReflect.Field(i)
+		typeField  := originalValueReflect.Type().Field(i)
 
 		// Check what kind of modifiable permission we need to edit
-		modifiable := originalValueField.Type().Field(i).Tag.Get("modifiable")
+		modifiable := typeField.Tag.Get("modifiable")
 
 		// By default, we don't allow modification
 		if modifiable == "" {
 			modifiable = "nobody"
 		}
 
+		//fmt.Printf("Field Name: %s,\t Field Value: %v,\t Tag Value: %s\n", typeField.Name, originalValueField.Interface(), modifiable)
+
+		//fmt.Printf("Field name: %v, modifiable %v\n",originalTypeField.Name, originalValueField.String(),  modifiable)
+
 		// If we don't have enough permissions, reset the field from original
 		requiredPermissionsForField, _ := strToPermissionLevel(modifiable)
-		if ! p.Gte(requiredPermissionsForField) && originalValueField.IsValid() && originalValueField.CanSet() {
-			toChangeValueField.Set(originalValueField)
+		if p.Gte(requiredPermissionsForField) {
+			//fmt.Printf("Setting field\n")
+			toChange.Elem().Field(i).Set(originalValueField)
 		}
 	}
 

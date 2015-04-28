@@ -141,6 +141,11 @@ func TestUpdatePhoneCarrier(t *testing.T) {
 	if carrier_back.Name != teststring {
 		t.Errorf("Update did not work, got back %v expected %v", carrier_back.Name, teststring)
 	}
+
+	err = testdb.UpdatePhoneCarrier(nil)
+	if err == nil {
+		t.Errorf("updated a nil")
+	}
 }
 
 func TestDeletePhoneCarrier(t *testing.T) {

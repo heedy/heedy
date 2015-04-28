@@ -79,7 +79,7 @@ func CreateTestUser() (*User, error) {
     name := GetNextName()
     email := GetNextEmail()
 
-    log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, TEST_PASSWORD)
+    //log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, TEST_PASSWORD)
 
     err := testdb.CreateUser(name, email, TEST_PASSWORD)
 
@@ -109,4 +109,21 @@ func CreateTestStream(dev *Device) (*Stream, error) {
     }
 
     return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
+}
+
+// Creates a connected user, device and stream
+func CreateUDS() (*User, *Device, *Stream, error) {
+	u, err := CreateTestUser()
+
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	d, err := CreateTestDevice(u)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	s, err := CreateTestStream(d)
+
+    return u, d, s, err
 }

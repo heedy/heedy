@@ -8,6 +8,8 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 All Rights Reserved
 **/
 
+import "reflect"
+
 
 type Stream struct {
 	StreamId  int64  `modifiable:"nobody"`
@@ -21,7 +23,7 @@ type Stream struct {
 
 
 func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) {
-	revertUneditableFields(d, originalValue, p)
+	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 

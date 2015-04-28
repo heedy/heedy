@@ -131,31 +131,6 @@ func TestReadUserByName(t *testing.T) {
 	}
 }
 
-func TestValidateUser(t *testing.T) {
-	name, email, pass := "TestValidateUser_name", "TestValidateUser_email", "TestValidateUser_pass"
-
-	err := testdb.CreateUser(name, email, pass)
-	if err != nil {
-		t.Errorf("Cannot create user %v", err)
-		return
-	}
-
-	validated, _ := testdb.ValidateUser(name, pass)
-	if !validated {
-		t.Errorf("could not validate a user with username and pass")
-	}
-
-	validated, _ = testdb.ValidateUser(email, pass)
-	if ! validated {
-		t.Errorf("could not validate a user with email and pass")
-	}
-
-	validated, _ = testdb.ValidateUser(email, email)
-	if validated {
-		t.Errorf("Validated an incorrect user")
-	}
-}
-
 func TestReadUserById(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserById(-1)
@@ -267,3 +242,116 @@ func TestReadStreamOwner(t *testing.T) {
 		t.Errorf("Wrong stream owner got %v, expected %v", owner, user)
 	}
 }
+
+func TestReadUserDevice(t *testing.T) {
+	user, err := CreateTestUser()
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	dev, err := testdb.ReadUserOperatingDevice(user)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	if dev.UserId != user.UserId {
+		t.Errorf("Incorrect device returned.")
+	}
+}
+
+func TestLogin(t *testing.T) {
+
+	user, err := CreateTestUser()
+
+	_, _, err = testdb.Login(user.Name, TEST_PASSWORD)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	_, _, err = testdb.Login(user.Email, TEST_PASSWORD)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+
+	_, _, err = testdb.Login("", TEST_PASSWORD)
+	if err != InvalidUsernameError {
+		t.Errorf("Wrong type returned %v", err)
+	}
+
+	_, _, err = testdb.Login(user.Name, "")
+	if err == nil {
+		t.Errorf("Accepted blank password")
+	}
+
+}
+
+func TestUpgradePassword(t *testing.T) {
+	user, err := CreateTestUser()
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	res := user.UpgradePassword(TEST_PASSWORD)
+	if res != false {
+		t.Errorf("Should not need to upgrade a password with the same salt")
+	}
+
+	user.PasswordHashScheme = ""
+
+	res = user.UpgradePassword(TEST_PASSWORD)
+	if res != true {
+		t.Errorf("Should want to upgrade a password with an old has type")
+	}
+
+	if user.PasswordHashScheme == "" {
+		t.Errorf("The has scheme was not updated")
+	}
+}
+
+func TestRevertUneditableFields(t *testing.T) {
+	orig := User{1,"Name", "Email", "Password", "passsalt", "hash", true, 1,1,1}
+	root := User{1,"", "", "", "", "", false, 0,0,0}
+	user := User{1,"Name", "", "", "", "", true, 1,1,1}
+
+	// the one we're going to try to submit
+	blank := User{0, "", "", "", "", "", false, 0,0,0}
+
+	tmpu := orig
+	tmpu.RevertUneditableFields(blank, ROOT)
+	if tmpu != root {
+		t.Errorf("Conversion as root didn't work got %v, expected %v", tmpu, root)
+	}
+
+	tmpu = orig
+	tmpu.RevertUneditableFields(blank, USER)
+	if tmpu != user {
+		t.Errorf("Conversion as user didn't work got %v, expected %v", tmpu, root)
+	}
+
+}
+/*
+// User is the storage type for rows of the database.
+type User struct {
+        UserId    int64  `modifiable:"nobody"` // The primary key
+        Name  string `modifiable:"root"`   // The public username of the user
+        Email string `modifiable:"user"`   // The user's email address
+
+        Password           string `modifiable:"user"` // A hash of the user's password
+        PasswordSalt       string `modifiable:"user"` // The password salt to be attached to the end of the password
+        PasswordHashScheme string `modifiable:"user"` // A string representing the hashing scheme used
+
+        Admin        bool   `modifiable:"root"` // True/False if this is an administrator
+
+        UploadLimit_Items int `modifiable:"root"` // upload limit in items/day
+        ProcessingLimit_S int `modifiable:"root"` // processing limit in seconds/day
+        StorageLimit_Gb   int `modifiable:"root"` // storage limit in GB
+}
+
+func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
+        revertUneditableFields(d, originalValue, p)
+}
+*/
