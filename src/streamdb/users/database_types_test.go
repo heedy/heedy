@@ -199,7 +199,7 @@ func TestGeneralPermissions(t *testing.T) {
 }
 
 func TestRelationToUser(t *testing.T) {
-	u, dev, _, err := CreateUDS()
+	u, dev, _, err := CreateUDS(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
@@ -240,13 +240,13 @@ func TestRelationToUser(t *testing.T) {
 
 
 func TestRelationToDevice(t *testing.T) {
-	u, dev, _, err := CreateUDS()
+	u, dev, _, err := CreateUDS(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	d2, err := CreateTestDevice(u)
+	d2, err := CreateTestDevice(testdb, u)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
@@ -290,7 +290,7 @@ func TestRelationToDevice(t *testing.T) {
 }
 
 func TestRelationToStream(t *testing.T) {
-	_, dev, stream, err := CreateUDS()
+	_, dev, stream, err := CreateUDS(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

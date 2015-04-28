@@ -6,13 +6,13 @@ import (
 )
 
 func TestCreateDevice(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("Cannot create test user %v", err.Error())
 		return
 	}
 
-	usr2, err := CreateTestUser()
+	usr2, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("Cannot create test user %v", err.Error())
 		return
@@ -40,7 +40,7 @@ func TestCreateDevice(t *testing.T) {
 }
 
 func TestReadDeviceById(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("Cannot create test user %v", err.Error())
 		return
@@ -68,7 +68,7 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("Cannot create test user %v", err.Error())
 		return
@@ -114,7 +114,7 @@ func TestUpdateDevice(t *testing.T) {
 }
 
 func TestDeleteDevice(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("Cannot create test user %v", err.Error())
 		return

@@ -20,11 +20,34 @@ var (
     nextNameId = 0
     nextEmailId = 0
 
-	testdb     *UserDatabase
-	testdbname = "testing.sqlite3"
+	testSqlite3  *UserDatabase
+    testPostgres *UserDatabase
+    testdb *UserDatabase
 
-    TEST_PASSWORD = "P@$$W0Rd123"
+	testdbname = "testing.sqlite3"
+    testPassword = "P@$$W0Rd123"
 )
+/**
+// Define the suite, and absorb the built-in basic suite
+// functionality from testify - including assertion methods.
+type UserTestSuite struct {
+    suite.Suite
+    testdb *UserDatabase
+}
+
+// Make sure that VariableThatShouldStartAtFive is set to five
+// before each test
+func (suite *UserTestSuite) SetupTest() {
+    suite.testdb = testSqlite3
+    //CleanTestDB(testdb)
+}
+
+// In order for 'go test' to run this suite, we need to create
+// a normal test function and pass our suite to suite.Run
+func TestUsers(t *testing.T) {
+    suite.Run(t, new(UserTestSuite))
+}
+**/
 
 func GetNextName() string {
     nextNameId++
@@ -35,6 +58,7 @@ func GetNextEmail() string {
     nextEmailId++
     return "name" + strconv.Itoa(nextNameId) + "@domain.com"
 }
+
 
 
 
@@ -49,21 +73,35 @@ func init() {
     if err != nil {
         log.Panic("Could not set up db for testing: ", err.Error())
     }
-
-
-	testdb = &UserDatabase{}
+	testSqlite3 = &UserDatabase{}
 
 	sql, dbtype, err := dbutil.OpenSqlDatabase(testdbname)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	testdb.InitUserDatabase(sql, dbtype.String())
+	testSqlite3.InitUserDatabase(sql, dbtype.String())
 
-    CleanTestDB()
+    testdb = testSqlite3
+
+    CleanTestDB(testdb)
 }
 
-func CleanTestDB(){
+
+
+
+func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {
+    name := GetNextName()
+    err := testdb.CreateStream(name, "", dev.DeviceId)
+    if err != nil {
+        return nil, err
+    }
+
+    return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
+}
+
+
+func CleanTestDB(testdb *UserDatabase){
     testdb.Exec("DELETE * FROM PhoneCarriers;")
     testdb.Exec("DELETE * FROM Users;")
     testdb.Exec("DELETE * FROM Devices;")
@@ -75,13 +113,13 @@ func CleanTestDB(){
 }
 
 
-func CreateTestUser() (*User, error) {
+func CreateTestUser(testdb *UserDatabase) (*User, error) {
     name := GetNextName()
     email := GetNextEmail()
 
-    //log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, TEST_PASSWORD)
+    //log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, testPassword)
 
-    err := testdb.CreateUser(name, email, TEST_PASSWORD)
+    err := testdb.CreateUser(name, email, testPassword)
 
     if err != nil {
         return nil, err
@@ -91,7 +129,7 @@ func CreateTestUser() (*User, error) {
 }
 
 
-func CreateTestDevice(usr *User) (*Device, error) {
+func CreateTestDevice(testdb *UserDatabase, usr *User) (*Device, error) {
     name := GetNextName()
     err := testdb.CreateDevice(name, usr.UserId)
     if err != nil {
@@ -101,29 +139,21 @@ func CreateTestDevice(usr *User) (*Device, error) {
     return testdb.ReadDeviceForUserByName(usr.UserId, name)
 }
 
-func CreateTestStream(dev *Device) (*Stream, error) {
-    name := GetNextName()
-    err := testdb.CreateStream(name, "", dev.DeviceId)
-    if err != nil {
-        return nil, err
-    }
 
-    return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
-}
 
 // Creates a connected user, device and stream
-func CreateUDS() (*User, *Device, *Stream, error) {
-	u, err := CreateTestUser()
+func CreateUDS(testdb *UserDatabase) (*User, *Device, *Stream, error) {
+	u, err := CreateTestUser(testdb)
 
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	d, err := CreateTestDevice(u)
+	d, err := CreateTestDevice(testdb, u)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	s, err := CreateTestStream(d)
+	s, err := CreateTestStream(testdb, d)
 
     return u, d, s, err
 }

@@ -9,15 +9,15 @@ import (
 
 func TestCreateStream(t *testing.T) {
 
-	CleanTestDB()
+	CleanTestDB(testdb)
 
-	u, err := CreateTestUser()
+	u, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf("%v\n", err)
 		return
 	}
 
-	dev, err := CreateTestDevice(u)
+	dev, err := CreateTestDevice(testdb, u)
 	if err != nil {
 		t.Errorf("%v\n", err)
 	}
@@ -37,19 +37,19 @@ func TestCreateStream(t *testing.T) {
 
 
 func TestUpdateStream(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	dev, err := CreateTestDevice(usr)
+	dev, err := CreateTestDevice(testdb, usr)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	stream, err := CreateTestStream(dev)
+	stream, err := CreateTestStream(testdb, dev)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
@@ -84,19 +84,19 @@ func TestUpdateStream(t *testing.T) {
 }
 
 func TestDeleteStream(t *testing.T) {
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	dev, err := CreateTestDevice(usr)
+	dev, err := CreateTestDevice(testdb, usr)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	stream, err := CreateTestStream(dev)
+	stream, err := CreateTestStream(testdb, dev)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
@@ -119,13 +119,13 @@ func TestDeleteStream(t *testing.T) {
 
 func TestReadStreamByDevice(t *testing.T) {
 
-	usr, err := CreateTestUser()
+	usr, err := CreateTestUser(testdb)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	dev, err := CreateTestDevice(usr)
+	dev, err := CreateTestDevice(testdb, usr)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

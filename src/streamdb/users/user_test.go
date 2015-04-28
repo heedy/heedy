@@ -3,29 +3,20 @@ package users
 import (
 	"testing"
 	"reflect"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
 )
 
 
 func TestCreateUser(t *testing.T) {
-	CleanTestDB()
-
 	err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass")
-	if err != nil {
-		t.Errorf("Cannot create user %v", err)
-		return
-	}
+	require.Nil(t, err)
 
 	err = testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email2", "TestCreateUser_pass2")
-	if err == nil {
-		t.Errorf("Wrong error returned %v", err)
-		return
-	}
+	require.NotNil(t, err)
 
 	err = testdb.CreateUser("TestCreateUser_name2", "TestCreateUser_email", "TestCreateUser_pass2")
-	if err == nil {
-		t.Errorf("Wrong err returned %v", err)
-		return
-	}
+	require.NotNil(t, err)
 }
 
 func BenchmarkCreateUser(b *testing.B) {
@@ -36,139 +27,78 @@ func BenchmarkCreateUser(b *testing.B) {
 
 
 func TestReadAllUsers(t *testing.T) {
-	CleanTestDB()
 
 	for i := 0; i < 5; i++{
-		_, err := CreateTestUser()
-		if err != nil {
-			t.Errorf(err.Error())
-			return
-		}
+		_, err := CreateTestUser(testdb)
+		require.Nil(t, err)
 	}
 
 	users, err := testdb.ReadAllUsers()
+	require.Nil(t, err)
+	require.NotNil(t, users)
 
-	if err != nil {
-		t.Errorf("Exception while reading all users %v", err)
-	}
-
-	if users == nil {
-		t.Errorf("users is nil")
-		return
-	}
 
 	err = testdb.CreateUser("TestReadAllUsers", "TestReadAllUsers_email", "TestReadAllUsers_pass")
-	if err != nil {
-		t.Errorf("Could not complete test due to: %v", err)
-		return
-	}
+	require.Nil(t, err)
 
 	users2, err := testdb.ReadAllUsers()
+	assert.Nil(t, err, "got err from read all users %v", err)
+	require.NotNil(t, users2, "Could not get all users, was nil")
 
-	if err != nil {
-		t.Errorf("Exception while reading all users %v", err)
-	}
-
-	if users2 == nil {
-		t.Errorf("users is nil")
-		return
-	}
-
-	if len(users2)-len(users) != 1 {
-		t.Errorf("not taking into account changes")
-	}
+	assert.Equal(t, 1, len(users2) - len(users), "not taking into account changes")
 }
 
 func TestReadUserByEmail(t *testing.T) {
+
 	// test failures on non existance
 	usr, err := testdb.ReadUserByEmail("doesnotexist   because spaces")
-
-	if err == nil {
-		t.Errorf("no error returned, expected non nil on failing case")
-	}
+	assert.NotNil(t, err, "no error returned, expected non nil on failing case")
 
 	// setup for reading
 	err = testdb.CreateUser("TestReadUserByEmail_name", "TestReadUserByEmail_email", "TestReadUserByEmail_pass")
-	if err != nil {
-		t.Errorf("Could not create user for test reading... %v", err)
-		return
-	}
+	require.Nil(t, err, "Could not create user for test reading...")
 
 	usr, err = testdb.ReadUserByEmail("TestReadUserByEmail_email")
-
-	if usr == nil {
-		t.Errorf("did not get a user by email")
-	}
-
-	if err != nil {
-		t.Errorf("got an error when trying to get a user that should exist %v", err)
-	}
+	assert.NotNil(t, usr, "did not get a user by email")
+	assert.Nil(t, err, "got an error when trying to get a user that should exist %v", err)
 }
 
 func TestReadUserByName(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserByName("")
-
-	if err == nil {
-		t.Errorf("no error returned, expected non nil on failing case")
-	}
+	assert.NotNil(t, err)
+	assert.NotNil(t, usr)
 
 	// setup for reading
 	err = testdb.CreateUser("TestReadUserByName_name", "TestReadUserByName_email", "TestReadUserByName_pass")
-	if err != nil {
-		t.Errorf("Could not create user for test reading... %v", err)
-		return
-	}
+	require.Nil(t, err)
 
 	usr, err = testdb.ReadUserByName("TestReadUserByName_name")
-
-	if usr == nil {
-		t.Errorf("did not get a user by name")
-	}
-
-	if err != nil {
-		t.Errorf("got an error when trying to get a user that should exist %v", err)
-	}
+	assert.NotNil(t, usr, "did not get a user by name")
+	assert.Nil(t, err, "got an error when trying to get a user that should exist")
 }
 
 func TestReadUserById(t *testing.T) {
 	// test failures on non existance
 	usr, err := testdb.ReadUserById(-1)
-
-	if err == nil {
-		t.Errorf("no error returned, expected non nil on failing case")
-	}
+	assert.NotNil(t, err)
 
 	// setup for reading
 	err = testdb.CreateUser("ReadUserById_name", "ReadUserById_email", "ReadUserById_pass")
-	if err != nil {
-		t.Errorf("Could not create user for test reading... %v", err)
-		return
-	}
+	assert.Nil(t, err)
 
 	usr, err = testdb.ReadUserByName("ReadUserById_name")
-
-	if usr == nil {
-		t.Errorf("did not get a user by id")
-	}
-
-	if err != nil {
-		t.Errorf("got an error when trying to get a user that should exist %v", err)
-	}
+	assert.NotNil(t, usr)
+	assert.Nil(t, err)
 }
 
 func TestUpdateUser(t *testing.T) {
-	usr, err := CreateTestUser()
+	err := testdb.UpdateUser(nil)
+	assert.Equal(t, err, ERR_INVALID_PTR, "Didn't catch nil")
 
-	if err != nil {
-		t.Errorf("got an error when trying to create a user %v", err.Error())
-		return
-	}
+	usr, err := CreateTestUser(testdb)
+	require.Nil(t, err)
 
-	err = testdb.UpdateUser(nil)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Didn't catch nil")
-	}
 
 	usr.Name = "Hello"
 	usr.Email = "hello@example.com"
@@ -178,10 +108,7 @@ func TestUpdateUser(t *testing.T) {
 	usr.StorageLimit_Gb = 1
 
 	err = testdb.UpdateUser(usr)
-
-	if err != nil {
-		t.Errorf("Could not update user %v", err)
-	}
+	require.Nil(t, err)
 
 	usr2, err := testdb.ReadUserByName(usr.Name)
 
@@ -191,125 +118,65 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	usr, err := CreateTestUser()
-
-	if nil != err {
-		t.Errorf("Cannot create user to test delete")
-		return
-	}
+	usr, err := CreateTestUser(testdb)
+	require.Nil(t, err)
 
 	err = testdb.DeleteUser(usr.UserId)
-
-	if nil != err {
-		t.Errorf("Error when attempted delete %v", err)
-		return
-	}
+	require.Nil(t, err)
 
 	_, err = testdb.ReadUserById(usr.UserId)
-
-	if err == nil {
-		t.Errorf("The user with ID %v should have errored out, but it did not", usr.UserId)
-		return
-	}
+	require.NotNil(t, err, "The user with ID %v should have errored out, but it did not", usr.UserId)
 }
 
 func TestReadStreamOwner(t *testing.T) {
-	user, err := CreateTestUser()
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	device, err := CreateTestDevice(user)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	stream, err := CreateTestStream(device)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	user, _, stream, err := CreateUDS(testdb)
+	require.Nil(t, err)
 
 	owner, err := testdb.ReadStreamOwner(stream.StreamId)
+	require.Nil(t, err)
 
-	if err != nil {
-		t.Errorf("Could not read stream owner %v", err)
-	}
-
-	if owner.UserId != user.UserId {
-		t.Errorf("Wrong stream owner got %v, expected %v", owner, user)
-	}
+	require.Equal(t, owner.UserId, user.UserId, "Wrong stream owner got %v, expected %v", owner, user)
 }
 
 func TestReadUserDevice(t *testing.T) {
-	user, err := CreateTestUser()
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	user, err := CreateTestUser(testdb)
+	require.Nil(t, err)
 
 	dev, err := testdb.ReadUserOperatingDevice(user)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	require.Nil(t, err)
 
-	if dev.UserId != user.UserId {
-		t.Errorf("Incorrect device returned.")
-	}
+	assert.Equal(t, dev.UserId, user.UserId, "Incorrect device returned.")
 }
 
 func TestLogin(t *testing.T) {
 
-	user, err := CreateTestUser()
+	user, err := CreateTestUser(testdb)
 
-	_, _, err = testdb.Login(user.Name, TEST_PASSWORD)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
+	_, _, err = testdb.Login(user.Name, testPassword)
+	assert.Nil(t, err)
 
-	_, _, err = testdb.Login(user.Email, TEST_PASSWORD)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
+	_, _, err = testdb.Login(user.Email, testPassword)
+	assert.Nil(t, err)
 
-
-	_, _, err = testdb.Login("", TEST_PASSWORD)
-	if err != InvalidUsernameError {
-		t.Errorf("Wrong type returned %v", err)
-	}
+	_, _, err = testdb.Login("", testPassword)
+	assert.Equal(t, err, InvalidUsernameError, "Wrong type returned %v", err)
 
 	_, _, err = testdb.Login(user.Name, "")
-	if err == nil {
-		t.Errorf("Accepted blank password")
-	}
-
+	assert.NotNil(t, err, "Accepted blank password")
 }
 
 func TestUpgradePassword(t *testing.T) {
-	user, err := CreateTestUser()
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	user, err := CreateTestUser(testdb)
+	require.Nil(t, err)
 
-	res := user.UpgradePassword(TEST_PASSWORD)
-	if res != false {
-		t.Errorf("Should not need to upgrade a password with the same salt")
-	}
+	res := user.UpgradePassword(testPassword)
+	assert.Equal(t, res, false, "Should not need to upgrade a password with the same scheme")
 
 	user.PasswordHashScheme = ""
+	res = user.UpgradePassword(testPassword)
+	assert.Equal(t, res, true, "Should want to upgrade a password with an old has type")
 
-	res = user.UpgradePassword(TEST_PASSWORD)
-	if res != true {
-		t.Errorf("Should want to upgrade a password with an old has type")
-	}
-
-	if user.PasswordHashScheme == "" {
-		t.Errorf("The has scheme was not updated")
-	}
+	assert.NotEqual(t, "", user.PasswordHashScheme, "The has scheme was not updated")
 }
 
 func TestRevertUneditableFields(t *testing.T) {
@@ -333,25 +200,3 @@ func TestRevertUneditableFields(t *testing.T) {
 	}
 
 }
-/*
-// User is the storage type for rows of the database.
-type User struct {
-        UserId    int64  `modifiable:"nobody"` // The primary key
-        Name  string `modifiable:"root"`   // The public username of the user
-        Email string `modifiable:"user"`   // The user's email address
-
-        Password           string `modifiable:"user"` // A hash of the user's password
-        PasswordSalt       string `modifiable:"user"` // The password salt to be attached to the end of the password
-        PasswordHashScheme string `modifiable:"user"` // A string representing the hashing scheme used
-
-        Admin        bool   `modifiable:"root"` // True/False if this is an administrator
-
-        UploadLimit_Items int `modifiable:"root"` // upload limit in items/day
-        ProcessingLimit_S int `modifiable:"root"` // processing limit in seconds/day
-        StorageLimit_Gb   int `modifiable:"root"` // storage limit in GB
-}
-
-func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
-        revertUneditableFields(d, originalValue, p)
-}
-*/

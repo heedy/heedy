@@ -44,6 +44,7 @@ go-dependencies:
 	# go tools
 	go get golang.org/x/tools/cmd/cover
 	go get github.com/jteeuwen/go-bindata/...
+	go get github.com/stretchr/testify
 
 
 bin/dep/gnatsd: depfolder
