@@ -26,8 +26,8 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE PhoneCarrier (
 	    id {{.pkey_exp}},
-	    name CHAR(100) UNIQUE NOT NULL,
-	    emaildomain CHAR(50) UNIQUE NOT NULL);
+	    name VARCHAR UNIQUE NOT NULL,
+	    emaildomain VARCHAR UNIQUE NOT NULL);
 
 
 
