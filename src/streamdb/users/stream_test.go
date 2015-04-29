@@ -3,6 +3,9 @@ package users
 import (
 	"testing"
 	"reflect"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+
 )
 
 
@@ -10,140 +13,53 @@ import (
 func TestCreateStream(t *testing.T) {
 
 	CleanTestDB(testdb)
+	_, dev, stream, err := CreateUDS(testdb)
+	require.Nil(t, err)
 
-	u, err := CreateTestUser(testdb)
-	if err != nil {
-		t.Errorf("%v\n", err)
-		return
-	}
-
-	dev, err := CreateTestDevice(testdb, u)
-	if err != nil {
-		t.Errorf("%v\n", err)
-	}
-
-
-	err = testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
-	if err != nil {
-		t.Errorf("Cannot create stream %v", err)
-		return
-	}
-
-	err = testdb.CreateStream("TestCreateStream", "{}", dev.DeviceId)
-	if err == nil {
-		t.Errorf("Created stream with duplicate name")
-	}
+	err = testdb.CreateStream(stream.Name, "{}", dev.DeviceId)
+	assert.NotNil(t, err, "Created stream with duplicate name")
 }
 
 
 func TestUpdateStream(t *testing.T) {
-	usr, err := CreateTestUser(testdb)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	dev, err := CreateTestDevice(testdb, usr)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	stream, err := CreateTestStream(testdb, dev)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	_, _, stream, err := CreateUDS(testdb)
+	require.Nil(t, err)
 
 	stream.Nickname = "true"
 	stream.Type = "{a:'string'}"
-	//stream.OwnerId = dev
 
 	err = testdb.UpdateStream(stream)
-
-	if err != nil {
-		t.Errorf("Could not update stream %v", err)
-	}
+	assert.Nil(t, err, "Could not update stream %v", err)
 
 	stream2, err := testdb.ReadStreamById(stream.StreamId)
-
-	if err != nil {
-		t.Errorf("got an error when trying to get a stream that should exist %v", err)
-		return
-	}
+	require.Nil(t, err, "got an error when trying to get a stream that should exist %v", err)
 
 	if !reflect.DeepEqual(stream, stream2) {
 		t.Errorf("The original and updated objects don't match orig: %v updated %v", stream, stream2)
 	}
 
 	err = testdb.UpdateStream(nil)
-	if err != ERR_INVALID_PTR {
-		t.Errorf("Function safeguards failed")
-	}
-
+	assert.Equal(t, err,  ERR_INVALID_PTR, "Function safeguards failed")
 }
 
 func TestDeleteStream(t *testing.T) {
-	usr, err := CreateTestUser(testdb)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	dev, err := CreateTestDevice(testdb, usr)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	stream, err := CreateTestStream(testdb, dev)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
+	_, _, stream, err := CreateUDS(testdb)
+	require.Nil(t, err)
 
 	err = testdb.DeleteStream(stream.StreamId)
-
-	if nil != err {
-		t.Errorf("Error when attempted delete %v", err.Error())
-		return
-	}
+	require.Nil(t, err, "Error when attempted delete %v", err)
 
 	_, err = testdb.ReadStreamById(stream.StreamId)
-
-	if err == nil {
-		t.Errorf("The stream with the selected ID should have errored out, but it was not")
-		return
-	}
+	require.NotNil(t, err, "The stream with the selected ID should have errored out, but it was not")
 }
 
 func TestReadStreamByDevice(t *testing.T) {
+	_, dev, _, err := CreateUDS(testdb)
+	require.Nil(t, err)
 
-	usr, err := CreateTestUser(testdb)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	dev, err := CreateTestDevice(testdb, usr)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	testdb.CreateStream("TestReadStreamByDevice", "{}", dev.DeviceId)
 	testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
 
 	streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
-
-	if err != nil {
-		t.Errorf("Got error while reading streams by device")
-		return
-	}
-
-	// TODO change this to look for proper streams once we have a set test db
-	// with fixed items
-	if len(streams) < 2 {
-		t.Errorf("didn't get enough streams")
-	}
+	require.Nil(t, err)
+	require.Len(t, streams, 2, "didn't get enough streams")
 }

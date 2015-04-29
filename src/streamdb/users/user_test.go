@@ -189,14 +189,9 @@ func TestRevertUneditableFields(t *testing.T) {
 
 	tmpu := orig
 	tmpu.RevertUneditableFields(blank, ROOT)
-	if tmpu != root {
-		t.Errorf("Conversion as root didn't work got %v, expected %v", tmpu, root)
-	}
+	assert.Equal(t, tmpu, root, "Conversion as root didn't work got %v, expected %v", tmpu, root)
 
 	tmpu = orig
 	tmpu.RevertUneditableFields(blank, USER)
-	if tmpu != user {
-		t.Errorf("Conversion as user didn't work got %v, expected %v", tmpu, root)
-	}
-
+	assert.Equal(t, tmpu , user, "Conversion as user didn't work got %v, expected %v", tmpu, root)
 }
