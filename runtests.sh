@@ -19,15 +19,15 @@ echo "Setting up environment..."
 ./bin/connectordb start $DBDIR
 
 echo "Looking for postgres proc..."
-ps -aux | grep postgres
+ps aux | grep postgres
 
 
 echo "Looking for redis proc..."
-ps -aux | grep redis-server
+ps aux | grep redis-server
 
 
 echo "Looking for gnatsd proc..."
-ps -aux | grep gnatsd
+ps aux | grep gnatsd
 
 echo "Running tests..."
 go test -cover streamdb/...

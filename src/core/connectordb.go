@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"streamdb"
 	"streamdb/dbmaker"
 	"strings"
+	"log"
 )
 
 var (
@@ -24,6 +26,8 @@ var (
 	stopFlags = flag.NewFlagSet("stop", flag.ExitOnError)
 
 	upgradeFlags = flag.NewFlagSet("upgrade", flag.ExitOnError)
+
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 )
 
 //PrintUsage gives a nice message of the functionality available from the executable
@@ -51,14 +55,23 @@ func main() {
 		return
 	}
 
-	switch os.Args[1] {
-	case "create":
-		createFlags.Parse(os.Args[2:])
-		if createFlags.NArg() != 1 {
-			PrintUsage()
-			return
-		}
+	flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            log.Fatal(err)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
 
+	log.Print(flag.Args())
+
+
+	switch flag.Args()[0] {
+	case "create":
+		assertFlagsGood(createFlags)
+		
 		//extract the username and password from the formatted string
 		usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
 		if len(usernamePasswordArray) != 2 {
@@ -79,11 +92,7 @@ func main() {
 		}
 
 	case "start":
-		startFlags.Parse(os.Args[2:])
-		if startFlags.NArg() != 1 {
-			PrintUsage()
-			return
-		}
+		assertFlagsGood(startFlags)
 
 		//TODO: Load ports and interface from a config file
 		err := dbmaker.Start(startFlags.Arg(0), "127.0.0.1", 6379, 4222, 52592, nil)
@@ -92,11 +101,7 @@ func main() {
 		}
 
 	case "stop":
-		stopFlags.Parse(os.Args[2:])
-		if stopFlags.NArg() != 1 {
-			PrintUsage()
-			return
-		}
+		assertFlagsGood(stopFlags)
 
 		err := dbmaker.Stop(stopFlags.Arg(0), nil)
 		if err != nil {
@@ -104,11 +109,7 @@ func main() {
 		}
 
 	case "upgrade":
-		upgradeFlags.Parse(os.Args[2:])
-		if upgradeFlags.NArg() != 1 {
-			PrintUsage()
-			return
-		}
+		assertFlagsGood(upgradeFlags)
 
 		err := dbmaker.Upgrade(upgradeFlags.Arg(0), nil)
 		if err != nil {
@@ -117,5 +118,13 @@ func main() {
 
 	default:
 		PrintUsage()
+	}
+}
+
+func assertFlagsGood(fs *flag.FlagSet) {
+	fs.Parse(flag.Args()[1:])
+	if fs.NArg() != 1 {
+		PrintUsage()
+		os.Exit(1)
 	}
 }
