@@ -24,7 +24,7 @@ var (
 	testSqlite3  *UserDatabase
     testPostgres *UserDatabase
 	testdatabases = []*UserDatabase{}
-    testdb *UserDatabase
+    //testdb *UserDatabase
     testdatabasesNames = []string{}
     testPassword = "P@$$W0Rd123"
 )
@@ -47,7 +47,7 @@ func init() {
     testdatabases = []*UserDatabase{testSqlite3, testPostgres}
     testdatabasesNames = []string{"sqlite3", "postgres"}
 
-    testdb = testSqlite3
+    //testdb = testSqlite3
 }
 
 func initDB(dbName string) *UserDatabase {
@@ -56,7 +56,7 @@ func initDB(dbName string) *UserDatabase {
     // Init the db
     err := dbutil.UpgradeDatabase(dbName, true)
     if err != nil {
-        log.Panic("Could not set up db for testing: ", err.Error())
+        log.Printf("Could not set up db for testing: %v\n", err.Error())
         return nil
     }
 

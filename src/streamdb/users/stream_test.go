@@ -11,55 +11,85 @@ import (
 
 
 func TestCreateStream(t *testing.T) {
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	CleanTestDB(testdb)
-	_, dev, stream, err := CreateUDS(testdb)
-	require.Nil(t, err)
+		CleanTestDB(testdb)
+		_, dev, stream, err := CreateUDS(testdb)
+		require.Nil(t, err)
 
-	err = testdb.CreateStream(stream.Name, "{}", dev.DeviceId)
-	assert.NotNil(t, err, "Created stream with duplicate name")
+		err = testdb.CreateStream(stream.Name, "{}", dev.DeviceId)
+		assert.NotNil(t, err, "Created stream with duplicate name")
+	}
 }
 
 
 func TestUpdateStream(t *testing.T) {
-	_, _, stream, err := CreateUDS(testdb)
-	require.Nil(t, err)
 
-	stream.Nickname = "true"
-	stream.Type = "{a:'string'}"
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	err = testdb.UpdateStream(stream)
-	assert.Nil(t, err, "Could not update stream %v", err)
+		_, _, stream, err := CreateUDS(testdb)
+		require.Nil(t, err)
 
-	stream2, err := testdb.ReadStreamById(stream.StreamId)
-	require.Nil(t, err, "got an error when trying to get a stream that should exist %v", err)
+		stream.Nickname = "true"
+		stream.Type = "{a:'string'}"
 
-	if !reflect.DeepEqual(stream, stream2) {
-		t.Errorf("The original and updated objects don't match orig: %v updated %v", stream, stream2)
+		err = testdb.UpdateStream(stream)
+		assert.Nil(t, err, "Could not update stream %v", err)
+
+		stream2, err := testdb.ReadStreamById(stream.StreamId)
+		require.Nil(t, err, "got an error when trying to get a stream that should exist %v", err)
+
+		if !reflect.DeepEqual(stream, stream2) {
+			t.Errorf("The original and updated objects don't match orig: %v updated %v", stream, stream2)
+		}
+
+		err = testdb.UpdateStream(nil)
+		assert.Equal(t, err,  ERR_INVALID_PTR, "Function safeguards failed")
 	}
-
-	err = testdb.UpdateStream(nil)
-	assert.Equal(t, err,  ERR_INVALID_PTR, "Function safeguards failed")
 }
 
 func TestDeleteStream(t *testing.T) {
-	_, _, stream, err := CreateUDS(testdb)
-	require.Nil(t, err)
 
-	err = testdb.DeleteStream(stream.StreamId)
-	require.Nil(t, err, "Error when attempted delete %v", err)
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	_, err = testdb.ReadStreamById(stream.StreamId)
-	require.NotNil(t, err, "The stream with the selected ID should have errored out, but it was not")
+		_, _, stream, err := CreateUDS(testdb)
+		require.Nil(t, err)
+
+		err = testdb.DeleteStream(stream.StreamId)
+		require.Nil(t, err, "Error when attempted delete %v", err)
+
+		_, err = testdb.ReadStreamById(stream.StreamId)
+		require.NotNil(t, err, "The stream with the selected ID should have errored out, but it was not")
+	}
 }
 
 func TestReadStreamByDevice(t *testing.T) {
-	_, dev, _, err := CreateUDS(testdb)
-	require.Nil(t, err)
 
-	testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
-	require.Nil(t, err)
-	require.Len(t, streams, 2, "didn't get enough streams")
+		_, dev, _, err := CreateUDS(testdb)
+		require.Nil(t, err)
+
+		testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
+
+		streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
+		require.Nil(t, err)
+		require.Len(t, streams, 2, "didn't get enough streams")
+	}
 }
