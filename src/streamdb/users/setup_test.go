@@ -16,15 +16,16 @@ import (
     "log"
     )
 
+
 var (
     nextNameId = 0
     nextEmailId = 0
 
 	testSqlite3  *UserDatabase
     testPostgres *UserDatabase
+	testdatabases = []*UserDatabase{}
     testdb *UserDatabase
-
-	testdbname = "testing.sqlite3"
+    testdatabasesNames = []string{}
     testPassword = "P@$$W0Rd123"
 )
 
@@ -40,31 +41,37 @@ func GetNextEmail() string {
 
 
 func init() {
-	var err error
+    testSqlite3 := initDB("testing.sqlite3")
+    testPostgres := initDB("sslmode=disable dbname=connectordb port=52592")
 
-    // may not work if postgres
-	_ = os.Remove(testdbname)
+    testdatabases = []*UserDatabase{testSqlite3, testPostgres}
+    testdatabasesNames = []string{"sqlite3", "postgres"}
+
+    testdb = testSqlite3
+}
+
+func initDB(dbName string) *UserDatabase {
+	_ = os.Remove(dbName) // may fail if postgres
 
     // Init the db
-    err = dbutil.UpgradeDatabase(testdbname, true)
+    err := dbutil.UpgradeDatabase(dbName, true)
     if err != nil {
         log.Panic("Could not set up db for testing: ", err.Error())
+        return nil
     }
-	testSqlite3 = &UserDatabase{}
 
-	sql, dbtype, err := dbutil.OpenSqlDatabase(testdbname)
+	db := &UserDatabase{}
+
+	sql, dbtype, err := dbutil.OpenSqlDatabase(dbName)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	testSqlite3.InitUserDatabase(sql, dbtype.String())
+	db.InitUserDatabase(sql, dbtype.String())
 
-    testdb = testSqlite3
-
-    CleanTestDB(testdb)
+    CleanTestDB(db)
+    return db
 }
-
-
 
 
 func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {

@@ -127,86 +127,107 @@ func TestGeneralPermissions(t *testing.T) {
 }
 
 func TestRelationToUser(t *testing.T) {
-	u, dev, _, err := CreateUDS(testdb)
-	require.Nil(t, err)
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	assert.Equal(t, dev.RelationToUser(nil), ANYBODY, "nil user should be anybody")
+		u, dev, _, err := CreateUDS(testdb)
+		require.Nil(t, err)
 
-	dev.Enabled = false
-	assert.Equal(t, dev.RelationToUser(u), ANYBODY, "disabled should be anybody")
-	dev.Enabled = true
+		assert.Equal(t, dev.RelationToUser(nil), ANYBODY, "nil user should be anybody")
 
-	dev.IsAdmin = true
-	assert.Equal(t, dev.RelationToUser(u), ROOT, "admin should have root")
-	dev.IsAdmin = false
+		dev.Enabled = false
+		assert.Equal(t, dev.RelationToUser(u), ANYBODY, "disabled should be anybody")
+		dev.Enabled = true
 
-	dev.CanActAsUser = true
-	assert.Equal(t, dev.RelationToUser(u), USER, "devices with same userid should be users")
-	dev.CanActAsUser = false
+		dev.IsAdmin = true
+		assert.Equal(t, dev.RelationToUser(u), ROOT, "admin should have root")
+		dev.IsAdmin = false
 
-	assert.Equal(t, dev.RelationToUser(u), DEVICE, "devices under a user should be a device")
+		dev.CanActAsUser = true
+		assert.Equal(t, dev.RelationToUser(u), USER, "devices with same userid should be users")
+		dev.CanActAsUser = false
 
-	dev.UserId = -1
-	assert.Equal(t, dev.RelationToUser(u),  ANYBODY, "unrelated devices should be anybody")
+		assert.Equal(t, dev.RelationToUser(u), DEVICE, "devices under a user should be a device")
+
+		dev.UserId = -1
+		assert.Equal(t, dev.RelationToUser(u),  ANYBODY, "unrelated devices should be anybody")
+	}
 }
 
 func TestRelationToDevice(t *testing.T) {
-	u, dev, _, err := CreateUDS(testdb)
-	require.Nil(t, err)
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	d2, err := CreateTestDevice(testdb, u)
-	require.Nil(t, err)
+		u, dev, _, err := CreateUDS(testdb)
+		require.Nil(t, err)
 
-	assert.Equal(t, dev.RelationToDevice(nil), ANYBODY, "nil dev should be anybody")
+		d2, err := CreateTestDevice(testdb, u)
+		require.Nil(t, err)
 
-	dev.Enabled = false
-	assert.Equal(t, dev.RelationToDevice(d2), ANYBODY, "disabled devices should be anybody")
-	dev.Enabled = true
+		assert.Equal(t, dev.RelationToDevice(nil), ANYBODY, "nil dev should be anybody")
 
-	dev.IsAdmin = true
-	assert.Equal(t, dev.RelationToDevice(d2), ROOT, "admin devices should have root")
-	dev.IsAdmin = false
+		dev.Enabled = false
+		assert.Equal(t, dev.RelationToDevice(d2), ANYBODY, "disabled devices should be anybody")
+		dev.Enabled = true
 
-	dev.CanActAsUser = true
-	assert.Equal(t, dev.RelationToDevice(d2), USER, "devices with same userid should be users")
-	dev.CanActAsUser = false
+		dev.IsAdmin = true
+		assert.Equal(t, dev.RelationToDevice(d2), ROOT, "admin devices should have root")
+		dev.IsAdmin = false
 
-	assert.Equal(t, dev.RelationToDevice(d2),   FAMILY, "devices under a user should be a family")
-	assert.Equal(t, dev.RelationToDevice(dev),  DEVICE, "Devices should be device with themselves")
+		dev.CanActAsUser = true
+		assert.Equal(t, dev.RelationToDevice(d2), USER, "devices with same userid should be users")
+		dev.CanActAsUser = false
 
-	dev.UserId = -1
-	assert.Equal(t, dev.RelationToDevice(d2), ENABLED, "unrelated devices should be enabled")
+		assert.Equal(t, dev.RelationToDevice(d2),   FAMILY, "devices under a user should be a family")
+		assert.Equal(t, dev.RelationToDevice(dev),  DEVICE, "Devices should be device with themselves")
+
+		dev.UserId = -1
+		assert.Equal(t, dev.RelationToDevice(d2), ENABLED, "unrelated devices should be enabled")
+	}
 }
 
 func TestRelationToStream(t *testing.T) {
-	_, dev, stream, err := CreateUDS(testdb)
-	require.Nil(t, err)
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
 
-	assert.Equal(t, dev.RelationToStream(nil, dev), ANYBODY, "nil stream")
-	assert.Equal(t, dev.RelationToStream(stream, nil), ANYBODY, "nil parent")
+		_, dev, stream, err := CreateUDS(testdb)
+		require.Nil(t, err)
 
-	dev.Enabled = false
-	assert.Equal(t, dev.RelationToStream(stream, dev), ANYBODY, "disabled dev")
-	dev.Enabled = true
+		assert.Equal(t, dev.RelationToStream(nil, dev), ANYBODY, "nil stream")
+		assert.Equal(t, dev.RelationToStream(stream, nil), ANYBODY, "nil parent")
 
-	dev.IsAdmin = true
-	assert.Equal(t, dev.RelationToStream(stream, dev), ROOT, "root dev")
-	dev.IsAdmin = false
+		dev.Enabled = false
+		assert.Equal(t, dev.RelationToStream(stream, dev), ANYBODY, "disabled dev")
+		dev.Enabled = true
 
-	dev.CanActAsUser = true
-	assert.Equal(t, dev.RelationToStream(stream, dev), USER, "root dev")
-	dev.CanActAsUser = false
+		dev.IsAdmin = true
+		assert.Equal(t, dev.RelationToStream(stream, dev), ROOT, "root dev")
+		dev.IsAdmin = false
 
-	d2 := *dev
-	d2.UserId = d2.UserId + 1
-	d2.DeviceId = d2.DeviceId + 1
-	assert.Equal(t, d2.RelationToStream(stream, dev), ENABLED,
-					"different user devices got %v", dev.RelationToStream(stream, &d2))
+		dev.CanActAsUser = true
+		assert.Equal(t, dev.RelationToStream(stream, dev), USER, "root dev")
+		dev.CanActAsUser = false
 
-	d2 = *dev
-	d2.CanActAsUser = true
-	d2.UserId += 1
-	d2.DeviceId += 1
-	assert.NotEqual(t, dev.RelationToStream(stream, &d2), USER, "d2 can be user, but isn't parent")
-	assert.Equal(t, dev.RelationToStream(stream, dev), DEVICE, "owner should be dev")
+		d2 := *dev
+		d2.UserId = d2.UserId + 1
+		d2.DeviceId = d2.DeviceId + 1
+		assert.Equal(t, d2.RelationToStream(stream, dev), ENABLED,
+						"different user devices got %v", dev.RelationToStream(stream, &d2))
+
+		d2 = *dev
+		d2.CanActAsUser = true
+		d2.UserId += 1
+		d2.DeviceId += 1
+		assert.NotEqual(t, dev.RelationToStream(stream, &d2), USER, "d2 can be user, but isn't parent")
+		assert.Equal(t, dev.RelationToStream(stream, dev), DEVICE, "owner should be dev")
+	}
 }
