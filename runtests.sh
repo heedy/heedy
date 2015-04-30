@@ -34,10 +34,9 @@ go test -cover streamdb/...
 test_status=$?
 
 ./bin/connectordb stop $DBDIR
-#rm -rf $DBDIR
-
 
 if [ $test_status -eq 0 ]; then
+    rm -rf $DBDIR
 	#Now test the python stuff, while rebuilding the db to make sure that
 	#the go tests didn't invalidate the db
 	./bin/connectordb create --user test:test $DBDIR

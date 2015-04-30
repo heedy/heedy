@@ -42,15 +42,15 @@ go-dependencies:
 	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions
 
 	# go tools
-	go get golang.org/x/tools/cmd/cover
+	#go get golang.org/x/tools/cmd/cover	#Cover tool is default in 1.4, and this command gives errors
 	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/stretchr/testify
 
 
-bin/dep/gnatsd: depfolder
+bin/dep/gnatsd: bin/dep
 	go build -o bin/dep/gnatsd github.com/apcera/gnatsd
 
-depfolder:
+bin/dep:
 	mkdir -p bin/dep
 
 # specific packages required by the project to run on a host
