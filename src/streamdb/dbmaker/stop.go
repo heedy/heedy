@@ -4,15 +4,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"streamdb/util"
 )
 
 //Stop shuts down all services running in the given directory
 func Stop(streamdbDirectory string, err error) error {
 	if err == nil {
-		if IsDirectory(streamdbDirectory) {
+		if util.IsDirectory(streamdbDirectory) {
 			streamdbDirectory, err = filepath.Abs(streamdbDirectory)
 		} else {
-			return ErrNotDatabase
+			return util.ErrNotDatabase
 		}
 
 	}

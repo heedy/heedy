@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"streamdb/util"
 )
 
 var (
@@ -28,7 +29,7 @@ func Create(streamdbDirectory, sqlDatabaseType string, err error) error {
 	}
 	log.Printf("Creating new StreamDB database at '%s'\n", streamdbDirectory)
 
-	if PathExists(streamdbDirectory) {
+	if util.PathExists(streamdbDirectory) {
 		return ErrDirectoryExists
 	}
 

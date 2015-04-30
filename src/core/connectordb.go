@@ -61,70 +61,87 @@ func main() {
         if err != nil {
             log.Fatal(err)
         }
+
         pprof.StartCPUProfile(f)
         defer pprof.StopCPUProfile()
     }
 
-	log.Print(flag.Args())
+	var err error
+	commandName := flag.Args()[0]
 
+	switch commandName {
+		case "create":
+			err = createDatabase()
 
-	switch flag.Args()[0] {
-	case "create":
-		assertFlagsGood(createFlags)
-		
-		//extract the username and password from the formatted string
-		usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
-		if len(usernamePasswordArray) != 2 {
-			fmt.Println("--user: Username and password not given in format <username>:<password>")
-			createFlags.PrintDefaults()
-			return
-		}
-		username := usernamePasswordArray[0]
-		password := usernamePasswordArray[1]
+		case "start":
+			err = startDatabase()
 
-		err := dbmaker.Create(createFlags.Arg(0), *createDbType, nil)
-		err = dbmaker.MakeUser(createFlags.Arg(0), username, password, *createEmail, err)
+		case "stop":
+			err = stopDatabase()
 
-		if err != nil {
-			fmt.Printf("Database creation FAILED with the following error:\n\n%v\n", err)
-		} else {
-			fmt.Printf("\nDatabase created successfully.\n")
-		}
+		case "upgrade":
+			err = upgradeDatabase()
 
-	case "start":
-		assertFlagsGood(startFlags)
+		default:
+			PrintUsage()
+	}
 
-		//TODO: Load ports and interface from a config file
-		err := dbmaker.Start(startFlags.Arg(0), "127.0.0.1", 6379, 4222, 52592, nil)
-		if err != nil {
-			fmt.Printf("ConnectorDB crashed with the following error:\n\n%v\n", err)
-		}
-
-	case "stop":
-		assertFlagsGood(stopFlags)
-
-		err := dbmaker.Stop(stopFlags.Arg(0), nil)
-		if err != nil {
-			fmt.Printf("ConnectorDB stop failed with the following error:\n\n%v\n", err)
-		}
-
-	case "upgrade":
-		assertFlagsGood(upgradeFlags)
-
-		err := dbmaker.Upgrade(upgradeFlags.Arg(0), nil)
-		if err != nil {
-			fmt.Printf("ConnectorDB upgrade failed with the following error:\n\n%v\n", err)
-		}
-
-	default:
-		PrintUsage()
+	if err != nil {
+		fmt.Printf("Error: A problem occured during %v:\n\n%v\n", commandName, err)
 	}
 }
 
-func assertFlagsGood(fs *flag.FlagSet) {
+
+// processes the flags and makes sure they're valid, exiting if needed.
+func processFlags(fs *flag.FlagSet) {
 	fs.Parse(flag.Args()[1:])
+
 	if fs.NArg() != 1 {
 		PrintUsage()
 		os.Exit(1)
 	}
+}
+
+// Does the creations step
+func createDatabase() error {
+	processFlags(createFlags)
+
+	//extract the username and password from the formatted string
+	usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
+	if len(usernamePasswordArray) != 2 {
+		fmt.Println("--user: Username and password not given in format <username>:<password>")
+		createFlags.PrintDefaults()
+		return nil
+	}
+	username := usernamePasswordArray[0]
+	password := usernamePasswordArray[1]
+
+	err := dbmaker.Create(createFlags.Arg(0), *createDbType, nil)
+	err = dbmaker.MakeUser(createFlags.Arg(0), username, password, *createEmail, err)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nDatabase created successfully.\n")
+	return nil
+}
+
+func startDatabase() error {
+	processFlags(startFlags)
+
+	//TODO: Load ports and interface from a config file
+	return dbmaker.Start(startFlags.Arg(0), "127.0.0.1", 6379, 4222, 52592, nil)
+}
+
+func stopDatabase() error {
+	processFlags(stopFlags)
+
+	return dbmaker.Stop(stopFlags.Arg(0), nil)
+}
+
+func upgradeDatabase() error {
+	processFlags(upgradeFlags)
+
+ 	return dbmaker.Upgrade(upgradeFlags.Arg(0), nil)
 }

@@ -2,23 +2,21 @@ package dbmaker
 
 import (
 	"log"
-	"path/filepath"
 	"streamdb/dbutil"
 	"streamdb/users"
+	"streamdb/util"
 )
 
 //MakeUser creates a user directly from a streamdb directory, without needing to start up all of streamdb
 func MakeUser(streamdbDirectory, username, password, email string, err error) error {
-	err = EnsureNotRunning(streamdbDirectory, err)
 	if err != nil {
 		return err
 	}
-	if !IsDirectory(streamdbDirectory) {
-		return ErrNotDatabase
-	}
 
-	//Make sure we are using an absolute path
-	streamdbDirectory, err = filepath.Abs(streamdbDirectory)
+	streamdbDirectory, err = util.ProcessConnectordbDirectory(streamdbDirectory)
+	if err != nil {
+		return err
+	}
 
 	//Start the postgres database on a random port on localhost to set up the user
 	err = StartSqlDatabase(streamdbDirectory, "127.0.0.1", 55413, err)

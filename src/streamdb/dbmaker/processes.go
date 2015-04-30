@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"streamdb/util"
+
 )
 
 var (
@@ -37,8 +39,8 @@ func WaitPort(host string, port int, err error) error {
 	_, err = net.Dial("tcp", hostPort)
 	i := 0
 	for ; err != nil && i < PortTimeoutLoops; i++ {
-		time.Sleep(100 * time.Millisecond)
 		_, err = net.Dial("tcp", hostPort)
+		time.Sleep(100 * time.Millisecond)
 	}
 	if i >= PortTimeoutLoops {
 		return ErrTimeout
@@ -93,7 +95,7 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 	}
 
 	pidfile := filepath.Join(streamdbDirectory, procname+".pid")
-	if !PathExists(pidfile) {
+	if !util.PathExists(pidfile) {
 		return nil, ErrFileNotFound
 	}
 

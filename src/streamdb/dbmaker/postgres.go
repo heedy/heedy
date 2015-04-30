@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"streamdb/dbutil"
 	"time"
+	"streamdb/util"
 )
 
 var postgresDatabaseName = "postgres_database"
+
 
 //GetSqlPath gets the connection string to the database
 func GetSqlPath(streamdbDirectory, iface string, port int, err error) (string, error) {
@@ -28,9 +30,10 @@ func GetSqlPath(streamdbDirectory, iface string, port int, err error) (string, e
 	}
 }
 
+
 //StartSqlDatabase starts the correct sql database based upon the directory
 func StartSqlDatabase(streamdbDirectory, iface string, port int, err error) error {
-	err = EnsurePidNotRunning(streamdbDirectory, "sqldb", err)
+	err = util.EnsurePidNotRunning(streamdbDirectory, "sqldb", err)
 
 	dbtype, err := GetDatabaseType(streamdbDirectory, err)
 
@@ -110,7 +113,7 @@ func StartPostgres(streamdbDirectory, iface string, port int, err error) error {
 	postgresDir := filepath.Join(streamdbDirectory, postgresDatabaseName)
 
 	//Postgres is a little bitch about its config file, which needs to be moved to the database dir
-	err = copyFileContents(configfile, filepath.Join(postgresDir, "postgresql.conf"), err)
+	err = util.CopyFileContents(configfile, filepath.Join(postgresDir, "postgresql.conf"), err)
 
 	err = RunDaemon(err, dbutil.FindPostgres(), "-D", postgresDir)
 

@@ -12,19 +12,73 @@ All Rights Reserved
 **/
 
 import (
-	"flag"
+	"path/filepath"
+
+	"github.com/kardianos/osext"
 )
 
 var (
-	Nodetype            = flag.String("node.type", "master", "Whether this node should be considered the 'master' or a 'slave'")
-	RedisConnection     = flag.String("redis.connection_location", "localhost:6379", "The redis connection string")
-	MessageConnection   = flag.String("gnatsd.connection_location", "localhost:4222", "The gnatsd connection string")
-	DatabaseConnection  = flag.String("database.cxn_string", "", "The database's connection string")
-	WebPort             = flag.Int("web.portnum", 8000, "The port to serve the website on")
-	WebInterfaceEnabled = flag.Bool("web.http.enabled", true, "Should the http website be run?")
-	WebApiEnabled       = flag.Bool("web.api.enabled", true, "Should the web api be on?")
-	WebApiKey           = flag.String("web.http.key", "", "The api key for the web interface")
-	ApiApiKey           = flag.String("web.api.key", "", "The api key for the web interface")
-	DaisyEnabled        = flag.Bool("web.daisy.enabled", false, "Turn on the daisy components of the web interface")
-	PostgresPort		= flag.Int("postgres.portnum", 52592, "The default port for postgres to run on")
+	config *Configuration
 )
+
+type Configuration struct {
+	Nodetype string
+	RedisHost string
+	RedisPort int
+	GnatsdHost string
+	GnatsdPort int
+	DatabaseConnectionString string
+	WebPort int
+	RunApi bool
+	RunWeb bool
+	RunDaisy bool
+	PostgresPort int
+}
+
+func NewConfiguration() Configuration {
+	var cfg Configuration
+	cfg.Nodetype = "master"
+	cfg.RedisHost = "localhost"
+	cfg.RedisPort = 6379
+	cfg.GnatsdHost = "localhost"
+	cfg.GnatsdPort = 4222
+	cfg.DatabaseConnectionString = ""
+	cfg.WebPort = 8000
+	cfg.RunApi = true
+	cfg.RunWeb = true
+	cfg.RunDaisy = false
+	cfg.PostgresPort = 52592
+
+	return cfg
+}
+
+func InitConfiguration(path string) error {
+	return nil
+}
+
+func ReloadConfiguration() {
+
+}
+
+func GetConfiguration() (*Configuration, error) {
+	return config, nil
+}
+
+
+func SaveConfiguration() error {
+	return nil
+}
+
+
+//ConfigPath returns the path to the default StreamDB config templates
+func ConfigPath() (string, error) {
+
+	execpath, err := osext.ExecutableFolder()
+	return filepath.Join(execpath, "config"), err
+}
+
+
+// Gets whether this is a postgres or sqlite connection
+func (c Configuration) GetConnectionType() {
+	
+}

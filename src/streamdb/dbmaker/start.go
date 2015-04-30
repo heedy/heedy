@@ -1,26 +1,19 @@
 package dbmaker
 
 import (
-	"errors"
 	"log"
 	"path/filepath"
+	"streamdb/util"
 )
 
-//This error is thrown if a bad path is given as a database
-var ErrNotDatabase = errors.New("The given path is not initialized as a database")
 
 //Start the necessary servers to run StreamDB
 func Start(streamdbDirectory, iface string, redisPort, gnatsdPort, sqlPort int, err error) error {
-	if err == nil {
-		if IsDirectory(streamdbDirectory) {
-			streamdbDirectory, err = filepath.Abs(streamdbDirectory)
-		} else {
-			return ErrNotDatabase
-		}
-
+	if err != nil {
+		return err
 	}
 
-	err = EnsureNotRunning(streamdbDirectory, err)
+	streamdbDirectory, err = util.ProcessConnectordbDirectory(streamdbDirectory)
 	if err != nil {
 		return err
 	}
@@ -38,7 +31,7 @@ func Start(streamdbDirectory, iface string, redisPort, gnatsdPort, sqlPort int, 
 		StopRedis(streamdbDirectory, nil)
 	} else {
 		//The pid file doesn't actualyl contain a pid - it is more of a "run lock"
-		Touch(filepath.Join(streamdbDirectory, "connectordb.pid"))
+		util.Touch(filepath.Join(streamdbDirectory, "connectordb.pid"))
 	}
 
 	return err

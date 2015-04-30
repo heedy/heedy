@@ -4,6 +4,7 @@ import (
 	"log"
 	"path/filepath"
 	"streamdb/dbutil"
+	"streamdb/util"
 )
 
 var sqliteDatabaseName = "streamdb.sqlite3"
@@ -19,7 +20,7 @@ func InitializeSqlite(streamdbDirectory string, err error) error {
 
 	// because sqlite doesn't always like being started on a file that
 	// doesn't exist
-	Touch(dbFile)
+	util.Touch(dbFile)
 	//Initialize the database tables
 	log.Printf("Setting up initial tables\n")
 	return dbutil.UpgradeDatabase(dbFile, true)
