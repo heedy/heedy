@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestMessenger(t *testing.T) {
@@ -13,6 +15,9 @@ func TestMessenger(t *testing.T) {
 		t.Errorf("Error chain failed: %s", err)
 		return
 	}
+
+	_, err = Connect("localhost:13378", nil)
+	require.Error(t, err)
 
 	msg, err := Connect("localhost:4222", nil)
 	if err != nil {

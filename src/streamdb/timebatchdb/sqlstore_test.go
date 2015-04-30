@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -26,6 +27,23 @@ func TableMakerTestCreate(db *sql.DB) error {
             );`)
 	db.Exec("CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);")
 	return err
+}
+
+func TestEncDec(t *testing.T) {
+	dpa := CreateDatapointArray([]int64{1, 2, 3}, [][]byte{[]byte("test0"), []byte("test1"), []byte("test2")}, "")
+	_, err := decodeDatapointArray(0, []byte{})
+	require.EqualError(t, err, ErrorVersion.Error())
+	_, err = encodeDatapointArray(0, nil)
+	require.EqualError(t, err, ErrorVersion.Error())
+
+	for i := 1; i <= 2; i++ {
+		enc, err := encodeDatapointArray(i, dpa)
+		require.NoError(t, err)
+		dec, err := decodeDatapointArray(i, enc)
+		require.NoError(t, err)
+		require.Equal(t, dpa.Size(), dec.Size())
+	}
+
 }
 
 func SqlStoreTest(s *SqlStore, t *testing.T) {

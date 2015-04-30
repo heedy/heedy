@@ -38,7 +38,7 @@ func TestRedisCache(t *testing.T) {
 	//First try dialing an invalid redis cache
 	rc, err := OpenRedisCache("", err2)
 	if err != err2 {
-		t.Errorf("OpenFail", err)
+		t.Errorf("OpenFail %v", err)
 		return
 	}
 	//First try dialing an invalid redis cache
