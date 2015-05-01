@@ -2,6 +2,8 @@ package timebatchdb
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRangeList(t *testing.T) {
@@ -17,47 +19,29 @@ func TestRangeList(t *testing.T) {
 	rl := NewRangeList()
 	rl.Append(da)
 	rl.Append(db)
-	err := rl.Init()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
+	require.NoError(t, rl.Init())
 
-	da, err = DatapointArrayFromDataRange(rl)
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if da.Len() != 9 {
-		t.Errorf(" DatapointArray length: %d", da.Len())
-		return
-	}
+	da, err := DatapointArrayFromDataRange(rl)
+	require.NoError(t, err)
+	require.Equal(t, 9, da.Len())
 
 	timestamps = da.Timestamps()
-
-	if timestamps[0] != 1 || timestamps[1] != 2 || timestamps[8] != 3200 {
-		t.Errorf("Datarange timestamp fail1: %d %d", timestamps[0], timestamps[8])
-		return
-	}
+	require.Equal(t, int64(1), timestamps[0])
+	require.Equal(t, int64(2), timestamps[1])
+	require.Equal(t, int64(3200), timestamps[8])
 
 	//The Close method was not tested at all
 	rl3 := NewRangeList()
 
 	rl3.Init()
 	dpt, err := rl3.Next()
-	if dpt != nil || err != nil {
-		t.Errorf("Next value of empty list had weird result")
-		return
-	}
+	require.NoError(t, err)
+	require.Nil(t, dpt)
+
 	rl2 := NewRangeList()
 	rl2.Append(da)
 	rl2.Append(db)
-	err = rl2.Init()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-
+	require.NoError(t, rl2.Init())
 	rl2.Close()
 
 }
@@ -71,51 +55,31 @@ func TestTimeRange(t *testing.T) {
 
 	tr := NewTimeRange(da, 3, 6)
 	defer tr.Close()
-	err := tr.Init()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
+	require.NoError(t, tr.Init())
+
 	dp, err := tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 4 {
-		t.Errorf("TimeRange start time incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(4), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 5 {
-		t.Errorf("TimeRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(5), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 6 {
-		t.Errorf("TimeRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(6), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 6 {
-		t.Errorf("TimeRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(6), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp != nil {
-		t.Errorf("TimeRange endtime incorrect")
-	}
+	require.NoError(t, err)
+	require.Nil(t, dp)
 }
 
 func TestNumRange(t *testing.T) {
@@ -127,79 +91,50 @@ func TestNumRange(t *testing.T) {
 
 	tr := NewNumRange(da, 5)
 	defer tr.Close()
-	err := tr.Init()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
+	require.NoError(t, tr.Init())
+
 	dp, err := tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 1 {
-		t.Errorf("NumRange start time incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(1), dp.Timestamp())
+
 	err = tr.Skip(2)
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 4 {
-		t.Errorf("NumRange start time incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(4), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 5 {
-		t.Errorf("NumRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(5), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 6 {
-		t.Errorf("NumRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(6), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 6 {
-		t.Errorf("NumRange incorrect")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(6), dp.Timestamp())
+
 	dp, err = tr.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp != nil {
-		t.Errorf("NumRange endtime incorrect")
-	}
+	require.NoError(t, err)
+	require.Nil(t, dp)
 }
 
 //This is just to increase test coverage...
 func TestEmptyRange(t *testing.T) {
 	er := EmptyRange{}
-	err := er.Init()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
+	require.NoError(t, er.Init())
+
 	dp, err := er.Next()
-	if err != nil || dp != nil {
-		t.Errorf("EmptyRange datapoint next error: %s %v", err, dp)
-		return
-	}
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
 	er.Close()
 }
 

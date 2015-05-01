@@ -2,6 +2,8 @@ package timebatchdb
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 //WARNING: This function is used in tests of datarange also
@@ -20,7 +22,7 @@ func assertData(t *testing.T, da *DatapointArray, try string) bool {
 
 	timestamps, data := da.Get()
 	if len(timestamps) != 9 || len(data) != 9 {
-		t.Errorf("%s wrong range returned %d %d", len(timestamps), len(data))
+		t.Errorf("%s wrong range returned %d %d", try, len(timestamps), len(data))
 		return false
 	}
 	if timestamps[0] != 1000 || timestamps[1] != 1500 || timestamps[8] != 3000 {
@@ -45,130 +47,59 @@ func TestDatapointArray(t *testing.T) {
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8")}
 
-	if !CreateDatapointArray(timestamps[0:1], data[0:1], "").IsTimestampOrdered() {
-		t.Errorf("Timestamp ordering failure")
-	}
-	if !CreateDatapointArray(timestamps[0:3], data[0:3], "").IsTimestampOrdered() {
-		t.Errorf("Timestamp ordering failure")
-	}
+	require.True(t, CreateDatapointArray(timestamps[0:1], data[0:1], "").IsTimestampOrdered())
+	require.True(t, CreateDatapointArray(timestamps[0:3], data[0:3], "").IsTimestampOrdered())
 
 	da := CreateDatapointArray(timestamps, data, "test") //This internally tests fromlist
 
-	if !assertData(t, da, "creation") {
-		return
-	}
-
-	if da.IsTimestampOrdered() {
-		t.Errorf("Timestamp ordering should fail due to duplicate stamps")
-	}
+	require.True(t, assertData(t, da, "creation"))
+	require.False(t, da.IsTimestampOrdered(), "Timestamp ordering should fail due to duplicate stamps")
 
 	dplen := da.Size()
 	//It looks like the basics are working. Now let's test going to bytes and back
 	da.Bytes()
-	if dplen != da.Size() {
-		t.Errorf("Error finding size of dataArray")
-	}
+	require.Equal(t, dplen, da.Size())
 
 	//da was reloaded when Bytes() was called. Make sure things are fine
-	if !assertData(t, da, "nochangebytes") {
-		return
-	}
-
-	//Now test da2
-	if !assertData(t, DatapointArrayFromBytes(da.Bytes()), "frombytes") {
-		return
-	}
-
-	if !assertData(t, DatapointArrayFromCompressedBytes(da.CompressedBytes()), "compressed") {
-		return
-	}
+	require.True(t, assertData(t, da, "nochangebytes"))
+	require.True(t, assertData(t, DatapointArrayFromBytes(da.Bytes()), "frombytes"))
+	require.True(t, assertData(t, DatapointArrayFromCompressedBytes(da.CompressedBytes()), "compressed"))
 
 	//Now check getting by time
-	i := da.FindTimeIndex(1200)
-	if i != 1 {
-		t.Errorf("Error in findtimeindex: %d", i)
-	}
+	require.Equal(t, 1, da.FindTimeIndex(1200))
+	require.Equal(t, 5, da.FindTimeIndex(2000))
+	require.Equal(t, -1, da.FindTimeIndex(3000))
 
-	i = da.FindTimeIndex(2000)
-	if i != 5 {
-		t.Errorf("Error in findtimeindex: %d", i)
-	}
+	require.Equal(t, 4, da.DatapointTRange(1200, 2000).Len())
+	require.Equal(t, 4, len(da.DataTRange(1200, 2000)))
+	require.Equal(t, 4, len(da.TimestampTRange(1200, 2000)))
 
-	i = da.FindTimeIndex(3000)
-	if i != -1 {
-		t.Errorf("Error in findtimeindex: %d", i)
-		return
-	}
+	require.Equal(t, 8, da.DatapointTRange(1200, 3500).Len())
+	require.Equal(t, 8, len(da.DataTRange(1200, 3500)))
+	require.Equal(t, 8, len(da.TimestampTRange(1200, 3500)))
 
-	if da.DatapointTRange(1200, 2000).Len() != 4 {
-		t.Errorf("Wrong TRange")
-		return
-	}
-	if len(da.DataTRange(1200, 2000)) != 4 {
-		t.Errorf("Wrong TRange")
-		return
-	}
-	if len(da.TimestampTRange(1200, 2000)) != 4 {
-		t.Errorf("Wrong TRange")
-		return
-	}
-	if da.DatapointTRange(1200, 3500).Len() != 8 {
-		t.Errorf("Wrong TRange")
-		return
-	}
-	if len(da.DataTRange(1200, 3500)) != 8 {
-		t.Errorf("Wrong TRange")
-		return
-	}
-	if len(da.TimestampTRange(1200, 3500)) != 8 {
-		t.Errorf("Wrong TRange")
-		return
-	}
+	require.Equal(t, da.Len(), len(da.DataIRange(0, 50)))
+	require.Equal(t, 0, len(da.DataIRange(40, 50)))
 
-	if len(da.DataIRange(0, 50)) != da.Len() {
-		t.Errorf("DataIRange doesn't return correct number of values")
-		return
-	}
-	if len(da.DataIRange(40, 50)) != 0 {
-		t.Errorf("DataIRange doesn't return correct number of values")
-		return
-	}
-	if len(da.TimestampIRange(0, 50)) != da.Len() {
-		t.Errorf("DataIRange doesn't return correct number of values")
-		return
-	}
-	if len(da.TimestampIRange(40, 50)) != 0 {
-		t.Errorf("DataIRange doesn't return correct number of values")
-		return
-	}
+	require.Equal(t, da.Len(), len(da.TimestampIRange(0, 50)))
+	require.Equal(t, 0, len(da.TimestampIRange(40, 50)))
 
 	datat, datad := da.GetTRange(1200, 3500)
-	if len(datat) != 8 || len(datad) != 8 {
-		t.Errorf("Wrong TRange")
-		return
-	}
+	require.Equal(t, 8, len(datat))
+	require.Equal(t, 8, len(datad))
 
-	if da.TStart(2000).Len() != 4 {
-		t.Errorf("Wrong TStart")
-		return
-	}
+	require.Equal(t, 4, da.TStart(2000).Len())
 
 	dp, err := da.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 1000 {
-		t.Errorf("Iterator wrong")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(1000), dp.Timestamp())
+
 	dp, err = da.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 1500 {
-		t.Errorf("Iterator wrong")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(1500), dp.Timestamp())
+
 	da.Next()
 	da.Next()
 	da.Next()
@@ -176,47 +107,29 @@ func TestDatapointArray(t *testing.T) {
 	da.Next()
 	da.Next()
 	dp, err = da.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 3000 {
-		t.Errorf("Iterator wrong")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(3000), dp.Timestamp())
+
 	dp, err = da.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp != nil {
-		t.Errorf("Iterator wrong")
-	}
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
 	da.Close()
 	dp, err = da.Next()
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if dp == nil || dp.Timestamp() != 1000 {
-		t.Errorf("Iterator wrong")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, int64(1000), dp.Timestamp())
 	da.Close()
 
 	// make sure loading from DataRange is functional
 	da2, err := DatapointArrayFromDataRange(da)
-	if err != nil {
-		t.Errorf("Error: %s", err)
-		return
-	}
-	if !assertData(t, da2, "fromdatarange") {
-		return
-	}
+	require.NoError(t, err)
+	require.True(t, assertData(t, da2, "fromdatarange"))
 
 	// make sure loading from ByteDatapoints is functional
 	da3 := DatapointArrayFromByteDatapoints(da.ByteDatapoints())
-	if !assertData(t, da3, "bytedatapoints") {
-		return
-	}
+	require.True(t, assertData(t, da3, "bytedatapoints"))
 }
 
 func BenchmarkDatapointArrayRange(b *testing.B) {

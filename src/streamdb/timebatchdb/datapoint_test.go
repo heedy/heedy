@@ -3,6 +3,8 @@ package timebatchdb
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDatapoint(t *testing.T) {
@@ -19,40 +21,28 @@ func TestDatapoint(t *testing.T) {
 	buf.Write([]byte("END"))
 
 	d2, err := ReadDatapoint(buf)
-	if err != nil {
-		t.Errorf("Datapoint error %s", err)
-		return
-	}
+	require.NoError(t, err)
+	require.Equal(t, d2.Len(), d.Len())
+	require.Equal(t, int64(1337), d2.Timestamp())
+	require.Equal(t, "Hello World!", string(d2.Data()))
+	require.Equal(t, 12, d2.DataLen())
+	require.Equal(t, "world/hello", d2.Key())
 
-	if d2.Len() != d.Len() || d2.Timestamp() != 1337 || string(d2.Data()) != "Hello World!" || d2.DataLen() != 12 || d2.Key() != "world/hello" {
-		t.Errorf("Datapoint read error: %s", d2)
-		return
-	}
-	if string(buf.Next(3)) != "END" {
-		t.Errorf("Datapoint reading went out of bounds")
-		return
-	}
+	require.Equal(t, "END", string(buf.Next(3)), "Datapoint reading went out of bounds")
 
 	//Lastly, check if the datapoint can be created from a byte array
 	buf = new(bytes.Buffer)
 	buf.Write(d.Bytes())
 	buf.Write([]byte("END"))
 	d3, n := DatapointFromBytes(buf.Bytes())
-	if int(n) != d3.Len() {
-		t.Errorf("Datapoint read bytenum error: %s", d3)
-		return
-	}
+	require.Equal(t, d3.Len(), int(n))
 
-	if d3.Len() != d.Len() || d3.Timestamp() != 1337 || string(d3.Data()) != "Hello World!" || d3.DataLen() != 12 || d2.Key() != "world/hello" {
-		t.Errorf("Datapoint read error: %s", d3)
-		return
-	}
-
-	if d3.String() != d.String() {
-		t.Errorf("Datapoint string error: %s", d3)
-		return
-	}
-
+	require.Equal(t, d3.Len(), d.Len())
+	require.Equal(t, int64(1337), d3.Timestamp())
+	require.Equal(t, "Hello World!", string(d3.Data()))
+	require.Equal(t, 12, d3.DataLen())
+	require.Equal(t, "world/hello", d3.Key())
+	require.Equal(t, d.String(), d3.String())
 }
 
 func TestLargeDatapoint(t *testing.T) {
@@ -62,10 +52,11 @@ func TestLargeDatapoint(t *testing.T) {
 		datastring = datastring + "HelloWorld"
 	}
 	d := NewDatapoint(1337, []byte(datastring), "")
-	if d.Len() != len(d.Bytes()) || d.Timestamp() != 1337 || string(d.Data()) != datastring || d.DataLen() != len(datastring) || d.Key() != "" {
-		t.Errorf("Datapoint read error: %s", d)
-		return
-	}
+	require.Equal(t, len(d.Bytes()), d.Len())
+	require.Equal(t, int64(1337), d.Timestamp())
+	require.Equal(t, string(d.Data()), datastring)
+	require.Equal(t, d.DataLen(), len(datastring))
+	require.Equal(t, "", d.Key())
 }
 
 func BenchmarkDatapointCreate(b *testing.B) {
