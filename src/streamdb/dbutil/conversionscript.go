@@ -219,8 +219,8 @@ END;
 
 CREATE TRIGGER ModifyUserdev20150328 AFTER UPDATE ON Users FOR EACH ROW
 BEGIN
-UPDATE Devices WHERE UserId = NEW.UserId AND IsAdmin = 1 SET IsAdmin = NEW.Admin;
-UPDATE Devices WHERE UserId = NEW.UserId AND Name = 'user' SET IsAdmin = NEW.Admin;
+UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND IsAdmin = 1 ;
+UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND Name = 'user' ;
 END;
 
 {{end}}
@@ -242,8 +242,8 @@ CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
 
 CREATE FUNCTION ModifyUserdev20150328Func() RETURNS TRIGGER AS $_$
 BEGIN
-	UPDATE Devices WHERE UserId = NEW.UserId AND IsAdmin = TRUE SET IsAdmin = NEW.Admin;
-	UPDATE Devices WHERE UserId = NEW.UserId AND Name = 'user' SET IsAdmin = NEW.Admin;
+	UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND IsAdmin = TRUE;
+	UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND Name = 'user';
     RETURN NEW;
 END $_$ LANGUAGE 'plpgsql';
 
