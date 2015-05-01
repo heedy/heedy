@@ -72,7 +72,7 @@ func (userdb *UserDatabase) Login(Username, Password string) (*User, *Device, er
 
 // Reads the operating device for the user (the implicity device the user uses)
 func (userdb *UserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
-	return userdb.ReadDeviceForUserByName(user.UserId, "User")
+	return userdb.ReadDeviceForUserByName(user.UserId, "user")
 }
 
 // ReadUserByEmail returns a User instance if a user exists with the given

@@ -213,7 +213,7 @@ CREATE TABLE StreamKeyValues (
 {{ if eq .DBType "sqlite3"}}
 CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
 BEGIN
-INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable) VALUES ('User', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, 1, 0);
+INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, 1, 0, NEW.IsAdmin);
 END;
 {{end}}
 
@@ -221,7 +221,7 @@ END;
 
 CREATE FUNCTION AddUserdev20150328Func() RETURNS TRIGGER AS $_$
 BEGIN
-	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable) VALUES ('User', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE);
+	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE, NEW.IsAdmin);
     RETURN NEW;
 END $_$ LANGUAGE 'plpgsql';
 
