@@ -215,6 +215,14 @@ CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
 BEGIN
 INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, 1, 0, NEW.Admin);
 END;
+
+
+CREATE TRIGGER ModifyUserdev20150328 AFTER UPDATE ON Users FOR EACH ROW
+BEGIN
+UPDATE Devices WHERE UserId = NEW.UserId AND IsAdmin = 1 SET IsAdmin = NEW.Admin;
+UPDATE Devices WHERE UserId = NEW.UserId AND Name = 'user' SET IsAdmin = NEW.Admin;
+END;
+
 {{end}}
 
 {{ if eq .DBType "postgres"}}
@@ -229,7 +237,23 @@ END $_$ LANGUAGE 'plpgsql';
 CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
     EXECUTE PROCEDURE AddUserdev20150328Func();
 
+
+
+
+CREATE FUNCTION ModifyUserdev20150328Func() RETURNS TRIGGER AS $_$
+BEGIN
+	UPDATE Devices WHERE UserId = NEW.UserId AND IsAdmin = TRUE SET IsAdmin = NEW.Admin;
+	UPDATE Devices WHERE UserId = NEW.UserId AND Name = 'user' SET IsAdmin = NEW.Admin;
+    RETURN NEW;
+END $_$ LANGUAGE 'plpgsql';
+
+
+CREATE TRIGGER ModifyUserdev20150328 AFTER UPDATE ON Users FOR EACH ROW
+    EXECUTE PROCEDURE ModifyUserdev20150328Func();
+
+
 {{end}}
+
 
 -- Construct Indexes
 

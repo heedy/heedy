@@ -23,7 +23,6 @@ import (
 
 var (
 	configuration = newConfiguration()
-	configpath string
 	doneInit bool
 
 	ErrNotSetup = errors.New("InitConfiguration has not been called yet!")
@@ -44,6 +43,7 @@ type Configuration struct {
 	PostgresHost string
 	SqliteDbPath string
 	DatabaseType string
+	StreamdbDirectory string
 
 }
 
@@ -53,13 +53,13 @@ func GetStreamdbDirectory() (string, error) {
 		return "", ErrNotSetup
 	}
 
-	return configpath, nil
+	return configuration.StreamdbDirectory, nil
 }
 
 // Returns the database connection string for the current database
 func GetDatabaseConnectionString() string {
 	if configuration.DatabaseType == "sqlite" {
-		return "sqlite://" + configpath  + "/" + configuration.SqliteDbPath
+		return "sqlite://" + configuration.StreamdbDirectory  + "/" + configuration.SqliteDbPath
 	}
 
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", configuration.PostgresHost, configuration.PostgresPort)
@@ -116,7 +116,7 @@ func InitConfiguration(path string) error {
 	}
 	doneInit = true
 
-	configpath = path // save for saving
+	configuration.StreamdbDirectory = path // save for saving
 
 	// TODO load config from here if possible
 	return nil
