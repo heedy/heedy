@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 	"streamdb/dbutil"
 	"streamdb/util"
+	"streamdb/config"
 )
 
 var sqliteDatabaseName = "streamdb.sqlite3"
 
 //InitializeSqlite creates an sqlite database and subsequently sets it up to work with streamdb
-func InitializeSqlite(streamdbDirectory string, err error) error {
+func InitializeSqlite() error {
+	streamdbDirectory, err := config.GetStreamdbDirectory()
 	if err != nil {
 		return err
 	}
@@ -21,17 +23,18 @@ func InitializeSqlite(streamdbDirectory string, err error) error {
 	// because sqlite doesn't always like being started on a file that
 	// doesn't exist
 	util.Touch(dbFile)
+
 	//Initialize the database tables
 	log.Printf("Setting up initial tables\n")
 	return dbutil.UpgradeDatabase(dbFile, true)
 }
 
 //StartSqlite does absolutely nothing, since sqlite is a single-process thing
-func StartSqlite(streamdbDirectory, iface string, port int, err error) error {
-	return err
+func StartSqlite() error {
+	return nil
 }
 
 //StopSqlite does absolutely nothing, since sqlite is a single-process thing
-func StopSqlite(streamdbDirectory string, err error) error {
-	return err
+func StopSqlite() error {
+	return nil
 }

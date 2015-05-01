@@ -5,6 +5,6 @@ import (
 )
 
 //Upgrade the database
-func Upgrade(streamdbDirectory string, err error) error {
+func Upgrade() error {
 	return errors.New("Upgrade is not defined for your database version")
 }

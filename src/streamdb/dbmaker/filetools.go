@@ -8,8 +8,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"streamdb/config"
+	//"streamdb/config"
 	"streamdb/util"
+	"github.com/kardianos/osext"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 
 
 
-
+/**
 // TODO removeme as this can be auto inferred from the connection string
 
 //GetDatabaseType gets the database type used from the folder structure - in particular, if sqlite is used, then there
@@ -48,7 +49,7 @@ func GetDatabaseType(streamdbDirectory string, err error) (string, error) {
 	return "", ErrUnrecognizedDatabase
 }
 
-
+**/
 //GenerateConfigReplacements generates the replacement variables to use within configuration files
 func GenerateConfigReplacements(streamdbDirectory, procname, iface string, port int) map[string]string {
 	m := make(map[string]string)
@@ -68,6 +69,13 @@ func GenerateConfigReplacements(streamdbDirectory, procname, iface string, port 
 	return m
 }
 
+
+//ConfigPath returns the path to the default StreamDB config templates
+func ConfigPath() (string, error) {
+	execpath, err := osext.ExecutableFolder()
+	return filepath.Join(execpath, "config"), err
+}
+
 //CopyConfig copies configuration file template from the default config directory of StreamDB to the database folder
 func CopyConfig(streamdbPath, configname string, err error) error {
 	if err != nil {
@@ -75,7 +83,7 @@ func CopyConfig(streamdbPath, configname string, err error) error {
 	}
 
 	templatepath := filepath.Join(streamdbPath, configname)
-	cpath, err := config.ConfigPath()
+	cpath, err := ConfigPath()
 	defaultTemplate := filepath.Join(cpath, configname)
 	if !util.PathExists(defaultTemplate) || err != nil {
 		return ErrFileNotFound

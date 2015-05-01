@@ -1,71 +1,23 @@
 package dbmaker
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"streamdb/dbutil"
 	"time"
 	"streamdb/util"
+	"streamdb/config"
+	"strconv"
 )
 
-var postgresDatabaseName = "postgres_database"
-
-
-//GetSqlPath gets the connection string to the database
-func GetSqlPath(streamdbDirectory, iface string, port int, err error) (string, error) {
-	dbtype, err := GetDatabaseType(streamdbDirectory, err)
-	if err != nil {
-		return "", err
-	}
-
-	switch dbtype {
-	case "postgres":
-		return fmt.Sprintf("postgres://%s:%d/connectordb?sslmode=disable", iface, port), nil
-	case "sqlite":
-		return filepath.Join(streamdbDirectory, sqliteDatabaseName), nil
-	default:
-		return "", ErrUnrecognizedDatabase
-	}
-}
-
-
-//StartSqlDatabase starts the correct sql database based upon the directory
-func StartSqlDatabase(streamdbDirectory, iface string, port int, err error) error {
-	err = util.EnsurePidNotRunning(streamdbDirectory, "sqldb", err)
-
-	dbtype, err := GetDatabaseType(streamdbDirectory, err)
-
-	switch dbtype {
-	case "postgres":
-		err = StartPostgres(streamdbDirectory, iface, port, err)
-	case "sqlite":
-		err = StartSqlite(streamdbDirectory, iface, port, err)
-	default:
-		return ErrUnrecognizedDatabase
-	}
-	return err
-}
-
-//StopSqlDatabase stops the correct sql database based upon the directory
-func StopSqlDatabase(streamdbDirectory string, err error) error {
-
-	dbtype, err := GetDatabaseType(streamdbDirectory, err)
-
-	switch dbtype {
-	case "postgres":
-		err = StopPostgres(streamdbDirectory, err)
-	case "sqlite":
-		err = StopSqlite(streamdbDirectory, err)
-	default:
-		return ErrUnrecognizedDatabase
-	}
-	return nil
-}
+var (
+	postgresDatabaseName = "postgres_database"
+)
 
 //InitializePostgres creates a postgres database and subsequently sets it up to work with streamdb
-func InitializePostgres(streamdbDirectory string, err error) error {
+func InitializePostgres() error {
+	streamdbDirectory, err := config.GetStreamdbDirectory()
 	if err != nil {
 		return err
 	}
@@ -86,29 +38,40 @@ func InitializePostgres(streamdbDirectory string, err error) error {
 	}
 
 	//Now we create the underlying database
-	err = StartPostgres(streamdbDirectory, "127.0.0.1", 55412, err)
-
-	err = RunCommand(err, dbutil.FindPostgresPsql(), "-h", "localhost", "-p", "55412", "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
-
-	spath, err := GetSqlPath(streamdbDirectory, "127.0.0.1", 55412, err)
-	if err == nil {
-		log.Printf("Setting up initial tables\n")
-		err = dbutil.UpgradeDatabase(spath, true)
+	if err := StartPostgres(); err != nil {
+		return err
 	}
+	defer StopPostgres()
 
-	StopPostgres(streamdbDirectory, nil)
+	postgresHost := config.GetConfiguration().PostgresHost
+	postgresPort := config.GetConfiguration().PostgresPort
 
-	return err
-}
+	port := strconv.Itoa(postgresPort)
 
-//StartPostgres starts the postgres server for the database
-func StartPostgres(streamdbDirectory, iface string, port int, err error) error {
+
+	err = RunCommand(err, dbutil.FindPostgresPsql(), "-h", postgresHost, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
 	if err != nil {
 		return err
 	}
-	log.Printf("Starting postgres server on port %d\n", port)
+
+	log.Printf("Setting up initial tables\n")
+	spath := config.GetDatabaseConnectionString()
+	return dbutil.UpgradeDatabase(spath, true)
+}
+
+//StartPostgres starts the postgres server for the database
+func StartPostgres() error {
+	streamdbDirectory, err := config.GetStreamdbDirectory()
+	if err != nil {
+		return err
+	}
+
+	postgresHost := config.GetConfiguration().PostgresHost
+	postgresPort := config.GetConfiguration().PostgresPort
+
+	log.Printf("Starting postgres server on port %d\n", postgresPort)
 	configfile, err := SetConfig(streamdbDirectory, "postgres.conf",
-		GenerateConfigReplacements(streamdbDirectory, "postgres", iface, port), err)
+		GenerateConfigReplacements(streamdbDirectory, "postgres", postgresHost, postgresPort), err)
 
 	postgresDir := filepath.Join(streamdbDirectory, postgresDatabaseName)
 
@@ -117,7 +80,7 @@ func StartPostgres(streamdbDirectory, iface string, port int, err error) error {
 
 	err = RunDaemon(err, dbutil.FindPostgres(), "-D", postgresDir)
 
-	err = WaitPort(iface, port, err)
+	err = WaitPort(postgresHost, postgresPort, err)
 	if err == nil {
 		//Sleep one second, since postgres is weird like that
 		time.Sleep(1 * time.Second)
@@ -126,10 +89,12 @@ func StartPostgres(streamdbDirectory, iface string, port int, err error) error {
 }
 
 //StopPostgres kills the postgres server associated with the database
-func StopPostgres(streamdbDirectory string, err error) error {
+func StopPostgres() error {
+	streamdbDirectory, err := config.GetStreamdbDirectory()
 	if err != nil {
 		return err
 	}
+
 	log.Printf("Stopping postgres server\n")
 	err = StopProcess(streamdbDirectory, "postgres", err)
 

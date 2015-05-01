@@ -4,12 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 	"streamdb"
 	"streamdb/dbmaker"
 	"strings"
 	"log"
+	"streamdb/config"
+	"streamdb/util"
 )
 
 var (
@@ -50,11 +53,8 @@ func PrintUsage() {
 
 // The main entrypoint into connectordb
 func main() {
-	if len(os.Args) < 3 {
-		PrintUsage()
-		return
-	}
 
+	// global system stuff
 	flag.Parse()
     if *cpuprofile != "" {
         f, err := os.Create(*cpuprofile)
@@ -66,21 +66,36 @@ func main() {
         defer pprof.StopCPUProfile()
     }
 
+	// Make sure we don't go OOB
+	if len(flag.Args()) < 2 {
+		PrintUsage()
+		return
+	}
+
+	// Choose our command
 	var err error
 	commandName := flag.Args()[0]
+	dbPath      := flag.Args()[1]
+
+	// Make sure this is abs.
+	dbPath, _    = filepath.Abs(dbPath)
+
+	// init and save later
+	config.InitConfiguration(dbPath)
+	defer config.SaveConfiguration()
 
 	switch commandName {
 		case "create":
 			err = createDatabase()
 
 		case "start":
-			err = startDatabase()
+			err = startDatabase(dbPath)
 
 		case "stop":
 			err = stopDatabase()
 
 		case "upgrade":
-			err = upgradeDatabase()
+			err = upgradeDatabase(dbPath)
 
 		default:
 			PrintUsage()
@@ -116,10 +131,13 @@ func createDatabase() error {
 	username := usernamePasswordArray[0]
 	password := usernamePasswordArray[1]
 
-	err := dbmaker.Create(createFlags.Arg(0), *createDbType, nil)
-	err = dbmaker.MakeUser(createFlags.Arg(0), username, password, *createEmail, err)
+	config.GetConfiguration().DatabaseType = *createDbType
 
-	if err != nil {
+	if err := dbmaker.Create(); err != nil {
+		return err
+	}
+
+	if err := dbmaker.MakeUser(username, password, *createEmail); err != nil {
 		return err
 	}
 
@@ -127,21 +145,33 @@ func createDatabase() error {
 	return nil
 }
 
-func startDatabase() error {
+func startDatabase(dbPath string) error {
 	processFlags(startFlags)
 
-	//TODO: Load ports and interface from a config file
-	return dbmaker.Start(startFlags.Arg(0), "127.0.0.1", 6379, 4222, 52592, nil)
+	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+	if err != nil {
+		return err
+	}
+
+	return dbmaker.Start()
 }
 
 func stopDatabase() error {
 	processFlags(stopFlags)
 
-	return dbmaker.Stop(stopFlags.Arg(0), nil)
+	return dbmaker.Stop()
 }
 
-func upgradeDatabase() error {
+func upgradeDatabase(dbPath string) error {
 	processFlags(upgradeFlags)
 
- 	return dbmaker.Upgrade(upgradeFlags.Arg(0), nil)
+	// get cannonicalized path and make sure we're not already running
+	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+	if err != nil {
+		return err
+	}
+
+	// Start the server
+
+ 	return dbmaker.Upgrade()
 }

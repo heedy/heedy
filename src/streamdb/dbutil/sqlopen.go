@@ -47,8 +47,9 @@ func SqliteURIToPath(sqluri string) string {
 	return sqluri
 }
 
+
 // From a connection string, gets the cleaned connection path and database type
-func processConnectionString(connectionString string) (connector string, dbt DRIVERSTR) {
+func ProcessConnectionString(connectionString string) (connector string, dbt DRIVERSTR) {
 
     dbt 	  = POSTGRES //The default is postgres.
 	connector = connectionString
@@ -75,7 +76,7 @@ func processConnectionString(connectionString string) (connector string, dbt DRI
 func OpenSqlDatabase(connectionString string) (*sql.DB, DRIVERSTR, error) {
 	var err error
 
-	sqluri, sqltype := processConnectionString(connectionString)
+	sqluri, sqltype := ProcessConnectionString(connectionString)
 	log.Printf("Opening %v database with cxn string: %v", sqltype, sqluri)
 
 	sqldb, err := sql.Open(sqltype.String(), sqluri)

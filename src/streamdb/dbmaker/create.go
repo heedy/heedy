@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 	"os"
-	"path/filepath"
 	"streamdb/util"
+	"streamdb/config"
 )
 
 var (
@@ -20,33 +20,40 @@ This package contains the necessary tools to create and initialize a full stream
 */
 
 //Create initializes a full StreamDB database
-func Create(streamdbDirectory, sqlDatabaseType string, err error) error {
+func Create() error {
 
-	//Make sure we are using an absolute path
-	streamdbDirectory, err = filepath.Abs(streamdbDirectory)
+	sqlDatabaseType := config.GetConfiguration().DatabaseType
+	streamdbDirectory, err := config.GetStreamdbDirectory()
 	if err != nil {
 		return err
 	}
-	log.Printf("Creating new StreamDB database at '%s'\n", streamdbDirectory)
 
 	if util.PathExists(streamdbDirectory) {
 		return ErrDirectoryExists
 	}
 
+	log.Printf("Creating new StreamDB database at '%s'\n", streamdbDirectory)
+
 	err = os.MkdirAll(streamdbDirectory, FolderPermissions)
 
 	switch sqlDatabaseType {
-	case "postgres":
-		err = InitializePostgres(streamdbDirectory, err)
-	case "sqlite":
-		err = InitializeSqlite(streamdbDirectory, err)
-	default:
-		os.RemoveAll(streamdbDirectory)
-		return ErrUnrecognizedDatabase
+		case "postgres":
+			if err := InitializePostgres(); err != nil {
+				return err
+			}
+		case "sqlite":
+			if err := InitializeSqlite(); err != nil {
+				return err
+			}
+		default:
+			os.RemoveAll(streamdbDirectory)
+			return ErrUnrecognizedDatabase
 	}
 
-	err = InitializeGnatsd(streamdbDirectory, err)
-	err = InitializeRedis(streamdbDirectory, err)
+	if err := InitializeGnatsd(); err != nil{
+		return err
+	}
+	err = InitializeRedis()
 
 	return err
 }

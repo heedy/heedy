@@ -5,30 +5,34 @@ import (
 	"os"
 	"path/filepath"
 	"streamdb/util"
+	"streamdb/config"
 )
 
 //Stop shuts down all services running in the given directory
-func Stop(streamdbDirectory string, err error) error {
-	if err == nil {
-		if util.IsDirectory(streamdbDirectory) {
-			streamdbDirectory, err = filepath.Abs(streamdbDirectory)
-		} else {
-			return util.ErrNotDatabase
-		}
+func Stop() error {
 
+	streamdbDirectory, err := config.GetStreamdbDirectory()
+	if err != nil {
+		return err
+	}
+
+	if util.IsDirectory(streamdbDirectory) {
+		streamdbDirectory, err = filepath.Abs(streamdbDirectory)
+	} else {
+		return util.ErrNotDatabase
 	}
 
 	log.Printf("Stopping database in '%s'\n", streamdbDirectory)
 
-	err = StopGnatsd(streamdbDirectory, nil)
+	err = StopGnatsd()
 	if err != nil {
 		log.Printf("Error Stopping Gnatsd: %v", err)
 	}
-	err = StopRedis(streamdbDirectory, nil)
+	err = StopRedis()
 	if err != nil {
 		log.Printf("Error Stopping Redis: %v", err)
 	}
-	err = StopPostgres(streamdbDirectory, nil)
+	err = StopPostgres()
 	if err != nil {
 		log.Printf("Error Stopping Postgres: %v", err)
 	}

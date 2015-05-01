@@ -53,13 +53,13 @@ func TestSqliteURIToPath(t *testing.T){
 // From a connection string, gets the cleaned connection path and database type
 func TestProcessConnectionString(t *testing.T){
 
-    _, driver := processConnectionString("test.sqlite3")
+    _, driver := ProcessConnectionString("test.sqlite3")
 
     if driver != SQLITE3 {
         t.Errorf("URI should be sqlite")
     }
 
-    _, driver = processConnectionString("postgres://foobar.com")
+    _, driver = ProcessConnectionString("postgres://foobar.com")
     if driver != POSTGRES {
         t.Errorf("URI should be postgres")
     }
