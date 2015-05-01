@@ -36,7 +36,7 @@ var (
 //PrintUsage gives a nice message of the functionality available from the executable
 func PrintUsage() {
 	fmt.Printf("ConnectorDB Version %v\nCompiled for %v using %v\n\n", streamdb.Version, runtime.GOARCH, runtime.Version())
-	fmt.Printf("Usage:\nconnectordb [command] [--flags] [path to database folder]\n")
+	fmt.Printf("Usage:\nconnectordb [command] [path to database folder] [--flags] \n")
 
 	fmt.Printf("\ncreate: Initialize a new database at the given folder\n")
 	createFlags.PrintDefaults()
@@ -79,7 +79,7 @@ func main() {
 
 	// Make sure this is abs.
 	dbPath, _    = filepath.Abs(dbPath)
-
+	log.Println(dbPath)
 	// init and save later
 	config.InitConfiguration(dbPath)
 	defer config.SaveConfiguration()
@@ -109,12 +109,7 @@ func main() {
 
 // processes the flags and makes sure they're valid, exiting if needed.
 func processFlags(fs *flag.FlagSet) {
-	fs.Parse(flag.Args()[1:])
-
-	if fs.NArg() != 1 {
-		PrintUsage()
-		os.Exit(1)
-	}
+	fs.Parse(flag.Args()[2:])
 }
 
 // Does the creations step
