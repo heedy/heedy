@@ -132,9 +132,10 @@ func createDatabase() error {
 		return err
 	}
 
-	if err := dbmaker.MakeUser(username, password, *createEmail); err != nil {
+	if err := dbmaker.MakeUser(username, password, *createEmail, true); err != nil {
 		return err
 	}
+
 
 	fmt.Printf("\nDatabase created successfully.\n")
 	return nil
