@@ -2,20 +2,17 @@ package dbutil
 
 import (
 	"database/sql"
-    "log"
+	"log"
 	"strings"
 	//The blank imports are used to automatically register the database handlers
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-
-    )
-
-type DRIVERSTR string
+)
 
 const (
 	// The driver strings for the given database types as needed by the sql package
-	SQLITE3  DRIVERSTR = "sqlite3"
-	POSTGRES DRIVERSTR = "postgres"
+	SQLITE3  string = "sqlite3"
+	POSTGRES string = "postgres"
 )
 
 const (
@@ -23,11 +20,6 @@ const (
 	sqlitePrefix   = "sqlite://"
 	postgresPrefix = "postgres://"
 )
-
-// Converts a driverstr into a string
-func (d DRIVERSTR) String() string {
-    return string(d)
-}
 
 // Checks if a URI is sqlite
 func UriIsSqlite(sqluri string) bool {
@@ -47,11 +39,10 @@ func SqliteURIToPath(sqluri string) string {
 	return sqluri
 }
 
-
 // From a connection string, gets the cleaned connection path and database type
-func ProcessConnectionString(connectionString string) (connector string, dbt DRIVERSTR) {
+func ProcessConnectionString(connectionString string) (connector string, dbt string) {
 
-    dbt 	  = POSTGRES //The default is postgres.
+	dbt = POSTGRES //The default is postgres.
 	connector = connectionString
 
 	//First, we check if the user wants to use sqlite or postgres. If the url given
@@ -71,25 +62,24 @@ func ProcessConnectionString(connectionString string) (connector string, dbt DRI
 	return connector, dbt
 }
 
-
 // Gets the conversion script for the given database.
-func OpenSqlDatabase(connectionString string) (*sql.DB, DRIVERSTR, error) {
+func OpenSqlDatabase(connectionString string) (*sql.DB, string, error) {
 	var err error
 
 	sqluri, sqltype := ProcessConnectionString(connectionString)
 	log.Printf("Opening %v database with cxn string: %v", sqltype, sqluri)
 
-	sqldb, err := sql.Open(sqltype.String(), sqluri)
+	sqldb, err := sql.Open(sqltype, sqluri)
 
 	return sqldb, sqltype, err
 }
 
 // Gets the streamdb database version
-func GetDatabaseVersion(db *sql.DB, dbtype DRIVERSTR) string{
+func GetDatabaseVersion(db *sql.DB, dbtype string) string {
 	version := "00000000"
 
 	var mixin SqlxMixin
-	mixin.InitSqlxMixin(db, dbtype.String())
+	mixin.InitSqlxMixin(db, dbtype)
 
 	err := mixin.Get(&version, "SELECT Value FROM StreamdbMeta WHERE Key = 'DBVersion'")
 

@@ -15,19 +15,16 @@ const Version = "0.2.0a"
 var (
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 250
-	db        *Database
 )
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
-	users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
+	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
-	tdb     *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg     *messenger.Messenger  //messenger is a connection to the messaging client
-	sqldb   *sql.DB               //Connection to the sql database
-	SqlType dbutil.DRIVERSTR
+	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
+	msg *messenger.Messenger  //messenger is a connection to the messaging client
 
-	dbutil.SqlxMixin
+	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
 
 /**
@@ -53,28 +50,23 @@ Finally, if running in postgres, then at least one process must be running the f
 writes the database's internal data.
 **/
 func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
-
-	/**
-	  TODO migrate all sql userdb stuff into this file.
-	  **/
-
 	var db Database
+	var sqltype string
 
-	db.sqldb, db.SqlType, err = dbutil.OpenSqlDatabase(sqluri)
-
+	//Dbutil prints the sqluri t log, so no need to do it here
+	db.sqldb, sqltype, err = dbutil.OpenSqlDatabase(sqluri)
 	if err != nil {
-		db.Close()
 		return nil, err
 	}
 
-	db.InitSqlxMixin(db.sqldb, string(db.SqlType))
-	db.InitUserDatabase(db.sqldb, string(db.SqlType))
+	log.Printf("Opening User database")
+	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
 
 	log.Printf("Opening messenger with uri %s\n", msguri)
 	db.msg, err = messenger.Connect(msguri, err)
 
 	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
-	db.tdb, err = timebatchdb.Open(db.sqldb, string(db.SqlType), redisuri, BatchSize, err)
+	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
 
 	if err != nil {
 		db.Close()
@@ -82,12 +74,28 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if db.SqlType == dbutil.SQLITE3 {
+	if sqltype == "sqlite3" {
 		go db.tdb.WriteDatabase()
 	}
 
 	return &db, nil
 
+}
+
+//DeviceOperator returns the operator associated with the given API key
+func (db *Database) DeviceOperator(apikey string) (Operator, error) {
+	dev, err := db.Userdb.ReadDeviceByApiKey(apikey)
+	if err != nil {
+		return nil, err
+	}
+	usr, err := db.Userdb.ReadUserById(dev.UserId)
+	return &AuthOperator{db, dev, usr}, err
+}
+
+//UserOperator returns the operator associated with the given username/password combination
+func (db *Database) UserOperator(username, password string) (Operator, error) {
+	usr, dev, err := db.Userdb.Login(username, password)
+	return &AuthOperator{db, dev, usr}, err
 }
 
 //Close closes all database connections and releases all resources.
@@ -97,12 +105,12 @@ func (db *Database) Close() {
 		db.tdb.Close()
 	}
 
-	if db.sqldb != nil {
-		db.sqldb.Close()
-	}
-
 	if db.msg != nil {
 		db.msg.Close()
+	}
+
+	if db.sqldb != nil {
+		db.sqldb.Close()
 	}
 }
 
@@ -126,7 +134,5 @@ If you are just connecting to an already-running StreamDB and RunWriter is alrea
 this database, then NO.
 **/
 func (db *Database) RunWriter() {
-	if db.SqlType != "sqlite3" {
-		db.tdb.WriteDatabase()
-	}
+	db.tdb.WriteDatabase()
 }
