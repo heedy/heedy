@@ -18,12 +18,11 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
 
 	// Check for existance of user to provide helpful notices
 	switch {
-		case existing.Email == Email:
-			return ERR_EMAIL_EXISTS
-		case existing.Name == Name:
-			return ERR_USERNAME_EXISTS
+	case existing.Email == Email:
+		return ERR_EMAIL_EXISTS
+	case existing.Name == Name:
+		return ERR_USERNAME_EXISTS
 	}
-
 
 	dbpass, salt, hashtype := UpgradePassword(Password)
 
@@ -57,7 +56,7 @@ func (userdb *UserDatabase) Login(Username, Password string) (*User, *Device, er
 		return nil, nil, InvalidUsernameError
 	}
 
-	if ! user.ValidatePassword(Password) {
+	if !user.ValidatePassword(Password) {
 		return user, nil, InvalidPasswordError
 	}
 
@@ -162,5 +161,11 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 // DeleteUser removes a user from the database
 func (userdb *UserDatabase) DeleteUser(UserId int64) error {
 	_, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
+	return err
+}
+
+// DeleteUserByName removes a user from the database by name
+func (userdb *UserDatabase) DeleteUserByName(Username string) error {
+	_, err := userdb.Exec(`DELETE FROM Users WHERE Name = ?;`, Username)
 	return err
 }
