@@ -33,9 +33,15 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		var err error
 
 		if len(authUser) != 0 {
-			writer.WriteHeader(http.StatusNotImplemented)
-			writer.Write([]byte(ErrUnderConstruction.Error()))
-			return
+			//Authenticate by username/password
+			o, err = db.AuthenticateUser(authUser, authPass)
+
+			if err != nil {
+				writer.Header().Set("WWW-Authenticate", "Basic")
+				writer.WriteHeader(http.StatusUnauthorized)
+				writer.Write([]byte(err.Error()))
+				return
+			}
 		} else {
 			//Authenticate by API key
 			o, err = db.GetOperator(authPass)

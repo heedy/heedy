@@ -28,20 +28,22 @@ func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 
 //ListUsers lists the users that the given operator can see
 func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	writer.WriteHeader(http.StatusNotImplemented)
-	return ErrUnderConstruction
+	u, err := o.ReadAllUsers()
+	return JSONWriter(writer, u, err)
 }
 
 //CreateUser creates a new user from a REST API request
 func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	writer.WriteHeader(http.StatusNotImplemented)
+
 	return ErrUnderConstruction
 }
 
 //ReadUser reads the given user
 func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	writer.WriteHeader(http.StatusNotImplemented)
-	return ErrUnderConstruction
+	usrname := mux.Vars(request)["user"]
+	u, err := o.ReadUser(usrname)
+	return JSONWriter(writer, u, err)
 }
 
 //UpdateUser updates the metadata for existing user from a REST API request

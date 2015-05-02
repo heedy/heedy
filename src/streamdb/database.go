@@ -23,7 +23,7 @@ type Database struct {
 	users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
 	tdb     *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg     *messenger.Messenger  //messenger is a connectino to the messaging client
+	msg     *messenger.Messenger  //messenger is a connection to the messaging client
 	sqldb   *sql.DB               //Connection to the sql database
 	SqlType dbutil.DRIVERSTR
 

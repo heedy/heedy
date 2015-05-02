@@ -1,14 +1,14 @@
 package streamdb
 
 import (
-	"streamdb/users"
 	"errors"
+	"streamdb/users"
 	"strings"
 )
 
 var (
-	PermissionError = errors.New("Insufficient Privileges")
-	InvalidPathError = errors.New("The given path is invalid")
+	PermissionError       = errors.New("Insufficient Privileges")
+	InvalidPathError      = errors.New("The given path is invalid")
 	InvalidParameterError = errors.New("Invalid Parameter")
 )
 
@@ -32,24 +32,31 @@ func (db *Database) GetOperatorForDevice(device *users.Device) (Operator, error)
 	return DeviceOperator{db, device, ao}, err
 }
 
+//AuthenticateUser returns the user's operator given a username/password combo
+func (db *Database) AuthenticateUser(username, password string) (Operator, error) {
+	_, d, err := db.Login(username, password)
+	if err != nil {
+		return nil, err
+	}
+	return db.GetOperatorForDevice(d)
+}
 
 // The operatror is a database proxy for a particular device, note that these
 // should not be operated indefinitely as the users.Device may change over
 // time.
 type DeviceOperator struct {
-	db *Database // the database this operator works on
-	dev *users.Device // the device behind this operator
+	db      *Database     // the database this operator works on
+	dev     *users.Device // the device behind this operator
 	adminOp Operator
 }
 
-
-func (o DeviceOperator) GetDatabase() (*Database) {
+func (o DeviceOperator) GetDatabase() *Database {
 	return o.db
 }
 
 // Creates a user with a username, password, and email string
 func (o DeviceOperator) CreateUser(username, email, password string) error {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -57,7 +64,7 @@ func (o DeviceOperator) CreateUser(username, email, password string) error {
 }
 
 func (o DeviceOperator) ReadUser(username string) (*users.User, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return nil, PermissionError
 	}
 
@@ -65,17 +72,16 @@ func (o DeviceOperator) ReadUser(username string) (*users.User, error) {
 }
 
 func (o DeviceOperator) ReadUserById(id int64) (*users.User, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return nil, PermissionError
 	}
 
 	return o.GetDatabase().ReadUserById(id)
 }
 
-
 // Returns a User instance if a user exists with the given email address
 func (o DeviceOperator) ReadUserByEmail(email string) (*users.User, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return nil, PermissionError
 	}
 
@@ -83,8 +89,8 @@ func (o DeviceOperator) ReadUserByEmail(email string) (*users.User, error) {
 }
 
 // Fetches all users from the database
-func (o DeviceOperator) ReadAllUsers() ([]users.User, error){
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+func (o DeviceOperator) ReadAllUsers() ([]users.User, error) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return nil, PermissionError
 	}
 
@@ -98,7 +104,7 @@ func (o DeviceOperator) UpdateUser(user, originalUser *users.User) error {
 	}
 
 	permission := o.dev.RelationToUser(user)
-	if ! permission.Gte(users.ROOT) {
+	if !permission.Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -109,7 +115,7 @@ func (o DeviceOperator) UpdateUser(user, originalUser *users.User) error {
 
 // Attempts to delete a user as the given device.
 func (o DeviceOperator) DeleteUser(id int64) error {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -118,7 +124,7 @@ func (o DeviceOperator) DeleteUser(id int64) error {
 
 // Attempts to create a phone carrier as the given device
 func (o DeviceOperator) CreatePhoneCarrier(name, emailDomain string) error {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -127,7 +133,7 @@ func (o DeviceOperator) CreatePhoneCarrier(name, emailDomain string) error {
 
 // ReadPhoneCarrierByIdAs attempts to select a phone carrier from the database given its ID
 func (o DeviceOperator) ReadPhoneCarrierById(Id int64) (*users.PhoneCarrier, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ENABLED) {
+	if !o.dev.GeneralPermissions().Gte(users.ENABLED) {
 		return nil, PermissionError
 	}
 
@@ -137,13 +143,12 @@ func (o DeviceOperator) ReadPhoneCarrierById(Id int64) (*users.PhoneCarrier, err
 
 // Attempts to read phone carriers as the given device
 func (o DeviceOperator) ReadAllPhoneCarriers() ([]users.PhoneCarrier, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ENABLED) {
+	if !o.dev.GeneralPermissions().Gte(users.ENABLED) {
 		return nil, PermissionError
 	}
 
 	return o.GetDatabase().ReadAllPhoneCarriers()
 }
-
 
 // Attempts to update the phone carrier as the given device
 func (o DeviceOperator) UpdatePhoneCarrier(carrier *users.PhoneCarrier) error {
@@ -151,7 +156,7 @@ func (o DeviceOperator) UpdatePhoneCarrier(carrier *users.PhoneCarrier) error {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -160,7 +165,7 @@ func (o DeviceOperator) UpdatePhoneCarrier(carrier *users.PhoneCarrier) error {
 
 // Attempts to delete the phone carrier as the given device
 func (o DeviceOperator) DeletePhoneCarrier(carrierId int64) error {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return PermissionError
 	}
 
@@ -168,11 +173,11 @@ func (o DeviceOperator) DeletePhoneCarrier(carrierId int64) error {
 }
 
 func (o DeviceOperator) CreateDevice(Name string, Owner *users.User) error {
-	if Owner == nil || Name == ""{
+	if Owner == nil || Name == "" {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.RelationToUser(Owner).Gte(users.USER) {
+	if !o.dev.RelationToUser(Owner).Gte(users.USER) {
 		return PermissionError
 	}
 
@@ -180,7 +185,7 @@ func (o DeviceOperator) CreateDevice(Name string, Owner *users.User) error {
 }
 
 func (o DeviceOperator) ReadDevicesForUser(u *users.User) ([]users.Device, error) {
-	if ! o.dev.RelationToUser(u).Gte(users.FAMILY) {
+	if !o.dev.RelationToUser(u).Gte(users.FAMILY) {
 		return nil, PermissionError
 	}
 
@@ -188,13 +193,12 @@ func (o DeviceOperator) ReadDevicesForUser(u *users.User) ([]users.Device, error
 }
 
 func (o DeviceOperator) ReadDeviceByApiKey(Key string) (*users.Device, error) {
-	if ! o.dev.GeneralPermissions().Gte(users.ROOT) {
+	if !o.dev.GeneralPermissions().Gte(users.ROOT) {
 		return nil, PermissionError
 	}
 
 	return o.db.ReadDeviceByApiKey(Key)
 }
-
 
 func (o DeviceOperator) ReadDeviceById(id int64) (*users.Device, error) {
 	newdev, err := o.db.ReadDeviceById(id)
@@ -202,7 +206,7 @@ func (o DeviceOperator) ReadDeviceById(id int64) (*users.Device, error) {
 		return nil, err
 	}
 
-	if ! o.dev.RelationToDevice(newdev).Gte(users.FAMILY) {
+	if !o.dev.RelationToDevice(newdev).Gte(users.FAMILY) {
 		return nil, PermissionError
 	}
 
@@ -215,7 +219,7 @@ func (o DeviceOperator) UpdateDevice(update *users.Device, original *users.Devic
 	}
 
 	permission := o.dev.RelationToDevice(update)
-	if ! permission.Gte(users.DEVICE) {
+	if !permission.Gte(users.DEVICE) {
 		return PermissionError
 	}
 
@@ -230,19 +234,19 @@ func (o DeviceOperator) DeleteDevice(device *users.Device) error {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.RelationToDevice(device).Gte(users.USER) {
+	if !o.dev.RelationToDevice(device).Gte(users.USER) {
 		return PermissionError
 	}
 
 	return o.db.DeleteDevice(device.DeviceId)
 }
 
-func (o DeviceOperator) CreateStream(Name, Type string, owner *users.Device) (error) {
+func (o DeviceOperator) CreateStream(Name, Type string, owner *users.Device) error {
 	if owner == nil {
 		return InvalidParameterError
 	}
 
-	if ! o.dev.RelationToDevice(owner).Gte(users.USER) {
+	if !o.dev.RelationToDevice(owner).Gte(users.USER) {
 		return PermissionError
 	}
 
@@ -250,13 +254,12 @@ func (o DeviceOperator) CreateStream(Name, Type string, owner *users.Device) (er
 }
 
 func (o DeviceOperator) ReadStreamsByDevice(operand *users.Device) ([]users.Stream, error) {
-	if ! o.dev.RelationToDevice(operand).Gte(users.FAMILY) {
+	if !o.dev.RelationToDevice(operand).Gte(users.FAMILY) {
 		return nil, PermissionError
 	}
 
 	return o.db.ReadStreamsByDevice(operand.DeviceId)
 }
-
 
 // Reads a stream by id; returns it, it's parent and an error if set
 func (o DeviceOperator) ReadStreamById(id int64) (*users.Stream, *users.Device, error) {
@@ -271,7 +274,7 @@ func (o DeviceOperator) ReadStreamById(id int64) (*users.Stream, *users.Device, 
 		return nil, nil, err
 	}
 
-	if ! o.dev.RelationToStream(stream, device).Gte(users.FAMILY) {
+	if !o.dev.RelationToStream(stream, device).Gte(users.FAMILY) {
 		return nil, nil, PermissionError
 	}
 
@@ -284,7 +287,7 @@ func (o DeviceOperator) UpdateStream(d *users.Device, stream, originalStream *us
 	}
 
 	permission := o.dev.RelationToStream(stream, d)
-	if ! permission.Gte(users.USER) {
+	if !permission.Gte(users.USER) {
 		return PermissionError
 	}
 
@@ -294,7 +297,7 @@ func (o DeviceOperator) UpdateStream(d *users.Device, stream, originalStream *us
 }
 
 func (o DeviceOperator) DeleteStream(toDeleteOwner *users.Device, toDeleteStream *users.Stream) error {
-	if ! o.dev.RelationToStream(toDeleteStream, toDeleteOwner).Gte(users.USER) {
+	if !o.dev.RelationToStream(toDeleteStream, toDeleteOwner).Gte(users.USER) {
 		return PermissionError
 	}
 
@@ -321,7 +324,7 @@ to the operator's device.
 **/
 func (o DeviceOperator) ResolvePath(path string) (*Path, error) {
 	var err error
-	var user   *users.User
+	var user *users.User
 	var device *users.Device
 	var stream *users.Stream
 
