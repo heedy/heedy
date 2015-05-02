@@ -34,7 +34,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 
 		if len(authUser) != 0 {
 			//Authenticate by username/password
-			o, err = db.AuthenticateUser(authUser, authPass)
+			o, err = db.UserOperator(authUser, authPass)
 
 			if err != nil {
 				writer.Header().Set("WWW-Authenticate", "Basic")
@@ -44,7 +44,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		} else {
 			//Authenticate by API key
-			o, err = db.GetOperator(authPass)
+			o, err = db.DeviceOperator(authPass)
 
 			if err != nil {
 				writer.Header().Set("WWW-Authenticate", "Basic")
