@@ -6,6 +6,8 @@ import (
 	"os"
 	"streamdb/util"
 	"streamdb/config"
+	"streamdb/dbutil"
+	"streamdb/users"
 )
 
 var (
@@ -15,18 +17,10 @@ var (
 	ErrUnrecognizedDatabase = errors.New("Unrecognized sql database type")
 )
 
-/*
-This package contains the necessary tools to create and initialize a full streamdb database
-*/
 
-//Create initializes a full StreamDB database
-func Create() error {
-
-	sqlDatabaseType := config.GetConfiguration().DatabaseType
-	streamdbDirectory, err := config.GetStreamdbDirectory()
-	if err != nil {
-		return err
-	}
+//Create a streamdb instance
+func Create(config *config.Configuration, username, password, email string) error {
+	streamdbDirectory := config.StreamdbDirectory
 
 	if util.PathExists(streamdbDirectory) {
 		return ErrDirectoryExists
@@ -34,26 +28,65 @@ func Create() error {
 
 	log.Printf("Creating new StreamDB database at '%s'\n", streamdbDirectory)
 
-	err = os.MkdirAll(streamdbDirectory, FolderPermissions)
+	if err := os.MkdirAll(streamdbDirectory, FolderPermissions); err != nil {
+		return err
+	}
+
+	if err := createSqlDatabase(config, username, password, email); err != nil {
+		return err
+	}
+
+	if err := gnatsdInstance.Setup(); err != nil {
+		return err
+	}
+
+	if err := redisInstance.Setup(); err != nil{
+		return err
+	}
+
+	return nil
+}
+
+
+func createSqlDatabase(config *config.Configuration, username, password, email string) error {
+	sqlDatabaseType := config.DatabaseType
+	log.Printf("Creating sql database of type %s \n", sqlDatabaseType)
 
 	switch sqlDatabaseType {
 		case "postgres":
-			if err := InitializePostgres(); err != nil {
+			if err := postgresInstance.Setup(); err != nil {
 				return err
 			}
 		case "sqlite":
-			if err := InitializeSqlite(); err != nil {
+			if err := sqliteInstance.Setup(); err != nil {
 				return err
 			}
 		default:
-			os.RemoveAll(streamdbDirectory)
 			return ErrUnrecognizedDatabase
 	}
 
-	if err := InitializeGnatsd(); err != nil{
+	log.Printf("Creating user %s (%s)\n", username, email)
+
+	// Make the connection
+	spath := config.GetDatabaseConnectionString()
+	db, driver, err := dbutil.OpenSqlDatabase(spath)
+	if err != nil {
 		return err
 	}
-	err = InitializeRedis()
+	defer db.Close()
 
-	return err
+	var udb users.UserDatabase
+	udb.InitUserDatabase(db, string(driver))
+	err = udb.CreateUser(username, email, password)
+	if err != nil {
+		return err
+	}
+
+	usr, err := udb.ReadUserByName(username)
+	if err != nil {
+		return err
+	}
+
+	usr.Admin = true
+	return udb.UpdateUser(usr)
 }

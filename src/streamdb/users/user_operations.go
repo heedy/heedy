@@ -112,6 +112,13 @@ func (userdb *UserDatabase) ReadUserById(UserId int64) (*User, error) {
 	return &user, err
 }
 
+/**
+func (userdb *UserDatabase) ReadUsersForDevice(devId uint64) ([]User, error){
+	var users []User
+	err := userdb.Select(&users, "SELECT u* FROM Users u, Devices d WHERE d.DeviceId = ? AND u.UserId = d.UserId OR ? = TRUE")
+}
+**/
+
 func (userdb *UserDatabase) ReadAllUsers() ([]User, error) {
 	var users []User
 

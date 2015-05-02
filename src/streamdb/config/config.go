@@ -58,6 +58,12 @@ func GetStreamdbDirectory() (string, error) {
 
 // Returns the database connection string for the current database
 func GetDatabaseConnectionString() string {
+	return configuration.GetDatabaseConnectionString()
+}
+
+
+// Returns the database connection string for the current database
+func (config *Configuration) GetDatabaseConnectionString() string {
 	if configuration.DatabaseType == "sqlite" {
 		return "sqlite://" + configuration.StreamdbDirectory  + "/" + configuration.SqliteDbPath
 	}
@@ -92,16 +98,16 @@ func IsDatabaseLocal() bool {
 func newConfiguration() *Configuration {
 	var cfg Configuration
 	cfg.Nodetype = "master"
-	cfg.RedisHost = "localhost"
+	cfg.RedisHost = "127.0.0.1"
 	cfg.RedisPort = 6379
-	cfg.GnatsdHost = "localhost"
+	cfg.GnatsdHost = "127.0.0.1"
 	cfg.GnatsdPort = 4222
 	cfg.WebPort = 8000
 	cfg.RunApi = true
 	cfg.RunWeb = true
 	cfg.RunDaisy = false
 	cfg.SqliteDbPath = ""
-	cfg.PostgresHost = "localhost"
+	cfg.PostgresHost = "127.0.0.1"
 	cfg.PostgresPort = 52592
 	cfg.DatabaseType = "postgres"
 

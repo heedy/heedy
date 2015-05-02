@@ -1,4 +1,5 @@
 package dbmaker
+/**
 
 import (
 	"streamdb/dbutil"
@@ -6,7 +7,6 @@ import (
 	"streamdb/config"
 	"errors"
 )
-
 var (
 	ErrNotLocalDb = errors.New("the specified database is not on this host")
 )
@@ -56,3 +56,4 @@ func StopSqlDatabase() error {
 	}
 	return nil
 }
+**/

@@ -72,6 +72,11 @@ func FindPostgresPsql() string {
     return findPostgresExecutable("psql")
 }
 
+func FindPostgresPgctl() string {
+    return findPostgresExecutable("pg_ctl")
+}
+
+
 func trimExecutablePath(exepath string) string {
     return strings.Trim(exepath, " \t\n\r")
 }

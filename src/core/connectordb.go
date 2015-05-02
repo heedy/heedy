@@ -51,6 +51,10 @@ func PrintUsage() {
 
 }
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 // The main entrypoint into connectordb
 func main() {
 
@@ -92,7 +96,7 @@ func main() {
 			err = startDatabase(dbPath)
 
 		case "stop":
-			err = stopDatabase()
+			err = stopDatabase(dbPath)
 
 		case "upgrade":
 			err = upgradeDatabase(dbPath)
@@ -127,15 +131,22 @@ func createDatabase() error {
 	password := usernamePasswordArray[1]
 
 	config.GetConfiguration().DatabaseType = *createDbType
+	log.Println(config.GetConfiguration())
 
-	if err := dbmaker.Create(); err != nil {
+	log.Println("CONNECTORDB: Doing Init")
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	if err := dbmaker.MakeUser(username, password, *createEmail, true); err != nil {
+	log.Println("CONNECTORDB: Creating Files")
+	if err := dbmaker.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
 		return err
 	}
 
+	log.Println("CONNECTORDB: Stopping any subsystems")
+
+	dbmaker.Stop(config.GetConfiguration())
+	//dbmaker.Kill(config.GetConfiguration())
 
 	fmt.Printf("\nDatabase created successfully.\n")
 	return nil
@@ -149,13 +160,32 @@ func startDatabase(dbPath string) error {
 		return err
 	}
 
-	return dbmaker.Start()
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+
+	return dbmaker.Start(config.GetConfiguration())
 }
 
-func stopDatabase() error {
+func stopDatabase(dbPath string) error {
 	processFlags(stopFlags)
 
-	return dbmaker.Stop()
+	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+	if err == nil {
+		log.Printf("Connectordb looks like it isn't already running, but we'll try anyway.")
+		return err
+	}
+
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
+		log.Printf("%v\n", err.Error())
+	}
+
+	return nil
 }
 
 func upgradeDatabase(dbPath string) error {
