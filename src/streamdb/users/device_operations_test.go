@@ -56,6 +56,28 @@ func TestReadDeviceById(t *testing.T) {
 	}
 }
 
+func TestReadDeviceByApiKey(t *testing.T) {
+	for i, testdb := range(testdatabases) {
+		if testdb == nil {
+			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
+			continue
+		}
+
+		_, dev, _, err := CreateUDS(testdb)
+		require.Nil(t, err)
+
+		key := dev.ApiKey
+
+		dev2, err := testdb.ReadDeviceByApiKey(key)
+		require.Nil(t, err)
+		assert.Equal(t, key, dev2.ApiKey)
+
+		dev3, err := testdb.ReadDeviceByApiKey("")
+		assert.NotNil(t, err, "non existing device read by api key, dev %v", dev3)
+	}
+
+}
+
 func TestUpdateDevice(t *testing.T) {
 	for i, testdb := range(testdatabases) {
 		if testdb == nil {

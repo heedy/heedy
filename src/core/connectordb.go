@@ -127,15 +127,25 @@ func createDatabase() error {
 	password := usernamePasswordArray[1]
 
 	config.GetConfiguration().DatabaseType = *createDbType
+	log.Println(config.GetConfiguration())
 
-	if err := dbmaker.Create(); err != nil {
+	log.Println("CONNECTORDB: Doing Init")
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	if err := dbmaker.MakeUser(username, password, *createEmail, true); err != nil {
+	log.Println("CONNECTORDB: Creating Files")
+	if err := dbmaker.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
 		return err
 	}
 
+	log.Println("CONNECTORDB: Stopping any subsystems")
+
+	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+	//dbmaker.Kill(config.GetConfiguration())
 
 	fmt.Printf("\nDatabase created successfully.\n")
 	return nil
@@ -149,13 +159,18 @@ func startDatabase(dbPath string) error {
 		return err
 	}
 
-	return dbmaker.Start()
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+
+	return dbmaker.Start(config.GetConfiguration())
 }
 
 func stopDatabase() error {
 	processFlags(stopFlags)
 
-	return dbmaker.Stop()
+	return dbmaker.Stop(config.GetConfiguration())
 }
 
 func upgradeDatabase(dbPath string) error {

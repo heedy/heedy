@@ -11,6 +11,7 @@ import (
 	//"streamdb/config"
 	"streamdb/util"
 	"github.com/kardianos/osext"
+	//"text/template"
 )
 
 var (

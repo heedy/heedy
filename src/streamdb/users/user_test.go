@@ -222,6 +222,15 @@ func TestReadUserDevice(t *testing.T) {
 		require.Nil(t, err)
 
 		assert.Equal(t, dev.UserId, user.UserId, "Incorrect device returned.")
+
+		user.Admin = true
+		err = testdb.UpdateUser(user)
+		require.Nil(t, err)
+
+		dev, err = testdb.ReadUserOperatingDevice(user)
+		require.Nil(t, err)
+
+		assert.True(t, dev.IsAdmin)
 	}
 }
 

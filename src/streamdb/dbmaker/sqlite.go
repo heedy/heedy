@@ -10,31 +10,67 @@ import (
 
 var sqliteDatabaseName = "streamdb.sqlite3"
 
-//InitializeSqlite creates an sqlite database and subsequently sets it up to work with streamdb
-func InitializeSqlite() error {
-	streamdbDirectory, err := config.GetStreamdbDirectory()
-	if err != nil {
-		return err
-	}
 
-	dbFile := filepath.Join(streamdbDirectory, sqliteDatabaseName)
-	log.Printf("Initializing sqlite database '%s'\n", dbFile)
+// A service representing the postgres database
+type SqliteService struct{
+	ServiceHelper // We get stop, status, kill, and Name from this
+	streamdbDirectory string
+	sqliteFilepath string
+}
+
+
+// Creates and returns a new postgres service in a pre-init state
+// with default values loaded from config
+func NewDefaultSqliteService() *SqliteService {
+	return NewConfigSqliteSerivce(config.GetConfiguration())
+}
+
+func NewConfigSqliteSerivce(config *config.Configuration) *SqliteService {
+	dir := config.StreamdbDirectory
+	return NewSqliteService(dir)
+}
+
+// Creates and returns a new postgres service in a pre-init state
+func NewSqliteService(streamdbDirectory string) *SqliteService {
+	var ps SqliteService
+	ps.sqliteFilepath = filepath.Join(streamdbDirectory, sqliteDatabaseName)
+	ps.streamdbDirectory = streamdbDirectory
+
+	ps.InitServiceHelper(streamdbDirectory, "sqlite")
+	return &ps
+}
+
+//InitializeSqlite creates an sqlite database and subsequently sets it up to work with streamdb
+func (srv *SqliteService) Setup() error {
+	log.Printf("Initializing sqlite database '%s'\n", srv.sqliteFilepath)
 
 	// because sqlite doesn't always like being started on a file that
 	// doesn't exist
-	util.Touch(dbFile)
+	util.Touch(srv.sqliteFilepath)
 
 	//Initialize the database tables
 	log.Printf("Setting up initial tables\n")
-	return dbutil.UpgradeDatabase(dbFile, true)
+	return dbutil.UpgradeDatabase(srv.sqliteFilepath, true)
 }
 
-//StartSqlite does absolutely nothing, since sqlite is a single-process thing
-func StartSqlite() error {
+func (srv *SqliteService) Init() error {
+	srv.Stat = StatusInit
 	return nil
 }
 
-//StopSqlite does absolutely nothing, since sqlite is a single-process thing
-func StopSqlite() error {
+//StartRedis runs the redis server
+func (srv *SqliteService) Start() error {
+	srv.Stat = StatusRunning
+	return nil
+}
+
+
+func (srv *SqliteService) Stop() error {
+	srv.Stat = StatusInit
+	return nil
+}
+
+func (srv *SqliteService) Kill() error {
+	srv.Stat = StatusInit
 	return nil
 }
