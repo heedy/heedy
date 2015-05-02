@@ -144,12 +144,10 @@ func (srv *PostgresService) Start() error {
 }
 
 func (srv *PostgresService) Stop() error {
-	err := srv.HelperStop()
-	if err == nil {
-		//Sleep a couple seconds, since postgres is weird like that
-		time.Sleep(5 * time.Second)
-	}
-	return err
+	pgctl := dbutil.FindPostgresPgctl()
+	postgresDir := filepath.Join(srv.streamdbDirectory, postgresDatabaseName)
+
+	return RunCommand(nil, pgctl, "-D", postgresDir, "-m", "fast", "stop")
 }
 
 

@@ -96,7 +96,7 @@ func main() {
 			err = startDatabase(dbPath)
 
 		case "stop":
-			err = stopDatabase()
+			err = stopDatabase(dbPath)
 
 		case "upgrade":
 			err = upgradeDatabase(dbPath)
@@ -168,10 +168,24 @@ func startDatabase(dbPath string) error {
 	return dbmaker.Start(config.GetConfiguration())
 }
 
-func stopDatabase() error {
+func stopDatabase(dbPath string) error {
 	processFlags(stopFlags)
 
-	return dbmaker.Stop(config.GetConfiguration())
+	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+	if err == nil {
+		log.Printf("Connectordb looks like it isn't already running, but we'll try anyway.")
+		return err
+	}
+
+	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
+		log.Printf("%v\n", err.Error())
+	}
+
+	return nil
 }
 
 func upgradeDatabase(dbPath string) error {

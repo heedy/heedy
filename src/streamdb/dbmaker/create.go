@@ -73,6 +73,7 @@ func createSqlDatabase(config *config.Configuration, username, password, email s
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	var udb users.UserDatabase
 	udb.InitUserDatabase(db, string(driver))
