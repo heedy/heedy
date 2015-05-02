@@ -97,6 +97,8 @@ func startSqlDatabase(config *config.Configuration) error {
 func Start(config *config.Configuration) error {
 	log.Printf("Starting subsystems\n")
 
+	os.Chdir(config.StreamdbDirectory)
+
 	if err := startSqlDatabase(config); err != nil {
 		return err
 	}
@@ -120,13 +122,9 @@ func stopSqlDatabase(config *config.Configuration) error{
 
 	switch sqlDatabaseType {
 		case "postgres":
-			if err := postgresInstance.Stop(); err != nil {
-				return err
-			}
+			return postgresInstance.Stop()
 		case "sqlite":
-			if err := sqliteInstance.Stop(); err != nil {
-				return err
-			}
+			return sqliteInstance.Stop()
 	}
 	return ErrUnrecognizedDatabase
 }
@@ -136,7 +134,10 @@ func stopSqlDatabase(config *config.Configuration) error{
 func Stop(config *config.Configuration) error {
 	log.Printf("Stopping subsystems\n")
 
-	globerr := stopSqlDatabase(config)
+	var globerr error
+	if err := stopSqlDatabase(config); err != nil {
+		globerr = err
+	}
 
 	if err := gnatsdInstance.Stop(); err != nil {
 		globerr = err

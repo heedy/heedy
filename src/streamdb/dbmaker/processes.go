@@ -96,7 +96,8 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 
 	pidfile := filepath.Join(streamdbDirectory, procname+".pid")
 	if !util.PathExists(pidfile) {
-		return nil, ErrFileNotFound
+		log.Printf("Pid Not Found For: %s", procname)
+		return nil, ErrProcessNotFound
 	}
 
 	pidbytes, err := ioutil.ReadFile(pidfile)
@@ -107,6 +108,7 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 	pids := strings.Fields(string(pidbytes))
 
 	if len(pids) < 1 {
+		log.Printf("Numpids = 0 for: %s", procname)
 		return nil, ErrProcessNotFound
 	}
 
@@ -124,7 +126,25 @@ func StopProcess(streamdbDirectory, procname string, err error) error {
 	if err != nil {
 		return err
 	}
-	return p.Signal(os.Interrupt)
+
+	log.Printf("Stopping process %d '%s'\n", p.Pid, procname)
+	if err := p.Signal(os.Interrupt); err != nil {
+		return err
+	}
+
+	// Wait for the process to close
+	procWait := make(chan int, 1)
+    go func() {
+        p.Wait()
+        procWait <- 1
+    }()
+
+    select {
+	    case <-procWait:
+	        return nil
+	    case <-time.After(time.Second * 5):
+	        return ErrTimeout
+    }
 }
 
 //KillProcess sends immediately kills the process

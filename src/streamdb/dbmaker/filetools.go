@@ -87,6 +87,7 @@ func CopyConfig(streamdbPath, configname string, err error) error {
 	cpath, err := ConfigPath()
 	defaultTemplate := filepath.Join(cpath, configname)
 	if !util.PathExists(defaultTemplate) || err != nil {
+		log.Printf("Error sdbpath: %s configname: %s default: %s err: %s", streamdbPath, configname, defaultTemplate, err.Error())
 		return ErrFileNotFound
 	}
 	log.Printf("Copying %s from '%s'", configname, defaultTemplate)

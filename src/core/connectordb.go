@@ -51,6 +51,10 @@ func PrintUsage() {
 
 }
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 // The main entrypoint into connectordb
 func main() {
 
@@ -141,10 +145,7 @@ func createDatabase() error {
 
 	log.Println("CONNECTORDB: Stopping any subsystems")
 
-	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
-		return err
-	}
-
+	dbmaker.Stop(config.GetConfiguration())
 	//dbmaker.Kill(config.GetConfiguration())
 
 	fmt.Printf("\nDatabase created successfully.\n")

@@ -2,7 +2,8 @@ package dbmaker
 
 import(
 	"log"
-	"os"
+	//"os"
+	"syscall"
 	)
 
 type Status int
@@ -102,17 +103,13 @@ func (sh *ServiceHelper) Status() Status {
 
 func (sh *ServiceHelper) HelperStop() error {
 	log.Printf("Stopping %s server\n", sh.Name())
-	sh.Stat = StatusInit
-
-	if sh.Stat != StatusRunning {
-		return nil
-	}
 
 	p, err := GetProcess(sh.StreamdbDirectory, sh.ServiceName, nil)
 	if err != nil {
 		return err
 	}
-	if err := p.Signal(os.Interrupt); err != nil {
+	//if err := p.Signal(os.Interrupt); err != nil {
+	if err := p.Signal(syscall.SIGTERM); err != nil {
 		sh.Stat = StatusError
 		return err
 	}
