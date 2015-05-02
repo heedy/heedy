@@ -6,15 +6,15 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"streamdb"
 	"plugins/rest"
+	"streamdb"
 )
 
 var (
 	serverport = flag.Int("port", 8000, "The port number to listen on")
 	helpflag   = flag.Bool("help", false, "Prints this message")
 
-	sqlserver   = flag.String("sql", "webservice.sqlite3", "")
+	sqlserver   = flag.String("sql", "postgres://127.0.0.1:52592/connectordb?sslmode=disable", "")
 	redisserver = flag.String("redis", "localhost:6379", "The address to the redis instance")
 	msgserver   = flag.String("msg", "localhost:4222", "The address of the messenger server")
 )
@@ -36,7 +36,7 @@ func main() {
 	}
 	defer db.Close()
 
-	log.Printf("Starting REST API on port %d", *serverport)
+	log.Printf("Running REST API on port %d", *serverport)
 
 	r := rest.Router(db, nil)
 	http.Handle("/", r)
