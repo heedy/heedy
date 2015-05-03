@@ -12,6 +12,9 @@ These functions allow Database to conform to the Operator interface
 var (
 	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
 	ErrAdmin = errors.New("An administrative operator has no user or device")
+
+	//ErrNotChangeable is thrown when changing a field that can't be changed
+	ErrNotChangeable = errors.New("The given fields are not modifiable.")
 )
 
 //User returns the current user
@@ -54,4 +57,41 @@ func (o *Database) ReadUserByEmail(email string) (*users.User, error) {
 //DeleteUser deletes the given user - only admin can delete
 func (o *Database) DeleteUser(username string) error {
 	return o.Userdb.DeleteUserByName(username)
+}
+
+//UpdateUser performs the given modifications
+func (o *Database) UpdateUser(user *users.User, modifieduser users.User) error {
+	if modifieduser.RevertUneditableFields(*user, users.ROOT) > 0 {
+		return ErrNotChangeable
+	}
+
+	return o.Userdb.UpdateUser(&modifieduser)
+}
+
+//SetAdmin does exactly what it claims
+func (o *Database) SetAdmin(path string, isadmin bool) error {
+
+	//TODO: Make this work with devices
+	u, err := o.ReadUser(path)
+	if err != nil {
+		return err
+	}
+
+	modu := *u //Make a copy of the user
+	modu.Admin = isadmin
+
+	return o.UpdateUser(u, modu)
+
+}
+
+//ChangeUserPassword changes the password for the given user
+func (o *Database) ChangeUserPassword(username, newpass string) error {
+	u, err := o.ReadUser(username)
+	if err != nil {
+		return err
+	}
+	modu := *u
+	modu.Password, modu.PasswordSalt, modu.PasswordHashScheme = users.UpgradePassword(newpass)
+
+	return o.UpdateUser(u, modu)
 }

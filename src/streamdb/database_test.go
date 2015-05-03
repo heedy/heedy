@@ -15,18 +15,7 @@ func ResetTimeBatch() error {
 		return err
 	}
 	defer sdb.Close()
-	sdb.Exec("DROP TABLE IF EXISTS timebatchtable")
-	_, err = sdb.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
-        (
-            Key VARCHAR NOT NULL,
-            EndTime BIGINT,
-            EndIndex BIGINT,
-			Version INTEGER,
-            Data BYTEA,
-            PRIMARY KEY (Key, EndIndex)
-            );`)
-	sdb.Exec("CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);")
-
+	sdb.Exec("DELETE FROM timebatchtable;")
 	sdb.Exec("DELETE FROM Users;")
 	sdb.Exec("DELETE FROM Devices;")
 
@@ -77,13 +66,22 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test", usr.Name)
 
+	modu := *usr
+	modu.Admin = true
+	modu.Email = "testemail@test.com"
+	require.NoError(t, db.UpdateUser(usr, modu))
+
+	usr, err = db.ReadUser("streamdb_test")
+	require.NoError(t, err)
+	require.Equal(t, true, usr.IsAdmin)
+
 	//As of now, this part fails - delete of nonexisting does not error
-	//require.Error(t, db.DeleteUser("notauser"))
+	require.Error(t, db.DeleteUser("notauser"))
 	require.NoError(t, db.DeleteUser("streamdb_test"))
 
 	_, err = db.ReadUser("streamdb_test")
 	require.Error(t, err)
-	_, err = db.ReadUserByEmail("root@localhost")
+	_, err = db.ReadUserByEmail("streamdb_test")
 	require.Error(t, err)
 
 }
