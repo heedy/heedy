@@ -95,7 +95,7 @@ type User struct {
 }
 
 func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+	revertUneditableFields(reflect.ValueOf(*d), reflect.ValueOf(originalValue), p)
 }
 
 // Sets a new password for an account

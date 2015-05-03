@@ -23,7 +23,7 @@ type Stream struct {
 
 
 func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+	revertUneditableFields(reflect.ValueOf(*d), reflect.ValueOf(originalValue), p)
 }
 
 
