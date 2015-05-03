@@ -22,6 +22,10 @@ type Operator interface {
 
 	ReadUser(username string) (*users.User, error)
 	ReadUserByEmail(email string) (*users.User, error)
-
+	ChangeUserPassword(username, newpass string) error
+	UpdateUser(user *users.User, modifieduser users.User) error //TODO: I don't like that we have to pass the original user, but don't see how to make it better wihout making it get new user
 	DeleteUser(username string) error
+
+	//SetAdmin can set a user or a device
+	SetAdmin(path string, isadmin bool) error
 }

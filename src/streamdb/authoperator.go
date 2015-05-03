@@ -88,3 +88,44 @@ func (o *AuthOperator) DeleteUser(username string) error {
 	}
 	return o.Db.DeleteUser(username)
 }
+
+//UpdateUser performs the given modifications
+func (o *AuthOperator) UpdateUser(user *users.User, modifieduser users.User) error {
+	//See if the bastards tried to change a field they have no fucking business editing :-P
+	if modifieduser.RevertUneditableFields(*user, o.dev.RelationToUser(user)) > 0 {
+		return ErrPermissions
+	}
+	err := o.Db.Userdb.UpdateUser(&modifieduser)
+	if err == nil && user.Name == o.usr.Name {
+		o.usr = &modifieduser //If we are modifying self, then save the changes in self also
+	}
+	return err
+}
+
+//SetAdmin does exactly what it claims
+func (o *AuthOperator) SetAdmin(path string, isadmin bool) error {
+
+	//TODO: Make this work with devices
+	u, err := o.ReadUser(path)
+	if err != nil {
+		return err
+	}
+
+	modu := *u //Make a copy of the user
+	modu.Admin = isadmin
+
+	return o.UpdateUser(u, modu)
+
+}
+
+//ChangeUserPassword changes the password for the given user
+func (o *AuthOperator) ChangeUserPassword(username, newpass string) error {
+	u, err := o.ReadUser(username)
+	if err != nil {
+		return err
+	}
+	modu := *u
+	modu.Password, modu.PasswordSalt, modu.PasswordHashScheme = users.UpgradePassword(newpass)
+
+	return o.UpdateUser(u, modu)
+}

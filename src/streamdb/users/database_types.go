@@ -94,8 +94,8 @@ type User struct {
 	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
 }
 
-func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
+	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 // Sets a new password for an account
@@ -240,13 +240,13 @@ func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel)
 	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
-func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) {
+func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) int {
 
 	//fmt.Printf("Getting original elem %v\n", originalValue.Kind())
 	originalValueReflect := originalValue //.Elem()
 
 	//fmt.Println("done getting elem")
-
+	changeNumber := 0
 	for i := 0; i < originalValueReflect.NumField(); i++ {
 		// Grab the fields for reflection
 		originalValueField := originalValueReflect.Field(i)
@@ -269,10 +269,12 @@ func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value,
 		if !p.Gte(requiredPermissionsForField) {
 			//fmt.Printf("Setting field\n")
 			toChange.Elem().Field(i).Set(originalValueField)
+			changeNumber++
 		}
 	}
 
 	// and bob's your uncle!
+	return changeNumber
 }
 
 // Check if the device is enabled
