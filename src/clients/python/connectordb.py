@@ -27,7 +27,7 @@ class ConnectorDB(object):
         
         #We don't actually know our name - we only have an api key, so let's get the device.
         #This also gives us a chance to make sure our auth is working.
-        self.name = self.urlget("this").text
+        self.name = self.urlget("d/this").text
 
         
     #Does error handling for a request result

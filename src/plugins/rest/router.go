@@ -72,23 +72,26 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	//Allow for the application to match /path and /path/ to the same place.
 	prefix.StrictSlash(true)
 
+	//Data-handlers (CRUD)
+	d := prefix.PathPrefix("/d").Subrouter()
+
 	//User CRUD
-	prefix.HandleFunc("/{user}", authenticator(GetUser, db)).Methods("GET")
-	prefix.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
-	prefix.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
+	d.HandleFunc("/{user}", authenticator(GetUser, db)).Methods("GET")
+	d.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
+	d.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
+	d.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
 
 	//Device CRUD
-	prefix.HandleFunc("/{user}/{device}", authenticator(GetDevice, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
-	prefix.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
+	d.HandleFunc("/{user}/{device}", authenticator(GetDevice, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
+	d.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
+	d.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
 
 	//Stream CRUD
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(GetStream, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(GetStream, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
 
 	//Getting details of the stream
 	//prefix.HandleFunc("/{user}/{device}/{stream}",<>).Methods("GET")
@@ -102,5 +105,13 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	//Connect to the device websocket
 	//prefix.HandleFunc("/{user}/{device}.ws",<>).Methods("GET")
+
+	//Function Handlers
+	//f := prefix.PathPrefix("/f").Subrouter()
+	//f.HandleFunc("/this", authenticator(GetThis, db)).Methods("GET")
+	//f.HandleFunc("/ls", authenticator(ListUsers, db)).Methods("GET")
+
+	//Future handlers: m (models and machine learning)
+
 	return prefix
 }
