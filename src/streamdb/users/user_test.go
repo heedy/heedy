@@ -281,18 +281,49 @@ func TestUpgradePassword(t *testing.T) {
 }
 
 func TestRevertUneditableFields(t *testing.T) {
+	// The original value we're trying to change
 	orig := User{1,"Name", "Email", "Password", "passsalt", "hash", true, 1,1,1}
-	root := User{1,"", "", "", "", "", false, 0,0,0}
-	user := User{1,"Name", "", "", "", "", true, 1,1,1}
 
-	// the one we're going to try to submit
+	// the one we're trying to submit
 	blank := User{0, "", "", "", "", "", false, 0,0,0}
 
-	tmpu := orig
-	tmpu.RevertUneditableFields(blank, ROOT)
+	// nobody's version
+	nobody := blank
+	// root's version of blank:
+	root := User{1,"", "", "", "", "", false, 0,0,0}
+	// User's version of blank
+	user := User{1,"Name", "", "", "", "", true, 1,1,1}
+	// all the rest shouldn't be able to do anything
+	device := orig
+	family := orig
+	enabled := orig
+	anybody := orig
+
+	tmpu := blank
+	tmpu.RevertUneditableFields(orig, NOBODY)
+	assert.Equal(t, tmpu, nobody, "Conversion as nobody didn't work got %v, expected %v", tmpu, root)
+
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, ROOT)
 	assert.Equal(t, tmpu, root, "Conversion as root didn't work got %v, expected %v", tmpu, root)
 
-	tmpu = orig
-	tmpu.RevertUneditableFields(blank, USER)
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, USER)
 	assert.Equal(t, tmpu , user, "Conversion as user didn't work got %v, expected %v", tmpu, root)
+
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, DEVICE)
+	assert.Equal(t, tmpu , device, "Conversion as device didn't work got %v, expected %v", tmpu, root)
+
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, FAMILY)
+	assert.Equal(t, tmpu , family, "Conversion as family didn't work got %v, expected %v", tmpu, root)
+
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, ENABLED)
+	assert.Equal(t, tmpu , enabled, "Conversion as enabled didn't work got %v, expected %v", tmpu, root)
+
+	tmpu = blank
+	tmpu.RevertUneditableFields(orig, ANYBODY)
+	assert.Equal(t, tmpu , anybody, "Conversion as anybody didn't work got %v, expected %v", tmpu, root)
 }

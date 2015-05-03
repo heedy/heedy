@@ -95,7 +95,7 @@ type User struct {
 }
 
 func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(*d), reflect.ValueOf(originalValue), p)
+	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 // Sets a new password for an account
@@ -237,7 +237,7 @@ func (d *Device) RelationToStream(stream *Stream, streamParent *Device) Permissi
 }
 
 func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(*d), reflect.ValueOf(originalValue), p)
+	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) {
@@ -266,7 +266,7 @@ func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value,
 
 		// If we don't have enough permissions, reset the field from original
 		requiredPermissionsForField, _ := strToPermissionLevel(modifiable)
-		if p.Gte(requiredPermissionsForField) {
+		if !p.Gte(requiredPermissionsForField) {
 			//fmt.Printf("Setting field\n")
 			toChange.Elem().Field(i).Set(originalValueField)
 		}
