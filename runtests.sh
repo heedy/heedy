@@ -13,26 +13,47 @@ if [ -d "$DBDIR" ]; then
     rm -rf $DBDIR
 fi
 
-echo "My PID"
+echo "My PID" $$
 
-echo $$
+pg_pre=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
+redis_pre=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
+gnatsd_pre=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
 
 check_pids () { 
 	echo "==================================================="
 	echo "Checking For Runaway Processes"
 	echo "==================================================="
 
+	test_status=0
 	echo "Looking for postgres proc..."
-	ps aux | grep postgres | grep -v 'grep'
-
+	postgresproc=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
+	echo $postgresproc
+	
 	echo "Looking for redis proc..."
-	ps aux | grep redis-server | grep -v 'grep'
-
+	redisproc=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
+	echo $redisproc
+	
 	echo "Looking for gnatsd proc..."
-	ps aux | grep gnatsd | grep -v 'grep'
+	gnatsdproc=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
+	echo $gnatsdproc
 	
 	echo "Looking for connectordb proc..."
 	ps aux | grep connectordb | grep -v 'grep'
+
+	if [ "$postgresproc" != "$pg_pre" ]; then
+		echo "Postgres process started from us was still running"
+		exit 1
+	fi
+	
+	if [ "$redisproc" != "$redis_pre" ]; then
+		echo "Redis process started from us was still running"
+		exit 1
+	fi
+	
+	if [ "$gnatsdproc" != "$gnatsd_pre" ]; then
+		echo "Gnatsd process started from us was still running"
+		exit 1
+	fi
 }
 
 stop () {
@@ -60,59 +81,50 @@ create () {
 	echo "==================================================="
 	echo "Doing Create"
 	echo "==================================================="
+	rm -rf $DBDIR
 	./bin/connectordb create $DBDIR -user=test:test
 }
 
 force_stop
 
 create
-
 check_pids
-
-stop
-check_pids
-force_stop
 
 start
-check_pids
 
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
 go test -cover streamdb/...
 test_status=$?
-
 stop
 check_pids
-force_stop
 
-if [ $test_status -eq 0 ]; then
+
+create
+start
+#Now test the python stuff, while rebuilding the db to make sure that
+#the go tests didn't invalidate the db
+echo "==================================================="
+echo "Starting Rest"
+echo "==================================================="
+./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
+rest_server=$!
+
+echo "==================================================="
+echo "Starting API Tests"
+echo "==================================================="
+nosetests src/clients/python/connectordb_test.py
+test_status=$?
+
+kill $rest_server
+stop $DBDIR
+
+check_pids
+
+#delete dir if tests succeeded
+if [ "$test_status" -eq 0 ]; then
     rm -rf $DBDIR
-    create
-    check_pids
-    stop
-    check_pids
-    force_stop
-    
-    start
-    check_pids
-	#Now test the python stuff, while rebuilding the db to make sure that
-	#the go tests didn't invalidate the db
-	echo "==================================================="
-	echo "Starting Rest"
-	echo "==================================================="
-    ./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
-    rest_server=$!
-    
-	echo "==================================================="
-	echo "Starting API Tests"
-	echo "==================================================="
-    nosetests src/clients/python/connectordb_test.py
-    test_status=$?
-    kill $rest_server
-	./bin/connectordb stop $DBDIR
 fi
 
-
-#rm -rf $DBDIR
 exit $test_status
