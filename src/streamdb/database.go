@@ -7,6 +7,7 @@ import (
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
+	"streamdb/config"
 )
 
 //The StreamDB version string
@@ -28,6 +29,16 @@ type Database struct {
 	SqlType dbutil.DRIVERSTR
 
 	dbutil.SqlxMixin
+}
+
+
+// Calls open from the arguments in the given configuration
+func OpenFromConfig(cfg *config.Configuration) (*Database, error){
+	redis 	:= cfg.GetRedisUri()
+	gnatsd 	:= cfg.GetGnatsdUri()
+	sql 	:= cfg.GetDatabaseConnectionString()
+
+	return Open(sql, redis, gnatsd)
 }
 
 /**

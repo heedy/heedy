@@ -61,7 +61,6 @@ func GetDatabaseConnectionString() string {
 	return configuration.GetDatabaseConnectionString()
 }
 
-
 // Returns the database connection string for the current database
 func (config *Configuration) GetDatabaseConnectionString() string {
 	if configuration.DatabaseType == "sqlite" {
@@ -94,6 +93,17 @@ func IsDatabaseLocal() bool {
 
 	return false
 }
+
+// Returns the redis "uri", no prefix appneded
+func (config *Configuration) GetRedisUri() string {
+	return fmt.Sprintf("%s:%d", configuration.RedisHost, configuration.RedisPort)
+}
+
+// Get the gnatsd "uri" no prefix appended; it'll be in the format host:port
+func (config *Configuration) GetGnatsdUri() string {
+	return fmt.Sprintf("%s:%d", configuration.GnatsdHost, configuration.GnatsdPort)
+}
+
 
 func newConfiguration() *Configuration {
 	var cfg Configuration

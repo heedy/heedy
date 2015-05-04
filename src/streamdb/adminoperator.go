@@ -9,9 +9,9 @@ var (
 	AdminUnsupported = errors.New("This operation is unsupported for AdminOperators")
 	)
 
-//Given an API key, returns the  Device object
-func (db *Database) GetAdminOperator() (Operator, error) {
-	return AdminOperator{db}, nil
+//Returns the super operator
+func (db *Database) GetAdminOperator() (Operator) {
+	return AdminOperator{db}
 }
 
 // The admin operator does everything as a root device

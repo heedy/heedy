@@ -18,8 +18,8 @@ func (db *Database) GetOperator(apikey string) (Operator, error) {
 	if err != nil {
 		return nil, err
 	}
-	ao, err := db.GetAdminOperator()
-	return DeviceOperator{db, dev, ao}, err
+	ao := db.GetAdminOperator()
+	return DeviceOperator{db, dev, ao}, nil
 }
 
 // Gets an operator for a particular device
@@ -28,8 +28,8 @@ func (db *Database) GetOperatorForDevice(device *users.Device) (Operator, error)
 		return nil, InvalidParameterError
 	}
 
-	ao, err := db.GetAdminOperator()
-	return DeviceOperator{db, device, ao}, err
+	ao := db.GetAdminOperator()
+	return DeviceOperator{db, device, ao}, nil
 }
 
 //AuthenticateUser returns the user's operator given a username/password combo
