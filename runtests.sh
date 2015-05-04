@@ -13,6 +13,10 @@ if [ -d "$DBDIR" ]; then
     rm -rf $DBDIR
 fi
 
+echo "My PID"
+
+echo $$
+
 check_pids () { 
 	echo "==================================================="
 	echo "Checking For Runaway Processes"
