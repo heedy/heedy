@@ -56,6 +56,10 @@ func (o *Database) ReadUserByEmail(email string) (*users.User, error) {
 
 //DeleteUser deletes the given user - only admin can delete
 func (o *Database) DeleteUser(username string) error {
+	_, err := o.ReadUser(username)
+	if err != nil {
+		return err //Workaround for issue #81
+	}
 	return o.Userdb.DeleteUserByName(username)
 }
 
