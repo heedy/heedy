@@ -13,22 +13,23 @@ if [ -d "$DBDIR" ]; then
     rm -rf $DBDIR
 fi
 
-check_pids () { 
+check_stopped () { 
 	echo "==================================================="
 	echo "Checking For Runaway Processes"
 	echo "==================================================="
-
+    sleep 1 #Stop false alarms
+    
 	echo "Looking for postgres proc..."
-	ps aux | grep postgres | grep -v 'grep'
+	ps aux | grep postgres | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=8
 
 	echo "Looking for redis proc..."
-	ps aux | grep redis-server | grep -v 'grep'
+	ps aux | grep redis-server | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=9
 
 	echo "Looking for gnatsd proc..."
-	ps aux | grep gnatsd | grep -v 'grep'
+	ps aux | grep gnatsd | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=10
 	
-	echo "Looking for connectordb proc..."
-	ps aux | grep connectordb | grep -v 'grep'
+	echo "Looking for connectordb proc..." 
+	ps aux | grep connectordb | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=11
 }
 
 stop () {
@@ -58,57 +59,55 @@ create () {
 	echo "==================================================="
 	./bin/connectordb create $DBDIR -user=test:test
 }
-
+test_status=0
 force_stop
 
 create
-
-check_pids
-
-stop
-check_pids
-force_stop
+check_stopped
+if [ "$test_status" -ne 0 ]; then
+    echo "FAILED: Process not being shut down correctly!"
+    exit $test_status
+fi
 
 start
-check_pids
 
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
 go test -cover streamdb/...
 test_status=$?
-
 stop
-check_pids
-force_stop
-
-if [ $test_status -eq 0 ]; then
-    rm -rf $DBDIR
-    create
-    check_pids
-    stop
-    check_pids
-    force_stop
-    
-    start
-    check_pids
-	#Now test the python stuff, while rebuilding the db to make sure that
-	#the go tests didn't invalidate the db
-	echo "==================================================="
-	echo "Starting Rest"
-	echo "==================================================="
-    ./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
-    rest_server=$!
-    
-	echo "==================================================="
-	echo "Starting API Tests"
-	echo "==================================================="
-    nosetests src/clients/python/connectordb_test.py
-    test_status=$?
-    kill $rest_server
-	./bin/connectordb stop $DBDIR
+check_stopped
+if [ "$test_status" -ne 0 ]; then
+    echo "Coverage tests or stopping database failed!"
+    exit 1
 fi
 
+rm -rf $DBDIR
+create
+start
+#Now test the python stuff, while rebuilding the db to make sure that
+#the go tests didn't invalidate the db
+echo "==================================================="
+echo "Starting Rest"
+echo "==================================================="
+./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
+rest_server=$!
 
-#rm -rf $DBDIR
+echo "==================================================="
+echo "Starting API Tests"
+echo "==================================================="
+nosetests src/clients/python/connectordb_test.py
+test_status=$?
+
+kill $rest_server
+./bin/connectordb stop $DBDIR
+
+check_stopped
+
+#delete dir if tests succeeded
+if [ "$test_status" -eq 0 ]; then
+    rm -rf $DBDIR
+fi
+
 exit $test_status
