@@ -19,6 +19,11 @@ type AuthOperator struct {
 	usr *users.User   //If the underlying user is queried, it is stored here for future reference. Nil by default
 }
 
+//Database returns the underlying database
+func (o *AuthOperator) Database() *Database {
+	return o.Db
+}
+
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
 	return o.usr, nil

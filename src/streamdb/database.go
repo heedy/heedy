@@ -2,7 +2,9 @@ package streamdb
 
 import (
 	"database/sql"
+	"errors"
 	"log"
+	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
@@ -25,6 +27,15 @@ type Database struct {
 	msg *messenger.Messenger  //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+}
+
+// Calls open from the arguments in the given configuration
+func OpenFromConfig(cfg *config.Configuration) (*Database, error) {
+	redis := cfg.GetRedisUri()
+	gnatsd := cfg.GetGnatsdUri()
+	sql := cfg.GetDatabaseConnectionString()
+
+	return Open(sql, redis, gnatsd)
 }
 
 /**
@@ -96,6 +107,10 @@ func (db *Database) DeviceOperator(apikey string) (Operator, error) {
 func (db *Database) UserOperator(username, password string) (Operator, error) {
 	usr, dev, err := db.Userdb.Login(username, password)
 	return &AuthOperator{db, dev, usr}, err
+}
+
+func (db *Database) Operator(path string) (Operator, error) {
+	return nil, errors.New("UNIMPLEMENTED")
 }
 
 //Close closes all database connections and releases all resources.

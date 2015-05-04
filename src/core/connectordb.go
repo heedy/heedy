@@ -13,6 +13,7 @@ import (
 	"log"
 	"streamdb/config"
 	"streamdb/util"
+	"plugins/shell"
 )
 
 var (
@@ -100,6 +101,9 @@ func main() {
 
 		case "upgrade":
 			err = upgradeDatabase(dbPath)
+			
+		case "shell":
+			err = startShell()
 
 		default:
 			PrintUsage()
@@ -200,4 +204,14 @@ func upgradeDatabase(dbPath string) error {
 	// Start the server
 
  	return dbmaker.Upgrade()
+}
+
+func startShell() error {
+	db, err := streamdb.OpenFromConfig(config.GetConfiguration())
+	if err != nil {
+		return err
+	}
+
+	shell.StartShell(db)
+	return nil
 }

@@ -17,6 +17,11 @@ var (
 	ErrNotChangeable = errors.New("The given fields are not modifiable.")
 )
 
+//Database just returns self
+func (o *Database) Database() *Database {
+	return o
+}
+
 //User returns the current user
 func (o *Database) User() (usr *users.User, err error) {
 	return nil, ErrAdmin

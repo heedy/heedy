@@ -10,6 +10,9 @@ import "streamdb/users"
 // independent of future backends we implement.
 type Operator interface {
 
+	//Returns the underlying database
+	Database() *Database
+
 	//Gets the user and device associated with the current operator
 	User() (*users.User, error)
 	Device() (*users.Device, error)

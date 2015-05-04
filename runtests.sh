@@ -13,23 +13,47 @@ if [ -d "$DBDIR" ]; then
     rm -rf $DBDIR
 fi
 
-check_stopped () { 
+echo "My PID" $$
+
+pg_pre=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
+redis_pre=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
+gnatsd_pre=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
+
+check_pids () { 
 	echo "==================================================="
 	echo "Checking For Runaway Processes"
 	echo "==================================================="
-    sleep 1 #Stop false alarms
-    
+
+	test_status=0
 	echo "Looking for postgres proc..."
-	ps aux | grep postgres | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=8
-
-	echo "Looking for redis proc..."
-	ps aux | grep redis-server | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=9
-
-	echo "Looking for gnatsd proc..."
-	ps aux | grep gnatsd | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=10
+	postgresproc=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
+	echo $postgresproc
 	
-	echo "Looking for connectordb proc..." 
-	ps aux | grep connectordb | grep -v 'grep' && echo "FAILED! PROCESS EXISTS!" && test_status=11
+	echo "Looking for redis proc..."
+	redisproc=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
+	echo $redisproc
+	
+	echo "Looking for gnatsd proc..."
+	gnatsdproc=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
+	echo $gnatsdproc
+	
+	echo "Looking for connectordb proc..."
+	ps aux | grep connectordb | grep -v 'grep'
+
+	if [ "$postgresproc" != "$pg_pre" ]; then
+		echo "Postgres process started from us was still running"
+		exit 1
+	fi
+	
+	if [ "$redisproc" != "$redis_pre" ]; then
+		echo "Redis process started from us was still running"
+		exit 1
+	fi
+	
+	if [ "$gnatsdproc" != "$gnatsd_pre" ]; then
+		echo "Gnatsd process started from us was still running"
+		exit 1
+	fi
 }
 
 stop () {
@@ -57,17 +81,14 @@ create () {
 	echo "==================================================="
 	echo "Doing Create"
 	echo "==================================================="
+	rm -rf $DBDIR
 	./bin/connectordb create $DBDIR -user=test:test
 }
-test_status=0
+
 force_stop
 
 create
-check_stopped
-if [ "$test_status" -ne 0 ]; then
-    echo "FAILED: Process not being shut down correctly!"
-    exit $test_status
-fi
+check_pids
 
 start
 
@@ -77,13 +98,9 @@ echo "==================================================="
 go test -cover streamdb/...
 test_status=$?
 stop
-check_stopped
-if [ "$test_status" -ne 0 ]; then
-    echo "Coverage tests or stopping database failed!"
-    exit 1
-fi
+check_pids
 
-rm -rf $DBDIR
+
 create
 start
 #Now test the python stuff, while rebuilding the db to make sure that
@@ -101,9 +118,9 @@ nosetests src/clients/python/connectordb_test.py
 test_status=$?
 
 kill $rest_server
-./bin/connectordb stop $DBDIR
+stop $DBDIR
 
-check_stopped
+check_pids
 
 #delete dir if tests succeeded
 if [ "$test_status" -eq 0 ]; then
