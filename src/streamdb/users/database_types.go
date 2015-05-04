@@ -236,8 +236,8 @@ func (d *Device) RelationToStream(stream *Stream, streamParent *Device) Permissi
 	return ENABLED
 }
 
-func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) int {
+	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) int {
@@ -268,8 +268,10 @@ func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value,
 		requiredPermissionsForField, _ := strToPermissionLevel(modifiable)
 		if !p.Gte(requiredPermissionsForField) {
 			//fmt.Printf("Setting field\n")
-			toChange.Elem().Field(i).Set(originalValueField)
-			changeNumber++
+			if !reflect.DeepEqual(toChange.Elem().Field(i).Interface(), originalValueField.Interface()) {
+				toChange.Elem().Field(i).Set(originalValueField)
+				changeNumber++
+			}
 		}
 	}
 

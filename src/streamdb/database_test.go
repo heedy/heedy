@@ -73,7 +73,7 @@ func TestDatabaseUserCrud(t *testing.T) {
 
 	usr, err = db.ReadUser("streamdb_test")
 	require.NoError(t, err)
-	require.Equal(t, true, usr.IsAdmin)
+	require.Equal(t, true, usr.Admin)
 
 	//As of now, this part fails - delete of nonexisting does not error
 	require.Error(t, db.DeleteUser("notauser"))
