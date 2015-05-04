@@ -3,6 +3,7 @@ package dbmaker
 import (
 	"log"
 	"streamdb/config"
+	"strconv"
 )
 
 
@@ -90,7 +91,10 @@ func (srv *RedisService) Start() error {
 
 
 func (srv *RedisService) Stop() error {
-	return srv.HelperStop()
+	portString := strconv.Itoa(srv.port)
+
+	return RunCommand(nil, "redis-cli", "-p", portString, "shutdown")
+	//return srv.HelperStop()
 }
 
 
