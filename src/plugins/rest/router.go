@@ -34,7 +34,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 
 		if len(authUser) != 0 {
 			//Authenticate by username/password
-			o, err = db.UserOperator(authUser, authPass)
+			o, err = db.UserLoginOperator(authUser, authPass)
 
 			if err != nil {
 				writer.Header().Set("WWW-Authenticate", "Basic")
@@ -44,7 +44,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		} else {
 			//Authenticate by API key
-			o, err = db.DeviceOperator(authPass)
+			o, err = db.DeviceLoginOperator(authPass)
 
 			if err != nil {
 				writer.Header().Set("WWW-Authenticate", "Basic")
@@ -54,7 +54,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		}
 
-		//If we got here, o is valid.
+		//If we got here, o is valiprefix.
 		err = apifunc(o, writer, request)
 		if err != nil {
 			writer.Write([]byte(err.Error()))
@@ -72,26 +72,24 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	//Allow for the application to match /path and /path/ to the same place.
 	prefix.StrictSlash(true)
 
-	//Data-handlers (CRUD)
-	d := prefix.PathPrefix("/d").Subrouter()
-
 	//User CRUD
-	d.HandleFunc("/{user}", authenticator(GetUser, db)).Methods("GET")
-	d.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
-	d.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
-	d.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
+	prefix.HandleFunc("/{user}", authenticator(GetUser, db)).Methods("GET")
+	prefix.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
+	prefix.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
+	prefix.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
 
 	//Device CRUD
-	d.HandleFunc("/{user}/{device}", authenticator(GetDevice, db)).Methods("GET")
-	d.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
-	d.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
-	d.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
+	prefix.HandleFunc("/{user}/{device}", authenticator(GetDevice, db)).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
+	prefix.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
+	prefix.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
 
 	//Stream CRUD
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(GetStream, db)).Methods("GET")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(GetStream, db)).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
+	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
+	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	//prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
 
 	//Getting details of the stream
 	//prefix.HandleFunc("/{user}/{device}/{stream}",<>).Methods("GET")

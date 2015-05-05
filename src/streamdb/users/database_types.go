@@ -79,14 +79,14 @@ type DeviceKeyValue struct {
 // User is the storage type for rows of the database.
 type User struct {
 	UserId int64  `modifiable:"nobody" json:"-"`   // The primary key
-	Name   string `modifiable:"root" json:"user"`  // The public username of the user
+	Name   string `modifiable:"root" json:"name"`  // The public username of the user
 	Email  string `modifiable:"user" json:"email"` // The user's email address
 
-	Password           string `modifiable:"user" json:"-"` // A hash of the user's password
-	PasswordSalt       string `modifiable:"user" json:"-"` // The password salt to be attached to the end of the password
-	PasswordHashScheme string `modifiable:"user" json:"-"` // A string representing the hashing scheme used
+	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
+	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
+	PasswordHashScheme string `modifiable:"user" json:"-"`                  // A string representing the hashing scheme used
 
-	Admin bool `modifiable:"root" json:"omitempty"` // True/False if this is an administrator
+	Admin bool `modifiable:"root" json:"admin,omitempty"` // True/False if this is an administrator
 
 	//Since we temporarily don't use limits, I have disabled cluttering results with them on json output
 	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
@@ -136,16 +136,16 @@ func (u *User) UpgradePassword(password string) bool {
 //
 type Device struct {
 	DatabaseType
-	DeviceId         int64  `modifiable:"nobody" json:"-"`       // The primary key of this device
-	Name             string `modifiable:"nobody"`                // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname         string `modifiable:"user"`                  // The human readable name of this device
-	UserId           int64  `modifiable:"root" json:"-"`         // the user that owns this device
-	ApiKey           string `modifiable:"user" json:"-"`         // A uuid used as an api key to verify against
-	Enabled          bool   `modifiable:"user" json:"-"`         // Whether or not this device can do reading and writing
-	IsAdmin          bool   `modifiable:"root" json:"omitempty"` // Whether or not this is a "superdevice" which has access to the whole API
-	CanWrite         bool   `modifiable:"user"`                  // Can this device write to streams? (inactive right now)
-	CanWriteAnywhere bool   `modifiable:"user"`                  // Can this device write to others streams? (inactive right now)
-	CanActAsUser     bool   `modifiable:"user"`                  // Can this device operate as a user? (inactive right now)
+	DeviceId         int64  `modifiable:"nobody" json:"-"`        // The primary key of this device
+	Name             string `modifiable:"nobody"`                 // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname         string `modifiable:"user"`                   // The human readable name of this device
+	UserId           int64  `modifiable:"root" json:"-"`          // the user that owns this device
+	ApiKey           string `modifiable:"user" json:"-"`          // A uuid used as an api key to verify against
+	Enabled          bool   `modifiable:"user" json:"-"`          // Whether or not this device can do reading and writing
+	IsAdmin          bool   `modifiable:"root" json:",omitempty"` // Whether or not this is a "superdevice" which has access to the whole API
+	CanWrite         bool   `modifiable:"user"`                   // Can this device write to streams? (inactive right now)
+	CanWriteAnywhere bool   `modifiable:"user"`                   // Can this device write to others streams? (inactive right now)
+	CanActAsUser     bool   `modifiable:"user"`                   // Can this device operate as a user? (inactive right now)
 	IsVisible        bool   `modifiable:"root"`
 	UserEditable     bool   `modifiable:"root"`
 }
