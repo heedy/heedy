@@ -29,6 +29,11 @@ func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	log.Println("Listing Users")
 	u, err := o.ReadAllUsers()
+	if err != nil {
+		for i := 0; i < len(u); i++ {
+			u[i].Password = ""
+		}
+	}
 	return JSONWriter(writer, u, err)
 }
 
