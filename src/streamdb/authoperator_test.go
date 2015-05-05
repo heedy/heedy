@@ -16,11 +16,13 @@ func TestAuthUserCrud(t *testing.T) {
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	_, err = db.UserOperator("streamdb_test", "wrongpass")
+	_, err = db.UserLoginOperator("streamdb_test", "wrongpass")
 	require.Error(t, err)
 
-	o, err := db.UserOperator("streamdb_test", "mypass")
+	o, err := db.UserLoginOperator("streamdb_test", "mypass")
 	require.NoError(t, err)
+
+	require.Equal(t, db, o.Database())
 
 	u, err := o.User()
 	require.NoError(t, err)
@@ -56,5 +58,58 @@ func TestAuthUserCrud(t *testing.T) {
 	u, err = o.ReadUser("notauser")
 	require.Error(t, err)
 
+	require.Error(t, o.SetAdmin("streamdb_test", true))
+
+	require.NoError(t, o.ChangeUserPassword("streamdb_test", "pass2"))
+
+	_, err = db.UserLoginOperator("streamdb_test", "pass2")
+	require.NoError(t, err)
+
+	u, err = o.ReadUserByEmail("root@localhost2")
+	require.Error(t, err)
+
+	u, err = o.ReadUserByEmail("root@localhost")
+	require.NoError(t, err)
+	require.Equal(t, "streamdb_test", u.Name)
+
+	modu := *u
+	modu.Email = "testemail@test.com"
+	require.NoError(t, o.UpdateUser(u, modu))
+
+	u, err = o.User()
+	require.NoError(t, err)
+	require.Equal(t, "testemail@test.com", u.Email)
+
+	require.Error(t, o.DeleteUser("streamdb_test2"))
 	require.Error(t, o.DeleteUser("streamdb_test"))
+
+	//Now, let's make this an admin user
+	require.NoError(t, db.SetAdmin("streamdb_test", true))
+
+	//Reload the device with admin
+	require.NoError(t, o.Reload())
+
+	//Make sure there are 3 if admin
+	usrs, err = o.ReadAllUsers()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(usrs))
+
+	u, err = o.ReadUser("streamdb_test2")
+	require.NoError(t, err)
+
+	u, err = o.ReadUserByEmail("root@localhost2")
+	require.NoError(t, err)
+	require.Equal(t, "streamdb_test2", u.Name)
+
+	require.NoError(t, o.DeleteUser("streamdb_test2"))
+
+	_, err = db.Operator("streamdb_test2")
+	require.Error(t, err)
+	o, err = db.Operator("streamdb_test3")
+	require.NoError(t, err)
+
+	u, err = o.User()
+	require.NoError(t, err)
+	require.Equal(t, "streamdb_test3", u.Name)
+
 }

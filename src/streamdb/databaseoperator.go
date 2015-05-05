@@ -22,6 +22,11 @@ func (o *Database) Database() *Database {
 	return o
 }
 
+//Reload does nothing - it is there jsut for conformity to interface
+func (o *Database) Reload() error {
+	return nil
+}
+
 //User returns the current user
 func (o *Database) User() (usr *users.User, err error) {
 	return nil, ErrAdmin

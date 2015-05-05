@@ -2,7 +2,6 @@ package streamdb
 
 import (
 	"database/sql"
-	"errors"
 	"log"
 	"streamdb/config"
 	"streamdb/dbutil"
@@ -93,8 +92,8 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 }
 
-//DeviceOperator returns the operator associated with the given API key
-func (db *Database) DeviceOperator(apikey string) (Operator, error) {
+//DeviceLoginOperator returns the operator associated with the given API key
+func (db *Database) DeviceLoginOperator(apikey string) (Operator, error) {
 	dev, err := db.Userdb.ReadDeviceByApiKey(apikey)
 	if err != nil {
 		return nil, err
@@ -103,14 +102,23 @@ func (db *Database) DeviceOperator(apikey string) (Operator, error) {
 	return &AuthOperator{db, dev, usr}, err
 }
 
-//UserOperator returns the operator associated with the given username/password combination
-func (db *Database) UserOperator(username, password string) (Operator, error) {
+//UserLoginOperator returns the operator associated with the given username/password combination
+func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
 	usr, dev, err := db.Userdb.Login(username, password)
 	return &AuthOperator{db, dev, usr}, err
 }
 
+//Operator gets the operator by usr or device name
 func (db *Database) Operator(path string) (Operator, error) {
-	return nil, errors.New("UNIMPLEMENTED")
+
+	//Get the user
+	usr, err := db.Userdb.ReadUserByName(path)
+	if err != nil {
+		return nil, err
+	}
+	dev, err := db.Userdb.ReadUserOperatingDevice(usr)
+
+	return &AuthOperator{db, dev, usr}, err
 }
 
 //Close closes all database connections and releases all resources.

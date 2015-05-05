@@ -37,6 +37,9 @@ func TestDatabaseUserCrud(t *testing.T) {
 	defer db.Close()
 	go db.RunWriter()
 
+	require.Equal(t, db, db.Database())
+	require.NoError(t, db.Reload())
+
 	_, err = db.User()
 	require.Equal(t, err, ErrAdmin)
 
@@ -74,6 +77,32 @@ func TestDatabaseUserCrud(t *testing.T) {
 	usr, err = db.ReadUser("streamdb_test")
 	require.NoError(t, err)
 	require.Equal(t, true, usr.Admin)
+	require.Equal(t, "testemail@test.com", usr.Email)
+
+	modu = *usr
+	modu.UserId = 9001
+	require.Error(t, db.UpdateUser(usr, modu))
+
+	require.NoError(t, db.SetAdmin("streamdb_test", false))
+	usr, err = db.ReadUser("streamdb_test")
+	require.NoError(t, err)
+	require.Equal(t, false, usr.Admin)
+
+	require.NoError(t, db.SetAdmin("streamdb_test", true))
+	usr, err = db.ReadUser("streamdb_test")
+	require.NoError(t, err)
+	require.Equal(t, true, usr.Admin)
+
+	_, err = db.UserLoginOperator("streamdb_test", "wrongpass")
+	require.Error(t, err)
+	_, err = db.UserLoginOperator("streamdb_test", "mypass")
+	require.NoError(t, err)
+
+	require.NoError(t, db.ChangeUserPassword("streamdb_test", "pass2"))
+	_, err = db.UserLoginOperator("streamdb_test", "mypass")
+	require.Error(t, err)
+	_, err = db.UserLoginOperator("streamdb_test", "pass2")
+	require.NoError(t, err)
 
 	//As of now, this part fails - delete of nonexisting does not error
 	require.Error(t, db.DeleteUser("notauser"))

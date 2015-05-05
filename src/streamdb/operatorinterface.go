@@ -13,6 +13,9 @@ type Operator interface {
 	//Returns the underlying database
 	Database() *Database
 
+	//Reload makes sure that the operator is syncd with most recent changes to database
+	Reload() error
+
 	//Gets the user and device associated with the current operator
 	User() (*users.User, error)
 	Device() (*users.Device, error)

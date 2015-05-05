@@ -19,6 +19,34 @@ type AuthOperator struct {
 	usr *users.User   //If the underlying user is queried, it is stored here for future reference. Nil by default
 }
 
+//Loads the device from database
+func (o *AuthOperator) reloadDevice() error {
+	dev, err := o.Db.Userdb.ReadDeviceById(o.dev.DeviceId)
+	if err != nil {
+		return err
+	}
+	o.dev = dev
+	return err
+}
+
+//Loads the user from database
+func (o *AuthOperator) reloadUser() error {
+	usr, err := o.Db.Userdb.ReadUserById(o.usr.UserId)
+	if err != nil {
+		return err
+	}
+	o.usr = usr
+	return err
+}
+
+//Reload both user and device
+func (o *AuthOperator) Reload() error {
+	if err := o.reloadUser(); err != nil {
+		return err
+	}
+	return o.reloadDevice()
+}
+
 //Database returns the underlying database
 func (o *AuthOperator) Database() *Database {
 	return o.Db
@@ -58,12 +86,8 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
-	u, err := o.User()
-	if err != nil {
-		return nil, err
-	}
-	if u.Name == username {
-		return u, nil
+	if o.usr.Name == username {
+		return o.usr, nil
 	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUser(username)
@@ -73,12 +97,8 @@ func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
 
 //ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUserByEmail(email string) (*users.User, error) {
-	u, err := o.User()
-	if err != nil {
-		return nil, err
-	}
-	if u.Email == email {
-		return u, nil
+	if o.usr.Email == email {
+		return o.usr, nil
 	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUserByEmail(email)
@@ -102,7 +122,8 @@ func (o *AuthOperator) UpdateUser(user *users.User, modifieduser users.User) err
 	}
 	err := o.Db.Userdb.UpdateUser(&modifieduser)
 	if err == nil && user.Name == o.usr.Name {
-		o.usr = &modifieduser //If we are modifying self, then save the changes in self also
+		//o.usr = &modifieduser //If we are modifying self, then save the changes in self also
+		return o.Reload() //Since stuff is modified on triggers, reload both user and device on update
 	}
 	return err
 }
