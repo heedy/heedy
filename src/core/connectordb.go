@@ -13,7 +13,9 @@ import (
 	"log"
 	"streamdb/config"
 	"streamdb/util"
-	"plugins/shell"
+	_ "plugins/shell"
+	_ "plugins/webclient"
+	"plugins"
 )
 
 var (
@@ -47,6 +49,10 @@ func PrintUsage() {
 	stopFlags.PrintDefaults()
 	fmt.Printf("\nupgrade: Upgrades an existing database to a newer version.\n")
 	upgradeFlags.PrintDefaults()
+	fmt.Printf("\n")
+
+	// Print all usages of the plugins
+	plugins.Usage()
 
 	fmt.Printf("\n")
 
@@ -101,12 +107,13 @@ func main() {
 
 		case "upgrade":
 			err = upgradeDatabase(dbPath)
-			
-		case "shell":
-			err = startShell()
 
 		default:
-			PrintUsage()
+			err = runPlugin(commandName, dbPath)
+			if err == plugins.ErrNoPlugin {
+				PrintUsage()
+				return
+			}
 	}
 
 	if err != nil {
@@ -206,12 +213,12 @@ func upgradeDatabase(dbPath string) error {
  	return dbmaker.Upgrade()
 }
 
-func startShell() error {
+func runPlugin(cmd, dbPath string) error {
 	db, err := streamdb.OpenFromConfig(config.GetConfiguration())
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
-	shell.StartShell(db)
-	return nil
+	return plugins.Run(cmd, db, flag.Args()[2:])
 }

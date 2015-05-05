@@ -8,100 +8,84 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
-func createDeviceAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	user, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
-
-	devname := request.PostFormValue("name")
+func createDeviceAction(se *SessionEnvironment) {
+	devname := se.Request.PostFormValue("name")
 
 	log.Printf("Creating device %v", devname)
 
-	err := operator.CreateDevice(devname, user)
+	err := se.Operator.CreateDevice(devname, se.User)
 	if err != nil {
-		session.AddFlash("You must enter a device name that isn't empty or taken.")
+		se.Session.AddFlash("You must enter a device name that isn't empty or taken.")
 	} else {
-		session.AddFlash("Created Device")
+		se.Session.AddFlash("Created Device")
 	}
 
-	http.Redirect(writer, request, "/secure/", http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/", http.StatusTemporaryRedirect)
 }
 
-func editDevicePage(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	_, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
-
-	vars := mux.Vars(request)
+func editDevicePage(se *SessionEnvironment) {
+	vars := mux.Vars(se.Request)
 	devids := vars["id"]
 	devid, _ := strconv.Atoi(devids)
-	device, err := userdb.ReadDeviceById(int64(devid))
+	device, err := se.Operator.ReadDeviceById(int64(devid))
 
 	origDevice := *device
 
 	if err != nil {
-		session.AddFlash("Error getting device, maybe it was deleted?")
+		se.Session.AddFlash("Error getting device, maybe it was deleted?")
 		goto redirect
 	}
 
-	device.Nickname = request.PostFormValue("shortname")
-	device.Enabled = request.PostFormValue("enabled") == "checked"
-	device.IsAdmin = request.PostFormValue("superdevice") == "checked"
-	device.CanWrite = request.PostFormValue("canwrite") == "checked"
-	device.CanWriteAnywhere = request.PostFormValue("canwriteanywhere") == "checked"
-	device.CanActAsUser = request.PostFormValue("userproxy") == "checked"
+	device.Nickname = se.Request.PostFormValue("shortname")
+	device.Enabled = se.Request.PostFormValue("enabled") == "checked"
+	device.IsAdmin = se.Request.PostFormValue("superdevice") == "checked"
+	device.CanWrite = se.Request.PostFormValue("canwrite") == "checked"
+	device.CanWriteAnywhere = se.Request.PostFormValue("canwriteanywhere") == "checked"
+	device.CanActAsUser = se.Request.PostFormValue("userproxy") == "checked"
 
-	err = operator.UpdateDevice(device, &origDevice)
+	err = se.Operator.UpdateDevice(device, &origDevice)
 
 	if err != nil {
 		log.Printf(err.Error())
-		session.AddFlash(err.Error())
+		se.Session.AddFlash(err.Error())
 	} else {
-		session.AddFlash("Created Device")
+		se.Session.AddFlash("Updated Device")
 	}
 
 redirect:
-	http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 }
 
 
-func getDevicePage(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	//user, userdevice, _ := srw.GetUserAndDevice()
-	user, _, _ := srw.GetUserAndDevice()
-	//operator, _ := userdb.GetOperatorForDevice(userdevice)
+func getDevicePage(se *SessionEnvironment) {
 	pageData := make(map[string]interface{})
 
-	vars := mux.Vars(request)
+	vars := mux.Vars(se.Request)
 	devids := vars["id"]
 
 	devid, _ := strconv.Atoi(devids)
 
-	device, err := userdb.ReadDeviceById(int64(devid))
+	device, err := se.Operator.ReadDeviceById(int64(devid))
 	pageData["device"] = device
-	pageData["user"] = user
-	pageData["flashes"] = session.Flashes()
+	pageData["user"] = se.User
+	pageData["flashes"] = se.Session.Flashes()
 
 	if err != nil {
 		pageData["alert"] = "Error getting device."
 	}
 
-	streams, err := userdb.ReadStreamsByDevice(device.DeviceId)
+	streams, err := se.Operator.ReadStreamsByDevice(device)
 	pageData["streams"] = streams
 
 	if err != nil {
 		pageData["alert"] = "Error getting device streams"
 	}
 
-	err = deviceInfoTemplate.ExecuteTemplate(writer, "device_info.html", pageData)
+	se.Save()
+	err = deviceInfoTemplate.ExecuteTemplate(se.Writer, "device_info.html", pageData)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(se.Writer, err.Error(), http.StatusInternalServerError)
 	}
 }
