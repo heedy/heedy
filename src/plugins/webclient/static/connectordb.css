@@ -71,4 +71,76 @@ abbr {
 /* To combat container fluid on desktops where it gets insanely huge */
 body {
     max-width:1170px;
+  background-color: #eee;
+  font-family:arial;
+      
 }
+
+.panel {
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,.12),0 1px 6px 0 rgba(0,0,0,.12);
+
+}
+
+.panel-primary {
+	border-width:0px;
+}
+
+/* To kill off the stupid roboto theme that makes forms invisible */
+
+.form-control {
+  border: 1px solid#d2d2d2;
+  padding: 1em;
+  background-color: white;
+  background-image: none;
+}
+
+.form-control:focus{
+background-image:none;	
+	
+  padding: 1em;
+  float: none;
+  border: 1px solid #66afe9;
+
+}
+
+.form-group .form-control:focus, .form-group-default .form-control:focus {
+background-image:none;	
+	
+  padding: 1em;
+  float: none;
+  border: 1px solid #66afe9;
+
+}
+
+
+.navbar-inverse {
+  background-color: #9C3FB5;
+  border-color: #9C3FB5;
+  color: white;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.navbar-brand {
+  font-size: 1.2em;
+  color: white;
+  font-weight: bold;
+}
+
+
+.navbar-inverse .navbar-brand {
+  color: white;
+}
+
+.navbar-inverse {
+  color: white;
+}
+
+
+.navbar-inverse .navbar-nav > li > a {
+  color: white;
+}
+
+.navbar-inverse .navbar-nav > .open > a, .navbar-inverse .navbar-nav > .open > a:hover, .navbar-inverse .navbar-nav > .open > a:focus {
+  background-color: #9C3FB5;
+  }
