@@ -35,7 +35,7 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	require.NoError(t, err)
 	defer db.Close()
-	go db.RunWriter()
+	//go db.RunWriter()
 
 	require.Equal(t, db, db.Database())
 	require.NoError(t, db.Reload())
@@ -56,7 +56,7 @@ func TestCacheCuriosities(t *testing.T) {
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	require.NoError(t, err)
 	defer db.Close()
-	go db.RunWriter()
+	//go db.RunWriter()
 
 	usrs, err := db.ReadAllUsers()
 	require.NoError(t, err)
@@ -90,4 +90,49 @@ func TestCacheCuriosities(t *testing.T) {
 
 	_, err = db.ReadDevice("tstr/mydevice")
 	require.Error(t, err, "Deleting a user does not propagate to cached devices")
+}
+
+//Let's see if the cache actually helps much with login speed
+func BenchmarkUserLogin(b *testing.B) {
+	ResetTimeBatch()
+
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	if err != nil {
+		b.Errorf("Couldn't open database: %v", err)
+		return
+	}
+	defer db.Close()
+	//go db.RunWriter()
+	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err = db.LoginOperator("streamdb_test", "mypass")
+		if err != nil {
+			b.Errorf("Login Failed: %v", err)
+			return
+		}
+	}
+}
+
+func BenchmarkUserLoginNoCache(b *testing.B) {
+	ResetTimeBatch()
+	CacheExpireTime = 0 //Cache expires IMMEDIATELY
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	if err != nil {
+		b.Errorf("Couldn't open database: %v", err)
+		return
+	}
+	defer db.Close()
+	//go db.RunWriter()
+	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err = db.LoginOperator("streamdb_test", "mypass")
+		if err != nil {
+			b.Errorf("Login Failed: %v", err)
+			return
+		}
+	}
 }

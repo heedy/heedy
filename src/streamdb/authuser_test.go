@@ -12,7 +12,7 @@ func TestAuthUserCrud(t *testing.T) {
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	require.NoError(t, err)
 	defer db.Close()
-	go db.RunWriter()
+	//go db.RunWriter()
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
