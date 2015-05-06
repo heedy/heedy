@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"os"
 	"streamdb"
+	"plugins"
 )
 
 const (
@@ -29,6 +30,29 @@ const (
   \___\___/_||_|_||_\___\__|\__\___/_| |___/|___/ |___/_||_\___|_|_|
 `
 )
+
+func init() {
+	// do some sweet plugin registration!
+	plugins.Register("shell", usage, startShellExec)
+}
+
+func startShellExec(sdb *streamdb.Database, args []string) error {
+	StartShell(sdb)
+	return nil
+}
+
+func usage() {
+	fmt.Println(`shell: runs an interactive shell for connectordb
+
+    Currently only basic utilities are supported, but more will come soon.
+    This is the command you want to use to add/modify/delete users, view the
+    health of your system and/or do administrative tasks.
+
+    In the future it will be possible to script the shell to make administration
+    easier.
+`)
+}
+
 
 
 func StartShell(sdb *streamdb.Database) {
@@ -91,7 +115,8 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 		AddUser{},
 		ListUsers{},
 		Cat{},
-		Su{}}
+		Su{},
+		ListDevices{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb

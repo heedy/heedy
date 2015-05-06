@@ -236,6 +236,11 @@ func (d *Device) RelationToStream(stream *Stream, streamParent *Device) Permissi
 	return ENABLED
 }
 
+// Returns the icon for the device in base 64
+func (d *Device) GetIconB64() string {
+	return DEFAULT_ICON
+}
+
 func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) {
 	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }

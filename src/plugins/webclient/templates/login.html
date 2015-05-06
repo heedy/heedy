@@ -1,0 +1,26 @@
+{{define "title"}}Login{{end}}
+
+{{define "body"}}
+
+    <div class="panel panel-default">
+        <h1>Welcome to ConnectorDB</h1>
+
+        <form class="form-signin" method="POST" action="/login/action/login">
+            <h2 class="form-signin-heading">Login</h2>
+            <label for="inputEmail" class="sr-only">Username or Primary Email Address</label>
+            <input type="text" id="email" class="form-control" placeholder="Username or Email Address" name="username" required autofocus>
+            <br>
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Password" name="password" required>
+            <br>
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+        </form>
+
+        <p><b>Stuff for Geeks:</b> </p>
+        <p>We use at least a SHA256 hashing mechanism with salted keys. As better methods become
+            available we'll securely upgrade your password in the background the next time you log in.</p>
+
+    </div>
+{{end}}
+
+{{template "base" . }}

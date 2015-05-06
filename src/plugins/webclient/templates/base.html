@@ -5,6 +5,10 @@
       <script src='/inc/jquery.qrcode-0.11.0.min.js' type='text/javascript'></script>
       <script src='/inc/js/bootstrap.min.js' type='text/javascript'></script>
       <link href="/inc/bootstrap.min.css" rel="stylesheet">
+		<!--<link href="/inc/roboto.min.css" rel="stylesheet">
+		<link href="/inc/material-fullpalette.min.css" rel="stylesheet">
+		<link href="/inc/ripples.min.css" rel="stylesheet">-->
+      <link href="/inc/magic-bootstrap.css" rel="stylesheet">
       <link href="/inc/connectordb.css" rel="stylesheet">
       <script src="/inc/js/connectordb.js" type='text/javascript'></script>
 
@@ -12,7 +16,7 @@
     </head>
 
     <body class="container">
-        <nav class="navbar navbar-default">
+        <nav class="navbar navbar-inverse">
         <div class="container-fluid">
           <!-- Brand and toggle get grouped for better mobile display -->
           <div class="navbar-header">
@@ -28,14 +32,16 @@
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav navbar-right">
+                {{ if $.user }}
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">User: {{ $.user.Name }}<span class="caret"></span></a>
                 <ul class="dropdown-menu" role="menu">
                   <li><a href="/secure/edit">Settings</a></li>
                   <li class="divider"></li>
-                  <li><a href="#">Logout (not implemented)</a></li>
+                  <li><a href="/login/action/logoff">Logout</a></li>
                 </ul>
               </li>
+              {{ end }}
             </ul>
           </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->

@@ -147,7 +147,12 @@ func MarshalWithTag(v interface{}, tag string) ([]byte, error) {
 
 // MarshalIndent is like Marshal but applies Indent to format the output.
 func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
-	b, err := MarshalWithTag(v, "json")
+	return MarshalIndentWithTag(v, prefix, indent, "json")
+}
+
+// MarshalIndent is like Marshal but applies Indent to format the output.
+func MarshalIndentWithTag(v interface{}, prefix, indent string, tag string) ([]byte, error) {
+	b, err := MarshalWithTag(v, tag)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +163,7 @@ func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
 
 // HTMLEscape appends to dst the JSON-encoded src with <, >, &, U+2028 and U+2029
 // characters inside string literals changed to \u003c, \u003e, \u0026, \u2028, \u2029

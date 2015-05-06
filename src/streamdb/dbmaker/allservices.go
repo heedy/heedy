@@ -97,7 +97,7 @@ func startSqlDatabase(config *config.Configuration) error {
 func Start(config *config.Configuration) error {
 	log.Printf("Starting subsystems\n")
 
-	os.Chdir(config.StreamdbDirectory)
+	//os.Chdir(config.StreamdbDirectory)
 
 	if err := startSqlDatabase(config); err != nil {
 		return err
