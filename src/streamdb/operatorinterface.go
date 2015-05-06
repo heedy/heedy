@@ -2,7 +2,7 @@ package streamdb
 
 import "streamdb/users"
 
-// An operator is an object that wraps the active streamdb databases and allows
+// An Operator is an object that wraps the active streamdb databases and allows
 // operations to be done on them collectively. It differs from the straight
 // timebatchdb/userdb as it allows some checking to be done with regards to
 // permissions and such beforehand. If at all possible you should use this
@@ -24,7 +24,10 @@ type Operator interface {
 	User() (*users.User, error)
 	Device() (*users.Device, error)
 
-	// Creates a user with the given name, email and password
+	//The following are path operations that simplify working with paths
+	//GetDeviceUser()
+	//GetStreamUser()
+	//GetStreamDevice()
 
 	// The user read operations work pretty much as advertised
 	ReadAllUsers() ([]users.User, error)
@@ -39,14 +42,13 @@ type Operator interface {
 	//SetAdmin can set a user or a device to have administrator permissions
 	SetAdmin(path string, isadmin bool) error
 
-	//Returns both user and device associated with the path
-	//ReadUserDevice(path string) (*users.User, *users.Device, error)
+	//The device operations are exactly the same as user operations. You pass in device paths
+	//in the form "username/devicename"
+	ReadAllDevices(username string) ([]users.Device, error)
 
-	//ReadAllDevices(username string) ([]users.Device, error)
-
-	//CreateDevice(devicepath string) error
-	//ReadDevice(devicepath string) (*users.Device, error)
-	//UpdateDevice(devicepath string, modifieddevice *users.Device) error
-	//ChangeDeviceApiKey(devicepath string) (apikey string, err error)
-	//DeleteDevice(devicepath string) error
+	CreateDevice(devicepath string) error
+	ReadDevice(devicepath string) (*users.Device, error)
+	UpdateDevice(devicepath string, modifieddevice *users.Device) error
+	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
+	DeleteDevice(devicepath string) error
 }

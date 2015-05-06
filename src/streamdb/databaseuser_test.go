@@ -59,15 +59,15 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, true, usr.Admin)
 
-	_, err = db.UserLoginOperator("streamdb_test", "wrongpass")
+	_, err = db.LoginOperator("streamdb_test", "wrongpass")
 	require.Error(t, err)
-	_, err = db.UserLoginOperator("streamdb_test", "mypass")
+	_, err = db.LoginOperator("streamdb_test", "mypass")
 	require.NoError(t, err)
 
 	require.NoError(t, db.ChangeUserPassword("streamdb_test", "pass2"))
-	_, err = db.UserLoginOperator("streamdb_test", "mypass")
+	_, err = db.LoginOperator("streamdb_test", "mypass")
 	require.Error(t, err)
-	_, err = db.UserLoginOperator("streamdb_test", "pass2")
+	_, err = db.LoginOperator("streamdb_test", "pass2")
 	require.NoError(t, err)
 
 	//As of now, this part fails - delete of nonexisting does not error

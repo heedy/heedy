@@ -64,7 +64,15 @@ func (o *Database) DeleteUser(username string) error {
 	if err != nil {
 		return err
 	}
+
+	//BUG(daniel): The behavior here under malicious attack is undefined. In particular, the cache might
+	//be in an inconsistent state if a user happens to create a new device at this moment in another thread, and before
+	//userdb deletes the user. This will leave a leftover device in the cache, which could allow
+	//a new user with the same name to be created immediately, and it just *might* be possible to do some shenanigans
+	//with the leftover device in cache. That is why it is important to clear the cache of existing devices
+
 	o.userCache.Remove(username)
+
 	return o.Userdb.DeleteUserByName(username)
 }
 
@@ -87,19 +95,6 @@ func (o *Database) UpdateUser(username string, modifieduser *users.User) error {
 		o.userCache.Add(modifieduser.Name, *modifieduser)
 	}
 	return err
-}
-
-//SetAdmin does exactly what it claims
-func (o *Database) SetAdmin(path string, isadmin bool) error {
-
-	//TODO: Make this work with devices
-	u, err := o.ReadUser(path)
-	if err != nil {
-		return err
-	}
-	u.Admin = isadmin
-	return o.UpdateUser(u.Name, u)
-
 }
 
 //ChangeUserPassword changes the password for the given user

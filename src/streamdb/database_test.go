@@ -3,6 +3,7 @@ package streamdb
 import (
 	"database/sql"
 	"streamdb/timebatchdb"
+	"streamdb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,7 +36,7 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	require.NoError(t, err)
 	defer db.Close()
-	//go db.RunWriter()
+	go db.RunWriter()
 
 	require.Equal(t, db, db.Database())
 	require.NoError(t, db.Reload())
@@ -45,11 +46,19 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 
 	_, err = db.Device()
 	require.Equal(t, err, ErrAdmin)
+
+	require.Equal(t, "ADMIN", db.Name())
+
+	require.True(t, db.Permissions(users.ROOT))
 }
 
 func TestCacheCuriosities(t *testing.T) {
 	//Adding the cache has also added several curious things that can go wrong
 	//We make sure that they don't happen here
+
+	//One more thing: Adding the cache adds a lot of question marks in multi-node setups, because
+	//there WILL be invalid nodes added at some point. Therefore, it will be important to have a periodic
+	//userdb cleanup process that deletes things that are not linked to valid ids
 
 	require.NoError(t, ResetTimeBatch())
 
@@ -117,6 +126,7 @@ func BenchmarkUserLogin(b *testing.B) {
 
 func BenchmarkUserLoginNoCache(b *testing.B) {
 	ResetTimeBatch()
+	origExpire := CacheExpireTime
 	CacheExpireTime = 0 //Cache expires IMMEDIATELY
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	if err != nil {
@@ -135,4 +145,5 @@ func BenchmarkUserLoginNoCache(b *testing.B) {
 			return
 		}
 	}
+	CacheExpireTime = origExpire
 }

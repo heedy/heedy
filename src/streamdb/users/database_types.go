@@ -138,9 +138,9 @@ type Device struct {
 	DatabaseType
 	DeviceId         int64  `modifiable:"nobody" json:"-"`        // The primary key of this device
 	Name             string `modifiable:"nobody"`                 // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname         string `modifiable:"user"`                   // The human readable name of this device
+	Nickname         string `modifiable:"device"`                 // The human readable name of this device
 	UserId           int64  `modifiable:"root" json:"-"`          // the user that owns this device
-	ApiKey           string `modifiable:"user" json:"-"`          // A uuid used as an api key to verify against
+	ApiKey           string `modifiable:"device" json:"-"`        // A uuid used as an api key to verify against
 	Enabled          bool   `modifiable:"user" json:"-"`          // Whether or not this device can do reading and writing
 	IsAdmin          bool   `modifiable:"root" json:",omitempty"` // Whether or not this is a "superdevice" which has access to the whole API
 	CanWrite         bool   `modifiable:"user"`                   // Can this device write to streams? (inactive right now)

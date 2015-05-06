@@ -3,6 +3,8 @@ package streamdb
 import (
 	"streamdb/users"
 	"strings"
+
+	"github.com/nu7hatch/gouuid"
 )
 
 //ReadAllDevices for the given user
@@ -14,12 +16,24 @@ func (o *Database) ReadAllDevices(username string) ([]users.Device, error) {
 	return o.Userdb.ReadDevicesForUserId(u.UserId)
 }
 
+//Technically, it is inefficient to pass in a path in a/b format, but our use case is
+//so extremely dominated by database query/network, that it is essentially free to make stuff
+//as pretty as possible.
 func splitDevicePath(devicepath string) (usr string, dev string, err error) {
 	splitted := strings.Split(devicepath, "/")
 	if len(splitted) != 2 {
 		return "", "", ErrBadPath
 	}
 	return splitted[0], splitted[1], nil
+}
+
+//ReadDeviceUser gets the user associated with the given device path
+func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) {
+	username, _, err := splitDevicePath(devicepath)
+	if err != nil {
+		return nil, err
+	}
+	return o.ReadUser(username)
 }
 
 //ReadDevice reads the given device
@@ -58,6 +72,31 @@ func (o *Database) CreateDevice(devicepath string) error {
 	return o.Userdb.CreateDevice(deviceName, u.UserId)
 }
 
+//UpdateDevice updates the device at devicepath to the modifed device passed in
+func (o *Database) UpdateDevice(devicepath string, modifieddevice *users.Device) error {
+	_, devname, err := splitDevicePath(devicepath)
+	if err != nil {
+		return err
+	}
+	dev, err := o.ReadDevice(devicepath)
+	if err != nil {
+		return err
+	}
+	if modifieddevice.RevertUneditableFields(*dev, users.ROOT) > 0 {
+		return ErrNotChangeable
+	}
+
+	err = o.Userdb.UpdateDevice(modifieddevice)
+	if err == nil {
+		//If the device name was changed, update device name in cache
+		if devname != modifieddevice.Name {
+			o.deviceCache.Remove(devicepath)
+		}
+		o.deviceCache.Add(devicepath, *modifieddevice)
+	}
+	return err
+}
+
 //DeleteDevice deletes an existing device
 func (o *Database) DeleteDevice(devicepath string) error {
 	dev, err := o.ReadDevice(devicepath)
@@ -67,6 +106,20 @@ func (o *Database) DeleteDevice(devicepath string) error {
 	err = o.Userdb.DeleteDevice(dev.DeviceId)
 	o.deviceCache.Remove(devicepath)
 	return err
+}
+
+//ChangeDeviceAPIKey generates a new api key for the given device, and returns the key
+func (o *Database) ChangeDeviceAPIKey(devicepath string) (apikey string, err error) {
+	dev, err := o.ReadDevice(devicepath)
+	if err != nil {
+		return "", err
+	}
+	newkey, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	dev.ApiKey = newkey.String()
+	return dev.ApiKey, o.UpdateDevice(devicepath, dev)
 }
 
 //DeleteUserDevices deletes all devices associated with the given user
@@ -83,7 +136,7 @@ func (o *Database) DeleteUserDevices(username string) error {
 	//We will be more clever here than just running DeleteDevice in a loop
 	//In particular, the whole goal here is to avoid pounding postgres, so
 	//loop through deleting streams/devices from cache and timebatch,
-	//but only delete once from devices.
+	//but only delete once from devices in postgres.
 
 	//This function avoids the "user" device for good reason
 	err = o.Userdb.DeleteAllDevicesForUser(usr.UserId)

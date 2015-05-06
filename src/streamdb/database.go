@@ -254,3 +254,27 @@ func (db *Database) Device() (*users.Device, error) {
 func (db *Database) Permissions(perm users.PermissionLevel) bool {
 	return true
 }
+
+//SetAdmin does exactly what it claims. It works on both users and devices
+func (db *Database) SetAdmin(path string, isadmin bool) error {
+	parray := strings.Split(path, "/")
+	if len(parray) > 2 {
+		return ErrBadPath
+	}
+	if len(parray) == 2 { //This is a device
+		dev, err := db.ReadDevice(path)
+		if err != nil {
+			return err
+		}
+		dev.IsAdmin = isadmin
+		return db.UpdateDevice(path, dev)
+	}
+	//It is a user
+	u, err := db.ReadUser(path)
+	if err != nil {
+		return err
+	}
+	u.Admin = isadmin
+	return db.UpdateUser(u.Name, u)
+
+}
