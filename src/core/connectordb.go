@@ -15,6 +15,7 @@ import (
 	"streamdb/util"
 	_ "plugins/shell"
 	_ "plugins/webclient"
+	_ "plugins/run"
 	"plugins"
 )
 
@@ -24,10 +25,8 @@ var (
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
 	createDbType           = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
-	startFlags  = flag.NewFlagSet("create", flag.ExitOnError)
-	startBasic  = startFlags.Bool("basic", false, "Start only background servers")
-	startRest   = startFlags.Bool("rest", true, "Start the REST API")
-	startWriter = startFlags.Bool("dbwriter", true, "Start the databaseWriter")
+	startFlags  = flag.NewFlagSet("start", flag.ExitOnError)
+	forceStart  = startFlags.Bool("force", false, "Force the start despite there being a connectordb pid file")
 
 	stopFlags = flag.NewFlagSet("stop", flag.ExitOnError)
 
@@ -167,14 +166,19 @@ func startDatabase(dbPath string) error {
 	processFlags(startFlags)
 
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+
 	if err != nil {
-		return err
+		if err == util.ErrAlreadyRunning && ! *forceStart {
+			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
+			return err
+		} else {
+			return err
+		}
 	}
 
 	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
-
 
 	return dbmaker.Start(config.GetConfiguration())
 }
