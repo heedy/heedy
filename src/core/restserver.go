@@ -17,6 +17,8 @@ var (
 	sqlserver   = flag.String("sql", "postgres://127.0.0.1:52592/connectordb?sslmode=disable", "")
 	redisserver = flag.String("redis", "localhost:6379", "The address to the redis instance")
 	msgserver   = flag.String("msg", "localhost:4222", "The address of the messenger server")
+
+	runwriter = flag.Bool("dbwriter", true, "Run the Database Writer (needed if dbwriter service off)")
 )
 
 func main() {
@@ -35,6 +37,10 @@ func main() {
 		panic(err.Error())
 	}
 	defer db.Close()
+
+	if *runwriter {
+		go db.RunWriter()
+	}
 
 	log.Printf("Running REST API on port %d", *serverport)
 

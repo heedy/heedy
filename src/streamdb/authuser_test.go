@@ -22,6 +22,7 @@ func TestAuthUserCrud(t *testing.T) {
 	o, err := db.UserLoginOperator("streamdb_test", "mypass")
 	require.NoError(t, err)
 
+	require.Equal(t, "streamdb_test/user", o.Name())
 	require.Equal(t, db, o.Database())
 
 	u, err := o.User()
@@ -72,9 +73,8 @@ func TestAuthUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test", u.Name)
 
-	modu := *u
-	modu.Email = "testemail@test.com"
-	require.NoError(t, o.UpdateUser(u, modu))
+	u.Email = "testemail@test.com"
+	require.NoError(t, o.UpdateUser(u.Name, u))
 
 	u, err = o.User()
 	require.NoError(t, err)

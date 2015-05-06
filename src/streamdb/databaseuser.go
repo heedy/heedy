@@ -10,37 +10,10 @@ These functions allow Database to conform to the Operator interface
 */
 
 var (
-	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
-	ErrAdmin = errors.New("An administrative operator has no user or device")
 
 	//ErrNotChangeable is thrown when changing a field that can't be changed
 	ErrNotChangeable = errors.New("The given fields are not modifiable.")
 )
-
-//Database just returns self
-func (o *Database) Database() *Database {
-	return o
-}
-
-//Reload does nothing - it is there jsut for conformity to interface
-func (o *Database) Reload() error {
-	return nil
-}
-
-//User returns the current user
-func (o *Database) User() (usr *users.User, err error) {
-	return nil, ErrAdmin
-}
-
-//Device returns the current device
-func (o *Database) Device() (*users.Device, error) {
-	return nil, ErrAdmin
-}
-
-//Permissions returns whether the operator has permissions given by the string
-func (o *Database) Permissions(perm users.PermissionLevel) bool {
-	return true
-}
 
 //The following functions are direct mirrors of Userdb
 
@@ -56,12 +29,28 @@ func (o *Database) ReadAllUsers() ([]users.User, error) {
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUser(username string) (*users.User, error) {
-	return o.Userdb.ReadUserByName(username)
+	//Check if the user is in the cache
+	if u, ok := o.userCache.Get(username); ok {
+		usr := u.(users.User)
+		return &usr, nil
+	}
+
+	usr, err := o.Userdb.ReadUserByName(username)
+	if err == nil {
+		//put the user into the cache
+		o.userCache.Add(usr.Name, *usr)
+	}
+	return usr, err
 }
 
 //ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUserByEmail(email string) (*users.User, error) {
-	return o.Userdb.ReadUserByEmail(email)
+	usr, err := o.Userdb.ReadUserByEmail(email)
+	if err == nil {
+		//put the user into the cache
+		o.userCache.Add(usr.Name, *usr)
+	}
+	return usr, err
 }
 
 //DeleteUser deletes the given user - only admin can delete
@@ -70,16 +59,34 @@ func (o *Database) DeleteUser(username string) error {
 	if err != nil {
 		return err //Workaround for issue #81
 	}
+	//DeleteUserDevices is not needed for users, but necessary for timebatchdb and cache cleaning
+	err = o.DeleteUserDevices(username)
+	if err != nil {
+		return err
+	}
+	o.userCache.Remove(username)
 	return o.Userdb.DeleteUserByName(username)
 }
 
 //UpdateUser performs the given modifications
-func (o *Database) UpdateUser(user *users.User, modifieduser users.User) error {
+func (o *Database) UpdateUser(username string, modifieduser *users.User) error {
+	user, err := o.ReadUser(username)
+	if err != nil {
+		return err //Workaround for issue #81
+	}
 	if modifieduser.RevertUneditableFields(*user, users.ROOT) > 0 {
 		return ErrNotChangeable
 	}
 
-	return o.Userdb.UpdateUser(&modifieduser)
+	err = o.Userdb.UpdateUser(modifieduser)
+	if err == nil {
+		//The username was changed - remove the old one from cache
+		if username != modifieduser.Name {
+			o.userCache.Remove(username)
+		}
+		o.userCache.Add(modifieduser.Name, *modifieduser)
+	}
+	return err
 }
 
 //SetAdmin does exactly what it claims
@@ -90,11 +97,8 @@ func (o *Database) SetAdmin(path string, isadmin bool) error {
 	if err != nil {
 		return err
 	}
-
-	modu := *u //Make a copy of the user
-	modu.Admin = isadmin
-
-	return o.UpdateUser(u, modu)
+	u.Admin = isadmin
+	return o.UpdateUser(u.Name, u)
 
 }
 
@@ -104,8 +108,6 @@ func (o *Database) ChangeUserPassword(username, newpass string) error {
 	if err != nil {
 		return err
 	}
-	modu := *u
-	modu.Password, modu.PasswordSalt, modu.PasswordHashScheme = users.UpgradePassword(newpass)
-
-	return o.UpdateUser(u, modu)
+	u.SetNewPassword(newpass)
+	return o.UpdateUser(username, u)
 }

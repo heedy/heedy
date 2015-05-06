@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -17,7 +16,6 @@ var ErrInvalidName = errors.New("The given name did not pass sanitation.")
 func OK(writer http.ResponseWriter) error {
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte("ok"))
-	log.Println("OK")
 	return nil
 }
 
@@ -35,7 +33,6 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, err error) error {
 	}
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	log.Printf("Success: %s\n", string(res))
 	return nil
 }
 

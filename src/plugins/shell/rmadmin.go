@@ -32,22 +32,10 @@ func (h RevokeAdmin) Execute(shell *Shell, args []string) {
 		fmt.Println(Red + "Must supply a name" + Reset)
 		return
 	}
-
-	operator := shell.operator
-
-	user, err := operator.ReadUser(args[1])
+	err := shell.operator.SetAdmin(args[1], false)
 	if shell.PrintError(err) {
 		return
 	}
-
-	orig := *user      // our original to revert values to
-	user.Admin = false // grant admin
-
-	err = operator.UpdateUser(user, orig)
-	if shell.PrintError(err) {
-		return
-	}
-
 	fmt.Println(Green + "Revoked admin from: " + args[1] + Reset)
 }
 

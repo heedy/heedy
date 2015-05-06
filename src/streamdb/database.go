@@ -2,20 +2,36 @@ package streamdb
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
+	"strings"
 )
 
 //The StreamDB version string
-const Version = "0.2.0a"
+const Version = "0.2.0"
 
 var (
+
+	//ErrBadPath is thrown when a user device or stream cannot be extracted from the path
+	ErrBadPath = errors.New("The given path is invalid.")
+	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
+	ErrAdmin = errors.New("An administrative operator has no user or device")
+
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 250
+
+	//CacheSizes are the number of users/devices/streams to cache
+	UserCacheSize   = 100
+	DeviceCacheSize = 1000
+	StreamCacheSize = 10000
+
+	//Cache eviction timer in seconds. Can be huge on single-node setups
+	CacheExpireTime = 60
 )
 
 //Database is a StreamDB database object which holds the methods
@@ -26,6 +42,11 @@ type Database struct {
 	msg *messenger.Messenger  //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+
+	//The caches are to keep frequently used stuff in memory for a reasonable time before reloading from database
+	userCache   TimedCache
+	deviceCache TimedCache
+	streamCache TimedCache
 }
 
 // Calls open from the arguments in the given configuration
@@ -63,7 +84,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	var db Database
 	var sqltype string
 
-	//Dbutil prints the sqluri t log, so no need to do it here
+	//Dbutil prints the sqluri to log, so no need to do it here
 	db.sqldb, sqltype, err = dbutil.OpenSqlDatabase(sqluri)
 	if err != nil {
 		return nil, err
@@ -77,6 +98,10 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 
 	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
 	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
+
+	db.userCache, err = NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)
+	db.deviceCache, err = NewTimedCache(DeviceCacheSize, int64(CacheExpireTime), err)
+	db.streamCache, err = NewTimedCache(StreamCacheSize, int64(CacheExpireTime), err)
 
 	if err != nil {
 		db.Close()
@@ -93,32 +118,67 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 }
 
 //DeviceLoginOperator returns the operator associated with the given API key
-func (db *Database) DeviceLoginOperator(apikey string) (Operator, error) {
-	dev, err := db.Userdb.ReadDeviceByApiKey(apikey)
-	if err != nil {
-		return nil, err
+func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, error) {
+	dev, err := db.ReadDevice(devicepath)
+	if err != nil || dev.ApiKey != apikey {
+		return nil, ErrPermissions //Don't leak whether the device exists
 	}
-	usr, err := db.Userdb.ReadUserById(dev.UserId)
-	return &AuthOperator{db, dev, usr}, err
+
+	//Get the device's associated user (it should have been thrown into cache by ReadDevice)
+	usr, err := db.ReadUser(strings.Split(devicepath, "/")[0])
+
+	return &AuthOperator{db, usr.Name, dev.Name}, err
 }
 
 //UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
-	usr, dev, err := db.Userdb.Login(username, password)
-	return &AuthOperator{db, dev, usr}, err
+	usr, err := db.ReadUser(username) //Checks the cache for the user first
+	if err != nil || !usr.ValidatePassword(password) {
+		return nil, ErrPermissions //We don't want to leak if a user exists or not
+	}
+
+	//Get the device - checks the cache first
+	dev, err := db.ReadDevice(username + "/user")
+
+	return &AuthOperator{db, usr.Name, dev.Name}, err
+}
+
+//LoginOperator logs in as a user or device, depending on which is passed in
+func (db *Database) LoginOperator(path, password string) (Operator, error) {
+	parray := strings.Split(path, "/")
+	if len(parray) > 2 {
+		return nil, ErrBadPath
+	}
+	if len(parray) == 2 {
+		return db.DeviceLoginOperator(path, password)
+	}
+	return db.UserLoginOperator(path, password)
 }
 
 //Operator gets the operator by usr or device name
 func (db *Database) Operator(path string) (Operator, error) {
+	devname := "user"
+	username := path
 
-	//Get the user
-	usr, err := db.Userdb.ReadUserByName(path)
+	//Get the user and device names set up correctly
+	parray := strings.Split(path, "/")
+	if len(parray) > 2 {
+		return nil, ErrBadPath
+	}
+	if len(parray) == 2 {
+		username = parray[0]
+		devname = parray[1]
+	}
+
+	//Get the user - note that ReadUser first checks the cache
+	usr, err := db.ReadUser(username)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := db.Userdb.ReadUserOperatingDevice(usr)
+	//Get the device - check the cache first
+	dev, err := db.ReadDevice(username + "/" + devname)
 
-	return &AuthOperator{db, dev, usr}, err
+	return &AuthOperator{db, usr.Name, dev.Name}, err
 }
 
 //Close closes all database connections and releases all resources.
@@ -158,4 +218,39 @@ this database, then NO.
 **/
 func (db *Database) RunWriter() {
 	db.tdb.WriteDatabase()
+}
+
+//These functions allow the Database object to conform to the Operator interface
+
+//Name here is ADMIN meaning that it is the database administration operator
+func (db *Database) Name() string {
+	return "ADMIN"
+}
+
+//Database just returns self
+func (db *Database) Database() *Database {
+	return db
+}
+
+//Reload for a full database purges the entire cache
+func (db *Database) Reload() error {
+	db.userCache.Purge()
+	db.deviceCache.Purge()
+	db.streamCache.Purge()
+	return nil
+}
+
+//User returns the current user
+func (db *Database) User() (usr *users.User, err error) {
+	return nil, ErrAdmin
+}
+
+//Device returns the current device
+func (db *Database) Device() (*users.Device, error) {
+	return nil, ErrAdmin
+}
+
+//Permissions returns whether the operator has permissions given by the string
+func (db *Database) Permissions(perm users.PermissionLevel) bool {
+	return true
 }

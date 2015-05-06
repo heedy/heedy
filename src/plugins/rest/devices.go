@@ -7,18 +7,8 @@ import (
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
 func GetThis(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usr, err := o.User()
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return err
-	}
-	dev, err := o.Device()
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return err
-	}
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(usr.Name + "/" + dev.Name))
+	writer.Write([]byte(o.Name()))
 	return nil
 }
 

@@ -15,36 +15,20 @@ var (
 type AuthOperator struct {
 	Db *Database //Db is the underlying database
 
-	dev *users.Device //The device underlying this operator. If it is nil, it is an admin
-	usr *users.User   //If the underlying user is queried, it is stored here for future reference. Nil by default
+	usrName string //The user name underlying this device
+	devName string //The device name underlying this device
 }
 
-//Loads the device from database
-func (o *AuthOperator) reloadDevice() error {
-	dev, err := o.Db.Userdb.ReadDeviceById(o.dev.DeviceId)
-	if err != nil {
-		return err
-	}
-	o.dev = dev
-	return err
-}
-
-//Loads the user from database
-func (o *AuthOperator) reloadUser() error {
-	usr, err := o.Db.Userdb.ReadUserById(o.usr.UserId)
-	if err != nil {
-		return err
-	}
-	o.usr = usr
-	return err
+//Name is the path to the device underlying the operator
+func (o *AuthOperator) Name() string {
+	return o.usrName + "/" + o.devName
 }
 
 //Reload both user and device
 func (o *AuthOperator) Reload() error {
-	if err := o.reloadUser(); err != nil {
-		return err
-	}
-	return o.reloadDevice()
+	o.Db.userCache.Remove(o.usrName)
+	o.Db.deviceCache.Remove(o.Name())
+	return nil
 }
 
 //Database returns the underlying database
@@ -54,17 +38,21 @@ func (o *AuthOperator) Database() *Database {
 
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
-	return o.usr, nil
+	return o.Db.ReadUser(o.usrName)
 }
 
 //Device returns the current device
 func (o *AuthOperator) Device() (*users.Device, error) {
-	return o.dev, nil
+	return o.Db.ReadDevice(o.Name())
 }
 
 //Permissions returns whether the operator has permissions given by the string
 func (o *AuthOperator) Permissions(perm users.PermissionLevel) bool {
-	return o.dev.GeneralPermissions().Gte(perm)
+	dev, err := o.Device()
+	if err != nil {
+		return false
+	}
+	return dev.GeneralPermissions().Gte(perm)
 }
 
 //CreateUser makes a new user
@@ -81,13 +69,17 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 		return o.Db.ReadAllUsers()
 	}
 	//If not admin, then we only know about our own device
-	return []users.User{*o.usr}, nil
+	u, err := o.User()
+	if err != nil {
+		return []users.User{}, err
+	}
+	return []users.User{*u}, err
 }
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
-	if o.usr.Name == username {
-		return o.usr, nil
+	if o.usrName == username {
+		return o.User()
 	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUser(username)
@@ -97,8 +89,12 @@ func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
 
 //ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUserByEmail(email string) (*users.User, error) {
-	if o.usr.Email == email {
-		return o.usr, nil
+	u, err := o.User()
+	if err != nil {
+		return nil, err
+	}
+	if u.Email == email {
+		return u, nil
 	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUserByEmail(email)
@@ -115,16 +111,21 @@ func (o *AuthOperator) DeleteUser(username string) error {
 }
 
 //UpdateUser performs the given modifications
-func (o *AuthOperator) UpdateUser(user *users.User, modifieduser users.User) error {
+func (o *AuthOperator) UpdateUser(username string, modifieduser *users.User) error {
+	user, err := o.ReadUser(username)
+	if err != nil {
+		return err
+	}
+	dev, err := o.Device()
+	if err != nil {
+		return err
+	}
 	//See if the bastards tried to change a field they have no fucking business editing :-P
-	if modifieduser.RevertUneditableFields(*user, o.dev.RelationToUser(user)) > 0 {
+	if modifieduser.RevertUneditableFields(*user, dev.RelationToUser(user)) > 0 {
 		return ErrPermissions
 	}
-	err := o.Db.Userdb.UpdateUser(&modifieduser)
-	if err == nil && user.Name == o.usr.Name {
-		//o.usr = &modifieduser //If we are modifying self, then save the changes in self also
-		return o.Reload() //Since stuff is modified on triggers, reload both user and device on update
-	}
+	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
+	o.Db.UpdateUser(username, modifieduser)
 	return err
 }
 
@@ -136,11 +137,8 @@ func (o *AuthOperator) SetAdmin(path string, isadmin bool) error {
 	if err != nil {
 		return err
 	}
-
-	modu := *u //Make a copy of the user
-	modu.Admin = isadmin
-
-	return o.UpdateUser(u, modu)
+	u.Admin = isadmin
+	return o.UpdateUser(u.Name, u)
 
 }
 
@@ -150,8 +148,6 @@ func (o *AuthOperator) ChangeUserPassword(username, newpass string) error {
 	if err != nil {
 		return err
 	}
-	modu := *u
-	modu.Password, modu.PasswordSalt, modu.PasswordHashScheme = users.UpgradePassword(newpass)
-
-	return o.UpdateUser(u, modu)
+	u.SetNewPassword(newpass)
+	return o.UpdateUser(username, u)
 }

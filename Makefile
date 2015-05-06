@@ -40,6 +40,7 @@ go-dependencies:
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions
+	go get github.com/hashicorp/golang-lru
 
 	# go tools
 	#go get golang.org/x/tools/cmd/cover	#Cover tool is default in 1.4, and this command gives errors

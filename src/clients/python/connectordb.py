@@ -18,14 +18,11 @@ class ServerError(Exception):
 
 
 class ConnectorDB(object):
-    #Connect to ConnectorDB given an apikey and an optional url to the server.
+    #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
     #Alternately, you can log in using your username and password by setting
     #your password to apikey, and name to username.
-    def __init__(self,apikey,password="",url="https://connectordb.com"):
-        if len(password)>0:
-            self.auth = HTTPBasicAuth(apikey,password)
-        else:
-            self.auth = HTTPBasicAuth("",apikey)
+    def __init__(self,user,password,url="https://connectordb.com"):
+        self.auth = HTTPBasicAuth(user,password)
         self.url = url
         
         #We don't actually know our name - we only have an api key, so let's get the device.

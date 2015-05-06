@@ -29,7 +29,7 @@ func ResetTimeBatch() error {
 	return err
 }
 
-func TestDatabaseUserCrud(t *testing.T) {
+func TestDatabaseOperatorBasics(t *testing.T) {
 	require.NoError(t, ResetTimeBatch())
 
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
@@ -45,72 +45,49 @@ func TestDatabaseUserCrud(t *testing.T) {
 
 	_, err = db.Device()
 	require.Equal(t, err, ErrAdmin)
+}
+
+func TestCacheCuriosities(t *testing.T) {
+	//Adding the cache has also added several curious things that can go wrong
+	//We make sure that they don't happen here
+
+	require.NoError(t, ResetTimeBatch())
+
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	require.NoError(t, err)
+	defer db.Close()
+	go db.RunWriter()
 
 	usrs, err := db.ReadAllUsers()
 	require.NoError(t, err)
 	require.Equal(t, 0, len(usrs))
 
-	_, err = db.ReadUser("streamdb_test")
-	require.Error(t, err)
-	_, err = db.ReadUserByEmail("root@localhost")
-	require.Error(t, err)
-
+	//Create the user
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
-
-	usrs, err = db.ReadAllUsers()
+	//Change the user's name
+	u, err := db.ReadUser("streamdb_test")
 	require.NoError(t, err)
-	require.Equal(t, 1, len(usrs))
+	u.Name = "tstr"
+	db.UpdateUser("streamdb_test", u)
 
-	usr, err := db.ReadUser("streamdb_test")
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test", usr.Name)
+	//Now let's see if the cache removed the old user name
+	u, err = db.ReadUser("streamdb_test")
+	require.Error(t, err, "Changing username leaves old name in cache")
 
-	usr, err = db.ReadUserByEmail("root@localhost")
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test", usr.Name)
-
-	modu := *usr
-	modu.Admin = true
-	modu.Email = "testemail@test.com"
-	require.NoError(t, db.UpdateUser(usr, modu))
-
-	usr, err = db.ReadUser("streamdb_test")
-	require.NoError(t, err)
-	require.Equal(t, true, usr.Admin)
-	require.Equal(t, "testemail@test.com", usr.Email)
-
-	modu = *usr
-	modu.UserId = 9001
-	require.Error(t, db.UpdateUser(usr, modu))
-
-	require.NoError(t, db.SetAdmin("streamdb_test", false))
-	usr, err = db.ReadUser("streamdb_test")
-	require.NoError(t, err)
-	require.Equal(t, false, usr.Admin)
-
-	require.NoError(t, db.SetAdmin("streamdb_test", true))
-	usr, err = db.ReadUser("streamdb_test")
-	require.NoError(t, err)
-	require.Equal(t, true, usr.Admin)
-
-	_, err = db.UserLoginOperator("streamdb_test", "wrongpass")
-	require.Error(t, err)
-	_, err = db.UserLoginOperator("streamdb_test", "mypass")
+	//Now, let's make sure that after a user is deleted, its devices/streams are deleted also
+	//This leads to a REALLY weird bug in python tests, which create and delete the same username
+	//many times, and the user device gets mismatched between them if the cache is not purged
+	//of deleted user's devices/streams
+	_, err = db.ReadUser("tstr")
 	require.NoError(t, err)
 
-	require.NoError(t, db.ChangeUserPassword("streamdb_test", "pass2"))
-	_, err = db.UserLoginOperator("streamdb_test", "mypass")
-	require.Error(t, err)
-	_, err = db.UserLoginOperator("streamdb_test", "pass2")
+	require.NoError(t, db.CreateDevice("tstr/mydevice"))
+
+	_, err = db.ReadDevice("tstr/mydevice")
 	require.NoError(t, err)
 
-	//As of now, this part fails - delete of nonexisting does not error
-	require.Error(t, db.DeleteUser("notauser"))
-	require.NoError(t, db.DeleteUser("streamdb_test"))
+	require.NoError(t, db.DeleteUser("tstr"))
 
-	_, err = db.ReadUser("streamdb_test")
-	require.Error(t, err)
-	_, err = db.ReadUserByEmail("streamdb_test")
-	require.Error(t, err)
-
+	_, err = db.ReadDevice("tstr/mydevice")
+	require.Error(t, err, "Deleting a user does not propagate to cached devices")
 }

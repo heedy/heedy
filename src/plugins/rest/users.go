@@ -27,7 +27,7 @@ func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 
 //ListUsers lists the users that the given operator can see
 func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	log.Println("Listing Users")
+	log.Printf("%s: List Users\n", o.Name())
 	u, err := o.ReadAllUsers()
 	if err != nil {
 		for i := 0; i < len(u); i++ {
@@ -45,7 +45,7 @@ type userCreator struct {
 //CreateUser creates a new user from a REST API request
 func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	log.Println("Create User: ", usrname)
+	log.Printf("%s: Create User %s\n", o.Name(), usrname)
 	var a userCreator
 	err := UnmarshalRequest(request, &a)
 	err = ValidName(usrname, err)
@@ -65,7 +65,7 @@ func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 //ReadUser reads the given user
 func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	log.Println("ReadUser: ", usrname)
+	log.Printf("%s: Read User %s\n", o.Name(), usrname)
 	u, err := o.ReadUser(usrname)
 
 	if err == nil {
@@ -78,7 +78,7 @@ func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Req
 //UpdateUser updates the metadata for existing user from a REST API request
 func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	log.Println("UpdateUser: ", usrname)
+	log.Printf("%s: Update User %s\n", o.Name(), usrname)
 	u, err := o.ReadUser(usrname)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
@@ -96,10 +96,8 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 	//We use a special procedure for upgrading the password
 	if modusr.Password != u.Password {
 		modusr.SetNewPassword(modusr.Password)
-		log.Println("Changed pass:", modusr)
 	}
-
-	if err = o.UpdateUser(u, modusr); err != nil {
+	if err = o.UpdateUser(usrname, &modusr); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		return err
 	}
@@ -109,7 +107,7 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 //DeleteUser deletes existing user from a REST API request
 func DeleteUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	log.Println("DelUser: ", usrname)
+	log.Printf("%s: Delete User %s\n", o.Name(), usrname)
 	err := o.DeleteUser(usrname)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)

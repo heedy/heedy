@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"streamdb"
 
 	"errors"
@@ -28,36 +29,21 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			return
 		}
 
-		//Now, authentication is either by API key or by username/password combo
-		var o streamdb.Operator
-		var err error
+		o, err := db.LoginOperator(authUser, authPass)
 
-		if len(authUser) != 0 {
-			//Authenticate by username/password
-			o, err = db.UserLoginOperator(authUser, authPass)
-
-			if err != nil {
-				writer.Header().Set("WWW-Authenticate", "Basic")
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte(err.Error()))
-				return
-			}
-		} else {
-			//Authenticate by API key
-			o, err = db.DeviceLoginOperator(authPass)
-
-			if err != nil {
-				writer.Header().Set("WWW-Authenticate", "Basic")
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte(err.Error()))
-				return
-			}
+		if err != nil {
+			writer.Header().Set("WWW-Authenticate", "Basic")
+			writer.WriteHeader(http.StatusUnauthorized)
+			writer.Write([]byte(err.Error()))
+			log.Println("Authentication Failure: ", authUser, err.Error())
+			return
 		}
 
-		//If we got here, o is valiprefix.
+		//If we got here, o is a valid operator
 		err = apifunc(o, writer, request)
 		if err != nil {
 			writer.Write([]byte(err.Error()))
+			log.Println("Error: ", err.Error())
 			return
 		}
 	})
