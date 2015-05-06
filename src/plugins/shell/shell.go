@@ -115,7 +115,8 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 		AddUser{},
 		ListUsers{},
 		Cat{},
-		Su{}}
+		Su{},
+		ListDevices{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
