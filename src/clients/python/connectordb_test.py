@@ -5,7 +5,7 @@ class TestConnectorDB(unittest.TestCase):
     def setUp(self):
         try:
             db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
-            db.user("python_test").delete()
+            db.getuser("python_test").delete()
         except:
             pass
     def test_authfail(self):
@@ -26,10 +26,11 @@ class TestConnectorDB(unittest.TestCase):
     def test_adminusercrud(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
 
-        self.assertEqual(db.thisuser.exists,True)
-        self.assertEqual(db.thisuser.admin,True)
+        self.assertEqual(db.user.exists,True)
+        self.assertEqual(db.user.admin,True)
+        self.assertEqual(db.admin,True)
 
-        usr = db.user("python_test")
+        usr = db.getuser("python_test")
         self.assertFalse(usr.exists)
 
         usr.create("py@email","mypass")
@@ -41,7 +42,7 @@ class TestConnectorDB(unittest.TestCase):
 
         usr.email = "email@me"
         self.assertEqual(usr.email,"email@me")
-        self.assertEqual(db.user("python_test").email,"email@me")
+        self.assertEqual(db.getuser("python_test").email,"email@me")
         usr.admin = True
         self.assertEqual(usr.admin,True)
         usr.admin = False
@@ -55,13 +56,13 @@ class TestConnectorDB(unittest.TestCase):
         usrdb = connectordb.ConnectorDB("python_test","pass2",url="http://localhost:8000")
         self.assertEqual(usrdb.name,"python_test/user")
         usr.delete()
-        self.assertFalse(db.user("python_test").exists)
+        self.assertFalse(db.getuser("python_test").exists)
 
         self.assertEqual(len(db.users()),1)
     def test_usercrud(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
 
-        usr = db.user("python_test")
+        usr = db.getuser("python_test")
         self.assertFalse(usr.exists)
 
         usr.create("py@email","mypass")
@@ -70,15 +71,48 @@ class TestConnectorDB(unittest.TestCase):
 
         self.assertEqual(len(db.users()),1,"Shouldn't see the test user")
 
-        self.assertRaises(connectordb.AuthenticationError,db.user("hi").create,"a@b","lol")
+        self.assertRaises(connectordb.AuthenticationError,db.getuser("hi").create,"a@b","lol")
 
-        self.assertEqual(db.user("test").exists,False)
+        self.assertEqual(db.getuser("test").exists,False)
 
-        self.assertRaises(connectordb.AuthenticationError,db.user("test").delete)
+        self.assertRaises(connectordb.AuthenticationError,db.getuser("test").delete)
 
 
-        usr = db.thisuser
+        usr = db.user
         usr.email = "email@me"
         self.assertEqual(usr.email,"email@me")
-        self.assertEqual(db.user("python_test").email,"email@me")
+        self.assertEqual(db.getuser("python_test").email,"email@me")
+
+    def test_devicecrud(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+
+        db = connectordb.ConnectorDB("python_test","mypass",url="http://localhost:8000")
+
+        self.assertTrue(db.exists)
+        self.assertEqual(1,len(db.user.devices()))
+
+        self.assertFalse(db.user["mydevice"].exists)
+        db.user["mydevice"].create()
+
+        self.assertTrue(db.user["mydevice"].exists)
+
+        self.assertEqual(2,len(db.user.devices()))
+
+        db = connectordb.ConnectorDB("python_test/mydevice",db.user["mydevice"].apikey,url="http://localhost:8000")
+
+        self.assertEqual(1,len(db.user.devices()))
+
+        db.nickname = "testnick"
+        self.assertEqual(db.nickname,"testnick")
+        self.assertEqual(db.user.email,"py@email")
+        self.assertRaises(connectordb.AuthenticationError,db.delete)
+
+        newkey = db.resetKey()
+        self.assertRaises(connectordb.AuthenticationError,db.refresh)
+
+
+        db = connectordb.ConnectorDB("python_test/mydevice",newkey,url="http://localhost:8000")
+        self.assertTrue(db.exists)
 

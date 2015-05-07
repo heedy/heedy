@@ -136,18 +136,18 @@ func (u *User) UpgradePassword(password string) bool {
 //
 type Device struct {
 	DatabaseType
-	DeviceId         int64  `modifiable:"nobody" json:"-"`        // The primary key of this device
-	Name             string `modifiable:"nobody"`                 // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname         string `modifiable:"device"`                 // The human readable name of this device
-	UserId           int64  `modifiable:"root" json:"-"`          // the user that owns this device
-	ApiKey           string `modifiable:"device" json:"-"`        // A uuid used as an api key to verify against
-	Enabled          bool   `modifiable:"user" json:"-"`          // Whether or not this device can do reading and writing
-	IsAdmin          bool   `modifiable:"root" json:",omitempty"` // Whether or not this is a "superdevice" which has access to the whole API
-	CanWrite         bool   `modifiable:"user"`                   // Can this device write to streams? (inactive right now)
-	CanWriteAnywhere bool   `modifiable:"user"`                   // Can this device write to others streams? (inactive right now)
-	CanActAsUser     bool   `modifiable:"user"`                   // Can this device operate as a user? (inactive right now)
-	IsVisible        bool   `modifiable:"root"`
-	UserEditable     bool   `modifiable:"root"`
+	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
+	Name             string `modifiable:"nobody" json:"name"`                     // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
+	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
+	ApiKey           string `modifiable:"device" json:"apikey,omitempty"`         // A uuid used as an api key to verify against
+	Enabled          bool   `modifiable:"user" json:"enabled"`                    // Whether or not this device can do reading and writing
+	IsAdmin          bool   `modifiable:"root" json:"admin,omitempty"`            // Whether or not this is a "superdevice" which has access to the whole API
+	CanWrite         bool   `modifiable:"user" json:"canwrite,omitempty"`         // Can this device write to streams? (inactive right now)
+	CanWriteAnywhere bool   `modifiable:"user" json:"canwriteanywhere,omitempty"` // Can this device write to others streams? (inactive right now)
+	CanActAsUser     bool   `modifiable:"user" json:"user,omitempty"`             // Can this device operate as a user? (inactive right now)
+	IsVisible        bool   `modifiable:"root" json:"visible"`
+	UserEditable     bool   `modifiable:"root" json:"-"`
 }
 
 func (d *Device) GeneralPermissions() PermissionLevel {
