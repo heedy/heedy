@@ -32,11 +32,11 @@ func initSqlDatabase(config *config.Configuration) error {
 	sqlDatabaseType := config.DatabaseType
 
 	switch sqlDatabaseType {
-		case "postgres":
+		case config.Postgres:
 			if err := postgresInstance.Init(); err != nil {
 				return err
 			}
-		case "sqlite":
+		case config.Sqlite:
 			if err := sqliteInstance.Init(); err != nil {
 				return err
 			}
@@ -77,11 +77,11 @@ func startSqlDatabase(config *config.Configuration) error {
 	sqlDatabaseType := config.DatabaseType
 
 	switch sqlDatabaseType {
-		case "postgres":
+		case config.Postgres:
 			if err := postgresInstance.Start(); err != nil {
 				return err
 			}
-		case "sqlite":
+		case config.Sqlite:
 			if err := sqliteInstance.Start(); err != nil {
 				return err
 			}
@@ -121,9 +121,9 @@ func stopSqlDatabase(config *config.Configuration) error{
 	sqlDatabaseType := config.DatabaseType
 
 	switch sqlDatabaseType {
-		case "postgres":
+		case config.Postgres:
 			return postgresInstance.Stop()
-		case "sqlite":
+		case config.Sqlite:
 			return sqliteInstance.Stop()
 	}
 	return ErrUnrecognizedDatabase
@@ -166,11 +166,11 @@ func Kill(config *config.Configuration) error {
 	sqlDatabaseType := config.DatabaseType
 
 	switch sqlDatabaseType {
-		case "postgres":
+		case config.Postgres:
 			if err := postgresInstance.Kill(); err != nil {
 				globerr = err
 			}
-		case "sqlite":
+		case config.Sqlite:
 			if err := sqliteInstance.Kill(); err != nil {
 				globerr = err
 			}

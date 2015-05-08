@@ -113,7 +113,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if sqltype == "sqlite3" {
+	if sqltype == config.Sqlite {
 		go db.tdb.WriteDatabase()
 	}
 

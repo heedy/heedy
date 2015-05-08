@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+	"streamdb/config"
 	//The blank imports are used to automatically register the database handlers
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -11,8 +12,8 @@ import (
 
 const (
 	// The driver strings for the given database types as needed by the sql package
-	SQLITE3  string = "sqlite3"
-	POSTGRES string = "postgres"
+	SQLITE3  string = config.Sqlite
+	POSTGRES string = config.Postgres
 )
 
 const (

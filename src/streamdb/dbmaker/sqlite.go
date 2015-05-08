@@ -36,7 +36,7 @@ func NewSqliteService(streamdbDirectory string) *SqliteService {
 	ps.sqliteFilepath = filepath.Join(streamdbDirectory, sqliteDatabaseName)
 	ps.streamdbDirectory = streamdbDirectory
 
-	ps.InitServiceHelper(streamdbDirectory, "sqlite")
+	ps.InitServiceHelper(streamdbDirectory, config.Sqlite)
 	return &ps
 }
 

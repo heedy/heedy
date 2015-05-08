@@ -62,8 +62,7 @@ func getConversion(dbtype string, dbversion string, dropOld bool) (string, error
 }
 
 func getSqlite3Location() string {
-	//execFolder, _ := osext.ExecutableFolder()
-	return "sqlite3" //filepath.Join(execFolder, "dep", "sqlite3")
+	return "sqlite3"
 }
 
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.

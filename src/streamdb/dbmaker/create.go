@@ -53,11 +53,11 @@ func createSqlDatabase(config *config.Configuration, username, password, email s
 	log.Printf("Creating sql database of type %s \n", sqlDatabaseType)
 
 	switch sqlDatabaseType {
-		case "postgres":
+		case config.Postgres:
 			if err := postgresInstance.Setup(); err != nil {
 				return err
 			}
-		case "sqlite":
+		case config.Sqlite:
 			if err := sqliteInstance.Setup(); err != nil {
 				return err
 			}

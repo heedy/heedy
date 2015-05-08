@@ -23,7 +23,7 @@ import (
 
 const (
 	// The database types we support
-	Sqlite = "sqlite"
+	Sqlite = "sqlite3"
 	Postgres = "postgres"
 	SqliteExecutable = "sqlite3"
 
