@@ -74,7 +74,7 @@ func (o *Database) CreateDevice(devicepath string) error {
 
 //UpdateDevice updates the device at devicepath to the modifed device passed in
 func (o *Database) UpdateDevice(devicepath string, modifieddevice *users.Device) error {
-	_, devname, err := splitDevicePath(devicepath)
+	username, devname, err := splitDevicePath(devicepath)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (o *Database) UpdateDevice(devicepath string, modifieddevice *users.Device)
 		if devname != modifieddevice.Name {
 			o.deviceCache.Remove(devicepath)
 		}
-		o.deviceCache.Add(devicepath, *modifieddevice)
+		o.deviceCache.Add(username+"/"+modifieddevice.Name, *modifieddevice)
 	}
 	return err
 }
@@ -144,7 +144,9 @@ func (o *Database) DeleteUserDevices(username string) error {
 	//Now loop through the devices, and delete them from cache if they exist
 	//no need to worry about "user" here, since it can be reloaded
 	for d := range devs {
-		o.deviceCache.Remove(username + "/" + devs[d].Name)
+		devpath := username + "/" + devs[d].Name
+		o.DeleteDeviceStreams(devpath)
+		o.deviceCache.Remove(devpath)
 	}
 
 	return err

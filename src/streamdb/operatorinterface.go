@@ -54,10 +54,10 @@ type Operator interface {
 
 	//The stream operations are exactly the same as device operations. You pass in paths
 	//in the form "username/devicename/streamname"
-	//ReadAllStreams(devicepath string) ([]users.Stream, error)
+	ReadAllStreams(devicepath string) ([]Stream, error)
 
-	//CreateStream(streampath string) error
-	//ReadStream(streampath string) (*users.Stream, error)
-	//UpdateStream(streampath string, modifiedstream *users.Stream) error
-	//DeleteStream(streampath string) error
+	CreateStream(streampath, jsonschema string) error
+	ReadStream(streampath string) (*Stream, error)
+	UpdateStream(streampath string, modifiedstream *Stream) error
+	DeleteStream(streampath string) error
 }
