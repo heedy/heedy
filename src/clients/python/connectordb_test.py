@@ -1,5 +1,6 @@
 import unittest
 import connectordb
+from jsonschema import SchemaError
 
 class TestConnectorDB(unittest.TestCase):
     def setUp(self):
@@ -116,3 +117,38 @@ class TestConnectorDB(unittest.TestCase):
         db = connectordb.ConnectorDB("python_test/mydevice",newkey,url="http://localhost:8000")
         self.assertTrue(db.exists)
 
+    def test_streamcrud(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+
+        self.assertTrue(dev.exists)
+        db = connectordb.ConnectorDB("python_test/mydevice",dev.apikey,url="http://localhost:8000")
+
+
+        self.assertTrue(db.exists)
+
+        s = db["mystream"]
+
+        self.assertRaises(SchemaError,s.create,{"type":"blah blah"})
+
+        s.create({"type":"string"})
+        self.assertTrue(s.exists)
+        s.delete()
+        self.assertFalse(s.exists)
+
+        db["mystream"].create({"type":"string"})
+        self.assertTrue(s.exists)
+        s.name = "differentstream"
+        self.assertFalse(s.exists)
+
+        self.assertTrue(db["differentstream"].exists)
+        print db["differentstream"].metadata
+        self.assertEqual(len(db.streams()),1)
+        self.assertEqual(db["differentstream"].schema["type"],"string")
+        self.assertEqual(db["differentstream"].name,"differentstream")
+        db["differentstream"].delete()
+        self.assertFalse(db["differentstream"].exists)
+        self.assertEqual(len(db.streams()),0)

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"streamdb"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -34,10 +35,15 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		o, err := db.LoginOperator(authUser, authPass)
 
 		if err != nil {
+			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "AUTH"}).Warningln(err.Error())
+
+			//So there was an unsuccessful attempt at login, huh?
+			time.Sleep(300 * time.Millisecond)
+
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
 			writer.Write([]byte(err.Error()))
-			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "AUTH"}).Warningln(err.Error())
+
 			return
 		}
 

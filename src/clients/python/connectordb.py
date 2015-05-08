@@ -2,6 +2,7 @@ import requests
 import json
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
+from jsonschema import validate, Draft4Validator
 
 
 class AuthenticationError(Exception):
@@ -15,6 +16,11 @@ class ServerError(Exception):
     def __str__(self):
         return repr(self.value)
 
+class DataError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
 #The base object upon which the rest is built up
 class ConnectorObject(object):
@@ -96,6 +102,18 @@ class Device(ConnectorObject):
     def create(self):
         self.metadata = self.db.urlpost(self.metaname).json()
 
+    def streams(self):
+        #Returns the list of users accessible to this operator
+        strms = []
+        for s in self.db.urlget(self.metaname+"/ls").json():
+            tmps = Stream(self.db,s["name"])
+            tmps.metadata = s
+            strms.append(tmps)
+        return strms
+
+    def __getitem__(self,val):
+        return Stream(self.db,self.metaname+"/"+val)
+
     @property
     def admin(self):
         if not "admin" in self.data:
@@ -138,6 +156,22 @@ class Device(ConnectorObject):
     @property
     def name(self):
         return self.metaname
+
+class Stream(ConnectorObject):
+    def create(self,schema):
+        Draft4Validator.check_schema(schema)
+        self.metadata = self.db.urlpost(self.metaname,schema).json()
+
+    @property
+    def nickname(self):
+        return self.data["nickname"]
+    @nickname.setter
+    def nickname(self,value):
+        self.set({"nickname": value})
+
+    @property
+    def schema(self):
+        return self.data["schema"]
 
 
 class ConnectorDB(Device):

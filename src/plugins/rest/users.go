@@ -24,7 +24,7 @@ func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 		return GetThis(o, writer, request)
 	case "favicon.ico":
 		writer.WriteHeader(http.StatusNotFound)
-		log.WithField("dev", o.Name()).Warnln("Browser used at", request.RemoteAddr)
+		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Debugln("Request for favicon")
 		return nil
 	}
 

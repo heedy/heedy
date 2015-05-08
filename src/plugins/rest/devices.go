@@ -37,7 +37,7 @@ func GetDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Re
 		return ListDevices(o, writer, request)
 	case "favicon.ico":
 		writer.WriteHeader(http.StatusNotFound)
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Warnln("Browser used at", request.RemoteAddr)
+		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Debugln("Request for favicon")
 		return nil
 	}
 }
@@ -59,11 +59,13 @@ func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 	err := ValidName(devname, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
+		logger.Warningln(err)
 		return err
 	}
 
 	if err = o.CreateDevice(devpath); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
+		logger.Warningln(err)
 		return err
 	}
 
@@ -124,7 +126,7 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 func DeleteDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, devpath := getDevicePath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteDevice", "arg": devpath})
-	logger.Infoln("Deleting device", devpath)
+	logger.Infoln()
 	err := o.DeleteDevice(devpath)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
