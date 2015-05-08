@@ -76,7 +76,7 @@ func OpenSqlDatabase(connectionString string) (*sql.DB, string, error) {
 
 // Gets the streamdb database version
 func GetDatabaseVersion(db *sql.DB, dbtype string) string {
-	version := "00000000"
+	version := defaultDbversion
 
 	var mixin SqlxMixin
 	mixin.InitSqlxMixin(db, dbtype)
@@ -84,7 +84,7 @@ func GetDatabaseVersion(db *sql.DB, dbtype string) string {
 	err := mixin.Get(&version, "SELECT Value FROM StreamdbMeta WHERE Key = 'DBVersion'")
 
 	if err != nil {
-		version = "00000000"
+		version = defaultDbversion
 	}
 
 	return version

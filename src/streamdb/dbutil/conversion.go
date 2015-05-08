@@ -15,6 +15,7 @@ import (
 
 const (
 	versionString = "DBVersion"
+	defaultDbversion = "00000000"
 )
 
 // TODO @josephlewis42, add daniel's upgrade for version number on timebatch stuff.
@@ -31,7 +32,7 @@ func getConversion(dbtype string, dbversion string, dropOld bool) (string, error
 	templateParams := make(map[string]string)
 
 	if dbversion == "" {
-		dbversion = "00000000"
+		dbversion = defaultDbversion
 	}
 
 	templateParams["DBVersion"] = dbversion

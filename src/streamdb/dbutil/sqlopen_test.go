@@ -70,7 +70,7 @@ func TestSqlOpen(t *testing.T) {
 
 	version := GetDatabaseVersion(db, ds)
 
-	if version != "00000000" {
+	if version != defaultDbversion {
 		t.Errorf("Wrong version gotten for empty database")
 	}
 }
