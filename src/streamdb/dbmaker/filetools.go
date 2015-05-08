@@ -3,13 +3,14 @@ package dbmaker
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"streamdb/config"
 	"streamdb/util"
+	"strings"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/kardianos/osext"
 )
 
@@ -45,7 +46,6 @@ func GenerateConfigReplacements(streamdbDirectory, procname, iface string, port 
 
 	return m
 }
-
 
 //ConfigPath returns the path to the default StreamDB config templates
 func ConfigPath() (string, error) {

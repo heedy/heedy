@@ -1,23 +1,22 @@
 package dbmaker
 
 import (
-	"log"
 	"path/filepath"
+	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/util"
-	"streamdb/config"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var sqliteDatabaseName = "streamdb.sqlite3"
 
-
 // A service representing the postgres database
-type SqliteService struct{
-	ServiceHelper // We get stop, status, kill, and Name from this
+type SqliteService struct {
+	ServiceHelper     // We get stop, status, kill, and Name from this
 	streamdbDirectory string
-	sqliteFilepath string
+	sqliteFilepath    string
 }
-
 
 // Creates and returns a new postgres service in a pre-init state
 // with default values loaded from config
@@ -63,7 +62,6 @@ func (srv *SqliteService) Start() error {
 	srv.Stat = StatusRunning
 	return nil
 }
-
 
 func (srv *SqliteService) Stop() error {
 	srv.Stat = StatusInit

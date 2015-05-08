@@ -1,12 +1,13 @@
 package dbmaker
 
-import(
-	"log"
+import (
+	log "github.com/Sirupsen/logrus"
 	//"os"
 	"syscall"
-	)
+)
 
 type Status int
+
 const (
 	// The service hasn't had a call to init yet.
 	StatusPreInit = Status(0)
@@ -15,7 +16,7 @@ const (
 	// The service is running
 	StatusRunning = Status(2)
 	// The service is not running
-	StatusError = Status(3)
+	StatusError   = Status(3)
 	StatusCrashed = Status(4)
 )
 
@@ -54,17 +55,16 @@ type StreamdbService interface {
 	Name()
 }
 
-
 // ServiceHelper allows a few of the functions of StreamdbService to be
 // automagically done.
 type ServiceHelper struct {
-	Stat Status
-	ServiceName string
+	Stat              Status
+	ServiceName       string
 	StreamdbDirectory string
 }
 
 // Initializes some values of servicehelper
-func(sh *ServiceHelper) InitServiceHelper(streamdbDirectory, serviceName string) {
+func (sh *ServiceHelper) InitServiceHelper(streamdbDirectory, serviceName string) {
 	sh.StreamdbDirectory = streamdbDirectory
 	sh.ServiceName = serviceName
 	sh.Stat = StatusPreInit
@@ -72,7 +72,7 @@ func(sh *ServiceHelper) InitServiceHelper(streamdbDirectory, serviceName string)
 
 // Kills a process
 func (sh *ServiceHelper) HelperKill() error {
-	log.Printf("Killing %s server\n", sh.Name())
+	log.Printf("Killing %s server", sh.Name())
 	sh.Stat = StatusInit
 
 	if sh.Stat != StatusRunning {
@@ -93,7 +93,7 @@ func (sh *ServiceHelper) HelperKill() error {
 }
 
 // Returns the name of the service
-func (sh *ServiceHelper) Name() string{
+func (sh *ServiceHelper) Name() string {
 	return sh.ServiceName
 }
 
@@ -102,14 +102,14 @@ func (sh *ServiceHelper) Status() Status {
 }
 
 func (sh *ServiceHelper) HelperStop() error {
-	log.Printf("Stopping %s server\n", sh.Name())
+	log.Printf("Stopping %s server", sh.Name())
 
 	p, err := GetProcess(sh.StreamdbDirectory, sh.ServiceName, nil)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("%s running on %d\n", sh.Name(), p.Pid)
+	log.Printf("%s running on %d", sh.Name(), p.Pid)
 	//if err := p.Signal(os.Interrupt); err != nil {
 	if err := p.Signal(syscall.SIGTERM); err != nil {
 		sh.Stat = StatusError

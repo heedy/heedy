@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"plugins"
+	_ "plugins/run"
+	_ "plugins/shell"
+	_ "plugins/webclient"
 	"runtime"
 	"runtime/pprof"
 	"streamdb"
-	"streamdb/dbmaker"
-	"strings"
-	"log"
 	"streamdb/config"
+	"streamdb/dbmaker"
 	"streamdb/util"
-	_ "plugins/shell"
-	_ "plugins/webclient"
-	_ "plugins/run"
-	"plugins"
+	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -25,8 +26,8 @@ var (
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
 	createDbType           = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
-	startFlags  = flag.NewFlagSet("start", flag.ExitOnError)
-	forceStart  = startFlags.Bool("force", false, "Force the start despite there being a connectordb pid file")
+	startFlags = flag.NewFlagSet("start", flag.ExitOnError)
+	forceStart = startFlags.Bool("force", false, "Force the start despite there being a connectordb pid file")
 
 	stopFlags = flag.NewFlagSet("stop", flag.ExitOnError)
 
@@ -58,7 +59,7 @@ func PrintUsage() {
 }
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	//log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 // The main entrypoint into connectordb
@@ -66,15 +67,15 @@ func main() {
 
 	// global system stuff
 	flag.Parse()
-    if *cpuprofile != "" {
-        f, err := os.Create(*cpuprofile)
-        if err != nil {
-            log.Fatal(err)
-        }
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-        pprof.StartCPUProfile(f)
-        defer pprof.StopCPUProfile()
-    }
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	// Make sure we don't go OOB
 	if len(flag.Args()) < 2 {
@@ -85,41 +86,40 @@ func main() {
 	// Choose our command
 	var err error
 	commandName := flag.Args()[0]
-	dbPath      := flag.Args()[1]
+	dbPath := flag.Args()[1]
 
 	// Make sure this is abs.
-	dbPath, _    = filepath.Abs(dbPath)
+	dbPath, _ = filepath.Abs(dbPath)
 	log.Println(dbPath)
 	// init and save later
 	config.InitConfiguration(dbPath)
 	defer config.SaveConfiguration()
 
 	switch commandName {
-		case "create":
-			err = createDatabase()
+	case "create":
+		err = createDatabase()
 
-		case "start":
-			err = startDatabase(dbPath)
+	case "start":
+		err = startDatabase(dbPath)
 
-		case "stop":
-			err = stopDatabase(dbPath)
+	case "stop":
+		err = stopDatabase(dbPath)
 
-		case "upgrade":
-			err = upgradeDatabase(dbPath)
+	case "upgrade":
+		err = upgradeDatabase(dbPath)
 
-		default:
-			err = runPlugin(commandName, dbPath)
-			if err == plugins.ErrNoPlugin {
-				PrintUsage()
-				return
-			}
+	default:
+		err = runPlugin(commandName, dbPath)
+		if err == plugins.ErrNoPlugin {
+			PrintUsage()
+			return
+		}
 	}
 
 	if err != nil {
 		fmt.Printf("Error: A problem occured during %v:\n\n%v\n", commandName, err)
 	}
 }
-
 
 // processes the flags and makes sure they're valid, exiting if needed.
 func processFlags(fs *flag.FlagSet) {
@@ -141,7 +141,7 @@ func createDatabase() error {
 	password := usernamePasswordArray[1]
 
 	config.GetConfiguration().DatabaseType = *createDbType
-	log.Println(config.GetConfiguration())
+	log.Debugln("CONFIG:", config.GetConfiguration())
 
 	log.Println("CONNECTORDB: Doing Init")
 	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
@@ -168,7 +168,7 @@ func startDatabase(dbPath string) error {
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
 
 	if err != nil {
-		if err == util.ErrAlreadyRunning && ! *forceStart {
+		if err == util.ErrAlreadyRunning && !*forceStart {
 			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
 			return err
 		} else {
@@ -197,7 +197,7 @@ func stopDatabase(dbPath string) error {
 	}
 
 	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
-		log.Printf("%v\n", err.Error())
+		log.Printf("%v", err.Error())
 	}
 
 	return nil
@@ -214,7 +214,7 @@ func upgradeDatabase(dbPath string) error {
 
 	// Start the server
 
- 	return dbmaker.Upgrade()
+	return dbmaker.Upgrade()
 }
 
 func runPlugin(cmd, dbPath string) error {

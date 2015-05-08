@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"text/template"
+
+	log "github.com/Sirupsen/logrus"
 	//"path/filepath"
 
 	//"github.com/kardianos/osext"
 )
 
 const (
-	versionString = "DBVersion"
+	versionString    = "DBVersion"
 	defaultDbversion = "00000000"
 )
 
@@ -85,7 +86,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 
 	// Check version of database
 	version := GetDatabaseVersion(db, driver)
-	log.Printf("Upgrading DB From Version: %v\n", version)
+	log.Printf("Upgrading DB From Version: %v", version)
 
 	conversionstr, err := getConversion(driver, version, dropold)
 
@@ -97,7 +98,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 	case SQLITE3:
 
 		sqliteLocation := getSqlite3Location()
-		log.Printf("Sqlite Location is: %v\n", sqliteLocation)
+		log.Printf("Sqlite Location is: %v", sqliteLocation)
 		// sqlite doesn't allow direct exec of multiple lines, so we do it
 		// from the cli and hope for the best.
 
@@ -121,7 +122,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 		db.Close()
 
 		// Print sqlite version
-		log.Printf("Sqlite Version\n")
+		log.Printf("Sqlite Version")
 		cmd := exec.Command(sqliteLocation, "--version")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -146,7 +147,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 		}
 
 	default:
-		log.Printf("Unknown Driver %v\n", driver)
+		log.Printf("Unknown Driver %v", driver)
 		return errors.New("The connection driver is unknown, cowardly failing.")
 	}
 

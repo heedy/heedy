@@ -2,9 +2,10 @@ package dbutil
 
 import (
 	"database/sql"
-	"log"
-	"strings"
 	"streamdb/config"
+	"strings"
+
+	log "github.com/Sirupsen/logrus"
 	//The blank imports are used to automatically register the database handlers
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -57,7 +58,7 @@ func ProcessConnectionString(connectionString string) (connector string, dbt str
 	case strings.HasPrefix(connectionString, postgresPrefix):
 		dbt = POSTGRES
 	default:
-		log.Printf("Warning, database type was found, defaulting to %v", dbt)
+		log.Warningf("database type was found, defaulting to %v", dbt)
 	}
 
 	return connector, dbt
@@ -68,7 +69,7 @@ func OpenSqlDatabase(connectionString string) (*sql.DB, string, error) {
 	var err error
 
 	sqluri, sqltype := ProcessConnectionString(connectionString)
-	log.Printf("Opening %v database with cxn string: %v", sqltype, sqluri)
+	log.Debugf("Opening %v database with cxn string: %v", sqltype, sqluri)
 
 	sqldb, err := sql.Open(sqltype, sqluri)
 

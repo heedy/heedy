@@ -1,25 +1,25 @@
 package dbmaker
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"streamdb/config"
 	"streamdb/util"
-	"path/filepath"
-	"os"
-	"errors"
-	"log"
+
+	log "github.com/Sirupsen/logrus"
 )
 
-var(
-	sqliteInstance 		*SqliteService
-	postgresInstance 	*PostgresService
-	gnatsdInstance 		*GnatsdService
-	redisInstance 		*RedisService
+var (
+	sqliteInstance   *SqliteService
+	postgresInstance *PostgresService
+	gnatsdInstance   *GnatsdService
+	redisInstance    *RedisService
 
-	ErrNotInitialized = errors.New("Module not yet initialized")
+	ErrNotInitialized     = errors.New("Module not yet initialized")
 	ErrAlreadyInitialized = errors.New("All subsystems have allready been initialized")
-	doneInit = false
+	doneInit              = false
 )
-
 
 func initSqlDatabase(configuration *config.Configuration) error {
 	if doneInit {
@@ -32,16 +32,16 @@ func initSqlDatabase(configuration *config.Configuration) error {
 	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
-		case config.Postgres:
-			if err := postgresInstance.Init(); err != nil {
-				return err
-			}
-		case config.Sqlite:
-			if err := sqliteInstance.Init(); err != nil {
-				return err
-			}
-		default:
-			return ErrUnrecognizedDatabase
+	case config.Postgres:
+		if err := postgresInstance.Init(); err != nil {
+			return err
+		}
+	case config.Sqlite:
+		if err := sqliteInstance.Init(); err != nil {
+			return err
+		}
+	default:
+		return ErrUnrecognizedDatabase
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func Init(configuration *config.Configuration) error {
 		return ErrAlreadyInitialized
 	}
 
-	log.Printf("Initializing subsystems\n")
+	log.Printf("Initializing subsystems")
 	gnatsdInstance = NewConfigGnatsdService(configuration)
 	redisInstance = NewConfigRedisService(configuration)
 
@@ -64,10 +64,10 @@ func Init(configuration *config.Configuration) error {
 		return err
 	}
 
-	if err := redisInstance.Init(); err != nil{
+	if err := redisInstance.Init(); err != nil {
 		return err
 	}
-	log.Printf("Finished initializing subsystems\n")
+	log.Printf("Finished initializing subsystems")
 
 	doneInit = true
 	return nil
@@ -77,25 +77,24 @@ func startSqlDatabase(configuration *config.Configuration) error {
 	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
-		case config.Postgres:
-			if err := postgresInstance.Start(); err != nil {
-				return err
-			}
-		case config.Sqlite:
-			if err := sqliteInstance.Start(); err != nil {
-				return err
-			}
-		default:
-			return ErrUnrecognizedDatabase
+	case config.Postgres:
+		if err := postgresInstance.Start(); err != nil {
+			return err
+		}
+	case config.Sqlite:
+		if err := sqliteInstance.Start(); err != nil {
+			return err
+		}
+	default:
+		return ErrUnrecognizedDatabase
 	}
 
 	return nil
 }
 
-
 //Start the necessary servers to run StreamDB
 func Start(configuration *config.Configuration) error {
-	log.Printf("Starting subsystems\n")
+	log.Printf("Starting subsystems")
 
 	if err := startSqlDatabase(configuration); err != nil {
 		return err
@@ -105,7 +104,7 @@ func Start(configuration *config.Configuration) error {
 		return err
 	}
 
-	if err := redisInstance.Start(); err != nil{
+	if err := redisInstance.Start(); err != nil {
 		return err
 	}
 
@@ -114,23 +113,21 @@ func Start(configuration *config.Configuration) error {
 	return nil
 }
 
-
-func stopSqlDatabase(configuration *config.Configuration) error{
+func stopSqlDatabase(configuration *config.Configuration) error {
 	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
-		case config.Postgres:
-			return postgresInstance.Stop()
-		case config.Sqlite:
-			return sqliteInstance.Stop()
+	case config.Postgres:
+		return postgresInstance.Stop()
+	case config.Sqlite:
+		return sqliteInstance.Stop()
 	}
 	return ErrUnrecognizedDatabase
 }
 
-
 //Start the necessary servers to run StreamDB
 func Stop(configuration *config.Configuration) error {
-	log.Printf("Stopping subsystems\n")
+	log.Printf("Stopping subsystems")
 
 	var globerr error
 	if err := stopSqlDatabase(configuration); err != nil {
@@ -141,7 +138,7 @@ func Stop(configuration *config.Configuration) error {
 		globerr = err
 	}
 
-	if err := redisInstance.Stop(); err != nil{
+	if err := redisInstance.Stop(); err != nil {
 		globerr = err
 	}
 
@@ -155,32 +152,31 @@ func Stop(configuration *config.Configuration) error {
 	return globerr
 }
 
-
 //Start the necessary servers to run StreamDB
 func Kill(configuration *config.Configuration) error {
-	log.Printf("Killing subsystems\n")
+	log.Printf("Killing subsystems")
 
 	var globerr error
 	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
-		case config.Postgres:
-			if err := postgresInstance.Kill(); err != nil {
-				globerr = err
-			}
-		case config.Sqlite:
-			if err := sqliteInstance.Kill(); err != nil {
-				globerr = err
-			}
-		default:
-			globerr = ErrUnrecognizedDatabase
+	case config.Postgres:
+		if err := postgresInstance.Kill(); err != nil {
+			globerr = err
+		}
+	case config.Sqlite:
+		if err := sqliteInstance.Kill(); err != nil {
+			globerr = err
+		}
+	default:
+		globerr = ErrUnrecognizedDatabase
 	}
 
 	if err := gnatsdInstance.Kill(); err != nil {
 		globerr = err
 	}
 
-	if err := redisInstance.Kill(); err != nil{
+	if err := redisInstance.Kill(); err != nil {
 		globerr = err
 	}
 
