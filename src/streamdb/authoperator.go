@@ -18,6 +18,10 @@ type AuthOperator struct {
 
 	usrName string //The user name underlying this device
 	devName string //The device name underlying this device
+
+	//These two ensure that name-changes cannot be exploited
+	usrID int64 //the id of the user
+	devID int64 //the id of the device
 }
 
 //Name is the path to the device underlying the operator
@@ -39,12 +43,33 @@ func (o *AuthOperator) Database() *Database {
 
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
-	return o.Db.ReadUser(o.usrName)
+	usr, err = o.Db.ReadUser(o.usrName)
+
+	//If there was an error, then either the user was deleted, or the user name was changed in another thread
+	if err != nil || usr.UserId != o.usrID {
+		usr, err = o.Db.ReadUserByID(o.usrID)
+		if err != nil {
+			return nil, err
+		}
+		o.usrName = usr.Name
+	}
+	return usr, nil
 }
 
 //Device returns the current device
 func (o *AuthOperator) Device() (*users.Device, error) {
-	return o.Db.ReadDevice(o.Name())
+	dev, err := o.Db.ReadDevice(o.Name())
+
+	//This makes sure that the correct device is being used at all times (in case user name changes during runtime)
+	if err != nil || dev.DeviceId != o.devID {
+		dev, err = o.Db.ReadDeviceByID(o.usrID)
+		if err != nil {
+			return nil, err
+		}
+		o.devName = dev.Name
+	}
+	return dev, nil
+
 }
 
 //Permissions returns whether the operator has permissions given by the string

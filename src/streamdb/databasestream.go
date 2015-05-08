@@ -26,6 +26,29 @@ func (o *Database) ReadStreamDevice(streampath string) (u *users.Device, err err
 	return o.ReadDevice(username + "/" + devicename)
 }
 
+//ReadStreamAndDevice reads both stream and device
+func (o *Database) ReadStreamAndDevice(streampath string) (d *users.Device, s *Stream, err error) {
+	username, devicename, _, err := splitStreamPath(streampath)
+	if err != nil {
+		return nil, nil, err
+	}
+	devicepath := username + "/" + devicename
+	dev, err := o.ReadDevice(devicepath)
+	if err != nil {
+		return nil, nil, err
+	}
+	strm, err := o.ReadStream(streampath)
+	if err != nil {
+		return nil, nil, err
+	}
+	if strm.DeviceId != dev.DeviceId {
+		o.streamCache.Remove(streampath)
+		o.deviceCache.Remove(devicepath)
+		return o.ReadStreamAndDevice(streampath)
+	}
+	return dev, strm, nil
+}
+
 //CreateStream makes a new stream
 func (o *Database) CreateStream(streampath, jsonschema string) error {
 
@@ -87,6 +110,17 @@ func (o *Database) ReadStream(streampath string) (*Stream, error) {
 	return &strm, nil
 }
 
+//ReadStreamByID is a safe variant of reading - it does not touch the cache, it always
+//goes straight for the database.
+func (o *Database) ReadStreamByID(streamID int64) (*Stream, error) {
+	usrstrm, err := o.Userdb.ReadStreamById(streamID)
+	strm, err := NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+	return &strm, err
+}
+
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
 func (o *Database) UpdateStream(streampath string, modifiedstream *Stream) error {
@@ -119,9 +153,28 @@ func (o *Database) DeleteStream(streampath string) error {
 	if err != nil {
 		return err
 	}
+	//TODO: Delete timebatch stream
 	err = o.Userdb.DeleteStream(s.StreamId)
 	o.streamCache.Remove(streampath)
 	return err
+}
+
+//DeleteStreamByID deletes the stream using ID
+func (o *Database) DeleteStreamByID(streamID int64) error {
+	stream, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return err
+	}
+	dev, err := o.ReadDeviceByID(stream.DeviceId)
+	if err != nil {
+		return err
+	}
+	usr, err := o.ReadUserByID(dev.UserId)
+	if err != nil {
+		return err
+	}
+
+	return o.DeleteStream(usr.Name + "/" + dev.Name + "/" + stream.Name)
 }
 
 //DeleteDeviceStreams deletes all streams associated with the given device

@@ -39,6 +39,12 @@ type Operator interface {
 	ChangeUserPassword(username, newpass string) error
 	DeleteUser(username string) error
 
+	//The ID variants of the functions do not read the cache to ensure a lack of possible
+	//bugs. They also do not have fine-grained permission-based reading (ie, they are more
+	//blunt yes/no with permissions)
+	ReadUserByID(userID int64) (*users.User, error)
+	DeleteUserByID(userID int64) error
+
 	//SetAdmin can set a user or a device to have administrator permissions
 	SetAdmin(path string, isadmin bool) error
 
@@ -52,6 +58,9 @@ type Operator interface {
 	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
 	DeleteDevice(devicepath string) error
 
+	ReadDeviceByID(deviceID int64) (*users.Device, error)
+	DeleteDeviceByID(deviceID int64) error
+
 	//The stream operations are exactly the same as device operations. You pass in paths
 	//in the form "username/devicename/streamname"
 	ReadAllStreams(devicepath string) ([]Stream, error)
@@ -60,4 +69,7 @@ type Operator interface {
 	ReadStream(streampath string) (*Stream, error)
 	UpdateStream(streampath string, modifiedstream *Stream) error
 	DeleteStream(streampath string) error
+
+	ReadStreamByID(streamID int64) (*Stream, error)
+	DeleteStreamByID(streamID int64) error
 }

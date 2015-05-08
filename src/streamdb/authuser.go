@@ -26,10 +26,27 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
 	if o.usrName == username {
-		return o.User()
+		usr, err := o.User()
+		if err != nil {
+			return nil, err
+		}
+		//The username could have changed at this moment
+		if usr.Name == username {
+			return usr, nil
+		}
 	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUser(username)
+	}
+	return nil, ErrPermissions
+}
+
+//ReadUserByID Note: Reading by Id cannot make use of the cache. it ALWAYS touches the database.
+//This is a good way to ensure that the cache or expired names don't mess with things
+//Note that to ensure correctness, it does not attempt to read a user without root permissions
+func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
+	if o.Permissions(users.ROOT) {
+		return o.Db.ReadUserByID(userID)
 	}
 	return nil, ErrPermissions
 }
@@ -57,6 +74,14 @@ func (o *AuthOperator) DeleteUser(username string) error {
 	return o.Db.DeleteUser(username)
 }
 
+//DeleteUserByID deletes the given user - only admin can delete
+func (o *AuthOperator) DeleteUserByID(userID int64) error {
+	if !o.Permissions(users.ROOT) {
+		return ErrPermissions
+	}
+	return o.Db.DeleteUserByID(userID)
+}
+
 //UpdateUser performs the given modifications
 func (o *AuthOperator) UpdateUser(username string, modifieduser *users.User) error {
 	user, err := o.ReadUser(username)
@@ -67,6 +92,7 @@ func (o *AuthOperator) UpdateUser(username string, modifieduser *users.User) err
 	if err != nil {
 		return err
 	}
+
 	//See if the bastards tried to change a field they have no fucking business editing :-P
 	if modifieduser.RevertUneditableFields(*user, dev.RelationToUser(user)) > 0 {
 		return ErrPermissions

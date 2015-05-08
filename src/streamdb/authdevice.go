@@ -9,13 +9,36 @@ import (
 //ReadDevice reads the given device
 func (o *AuthOperator) ReadDevice(devicepath string) (*users.Device, error) {
 	if o.Name() == devicepath {
-		return o.Device()
+		dev, err := o.Device()
+		if err != nil {
+			return nil, err
+		}
+		//getting device updates the name if it had changed
+		if o.Name() == devicepath {
+			return dev, nil
+		}
 	}
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
 	}
 	newdevice, err := o.Db.ReadDevice(devicepath)
+	if err != nil {
+		return nil, err
+	}
+	if dev.RelationToDevice(newdevice).Gte(users.USER) {
+		return newdevice, nil
+	}
+	return nil, ErrPermissions
+}
+
+//ReadDeviceByID reads the device using its ID
+func (o *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
+	newdevice, err := o.Db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return nil, err
+	}
+	dev, err := o.Device()
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +62,14 @@ func (o *AuthOperator) ReadAllDevices(username string) ([]users.Device, error) {
 		return o.Db.ReadAllDevices(username)
 	}
 	if o.usrName == username { //If this is the user, return this device
-		return []users.Device{*dev}, nil
+		usr, err := o.User()
+		if err != nil {
+			return nil, err
+		}
+		//Make sure that this user is valid with the reloaded name
+		if usr.Name == username {
+			return []users.Device{*dev}, err
+		}
 	}
 	return nil, ErrPermissions
 }
@@ -89,6 +119,22 @@ func (o *AuthOperator) DeleteDevice(devicepath string) error {
 	}
 	if operatordevice.RelationToDevice(dev).Gte(users.USER) {
 		return o.Db.DeleteDevice(devicepath)
+	}
+	return ErrPermissions
+}
+
+//DeleteDeviceByID deletes the device given its ID
+func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
+	dev, err := o.ReadDeviceByID(deviceID)
+	if err != nil {
+		return err
+	}
+	operatordevice, err := o.Device()
+	if err != nil {
+		return err
+	}
+	if operatordevice.RelationToDevice(dev).Gte(users.USER) {
+		return o.Db.DeleteDeviceByID(deviceID)
 	}
 	return ErrPermissions
 }

@@ -43,6 +43,17 @@ func (o *Database) ReadUser(username string) (*users.User, error) {
 	return usr, err
 }
 
+//ReadUserByID Note: Reading by Id cannot make use of the cache. it ALWAYS touches the database.
+//This is a good way to make absolutely sure that the stuff is fresh
+func (o *Database) ReadUserByID(userID int64) (*users.User, error) {
+	usr, err := o.Userdb.ReadUserById(userID)
+	if err == nil {
+		//put the user into the cache
+		o.userCache.Add(usr.Name, *usr)
+	}
+	return usr, err
+}
+
 //ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUserByEmail(email string) (*users.User, error) {
 	usr, err := o.Userdb.ReadUserByEmail(email)
@@ -74,6 +85,19 @@ func (o *Database) DeleteUser(username string) error {
 	o.userCache.Remove(username)
 
 	return o.Userdb.DeleteUserByName(username)
+}
+
+//DeleteUserByID deletes a user using its ID
+func (o *Database) DeleteUserByID(userID int64) error {
+	usr, err := o.ReadUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	//Now the user is currently in cache and set up completely correctly.
+	//This is not perfect, but timebatchdb does not currently have an efficient
+	//deleter for users
+	return o.DeleteUser(usr.Name)
 }
 
 //UpdateUser performs the given modifications

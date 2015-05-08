@@ -128,7 +128,7 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, er
 	//Get the device's associated user (it should have been thrown into cache by ReadDevice)
 	usr, err := db.ReadUser(strings.Split(devicepath, "/")[0])
 
-	return &AuthOperator{db, usr.Name, dev.Name}, err
+	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
 }
 
 //UserLoginOperator returns the operator associated with the given username/password combination
@@ -141,7 +141,7 @@ func (db *Database) UserLoginOperator(username, password string) (Operator, erro
 	//Get the device - checks the cache first
 	dev, err := db.ReadDevice(username + "/user")
 
-	return &AuthOperator{db, usr.Name, dev.Name}, err
+	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
 }
 
 //LoginOperator logs in as a user or device, depending on which is passed in
@@ -179,7 +179,7 @@ func (db *Database) Operator(path string) (Operator, error) {
 	//Get the device - check the cache first
 	dev, err := db.ReadDevice(username + "/" + devname)
 
-	return &AuthOperator{db, usr.Name, dev.Name}, err
+	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
 }
 
 //Close closes all database connections and releases all resources.

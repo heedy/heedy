@@ -36,6 +36,29 @@ func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) 
 	return o.ReadUser(username)
 }
 
+//ReadUserAndDevice gets the user and device associated with the given path
+func (o *Database) ReadUserAndDevice(devicepath string) (u *users.User, d *users.Device, err error) {
+	username, _, err := splitDevicePath(devicepath)
+	if err != nil {
+		return nil, nil, err
+	}
+	usr, err := o.ReadUser(username)
+	if err != nil {
+		return nil, nil, err
+	}
+	dev, err := o.ReadDevice(devicepath)
+	if err != nil {
+		return nil, nil, err
+	}
+	if usr.UserId != dev.UserId {
+		//We have an ID mismatch - the cache is outdated. Purge it, and try again
+		o.userCache.Remove(username)
+		o.deviceCache.Remove(devicepath)
+		return o.ReadUserAndDevice(devicepath)
+	}
+	return usr, dev, nil
+}
+
 //ReadDevice reads the given device
 func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 	//Check if the device is in the cache
@@ -54,6 +77,17 @@ func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 		//Save the device in cache
 		o.deviceCache.Add(devicepath, *dev)
 	}
+
+	return dev, err
+}
+
+//ReadDeviceByID Note: Reading by ID cannot make use of the cache. It always touches the
+//database. This makes sure that the ID is valid/fresh.
+func (o *Database) ReadDeviceByID(deviceID int64) (*users.Device, error) {
+	dev, err := o.Userdb.ReadDeviceById(deviceID)
+
+	//We can't save the device in cache, since we don't know the user name
+	//and we don't want to waste another query to find it
 
 	return dev, err
 }
@@ -103,9 +137,26 @@ func (o *Database) DeleteDevice(devicepath string) error {
 	if err != nil {
 		return err
 	}
+	//Clean timebatchdb streams
+	o.DeleteDeviceStreams(devicepath)
+
 	err = o.Userdb.DeleteDevice(dev.DeviceId)
 	o.deviceCache.Remove(devicepath)
 	return err
+}
+
+//DeleteDeviceByID deletes the device using its deviceID
+func (o *Database) DeleteDeviceByID(deviceID int64) error {
+	dev, err := o.ReadDeviceByID(deviceID)
+	if err != nil {
+		return err
+	}
+	usr, err := o.ReadUserByID(dev.UserId)
+	if err != nil {
+		return err
+	}
+
+	return o.DeleteDevice(usr.Name + "/" + dev.Name)
 }
 
 //ChangeDeviceAPIKey generates a new api key for the given device, and returns the key
