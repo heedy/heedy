@@ -6,7 +6,8 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
-	"log"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -189,7 +190,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 
 	datapointarray, cacheStartIndex, err := d.cache.BatchGet(key, d.batchsize)
 	if err == ErrorRedisWrongSize || datapointarray.Len() < d.batchsize { //If WrongSize, it means that the key was pushed needlessly - ignore the key
-		log.Printf("TimebatchDB:WriteDatabase:IGNORING: Got small batch: key=%v #=%v\n", key, datapointarray.Len())
+		log.Warningf("TimebatchDB:WriteDatabase:IGNORING: Got small batch: key=%v #=%v\n", key, datapointarray.Len())
 	} else if err != nil {
 		d.cache.BatchPush(key)
 		return err
@@ -208,7 +209,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 				d.cache.BatchPush(key)
 				return err
 			}
-			log.Printf("TimebatchDB:WriteDatabase: Wrote Key=%s I=%v #=%v\n", key, cacheStartIndex, datapointarray.Len())
+			log.Debugf("TimebatchDB:WriteDatabase: Wrote Key=%s I=%v #=%v\n", key, cacheStartIndex, datapointarray.Len())
 		} else if storeEndIndex < cacheStartIndex {
 			d.cache.BatchPush(key)
 			return ErrorIndexMismatch //O shit. This breaks the database.
@@ -218,7 +219,7 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 			//which is in the middle of inserting data. We don't know which it is... so we assume that BatchRemove failed,
 			//and the functino is not running concurrently
 			//TODO: There should probably be some code here that takes care of this situation is a non-bad way for concurrency
-			log.Println("TimebatchDB:WriteDatabase:WARNING: cache_start < store_end :", key)
+			log.Warningln("TimebatchDB:WriteDatabase:WARNING: cache_start < store_end :", key)
 			/*
 			   err = d.cache.BatchRemove(key,d.batchsize)
 			   if (err!=nil) {
@@ -235,11 +236,11 @@ func (d *Database) WriteDatabaseIteration() (err error) {
 //In order for the database to function properly, there needs to be an instance of this function running somewhere in the background
 //Please note that while I think that the function will function concurrently, this was not stress-tested for concurrency issues.
 func (d *Database) WriteDatabase() (err error) {
-	log.Println("TimebatchDB:WriteDatabase:RUNNING")
+	log.Debugln("TimebatchDB:WriteDatabase:RUNNING")
 	for err == nil {
 		err = d.WriteDatabaseIteration()
 	}
-	log.Println("TimebatchDB:WriteDatabase:ERROR ", err)
+	log.Errorln("TimebatchDB:WriteDatabase:ERROR ", err)
 	return err
 }
 

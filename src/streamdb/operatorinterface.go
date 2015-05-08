@@ -51,4 +51,13 @@ type Operator interface {
 	UpdateDevice(devicepath string, modifieddevice *users.Device) error
 	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
 	DeleteDevice(devicepath string) error
+
+	//The stream operations are exactly the same as device operations. You pass in paths
+	//in the form "username/devicename/streamname"
+	//ReadAllStreams(devicepath string) ([]users.Stream, error)
+
+	//CreateStream(streampath string) error
+	//ReadStream(streampath string) (*users.Stream, error)
+	//UpdateStream(streampath string, modifiedstream *users.Stream) error
+	//DeleteStream(streampath string) error
 }

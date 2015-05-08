@@ -3,13 +3,14 @@ package streamdb
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 //The StreamDB version string
@@ -90,13 +91,13 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 		return nil, err
 	}
 
-	log.Printf("Opening User database")
+	log.Debugln("Opening User database")
 	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
 
-	log.Printf("Opening messenger with uri %s\n", msguri)
+	log.Debugln("Opening messenger with uri ", msguri)
 	db.msg, err = messenger.Connect(msguri, err)
 
-	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
+	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
 	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
 
 	db.userCache, err = NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)

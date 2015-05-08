@@ -1,8 +1,9 @@
 package rest
 
 import (
-	"log"
 	"streamdb"
+
+	log "github.com/Sirupsen/logrus"
 
 	"errors"
 	"net/http"
@@ -35,7 +36,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
 			writer.Write([]byte(err.Error()))
-			log.Println("Authentication Failure: ", authUser, err.Error())
+			log.WithFields(log.Fields{"dev": authUser, "f": "AUTH"}).Warningln(err.Error())
 			return
 		}
 
@@ -43,8 +44,6 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		err = apifunc(o, writer, request)
 		if err != nil {
 			writer.Write([]byte(err.Error()))
-			log.Println("Error: ", err.Error())
-			return
 		}
 	})
 }

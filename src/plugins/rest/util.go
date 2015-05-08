@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 //ErrInvalidName is thrown when the name is bad
@@ -20,15 +22,17 @@ func OK(writer http.ResponseWriter) error {
 }
 
 //JSONWriter writes the given data as http
-func JSONWriter(writer http.ResponseWriter, data interface{}, err error) error {
+func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry, err error) error {
 	if err != nil {
 		writer.WriteHeader(http.StatusNotFound)
+		logger.Warningln(err)
 		return err
 	}
 
 	res, err := json.Marshal(data)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Errorln(err)
 		return err
 	}
 	writer.WriteHeader(http.StatusOK)

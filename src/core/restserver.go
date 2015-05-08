@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"plugins/rest"
 	"streamdb"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -24,6 +25,8 @@ var (
 func main() {
 	flag.Parse()
 
+	log.SetLevel(log.DebugLevel)
+
 	if *helpflag {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
@@ -33,8 +36,7 @@ func main() {
 	db, err := streamdb.Open(*sqlserver, *redisserver, *msgserver)
 
 	if err != nil {
-		log.Print("Cannot open StreamDB")
-		panic(err.Error())
+		log.Panic("Cannot open StreamDB", err)
 	}
 	defer db.Close()
 
@@ -42,11 +44,11 @@ func main() {
 		go db.RunWriter()
 	}
 
-	log.Printf("Running REST API on port %d", *serverport)
+	log.Infoln("Running REST API on port ", *serverport)
 
 	r := rest.Router(db, nil)
 	http.Handle("/", r)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
+	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
 
 }

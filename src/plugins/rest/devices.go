@@ -1,10 +1,11 @@
 package rest
 
 import (
-	"log"
 	"net/http"
 	"streamdb"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
@@ -39,16 +40,18 @@ func GetDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Re
 
 //ListDevices lists the devices that the given user has
 func ListDevices(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ListDevices"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	log.Printf("%s: List Devices for %s\n", o.Name(), usrname)
+	logger.Debugln("List devices for", usrname)
 	d, err := o.ReadAllDevices(usrname)
-	return JSONWriter(writer, d, err)
+	return JSONWriter(writer, d, logger, err)
 }
 
 //CreateDevice creates a new user from a REST API request
 func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "CreateDevice"})
 	_, devname, devpath := getDevicePath(request)
-	log.Printf("%s: Create Device %s\n", o.Name(), devpath)
+	logger.Infoln("Create device", devname)
 	err := ValidName(devname, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -65,21 +68,24 @@ func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 
 //ReadDevice gets an existing device from a REST API request
 func ReadDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ReadDevice"})
 	_, _, devpath := getDevicePath(request)
-	log.Printf("%s: Read Device %s\n", o.Name(), devpath)
+	logger.Debugln("Read Device", devpath)
 	d, err := o.ReadDevice(devpath)
 
-	return JSONWriter(writer, d, err)
+	return JSONWriter(writer, d, logger, err)
 }
 
 //UpdateDevice updates the metadata for existing device from a REST API request
 func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "UpdateDevice"})
 	_, _, devpath := getDevicePath(request)
-	log.Printf("%s: Update Device %s\n", o.Name(), devpath)
+	logger.Infoln("Update Device", devpath)
 
 	d, err := o.ReadDevice(devpath)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
+		logger.Warningln(err)
 		return err
 	}
 
@@ -87,6 +93,7 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 	err = ValidName(d.Name, err)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
+		logger.Warningln(err)
 		return err
 	}
 
@@ -95,6 +102,7 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 		newkey, err := uuid.NewV4()
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
+			logger.Errorln(err)
 			return err
 		}
 		d.ApiKey = newkey.String()
@@ -102,18 +110,21 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 
 	if err = o.UpdateDevice(devpath, d); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
+		logger.Warningln(err)
 		return err
 	}
-	return JSONWriter(writer, d, err)
+	return JSONWriter(writer, d, logger, err)
 }
 
 //DeleteDevice deletes existing device from a REST API request
 func DeleteDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "DeleteDevice"})
 	_, _, devpath := getDevicePath(request)
-	log.Printf("%s: Delete Device %s\n", o.Name(), devpath)
+	logger.Infoln("Deleting device", devpath)
 	err := o.DeleteDevice(devpath)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
+		logger.Warningln(err)
 		return err
 	}
 	return OK(writer)
