@@ -11,6 +11,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+const Mb = 1024 * 1024
+
 //ErrInvalidName is thrown when the name is bad
 var ErrInvalidName = errors.New("The given name did not pass sanitation.")
 
@@ -45,7 +47,7 @@ func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	defer request.Body.Close()
 
 	//Limit requests to 10MB
-	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 10000000))
+	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 10 * Mb))
 	if err != nil {
 		return err
 	}

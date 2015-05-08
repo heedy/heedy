@@ -33,14 +33,16 @@ func (h Su) Execute(shell *Shell, args []string) {
 		return
 	}
 
-	suOperator, err := shell.sdb.Database().Operator(args[1])
+	username := args[1]
+
+	suOperator, err := shell.sdb.Database().Operator(username)
 	if shell.PrintError(err) {
 		return
 	}
 
 	sushell := CreateShell(shell.sdb)
 	sushell.operator = suOperator
-	sushell.operatorName = args[1]
+	sushell.operatorName = username
 
 	sushell.Repl()
 }
