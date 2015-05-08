@@ -47,7 +47,7 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 	_, err = db.Device()
 	require.Equal(t, err, ErrAdmin)
 
-	require.Equal(t, "ADMIN", db.Name())
+	require.Equal(t, "  Admin  ", db.Name())
 
 	require.True(t, db.Permissions(users.ROOT))
 }

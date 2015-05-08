@@ -21,15 +21,15 @@ var(
 )
 
 
-func initSqlDatabase(config *config.Configuration) error {
+func initSqlDatabase(configuration *config.Configuration) error {
 	if doneInit {
 		return ErrAlreadyInitialized
 	}
 
-	sqliteInstance = NewConfigSqliteSerivce(config)
-	postgresInstance = NewConfigPostgresService(config)
+	sqliteInstance = NewConfigSqliteSerivce(configuration)
+	postgresInstance = NewConfigPostgresService(configuration)
 
-	sqlDatabaseType := config.DatabaseType
+	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
 		case config.Postgres:
@@ -47,16 +47,16 @@ func initSqlDatabase(config *config.Configuration) error {
 	return nil
 }
 
-func Init(config *config.Configuration) error {
+func Init(configuration *config.Configuration) error {
 	if doneInit {
 		return ErrAlreadyInitialized
 	}
 
 	log.Printf("Initializing subsystems\n")
-	gnatsdInstance = NewConfigGnatsdService(config)
-	redisInstance = NewConfigRedisService(config)
+	gnatsdInstance = NewConfigGnatsdService(configuration)
+	redisInstance = NewConfigRedisService(configuration)
 
-	if err := initSqlDatabase(config); err != nil {
+	if err := initSqlDatabase(configuration); err != nil {
 		return err
 	}
 
@@ -73,8 +73,8 @@ func Init(config *config.Configuration) error {
 	return nil
 }
 
-func startSqlDatabase(config *config.Configuration) error {
-	sqlDatabaseType := config.DatabaseType
+func startSqlDatabase(configuration *config.Configuration) error {
+	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
 		case config.Postgres:
@@ -94,12 +94,10 @@ func startSqlDatabase(config *config.Configuration) error {
 
 
 //Start the necessary servers to run StreamDB
-func Start(config *config.Configuration) error {
+func Start(configuration *config.Configuration) error {
 	log.Printf("Starting subsystems\n")
 
-	//os.Chdir(config.StreamdbDirectory)
-
-	if err := startSqlDatabase(config); err != nil {
+	if err := startSqlDatabase(configuration); err != nil {
 		return err
 	}
 
@@ -111,14 +109,14 @@ func Start(config *config.Configuration) error {
 		return err
 	}
 
-	util.Touch(filepath.Join(config.StreamdbDirectory, "connectordb.pid"))
+	util.Touch(filepath.Join(configuration.StreamdbDirectory, "connectordb.pid"))
 
 	return nil
 }
 
 
-func stopSqlDatabase(config *config.Configuration) error{
-	sqlDatabaseType := config.DatabaseType
+func stopSqlDatabase(configuration *config.Configuration) error{
+	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
 		case config.Postgres:
@@ -131,11 +129,11 @@ func stopSqlDatabase(config *config.Configuration) error{
 
 
 //Start the necessary servers to run StreamDB
-func Stop(config *config.Configuration) error {
+func Stop(configuration *config.Configuration) error {
 	log.Printf("Stopping subsystems\n")
 
 	var globerr error
-	if err := stopSqlDatabase(config); err != nil {
+	if err := stopSqlDatabase(configuration); err != nil {
 		globerr = err
 	}
 
@@ -147,7 +145,7 @@ func Stop(config *config.Configuration) error {
 		globerr = err
 	}
 
-	pidpath := filepath.Join(config.StreamdbDirectory, "connectordb.pid")
+	pidpath := filepath.Join(configuration.StreamdbDirectory, "connectordb.pid")
 	if util.PathExists(pidpath) {
 		if err := os.Remove(pidpath); err != nil {
 			globerr = err
@@ -159,11 +157,11 @@ func Stop(config *config.Configuration) error {
 
 
 //Start the necessary servers to run StreamDB
-func Kill(config *config.Configuration) error {
+func Kill(configuration *config.Configuration) error {
 	log.Printf("Killing subsystems\n")
 
 	var globerr error
-	sqlDatabaseType := config.DatabaseType
+	sqlDatabaseType := configuration.DatabaseType
 
 	switch sqlDatabaseType {
 		case config.Postgres:

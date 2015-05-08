@@ -48,8 +48,8 @@ func Create(config *config.Configuration, username, password, email string) erro
 }
 
 
-func createSqlDatabase(config *config.Configuration, username, password, email string) error {
-	sqlDatabaseType := config.DatabaseType
+func createSqlDatabase(configuration *config.Configuration, username, password, email string) error {
+	sqlDatabaseType := configuration.DatabaseType
 	log.Printf("Creating sql database of type %s \n", sqlDatabaseType)
 
 	switch sqlDatabaseType {
@@ -68,7 +68,7 @@ func createSqlDatabase(config *config.Configuration, username, password, email s
 	log.Printf("Creating user %s (%s)\n", username, email)
 
 	// Make the connection
-	spath := config.GetDatabaseConnectionString()
+	spath := configuration.GetDatabaseConnectionString()
 	db, driver, err := dbutil.OpenSqlDatabase(spath)
 	if err != nil {
 		return err

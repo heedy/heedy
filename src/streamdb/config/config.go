@@ -55,7 +55,7 @@ type Configuration struct {
 	SqliteDbPath string
 	DatabaseType string
 	StreamdbDirectory string
-	DisallowedNames []string{}
+	DisallowedNames []string
 
 }
 
