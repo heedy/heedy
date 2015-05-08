@@ -27,6 +27,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		if !ok {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
+			log.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
 			return
 		}
 
@@ -36,7 +37,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
 			writer.Write([]byte(err.Error()))
-			log.WithFields(log.Fields{"dev": authUser, "f": "AUTH"}).Warningln(err.Error())
+			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "AUTH"}).Warningln(err.Error())
 			return
 		}
 

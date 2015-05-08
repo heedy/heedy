@@ -61,7 +61,7 @@ func ValidName(n string, err error) error {
 	if strings.Contains(n, "/") || strings.Contains(n, "\\") || strings.Contains(n, " ") || strings.Contains(n, "?") {
 		return ErrInvalidName
 	}
-	if n == "ls" || n == "this" {
+	if n == "ls" || n == "this" || n == "favicon.ico" {
 		return ErrInvalidName
 	}
 	return nil

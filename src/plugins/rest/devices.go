@@ -20,7 +20,7 @@ func getDevicePath(request *http.Request) (username string, devicename string, d
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
 func GetThis(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	//Don't log, since this is just a ping - we don't want to spam the logs
+	log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "PingThis"}).Debugln()
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(o.Name()))
 	return nil
@@ -35,23 +35,27 @@ func GetDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Re
 		return ReadDevice(o, writer, request)
 	case "ls":
 		return ListDevices(o, writer, request)
+	case "favicon.ico":
+		writer.WriteHeader(http.StatusNotFound)
+		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Warnln("Browser used at", request.RemoteAddr)
+		return nil
 	}
 }
 
 //ListDevices lists the devices that the given user has
 func ListDevices(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ListDevices"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	logger.Debugln("List devices for", usrname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListDevices", "arg": usrname})
+	logger.Debugln()
 	d, err := o.ReadAllDevices(usrname)
 	return JSONWriter(writer, d, logger, err)
 }
 
 //CreateDevice creates a new user from a REST API request
 func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "CreateDevice"})
 	_, devname, devpath := getDevicePath(request)
-	logger.Infoln("Create device", devname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateDevice", "arg": devpath})
+	logger.Infoln()
 	err := ValidName(devname, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -68,9 +72,9 @@ func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 
 //ReadDevice gets an existing device from a REST API request
 func ReadDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ReadDevice"})
 	_, _, devpath := getDevicePath(request)
-	logger.Debugln("Read Device", devpath)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadDevice", "arg": devpath})
+	logger.Debugln()
 	d, err := o.ReadDevice(devpath)
 
 	return JSONWriter(writer, d, logger, err)
@@ -78,9 +82,9 @@ func ReadDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 
 //UpdateDevice updates the metadata for existing device from a REST API request
 func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "UpdateDevice"})
 	_, _, devpath := getDevicePath(request)
-	logger.Infoln("Update Device", devpath)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateDevice", "arg": devpath})
+	logger.Infoln()
 
 	d, err := o.ReadDevice(devpath)
 	if err != nil {
@@ -118,8 +122,8 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 
 //DeleteDevice deletes existing device from a REST API request
 func DeleteDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "DeleteDevice"})
 	_, _, devpath := getDevicePath(request)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteDevice", "arg": devpath})
 	logger.Infoln("Deleting device", devpath)
 	err := o.DeleteDevice(devpath)
 	if err != nil {

@@ -20,12 +20,24 @@ var (
 	msgserver   = flag.String("msg", "localhost:4222", "The address of the messenger server")
 
 	runwriter = flag.Bool("dbwriter", true, "Run the Database Writer (needed if dbwriter service off)")
+	loglevel  = flag.String("log", "INFO", "The log level to run at")
 )
 
 func main() {
 	flag.Parse()
 
-	log.SetLevel(log.DebugLevel)
+	switch *loglevel {
+	default:
+		log.Panic("Unrecognized log level ", *loglevel)
+	case "INFO":
+		log.SetLevel(log.InfoLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	}
 
 	if *helpflag {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -44,10 +56,10 @@ func main() {
 		go db.RunWriter()
 	}
 
-	log.Infoln("Running REST API on port ", *serverport)
-
 	r := rest.Router(db, nil)
 	http.Handle("/", r)
+
+	fmt.Println("Running REST API on port", *serverport)
 
 	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%d", *serverport), nil))
 

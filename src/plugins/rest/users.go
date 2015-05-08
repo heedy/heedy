@@ -22,14 +22,18 @@ func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 		return ListUsers(o, writer, request)
 	case "this":
 		return GetThis(o, writer, request)
+	case "favicon.ico":
+		writer.WriteHeader(http.StatusNotFound)
+		log.WithField("dev", o.Name()).Warnln("Browser used at", request.RemoteAddr)
+		return nil
 	}
 
 }
 
 //ListUsers lists the users that the given operator can see
 func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ListUsers"})
-	logger.Debugln("Listing users")
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListUsers"})
+	logger.Debugln()
 	u, err := o.ReadAllUsers()
 	if err != nil {
 		for i := 0; i < len(u); i++ {
@@ -46,9 +50,9 @@ type userCreator struct {
 
 //CreateUser creates a new user from a REST API request
 func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "CreateUser"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	logger.Infoln("Creating", usrname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateUser", "arg": usrname})
+	logger.Infoln()
 	var a userCreator
 	err := UnmarshalRequest(request, &a)
 	err = ValidName(usrname, err)
@@ -69,9 +73,9 @@ func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 
 //ReadUser reads the given user
 func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "ReadUser"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	logger.Debugln("Reading", usrname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadUser", "arg": usrname})
+	logger.Debugln()
 	u, err := o.ReadUser(usrname)
 
 	if err == nil {
@@ -83,9 +87,9 @@ func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Req
 
 //UpdateUser updates the metadata for existing user from a REST API request
 func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "UpdateUser"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	logger.Infoln("Updating", usrname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateUser", "arg": usrname})
+	logger.Infoln()
 	u, err := o.ReadUser(usrname)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
@@ -116,9 +120,9 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 
 //DeleteUser deletes existing user from a REST API request
 func DeleteUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "f": "DeleteUser"})
 	usrname := strings.ToLower(mux.Vars(request)["user"])
-	logger.Infoln("Deleting", usrname)
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteUser", "arg": usrname})
+	logger.Infoln()
 	err := o.DeleteUser(usrname)
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
