@@ -5,10 +5,10 @@
         <div class="panel-heading">Device Information</div>
         <div class="panel-body">
             <table class="table">
-            <tr><td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ .device.Icon_PngB64 }}" /></td>
+            <tr><td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ .device.GetIconB64 }}" /></td>
                 <th><h2>
-                    {{if .device.Shortname}}
-                        <abbr title="{{ .device.Name }}">{{ .device.Shortname }}</abbr>
+                    {{if .device.Nickname}}
+                        <abbr title="{{ .device.Name }}">{{ .device.Nickname }}</abbr>
                     {{else}}
                         <abbr title="{{ .device.Name }}">{{ .device.Name }}</abbr>
                     {{end}}
@@ -31,18 +31,26 @@
         <div class="panel-heading">Streams</div>
         <div class="panel-body">
             <table class="table table-striped">
-            <tr><th>Name</th><th>Active?</th><th></th></tr>
+            <tr><th>Name</th><th>Ephemeral?</th><th>Downlink?</th><th></th></tr>
             {{ range $stream := .streams }}
                 <tr>
                     <td>{{ $stream.Name }}</td>
                     <td>
-                    {{if $stream.Active}}
+                    {{if $stream.Ephemeral}}
                         <div class="yes" />
                     {{else}}
                         <div class="no" />
                     {{end}}
                     </td>
-                    <td><a href="/secure/stream/{{ $stream.Id }}" class="btn btn-default">View</a></td>
+                    <td>
+                    {{if $stream.Downlink}}
+                        <div class="yes" />
+                    {{else}}
+                        <div class="no" />
+                    {{end}}
+                    </td>
+
+                    <td><a href="/secure/stream/{{ $stream.StreamId }}" class="btn btn-default">View</a></td>
                 </tr>
             {{ end }}
             </table>
@@ -54,7 +62,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">Create Stream for {{ .device.Name }}</div>
         <div class="panel-body">
-            <form action="/secure/stream/action/create/devid/{{ .device.Id }}" method="POST">
+            <form action="/secure/stream/action/create/devid/{{ .device.DeviceId }}" method="POST">
                 <div class="form-group">
                     <label for="streamName">Stream Name</label>
                     <input type="text" name="name" class="form-control" id="streamName" placeholder="Stream Name">
@@ -69,10 +77,10 @@
         <div class="panel panel-default">
             <div class="panel-heading">Edit Device</div>
             <div class="panel-body">
-                <form action="/secure/device/{{ .device.Id }}/action/edit" method="POST">
+                <form action="/secure/device/{{ .device.DeviceId }}/action/edit" method="POST">
                     <div class="form-group">
                         <label for="shortname">Device Nickname (if blank you'll see the long name)</label>
-                        <input type="text" name="shortname" class="form-control" id="shortname" placeholder="Nickname" value="{{.device.Shortname}}">
+                        <input type="text" name="shortname" class="form-control" id="shortname" placeholder="Nickname" value="{{.device.Nickname}}">
                     </div>
 
                     <div class="form-group">
@@ -83,7 +91,7 @@
                     {{ if .user.Admin }}
                         <div class="form-group">
                             <label for="superdevice">Superdevice (allow this device to do anything)</label>
-                            <input type="checkbox" name="superdevice" class="checkbox" id="superdevice" value='checked' {{if .device.Superdevice}}checked="checked"{{end}}>
+                            <input type="checkbox" name="superdevice" class="checkbox" id="superdevice" value='checked' {{if .device.IsAdmin}}checked="checked"{{end}}>
                         </div>
                     {{ end }}
 
@@ -100,7 +108,7 @@
 
                     <div class="form-group">
                         <label for="userproxy">User Proxy (allows this device to do everything you can do, e.g. create devices, delete information, etc.)</label>
-                        <input type="checkbox" name="userproxy" class="checkbox" id="userproxy" value='checked' {{if .device.UserProxy}}checked="checked"{{end}}>
+                        <input type="checkbox" name="userproxy" class="checkbox" id="userproxy" value='checked' {{if .device.CanActAsUser}}checked="checked"{{end}}>
                     </div>
 
                     <input class="btn btn-primary" type="submit" value="Update">

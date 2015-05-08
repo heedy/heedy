@@ -11,23 +11,22 @@
                     <input id="filter" type="text" class="form-control" placeholder="Type to filter...">
                 </div>
                 <thead>
-                    <tr><th>Icon</th><th>Name</th><th>Enabled</th><th></th><th></th></tr>
+                    <tr><th>Name</th><th>Enabled</th><th></th><th></th></tr>
                 </thead>
                 <tbody class="searchable">
                     {{ range $dev := .devices }}
                         <tr>
-                            <td><img class="devicon" alt="Embedded Image" src="data:image/png;base64,{{ $dev.Icon_PngB64 }}" /></td>
                             <td>
-                            {{if $dev.Shortname}}
-                                <abbr title="{{ $dev.Name }}">{{ $dev.Shortname }}</abbr>
+                            {{if $dev.Nickname}}
+                                <abbr title="{{ $dev.Name }}">{{ $dev.Nickname }}</abbr>
                             {{else}}
                                 <abbr title="{{ $dev.Name }}">{{ $dev.Name }}</abbr>
                             {{end}}
                             </td>
                             <td>{{if $dev.Enabled}}<div class="yes" >{{else}}<div class="no" >{{end}}</div></td>
-                            <td>{{if $dev.Superdevice}}<div class="super" ></div>{{end}}</td>
+                            <td>{{if $dev.IsAdmin}}<div class="super" ></div>{{end}}</td>
 
-                            <td><a href="/secure/device/{{ $dev.Id }}" class="btn btn-default">View</a></td>
+                            <td><a href="/secure/device/{{ $dev.DeviceId }}" class="btn btn-default">View</a></td>
                         </tr>
                     {{ end }}
                 </tbody>

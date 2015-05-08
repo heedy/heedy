@@ -240,6 +240,11 @@ func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel)
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
+// Returns the icon for the device in base 64
+func (d *Device) GetIconB64() string {
+	return DEFAULT_ICON
+}
+
 func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) int {
 
 	//fmt.Printf("Getting original elem %v\n", originalValue.Kind())

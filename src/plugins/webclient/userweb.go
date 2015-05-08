@@ -1,147 +1,122 @@
 package webclient
 
+/*
 import (
 	"log"
 	"net/http"
 )
 
+func getUserPage(se *SessionEnvironment) {
+	log.Printf("getting user page")
 
-func getUserPage(srw *SessionResponseWriter) {
-	writer := srw
-	session := srw.Session()
-	user, _, _ := srw.GetUserAndDevice()
-	//user, userdevice, _ := srw.GetUserAndDevice()
-	//operator, _ := userdb.GetOperatorForDevice(userdevice)
 	pageData := make(map[string]interface{})
 
-	devices, err := userdb.ReadDevicesForUserId(user.UserId)
+	log.Printf("userdb: %p, user: %v\n", userdb, se.User)
+
+	devices, err := userdb.ReadDevicesForUserId(se.User.UserId)
 	pageData["devices"] = devices
-	pageData["user"] = user
-	pageData["flashes"] = session.Flashes()
+	pageData["user"] = se.User
+	pageData["flashes"] = se.Session.Flashes()
+
+	if err != nil {
+		pageData["alert"] = "Error getting devices."
+	}
+	se.Save()
+
+	err = loginHomeTemplate.ExecuteTemplate(se.Writer, "root.html", pageData)
+	if err != nil {
+		http.Error(se.Writer, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func editUserPage(se *SessionEnvironment) {
+	pageData := make(map[string]interface{})
+
+	log.Printf("Editing %v", se.User.Name)
+	devices, err := userdb.ReadDevicesForUserId(se.User.UserId)
+	pageData["devices"] = devices
+	pageData["user"] = se.User
+	pageData["flashes"] = se.Session.Flashes()
 
 	if err != nil {
 		pageData["alert"] = "Error getting devices."
 	}
 
-	err = loginHomeTemplate.ExecuteTemplate(writer, "root.html", pageData)
+	se.Save()
+	err = userEditTemplate.ExecuteTemplate(se.Writer, "user_edit.html", pageData)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(se.Writer, err.Error(), http.StatusInternalServerError)
 	}
 }
 
+func modifyUserAction(se *SessionEnvironment) {
+	email := se.Request.PostFormValue("email")
 
-func editUserPage(srw *SessionResponseWriter) {
-	writer := srw
-	//request := srw.Request()
-	session := srw.Session()
-	//user, userdevice, _ := srw.GetUserAndDevice()
-	user, _, _ := srw.GetUserAndDevice()
-	//operator, _ := userdb.GetOperatorForDevice(userdevice)
-	pageData := make(map[string]interface{})
-
-
-	log.Printf("Editing %v", user.Name)
-	devices, err := userdb.ReadDevicesForUserId(user.UserId)
-	pageData["devices"] = devices
-	pageData["user"] = user
-	pageData["flashes"] = session.Flashes()
-
-	if err != nil {
-		pageData["alert"] = "Error getting devices."
-	}
-
-	err = userEditTemplate.ExecuteTemplate(writer, "user_edit.html", pageData)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func modifyUserAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	user, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
-
-
-	email := request.PostFormValue("email")
-
-	log.Printf("Modifying user %v, new email: %v", user.Name, email)
+	log.Printf("Modifying user %v, new email: %v", se.User.Name, email)
 
 	// TODO someday change this to send a link to the user's email address
 	// and when they click on it change the email (send them their email in the
 	// url string encrypted so we don't need another table)
 	if email != "" {
-		originaluser := *user
-		user.Email = email
+		originaluser := *se.User
+		se.User.Email = email
 
 		log.Printf("email passed first check")
-		err := operator.UpdateUser(user, &originaluser)
+		err := se.Operator.UpdateUser(se.User, &originaluser)
 
 		if err != nil {
-			session.AddFlash(err.Error())
+			se.Session.AddFlash(err.Error())
 		} else {
-			session.AddFlash("Settings Updated")
+			se.Session.AddFlash("Settings Updated")
 		}
 	}
-
-	http.Redirect(writer, request, "/secure/edit", http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/edit", http.StatusTemporaryRedirect)
 }
 
-func modifyPasswordAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	user, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
+func modifyPasswordAction(se *SessionEnvironment) {
 
-	p0 := request.PostFormValue("current_password")
-	p1 := request.PostFormValue("password1")
-	p2 := request.PostFormValue("password2")
+	p0 := se.Request.PostFormValue("current_password")
+	p1 := se.Request.PostFormValue("password1")
+	p2 := se.Request.PostFormValue("password2")
 
-	log.Printf("Modifying user %v, new password: %v", user.Name, p1)
+	log.Printf("Modifying user %v, new password: %v", se.User.Name, p1)
 
-	if p1 == p2 && p1 != "" && user.ValidatePassword(p0) {
-		origuser := *user
-		user.SetNewPassword(p1)
-		err := operator.UpdateUser(user, &origuser)
+	if p1 == p2 && p1 != "" && se.User.ValidatePassword(p0) {
+		origuser := *se.User
+		se.User.SetNewPassword(p1)
+		err := se.Operator.UpdateUser(se.User, &origuser)
 
 		if err != nil {
-			session.AddFlash(err.Error())
+			se.Session.AddFlash(err.Error())
 		} else {
-			session.AddFlash("Your password has been updated.")
+			se.Session.AddFlash("Your password has been updated.")
 		}
 	} else {
-		session.AddFlash("Your passwords did not match, try again.")
+		se.Session.AddFlash("Your passwords did not match, try again.")
 	}
 
-	http.Redirect(writer, request, "/secure/edit", http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/edit", http.StatusTemporaryRedirect)
 }
 
-func deleteUserAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	user, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
+func deleteUserAction(se *SessionEnvironment) {
+	p0 := se.Request.PostFormValue("password")
+	log.Printf("Deleting user %v", se.User.Name)
 
-	p0 := request.PostFormValue("password")
-
-	log.Printf("Deleting user %v", user.Name)
-
-	if user.ValidatePassword(p0) {
-		err := operator.DeleteUser(user.UserId)
+	if se.User.ValidatePassword(p0) {
+		err := se.Operator.DeleteUser(se.User.UserId)
 
 		if err != nil {
-			session.AddFlash(err.Error())
+			se.Session.AddFlash(err.Error())
 		} else {
-			session.AddFlash("Your password has been updated.")
+			se.Session.AddFlash("Your password has been updated.")
 		}
 	} else {
-		session.AddFlash("Your passwords did not match, try again.")
+		se.Session.AddFlash("Your passwords did not match, try again.")
 	}
-
-	http.Redirect(writer, request, "/secure/edit", http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/edit", http.StatusTemporaryRedirect)
 }
 
 func newUserPage(writer http.ResponseWriter, r *http.Request) {
@@ -152,3 +127,4 @@ func newUserPage(writer http.ResponseWriter, r *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 }
+*/

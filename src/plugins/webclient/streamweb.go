@@ -1,102 +1,87 @@
 package webclient
 
+/*
 import (
 	"log"
 	"net/http"
 	"strconv"
 
-
 	"github.com/gorilla/mux"
 )
 
-func readStreamPage(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	user, userdevice, _ := srw.GetUserAndDevice()
-	//user, _, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
+func readStreamPage(se *SessionEnvironment) {
 	pageData := make(map[string]interface{})
-
-	vars := mux.Vars(request)
+	vars := mux.Vars(se.Request)
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
-	stream, device, err := operator.ReadStreamById(int64(streamid))
+	stream, device, err := se.Operator.ReadStreamById(int64(streamid))
 
 	if err != nil {
 		pageData["alert"] = "Error getting stream."
 	}
 
 	pageData["stream"] = stream
-	pageData["user"] = user
+	pageData["user"] = se.User
 	pageData["device"] = device
-	pageData["flashes"] = session.Flashes()
+	pageData["flashes"] = se.Session.Flashes()
 
-	err = streamReadTemplate.ExecuteTemplate(writer, "stream.html", pageData)
+	se.Save()
+	err = streamReadTemplate.ExecuteTemplate(se.Writer, "stream.html", pageData)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(se.Writer, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func editStreamAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	_, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
-
-	vars := mux.Vars(request)
+func editStreamAction(se *SessionEnvironment) {
+	vars := mux.Vars(se.Request)
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
-	stream, device, err := operator.ReadStreamById(int64(streamid))
+	stream, device, err := se.Operator.ReadStreamById(int64(streamid))
 
 	origstream := *stream
 
 	if err != nil {
-		session.AddFlash("Error getting stream, maybe it was deleted?")
+		se.Session.AddFlash("Error getting stream, maybe it was deleted?")
 		goto redirect
 	}
 
-
-	err = operator.UpdateStream(device, stream, &origstream)
+	err = se.Operator.UpdateStream(device, stream, &origstream)
 
 	if err != nil {
 		log.Printf(err.Error())
-		session.AddFlash(err.Error())
+		se.Session.AddFlash(err.Error())
 	} else {
-		session.AddFlash("Created Device")
+		se.Session.AddFlash("Created Device")
 	}
 
 redirect:
-	http.Redirect(writer, request, "/secure/stream/" + streamids, http.StatusTemporaryRedirect)
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/stream/"+streamids, http.StatusTemporaryRedirect)
 }
 
-func createStreamAction(srw *SessionResponseWriter) {
-	writer := srw
-	request := srw.Request()
-	session := srw.Session()
-	_, userdevice, _ := srw.GetUserAndDevice()
-	operator, _ := userdb.GetOperatorForDevice(userdevice)
-
-	vars := mux.Vars(request)
+func createStreamAction(se *SessionEnvironment) {
+	vars := mux.Vars(se.Request)
 	devids := vars["id"]
+	name := se.Request.PostFormValue("name")
 
 	devid, _ := strconv.Atoi(devids)
-	device, err := operator.ReadDeviceById(int64(devid))
+	device, err := se.Operator.ReadDeviceById(int64(devid))
 
 	if err != nil {
 		log.Printf(err.Error())
-		session.AddFlash("Error getting device, maybe it was deleted?")
-		http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
+		se.Session.AddFlash("Error getting device, maybe it was deleted?")
+		goto redirect
 	}
 
-	name := request.PostFormValue("name")
-	err = operator.CreateStream(name, "x", device)
+	err = se.Operator.CreateStream(name, "x", device)
 
 	if err != nil {
 		log.Printf(err.Error())
-		session.AddFlash("Error creating stream.")
+		se.Session.AddFlash("Error creating stream.")
 	}
 
-	http.Redirect(writer, request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
+redirect:
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 }
+*/

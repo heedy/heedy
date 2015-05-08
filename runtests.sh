@@ -14,29 +14,29 @@ if [ -d "$DBDIR" ]; then
 fi
 
 echo "My PID" $$
-
+test_status=0
 pg_pre=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
 redis_pre=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
 gnatsd_pre=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
 
-check_pids () { 
+check_pids () {
 	echo "==================================================="
 	echo "Checking For Runaway Processes"
 	echo "==================================================="
 
-	test_status=0
+
 	echo "Looking for postgres proc..."
 	postgresproc=`ps aux | grep postgres | grep -v grep | awk '{print $2}'`
 	echo $postgresproc
-	
+
 	echo "Looking for redis proc..."
 	redisproc=`ps aux | grep redis-server | grep -v grep | awk '{print $2}'`
 	echo $redisproc
-	
+
 	echo "Looking for gnatsd proc..."
 	gnatsdproc=`ps aux | grep gnatsd | grep -v grep | awk '{print $2}'`
 	echo $gnatsdproc
-	
+
 	echo "Looking for connectordb proc..."
 	ps aux | grep connectordb | grep -v 'grep'
 
@@ -44,16 +44,21 @@ check_pids () {
 		echo "Postgres process started from us was still running"
 		exit 1
 	fi
-	
+
 	if [ "$redisproc" != "$redis_pre" ]; then
 		echo "Redis process started from us was still running"
 		exit 1
 	fi
-	
+
 	if [ "$gnatsdproc" != "$gnatsd_pre" ]; then
 		echo "Gnatsd process started from us was still running"
 		exit 1
 	fi
+
+    if [ "$test_status" != 0 ]; then
+        echo "FAILED TEST"
+        exit 1
+    fi
 }
 
 stop () {
@@ -64,9 +69,9 @@ stop () {
 }
 
 force_stop () {
-	killall postgres 
-	killall redis-server 
-	killall gnatsd 
+	killall postgres
+	killall redis-server
+	killall gnatsd
 	killall connectordb
 }
 

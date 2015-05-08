@@ -13,7 +13,7 @@ All Rights Reserved
 
 import (
 	"fmt"
-	"encoding/json"
+	"streamdb/util/njson"
 )
 
 // The clear command
@@ -43,7 +43,7 @@ func (h Cat) Execute(shell *Shell, args []string) {
 		return
 	}
 
-	bytes, err := json.MarshalIndent(user, "", "  ")
+	bytes, err := njson.MarshalIndentWithTag(user, "", "  ", "DOESNOTEXIST")
 	if shell.PrintError(err) {
 		return
 	}

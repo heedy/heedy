@@ -13,7 +13,10 @@ import (
 	"log"
 	"streamdb/config"
 	"streamdb/util"
-	"plugins/shell"
+	_ "plugins/shell"
+	_ "plugins/webclient"
+	_ "plugins/run"
+	"plugins"
 )
 
 var (
@@ -22,10 +25,8 @@ var (
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
 	createDbType           = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
-	startFlags  = flag.NewFlagSet("create", flag.ExitOnError)
-	startBasic  = startFlags.Bool("basic", false, "Start only background servers")
-	startRest   = startFlags.Bool("rest", true, "Start the REST API")
-	startWriter = startFlags.Bool("dbwriter", true, "Start the databaseWriter")
+	startFlags  = flag.NewFlagSet("start", flag.ExitOnError)
+	forceStart  = startFlags.Bool("force", false, "Force the start despite there being a connectordb pid file")
 
 	stopFlags = flag.NewFlagSet("stop", flag.ExitOnError)
 
@@ -47,6 +48,10 @@ func PrintUsage() {
 	stopFlags.PrintDefaults()
 	fmt.Printf("\nupgrade: Upgrades an existing database to a newer version.\n")
 	upgradeFlags.PrintDefaults()
+	fmt.Printf("\n")
+
+	// Print all usages of the plugins
+	plugins.Usage()
 
 	fmt.Printf("\n")
 
@@ -101,12 +106,13 @@ func main() {
 
 		case "upgrade":
 			err = upgradeDatabase(dbPath)
-			
-		case "shell":
-			err = startShell()
 
 		default:
-			PrintUsage()
+			err = runPlugin(commandName, dbPath)
+			if err == plugins.ErrNoPlugin {
+				PrintUsage()
+				return
+			}
 	}
 
 	if err != nil {
@@ -160,14 +166,19 @@ func startDatabase(dbPath string) error {
 	processFlags(startFlags)
 
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
+
 	if err != nil {
-		return err
+		if err == util.ErrAlreadyRunning && ! *forceStart {
+			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
+			return err
+		} else {
+			return err
+		}
 	}
 
 	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
-
 
 	return dbmaker.Start(config.GetConfiguration())
 }
@@ -206,12 +217,12 @@ func upgradeDatabase(dbPath string) error {
  	return dbmaker.Upgrade()
 }
 
-func startShell() error {
+func runPlugin(cmd, dbPath string) error {
 	db, err := streamdb.OpenFromConfig(config.GetConfiguration())
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
-	shell.StartShell(db)
-	return nil
+	return plugins.Run(cmd, db, flag.Args()[2:])
 }
