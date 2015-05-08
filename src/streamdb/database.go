@@ -14,7 +14,10 @@ import (
 )
 
 //The StreamDB version string
-const Version = "0.2.0"
+const (
+	Version = "0.2.0"
+	AdminName = "  Admin  "
+)
 
 var (
 
@@ -225,7 +228,7 @@ func (db *Database) RunWriter() {
 
 //Name here is ADMIN meaning that it is the database administration operator
 func (db *Database) Name() string {
-	return "ADMIN"
+	return AdminName
 }
 
 //Database just returns self
