@@ -5,12 +5,12 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
+	"path"
 	"streamdb"
 	"streamdb/users"
-	"streamdb/util"
 
 	"github.com/gorilla/mux"
+	"github.com/kardianos/osext"
 )
 
 var (
@@ -124,20 +124,20 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 }
 
 func init() {
-	util.SetWdToExecutable()
-
-	userEditTemplate = template.Must(template.ParseFiles("./templates/user_edit.html", "./templates/base.html"))
-	loginHomeTemplate = template.Must(template.ParseFiles("./templates/root.html", "./templates/base.html"))
-	deviceInfoTemplate = template.Must(template.ParseFiles("./templates/device_info.html", "./templates/base.html"))
-	firstrunTemplate = template.Must(template.ParseFiles("./templates/firstrun.html", "./templates/base.html"))
-	addUserTemplate = template.Must(template.ParseFiles("./templates/newuser.html", "./templates/base.html"))
-	loginPageTemplate = template.Must(template.ParseFiles("./templates/login.html", "./templates/base.html"))
+	folderPath, _ := osext.ExecutableFolder()
+	//Changing curdir breaks tests
+	userEditTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/user_edit.html"), path.Join(folderPath, "./templates/base.html")))
+	loginHomeTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/root.html"), path.Join(folderPath, "./templates/base.html")))
+	deviceInfoTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/device_info.html"), path.Join(folderPath, "./templates/base.html")))
+	firstrunTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/firstrun.html"), path.Join(folderPath, "./templates/base.html")))
+	addUserTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/newuser.html"), path.Join(folderPath, "./templates/base.html")))
+	loginPageTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/login.html"), path.Join(folderPath, "./templates/base.html")))
 }
 
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	userdb = udb
-
-	includepath, _ := filepath.Abs("./static/")
+	folderPath, _ := osext.ExecutableFolder()
+	includepath := path.Join(folderPath, "static")
 	log.Printf("Include path set to: %v", includepath)
 	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
 
@@ -162,7 +162,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/device/{id:[0-9]+}/action/edit", authWrapper(editDevicePage))
 
 	// CRUD Stream
-	streamReadTemplate = template.Must(template.ParseFiles("./templates/stream.html", "./templates/base.html"))
+	streamReadTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/stream.html"), path.Join(folderPath, "./templates/base.html")))
 
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}", authWrapper(readStreamPage))
 	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))

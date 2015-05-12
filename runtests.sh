@@ -105,7 +105,6 @@ test_status=$?
 stop
 check_pids
 
-
 create
 start
 #Now test the python stuff, while rebuilding the db to make sure that
@@ -123,7 +122,7 @@ nosetests src/clients/python/connectordb_test.py
 test_status=$?
 
 kill $rest_server
-stop $DBDIR
+stop
 
 check_pids
 
