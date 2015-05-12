@@ -24,52 +24,56 @@ type Operator interface {
 	User() (*users.User, error)
 	Device() (*users.Device, error)
 
-	//The following are path operations that simplify working with paths
-	//GetDeviceUser()
-	//GetStreamUser()
-	//GetStreamDevice()
+	//SetAdmin can set a user or a device to have administrator permissions
+	SetAdmin(path string, isadmin bool) error
 
-	// The user read operations work pretty much as advertised
+	// The user read operations work pretty much as advertised. Use them wisely.
 	ReadAllUsers() ([]users.User, error)
 
 	CreateUser(username, email, password string) error
+
 	ReadUser(username string) (*users.User, error)
-	ReadUserByEmail(email string) (*users.User, error)
-	UpdateUser(username string, modifieduser *users.User) error
-	ChangeUserPassword(username, newpass string) error
-	DeleteUser(username string) error
-
-	//The ID variants of the functions do not read the cache to ensure a lack of possible
-	//bugs. They also do not have fine-grained permission-based reading (ie, they are more
-	//blunt yes/no with permissions)
 	ReadUserByID(userID int64) (*users.User, error)
-	DeleteUserByID(userID int64) error
+	ReadUserByEmail(email string) (*users.User, error)
 
-	//SetAdmin can set a user or a device to have administrator permissions
-	SetAdmin(path string, isadmin bool) error
+	UpdateUser(modifieduser *users.User) error
+	ChangeUserPassword(username, newpass string) error
+
+	DeleteUser(username string) error
+	DeleteUserByID(userID int64) error
 
 	//The device operations are exactly the same as user operations. You pass in device paths
 	//in the form "username/devicename"
 	ReadAllDevices(username string) ([]users.Device, error)
+	ReadAllDevicesByUserID(userID int64) ([]users.Device, error)
 
 	CreateDevice(devicepath string) error
-	ReadDevice(devicepath string) (*users.Device, error)
-	UpdateDevice(devicepath string, modifieddevice *users.Device) error
-	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
-	DeleteDevice(devicepath string) error
+	CreateDeviceByUserID(userID int64, devicename string) error
 
+	ReadDevice(devicepath string) (*users.Device, error)
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
+	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
+
+	UpdateDevice(modifieddevice *users.Device) error
+	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
+
+	DeleteDevice(devicepath string) error
 	DeleteDeviceByID(deviceID int64) error
 
 	//The stream operations are exactly the same as device operations. You pass in paths
 	//in the form "username/devicename/streamname"
 	ReadAllStreams(devicepath string) ([]Stream, error)
+	ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error)
 
 	CreateStream(streampath, jsonschema string) error
-	ReadStream(streampath string) (*Stream, error)
-	UpdateStream(streampath string, modifiedstream *Stream) error
-	DeleteStream(streampath string) error
+	CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error
 
+	ReadStream(streampath string) (*Stream, error)
 	ReadStreamByID(streamID int64) (*Stream, error)
+	ReadStreamByDeviceID(deviceID int64, streamname string) (*Stream, error)
+
+	UpdateStream(modifiedstream *Stream) error
+
+	DeleteStream(streampath string) error
 	DeleteStreamByID(streamID int64) error
 }

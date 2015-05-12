@@ -2,14 +2,6 @@ package streamdb
 
 import "streamdb/users"
 
-//CreateUser makes a new user
-func (o *AuthOperator) CreateUser(username, email, password string) error {
-	if !o.Permissions(users.ROOT) {
-		return ErrPermissions
-	}
-	return o.Db.CreateUser(username, email, password)
-}
-
 //ReadAllUsers reads all the users
 func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 	if o.Permissions(users.ROOT) {
@@ -23,47 +15,76 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 	return []users.User{*u}, err
 }
 
+//CreateUser makes a new user
+func (o *AuthOperator) CreateUser(username, email, password string) error {
+	if !o.Permissions(users.ROOT) {
+		return ErrPermissions
+	}
+	return o.Db.CreateUser(username, email, password)
+}
+
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
-	if o.usrName == username {
-		usr, err := o.User()
-		if err != nil {
-			return nil, err
-		}
-		//The username could have changed at this moment
-		if usr.Name == username {
-			return usr, nil
-		}
-	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUser(username)
+	}
+	//Not an admin. See if it is asking about the current user
+	if u, err := o.User(); err == nil && u.Name == username {
+		return u, nil
 	}
 	return nil, ErrPermissions
 }
 
-//ReadUserByID Note: Reading by Id cannot make use of the cache. it ALWAYS touches the database.
-//This is a good way to ensure that the cache or expired names don't mess with things
-//Note that to ensure correctness, it does not attempt to read a user without root permissions
+//ReadUserByID reads the user given the ID
 func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUserByID(userID)
+	}
+	if usr, err := o.User(); err == nil && usr.UserId == userID {
+		return usr, nil
 	}
 	return nil, ErrPermissions
 }
 
 //ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUserByEmail(email string) (*users.User, error) {
-	u, err := o.User()
-	if err != nil {
-		return nil, err
-	}
-	if u.Email == email {
-		return u, nil
-	}
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadUserByEmail(email)
 	}
+	if u, err := o.User(); err == nil && u.Email == email {
+		return u, nil
+	}
 	return nil, ErrPermissions
+}
+
+//UpdateUser performs the given modifications
+func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
+	user, err := o.ReadUserByID(modifieduser.UserId)
+	if err != nil {
+		return err
+	}
+	dev, err := o.Device()
+	if err != nil {
+		return err
+	}
+
+	//See if the bastards tried to change a field they have no fucking business editing :-P
+	if modifieduser.RevertUneditableFields(*user, dev.RelationToUser(user)) > 0 {
+		return ErrPermissions
+	}
+	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
+	o.Db.UpdateUser(modifieduser)
+	return err
+}
+
+//ChangeUserPassword changes the password for the given user
+func (o *AuthOperator) ChangeUserPassword(username, newpass string) error {
+	u, err := o.ReadUser(username)
+	if err != nil {
+		return err
+	}
+	u.SetNewPassword(newpass)
+	return o.UpdateUser(u)
 }
 
 //DeleteUser deletes the given user - only admin can delete
@@ -80,34 +101,4 @@ func (o *AuthOperator) DeleteUserByID(userID int64) error {
 		return ErrPermissions
 	}
 	return o.Db.DeleteUserByID(userID)
-}
-
-//UpdateUser performs the given modifications
-func (o *AuthOperator) UpdateUser(username string, modifieduser *users.User) error {
-	user, err := o.ReadUser(username)
-	if err != nil {
-		return err
-	}
-	dev, err := o.Device()
-	if err != nil {
-		return err
-	}
-
-	//See if the bastards tried to change a field they have no fucking business editing :-P
-	if modifieduser.RevertUneditableFields(*user, dev.RelationToUser(user)) > 0 {
-		return ErrPermissions
-	}
-	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
-	o.Db.UpdateUser(username, modifieduser)
-	return err
-}
-
-//ChangeUserPassword changes the password for the given user
-func (o *AuthOperator) ChangeUserPassword(username, newpass string) error {
-	u, err := o.ReadUser(username)
-	if err != nil {
-		return err
-	}
-	u.SetNewPassword(newpass)
-	return o.UpdateUser(username, u)
 }

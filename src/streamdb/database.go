@@ -15,7 +15,7 @@ import (
 
 //The StreamDB version string
 const (
-	Version = "0.2.0"
+	Version   = "0.2.0"
 	AdminName = "  Admin  "
 )
 
@@ -48,9 +48,9 @@ type Database struct {
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 
 	//The caches are to keep frequently used stuff in memory for a reasonable time before reloading from database
-	userCache   TimedCache
-	deviceCache TimedCache
-	streamCache TimedCache
+	userCache   *TimedCache
+	deviceCache *TimedCache
+	streamCache *TimedCache
 }
 
 // Calls open from the arguments in the given configuration
@@ -128,61 +128,51 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, er
 		return nil, ErrPermissions //Don't leak whether the device exists
 	}
 
-	//Get the device's associated user (it should have been thrown into cache by ReadDevice)
-	usr, err := db.ReadUser(strings.Split(devicepath, "/")[0])
-
-	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
+	return &AuthOperator{db, devicepath, dev.DeviceId}, err
 }
 
 //UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
-	usr, err := db.ReadUser(username) //Checks the cache for the user first
+	usr, err := db.ReadUser(username)
 	if err != nil || !usr.ValidatePassword(password) {
 		return nil, ErrPermissions //We don't want to leak if a user exists or not
 	}
 
-	//Get the device - checks the cache first
-	dev, err := db.ReadDevice(username + "/user")
+	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
+	if err != nil {
+		return nil, ErrPermissions //We use dev.Name, so must return error earlier
+	}
 
-	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
+	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, nil
 }
 
 //LoginOperator logs in as a user or device, depending on which is passed in
 func (db *Database) LoginOperator(path, password string) (Operator, error) {
-	parray := strings.Split(path, "/")
-	if len(parray) > 2 {
+	switch strings.Count(path, "/") {
+	default:
 		return nil, ErrBadPath
-	}
-	if len(parray) == 2 {
+	case 1:
 		return db.DeviceLoginOperator(path, password)
+	case 0:
+		return db.UserLoginOperator(path, password)
 	}
-	return db.UserLoginOperator(path, password)
 }
 
 //Operator gets the operator by usr or device name
 func (db *Database) Operator(path string) (Operator, error) {
-	devname := "user"
-	username := path
-
-	//Get the user and device names set up correctly
-	parray := strings.Split(path, "/")
-	if len(parray) > 2 {
+	switch strings.Count(path, "/") {
+	default:
 		return nil, ErrBadPath
+	case 0:
+		path += "/user"
+	case 1:
+		//Do nothing for this case
 	}
-	if len(parray) == 2 {
-		username = parray[0]
-		devname = parray[1]
-	}
-
-	//Get the user - note that ReadUser first checks the cache
-	usr, err := db.ReadUser(username)
+	dev, err := db.ReadDevice(path)
 	if err != nil {
-		return nil, err
+		return nil, err //We use dev.Name, so must return error earlier
 	}
-	//Get the device - check the cache first
-	dev, err := db.ReadDevice(username + "/" + devname)
-
-	return &AuthOperator{db, usr.Name, dev.Name, usr.UserId, dev.DeviceId}, err
+	return &AuthOperator{db, path, dev.DeviceId}, err
 }
 
 //Close closes all database connections and releases all resources.
@@ -226,7 +216,7 @@ func (db *Database) RunWriter() {
 
 //These functions allow the Database object to conform to the Operator interface
 
-//Name here is ADMIN meaning that it is the database administration operator
+//Name here is a special one meaning that it is the database administration operator
 func (db *Database) Name() string {
 	return AdminName
 }
@@ -261,24 +251,22 @@ func (db *Database) Permissions(perm users.PermissionLevel) bool {
 
 //SetAdmin does exactly what it claims. It works on both users and devices
 func (db *Database) SetAdmin(path string, isadmin bool) error {
-	parray := strings.Split(path, "/")
-	if len(parray) > 2 {
+	switch strings.Count(path, "/") {
+	default:
 		return ErrBadPath
-	}
-	if len(parray) == 2 { //This is a device
+	case 0:
+		u, err := db.ReadUser(path)
+		if err != nil {
+			return err
+		}
+		u.Admin = isadmin
+		return db.UpdateUser(u)
+	case 1:
 		dev, err := db.ReadDevice(path)
 		if err != nil {
 			return err
 		}
 		dev.IsAdmin = isadmin
-		return db.UpdateDevice(path, dev)
+		return db.UpdateDevice(dev)
 	}
-	//It is a user
-	u, err := db.ReadUser(path)
-	if err != nil {
-		return err
-	}
-	u.Admin = isadmin
-	return db.UpdateUser(u.Name, u)
-
 }

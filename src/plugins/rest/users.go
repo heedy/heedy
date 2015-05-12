@@ -110,7 +110,7 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 	if modusr.Password != u.Password {
 		modusr.SetNewPassword(modusr.Password)
 	}
-	if err = o.UpdateUser(usrname, &modusr); err != nil {
+	if err = o.UpdateUser(&modusr); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
 		return err

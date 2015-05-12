@@ -23,12 +23,20 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	o, err := db.Operator("streamdb_test")
 	require.NoError(t, err)
 
-	devs, err := db.ReadAllDevices("streamdb_test")
+	devs, err := o.ReadAllDevices("streamdb_test")
+	require.NoError(t, err)
+	require.Equal(t, 1, len(devs)) //the user device
+
+	dev, err := o.Device()
+	require.NoError(t, err)
+	devs, err = o.ReadAllDevicesByUserID(dev.UserId)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //the user device
 
 	//This user should not be able to CRUD devices of another user
 	devs, err = o.ReadAllDevices("otheruser")
+	require.Error(t, err)
+	devs, err = o.ReadAllDevicesByUserID(5436)
 	require.Error(t, err)
 
 	_, err = o.ReadDevice("otheruser/testdevice")
@@ -38,8 +46,17 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	_, err = db.ReadDevice("otheruser/testdevice2")
 	require.Error(t, err)
 
+	dev, err = db.ReadDevice("otheruser/testdevice")
+	require.NoError(t, err)
+	_, err = o.ReadDeviceByID(dev.DeviceId)
+	require.Error(t, err)
+	_, err = o.ReadDeviceByUserID(dev.UserId, "testdevice")
+	require.Error(t, err)
+	require.Error(t, o.DeleteDeviceByID(dev.DeviceId))
+	require.Error(t, o.CreateDeviceByUserID(dev.UserId, "testdevice2"))
+
 	testdevice.Nickname = "test"
-	require.Error(t, o.UpdateDevice("otheruser/testdevice", testdevice))
+	require.Error(t, o.UpdateDevice(testdevice))
 
 	require.Error(t, o.SetAdmin("otheruser/testdevice", true))
 	_, err = o.ChangeDeviceAPIKey("otheruser/testdevice")
@@ -47,7 +64,13 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 	//This user should be able to crud its own devices
 	require.NoError(t, o.CreateDevice("streamdb_test/testdevice"))
-	dev, err := o.ReadDevice("streamdb_test/testdevice")
+	dev, err = o.ReadDevice("streamdb_test/testdevice")
+	require.NoError(t, err)
+	require.Equal(t, "testdevice", dev.Name)
+	dev, err = o.ReadDeviceByID(dev.DeviceId)
+	require.NoError(t, err)
+	require.Equal(t, "testdevice", dev.Name)
+	dev, err = o.ReadDeviceByUserID(dev.UserId, "testdevice")
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
 
@@ -66,6 +89,12 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.Error(t, err)
 
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
+
+	usr, err := o.User()
+	require.NoError(t, o.CreateDeviceByUserID(usr.UserId, "testdevice"))
+	dev, err = o.ReadDevice("streamdb_test/testdevice")
+	require.NoError(t, err)
+	require.NoError(t, o.DeleteDeviceByID(dev.DeviceId))
 }
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
@@ -94,7 +123,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	testdevice, err := db.ReadDevice("tstusr/testdevice")
 	require.NoError(t, err)
 	testdevice.Nickname = "test"
-	require.Error(t, o.UpdateDevice("tstusr/testdevice", testdevice))
+	require.Error(t, o.UpdateDevice(testdevice))
 
 	require.Error(t, o.SetAdmin("tstusr/testdevice", true))
 	_, err = o.ChangeDeviceAPIKey("tstusr/testdevice")
@@ -103,7 +132,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	u, err := o.User()
 	require.NoError(t, err)
 	u.Email = "changedemail@lol"
-	require.Error(t, o.UpdateUser("tstusr", u))
+	require.Error(t, o.UpdateUser(u))
 
 	//This device should be able to modify itself
 	dev, err := o.ReadDevice("tstusr/test")
@@ -115,13 +144,13 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 
 	//Lastly, shouldn't be able to self-userify
 	dev.CanActAsUser = true
-	require.Error(t, o.UpdateDevice("tstusr/test", dev))
+	require.Error(t, o.UpdateDevice(dev))
 
 	dev, err = o.ReadDevice("tstusr/test")
 	require.NoError(t, err)
 	//But changing nickname is fine
 	dev.Nickname = "testnick"
-	require.NoError(t, o.UpdateDevice("tstusr/test", dev))
+	require.NoError(t, o.UpdateDevice(dev))
 	dev, err = o.ReadDevice("tstusr/test")
 	require.NoError(t, err)
 	require.Equal(t, "testnick", dev.Nickname)
@@ -139,6 +168,12 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	devs, err = o.ReadAllDevices("tstusr")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //Only this device
+
+	usr, err := db.ReadUser("tstusr")
+	require.NoError(t, err)
+	devs, err = o.ReadAllDevicesByUserID(usr.UserId)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(devs))
 
 	require.Error(t, o.DeleteDevice("tstusr/test"))
 

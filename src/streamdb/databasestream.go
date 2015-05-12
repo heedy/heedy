@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-//Technically, it is inefficient to pass in a path in a/b format, but our use case is
-//so extremely dominated by database query/network, that it is essentially free to make stuff
-//as pretty as possible.
 func splitStreamPath(streampath string) (usr string, dev string, stream string, err error) {
 	splitted := strings.Split(streampath, "/")
 	if len(splitted) != 3 {
@@ -17,15 +14,7 @@ func splitStreamPath(streampath string) (usr string, dev string, stream string, 
 	return splitted[0], splitted[1], splitted[2], nil
 }
 
-//ReadStreamDevice gets the device associated with the given stream path
-func (o *Database) ReadStreamDevice(streampath string) (u *users.Device, err error) {
-	username, devicename, _, err := splitStreamPath(streampath)
-	if err != nil {
-		return nil, err
-	}
-	return o.ReadDevice(username + "/" + devicename)
-}
-
+/*
 //ReadStreamAndDevice reads both stream and device
 func (o *Database) ReadStreamAndDevice(streampath string) (d *users.Device, s *Stream, err error) {
 	username, devicename, _, err := splitStreamPath(streampath)
@@ -47,26 +36,7 @@ func (o *Database) ReadStreamAndDevice(streampath string) (d *users.Device, s *S
 		return o.ReadStreamAndDevice(streampath)
 	}
 	return dev, strm, nil
-}
-
-//CreateStream makes a new stream
-func (o *Database) CreateStream(streampath, jsonschema string) error {
-
-	//Validate that the schema is correct
-	if _, err := schema.NewSchema(jsonschema); err != nil {
-		return err
-	}
-
-	username, devicename, streamname, err := splitStreamPath(streampath)
-	if err != nil {
-		return err
-	}
-	dev, err := o.ReadDevice(username + "/" + devicename)
-	if err != nil {
-		return err
-	}
-	return o.Userdb.CreateStream(streamname, jsonschema, dev.DeviceId)
-}
+}*/
 
 //ReadAllStreams reads all the streams for the given device
 func (o *Database) ReadAllStreams(devicepath string) ([]Stream, error) {
@@ -74,7 +44,12 @@ func (o *Database) ReadAllStreams(devicepath string) ([]Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-	usrstrms, err := o.Userdb.ReadStreamsByDevice(dev.DeviceId)
+	return o.ReadAllStreamsByDeviceID(dev.DeviceId)
+}
+
+//ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
+func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error) {
+	usrstrms, err := o.Userdb.ReadStreamsByDevice(deviceID)
 
 	//Now convert the users.Stream to Stream objects
 	strms := make([]Stream, len(usrstrms))
@@ -84,10 +59,32 @@ func (o *Database) ReadAllStreams(devicepath string) ([]Stream, error) {
 	return strms, err
 }
 
+//CreateStream makes a new stream
+func (o *Database) CreateStream(streampath, jsonschema string) error {
+	username, devicename, streamname, err := splitStreamPath(streampath)
+	if err != nil {
+		return err
+	}
+	dev, err := o.ReadDevice(username + "/" + devicename)
+	if err != nil {
+		return err
+	}
+	return o.CreateStreamByDeviceID(dev.DeviceId, streamname, jsonschema)
+}
+
+//CreateStreamByDeviceID creates a stream using a device ID instead of path
+func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
+	//Validate that the schema is correct
+	if _, err := schema.NewSchema(jsonschema); err != nil {
+		return err
+	}
+	return o.Userdb.CreateStream(streamname, jsonschema, deviceID)
+}
+
 //ReadStream reads the given stream
 func (o *Database) ReadStream(streampath string) (*Stream, error) {
 	//Check if the stream is in the cache
-	if s, ok := o.streamCache.Get(streampath); ok {
+	if s, ok := o.streamCache.GetByName(streampath); ok {
 		strm := s.(Stream)
 		return &strm, nil
 	}
@@ -106,29 +103,50 @@ func (o *Database) ReadStream(streampath string) (*Stream, error) {
 		return nil, err
 	}
 
-	o.streamCache.Add(streampath, strm) //This makes a copy in the cache
+	//Now we add the stream to cache
+	o.streamCache.Set(streampath, strm.StreamId, strm) //This makes a copy in the cache
 	return &strm, nil
 }
 
-//ReadStreamByID is a safe variant of reading - it does not touch the cache, it always
-//goes straight for the database.
+//ReadStreamByID reads a stream using a stream's ID
 func (o *Database) ReadStreamByID(streamID int64) (*Stream, error) {
+	if s, _, ok := o.streamCache.GetByID(streamID); ok {
+		strm := s.(Stream)
+		return &strm, nil
+	}
+
 	usrstrm, err := o.Userdb.ReadStreamById(streamID)
 	strm, err := NewStream(usrstrm, err)
 	if err != nil {
 		return nil, err
 	}
+
+	//Add the stream to the cache. Since we don't know its full path, see if its device is cached,
+	//and attempt to take the path from there
+	if _, devpath, ok := o.deviceCache.GetByID(strm.DeviceId); ok && devpath != "" {
+		o.streamCache.Set(devpath+"/"+strm.Name, strm.StreamId, strm)
+	} else {
+		o.streamCache.SetID(strm.StreamId, strm)
+	}
+
 	return &strm, err
+}
+
+//ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
+func (o *Database) ReadStreamByDeviceID(deviceID int64, streamname string) (*Stream, error) {
+	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
+	strm, err := NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+	o.streamCache.SetID(strm.StreamId, strm)
+	return &strm, nil
 }
 
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
-func (o *Database) UpdateStream(streampath string, modifiedstream *Stream) error {
-	usrname, devname, streamname, err := splitStreamPath(streampath)
-	if err != nil {
-		return err
-	}
-	strm, err := o.ReadStream(streampath)
+func (o *Database) UpdateStream(modifiedstream *Stream) error {
+	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
 	if err != nil {
 		return err
 	}
@@ -139,10 +157,16 @@ func (o *Database) UpdateStream(streampath string, modifiedstream *Stream) error
 	err = o.Userdb.UpdateStream(&modifiedstream.Stream)
 	if err == nil {
 		//If the stream name was changed, modify the stream name in cache
-		if streamname != modifiedstream.Name {
-			o.streamCache.Remove(streampath)
+		if strm.Name == modifiedstream.Name {
+			o.streamCache.Update(strm.StreamId, *modifiedstream)
+		} else {
+			//Attempt to recover the path by name using only cache
+			if _, devpath, _ := o.deviceCache.GetByID(strm.DeviceId); devpath != "" {
+				o.streamCache.Set(devpath+"/"+modifiedstream.Name, strm.StreamId, *modifiedstream)
+			} else {
+				o.streamCache.SetID(strm.StreamId, *modifiedstream)
+			}
 		}
-		o.streamCache.Add(usrname+"/"+devname+"/"+modifiedstream.Name, *modifiedstream)
 	}
 	return err
 }
@@ -153,49 +177,15 @@ func (o *Database) DeleteStream(streampath string) error {
 	if err != nil {
 		return err
 	}
-	//TODO: Delete timebatch stream
-	err = o.Userdb.DeleteStream(s.StreamId)
-	o.streamCache.Remove(streampath)
-	return err
+	return o.DeleteStreamByID(s.StreamId)
 }
 
 //DeleteStreamByID deletes the stream using ID
 func (o *Database) DeleteStreamByID(streamID int64) error {
-	stream, err := o.ReadStreamByID(streamID)
+	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
-		return err
+		return err //Workaround #81
 	}
-	dev, err := o.ReadDeviceByID(stream.DeviceId)
-	if err != nil {
-		return err
-	}
-	usr, err := o.ReadUserByID(dev.UserId)
-	if err != nil {
-		return err
-	}
-
-	return o.DeleteStream(usr.Name + "/" + dev.Name + "/" + stream.Name)
-}
-
-//DeleteDeviceStreams deletes all streams associated with the given device
-func (o *Database) DeleteDeviceStreams(devicepath string) error {
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return err
-	}
-	strms, err := o.ReadAllStreams(devicepath)
-	if err != nil {
-		return err
-	}
-
-	//Don't pound postgres
-	err = o.Userdb.DeleteAllStreamsForDevice(dev.DeviceId)
-
-	//Now loop through the streams, and delete them from cache if they exist
-	for s := range strms {
-		o.streamCache.Remove(devicepath + "/" + strms[s].Name)
-		//TODO: Delete the data streams from timebatchdb
-	}
-
-	return err
+	defer o.streamCache.RemoveID(streamID)
+	return o.Userdb.DeleteStream(streamID)
 }

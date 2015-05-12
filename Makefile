@@ -40,7 +40,7 @@ go-dependencies:
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions
-	go get github.com/hashicorp/golang-lru
+	go get github.com/dkumor/golang-lru	#I fixed their bugs
 	go get github.com/Sirupsen/logrus
 
 	# go tools

@@ -36,7 +36,7 @@ func TestDatabaseStreamCrud(t *testing.T) {
 	require.Equal(t, "stream1", s.Name)
 
 	s.Name = "stream2"
-	require.NoError(t, db.UpdateStream("tst/testdevice/stream1", s))
+	require.NoError(t, db.UpdateStream(s))
 
 	_, err = db.ReadStream("tst/testdevice/stream1")
 	require.Error(t, err)
@@ -48,7 +48,7 @@ func TestDatabaseStreamCrud(t *testing.T) {
 	require.Equal(t, "string", s.Schema["type"])
 
 	s.StreamId = 3634
-	require.Error(t, db.UpdateStream("tst/testdevice/stream2", s))
+	require.Error(t, db.UpdateStream(s))
 
 	require.Error(t, db.DeleteStream("tst/testdevice/stream1"))
 	require.NoError(t, db.DeleteStream("tst/testdevice/stream2"))
@@ -61,11 +61,16 @@ func TestDatabaseStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(strms))
 
-	_, err = db.ReadStream("tst/testdevice/stream1")
+	strm, err := db.ReadStream("tst/testdevice/stream1")
 	require.NoError(t, err)
 
-	require.NoError(t, db.DeleteDeviceStreams("tst/testdevice"))
+	db.Reload()
+	strm2, err := db.ReadStreamByID(strm.StreamId)
+	require.NoError(t, err)
+	require.Equal(t, strm2.Name, strm.Name)
 
-	_, err = db.ReadStream("tst/testdevice/stream1")
-	require.Error(t, err)
+	strm, err = db.ReadStreamByDeviceID(strm.DeviceId, "stream1")
+	require.NoError(t, err)
+	require.Equal(t, strm.Name, strm2.Name)
+
 }

@@ -55,16 +55,10 @@ func TestDatabaseDeviceCrud(t *testing.T) {
 	require.NoError(t, db.SetAdmin("streamdb_test/testdevice3", true))
 	require.Error(t, db.SetAdmin("streamdb_test/testdevice4", true))
 
-	require.NoError(t, db.DeleteUserDevices("streamdb_test"))
-
-	_, err = db.ReadDevice("streamdb_test/testdevice1")
-	require.Error(t, err)
-	_, err = db.ReadDevice("streamdb_test/testdevice2")
-	require.Error(t, err)
-	_, err = db.ReadDevice("streamdb_test/testdevice3")
-	require.Error(t, err)
-
-	_, err = db.ReadDevice("streamdb_test/user")
-	require.NoError(t, err)
+	dev, err = db.ReadDevice("streamdb_test/testdevice1")
+	//Clear the cache
+	db.Reload()
+	dev.Name = "hiah"
+	require.NoError(t, db.UpdateDevice(dev))
 
 }

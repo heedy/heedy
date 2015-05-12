@@ -106,7 +106,7 @@ func UpdateStream(o streamdb.Operator, writer http.ResponseWriter, request *http
 		logger.Warningln(err)
 		return err
 	}
-	if err = o.UpdateStream(streampath, s); err != nil {
+	if err = o.UpdateStream(s); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
 		return err

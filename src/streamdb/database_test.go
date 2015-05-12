@@ -77,7 +77,7 @@ func TestCacheCuriosities(t *testing.T) {
 	u, err := db.ReadUser("streamdb_test")
 	require.NoError(t, err)
 	u.Name = "tstr"
-	db.UpdateUser("streamdb_test", u)
+	db.UpdateUser(u)
 
 	//Now let's see if the cache removed the old user name
 	u, err = db.ReadUser("streamdb_test")
@@ -104,7 +104,6 @@ func TestCacheCuriosities(t *testing.T) {
 //Let's see if the cache actually helps much with login speed
 func BenchmarkUserLogin(b *testing.B) {
 	ResetTimeBatch()
-
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	if err != nil {
 		b.Errorf("Couldn't open database: %v", err)

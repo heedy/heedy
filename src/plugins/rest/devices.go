@@ -114,7 +114,7 @@ func UpdateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 		d.ApiKey = newkey.String()
 	}
 
-	if err = o.UpdateDevice(devpath, d); err != nil {
+	if err = o.UpdateDevice(d); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
 		return err

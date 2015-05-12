@@ -30,7 +30,7 @@ func (o *Database) ReadAllUsers() ([]users.User, error) {
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUser(username string) (*users.User, error) {
 	//Check if the user is in the cache
-	if u, ok := o.userCache.Get(username); ok {
+	if u, ok := o.userCache.GetByName(username); ok {
 		usr := u.(users.User)
 		return &usr, nil
 	}
@@ -38,18 +38,23 @@ func (o *Database) ReadUser(username string) (*users.User, error) {
 	usr, err := o.Userdb.ReadUserByName(username)
 	if err == nil {
 		//put the user into the cache
-		o.userCache.Add(usr.Name, *usr)
+		o.userCache.Set(usr.Name, usr.UserId, *usr)
 	}
 	return usr, err
 }
 
-//ReadUserByID Note: Reading by Id cannot make use of the cache. it ALWAYS touches the database.
-//This is a good way to make absolutely sure that the stuff is fresh
+//ReadUserByID reads a user by its ID
 func (o *Database) ReadUserByID(userID int64) (*users.User, error) {
+	//Check if the user is in the cache
+	if u, _, ok := o.userCache.GetByID(userID); ok {
+		usr := u.(users.User)
+		return &usr, nil
+	}
+
 	usr, err := o.Userdb.ReadUserById(userID)
 	if err == nil {
 		//put the user into the cache
-		o.userCache.Add(usr.Name, *usr)
+		o.userCache.Set(usr.Name, usr.UserId, *usr)
 	}
 	return usr, err
 }
@@ -59,50 +64,14 @@ func (o *Database) ReadUserByEmail(email string) (*users.User, error) {
 	usr, err := o.Userdb.ReadUserByEmail(email)
 	if err == nil {
 		//put the user into the cache
-		o.userCache.Add(usr.Name, *usr)
+		o.userCache.Set(usr.Name, usr.UserId, *usr)
 	}
 	return usr, err
 }
 
-//DeleteUser deletes the given user - only admin can delete
-func (o *Database) DeleteUser(username string) error {
-	_, err := o.ReadUser(username)
-	if err != nil {
-		return err //Workaround for issue #81
-	}
-	//DeleteUserDevices is not needed for users, but necessary for timebatchdb and cache cleaning
-	err = o.DeleteUserDevices(username)
-	if err != nil {
-		return err
-	}
-
-	//BUG(daniel): The behavior here under malicious attack is undefined. In particular, the cache might
-	//be in an inconsistent state if a user happens to create a new device at this moment in another thread, and before
-	//userdb deletes the user. This will leave a leftover device in the cache, which could allow
-	//a new user with the same name to be created immediately, and it just *might* be possible to do some shenanigans
-	//with the leftover device in cache. That is why it is important to clear the cache of existing devices
-
-	o.userCache.Remove(username)
-
-	return o.Userdb.DeleteUserByName(username)
-}
-
-//DeleteUserByID deletes a user using its ID
-func (o *Database) DeleteUserByID(userID int64) error {
-	usr, err := o.ReadUserByID(userID)
-	if err != nil {
-		return err
-	}
-
-	//Now the user is currently in cache and set up completely correctly.
-	//This is not perfect, but timebatchdb does not currently have an efficient
-	//deleter for users
-	return o.DeleteUser(usr.Name)
-}
-
 //UpdateUser performs the given modifications
-func (o *Database) UpdateUser(username string, modifieduser *users.User) error {
-	user, err := o.ReadUser(username)
+func (o *Database) UpdateUser(modifieduser *users.User) error {
+	user, err := o.ReadUserByID(modifieduser.UserId)
 	if err != nil {
 		return err //Workaround for issue #81
 	}
@@ -112,11 +81,14 @@ func (o *Database) UpdateUser(username string, modifieduser *users.User) error {
 
 	err = o.Userdb.UpdateUser(modifieduser)
 	if err == nil {
-		//The username was changed - remove the old one from cache
-		if username != modifieduser.Name {
-			o.userCache.Remove(username)
+		o.userCache.Set(modifieduser.Name, modifieduser.UserId, *modifieduser)
+
+		//Modifications to user can modify properties of user device, so
+		//clear the device from cache
+		dev, err := o.ReadDevice(modifieduser.Name + "/user")
+		if err == nil {
+			o.deviceCache.RemoveID(dev.DeviceId)
 		}
-		o.userCache.Add(modifieduser.Name, *modifieduser)
 	}
 	return err
 }
@@ -128,5 +100,33 @@ func (o *Database) ChangeUserPassword(username, newpass string) error {
 		return err
 	}
 	u.SetNewPassword(newpass)
-	return o.UpdateUser(username, u)
+	return o.UpdateUser(u)
+}
+
+//DeleteUser deletes the given user - only admin can delete
+func (o *Database) DeleteUser(username string) error {
+	_, err := o.ReadUser(username)
+	if err != nil {
+		return err //Workaround for issue #81
+	}
+
+	//We want the user removed from user cache after it is deleted from UserDB,
+	//so that no process can reinsert in while it is deleting
+	defer o.userCache.RemoveName(username)
+
+	//This is inefficient but absolutely necessary for not allowing logins from nonexisting devices
+	defer o.deviceCache.UnlinkNamePrefix(username + "/")
+	return o.Userdb.DeleteUserByName(username)
+}
+
+//DeleteUserByID deletes a user using its ID
+func (o *Database) DeleteUserByID(userID int64) error {
+	usr, err := o.ReadUserByID(userID)
+	if err != nil {
+		return err //Workaround for issue #81
+	}
+
+	defer o.userCache.RemoveID(userID)
+	defer o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
+	return o.Userdb.DeleteUser(userID)
 }

@@ -16,23 +16,20 @@ var (
 type AuthOperator struct {
 	Db *Database //Db is the underlying database
 
-	usrName string //The user name underlying this device
-	devName string //The device name underlying this device
+	operatorPath string
 
-	//These two ensure that name-changes cannot be exploited
-	usrID int64 //the id of the user
+	//This ensures that name-changes cannot be exploited
 	devID int64 //the id of the device
 }
 
 //Name is the path to the device underlying the operator
 func (o *AuthOperator) Name() string {
-	return o.usrName + "/" + o.devName
+	return o.operatorPath
 }
 
-//Reload both user and device
+//Reload the device from database
 func (o *AuthOperator) Reload() error {
-	o.Db.userCache.Remove(o.usrName)
-	o.Db.deviceCache.Remove(o.Name())
+	o.Db.userCache.RemoveID(o.devID)
 	return nil
 }
 
@@ -43,32 +40,16 @@ func (o *AuthOperator) Database() *Database {
 
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
-	usr, err = o.Db.ReadUser(o.usrName)
-
-	//If there was an error, then either the user was deleted, or the user name was changed in another thread
-	if err != nil || usr.UserId != o.usrID {
-		usr, err = o.Db.ReadUserByID(o.usrID)
-		if err != nil {
-			return nil, err
-		}
-		o.usrName = usr.Name
+	dev, err := o.Db.ReadDeviceByID(o.devID)
+	if err != nil {
+		return nil, err
 	}
-	return usr, nil
+	return o.Db.ReadUserByID(dev.UserId)
 }
 
 //Device returns the current device
 func (o *AuthOperator) Device() (*users.Device, error) {
-	dev, err := o.Db.ReadDevice(o.Name())
-
-	//This makes sure that the correct device is being used at all times (in case user name changes during runtime)
-	if err != nil || dev.DeviceId != o.devID {
-		dev, err = o.Db.ReadDeviceByID(o.usrID)
-		if err != nil {
-			return nil, err
-		}
-		o.devName = dev.Name
-	}
-	return dev, nil
+	return o.Db.ReadDeviceByID(o.devID)
 
 }
 
@@ -83,24 +64,22 @@ func (o *AuthOperator) Permissions(perm users.PermissionLevel) bool {
 
 //SetAdmin does exactly what it claims. It works on both users and devices
 func (o *AuthOperator) SetAdmin(path string, isadmin bool) error {
-	parray := strings.Split(path, "/")
-	if len(parray) > 2 {
+	switch strings.Count(path, "/") {
+	default:
 		return ErrBadPath
-	}
-	if len(parray) == 2 { //This is a device
+	case 0:
+		u, err := o.ReadUser(path)
+		if err != nil {
+			return err
+		}
+		u.Admin = isadmin
+		return o.UpdateUser(u)
+	case 1:
 		dev, err := o.ReadDevice(path)
 		if err != nil {
 			return err
 		}
 		dev.IsAdmin = isadmin
-		return o.UpdateDevice(path, dev)
+		return o.UpdateDevice(dev)
 	}
-	//It is a user
-	u, err := o.ReadUser(path)
-	if err != nil {
-		return err
-	}
-	u.Admin = isadmin
-	return o.UpdateUser(u.Name, u)
-
 }

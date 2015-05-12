@@ -1,6 +1,7 @@
 package streamdb
 
 import (
+	"streamdb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -60,7 +61,7 @@ func TestAuthUserCrud(t *testing.T) {
 	require.Equal(t, "streamdb_test", u.Name)
 
 	u.Email = "testemail@test.com"
-	require.NoError(t, o.UpdateUser(u.Name, u))
+	require.NoError(t, o.UpdateUser(u))
 
 	u, err = o.User()
 	require.NoError(t, err)
@@ -74,6 +75,11 @@ func TestAuthUserCrud(t *testing.T) {
 
 	//Reload the device with admin
 	require.NoError(t, o.Reload())
+
+	u, err = db.ReadUser("streamdb_test")
+	require.NoError(t, err)
+	require.Equal(t, true, u.Admin)
+	require.True(t, o.(*AuthOperator).Permissions(users.ROOT))
 
 	//Make sure there are 3 if admin
 	usrs, err = o.ReadAllUsers()
@@ -97,5 +103,10 @@ func TestAuthUserCrud(t *testing.T) {
 	u, err = o.User()
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test3", u.Name)
+	require.Error(t, o.DeleteUserByID(u.UserId))
 
+	require.NoError(t, db.SetAdmin("streamdb_test3", true))
+	require.NoError(t, o.DeleteUserByID(u.UserId))
+	_, err = o.User()
+	require.Error(t, err)
 }
