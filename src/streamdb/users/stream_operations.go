@@ -10,23 +10,19 @@ All Rights Reserved
 
 import "reflect"
 
-
 type Stream struct {
-	StreamId  int64  `modifiable:"nobody"`
-	Name      string `modifiable:"nobody"`
-	Nickname  string `modifiable:"user"`
-	Type      string `modifiable:"root"`
-	DeviceId  int64  `modifiable:"nobody"`
-	Ephemeral bool   `modifiable:"user"`
-	Downlink  bool   `modifiable:"user"`
+	StreamId  int64  `modifiable:"nobody" json:"-"`
+	Name      string `modifiable:"device" json:"name"`
+	Nickname  string `modifiable:"device" json:"nickname,omitempty"`
+	Type      string `modifiable:"root" json:"-"`
+	DeviceId  int64  `modifiable:"nobody" json:"-"`
+	Ephemeral bool   `modifiable:"device" json:"ephemeral,omitempty"`
+	Downlink  bool   `modifiable:"device" json:"downlink,omitempty"`
 }
 
-
-func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) {
-	revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) int {
+	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
-
-
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
@@ -95,5 +91,11 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 // DeleteStream removes a stream from the database
 func (userdb *UserDatabase) DeleteStream(Id int64) error {
 	_, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
+	return err
+}
+
+//Allows one query to the database to clean a device of streams
+func (userdb *UserDatabase) DeleteAllStreamsForDevice(deviceId int64) error {
+	_, err := userdb.Exec(`DELETE FROM Streams WHERE DeviceId = ?;`, deviceId)
 	return err
 }

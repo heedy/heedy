@@ -1,68 +1,59 @@
 package dbutil
 
 import (
-	"testing"
 	"os"
+	"testing"
 )
 
-func TestDriverStrString(t *testing.T) {
+func TestUriIsSqlite(t *testing.T) {
+	if !UriIsSqlite("testing.db") {
+		t.Errorf("URI should be sqlite")
+	}
+	if !UriIsSqlite("testing.sqlite") {
+		t.Errorf("URI should be sqlite")
+	}
 
-	if SQLITE3.String() != "sqlite3" {
-        t.Errorf("could not compare driver string")
+	if !UriIsSqlite("testing.sqlite3") {
+		t.Errorf("URI should be sqlite")
+	}
+
+	if !UriIsSqlite("sqlite://testing/foo/bar/baz") {
+		t.Errorf("URI should be sqlite")
+	}
+
+	if UriIsSqlite("/testing/foo/bar/baz") {
+		t.Errorf("URI should not be sqlite")
+	}
+
+	if UriIsSqlite("postgres:///testing/foo/bar/baz") {
+		t.Errorf("URI should not be sqlite")
 	}
 }
 
-func TestUriIsSqlite(t *testing.T) {
-    if ! UriIsSqlite("testing.db") {
-        t.Errorf("URI should be sqlite")
-    }
-    if ! UriIsSqlite("testing.sqlite") {
-        t.Errorf("URI should be sqlite")
-    }
+func TestSqliteURIToPath(t *testing.T) {
 
-    if ! UriIsSqlite("testing.sqlite3") {
-        t.Errorf("URI should be sqlite")
-    }
+	if SqliteURIToPath("/foo/bar/baz/sqlite.db") != "/foo/bar/baz/sqlite.db" {
+		t.Errorf("URI tampered with")
+	}
 
-    if ! UriIsSqlite("sqlite://testing/foo/bar/baz") {
-        t.Errorf("URI should be sqlite")
-    }
-
-    if UriIsSqlite("/testing/foo/bar/baz") {
-        t.Errorf("URI should not be sqlite")
-    }
-
-    if UriIsSqlite("postgres:///testing/foo/bar/baz") {
-        t.Errorf("URI should not be sqlite")
-    }
+	if SqliteURIToPath("sqlite:///foo/bar/baz/sqlite.db") != "/foo/bar/baz/sqlite.db" {
+		t.Errorf("URI not tampered with")
+	}
 }
-
-
-func TestSqliteURIToPath(t *testing.T){
-
-    if SqliteURIToPath("/foo/bar/baz/sqlite.db") != "/foo/bar/baz/sqlite.db" {
-        t.Errorf("URI tampered with")
-    }
-
-    if SqliteURIToPath("sqlite:///foo/bar/baz/sqlite.db") != "/foo/bar/baz/sqlite.db" {
-        t.Errorf("URI not tampered with")
-    }
-}
-
 
 // From a connection string, gets the cleaned connection path and database type
-func TestProcessConnectionString(t *testing.T){
+func TestProcessConnectionString(t *testing.T) {
 
-    _, driver := ProcessConnectionString("test.sqlite3")
+	_, driver := ProcessConnectionString("test.sqlite3")
 
-    if driver != SQLITE3 {
-        t.Errorf("URI should be sqlite")
-    }
+	if driver != SQLITE3 {
+		t.Errorf("URI should be sqlite")
+	}
 
-    _, driver = ProcessConnectionString("postgres://foobar.com")
-    if driver != POSTGRES {
-        t.Errorf("URI should be postgres")
-    }
+	_, driver = ProcessConnectionString("postgres://foobar.com")
+	if driver != POSTGRES {
+		t.Errorf("URI should be postgres")
+	}
 }
 
 func TestSqlOpen(t *testing.T) {
@@ -71,7 +62,7 @@ func TestSqlOpen(t *testing.T) {
 
 	db, ds, err := OpenSqlDatabase(filepath)
 	if err != nil {
-        t.Errorf(err.Error())
+		t.Errorf(err.Error())
 		return
 	}
 
@@ -79,7 +70,7 @@ func TestSqlOpen(t *testing.T) {
 
 	version := GetDatabaseVersion(db, ds)
 
-	if version != "00000000" {
-        t.Errorf("Wrong version gotten for empty database")
+	if version != defaultDbversion {
+		t.Errorf("Wrong version gotten for empty database")
 	}
 }

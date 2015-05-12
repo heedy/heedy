@@ -2,6 +2,7 @@ import requests
 import json
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
+from jsonschema import validate, Draft4Validator
 
 
 class AuthenticationError(Exception):
@@ -15,26 +16,180 @@ class ServerError(Exception):
     def __str__(self):
         return repr(self.value)
 
+class DataError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+#The base object upon which the rest is built up
+class ConnectorObject(object):
+    def __init__(self,connectordb,opath):
+        self.db = connectordb
+        self.metaname = opath
+
+        self.metadata = None
+    def refresh(self):
+        #Reload data about user from the server
+        self.metadata = self.db.urlget(self.metaname).json()
+
+    @property
+    def data(self):
+        #Returns the raw dict returned by querying for the device
+        if self.metadata is None:
+            self.refresh()
+        return self.metadata
+
+    def delete(self):
+        #Delete the device
+        self.db.urldelete(self.metaname)
+    @property
+    def exists(self):
+        #Property is True if object exists, false otherwise
+        try:
+            self.refresh()
+        except:
+            return False
+        return True
+
+    def set(self,props):
+        self.metadata = self.db.urlput(self.metaname,props).json()
+
+    @property
+    def name(self):
+        return self.data["name"]
+    @name.setter
+    def name(self,value):
+        self.set({"name": value})
+
+class User(ConnectorObject):
+    def create(self,email,password):
+        #Create the given user
+        self.metadata = self.db.urlpost(self.metaname,{"email": email,"password": password}).json()
+
+    def setpassword(self,password):
+        self.set({"password": password})
+
+    @property
+    def email(self):
+        return self.data["email"]
+    @email.setter
+    def email(self,value):
+        self.set({"email": value})
+
+    @property
+    def admin(self):
+        if not "admin" in self.data:
+            return False
+        return self.data["admin"]
+    @admin.setter
+    def admin(self,value):
+        self.set({"admin": value})
+
+    def devices(self):
+        #Returns the list of users accessible to this operator
+        devs = []
+        for d in self.db.urlget(self.metaname+"/ls").json():
+            tmpd = Device(self.db,d["name"])
+            tmpd.metadata = d
+            devs.append(tmpd)
+        return devs
+
+    def __getitem__(self,val):
+        return Device(self.db,self.metaname+"/"+val)
+
+class Device(ConnectorObject):
+    def create(self):
+        self.metadata = self.db.urlpost(self.metaname).json()
+
+    def streams(self):
+        #Returns the list of users accessible to this operator
+        strms = []
+        for s in self.db.urlget(self.metaname+"/ls").json():
+            tmps = Stream(self.db,s["name"])
+            tmps.metadata = s
+            strms.append(tmps)
+        return strms
+
+    def __getitem__(self,val):
+        return Stream(self.db,self.metaname+"/"+val)
+
+    @property
+    def admin(self):
+        if not "admin" in self.data:
+            return False
+        return self.data["admin"]
+    @admin.setter
+    def admin(self,value):
+        self.set({"admin": value})
+
+    @property
+    def nickname(self):
+        return self.data["nickname"]
+    @nickname.setter
+    def nickname(self,value):
+        self.set({"nickname": value})
+
+    @property
+    def apikey(self):
+        return self.data["apikey"]
+    @apikey.setter
+    def apikey(self,value):
+        self.set({"apikey": value})
+
+    def resetKey(self):
+        self.apikey=""
+        return self.metadata["apikey"]
+
+    @property
+    def devicename(self):
+        return self.metaname.split("/")[1]
+
+    @property
+    def username(self):
+        return self.metaname.split("/")[0]
+
+    @property
+    def user(self):
+        #Gets the device's user
+        return User(self.db,self.username)
+    @property
+    def name(self):
+        return self.metaname
+
+class Stream(ConnectorObject):
+    def create(self,schema):
+        Draft4Validator.check_schema(schema)
+        self.metadata = self.db.urlpost(self.metaname,schema).json()
+
+    @property
+    def nickname(self):
+        return self.data["nickname"]
+    @nickname.setter
+    def nickname(self,value):
+        self.set({"nickname": value})
+
+    @property
+    def schema(self):
+        return self.data["schema"]
 
 
-class ConnectorDB(object):
-    #Connect to ConnectorDB given an apikey and an optional url to the server.
+class ConnectorDB(Device):
+    #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
     #Alternately, you can log in using your username and password by setting
     #your password to apikey, and name to username.
-    def __init__(self,apikey,url="https://connectordb.com",username=""):
-        self.auth = HTTPBasicAuth(username,apikey)
+    def __init__(self,user,password,url="https://connectordb.com"):
+        self.auth = HTTPBasicAuth(user,password)
         self.url = url
         
-        #We don't actually know our name - we only have an api key, so let's get the device.
-        #This also gives us a chance to make sure our auth is working.
-        self.name = self.urlget("this").text
+        Device.__init__(self,self,self.urlget("this").text)
 
         
     #Does error handling for a request result
     def handleresult(self,r):
         if r.status_code==401 or r.status_code==403:
             raise AuthenticationError(r.text)
-        elif r.status_code > 400:
+        elif r.status_code !=200:
             raise ServerError(r.text)
         return r
 
@@ -43,36 +198,22 @@ class ConnectorDB(object):
         return self.handleresult(requests.get(urljoin(self.url,location),auth=self.auth))
     def urldelete(self,location):
         return self.handleresult(requests.delete(urljoin(self.url,location),auth=self.auth))
-    def urlpost(self,location,data):
+    def urlpost(self,location,data={}):
         return self.handleresult(requests.post(urljoin(self.url,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
     def urlput(self,location,data):
         return self.handleresult(requests.put(urljoin(self.url,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
 
-    @property
-    def username(self):
-        return self.name.split("/")[0]
+    def getuser(self,usrname):
+        return User(self,usrname)
 
-    @property
-    def devicename(self):
-        return self.name.split("/")[1]
+    def users(self):
+        #Returns the list of users accessible to this operator
+        usrs = []
+        for u in self.urlget("ls").json():
+            tmpu = self.getuser(u["name"])
+            tmpu.metadata = u
+            usrs.append(tmpu)
+        return usrs
 
-    @property
-    def user(self):
-        return User(self,self.username)
-
-    
-
-class User(object):
-    def __init__(self,connectordb,username):
-        self.db = connectordb
-        self.name = username
-
-        self.refresh()
-
-    def refresh(self):
-        self.metadata = self.db.get(self.name).json()
-
-    def delete(self):
-        self.db.urldelete(self.name)

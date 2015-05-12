@@ -1,23 +1,21 @@
 package dbmaker
 
 import (
-	"log"
 	"path/filepath"
 	"streamdb/config"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/kardianos/osext"
 )
 
-
-
 // A service representing the postgres database
 type GnatsdService struct {
-	ServiceHelper // We get stop, status, kill, and Name from this
-	host string
-	port int
+	ServiceHelper     // We get stop, status, kill, and Name from this
+	host              string
+	port              int
 	streamdbDirectory string
 }
-
 
 // Creates and returns a new postgres service in a pre-init state
 // with default values loaded from config
@@ -28,7 +26,7 @@ func NewDefaultGnatsdService() *GnatsdService {
 func NewConfigGnatsdService(config *config.Configuration) *GnatsdService {
 	host := config.GnatsdHost
 	port := config.GnatsdPort
-	dir  := config.StreamdbDirectory
+	dir := config.StreamdbDirectory
 
 	return NewGnatsdService(host, port, dir)
 }
@@ -46,14 +44,14 @@ func NewGnatsdService(host string, port int, streamdbDirectory string) *GnatsdSe
 
 //InitializeGnatsd sets up the configuration of the gnatsd messaging daemon
 func (srv *GnatsdService) Setup() error {
-	log.Printf("Setting up Gnatsd server\n")
+	log.Printf("Setting up Gnatsd server")
 
 	//Now copy the configuration file
 	return CopyConfig(srv.streamdbDirectory, "gnatsd.conf", nil)
 }
 
 func (srv *GnatsdService) Init() error {
-	log.Printf("Initializing Gnatsd\n")
+	log.Printf("Initializing Gnatsd")
 
 	srv.Stat = StatusInit
 	// Nothing to do here, may want to which/look for the executables in the
@@ -67,14 +65,14 @@ func (srv *GnatsdService) Start() error {
 		return nil
 	}
 	if srv.Stat != StatusInit {
-		log.Printf("Could not start gnatsd, status is %v\n", srv.Stat)
+		log.Printf("Could not start gnatsd, status is %v", srv.Stat)
 		return ErrNotInitialized
 	}
 
-	log.Printf("Starting gNATSd server on port %d\n", srv.port)
+	log.Printf("Starting gNATSd server on port %d", srv.port)
 
 	configReplacements := GenerateConfigReplacements(srv.streamdbDirectory, "gnatsd", srv.host, srv.port)
-	configfile, err := SetConfig(srv.streamdbDirectory, "gnatsd.conf", configReplacements , nil)
+	configfile, err := SetConfig(srv.streamdbDirectory, "gnatsd.conf", configReplacements, nil)
 
 	execpath, err := osext.ExecutableFolder()
 
@@ -91,11 +89,9 @@ func (srv *GnatsdService) Start() error {
 	return err
 }
 
-
 func (srv *GnatsdService) Stop() error {
 	return srv.HelperStop()
 }
-
 
 func (srv *GnatsdService) Kill() error {
 	return srv.HelperKill()

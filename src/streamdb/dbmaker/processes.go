@@ -4,16 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"streamdb/util"
 	"strings"
 	"time"
-	"streamdb/util"
 
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -34,7 +34,7 @@ func WaitPort(host string, port int, err error) error {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
 
-	log.Printf("Waiting for %v to open...\n", hostPort)
+	log.Printf("Waiting for %v to open...", hostPort)
 
 	_, err = net.Dial("tcp", hostPort)
 	i := 0
@@ -46,7 +46,7 @@ func WaitPort(host string, port int, err error) error {
 		return ErrTimeout
 	}
 
-	log.Printf("...%v is now open.\n", hostPort)
+	log.Printf("...%v is now open.", hostPort)
 	return nil
 }
 
@@ -127,24 +127,24 @@ func StopProcess(streamdbDirectory, procname string, err error) error {
 		return err
 	}
 
-	log.Printf("Stopping process %d '%s'\n", p.Pid, procname)
+	log.Printf("Stopping process %d '%s'", p.Pid, procname)
 	if err := p.Signal(os.Interrupt); err != nil {
 		return err
 	}
 
 	// Wait for the process to close
 	procWait := make(chan int, 1)
-    go func() {
-        p.Wait()
-        procWait <- 1
-    }()
+	go func() {
+		p.Wait()
+		procWait <- 1
+	}()
 
-    select {
-	    case <-procWait:
-	        return nil
-	    case <-time.After(time.Second * 5):
-	        return ErrTimeout
-    }
+	select {
+	case <-procWait:
+		return nil
+	case <-time.After(time.Second * 5):
+		return ErrTimeout
+	}
 }
 
 //KillProcess sends immediately kills the process

@@ -6,12 +6,13 @@ plugin registry when we're imported without side effects.
 **/
 
 import (
-	"streamdb"
-	"plugins"
 	"fmt"
 	"log"
-	"streamdb/config"
 	"net/http"
+	"plugins"
+	"streamdb"
+	"streamdb/config"
+
 	"github.com/gorilla/mux"
 )
 

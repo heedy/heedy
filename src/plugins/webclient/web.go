@@ -1,16 +1,16 @@
 package webclient
 
 import (
+	"encoding/gob"
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
+	"path"
 	"streamdb"
 	"streamdb/users"
-	"streamdb/util"
-    "encoding/gob"
 
 	"github.com/gorilla/mux"
+	"github.com/kardianos/osext"
 )
 
 var (
@@ -24,12 +24,12 @@ var (
 	addUserTemplate    *template.Template
 	loginPageTemplate  *template.Template
 
-	firstrun bool
+	firstrun    bool
 	webOperator *streamdb.Operator
 )
 
 func init() {
-    gob.Register(users.User{})
+	gob.Register(users.User{})
 	gob.Register(users.Device{})
 }
 
@@ -40,8 +40,6 @@ func internalServerError(err error) {
 **/
 
 type WebHandler func(se *SessionEnvironment)
-
-
 
 func authWrapper(h WebHandler) http.HandlerFunc {
 
@@ -84,7 +82,6 @@ func getLogin(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-
 // Display the login page
 func getLogout(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("logout\n")
@@ -103,13 +100,13 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 
 	log.Printf("Log in attempt: %v\n", userstr)
 
-	user, userdev, err := userdb.Login(userstr, passstr)
-	//_,_, err := userdb.Login(userstr, passstr)
-
+	usroperator, err := userdb.LoginOperator(userstr, passstr)
 	if err != nil {
 		http.Redirect(writer, request, "/login/?failed=true", http.StatusTemporaryRedirect)
 		return
 	}
+	user, _ := usroperator.User()
+	userdev, _ := usroperator.Device()
 
 	// Get a session. We're ignoring the error resulted from decoding an
 	// existing session: Get() always returns a session, even if empty.
@@ -119,7 +116,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	session.Values["Device"] = *userdev
 	session.Values["OrigUser"] = *user
 
-    if err := session.Save(request, writer); err != nil {
+	if err := session.Save(request, writer); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -127,24 +124,22 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 }
 
 func init() {
-	util.SetWdToExecutable()
-
-	userEditTemplate = template.Must(template.ParseFiles("./templates/user_edit.html", "./templates/base.html"))
-	loginHomeTemplate = template.Must(template.ParseFiles("./templates/root.html", "./templates/base.html"))
-	deviceInfoTemplate = template.Must(template.ParseFiles("./templates/device_info.html", "./templates/base.html"))
-	firstrunTemplate = template.Must(template.ParseFiles("./templates/firstrun.html", "./templates/base.html"))
-	addUserTemplate = template.Must(template.ParseFiles("./templates/newuser.html", "./templates/base.html"))
-	loginPageTemplate = template.Must(template.ParseFiles("./templates/login.html", "./templates/base.html"))
+	folderPath, _ := osext.ExecutableFolder()
+	//Changing curdir breaks tests
+	userEditTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/user_edit.html"), path.Join(folderPath, "./templates/base.html")))
+	loginHomeTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/root.html"), path.Join(folderPath, "./templates/base.html")))
+	deviceInfoTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/device_info.html"), path.Join(folderPath, "./templates/base.html")))
+	firstrunTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/firstrun.html"), path.Join(folderPath, "./templates/base.html")))
+	addUserTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/newuser.html"), path.Join(folderPath, "./templates/base.html")))
+	loginPageTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/login.html"), path.Join(folderPath, "./templates/base.html")))
 }
-
 
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	userdb = udb
-
-	includepath, _ := filepath.Abs("./static/")
+	folderPath, _ := osext.ExecutableFolder()
+	includepath := path.Join(folderPath, "static")
 	log.Printf("Include path set to: %v", includepath)
 	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
-
 
 	subroutePrefix.HandleFunc("/login/", http.HandlerFunc(getLogin))
 	subroutePrefix.HandleFunc("/login/action/login", http.HandlerFunc(postLogin))
@@ -161,17 +156,16 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/user/action/changepass", authWrapper(modifyPasswordAction))
 	subroutePrefix.HandleFunc("/secure/user/action/delete", authWrapper(deleteUserAction))
 
-
 	// CRUD Device
 	subroutePrefix.HandleFunc("/secure/device/{id:[0-9]+}", authWrapper(getDevicePage))
 	subroutePrefix.HandleFunc("/secure/device/action/create", authWrapper(createDeviceAction))
 	subroutePrefix.HandleFunc("/secure/device/{id:[0-9]+}/action/edit", authWrapper(editDevicePage))
 
 	// CRUD Stream
-	streamReadTemplate = template.Must(template.ParseFiles("./templates/stream.html", "./templates/base.html"))
+	streamReadTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/stream.html"), path.Join(folderPath, "./templates/base.html")))
 
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}", authWrapper(readStreamPage))
 	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
-	
+
 }

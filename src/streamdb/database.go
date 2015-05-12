@@ -2,41 +2,62 @@ package streamdb
 
 import (
 	"database/sql"
-	"log"
+	"errors"
+	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
-	"streamdb/config"
+	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 //The StreamDB version string
-const Version = "0.2.0a"
+const (
+	Version   = "0.2.0"
+	AdminName = "  Admin  "
+)
 
 var (
+
+	//ErrBadPath is thrown when a user device or stream cannot be extracted from the path
+	ErrBadPath = errors.New("The given path is invalid.")
+	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
+	ErrAdmin = errors.New("An administrative operator has no user or device")
+
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 250
-	db        *Database
+
+	//CacheSizes are the number of users/devices/streams to cache
+	UserCacheSize   = 100
+	DeviceCacheSize = 1000
+	StreamCacheSize = 10000
+
+	//Cache eviction timer in seconds. Can be huge on single-node setups
+	CacheExpireTime = 60
 )
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
-	users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
+	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
-	tdb     *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg     *messenger.Messenger  //messenger is a connection to the messaging client
-	sqldb   *sql.DB               //Connection to the sql database
-	SqlType dbutil.DRIVERSTR
+	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
+	msg *messenger.Messenger  //messenger is a connection to the messaging client
 
-	dbutil.SqlxMixin
+	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+
+	//The caches are to keep frequently used stuff in memory for a reasonable time before reloading from database
+	userCache   *TimedCache
+	deviceCache *TimedCache
+	streamCache *TimedCache
 }
 
-
 // Calls open from the arguments in the given configuration
-func OpenFromConfig(cfg *config.Configuration) (*Database, error){
-	redis 	:= cfg.GetRedisUri()
-	gnatsd 	:= cfg.GetGnatsdUri()
-	sql 	:= cfg.GetDatabaseConnectionString()
+func OpenFromConfig(cfg *config.Configuration) (*Database, error) {
+	redis := cfg.GetRedisUri()
+	gnatsd := cfg.GetGnatsdUri()
+	sql := cfg.GetDatabaseConnectionString()
 
 	return Open(sql, redis, gnatsd)
 }
@@ -64,28 +85,27 @@ Finally, if running in postgres, then at least one process must be running the f
 writes the database's internal data.
 **/
 func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
-
-	/**
-	  TODO migrate all sql userdb stuff into this file.
-	  **/
-
 	var db Database
+	var sqltype string
 
-	db.sqldb, db.SqlType, err = dbutil.OpenSqlDatabase(sqluri)
-
+	//Dbutil prints the sqluri to log, so no need to do it here
+	db.sqldb, sqltype, err = dbutil.OpenSqlDatabase(sqluri)
 	if err != nil {
-		db.Close()
 		return nil, err
 	}
 
-	db.InitSqlxMixin(db.sqldb, string(db.SqlType))
-	db.InitUserDatabase(db.sqldb, string(db.SqlType))
+	log.Debugln("Opening User database")
+	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
 
-	log.Printf("Opening messenger with uri %s\n", msguri)
+	log.Debugln("Opening messenger with uri ", msguri)
 	db.msg, err = messenger.Connect(msguri, err)
 
-	log.Printf("Opening timebatchdb with redis url %v batch size: %v\n", redisuri, BatchSize)
-	db.tdb, err = timebatchdb.Open(db.sqldb, string(db.SqlType), redisuri, BatchSize, err)
+	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
+	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
+
+	db.userCache, err = NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)
+	db.deviceCache, err = NewTimedCache(DeviceCacheSize, int64(CacheExpireTime), err)
+	db.streamCache, err = NewTimedCache(StreamCacheSize, int64(CacheExpireTime), err)
 
 	if err != nil {
 		db.Close()
@@ -93,12 +113,79 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if db.SqlType == dbutil.SQLITE3 {
+	if sqltype == config.Sqlite {
 		go db.tdb.WriteDatabase()
 	}
 
 	return &db, nil
 
+}
+
+//DeviceLoginOperator returns the operator associated with the given API key
+func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, error) {
+	dev, err := db.ReadDevice(devicepath)
+	if err != nil || dev.ApiKey != apikey {
+		return nil, ErrPermissions //Don't leak whether the device exists
+	}
+
+	return &AuthOperator{db, devicepath, dev.DeviceId}, err
+}
+
+//UserLoginOperator returns the operator associated with the given username/password combination
+func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
+	dev, err := db.ReadDevice(username + "/user")
+	if err != nil {
+		return nil, ErrPermissions
+	}
+
+	usr, err := db.ReadUserByID(dev.UserId)
+	if err != nil || !usr.ValidatePassword(password) {
+		return nil, ErrPermissions //We don't want to leak if a user exists or not
+	}
+
+	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, nil
+}
+
+//LoginOperator logs in as a user or device, depending on which is passed in
+func (db *Database) LoginOperator(path, password string) (Operator, error) {
+	switch strings.Count(path, "/") {
+	default:
+		return nil, ErrBadPath
+	case 1:
+		return db.DeviceLoginOperator(path, password)
+	case 0:
+		return db.UserLoginOperator(path, password)
+	}
+}
+
+//Operator gets the operator by usr or device name
+func (db *Database) Operator(path string) (Operator, error) {
+	switch strings.Count(path, "/") {
+	default:
+		return nil, ErrBadPath
+	case 0:
+		path += "/user"
+	case 1:
+		//Do nothing for this case
+	}
+	dev, err := db.ReadDevice(path)
+	if err != nil {
+		return nil, err //We use dev.Name, so must return error earlier
+	}
+	return &AuthOperator{db, path, dev.DeviceId}, err
+}
+
+//DeviceOperator returns the operator for the given device ID
+func (db *Database) DeviceOperator(deviceID int64) (Operator, error) {
+	dev, err := db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return nil, err
+	}
+	usr, err := db.ReadUserByID(dev.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, err
 }
 
 //Close closes all database connections and releases all resources.
@@ -108,12 +195,12 @@ func (db *Database) Close() {
 		db.tdb.Close()
 	}
 
-	if db.sqldb != nil {
-		db.sqldb.Close()
-	}
-
 	if db.msg != nil {
 		db.msg.Close()
+	}
+
+	if db.sqldb != nil {
+		db.sqldb.Close()
 	}
 }
 
@@ -137,7 +224,62 @@ If you are just connecting to an already-running StreamDB and RunWriter is alrea
 this database, then NO.
 **/
 func (db *Database) RunWriter() {
-	if db.SqlType != "sqlite3" {
-		db.tdb.WriteDatabase()
+	db.tdb.WriteDatabase()
+}
+
+//These functions allow the Database object to conform to the Operator interface
+
+//Name here is a special one meaning that it is the database administration operator
+func (db *Database) Name() string {
+	return AdminName
+}
+
+//Database just returns self
+func (db *Database) Database() *Database {
+	return db
+}
+
+//Reload for a full database purges the entire cache
+func (db *Database) Reload() error {
+	db.userCache.Purge()
+	db.deviceCache.Purge()
+	db.streamCache.Purge()
+	return nil
+}
+
+//User returns the current user
+func (db *Database) User() (usr *users.User, err error) {
+	return nil, ErrAdmin
+}
+
+//Device returns the current device
+func (db *Database) Device() (*users.Device, error) {
+	return nil, ErrAdmin
+}
+
+//Permissions returns whether the operator has permissions given by the string
+func (db *Database) Permissions(perm users.PermissionLevel) bool {
+	return true
+}
+
+//SetAdmin does exactly what it claims. It works on both users and devices
+func (db *Database) SetAdmin(path string, isadmin bool) error {
+	switch strings.Count(path, "/") {
+	default:
+		return ErrBadPath
+	case 0:
+		u, err := db.ReadUser(path)
+		if err != nil {
+			return err
+		}
+		u.Admin = isadmin
+		return db.UpdateUser(u)
+	case 1:
+		dev, err := db.ReadDevice(path)
+		if err != nil {
+			return err
+		}
+		dev.IsAdmin = isadmin
+		return db.UpdateDevice(dev)
 	}
 }

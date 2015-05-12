@@ -1,20 +1,19 @@
 package dbmaker
 
 import (
-	"log"
-	"streamdb/config"
 	"strconv"
+	"streamdb/config"
+
+	log "github.com/Sirupsen/logrus"
 )
 
-
 // A service representing the postgres database
-type RedisService struct{
-	ServiceHelper // We get stop, status, kill, and Name from this
-	host string
-	port int
+type RedisService struct {
+	ServiceHelper     // We get stop, status, kill, and Name from this
+	host              string
+	port              int
 	streamdbDirectory string
 }
-
 
 // Creates and returns a new postgres service in a pre-init state
 // with default values loaded from config
@@ -23,10 +22,10 @@ func NewDefaultRedisService() *RedisService {
 }
 
 // Creates a redis service from a given configuration
-func NewConfigRedisService(config *config.Configuration) *RedisService  {
+func NewConfigRedisService(config *config.Configuration) *RedisService {
 	host := config.RedisHost
 	port := config.RedisPort
-	dir  := config.StreamdbDirectory
+	dir := config.StreamdbDirectory
 
 	return NewRedisService(host, port, dir)
 }
@@ -44,15 +43,14 @@ func NewRedisService(host string, port int, streamdbDirectory string) *RedisServ
 
 //InitializeRedis sets up the configuration of redis
 func (srv *RedisService) Setup() error {
-	log.Printf("Setting up Redis server\n")
+	log.Printf("Setting up Redis server")
 
 	//Now copy the configuration file
 	return CopyConfig(srv.streamdbDirectory, "redis.conf", nil)
 }
 
-
 func (srv *RedisService) Init() error {
-	log.Printf("Initializing redis\n")
+	log.Printf("Initializing redis")
 	srv.Stat = StatusInit
 	// Nothing to do here, may want to which/look for the executables in the
 	// future and check the port is open
@@ -65,11 +63,11 @@ func (srv *RedisService) Start() error {
 		return nil
 	}
 	if srv.Stat != StatusInit {
-		log.Printf("Could not start redis, status is %v\n", srv.Stat)
+		log.Printf("Could not start redis, status is %v", srv.Stat)
 		return ErrNotInitialized
 	}
 
-	log.Printf("Starting Redis server on port %d\n", srv.port)
+	log.Printf("Starting Redis server on port %d", srv.port)
 
 	configReplacements := GenerateConfigReplacements(srv.streamdbDirectory, "redis", srv.host, srv.port)
 	configfile, err := SetConfig(srv.streamdbDirectory, "redis.conf", configReplacements, nil)
@@ -89,14 +87,12 @@ func (srv *RedisService) Start() error {
 	return err
 }
 
-
 func (srv *RedisService) Stop() error {
 	portString := strconv.Itoa(srv.port)
 
 	return RunCommand(nil, "redis-cli", "-p", portString, "shutdown")
 	//return srv.HelperStop()
 }
-
 
 func (srv *RedisService) Kill() error {
 	return srv.HelperKill()

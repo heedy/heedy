@@ -1,20 +1,22 @@
 package dbutil
 
 import (
-	"text/template"
 	"bytes"
-	"log"
-	"os/exec"
-    "io/ioutil"
 	"errors"
+	"io/ioutil"
 	"os"
+	"os/exec"
+	"text/template"
+
+	log "github.com/Sirupsen/logrus"
 	//"path/filepath"
 
 	//"github.com/kardianos/osext"
-    )
+)
 
 const (
-	versionString = "DBVersion"
+	versionString    = "DBVersion"
+	defaultDbversion = "00000000"
 )
 
 // TODO @josephlewis42, add daniel's upgrade for version number on timebatch stuff.
@@ -22,20 +24,20 @@ const (
 
 // the database meta type
 type meta struct {
-	key string
+	key   string
 	value string
 }
 
 // Gets the conversion script for the given params.
-func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, error) {
-	templateParams := make(map[string] string)
+func getConversion(dbtype string, dbversion string, dropOld bool) (string, error) {
+	templateParams := make(map[string]string)
 
 	if dbversion == "" {
-		dbversion = "00000000"
+		dbversion = defaultDbversion
 	}
 
 	templateParams["DBVersion"] = dbversion
-	templateParams["DBType"] = dbtype.String()
+	templateParams["DBType"] = dbtype
 	if dropOld {
 		templateParams["DroppingTables"] = "true"
 	} else {
@@ -48,7 +50,6 @@ func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, er
 		templateParams["pkey_exp"] = "INTEGER PRIMARY KEY AUTOINCREMENT"
 	}
 
-
 	conversion_template, err := template.New("modifier").Parse(dbconversion)
 
 	if err != nil {
@@ -58,12 +59,11 @@ func getConversion(dbtype DRIVERSTR, dbversion string, dropOld bool) (string, er
 	var doc bytes.Buffer
 	conversion_template.Execute(&doc, templateParams)
 
-    return doc.String(), nil
+	return doc.String(), nil
 }
 
 func getSqlite3Location() string {
-		//execFolder, _ := osext.ExecutableFolder()
-		return "sqlite3" //filepath.Join(execFolder, "dep", "sqlite3")
+	return "sqlite3"
 }
 
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.
@@ -79,14 +79,14 @@ Postgres just uses the existing connection.
 **/
 func UpgradeDatabase(cxnstring string, dropold bool) error {
 
-    db, driver, err := OpenSqlDatabase(cxnstring)
-    if err != nil {
-        return err
-    }
+	db, driver, err := OpenSqlDatabase(cxnstring)
+	if err != nil {
+		return err
+	}
 
-    // Check version of database
-    version := GetDatabaseVersion(db, driver)
-    log.Printf("Upgrading DB From Version: %v\n", version)
+	// Check version of database
+	version := GetDatabaseVersion(db, driver)
+	log.Printf("Upgrading DB From Version: %v", version)
 
 	conversionstr, err := getConversion(driver, version, dropold)
 
@@ -94,63 +94,62 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 		return err
 	}
 
-    switch driver {
-        case SQLITE3:
+	switch driver {
+	case SQLITE3:
 
-			sqliteLocation := getSqlite3Location()
-			log.Printf("Sqlite Location is: %v\n", sqliteLocation)
-            // sqlite doesn't allow direct exec of multiple lines, so we do it
-            // from the cli and hope for the best.
+		sqliteLocation := getSqlite3Location()
+		log.Printf("Sqlite Location is: %v", sqliteLocation)
+		// sqlite doesn't allow direct exec of multiple lines, so we do it
+		// from the cli and hope for the best.
 
-            f, err := ioutil.TempFile("", "initdb_")
-            if err != nil {
-                return err
-            }
+		f, err := ioutil.TempFile("", "initdb_")
+		if err != nil {
+			return err
+		}
 
-			// Tempfile says we're responsible for closing and deleting this
-            defer f.Close()
-            defer os.Remove(f.Name())
+		// Tempfile says we're responsible for closing and deleting this
+		defer f.Close()
+		defer os.Remove(f.Name())
 
-			//log.Printf("Doing Conversion, script is:\n%v\n\n", conversionstr)
+		//log.Printf("Doing Conversion, script is:\n%v\n\n", conversionstr)
 
-            _, err = f.WriteString(conversionstr)
-            if err != nil {
-                return err
-            }
+		_, err = f.WriteString(conversionstr)
+		if err != nil {
+			return err
+		}
 
-			// So we don't get any race conditions on the database
-            db.Close()
+		// So we don't get any race conditions on the database
+		db.Close()
 
-			// Print sqlite version
-			log.Printf("Sqlite Version\n")
-			cmd := exec.Command(sqliteLocation, "--version")
-			cmd.Stdout = os.Stdout
-    		cmd.Stderr = os.Stderr
-            err = cmd.Run()
+		// Print sqlite version
+		log.Printf("Sqlite Version")
+		cmd := exec.Command(sqliteLocation, "--version")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
 
-			// Strip anything from sqlite connection string that isn't a path
-            cmd = exec.Command(sqliteLocation, "-init", f.Name(), SqliteURIToPath(cxnstring))
-			cmd.Stdout = os.Stdout
-    		cmd.Stderr = os.Stderr
+		// Strip anything from sqlite connection string that isn't a path
+		cmd = exec.Command(sqliteLocation, "-init", f.Name(), SqliteURIToPath(cxnstring))
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-            err = cmd.Run()
-            if err != nil {
-                return err
-            }
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
 
+	case POSTGRES:
+		defer db.Close()
+		_, err = db.Exec(conversionstr)
 
-        case POSTGRES:
-            defer db.Close()
-            _, err = db.Exec(conversionstr)
+		if err != nil {
+			return err
+		}
 
-            if err != nil {
-                return err
-            }
-
-        default:
-			log.Printf("Unknown Driver %v\n", driver.String())
-            return errors.New("The connection driver is unknown, cowardly failing.")
-    }
+	default:
+		log.Printf("Unknown Driver %v", driver)
+		return errors.New("The connection driver is unknown, cowardly failing.")
+	}
 
 	return nil
 }

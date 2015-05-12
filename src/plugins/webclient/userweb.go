@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-
 func getUserPage(se *SessionEnvironment) {
 	log.Printf("getting user page")
 
@@ -13,7 +12,7 @@ func getUserPage(se *SessionEnvironment) {
 
 	log.Printf("userdb: %p, user: %v\n", userdb, se.User)
 
-	devices, err := userdb.ReadDevicesForUserId(se.User.UserId)
+	devices, err := userdb.ReadAllDevicesByUserID(se.User.UserId)
 	pageData["devices"] = devices
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()
@@ -29,13 +28,11 @@ func getUserPage(se *SessionEnvironment) {
 	}
 }
 
-
 func editUserPage(se *SessionEnvironment) {
 	pageData := make(map[string]interface{})
 
-
 	log.Printf("Editing %v", se.User.Name)
-	devices, err := userdb.ReadDevicesForUserId(se.User.UserId)
+	devices, err := userdb.ReadAllDevicesByUserID(se.User.UserId)
 	pageData["devices"] = devices
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()
@@ -60,11 +57,10 @@ func modifyUserAction(se *SessionEnvironment) {
 	// and when they click on it change the email (send them their email in the
 	// url string encrypted so we don't need another table)
 	if email != "" {
-		originaluser := *se.User
 		se.User.Email = email
 
 		log.Printf("email passed first check")
-		err := se.Operator.UpdateUser(se.User, &originaluser)
+		err := se.Operator.UpdateUser(se.User)
 
 		if err != nil {
 			se.Session.AddFlash(err.Error())
@@ -85,9 +81,8 @@ func modifyPasswordAction(se *SessionEnvironment) {
 	log.Printf("Modifying user %v, new password: %v", se.User.Name, p1)
 
 	if p1 == p2 && p1 != "" && se.User.ValidatePassword(p0) {
-		origuser := *se.User
 		se.User.SetNewPassword(p1)
-		err := se.Operator.UpdateUser(se.User, &origuser)
+		err := se.Operator.UpdateUser(se.User)
 
 		if err != nil {
 			se.Session.AddFlash(err.Error())
@@ -107,7 +102,7 @@ func deleteUserAction(se *SessionEnvironment) {
 	log.Printf("Deleting user %v", se.User.Name)
 
 	if se.User.ValidatePassword(p0) {
-		err := se.Operator.DeleteUser(se.User.UserId)
+		err := se.Operator.DeleteUserByID(se.User.UserId)
 
 		if err != nil {
 			se.Session.AddFlash(err.Error())

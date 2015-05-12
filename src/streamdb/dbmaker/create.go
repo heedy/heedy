@@ -2,12 +2,13 @@ package dbmaker
 
 import (
 	"errors"
-	"log"
 	"os"
-	"streamdb/util"
 	"streamdb/config"
 	"streamdb/dbutil"
 	"streamdb/users"
+	"streamdb/util"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -17,7 +18,6 @@ var (
 	ErrUnrecognizedDatabase = errors.New("Unrecognized sql database type")
 )
 
-
 //Create a streamdb instance
 func Create(config *config.Configuration, username, password, email string) error {
 	streamdbDirectory := config.StreamdbDirectory
@@ -26,7 +26,7 @@ func Create(config *config.Configuration, username, password, email string) erro
 		return ErrDirectoryExists
 	}
 
-	log.Printf("Creating new StreamDB database at '%s'\n", streamdbDirectory)
+	log.Printf("Creating new StreamDB database at '%s'", streamdbDirectory)
 
 	if err := os.MkdirAll(streamdbDirectory, FolderPermissions); err != nil {
 		return err
@@ -40,35 +40,34 @@ func Create(config *config.Configuration, username, password, email string) erro
 		return err
 	}
 
-	if err := redisInstance.Setup(); err != nil{
+	if err := redisInstance.Setup(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-
-func createSqlDatabase(config *config.Configuration, username, password, email string) error {
-	sqlDatabaseType := config.DatabaseType
-	log.Printf("Creating sql database of type %s \n", sqlDatabaseType)
+func createSqlDatabase(configuration *config.Configuration, username, password, email string) error {
+	sqlDatabaseType := configuration.DatabaseType
+	log.Printf("Creating sql database of type %s", sqlDatabaseType)
 
 	switch sqlDatabaseType {
-		case "postgres":
-			if err := postgresInstance.Setup(); err != nil {
-				return err
-			}
-		case "sqlite":
-			if err := sqliteInstance.Setup(); err != nil {
-				return err
-			}
-		default:
-			return ErrUnrecognizedDatabase
+	case config.Postgres:
+		if err := postgresInstance.Setup(); err != nil {
+			return err
+		}
+	case config.Sqlite:
+		if err := sqliteInstance.Setup(); err != nil {
+			return err
+		}
+	default:
+		return ErrUnrecognizedDatabase
 	}
 
-	log.Printf("Creating user %s (%s)\n", username, email)
+	log.Printf("Creating user %s (%s)", username, email)
 
 	// Make the connection
-	spath := config.GetDatabaseConnectionString()
+	spath := configuration.GetDatabaseConnectionString()
 	db, driver, err := dbutil.OpenSqlDatabase(spath)
 	if err != nil {
 		return err

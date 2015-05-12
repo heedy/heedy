@@ -16,8 +16,6 @@ import (
 	"streamdb/util/njson"
 )
 
-
-
 // The clear command
 type ListDevices struct {
 }
@@ -57,12 +55,7 @@ func (h ListDevices) Execute(shell *Shell, args []string) {
 		}
 	}
 
-	user, err := shell.operator.ReadUser(name)
-	if shell.PrintError(err) {
-		return
-	}
-
-	devices, err := shell.operator.ReadDevicesForUser(user)
+	devices, err := shell.operator.ReadAllDevices(name)
 	if shell.PrintError(err) {
 		return
 	}
@@ -77,18 +70,18 @@ func (h ListDevices) Execute(shell *Shell, args []string) {
 		fmt.Println("")
 	} else {
 		fmt.Printf("  Id\tName\tApiKey\t\n")
-		for _, dev := range(devices) {
+		for _, dev := range devices {
 			admin := "  "
 			if dev.IsAdmin {
 				admin = Yellow + "* "
 			}
 
 			visible := ""
-			if ! dev.IsVisible {
+			if !dev.IsVisible {
 				visible = Cyan + "(invisible)"
 			}
 
-			fmt.Printf("%s%d\t%s\t%s\t%s\n" + Reset, admin, dev.DeviceId, dev.Name, dev.ApiKey, visible)
+			fmt.Printf("%s%d\t%s\t%s\t%s\n"+Reset, admin, dev.DeviceId, dev.Name, dev.ApiKey, visible)
 		}
 
 		fmt.Print("\n\n* = admin\n")

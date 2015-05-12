@@ -21,6 +21,17 @@ All Rights Reserved
 import (
 )
 
+const (
+	// The database types we support
+	Sqlite = "sqlite3"
+	Postgres = "postgres"
+	SqliteExecutable = "sqlite3"
+
+	// Localhost variables, both net and string
+	LocalhostIpV4 = "127.0.0.1"
+	LocalhostIpV6 = "0:0:0:0:0:0:0:1"
+)
+
 var (
 	configuration = newConfiguration()
 	doneInit bool
@@ -44,6 +55,7 @@ type Configuration struct {
 	SqliteDbPath string
 	DatabaseType string
 	StreamdbDirectory string
+	DisallowedNames []string
 
 }
 
@@ -63,7 +75,7 @@ func GetDatabaseConnectionString() string {
 
 // Returns the database connection string for the current database
 func (config *Configuration) GetDatabaseConnectionString() string {
-	if configuration.DatabaseType == "sqlite" {
+	if configuration.DatabaseType == Sqlite {
 		return "sqlite://" + configuration.StreamdbDirectory  + "/" + configuration.SqliteDbPath
 	}
 
@@ -72,7 +84,7 @@ func (config *Configuration) GetDatabaseConnectionString() string {
 
 // Checks if a database needs to be started lcoally
 func IsDatabaseLocal() bool {
-	if configuration.DatabaseType == "sqlite" {
+	if configuration.DatabaseType == Sqlite {
 		return true
 	}
 
@@ -82,8 +94,8 @@ func IsDatabaseLocal() bool {
 		return true // another db will catch if there's a problem
 	}
 
-	localV4 := net.ParseIP("127.0.0.1")
-	localV6 := net.ParseIP("0:0:0:0:0:0:0:1")
+	localV4 := net.ParseIP(LocalhostIpV4)
+	localV6 := net.ParseIP(LocalhostIpV6)
 
 	for _, ip := range(ips) {
 		if bytes.Compare(ip, localV4) == 0 || bytes.Compare(ip, localV6) == 0 {
@@ -108,19 +120,19 @@ func (config *Configuration) GetGnatsdUri() string {
 func newConfiguration() *Configuration {
 	var cfg Configuration
 	cfg.Nodetype = "master"
-	cfg.RedisHost = "127.0.0.1"
+	cfg.RedisHost = LocalhostIpV4
 	cfg.RedisPort = 6379
-	cfg.GnatsdHost = "127.0.0.1"
+	cfg.GnatsdHost = LocalhostIpV4
 	cfg.GnatsdPort = 4222
 	cfg.WebPort = 8000
 	cfg.RunApi = true
 	cfg.RunWeb = true
 	cfg.RunDaisy = false
 	cfg.SqliteDbPath = ""
-	cfg.PostgresHost = "127.0.0.1"
+	cfg.PostgresHost = LocalhostIpV4
 	cfg.PostgresPort = 52592
-	cfg.DatabaseType = "postgres"
-
+	cfg.DatabaseType = Postgres
+	cfg.DisallowedNames = []string{"postmaster", "root"}
 	return &cfg
 }
 

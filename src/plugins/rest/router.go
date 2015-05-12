@@ -2,6 +2,9 @@ package rest
 
 import (
 	"streamdb"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"errors"
 	"net/http"
@@ -25,40 +28,29 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		if !ok {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
+			log.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
 			return
 		}
 
-		//Now, authentication is either by API key or by username/password combo
-		var o streamdb.Operator
-		var err error
+		o, err := db.LoginOperator(authUser, authPass)
 
-		if len(authUser) != 0 {
-			//Authenticate by username/password
-			o, err = db.AuthenticateUser(authUser, authPass)
+		if err != nil {
+			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "AUTH"}).Warningln(err.Error())
 
-			if err != nil {
-				writer.Header().Set("WWW-Authenticate", "Basic")
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte(err.Error()))
-				return
-			}
-		} else {
-			//Authenticate by API key
-			o, err = db.GetOperator(authPass)
+			//So there was an unsuccessful attempt at login, huh?
+			time.Sleep(300 * time.Millisecond)
 
-			if err != nil {
-				writer.Header().Set("WWW-Authenticate", "Basic")
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte(err.Error()))
-				return
-			}
+			writer.Header().Set("WWW-Authenticate", "Basic")
+			writer.WriteHeader(http.StatusUnauthorized)
+			writer.Write([]byte(err.Error()))
+
+			return
 		}
 
-		//If we got here, o is valid.
+		//If we got here, o is a valid operator
 		err = apifunc(o, writer, request)
 		if err != nil {
 			writer.Write([]byte(err.Error()))
-			return
 		}
 	})
 }
@@ -89,6 +81,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	//prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
 
 	//Getting details of the stream
 	//prefix.HandleFunc("/{user}/{device}/{stream}",<>).Methods("GET")
@@ -102,5 +95,13 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	//Connect to the device websocket
 	//prefix.HandleFunc("/{user}/{device}.ws",<>).Methods("GET")
+
+	//Function Handlers
+	//f := prefix.PathPrefix("/f").Subrouter()
+	//f.HandleFunc("/this", authenticator(GetThis, db)).Methods("GET")
+	//f.HandleFunc("/ls", authenticator(ListUsers, db)).Methods("GET")
+
+	//Future handlers: m (models and machine learning)
+
 	return prefix
 }

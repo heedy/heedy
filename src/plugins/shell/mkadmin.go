@@ -35,20 +35,12 @@ func (h GrantAdmin) Execute(shell *Shell, args []string) {
 
 	operator := shell.operator
 
-	user, err := operator.ReadUser(args[1])
+	err := operator.SetAdmin(args[1], true)
 	if shell.PrintError(err) {
 		return
 	}
 
-	orig := *user // our original to revert values to
-	user.Admin = true // grant admin
-
-	err = operator.UpdateUser(user, &orig)
-	if shell.PrintError(err) {
-		return
-	}
-
-	fmt.Println( Green + "Granted admin to: " + args[1] + Reset)
+	fmt.Println(Green + "Granted admin to: " + args[1] + Reset)
 }
 
 func (h GrantAdmin) Name() string {

@@ -15,7 +15,7 @@ var (
 )
 
 func TableMakerTestCreate(db *sql.DB) error {
-	db.Exec("DROP TABLE IF EXISTS timebatchtable")
+	db.Exec("REMOVE FROM timebatchtable")
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS timebatchtable
         (
             Key VARCHAR NOT NULL,
@@ -25,7 +25,7 @@ func TableMakerTestCreate(db *sql.DB) error {
             Data BYTEA,
             PRIMARY KEY (Key, EndIndex)
             );`)
-	db.Exec("CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);")
+	//db.Exec("CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);")
 	return err
 }
 

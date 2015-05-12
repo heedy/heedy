@@ -1,16 +1,17 @@
 package webclient
 
 import (
-	"net/http"
-	"streamdb/users"
-	"github.com/gorilla/sessions"
-	"streamdb"
 	"errors"
+	"net/http"
+	"streamdb"
+	"streamdb/users"
+
+	"github.com/gorilla/sessions"
 )
 
 var (
-	store = sessions.NewCookieStore([]byte("web-service-special-key"))
-	sessionName = "connectordb_login"
+	store               = sessions.NewCookieStore([]byte("web-service-special-key"))
+	sessionName         = "connectordb_login"
 	ErrUserDevNotStored = errors.New("User or device could not be found.")
 )
 
@@ -44,19 +45,19 @@ func NewSessionEnvironment(rw http.ResponseWriter, req *http.Request) (se Sessio
 	}
 
 	usr, ok := se.Session.Values["User"]
-	if ! ok || usr == nil{
+	if !ok || usr == nil {
 		return se, ErrUserDevNotStored
 	}
 	u := usr.(users.User)
 	se.User = &u
 
 	dev, ok := se.Session.Values["Device"]
-	if ! ok || dev == nil{
+	if !ok || dev == nil {
 		return se, ErrUserDevNotStored
 	}
 	d := dev.(users.Device)
 	se.Device = &d
 
-	se.Operator, err = userdb.GetOperatorForDevice(se.Device)
+	se.Operator, err = userdb.DeviceOperator(se.Device.DeviceId)
 	return se, err
 }

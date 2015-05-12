@@ -1,25 +1,25 @@
 package shell
 
 import (
-	"fmt"
-	"strings"
 	"bufio"
+	"fmt"
 	"os"
-	"streamdb"
 	"plugins"
+	"streamdb"
+	"strings"
 )
 
 const (
-	Reset = "\x1b[0m"
-	Bold = "\x1b[1m"
-	Black = "\x1b[30m"
- 	Red = "\x1b[31m"
-	Green = "\x1b[32m"
-	Yellow = "\x1b[33m"
-	Blue  = "\x1b[34m"
-	Magenta  = "\x1b[35m"
-	Cyan  = "\x1b[36m"
-	White = "\x1b[37m"
+	Reset   = "\x1b[0m"
+	Bold    = "\x1b[1m"
+	Black   = "\x1b[30m"
+	Red     = "\x1b[31m"
+	Green   = "\x1b[32m"
+	Yellow  = "\x1b[33m"
+	Blue    = "\x1b[34m"
+	Magenta = "\x1b[35m"
+	Cyan    = "\x1b[36m"
+	White   = "\x1b[37m"
 
 	Password = "\x1b[30;40m" // black on black
 
@@ -53,8 +53,6 @@ func usage() {
 `)
 }
 
-
-
 func StartShell(sdb *streamdb.Database) {
 	s := CreateShell(sdb)
 	s.Cls()
@@ -64,15 +62,15 @@ func StartShell(sdb *streamdb.Database) {
 
 // The shell we're operating under
 type Shell struct {
-	VersionString string
+	VersionString   string
 	CopyrightString string
-	running bool
-	commands []ShellCommand
-	host string
-	reader *bufio.Reader
-	sdb *streamdb.Database
-	operator streamdb.Operator
-	operatorName string // can be changed when we do a su
+	running         bool
+	commands        []ShellCommand
+	host            string
+	reader          *bufio.Reader
+	sdb             *streamdb.Database
+	operator        streamdb.Operator
+	operatorName    string // can be changed when we do a su
 }
 
 func (s *Shell) Repl() {
@@ -87,11 +85,11 @@ func (s *Shell) Repl() {
 func (s *Shell) RunCommand(cmdstring string) {
 	cmdstring = strings.TrimSpace(cmdstring)
 	command := strings.Split(cmdstring, " ")
-	if len( command ) == 0 {
+	if len(command) == 0 {
 		return
 	}
 
-	for _, cmd := range(s.commands) {
+	for _, cmd := range s.commands {
 		if cmd.Name() == command[0] {
 			cmd.Execute(s, command)
 			return
@@ -120,7 +118,7 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
-	s.operator = sdb.GetAdminOperator()
+	s.operator = sdb
 	s.operatorName = "ConnectorDB"
 	return &s
 }
@@ -132,7 +130,7 @@ func (s *Shell) GetPrompt() string {
 // Prints a seperator
 func (s *Shell) Seperator() {
 
-	for i := 0; i < 80; i++{
+	for i := 0; i < 80; i++ {
 		fmt.Printf("-")
 	}
 
@@ -162,7 +160,7 @@ func (s *Shell) ReadLine() string {
 // Prints an error if it exists. Returns true if printed, false if not
 func (s *Shell) PrintError(err error) bool {
 	if err != nil {
-		fmt.Printf(Red + "Error: %v\n" + Reset, err.Error())
+		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
 	}
 
 	return err != nil
@@ -170,19 +168,18 @@ func (s *Shell) PrintError(err error) bool {
 
 // The ShellCommand is an internal command within our internal shell.
 type ShellCommand interface {
-		// Returns the help string associated with this command.
-        Help() string
+	// Returns the help string associated with this command.
+	Help() string
 
-		// Returns the help for a specific command
-		Usage() string
+	// Returns the help for a specific command
+	Usage() string
 
-		// Execute the command with the given arguments
-		Execute(shell *Shell, args []string)
+	// Execute the command with the given arguments
+	Execute(shell *Shell, args []string)
 
-		// Returns the name of this shell command, should be all lower case
-		Name() string
+	// Returns the name of this shell command, should be all lower case
+	Name() string
 }
-
 
 // The help command
 type Help struct {
@@ -204,23 +201,23 @@ func (h Help) Usage() string {
 
 func (h Help) Execute(shell *Shell, args []string) {
 	if len(args) == 2 {
-		for _, cmd := range(shell.commands) {
+		for _, cmd := range shell.commands {
 			if cmd.Name() == args[1] {
 				fmt.Println(Bold)
-				fmt.Printf("%s Help\n" + Reset, args[1])
+				fmt.Printf("%s Help\n"+Reset, args[1])
 				fmt.Println("")
 				fmt.Printf(cmd.Usage())
 				return
 			}
 		}
-		fmt.Printf(Red + "%s not found, listing known commands:\n" + Reset, args[1])
+		fmt.Printf(Red+"%s not found, listing known commands:\n"+Reset, args[1])
 	}
 
 	fmt.Println(Bold)
 	fmt.Printf("ConnectorDB Shell Help\n" + Reset)
 	fmt.Println("")
 
-	for _, cmd := range(shell.commands) {
+	for _, cmd := range shell.commands {
 		fmt.Printf("%v\t- %v\n", cmd.Name(), cmd.Help())
 	}
 	fmt.Println("")
@@ -230,7 +227,6 @@ func (h Help) Execute(shell *Shell, args []string) {
 func (h Help) Name() string {
 	return "help"
 }
-
 
 // The Exit command
 type Exit struct {
@@ -294,7 +290,6 @@ func (h AddUser) Execute(shell *Shell, args []string) {
 	fmt.Print("Enter the email for the new user: ")
 	email := shell.ReadLine()
 
-
 	// Do the password check
 	passdiff := true
 	pass1 := ""
@@ -321,7 +316,7 @@ func (h AddUser) Execute(shell *Shell, args []string) {
 
 	err := shell.operator.CreateUser(name, email, pass1)
 	if err != nil {
-		fmt.Printf(Red + "Error: %v\n" + Reset, err.Error())
+		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
 	}
 }
 

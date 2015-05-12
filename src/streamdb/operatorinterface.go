@@ -1,66 +1,79 @@
 package streamdb
 
-import (
-	"streamdb/users"
-)
+import "streamdb/users"
 
-// An operator is an object that wraps the active streamdb databases and allows
+// An Operator is an object that wraps the active streamdb databases and allows
 // operations to be done on them collectively. It differs from the straight
 // timebatchdb/userdb as it allows some checking to be done with regards to
 // permissions and such beforehand. If at all possible you should use this
 // interface to perform operations because it will remain stable, secure and
 // independent of future backends we implement.
 type Operator interface {
-	// Returns the database underlying this operator
-    GetDatabase() *Database
 
-	// Creates a user with the given name, email and password
-    CreateUser(username, email, password string) error
+	//Returns an identifier for the device this operator is acting as.
+	//AuthOperator has this as the path to the device the operator is acting as
+	Name() string
 
-	// The user read operations work pretty much as advertised
+	//Returns the underlying database
+	Database() *Database
 
-    ReadAllUsers() ([]users.User, error)
-    ReadUser(username string) (*users.User, error)
-    ReadUserByEmail(email string) (*users.User, error)
-    ReadUserById(id int64) (*users.User, error)
+	//Reload makes sure that the operator is syncd with most recent changes to database
+	Reload() error
 
-	// Removes the user from the database
-    DeleteUser(id int64) error
+	//Gets the user and device associated with the current operator
+	User() (*users.User, error)
+	Device() (*users.Device, error)
 
-	// Updates the given user, the original user is the one that will be
-	// validated against.
-    UpdateUser(user, originalUser *users.User) error
+	//SetAdmin can set a user or a device to have administrator permissions
+	SetAdmin(path string, isadmin bool) error
 
-	// Creates a device with the given name and owner
-	CreateDevice(Name string, Owner *users.User) error
-    ReadDeviceByApiKey(Key string) (*users.Device, error)
-    ReadDeviceById(id int64) (*users.Device, error)
-    ReadDevicesForUser(u *users.User) ([]users.Device, error)
-    UpdateDevice(update *users.Device, original *users.Device) error
-    DeleteDevice(device *users.Device) error
+	// The user read operations work pretty much as advertised. Use them wisely.
+	ReadAllUsers() ([]users.User, error)
 
-	// Creates a new phone carrier in the system
-    CreatePhoneCarrier(name, emailDomain string) error
-    ReadPhoneCarrierById(Id int64) (*users.PhoneCarrier, error)
-    ReadAllPhoneCarriers() ([]users.PhoneCarrier, error)
-    UpdatePhoneCarrier(carrier *users.PhoneCarrier) error
-    DeletePhoneCarrier(carrierId int64) error
+	CreateUser(username, email, password string) error
 
-	// Creates a new stream with the given name, type for the given device
-    CreateStream(Name, Type string, owner *users.Device) error
-    ReadStreamById(id int64) (*users.Stream, *users.Device, error)
-    ReadStreamsByDevice(operand *users.Device) ([]users.Stream, error)
-    UpdateStream(d *users.Device, stream, originalStream *users.Stream) error
-    DeleteStream(toDeleteOwner *users.Device, toDeleteStream *users.Stream) error
+	ReadUser(username string) (*users.User, error)
+	ReadUserByID(userID int64) (*users.User, error)
+	ReadUserByEmail(email string) (*users.User, error)
 
-	/**
-	Converts a path like user/device/stream into the literal user, device and stream
+	UpdateUser(modifieduser *users.User) error
+	ChangeUserPassword(username, newpass string) error
 
-	The path may only fill from the left, e.g. "user//" meaning it will only return
-	the user and nil for the others. Otherwise, the path may fill from the right,
-	e.g. "/devicename/stream" in which case the user is implicitly the user belonging
-	to the operator's device.
+	DeleteUser(username string) error
+	DeleteUserByID(userID int64) error
 
-	**/
-    ResolvePath(path string) (*Path, error)
+	//The device operations are exactly the same as user operations. You pass in device paths
+	//in the form "username/devicename"
+	ReadAllDevices(username string) ([]users.Device, error)
+	ReadAllDevicesByUserID(userID int64) ([]users.Device, error)
+
+	CreateDevice(devicepath string) error
+	CreateDeviceByUserID(userID int64, devicename string) error
+
+	ReadDevice(devicepath string) (*users.Device, error)
+	ReadDeviceByID(deviceID int64) (*users.Device, error)
+	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
+
+	UpdateDevice(modifieddevice *users.Device) error
+	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
+
+	DeleteDevice(devicepath string) error
+	DeleteDeviceByID(deviceID int64) error
+
+	//The stream operations are exactly the same as device operations. You pass in paths
+	//in the form "username/devicename/streamname"
+	ReadAllStreams(devicepath string) ([]Stream, error)
+	ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error)
+
+	CreateStream(streampath, jsonschema string) error
+	CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error
+
+	ReadStream(streampath string) (*Stream, error)
+	ReadStreamByID(streamID int64) (*Stream, error)
+	ReadStreamByDeviceID(deviceID int64, streamname string) (*Stream, error)
+
+	UpdateStream(modifiedstream *Stream) error
+
+	DeleteStream(streampath string) error
+	DeleteStreamByID(streamID int64) error
 }

@@ -3,12 +3,13 @@ package users
 import (
 	"reflect"
 	"testing"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateDevice(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -24,7 +25,7 @@ func TestCreateDevice(t *testing.T) {
 		require.Nil(t, err)
 
 		// DeviceName/Usernames must be unique
-	 	err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
+		err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
 		assert.NotNil(t, err, "Created device with duplicate name under the same user")
 
 		// but should work with different users
@@ -34,7 +35,7 @@ func TestCreateDevice(t *testing.T) {
 }
 
 func TestReadDeviceById(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -49,7 +50,7 @@ func TestReadDeviceById(t *testing.T) {
 		devforid, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestReadStreamById")
 		require.Nil(t, err)
 
-		id := devforid.UserId
+		id := devforid.DeviceId
 		obj, err := testdb.ReadDeviceById(id)
 		require.Nil(t, err)
 		require.NotNil(t, obj)
@@ -57,7 +58,7 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestReadDeviceByApiKey(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -79,7 +80,7 @@ func TestReadDeviceByApiKey(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -94,7 +95,6 @@ func TestUpdateDevice(t *testing.T) {
 		obj, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestUpdateDevice")
 		require.Nil(t, err)
 		require.NotNil(t, obj)
-
 
 		obj.ApiKey = obj.ApiKey + "Testing" // should work with all UUIDs, still will be unique
 		obj.Enabled = false
@@ -118,7 +118,7 @@ func TestUpdateDevice(t *testing.T) {
 }
 
 func TestDeleteDevice(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue

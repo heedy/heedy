@@ -54,7 +54,6 @@ func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	return &dev, err
 }
 
-
 // UpdateDevice updates the given device in the database with all fields in the
 // struct.
 func (userdb *UserDatabase) UpdateDevice(device *Device) error {
@@ -93,5 +92,11 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 // DeleteDevice removes a device from the system.
 func (userdb *UserDatabase) DeleteDevice(Id int64) error {
 	_, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
+	return err
+}
+
+//Avoids deleting the "user" device, which is critical to the user's operation
+func (userdb *UserDatabase) DeleteAllDevicesForUser(userId int64) error {
+	_, err := userdb.Exec(`DELETE FROM Devices WHERE UserId = ? AND Name != ?;`, userId, "user")
 	return err
 }

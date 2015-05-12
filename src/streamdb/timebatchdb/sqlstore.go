@@ -3,6 +3,7 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
+	"streamdb/config"
 )
 
 var (
@@ -16,15 +17,20 @@ var (
 	ErrorVersion = errors.New("Unrecognized binary data version.")
 )
 
+const (
+	bytesStorage = 1
+	compressedBytesStorage = 2
+)
+
 //decodeDatapointArray is a convenience function that given a byte array, and the encoding version, returns the DatapointArray
 func decodeDatapointArray(version int, data []byte) (*DatapointArray, error) {
 	switch version {
+	case bytesStorage:
+		return DatapointArrayFromBytes(data), nil
+	case compressedBytesStorage:
+		return DatapointArrayFromCompressedBytes(data), nil
 	default:
 		return nil, ErrorVersion
-	case 1:
-		return DatapointArrayFromBytes(data), nil
-	case 2:
-		return DatapointArrayFromCompressedBytes(data), nil
 
 	}
 }
@@ -32,12 +38,12 @@ func decodeDatapointArray(version int, data []byte) (*DatapointArray, error) {
 //encodeDatapointArray is a convenience function that given a DatapointArray and the chosen encoding version, returns the byte array
 func encodeDatapointArray(version int, da *DatapointArray) ([]byte, error) {
 	switch version {
+	case bytesStorage:
+		return da.Bytes(), nil
+	case compressedBytesStorage:
+		return da.CompressedBytes(), nil
 	default:
 		return nil, ErrorVersion
-	case 1:
-		return da.Bytes(), nil
-	case 2:
-		return da.CompressedBytes(), nil
 	}
 }
 
@@ -318,9 +324,9 @@ func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore, error) {
 		return nil, err
 	}
 	switch sqldriver {
-	case "sqlite3":
+	case config.Sqlite:
 		return OpenSQLiteStore(db)
-	case "postgres":
+	case config.Postgres:
 		return OpenPostgresStore(db)
 	}
 	return nil, ErrorDatabaseDriver

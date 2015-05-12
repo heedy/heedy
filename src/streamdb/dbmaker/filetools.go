@@ -3,15 +3,15 @@ package dbmaker
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
-	//"streamdb/config"
+	"streamdb/config"
 	"streamdb/util"
+	"strings"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/kardianos/osext"
-	//"text/template"
 )
 
 var (
@@ -28,35 +28,12 @@ var (
 	FilePermissions = os.FileMode(0755)
 )
 
-
-
-/**
-// TODO removeme as this can be auto inferred from the connection string
-
-//GetDatabaseType gets the database type used from the folder structure - in particular, if sqlite is used, then there
-//will be an sqlite database. If a postgres folder exists, then dbtype is postgres. It returns ErrUnrecognizedDatabase
-//if no database is recognized
-func GetDatabaseType(streamdbDirectory string, err error) (string, error) {
-	if err != nil {
-		return "", err
-	}
-
-	if util.PathExists(filepath.Join(streamdbDirectory, sqliteDatabaseName)) {
-		return "sqlite", nil
-	}
-	if util.PathExists(filepath.Join(streamdbDirectory, postgresDatabaseName)) {
-		return "postgres", nil
-	}
-	return "", ErrUnrecognizedDatabase
-}
-
-**/
 //GenerateConfigReplacements generates the replacement variables to use within configuration files
 func GenerateConfigReplacements(streamdbDirectory, procname, iface string, port int) map[string]string {
 	m := make(map[string]string)
 
 	if len(iface) == 0 {
-		iface = "127.0.0.1"
+		iface = config.LocalhostIpV4
 	}
 
 	m["dbdir"] = streamdbDirectory
@@ -69,7 +46,6 @@ func GenerateConfigReplacements(streamdbDirectory, procname, iface string, port 
 
 	return m
 }
-
 
 //ConfigPath returns the path to the default StreamDB config templates
 func ConfigPath() (string, error) {

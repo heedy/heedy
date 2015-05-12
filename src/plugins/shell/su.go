@@ -33,24 +33,16 @@ func (h Su) Execute(shell *Shell, args []string) {
 		return
 	}
 
-	user, err := shell.sdb.ReadByNameOrEmail(args[1], args[1])
-	if shell.PrintError(err) {
-		return
-	}
+	username := args[1]
 
-	userdevice, err := shell.sdb.ReadUserOperatingDevice(user)
-	if shell.PrintError(err) {
-		return
-	}
-
-	suOperator, err := shell.sdb.GetOperatorForDevice(userdevice)
+	suOperator, err := shell.sdb.Database().Operator(username)
 	if shell.PrintError(err) {
 		return
 	}
 
 	sushell := CreateShell(shell.sdb)
 	sushell.operator = suOperator
-	sushell.operatorName = user.Name
+	sushell.operatorName = username
 
 	sushell.Repl()
 }
