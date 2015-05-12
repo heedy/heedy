@@ -133,14 +133,14 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, er
 
 //UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
-	usr, err := db.ReadUser(username)
-	if err != nil || !usr.ValidatePassword(password) {
-		return nil, ErrPermissions //We don't want to leak if a user exists or not
+	dev, err := db.ReadDevice(username + "/user")
+	if err != nil {
+		return nil, ErrPermissions
 	}
 
-	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
-	if err != nil {
-		return nil, ErrPermissions //We use dev.Name, so must return error earlier
+	usr, err := db.ReadUserByID(dev.UserId)
+	if err != nil || !usr.ValidatePassword(password) {
+		return nil, ErrPermissions //We don't want to leak if a user exists or not
 	}
 
 	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, nil
@@ -173,6 +173,19 @@ func (db *Database) Operator(path string) (Operator, error) {
 		return nil, err //We use dev.Name, so must return error earlier
 	}
 	return &AuthOperator{db, path, dev.DeviceId}, err
+}
+
+//DeviceOperator returns the operator for the given device ID
+func (db *Database) DeviceOperator(deviceID int64) (Operator, error) {
+	dev, err := db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return nil, err
+	}
+	usr, err := db.ReadUserByID(dev.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, err
 }
 
 //Close closes all database connections and releases all resources.

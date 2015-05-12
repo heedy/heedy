@@ -29,6 +29,11 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 	dev, err := o.Device()
 	require.NoError(t, err)
+
+	o2, err := db.DeviceOperator(dev.DeviceId)
+	require.NoError(t, err)
+	require.Equal(t, "streamdb_test/user", o2.Name())
+
 	devs, err = o.ReadAllDevicesByUserID(dev.UserId)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //the user device
