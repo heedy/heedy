@@ -1,6 +1,5 @@
 package webclient
 
-/*
 import (
 	"log"
 	"net/http"
@@ -14,8 +13,11 @@ func readStreamPage(se *SessionEnvironment) {
 	vars := mux.Vars(se.Request)
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
-	stream, device, err := se.Operator.ReadStreamById(int64(streamid))
-
+	stream, err := se.Operator.ReadStreamByID(int64(streamid))
+	if err != nil {
+		pageData["alert"] = "Error getting stream."
+	}
+	device, err := se.Operator.ReadDeviceByID(stream.DeviceId)
 	if err != nil {
 		pageData["alert"] = "Error getting stream."
 	}
@@ -36,16 +38,13 @@ func editStreamAction(se *SessionEnvironment) {
 	vars := mux.Vars(se.Request)
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
-	stream, device, err := se.Operator.ReadStreamById(int64(streamid))
-
-	origstream := *stream
-
+	stream, err := se.Operator.ReadStreamByID(int64(streamid))
 	if err != nil {
 		se.Session.AddFlash("Error getting stream, maybe it was deleted?")
 		goto redirect
 	}
 
-	err = se.Operator.UpdateStream(device, stream, &origstream)
+	err = se.Operator.UpdateStream(stream)
 
 	if err != nil {
 		log.Printf(err.Error())
@@ -65,7 +64,7 @@ func createStreamAction(se *SessionEnvironment) {
 	name := se.Request.PostFormValue("name")
 
 	devid, _ := strconv.Atoi(devids)
-	device, err := se.Operator.ReadDeviceById(int64(devid))
+	device, err := se.Operator.ReadDeviceByID(int64(devid))
 
 	if err != nil {
 		log.Printf(err.Error())
@@ -73,7 +72,7 @@ func createStreamAction(se *SessionEnvironment) {
 		goto redirect
 	}
 
-	err = se.Operator.CreateStream(name, "x", device)
+	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, "x")
 
 	if err != nil {
 		log.Printf(err.Error())
@@ -84,4 +83,3 @@ redirect:
 	se.Save()
 	http.Redirect(se.Writer, se.Request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
 }
-*/

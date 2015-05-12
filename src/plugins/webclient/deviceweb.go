@@ -1,6 +1,5 @@
 package webclient
 
-/*
 import (
 	"log"
 	"net/http"
@@ -14,7 +13,7 @@ func createDeviceAction(se *SessionEnvironment) {
 
 	log.Printf("Creating device %v", devname)
 
-	err := se.Operator.CreateDevice(devname, se.User)
+	err := se.Operator.CreateDeviceByUserID(se.User.UserId, devname)
 	if err != nil {
 		se.Session.AddFlash("You must enter a device name that isn't empty or taken.")
 	} else {
@@ -29,9 +28,7 @@ func editDevicePage(se *SessionEnvironment) {
 	vars := mux.Vars(se.Request)
 	devids := vars["id"]
 	devid, _ := strconv.Atoi(devids)
-	device, err := se.Operator.ReadDeviceById(int64(devid))
-
-	origDevice := *device
+	device, err := se.Operator.ReadDeviceByID(int64(devid))
 
 	if err != nil {
 		se.Session.AddFlash("Error getting device, maybe it was deleted?")
@@ -45,7 +42,7 @@ func editDevicePage(se *SessionEnvironment) {
 	device.CanWriteAnywhere = se.Request.PostFormValue("canwriteanywhere") == "checked"
 	device.CanActAsUser = se.Request.PostFormValue("userproxy") == "checked"
 
-	err = se.Operator.UpdateDevice(device, &origDevice)
+	err = se.Operator.UpdateDevice(device)
 
 	if err != nil {
 		log.Printf(err.Error())
@@ -67,7 +64,7 @@ func getDevicePage(se *SessionEnvironment) {
 
 	devid, _ := strconv.Atoi(devids)
 
-	device, err := se.Operator.ReadDeviceById(int64(devid))
+	device, err := se.Operator.ReadDeviceByID(int64(devid))
 	pageData["device"] = device
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()
@@ -76,7 +73,7 @@ func getDevicePage(se *SessionEnvironment) {
 		pageData["alert"] = "Error getting device."
 	}
 
-	streams, err := se.Operator.ReadStreamsByDevice(device)
+	streams, err := se.Operator.ReadAllStreamsByDeviceID(device.DeviceId)
 	pageData["streams"] = streams
 
 	if err != nil {
@@ -89,4 +86,3 @@ func getDevicePage(se *SessionEnvironment) {
 		http.Error(se.Writer, err.Error(), http.StatusInternalServerError)
 	}
 }
-*/

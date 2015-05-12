@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"plugins/rest"
+	"plugins/webclient"
 )
 
 func init() {
@@ -26,7 +27,7 @@ func init() {
 func exec(db *streamdb.Database, args []string) error {
 	log.Printf("Starting Server on port %d", config.GetConfiguration().WebPort)
 	r := mux.NewRouter()
-	//webclient.Setup(r, db)
+	webclient.Setup(r, db)
 
 	// handle the api at its versioned url
 	s := r.PathPrefix("/api/v1").Subrouter()

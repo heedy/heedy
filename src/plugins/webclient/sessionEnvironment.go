@@ -1,6 +1,5 @@
 package webclient
 
-/*
 import (
 	"errors"
 	"net/http"
@@ -59,7 +58,6 @@ func NewSessionEnvironment(rw http.ResponseWriter, req *http.Request) (se Sessio
 	d := dev.(users.Device)
 	se.Device = &d
 
-	se.Operator, err = userdb.GetOperatorForDevice(se.Device)
+	se.Operator, err = userdb.DeviceOperator(se.Device.DeviceId)
 	return se, err
 }
-*/
