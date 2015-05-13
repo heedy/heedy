@@ -5,18 +5,20 @@ CC:=gcc
 
 .PHONY: all clean build test
 
-all: go-dependencies $(OBJ) bin/dep/gnatsd
+all: resources go-dependencies $(OBJ) bin/dep/gnatsd
 
-build: $(OBJ)
+build: resources $(OBJ)
 
 bin:
 	mkdir bin
 	cp -r src/streamdb/dbmaker/config bin/config
+
+resources: bin
 	cp -r src/plugins/webclient/static/ bin/
 	cp -r src/plugins/webclient/templates/ bin/
 
 # Rule to go from source go file to binary
-bin/%: src/core/%.go bin
+bin/%: src/core/%.go bin go-dependencies
 	go build -o $@ $<
 
 clean:
@@ -49,7 +51,7 @@ go-dependencies:
 	go get github.com/stretchr/testify
 
 
-bin/dep/gnatsd: bin/dep
+bin/dep/gnatsd: bin/dep go-dependencies
 	go build -o bin/dep/gnatsd github.com/apcera/gnatsd
 
 bin/dep:

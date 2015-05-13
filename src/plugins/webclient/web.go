@@ -125,13 +125,22 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 
 func init() {
 	folderPath, _ := osext.ExecutableFolder()
-	//Changing curdir breaks tests
-	userEditTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/user_edit.html"), path.Join(folderPath, "./templates/base.html")))
-	loginHomeTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/root.html"), path.Join(folderPath, "./templates/base.html")))
-	deviceInfoTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/device_info.html"), path.Join(folderPath, "./templates/base.html")))
-	firstrunTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/firstrun.html"), path.Join(folderPath, "./templates/base.html")))
-	addUserTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/newuser.html"), path.Join(folderPath, "./templates/base.html")))
-	loginPageTemplate = template.Must(template.ParseFiles(path.Join(folderPath, "./templates/login.html"), path.Join(folderPath, "./templates/base.html")))
+	templatesPath := path.Join(folderPath, "templates")
+	basePath	  := path.Join(templatesPath, "base.html")
+
+	// Parses our templates relative to the template path including the base
+	// everything needs
+	tMust := func(templateName string) *template.Template {
+		tPath := path.Join(templatesPath, templateName)
+    	return template.Must(template.ParseFiles(tPath, basePath))
+  	};
+
+	userEditTemplate 	= tMust("user_edit.html")
+	loginHomeTemplate 	= tMust("root.html")
+	deviceInfoTemplate 	= tMust("device_info.html")
+	firstrunTemplate 	= tMust("firstrun.html")
+	addUserTemplate 	= tMust("newuser.html")
+	loginPageTemplate 	= tMust("login.html")
 }
 
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
