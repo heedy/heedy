@@ -63,6 +63,11 @@ abbr {
     height:1.5em;
 }
 
+.inlineimg {
+    margin-right:.25em;
+    height:1.25em;
+}
+
 /* Default size is a little small */
 .panel-heading {
     font-size: 1.5em;
@@ -73,7 +78,7 @@ body {
     max-width:1170px;
   background-color: #eee;
   font-family:arial;
-      
+
 }
 
 .panel {
@@ -88,15 +93,15 @@ body {
 /* To kill off the stupid roboto theme that makes forms invisible */
 
 .form-control {
-  border: 1px solid#d2d2d2;
+  border: 1px solid #d2d2d2;
   padding: 1em;
   background-color: white;
   background-image: none;
 }
 
 .form-control:focus{
-background-image:none;	
-	
+background-image:none;
+
   padding: 1em;
   float: none;
   border: 1px solid #66afe9;
@@ -104,8 +109,8 @@ background-image:none;
 }
 
 .form-group .form-control:focus, .form-group-default .form-control:focus {
-background-image:none;	
-	
+background-image:none;
+
   padding: 1em;
   float: none;
   border: 1px solid #66afe9;
@@ -114,8 +119,8 @@ background-image:none;
 
 
 .navbar-inverse {
-  background-color: #9C3FB5;
-  border-color: #9C3FB5;
+  background-color: #212a5e;
+  border-color: #212a5e;
   color: white;
   border-bottom-right-radius: 3px;
   border-bottom-left-radius: 3px;
@@ -142,5 +147,26 @@ background-image:none;
 }
 
 .navbar-inverse .navbar-nav > .open > a, .navbar-inverse .navbar-nav > .open > a:hover, .navbar-inverse .navbar-nav > .open > a:focus {
-  background-color: #9C3FB5;
+  background-color: #9C3FB5 !important;
   }
+
+
+@media (max-width: 767px) {
+
+    .navbar-inverse .navbar-nav .open .dropdown-menu {
+      background-color: white;
+    }
+
+    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a {
+      color: black;
+    }
+
+    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:focus {
+      color: #ffffff;
+      background-color: #3F51B5 !important;
+    }
+}
+
+.navbar-inverse .navbar-nav > .open > a, .navbar-inverse .navbar-nav > .open > a:hover, .navbar-inverse .navbar-nav > .open > a:focus {
+  background-color: #3F51B5 !important;
+}
