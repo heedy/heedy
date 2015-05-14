@@ -89,7 +89,8 @@ class User(ConnectorObject):
     def devices(self):
         #Returns the list of users accessible to this operator
         devs = []
-        for d in self.db.urlget(self.metaname+"/ls").json():
+        result = self.db.urlget(self.metaname+"/?special=ls")
+        for d in result.json():
             tmpd = Device(self.db,d["name"])
             tmpd.metadata = d
             devs.append(tmpd)
@@ -105,7 +106,9 @@ class Device(ConnectorObject):
     def streams(self):
         #Returns the list of users accessible to this operator
         strms = []
-        for s in self.db.urlget(self.metaname+"/ls").json():
+        result = self.db.urlget(self.metaname+"/?special=ls")
+        print result
+        for s in result.json():
             tmps = Stream(self.db,s["name"])
             tmps.metadata = s
             strms.append(tmps)
@@ -181,10 +184,10 @@ class ConnectorDB(Device):
     def __init__(self,user,password,url="https://connectordb.com"):
         self.auth = HTTPBasicAuth(user,password)
         self.url = url
-        
-        Device.__init__(self,self,self.urlget("this").text)
 
-        
+        Device.__init__(self,self,self.urlget("?special=this").text)
+
+
     #Does error handling for a request result
     def handleresult(self,r):
         if r.status_code==401 or r.status_code==403:
@@ -211,9 +214,8 @@ class ConnectorDB(Device):
     def users(self):
         #Returns the list of users accessible to this operator
         usrs = []
-        for u in self.urlget("ls").json():
+        for u in self.urlget("?special=ls").json():
             tmpu = self.getuser(u["name"])
             tmpu.metadata = u
             usrs.append(tmpu)
         return usrs
-

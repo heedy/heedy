@@ -3,7 +3,6 @@ package rest
 import (
 	"net/http"
 	"streamdb"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -12,8 +11,8 @@ import (
 )
 
 func getDevicePath(request *http.Request) (username string, devicename string, devicepath string) {
-	username = strings.ToLower(mux.Vars(request)["user"])
-	devicename = strings.ToLower(mux.Vars(request)["device"])
+	username = mux.Vars(request)["user"]
+	devicename = mux.Vars(request)["device"]
 	devicepath = username + "/" + devicename
 	return username, devicename, devicepath
 }
@@ -26,25 +25,10 @@ func GetThis(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 	return nil
 }
 
-//GetDevice handles a {user}/{device} request
-func GetDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	devname := strings.ToLower(mux.Vars(request)["device"])
-
-	switch devname {
-	default:
-		return ReadDevice(o, writer, request)
-	case "ls":
-		return ListDevices(o, writer, request)
-	case "favicon.ico":
-		writer.WriteHeader(http.StatusNotFound)
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Debugln("Request for favicon")
-		return nil
-	}
-}
 
 //ListDevices lists the devices that the given user has
 func ListDevices(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
+	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListDevices", "arg": usrname})
 	logger.Debugln()
 	d, err := o.ReadAllDevices(usrname)
