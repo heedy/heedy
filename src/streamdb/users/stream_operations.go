@@ -20,12 +20,26 @@ type Stream struct {
 	Downlink  bool   `modifiable:"device" json:"downlink,omitempty"`
 }
 
+// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+func (s *Stream) ValidityCheck() error {
+	if ! IsValidName(s.Name) {
+		return InvalidUsernameError
+	}
+
+	return nil
+}
+
 func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) int {
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
 func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
+
+	if ! IsValidName(Name) {
+		return InvalidNameError
+	}
+
 	_, err := userdb.Exec(`INSERT INTO Streams
 	    (	Name,
 	        Type,
@@ -67,6 +81,10 @@ func (userdb *UserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error
 func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 	if stream == nil {
 		return ERR_INVALID_PTR
+	}
+
+	if err := stream.ValidityCheck(); err != nil {
+		return err
 	}
 
 	_, err := userdb.Exec(`UPDATE Streams SET

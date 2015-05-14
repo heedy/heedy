@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"streamdb/dbutil"
+	"strings"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -27,6 +28,7 @@ var (
 	ERR_EMAIL_EXISTS    = errors.New("A user already exists with this email")
 	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
 	ERR_INVALID_PTR     = errors.New("The provided pointer is nil")
+	InvalidNameError    = errors.New("The provided name is not valid, it may not contain /, \\, space, ? or be blank")
 
 	// statements
 
@@ -39,4 +41,21 @@ type UserDatabase struct {
 
 func (db *UserDatabase) InitUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.InitSqlxMixin(sqldb, dbtype)
+}
+
+// Checks to see if the name of a user/device/stream is legal.
+func IsValidName(n string) bool {
+	if 	strings.Contains(n, "/") ||
+		strings.Contains(n, "\\") ||
+		strings.Contains(n, " ") ||
+		strings.Contains(n, "?") ||
+		strings.Contains(n, "\t") ||
+		strings.Contains(n, "\n") ||
+		strings.Contains(n, "\r") ||
+		strings.Contains(n, "#") ||
+		len(n) == 0 {
+		return false
+	}
+
+	return true
 }

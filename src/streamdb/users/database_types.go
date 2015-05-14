@@ -94,6 +94,24 @@ type User struct {
 	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
 }
 
+// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+func (u *User) ValidityCheck() error {
+	if ! IsValidName(u.Name) {
+		return InvalidUsernameError
+	}
+
+	if u.Email == "" {
+		return InvalidEmailError
+	}
+
+	if u.PasswordSalt == "" || u.PasswordHashScheme == "" {
+		return InvalidPasswordError
+	}
+
+	return nil
+}
+
+
 func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
@@ -148,6 +166,14 @@ type Device struct {
 	CanActAsUser     bool   `modifiable:"user" json:"user,omitempty"`             // Can this device operate as a user? (inactive right now)
 	IsVisible        bool   `modifiable:"root" json:"visible"`
 	UserEditable     bool   `modifiable:"root" json:"-"`
+}
+
+func (d *Device) ValidityCheck() error {
+	if ! IsValidName(d.Name) {
+		return InvalidNameError
+	}
+
+	return nil
 }
 
 func (d *Device) GeneralPermissions() PermissionLevel {
