@@ -172,10 +172,14 @@ func (o *Database) DeleteDevice(devicepath string) error {
 
 //DeleteDeviceByID deletes the device using its deviceID
 func (o *Database) DeleteDeviceByID(deviceID int64) error {
-	_, err := o.ReadDeviceByID(deviceID)
+	dev, err := o.ReadDeviceByID(deviceID)
 	if err != nil {
 		return err //Workaround #81
 	}
-	defer o.deviceCache.RemoveID(deviceID)
-	return o.Userdb.DeleteDevice(deviceID)
+	err = o.Userdb.DeleteDevice(deviceID)
+	if err == nil {
+		o.deviceCache.RemoveID(deviceID)
+		err = o.tdb.DeletePrefix(getTimebatchDeviceName(dev) + "/")
+	}
+	return err
 }

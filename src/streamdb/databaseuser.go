@@ -125,8 +125,11 @@ func (o *Database) DeleteUserByID(userID int64) error {
 	if err != nil {
 		return err //Workaround for issue #81
 	}
-
-	defer o.userCache.RemoveID(userID)
-	defer o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
-	return o.Userdb.DeleteUser(userID)
+	err = o.Userdb.DeleteUser(userID)
+	if err == nil {
+		err = o.tdb.DeletePrefix(getTimebatchUserName(usr.UserId) + "/")
+	}
+	o.userCache.RemoveID(userID)
+	o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
+	return err
 }

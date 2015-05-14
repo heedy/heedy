@@ -76,4 +76,16 @@ type Operator interface {
 
 	DeleteStream(streampath string) error
 	DeleteStreamByID(streamID int64) error
+
+	LengthStream(streampath string) (int64, error)
+	LengthStreamByID(streamID int64) (int64, error)
+
+	InsertStream(streampath string, data []Datapoint) error
+	InsertStreamByID(streamID int64, data []Datapoint) error
+
+	GetStreamTimeRange(streampath string, t1 float64, t2 float64) (DatapointReader, error)
+	GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64) (DatapointReader, error)
+
+	GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error)
+	GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64) (DatapointReader, error)
 }
