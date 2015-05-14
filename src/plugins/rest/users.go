@@ -3,32 +3,11 @@ package rest
 import (
 	"net/http"
 	"streamdb"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
-
-//GetUser runs the GET operation routing for REST
-func GetUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
-
-	//there can be certain commands in place of a username - those represent invalid user names
-	switch usrname {
-	default:
-		return ReadUser(o, writer, request)
-	case "ls":
-		return ListUsers(o, writer, request)
-	case "this":
-		return GetThis(o, writer, request)
-	case "favicon.ico":
-		writer.WriteHeader(http.StatusNotFound)
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Debugln("Request for favicon")
-		return nil
-	}
-
-}
 
 //ListUsers lists the users that the given operator can see
 func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
@@ -50,7 +29,7 @@ type userCreator struct {
 
 //CreateUser creates a new user from a REST API request
 func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
+	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateUser", "arg": usrname})
 	logger.Infoln()
 	var a userCreator
@@ -73,7 +52,7 @@ func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 
 //ReadUser reads the given user
 func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
+	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadUser", "arg": usrname})
 	logger.Debugln()
 	u, err := o.ReadUser(usrname)
@@ -87,7 +66,7 @@ func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Req
 
 //UpdateUser updates the metadata for existing user from a REST API request
 func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
+	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateUser", "arg": usrname})
 	logger.Infoln()
 	u, err := o.ReadUser(usrname)
@@ -120,7 +99,7 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 
 //DeleteUser deletes existing user from a REST API request
 func DeleteUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := strings.ToLower(mux.Vars(request)["user"])
+	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteUser", "arg": usrname})
 	logger.Infoln()
 	err := o.DeleteUser(usrname)
