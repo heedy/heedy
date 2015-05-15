@@ -60,11 +60,14 @@ func ValidName(n string, err error) error {
 	if err != nil {
 		return err
 	}
-	if strings.Contains(n, "/") || strings.Contains(n, "\\") || strings.Contains(n, " ") || strings.Contains(n, "?") {
+	
+	if 	strings.Contains(n, "/") ||
+		strings.Contains(n, "\\") ||
+		strings.Contains(n, " ") ||
+		strings.Contains(n, "?") ||
+		len(n) == 0 {
 		return ErrInvalidName
 	}
-	if n == "ls" || n == "this" || n == "favicon.ico" || len(n) == 0 {
-		return ErrInvalidName
-	}
+
 	return nil
 }

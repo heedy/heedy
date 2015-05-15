@@ -9,6 +9,10 @@ import (
 func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
 	ApiKey, _ := uuid.NewV4()
 
+	if ! IsValidName(Name) {
+		return InvalidNameError
+	}
+
 	_, err := userdb.Exec(`INSERT INTO Devices
 	    (	Name,
 	        ApiKey,
@@ -60,6 +64,11 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 	if device == nil {
 		return ERR_INVALID_PTR
 	}
+
+	if err := device.ValidityCheck(); err != nil {
+		return err
+	}
+
 
 	_, err := userdb.Exec(`UPDATE Devices SET
 	    Name = ?,

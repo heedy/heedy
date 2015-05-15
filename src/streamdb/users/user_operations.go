@@ -7,7 +7,8 @@ import (
 
 var (
 	InvalidPasswordError = errors.New("Invalid Password")
-	InvalidUsernameError = errors.New("Invalid Username")
+	InvalidUsernameError = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
+	InvalidEmailError    = errors.New("Invalid Email Address")
 )
 
 // CreateUser creates a user given the user's credentials.
@@ -22,6 +23,8 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
 		return ERR_EMAIL_EXISTS
 	case existing.Name == Name:
 		return ERR_USERNAME_EXISTS
+	case ! IsValidName(Name):
+		return InvalidUsernameError
 	}
 
 	dbpass, salt, hashtype := UpgradePassword(Password)
@@ -79,7 +82,7 @@ func (userdb *UserDatabase) ReadUserOperatingDevice(user *User) (*Device, error)
 func (userdb *UserDatabase) ReadByNameOrEmail(Name, Email string) (*User, error) {
 	var exists User
 
-	err := userdb.Get(&exists, "SELECT * FROM Users WHERE Name = ? OR Email = ? LIMIT 1;", Name, Email)
+	err := userdb.Get(&exists, "SELECT * FROM Users WHERE upper(Name) = upper(?) OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
 
 	return &exists, err
 }
@@ -89,7 +92,7 @@ func (userdb *UserDatabase) ReadByNameOrEmail(Name, Email string) (*User, error)
 func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
 	var user User
 
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE Email = ? LIMIT 1;", Email)
+	err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Email) = upper(?) LIMIT 1;", Email)
 
 	return &user, err
 }
@@ -99,7 +102,7 @@ func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
 func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
 	var user User
 
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE Name = ? LIMIT 1;", Name)
+	err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Name) = upper(?) LIMIT 1;", Name)
 	return &user, err
 }
 
@@ -145,6 +148,10 @@ func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
 func (userdb *UserDatabase) UpdateUser(user *User) error {
 	if user == nil {
 		return ERR_INVALID_PTR
+	}
+
+	if err := user.ValidityCheck(); err != nil {
+		return err
 	}
 
 	_, err := userdb.Exec(`UPDATE Users SET

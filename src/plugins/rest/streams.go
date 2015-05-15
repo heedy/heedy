@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"streamdb"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -13,26 +12,11 @@ import (
 )
 
 func getStreamPath(request *http.Request) (username string, devicename string, streamname string, streampath string) {
-	username = strings.ToLower(mux.Vars(request)["user"])
-	devicename = strings.ToLower(mux.Vars(request)["device"])
-	streamname = strings.ToLower(mux.Vars(request)["stream"])
+	username = mux.Vars(request)["user"]
+	devicename = mux.Vars(request)["device"]
+	streamname = mux.Vars(request)["stream"]
 	streampath = username + "/" + devicename + "/" + streamname
 	return username, devicename, streamname, streampath
-}
-
-//GetStream gets an existing stream from a REST API request
-func GetStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
-	streamname := strings.ToLower(mux.Vars(request)["stream"])
-	switch streamname {
-	default:
-		return ReadStream(o, writer, request)
-	case "ls":
-		return ListStreams(o, writer, request)
-	case "favicon.ico":
-		writer.WriteHeader(http.StatusNotFound)
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr}).Debugln("Request for favicon")
-		return nil
-	}
 }
 
 //ListStreams lists the streams that the given device has
