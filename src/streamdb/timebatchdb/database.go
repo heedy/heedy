@@ -101,6 +101,12 @@ func (d *Database) Close() {
 	d.store.Close()
 }
 
+//Clear the entire database. Do not use lightly -the data is unrecoverable
+func (d *Database) Clear() error {
+	d.cache.Clear()
+	return d.store.Clear()
+}
+
 //Delete the given key from the database
 func (d *Database) Delete(key string) error {
 	err := d.cache.Delete(key)

@@ -2,7 +2,6 @@ package streamdb
 
 import (
 	"database/sql"
-	"streamdb/timebatchdb"
 	"streamdb/users"
 	"testing"
 
@@ -15,19 +14,16 @@ func ResetTimeBatch() error {
 	if err != nil {
 		return err
 	}
-	defer sdb.Close()
-	sdb.Exec("DELETE FROM timebatchtable;")
 	sdb.Exec("DELETE FROM Users;")
 	sdb.Exec("DELETE FROM Devices;")
+	sdb.Close()
 
-	//Clear the redis cache
-	rc, err := timebatchdb.OpenRedisCache("localhost:6379", err)
+	//CLear timebatch
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
-	rc.Clear()
-	return err
+	return db.tdb.Clear()
 }
 
 func TestDatabaseOperatorBasics(t *testing.T) {
