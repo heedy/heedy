@@ -25,7 +25,6 @@ func GetThis(o streamdb.Operator, writer http.ResponseWriter, request *http.Requ
 	return nil
 }
 
-
 //ListDevices lists the devices that the given user has
 func ListDevices(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
@@ -59,6 +58,11 @@ func CreateDevice(o streamdb.Operator, writer http.ResponseWriter, request *http
 //ReadDevice gets an existing device from a REST API request
 func ReadDevice(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, devpath := getDevicePath(request)
+
+	if err := BadQ(o, writer, request, devpath); err != nil {
+		return err
+	}
+
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadDevice", "arg": devpath})
 	logger.Debugln()
 	d, err := o.ReadDevice(devpath)

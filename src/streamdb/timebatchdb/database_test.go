@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDatabasError(t *testing.T) {
@@ -206,12 +207,12 @@ func TestDatabaseRead(t *testing.T) {
 		t.Errorf("error on write: %v", err)
 		return
 	}
-	_, err = db.GetIndexRange("hello", 0, 0)
+	_, err = db.GetIndexRange("hello", 2, 1)
 	if err != ErrorUserFail {
 		t.Errorf("Get by index range failure: %v", err)
 		return
 	}
-	_, err = db.GetTimeRange("hello", 0, 0)
+	_, err = db.GetTimeRange("hello", 3, 2)
 	if err != ErrorUserFail {
 		t.Errorf("Get by index range failure: %v", err)
 		return
@@ -269,6 +270,12 @@ func TestDatabaseRead(t *testing.T) {
 		t.Errorf("Get by time range failure: %v %v", err, v)
 		return
 	}
+	i, err := db.GetTimeIndex("hello", 2530)
+	require.NoError(t, err)
+	require.Equal(t, 6, int(i))
+	i, err = db.GetTimeIndex("hello", 10)
+	require.NoError(t, err)
+	require.Equal(t, 0, int(i))
 }
 
 func TestDatabaseDelete(t *testing.T) {

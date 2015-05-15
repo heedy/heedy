@@ -89,7 +89,7 @@ class User(ConnectorObject):
     def devices(self):
         #Returns the list of users accessible to this operator
         devs = []
-        result = self.db.urlget(self.metaname+"/?special=ls")
+        result = self.db.urlget(self.metaname+"/?q=ls")
         for d in result.json():
             tmpd = Device(self.db,d["name"])
             tmpd.metadata = d
@@ -106,7 +106,7 @@ class Device(ConnectorObject):
     def streams(self):
         #Returns the list of users accessible to this operator
         strms = []
-        result = self.db.urlget(self.metaname+"/?special=ls")
+        result = self.db.urlget(self.metaname+"/?q=ls")
         print result
         for s in result.json():
             tmps = Stream(self.db,s["name"])
@@ -185,7 +185,7 @@ class ConnectorDB(Device):
         self.auth = HTTPBasicAuth(user,password)
         self.url = url
 
-        Device.__init__(self,self,self.urlget("?special=this").text)
+        Device.__init__(self,self,self.urlget("?q=this").text)
 
 
     #Does error handling for a request result
@@ -214,7 +214,7 @@ class ConnectorDB(Device):
     def users(self):
         #Returns the list of users accessible to this operator
         usrs = []
-        for u in self.urlget("?special=ls").json():
+        for u in self.urlget("?q=ls").json():
             tmpu = self.getuser(u["name"])
             tmpu.metadata = u
             usrs.append(tmpu)

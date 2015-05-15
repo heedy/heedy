@@ -64,6 +64,11 @@ func CreateStream(o streamdb.Operator, writer http.ResponseWriter, request *http
 //ReadStream reads a stream from a REST API request
 func ReadStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
+
+	if err := BadQ(o, writer, request, streampath); err != nil {
+		return err
+	}
+
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadStream", "arg": streampath})
 	logger.Debugln()
 	s, err := o.ReadStream(streampath)

@@ -14,30 +14,6 @@ func splitStreamPath(streampath string) (usr string, dev string, stream string, 
 	return splitted[0], splitted[1], splitted[2], nil
 }
 
-/*
-//ReadStreamAndDevice reads both stream and device
-func (o *Database) ReadStreamAndDevice(streampath string) (d *users.Device, s *Stream, err error) {
-	username, devicename, _, err := splitStreamPath(streampath)
-	if err != nil {
-		return nil, nil, err
-	}
-	devicepath := username + "/" + devicename
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return nil, nil, err
-	}
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return nil, nil, err
-	}
-	if strm.DeviceId != dev.DeviceId {
-		o.streamCache.Remove(streampath)
-		o.deviceCache.Remove(devicepath)
-		return o.ReadStreamAndDevice(streampath)
-	}
-	return dev, strm, nil
-}*/
-
 //ReadAllStreams reads all the streams for the given device
 func (o *Database) ReadAllStreams(devicepath string) ([]Stream, error) {
 	dev, err := o.ReadDevice(devicepath)
@@ -182,10 +158,20 @@ func (o *Database) DeleteStream(streampath string) error {
 
 //DeleteStreamByID deletes the stream using ID
 func (o *Database) DeleteStreamByID(streamID int64) error {
-	_, err := o.ReadStreamByID(streamID)
+	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err //Workaround #81
 	}
-	defer o.streamCache.RemoveID(streamID)
-	return o.Userdb.DeleteStream(streamID)
+
+	sname, err := o.getStreamTimebatchName(strm)
+	if err != nil {
+		return err
+	}
+	err = o.Userdb.DeleteStream(streamID)
+	if err == nil {
+		err = o.tdb.Delete(sname)
+	}
+	o.streamCache.RemoveID(streamID)
+	return err
+
 }
