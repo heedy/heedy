@@ -152,3 +152,29 @@ class TestConnectorDB(unittest.TestCase):
         db["differentstream"].delete()
         self.assertFalse(db["differentstream"].exists)
         self.assertEqual(len(db.streams()),0)
+
+    def test_streamio(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+
+        self.assertTrue(dev.exists)
+        db = connectordb.ConnectorDB("python_test/mydevice",dev.apikey,url="http://localhost:8000")
+
+        s = db["teststream"]
+
+        self.assertFalse(s.exists)
+
+        s.create({"type": "string"})
+        self.assertTrue(s.exists)
+
+        self.assertEqual(0,len(s))
+
+        s.insert("Hello World!")
+
+        self.assertEqual(1,len(s))
+
+        self.assertEqual("Hello World!",s[0]["d"])
+        self.assertEqual("Hello World!",s(0)[0]["d"])

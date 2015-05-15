@@ -53,6 +53,11 @@ func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 //ReadUser reads the given user
 func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
+
+	if err := BadQ(o, writer, request, usrname); err != nil {
+		return err
+	}
+
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadUser", "arg": usrname})
 	logger.Debugln()
 	u, err := o.ReadUser(usrname)

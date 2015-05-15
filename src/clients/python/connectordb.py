@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
 from jsonschema import validate, Draft4Validator
@@ -89,7 +90,7 @@ class User(ConnectorObject):
     def devices(self):
         #Returns the list of users accessible to this operator
         devs = []
-        result = self.db.urlget(self.metaname+"/?special=ls")
+        result = self.db.urlget(self.metaname+"/?q=ls")
         for d in result.json():
             tmpd = Device(self.db,d["name"])
             tmpd.metadata = d
@@ -106,7 +107,7 @@ class Device(ConnectorObject):
     def streams(self):
         #Returns the list of users accessible to this operator
         strms = []
-        result = self.db.urlget(self.metaname+"/?special=ls")
+        result = self.db.urlget(self.metaname+"/?q=ls")
         print result
         for s in result.json():
             tmps = Stream(self.db,s["name"])
@@ -176,6 +177,23 @@ class Stream(ConnectorObject):
     def schema(self):
         return self.data["schema"]
 
+    def __len__(self):
+        return int(self.db.urlget(self.metaname+"/length").text)
+
+    def insertMany(self,o):
+        self.db.urlupdate(self.metaname,o)
+
+    def insert(self,o):
+        self.insertMany([{"t": int(time.time()),"d":o}])
+
+    def __getitem__(self,obj):
+        if isinstance(obj,slice):
+            return self.db.urlget(self.metaname+"/data?i1="+str(obj.start)+"&i2="+str(obj.stop)).json()
+        else:
+            return self.db.urlget(self.metaname+"/data?i1="+str(obj)+"&i2="+str(obj+1)).json()[0]
+    def __call__(self,t1,t2=0,limit=0):
+        return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
+
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
@@ -185,7 +203,7 @@ class ConnectorDB(Device):
         self.auth = HTTPBasicAuth(user,password)
         self.url = url
 
-        Device.__init__(self,self,self.urlget("?special=this").text)
+        Device.__init__(self,self,self.urlget("?q=this").text)
 
 
     #Does error handling for a request result
@@ -207,6 +225,9 @@ class ConnectorDB(Device):
     def urlput(self,location,data):
         return self.handleresult(requests.put(urljoin(self.url,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
+    def urlupdate(self,location,data):
+        return self.handleresult(requests.request("UPDATE",urljoin(self.url,location),auth=self.auth,
+                                                 headers={'content-type': 'application/json'},data=json.dumps(data)))
 
     def getuser(self,usrname):
         return User(self,usrname)
@@ -214,7 +235,7 @@ class ConnectorDB(Device):
     def users(self):
         #Returns the list of users accessible to this operator
         usrs = []
-        for u in self.urlget("?special=ls").json():
+        for u in self.urlget("?q=ls").json():
             tmpu = self.getuser(u["name"])
             tmpu.metadata = u
             usrs.append(tmpu)

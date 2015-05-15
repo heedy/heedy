@@ -1,26 +1,27 @@
-package schema
+package streamdb
 
 import (
+	"errors"
+	"streamdb/schema"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestDatapoint(t *testing.T) {
-	sstring, err := NewSchema(`{"type": "string"}`)
+	sstring, err := schema.NewSchema(`{"type": "string"}`)
 	require.NoError(t, err)
 
-	dp := NewDatapoint(sstring)
+	var dp Datapoint
 
 	dp.Timestamp = 13.234
 	dp.Data = "Hello!"
 
 	require.Equal(t, int64(13234000000), dp.IntTimestamp())
 
-	val, err := dp.DataBytes()
-	require.NoError(t, err)
-
-	dp2, err := LoadDatapoint(sstring, dp.IntTimestamp(), val, "sender", "stream")
+	_, err = LoadDatapoint(sstring, dp.IntTimestamp(), []byte(`"Hello!"`), "sender", "stream", errors.New("FALE"))
+	require.Error(t, err)
+	dp2, err := LoadDatapoint(sstring, dp.IntTimestamp(), []byte(`"Hello!"`), "sender", "stream", nil)
 	require.NoError(t, err)
 
 	if dp2.Data.(string) != "Hello!" || dp2.Timestamp != 13.234 || dp2.Sender != "sender" || dp2.Stream != "stream" {

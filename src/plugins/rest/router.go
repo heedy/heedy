@@ -22,7 +22,7 @@ iJi88yzQuQgnLKtAwm+CVarEC5GITliLCs2DrG1L4SrXwgA/kGiCcpHdB2gfOC+eSPIJAAuBNHMYg+oM
 cExzABJea4QiAw9r15EsA0Dh9J5Xkh/s+6pdlKaf6irlFLSdP1l2e61XCk55EzZcfMok0ecfBJjO2G+i
 A5xUYweqavIKBzj1zlNXt3Zf19lqDb7kNICQAAAAABJRU5ErkJggg==`
 	faviconMime = "image/png"
-	)
+)
 
 var (
 	//ErrUnderConstruction is returned when an API call is valid, but currently unimplemented
@@ -43,6 +43,13 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			log.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
 			return
 		}
+
+		//Handle a panic without crashing the whole rest interface
+		defer func() {
+			if r := recover(); r != nil {
+				log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "PANIC"}).Errorln(r)
+			}
+		}()
 
 		o, err := db.LoginOperator(authUser, authPass)
 
@@ -70,6 +77,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 func serveFavicon(w http.ResponseWriter, request *http.Request) {
 	w.Header().Set("Content-Type", faviconMime)
 	w.Header().Set("Content-Transfer-Encoding", "BASE64")
+
 	w.Write([]byte(favicon))
 }
 
@@ -83,19 +91,19 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.StrictSlash(true)
 
 	// Special items
-	prefix.HandleFunc("/", authenticator(ListUsers, db)).Queries("special", "ls")
-	prefix.HandleFunc("/", authenticator(GetThis, db)).Queries("special", "this")
+	prefix.HandleFunc("/", authenticator(ListUsers, db)).Queries("q", "ls")
+	prefix.HandleFunc("/", authenticator(GetThis, db)).Queries("q", "this")
 	prefix.HandleFunc("/favicon.ico", serveFavicon)
 
 	//User CRUD
-	prefix.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("special", "ls")
+	prefix.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
 	prefix.HandleFunc("/{user}", authenticator(ReadUser, db)).Methods("GET")
 	prefix.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
 	prefix.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
 	prefix.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
 
 	//Device CRUD
-	prefix.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("special", "ls")
+	prefix.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
 	prefix.HandleFunc("/{user}/{device}", authenticator(ReadDevice, db)).Methods("GET")
 	prefix.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
 	prefix.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
@@ -106,27 +114,15 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
 	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
-	//prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
 
-	//Getting details of the stream
-	//prefix.HandleFunc("/{user}/{device}/{stream}",<>).Methods("GET")
+	//Stream IO
+	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
 
-	//Get an index range - start at index i1, and return i2 datapoints
-	//prefix.HandleFunc("/{user}/{device}/{stream}/i/{i1:[0-9]+}/{i2:[0-9]+}",<>).Methods("GET")
-	//Get a time range - start at time t1, and end at time t2
-	//prefix.HandleFunc("/{user}/{device}/{stream}/t/{t1:[0-9]+}/{t2:[0-9]+}",<>).Methods("GET")
-	//Get a time range - start at time t1, and return i2 datapoints
-	//prefix.HandleFunc("/{user}/{device}/{stream}/t/{t1:[0-9]+}/{t2:[0-9]+}",<>).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1:[0-9]+}")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1:[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?}")
 
-	//Connect to the device websocket
-	//prefix.HandleFunc("/{user}/{device}.ws",<>).Methods("GET")
-
-	//Function Handlers
-	//f := prefix.PathPrefix("/f").Subrouter()
-	//f.HandleFunc("/this", authenticator(GetThis, db)).Methods("GET")
-	//f.HandleFunc("/ls", authenticator(ListUsers, db)).Methods("GET")
-
-	//Future handlers: m (models and machine learning)
+	prefix.HandleFunc("/{user}/{device}/{stream}/length", authenticator(GetStreamLength, db)).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}/{stream}/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
 
 	return prefix
 }
