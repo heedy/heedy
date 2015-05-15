@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
 from jsonschema import validate, Draft4Validator
@@ -176,6 +177,23 @@ class Stream(ConnectorObject):
     def schema(self):
         return self.data["schema"]
 
+    def __len__(self):
+        return int(self.db.urlget(self.metaname+"/length").text)
+
+    def insertMany(self,o):
+        self.db.urlupdate(self.metaname,o)
+
+    def insert(self,o):
+        self.insertMany([{"t": int(time.time()),"d":o}])
+
+    def __getitem__(self,obj):
+        if isinstance(obj,slice):
+            return self.db.urlget(self.metaname+"/data?i1="+str(obj.start)+"&i2="+str(obj.stop)).json()
+        else:
+            return self.db.urlget(self.metaname+"/data?i1="+str(obj)+"&i2="+str(obj+1)).json()[0]
+    def __call__(self,t1,t2=0,limit=0):
+        return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
+
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
@@ -206,6 +224,9 @@ class ConnectorDB(Device):
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
     def urlput(self,location,data):
         return self.handleresult(requests.put(urljoin(self.url,location),auth=self.auth,
+                                                 headers={'content-type': 'application/json'},data=json.dumps(data)))
+    def urlupdate(self,location,data):
+        return self.handleresult(requests.request("UPDATE",urljoin(self.url,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
 
     def getuser(self,usrname):

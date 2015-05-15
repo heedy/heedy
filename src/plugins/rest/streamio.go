@@ -40,7 +40,7 @@ func WriteStream(o streamdb.Operator, writer http.ResponseWriter, request *http.
 		logger.Warningln(err)
 		return err
 	}
-	logger.Infoln("Inserting ", len(datapoints), " datapoints")
+	logger.Infoln("Inserting", len(datapoints), "datapoints")
 
 	err = o.InsertStream(streampath, datapoints)
 	if err != nil {
@@ -105,7 +105,7 @@ func GetStreamRangeI(o streamdb.Operator, writer http.ResponseWriter, request *h
 		i2s = "Inf"
 	}
 
-	logger.Debugln("irange [", i1s, ",", i2s, ")")
+	logger.Debugf("irange [%s,%s)", i1s, i2s)
 	dr, err := o.GetStreamIndexRange(streampath, int64(i1), int64(i2))
 
 	return writeJSONResult(writer, dr, logger, err)
@@ -147,7 +147,7 @@ func GetStreamRangeT(o streamdb.Operator, writer http.ResponseWriter, request *h
 		lims = "Inf"
 	}
 
-	logger.Debugln("trange [", t1s, ",", t2s, ") limit=", lims)
+	logger.Debugf("trange [%s,%s) limit=%s", t1s, t2s, lims)
 	dr, err := o.GetStreamTimeRange(streampath, t1, t2, int64(lim))
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)

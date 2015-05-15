@@ -105,18 +105,25 @@ func (o *Database) ChangeUserPassword(username, newpass string) error {
 
 //DeleteUser deletes the given user - only admin can delete
 func (o *Database) DeleteUser(username string) error {
-	_, err := o.ReadUser(username)
+	usr, err := o.ReadUser(username)
 	if err != nil {
 		return err //Workaround for issue #81
 	}
 
+	err = o.Userdb.DeleteUserByName(username)
+
 	//We want the user removed from user cache after it is deleted from UserDB,
 	//so that no process can reinsert in while it is deleting
-	defer o.userCache.RemoveName(username)
+	o.userCache.RemoveName(username)
 
-	//This is inefficient but absolutely necessary for not allowing logins from nonexisting devices
-	defer o.deviceCache.UnlinkNamePrefix(username + "/")
-	return o.Userdb.DeleteUserByName(username)
+	//This is inefficient but absolutely necessary for not giving errors
+	o.deviceCache.UnlinkNamePrefix(username + "/")
+	o.streamCache.UnlinkNamePrefix(username + "/")
+
+	if err == nil {
+		err = o.tdb.DeletePrefix(getTimebatchUserName(usr.UserId) + "/")
+	}
+	return err
 }
 
 //DeleteUserByID deletes a user using its ID
@@ -126,10 +133,11 @@ func (o *Database) DeleteUserByID(userID int64) error {
 		return err //Workaround for issue #81
 	}
 	err = o.Userdb.DeleteUser(userID)
+	o.userCache.RemoveID(userID)
+	o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
+	o.streamCache.UnlinkNamePrefix(usr.Name + "/")
 	if err == nil {
 		err = o.tdb.DeletePrefix(getTimebatchUserName(usr.UserId) + "/")
 	}
-	o.userCache.RemoveID(userID)
-	o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
 	return err
 }

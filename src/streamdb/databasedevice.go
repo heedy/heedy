@@ -176,9 +176,17 @@ func (o *Database) DeleteDeviceByID(deviceID int64) error {
 	if err != nil {
 		return err //Workaround #81
 	}
+
+	//We read the user to clear the cache of the device's streams
+	usr, err := o.ReadUserByID(dev.UserId)
+	if err != nil {
+		return err
+	}
+
 	err = o.Userdb.DeleteDevice(deviceID)
+	o.deviceCache.RemoveID(deviceID)
+	o.streamCache.UnlinkNamePrefix(usr.Name + "/" + dev.Name + "/")
 	if err == nil {
-		o.deviceCache.RemoveID(deviceID)
 		err = o.tdb.DeletePrefix(getTimebatchDeviceName(dev) + "/")
 	}
 	return err
