@@ -15,7 +15,7 @@ var (
 
 //DatapointReader is an iterator
 type DatapointReader interface {
-	Next() (*schema.Datapoint, error)
+	Next() (*Datapoint, error)
 	Close()
 }
 
@@ -32,13 +32,13 @@ func (r *RangeReader) Close() {
 }
 
 //Next gets the next datapoint in the range
-func (r *RangeReader) Next() (dp *schema.Datapoint, err error) {
+func (r *RangeReader) Next() (dp *Datapoint, err error) {
 	tbdp, err := r.drange.Next()
 	if err != nil || tbdp == nil {
 		return nil, err
 	}
 
-	return schema.LoadDatapoint(r.dschema, tbdp.Timestamp(), tbdp.Data(), tbdp.Key(), r.stream)
+	return LoadDatapoint(r.dschema, tbdp.Timestamp(), tbdp.Data(), tbdp.Key(), r.stream, nil)
 }
 
 //NewRangeReader opens a streamreader with the given

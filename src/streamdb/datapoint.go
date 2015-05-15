@@ -1,7 +1,8 @@
-package schema
+package streamdb
 
 import (
 	"fmt"
+	"streamdb/schema"
 	"time"
 )
 
@@ -11,13 +12,6 @@ type Datapoint struct {
 	Data      interface{} `json:"d"`
 	Sender    string      `json:"o,omitempty" xml:"o,attr"`
 	Stream    string      `json:"s,omitempty" xml:"s,attr"`
-
-	schema *Schema //The schema allows to validate the data to make sure that it fits the accepted types
-}
-
-//DataBytes returns the byte array associated with the data of the datapoint
-func (d *Datapoint) DataBytes() ([]byte, error) {
-	return d.schema.Marshal(d.Data)
 }
 
 //IntTimestamp returns the unix nanoseconds timestamp
@@ -34,17 +28,16 @@ func (d *Datapoint) String() string {
 	return s + "]"
 }
 
-//NewDatapoint reates a new uninitialized datapoint (which can be marshalled to)
-func NewDatapoint(schema *Schema) *Datapoint {
-	return &Datapoint{schema: schema}
-}
-
 //LoadDatapoint loads an existing data point into a datapoint struct
-func LoadDatapoint(schema *Schema, timestamp int64, data []byte, sender string, stream string) (*Datapoint, error) {
-	dp := NewDatapoint(schema)
+func LoadDatapoint(schema *schema.Schema, timestamp int64, data []byte, sender string, stream string, err error) (*Datapoint, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	var dp Datapoint
 
 	//Convert the data byte array to the wanted structure
-	err := schema.Unmarshal(data, &dp.Data)
+	err = schema.Unmarshal(data, &dp.Data)
 
 	//Convert the int nanosecond timestamp to a seconds timestamp
 	dp.Timestamp = float64(timestamp) * 1e-9
@@ -53,5 +46,5 @@ func LoadDatapoint(schema *Schema, timestamp int64, data []byte, sender string, 
 	dp.Sender = sender
 	dp.Stream = stream
 
-	return dp, err
+	return &dp, err
 }

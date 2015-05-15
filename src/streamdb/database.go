@@ -16,7 +16,7 @@ import (
 //The StreamDB version string
 const (
 	Version   = "0.2.0"
-	AdminName = "  Admin  "
+	AdminName = " ADMIN "
 )
 
 var (

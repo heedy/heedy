@@ -110,7 +110,7 @@ func TestJsonReader(t *testing.T) {
 
 	databytes = databytes[:20+i]
 
-	var arr *[]schema.Datapoint
+	var arr *[]Datapoint
 	err = json.Unmarshal(databytes, &arr)
 	if err != nil {
 		t.Errorf("Failed to unmarshal: %s", string(databytes))
