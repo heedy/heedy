@@ -1,9 +1,10 @@
 package webclient
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
@@ -47,7 +48,7 @@ func editStreamAction(se *SessionEnvironment) {
 	err = se.Operator.UpdateStream(stream)
 
 	if err != nil {
-		log.Printf(err.Error())
+		log.Errorf(err.Error())
 		se.Session.AddFlash(err.Error())
 	} else {
 		se.Session.AddFlash("Created Device")
@@ -67,7 +68,7 @@ func createStreamAction(se *SessionEnvironment) {
 	device, err := se.Operator.ReadDeviceByID(int64(devid))
 
 	if err != nil {
-		log.Printf(err.Error())
+		log.Errorf(err.Error())
 		se.Session.AddFlash("Error getting device, maybe it was deleted?")
 		goto redirect
 	}
@@ -75,7 +76,7 @@ func createStreamAction(se *SessionEnvironment) {
 	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, "x")
 
 	if err != nil {
-		log.Printf(err.Error())
+		log.Errorf(err.Error())
 		se.Session.AddFlash("Error creating stream.")
 	}
 

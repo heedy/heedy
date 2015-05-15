@@ -171,9 +171,8 @@ func startDatabase(dbPath string) error {
 		if err == util.ErrAlreadyRunning && !*forceStart {
 			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
 			return err
-		} else {
-			return err
 		}
+		return err
 	}
 
 	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
@@ -197,7 +196,7 @@ func stopDatabase(dbPath string) error {
 	}
 
 	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
-		log.Printf("%v", err.Error())
+		log.Errorf("%v", err.Error())
 	}
 
 	return nil

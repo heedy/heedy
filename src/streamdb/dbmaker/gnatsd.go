@@ -65,7 +65,7 @@ func (srv *GnatsdService) Start() error {
 		return nil
 	}
 	if srv.Stat != StatusInit {
-		log.Printf("Could not start gnatsd, status is %v", srv.Stat)
+		log.Errorf("Could not start gnatsd, status is %v", srv.Stat)
 		return ErrNotInitialized
 	}
 

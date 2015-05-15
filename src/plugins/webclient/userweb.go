@@ -1,8 +1,9 @@
 package webclient
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"net/http"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func getUserPage(se *SessionEnvironment) {
@@ -10,7 +11,7 @@ func getUserPage(se *SessionEnvironment) {
 
 	pageData := make(map[string]interface{})
 
-	log.Printf("userdb: %p, user: %v\n", userdb, se.User)
+	log.Debugf("userdb: %p, user: %v", userdb, se.User)
 
 	devices, err := userdb.ReadAllDevicesByUserID(se.User.UserId)
 	pageData["devices"] = devices

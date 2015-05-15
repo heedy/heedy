@@ -106,7 +106,7 @@ func (srv *PostgresService) Start() error {
 		return nil
 	}
 	if srv.Stat != StatusInit {
-		log.Printf("Could not start postgres, status is %v", srv.Stat)
+		log.Errorf("Could not start postgres, status is %v", srv.Stat)
 		return ErrNotInitialized
 	}
 	srv.Stat = StatusRunning

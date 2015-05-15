@@ -3,11 +3,12 @@ package webclient
 import (
 	"encoding/gob"
 	"html/template"
-	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"path"
 	"streamdb"
 	"streamdb/users"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/kardianos/osext"
@@ -47,14 +48,14 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 
 		log.Printf("Doing login\n")
 		se, err := NewSessionEnvironment(writer, request)
-		log.Printf("Created session\n")
+		log.Debugf("Created session\n")
 
 		if err != nil || se.User == nil || se.Device == nil {
-			log.Printf("Error: %v, %v\n", err, se)
+			log.Errorf("Error: %v, %v\n", err, se)
 			http.Redirect(writer, request, "/login/", http.StatusTemporaryRedirect)
 			return
 		}
-		log.Printf("Serving page\n")
+		log.Debugf("Serving page\n")
 
 		h(&se)
 	})
@@ -63,10 +64,10 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 // Display the login page
 func getLogin(writer http.ResponseWriter, request *http.Request) {
 
-	log.Printf("Showing login page\n")
+	log.Printf("Showing login page")
 
 	se, err := NewSessionEnvironment(writer, request)
-	log.Printf("got session\n")
+	log.Debugf("got session")
 
 	// Don't log in somebody that's already logged in
 	if err == nil && se.User != nil && se.Device != nil {
@@ -84,7 +85,7 @@ func getLogin(writer http.ResponseWriter, request *http.Request) {
 
 // Display the login page
 func getLogout(writer http.ResponseWriter, request *http.Request) {
-	log.Printf("logout\n")
+	log.Printf("logout")
 
 	se, _ := NewSessionEnvironment(writer, request)
 	se.Logoff()
@@ -98,7 +99,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	userstr := request.PostFormValue("username")
 	passstr := request.PostFormValue("password")
 
-	log.Printf("Log in attempt: %v\n", userstr)
+	log.Printf("Log in attempt: %v", userstr)
 
 	usroperator, err := userdb.LoginOperator(userstr, passstr)
 	if err != nil {
@@ -126,28 +127,28 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 func init() {
 	folderPath, _ := osext.ExecutableFolder()
 	templatesPath := path.Join(folderPath, "templates")
-	basePath	  := path.Join(templatesPath, "base.html")
+	basePath := path.Join(templatesPath, "base.html")
 
 	// Parses our templates relative to the template path including the base
 	// everything needs
 	tMust := func(templateName string) *template.Template {
 		tPath := path.Join(templatesPath, templateName)
-    	return template.Must(template.ParseFiles(tPath, basePath))
-  	};
+		return template.Must(template.ParseFiles(tPath, basePath))
+	}
 
-	userEditTemplate 	= tMust("user_edit.html")
-	loginHomeTemplate 	= tMust("root.html")
-	deviceInfoTemplate 	= tMust("device_info.html")
-	firstrunTemplate 	= tMust("firstrun.html")
-	addUserTemplate 	= tMust("newuser.html")
-	loginPageTemplate 	= tMust("login.html")
+	userEditTemplate = tMust("user_edit.html")
+	loginHomeTemplate = tMust("root.html")
+	deviceInfoTemplate = tMust("device_info.html")
+	firstrunTemplate = tMust("firstrun.html")
+	addUserTemplate = tMust("newuser.html")
+	loginPageTemplate = tMust("login.html")
 }
 
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	userdb = udb
 	folderPath, _ := osext.ExecutableFolder()
 	includepath := path.Join(folderPath, "static")
-	log.Printf("Include path set to: %v", includepath)
+	log.Debugf("Include path set to: %v", includepath)
 	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
 
 	subroutePrefix.HandleFunc("/login/", http.HandlerFunc(getLogin))

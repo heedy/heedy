@@ -63,7 +63,7 @@ func (srv *RedisService) Start() error {
 		return nil
 	}
 	if srv.Stat != StatusInit {
-		log.Printf("Could not start redis, status is %v", srv.Stat)
+		log.Errorf("Could not start redis, status is %v", srv.Stat)
 		return ErrNotInitialized
 	}
 
