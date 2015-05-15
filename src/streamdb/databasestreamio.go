@@ -2,6 +2,7 @@ package streamdb
 
 import (
 	"strconv"
+	"streamdb/timebatchdb"
 	"streamdb/users"
 )
 
@@ -44,6 +45,29 @@ func (o *Database) LengthStreamByID(streamID int64) (int64, error) {
 	return int64(slen), err
 }
 
+//TimeToIndexStream returns the index closest to the given timestamp
+func (o *Database) TimeToIndexStream(streampath string, time float64) (int64, error) {
+	strm, err := o.ReadStream(streampath)
+	if err != nil {
+		return 0, err
+	}
+	return o.TimeToIndexStreamByID(strm.StreamId, time)
+}
+
+//TimeToIndexStreamByID returns the index for the given timestamp
+func (o *Database) TimeToIndexStreamByID(streamID int64, time float64) (int64, error) {
+	strm, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return 0, err
+	}
+	sname, err := o.getStreamTimebatchName(strm)
+	if err != nil {
+		return 0, err
+	}
+	sindex, err := o.tdb.GetTimeIndex(sname, IntTimestamp(time))
+	return int64(sindex), err
+}
+
 //InsertStream inserts the given array of datapoints into the given stream.
 func (o *Database) InsertStream(streampath string, data []Datapoint) error {
 	strm, err := o.ReadStream(streampath)
@@ -78,16 +102,16 @@ func IntTimestamp(t float64) int64 {
 }
 
 //GetStreamTimeRange Reads the given stream by time range
-func (o *Database) GetStreamTimeRange(streampath string, t1 float64, t2 float64) (DatapointReader, error) {
+func (o *Database) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2)
+	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2, limit)
 }
 
 //GetStreamTimeRangeByID reads time range by ID
-func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64) (DatapointReader, error) {
+func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -98,6 +122,9 @@ func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64
 	}
 
 	dr, err := o.tdb.GetTimeRange(sname, IntTimestamp(t1), IntTimestamp(t2))
+	if limit > 0 {
+		dr = timebatchdb.NewNumRange(dr, uint64(limit))
+	}
 	return NewRangeReader(dr, strm.s, ""), err
 }
 

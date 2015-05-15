@@ -80,11 +80,14 @@ type Operator interface {
 	LengthStream(streampath string) (int64, error)
 	LengthStreamByID(streamID int64) (int64, error)
 
+	TimeToIndexStream(streampath string, time float64) (int64, error)
+	TimeToIndexStreamByID(streamID int64, time float64) (int64, error)
+
 	InsertStream(streampath string, data []Datapoint) error
 	InsertStreamByID(streamID int64, data []Datapoint) error
 
-	GetStreamTimeRange(streampath string, t1 float64, t2 float64) (DatapointReader, error)
-	GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64) (DatapointReader, error)
+	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error)
+	GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64) (DatapointReader, error)
 
 	GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error)
 	GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64) (DatapointReader, error)

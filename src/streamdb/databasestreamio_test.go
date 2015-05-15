@@ -59,7 +59,7 @@ func TestStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(3), l)
 
-	dr, err := db.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5)
+	dr, err := db.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 1)
 	require.NoError(t, err)
 
 	dp, err := dr.Next()
@@ -67,13 +67,6 @@ func TestStreamIO(t *testing.T) {
 	require.NotNil(t, dp)
 	require.Equal(t, "Hello World!", dp.Data)
 	require.Equal(t, 1.0, dp.Timestamp)
-	require.Equal(t, "", dp.Sender)
-
-	dp, err = dr.Next()
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, "2", dp.Data)
-	require.Equal(t, 2.0, dp.Timestamp)
 	require.Equal(t, "", dp.Sender)
 
 	dp, err = dr.Next()
@@ -104,6 +97,13 @@ func TestStreamIO(t *testing.T) {
 	require.Nil(t, dp)
 
 	dr.Close()
+
+	i, err := db.TimeToIndexStream("tst/tst/tst", 1.3)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), i)
+	i, err = db.TimeToIndexStream("tst/tst/tst", 0.3)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), i)
 
 	//Now let's make sure that stuff is deleted correctly
 	require.NoError(t, db.DeleteStream("tst/tst/tst"))

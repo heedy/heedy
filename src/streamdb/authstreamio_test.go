@@ -41,7 +41,7 @@ func TestAuthStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), l)
 
-	dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5)
+	dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0)
 	require.NoError(t, err)
 
 	dp, err := dr.Next()
@@ -72,6 +72,10 @@ func TestAuthStreamIO(t *testing.T) {
 	require.Nil(t, dp)
 
 	dr.Close()
+
+	i, err := db.TimeToIndexStream("tst/tst/tst", 0.3)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), i)
 
 	//Now let's make sure that stuff is deleted correctly
 	require.NoError(t, o.DeleteStream("tst/tst/tst"))

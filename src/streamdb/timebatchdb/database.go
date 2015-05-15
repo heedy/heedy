@@ -6,6 +6,7 @@ package timebatchdb
 import (
 	"database/sql"
 	"errors"
+	"math"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -132,15 +133,18 @@ func (d *Database) Len(key string) (uint64, error) {
 
 //GetIndexRange gets the given range of index values for the given key from the database
 func (d *Database) GetIndexRange(key string, i1 uint64, i2 uint64) (DataRange, error) {
-	if i1 >= i2 {
+	if i1 >= i2 && i2 != 0 {
 		return EmptyRange{}, ErrorUserFail
+	}
+	if i2 == 0 {
+		i2 = math.MaxUint64
 	}
 	return NewNumRange(&databaseRange{d, EmptyRange{}, i1, key}, i2-i1), nil
 }
 
 //GetTimeRange gets the given time range of values given a key from the database
 func (d *Database) GetTimeRange(key string, t1 int64, t2 int64) (DataRange, error) {
-	if t1 >= t2 {
+	if t1 >= t2 && t2 != 0 {
 		return EmptyRange{}, ErrorUserFail
 	}
 	//We have to be more clever here - we will need to initialize the databaseRange in
@@ -174,6 +178,36 @@ func (d *Database) GetTimeRange(key string, t1 int64, t2 int64) (DataRange, erro
 		return EmptyRange{}, err
 	}
 	return NewTimeRange(&databaseRange{d, dataRange, startIndex, key}, t1, t2), nil
+}
+
+//GetTimeIndex returns the index of the first datapoint with time >= t
+func (d *Database) GetTimeIndex(key string, t int64) (uint64, error) {
+	//First check if the time index is in cache
+	startTime, err := d.cache.GetStartTime(key)
+	if err != nil {
+		return 0, err
+	}
+	if startTime <= t {
+		//The timestamp is in cache
+		et, err := d.cache.GetEndTime(key)
+		if err != nil || et <= t {
+			return 0, err
+		}
+		//Alright, attempt to get the data from the cache
+		datapointarray, startIndex, err := d.cache.Get(key)
+		if err != nil {
+			return 0, err
+		}
+		startIndex += uint64(datapointarray.FindTimeIndex(t))
+		return startIndex, nil
+	}
+	//The timestamp is in sql storage
+	dataRange, startIndex, err := d.store.GetByTime(key, t)
+	if err != nil {
+		return 0, err
+	}
+	dataRange.Close()
+	return startIndex, nil
 }
 
 //Insert the given datapoint array to the stream given at key.

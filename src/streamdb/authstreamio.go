@@ -22,6 +22,24 @@ func (o *AuthOperator) LengthStreamByID(streamID int64) (int64, error) {
 	return o.Db.LengthStreamByID(streamID)
 }
 
+//TimeToIndexStream returns the index closest to the given timestamp
+func (o *AuthOperator) TimeToIndexStream(streampath string, time float64) (int64, error) {
+	strm, err := o.ReadStream(streampath)
+	if err != nil {
+		return 0, err
+	}
+	return o.Db.TimeToIndexStreamByID(strm.StreamId, time)
+}
+
+//TimeToIndexStreamByID returns the index for the given timestamp
+func (o *AuthOperator) TimeToIndexStreamByID(streamID int64, time float64) (int64, error) {
+	_, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return 0, err
+	}
+	return o.Db.TimeToIndexStreamByID(streamID, time)
+}
+
 //InsertStream inserts into the stream
 func (o *AuthOperator) InsertStream(streampath string, data []Datapoint) error {
 	strm, err := o.ReadStream(streampath)
@@ -67,21 +85,21 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, data []Datapoint) error 
 }
 
 //GetStreamTimeRange gets the time ragne
-func (o *AuthOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64) (DatapointReader, error) {
+func (o *AuthOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
 	_, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamTimeRange(streampath, t1, t2)
+	return o.Db.GetStreamTimeRange(streampath, t1, t2, limit)
 }
 
 //GetStreamTimeRangeByID gets the time range by ID
-func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64) (DatapointReader, error) {
+func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamTimeRangeByID(streamID, t1, t2)
+	return o.Db.GetStreamTimeRangeByID(streamID, t1, t2, limit)
 }
 
 //GetStreamIndexRange gets the index range by ID
