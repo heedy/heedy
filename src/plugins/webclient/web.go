@@ -3,7 +3,7 @@ package webclient
 import (
 	"encoding/gob"
 	"html/template"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"path"
 	"streamdb"

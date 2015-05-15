@@ -7,7 +7,7 @@ plugin registry when we're imported without side effects.
 
 import (
 	"fmt"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"plugins"
 	"streamdb"

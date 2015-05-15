@@ -10,7 +10,7 @@ All Rights Reserved
 **/
 
 import (
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"strconv"
 	"streamdb/dbutil"

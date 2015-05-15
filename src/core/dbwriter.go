@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"streamdb"
 )

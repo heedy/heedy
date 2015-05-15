@@ -1,7 +1,7 @@
 package webclient
 
 import (
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"strconv"
 

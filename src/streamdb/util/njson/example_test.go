@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"strings"
 )
