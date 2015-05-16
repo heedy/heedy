@@ -1,4 +1,4 @@
-package messenger
+package streamdb
 
 /*
 Package Messenger is a package that implements the pub/sub messaging system used for streaming uplinks and downlinks
@@ -27,7 +27,7 @@ func (m *Messenger) Close() {
 }
 
 //Connect initializes a connection with the gnatsd messenger. Allows daisy-chaining errors
-func Connect(url string, err error) (*Messenger, error) {
+func ConnectMessenger(url string, err error) (*Messenger, error) {
 	if err != nil {
 		return nil, err
 	}

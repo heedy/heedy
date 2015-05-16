@@ -5,7 +5,6 @@ import (
 	"errors"
 	"streamdb/config"
 	"streamdb/dbutil"
-	"streamdb/messenger"
 	"streamdb/timebatchdb"
 	"streamdb/users"
 	"strings"
@@ -43,7 +42,7 @@ type Database struct {
 	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
 	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg *messenger.Messenger  //messenger is a connection to the messaging client
+	msg *Messenger            //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 
@@ -98,7 +97,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
 
 	log.Debugln("Opening messenger with uri ", msguri)
-	db.msg, err = messenger.Connect(msguri, err)
+	db.msg, err = ConnectMessenger(msguri, err)
 
 	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
 	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)

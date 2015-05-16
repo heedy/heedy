@@ -48,3 +48,16 @@ func LoadDatapoint(schema *schema.Schema, timestamp int64, data []byte, sender s
 
 	return &dp, err
 }
+
+//The Message is a struct holding field data which is sent through Messenger
+type Message struct {
+	To     string      //The To field is the stream that the message is aimed at
+	From   string      //The from field is the device sending the message
+	Prefix string      //The Prefix is a special "message type" identifier.
+	Data   []Datapoint //The datapoints associated with the message
+}
+
+//String returns a stringified representation of the message
+func (m Message) String() string {
+	return "[To=" + m.To + " From=" + m.From + " Pre=" + m.Prefix + "]"
+}
