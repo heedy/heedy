@@ -48,7 +48,7 @@ func main() {
 	db, err := streamdb.Open(*sqlserver, *redisserver, *msgserver)
 
 	if err != nil {
-		log.Panic("Cannot open StreamDB", err)
+		log.Panic("Cannot open StreamDB: ", err)
 	}
 	defer db.Close()
 

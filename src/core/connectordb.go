@@ -117,7 +117,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("Error: A problem occured during %v:\n\n%v\n", commandName, err)
+		log.Errorf("A problem occured during %v:\n\n%v\n", commandName, err)
 	}
 }
 
@@ -133,7 +133,7 @@ func createDatabase() error {
 	//extract the username and password from the formatted string
 	usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
 	if len(usernamePasswordArray) != 2 {
-		fmt.Println("--user: Username and password not given in format <username>:<password>")
+		log.Errorln("--user: Username and password not given in format <username>:<password>")
 		createFlags.PrintDefaults()
 		return nil
 	}
@@ -143,12 +143,12 @@ func createDatabase() error {
 	config.GetConfiguration().DatabaseType = *createDbType
 	log.Debugln("CONFIG:", config.GetConfiguration())
 
-	log.Println("CONNECTORDB: Doing Init")
+	log.Debugln("CONNECTORDB: Doing Init")
 	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	log.Println("CONNECTORDB: Creating Files")
+	log.Debugln("CONNECTORDB: Creating Files")
 	if err := dbmaker.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func stopDatabase(dbPath string) error {
 
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
 	if err == nil {
-		log.Printf("Connectordb looks like it isn't already running, but we'll try anyway.")
+		log.Warningln("Connectordb looks like it isn't already running, but we'll try anyway.")
 		return err
 	}
 
@@ -196,7 +196,7 @@ func stopDatabase(dbPath string) error {
 	}
 
 	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
-		log.Errorf("%v", err.Error())
+		log.Errorln(err.Error())
 	}
 
 	return nil
