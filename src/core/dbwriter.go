@@ -1,10 +1,10 @@
 package main
 
 import (
+	"connectordb/streamdb"
 	"flag"
 	"fmt"
 	"os"
-	"streamdb"
 
 	log "github.com/Sirupsen/logrus"
 )

@@ -11,11 +11,11 @@ build: resources $(OBJ)
 
 bin:
 	mkdir bin
-	cp -r src/streamdb/dbmaker/config bin/config
+	cp -r src/connectordb/setup/config bin/config
 
 resources: bin
-	cp -r src/plugins/webclient/static/ bin/
-	cp -r src/plugins/webclient/templates/ bin/
+	cp -r src/connectordb/plugins/webclient/static/ bin/
+	cp -r src/connectordb/plugins/webclient/templates/ bin/
 
 # Rule to go from source go file to binary
 bin/%: src/core/%.go bin go-dependencies
