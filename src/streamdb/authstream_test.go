@@ -77,7 +77,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	s, err = o.ReadStreamByDeviceID(dev.DeviceId, "testme")
 	require.NoError(t, err)
 	require.Equal(t, s.Name, "testme")
-	require.NoError(t, o.DeleteStreamByID(s.StreamId))
+	require.NoError(t, o.DeleteStreamByID(s.StreamId, ""))
 	_, err = o.ReadStreamByID(s.StreamId)
 	require.Error(t, err)
 	_, err = o.ReadStreamByDeviceID(dev.DeviceId, "testme")

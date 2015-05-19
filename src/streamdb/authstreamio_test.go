@@ -84,3 +84,52 @@ func TestAuthStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
 }
+
+func TestAuthSubstream(t *testing.T) {
+	require.NoError(t, ResetTimeBatch())
+
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	require.NoError(t, err)
+	defer db.Close()
+
+	//Let's create a stream
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst2"))
+	require.NoError(t, db.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
+	s, err := db.ReadStream("tst/tst2/tst")
+	require.NoError(t, err)
+	s.Downlink = true
+	require.NoError(t, db.UpdateStream(s))
+
+	require.NoError(t, db.SetAdmin("tst/tst", true))
+	o, err := db.Operator("tst/tst")
+	require.NoError(t, err)
+
+	data := []Datapoint{Datapoint{
+		Timestamp: 1.0,
+		Data:      1336,
+	}}
+	require.NoError(t, o.InsertStream("tst/tst2/tst", data))
+
+	l, err := o.LengthStream("tst/tst2/tst")
+	require.NoError(t, err)
+	require.Equal(t, int64(0), l)
+
+	dr, err := o.GetStreamTimeRange("tst/tst2/tst/downlink", 0.0, 2.5, 0)
+	require.NoError(t, err)
+
+	dp, err := dr.Next()
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, 1.0, dp.Timestamp)
+	require.Equal(t, "tst/tst", dp.Sender)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
+	dr.Close()
+
+}

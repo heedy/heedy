@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	//ErrUnimplemented is thrown when we don't know what to do
 	ErrUnimplemented = errors.New("This operation is not yet implemented")
 )
 
@@ -34,12 +35,9 @@ func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error) {
 
 //CreateStream makes a new stream
 func (o *Database) CreateStream(streampath, jsonschema string) error {
-	_, devicepath, _, streamname, substreams, err := util.SplitStreamPath(streampath, nil)
+	_, devicepath, _, streamname, _, err := util.SplitStreamPath(streampath, nil)
 	if err != nil {
 		return err
-	}
-	if substreams != "" {
-		return ErrUnimplemented
 	}
 
 	dev, err := o.ReadDevice(devicepath)
@@ -60,19 +58,17 @@ func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema
 
 //ReadStream reads the given stream
 func (o *Database) ReadStream(streampath string) (*Stream, error) {
+	//Make sure that substreams are stripped from read
+	_, devicepath, streampath, streamname, _, err := util.SplitStreamPath(streampath, nil)
+	if err != nil {
+		return nil, err
+	}
 	//Check if the stream is in the cache
 	if s, ok := o.streamCache.GetByName(streampath); ok {
 		strm := s.(Stream)
 		return &strm, nil
 	}
-	//Apparently not. Get the stream from userdb
-	_, devicepath, _, streamname, substreams, err := util.SplitStreamPath(streampath, nil)
-	if err != nil {
-		return nil, err
-	}
-	if substreams != "" {
-		return nil, ErrUnimplemented
-	}
+
 	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return nil, err
@@ -136,6 +132,12 @@ func (o *Database) UpdateStream(modifiedstream *Stream) error {
 
 	err = o.Userdb.UpdateStream(&modifiedstream.Stream)
 	if err == nil {
+		if strm.Downlink == true && modifiedstream.Downlink == false {
+			//There was a downlink here. Since the downlink was removed, we delete the associated
+			//downlink substream
+			o.DeleteStreamByID(strm.StreamId, "downlink")
+		}
+
 		//If the stream name was changed, modify the stream name in cache
 		if strm.Name == modifiedstream.Name {
 			o.streamCache.Update(strm.StreamId, *modifiedstream)
@@ -153,15 +155,19 @@ func (o *Database) UpdateStream(modifiedstream *Stream) error {
 
 //DeleteStream deletes the given stream
 func (o *Database) DeleteStream(streampath string) error {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
+	if err != nil {
+		return err
+	}
 	s, err := o.ReadStream(streampath)
 	if err != nil {
 		return err
 	}
-	return o.DeleteStreamByID(s.StreamId)
+	return o.DeleteStreamByID(s.StreamId, substream)
 }
 
 //DeleteStreamByID deletes the stream using ID
-func (o *Database) DeleteStreamByID(streamID int64) error {
+func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err //Workaround #81
@@ -171,11 +177,19 @@ func (o *Database) DeleteStreamByID(streamID int64) error {
 	if err != nil {
 		return err
 	}
-	err = o.Userdb.DeleteStream(streamID)
-	if err == nil {
-		err = o.tdb.Delete(sname)
+	if substream != "" {
+		//We just delete the substream
+		err = o.tdb.Delete(sname + substream)
+	} else {
+		//We remove all substreams from timebatch. Right now it is only the downlink substream
+		o.tdb.Delete(sname + "downlink")
+
+		err = o.Userdb.DeleteStream(streamID)
+		if err == nil {
+			err = o.tdb.Delete(sname)
+		}
+		o.streamCache.RemoveID(streamID)
 	}
-	o.streamCache.RemoveID(streamID)
 	return err
 
 }

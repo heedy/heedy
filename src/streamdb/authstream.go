@@ -189,7 +189,7 @@ func (o *AuthOperator) DeleteStream(streampath string) error {
 }
 
 //DeleteStreamByID Delete the stream using ID... This doesn't actually use the ID internally
-func (o *AuthOperator) DeleteStreamByID(streamID int64) error {
+func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error {
 	odev, err := o.Device()
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (o *AuthOperator) DeleteStreamByID(streamID int64) error {
 		return err
 	}
 	if odev.RelationToStream(&strm.Stream, dev).Gte(users.DEVICE) {
-		return o.Db.DeleteStreamByID(streamID)
+		return o.Db.DeleteStreamByID(streamID, substream)
 	}
 	return ErrPermissions
 }

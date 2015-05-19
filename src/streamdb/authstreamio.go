@@ -1,6 +1,9 @@
 package streamdb
 
-import "streamdb/users"
+import (
+	"streamdb/users"
+	"streamdb/util"
+)
 
 //LengthStream returns the length of the data in a stream
 func (o *AuthOperator) LengthStream(streampath string) (int64, error) {
@@ -42,16 +45,20 @@ func (o *AuthOperator) TimeToIndexStreamByID(streamID int64, time float64) (int6
 
 //InsertStream inserts into the stream
 func (o *AuthOperator) InsertStream(streampath string, data []Datapoint) error {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
+	if err != nil {
+		return err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return err
 	}
 	//No need to repeat the permissions stuff twice
-	return o.InsertStreamByID(strm.StreamId, data)
+	return o.InsertStreamByID(strm.StreamId, data, substream)
 }
 
 //InsertStreamByID inserts into a stream given the stream's ID
-func (o *AuthOperator) InsertStreamByID(streamID int64, data []Datapoint) error {
+func (o *AuthOperator) InsertStreamByID(streamID int64, data []Datapoint, substream string) error {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err
@@ -75,13 +82,18 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, data []Datapoint) error 
 		for i := range data {
 			data[i].Sender = o.Name()
 		}
+
+		//Since the writer is not the owner, if the stream is a downlink, write to the downlink substream
+		if substream == "" && strm.Downlink {
+			substream = "downlink"
+		}
 	} else {
 		//The writer is reader. Ensure the sender field is empty
 		for i := range data {
 			data[i].Sender = ""
 		}
 	}
-	return o.Db.InsertStreamByID(streamID, data)
+	return o.Db.InsertStreamByID(streamID, data, substream)
 }
 
 //GetStreamTimeRange gets the time ragne
@@ -94,12 +106,12 @@ func (o *AuthOperator) GetStreamTimeRange(streampath string, t1 float64, t2 floa
 }
 
 //GetStreamTimeRangeByID gets the time range by ID
-func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
+func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (DatapointReader, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamTimeRangeByID(streamID, t1, t2, limit)
+	return o.Db.GetStreamTimeRangeByID(streamID, t1, t2, limit, substream)
 }
 
 //GetStreamIndexRange gets the index range by ID
@@ -112,10 +124,10 @@ func (o *AuthOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64
 }
 
 //GetStreamIndexRangeByID gets an index range by ID
-func (o *AuthOperator) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64) (DatapointReader, error) {
+func (o *AuthOperator) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (DatapointReader, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamIndexRangeByID(streamID, i1, i2)
+	return o.Db.GetStreamIndexRangeByID(streamID, i1, i2, substream)
 }

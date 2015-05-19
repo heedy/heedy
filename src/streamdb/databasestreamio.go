@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"streamdb/timebatchdb"
 	"streamdb/users"
+	"streamdb/util"
 )
 
 func getTimebatchUserName(userID int64) string {
@@ -19,7 +20,7 @@ func (o *Database) getStreamTimebatchName(strm *Stream) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return getTimebatchDeviceName(dev) + "/" + strconv.FormatInt(strm.StreamId, 32), nil
+	return getTimebatchDeviceName(dev) + "/" + strconv.FormatInt(strm.StreamId, 32) + "/", nil
 }
 
 //LengthStream returns the total number of datapoints in the given stream
@@ -70,15 +71,19 @@ func (o *Database) TimeToIndexStreamByID(streamID int64, time float64) (int64, e
 
 //InsertStream inserts the given array of datapoints into the given stream.
 func (o *Database) InsertStream(streampath string, data []Datapoint) error {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
+	if err != nil {
+		return err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return err
 	}
-	return o.InsertStreamByID(strm.StreamId, data)
+	return o.InsertStreamByID(strm.StreamId, data, substream)
 }
 
 //InsertStreamByID inserts into the stream given by the ID
-func (o *Database) InsertStreamByID(streamID int64, data []Datapoint) error {
+func (o *Database) InsertStreamByID(streamID int64, data []Datapoint, substream string) error {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err
@@ -93,7 +98,9 @@ func (o *Database) InsertStreamByID(streamID int64, data []Datapoint) error {
 		return err
 	}
 
-	return o.tdb.Insert(sname, dpa)
+	//TODO(daniel): We need substream validation code here. This requires the KV store
+
+	return o.tdb.Insert(sname+substream, dpa)
 }
 
 //IntTimestamp converts a floating point unix timestamp to nanoseconds
@@ -103,15 +110,16 @@ func IntTimestamp(t float64) int64 {
 
 //GetStreamTimeRange Reads the given stream by time range
 func (o *Database) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2, limit)
+	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2, limit, substream)
 }
 
 //GetStreamTimeRangeByID reads time range by ID
-func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
+func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (DatapointReader, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -121,7 +129,10 @@ func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64
 		return nil, err
 	}
 
-	dr, err := o.tdb.GetTimeRange(sname, IntTimestamp(t1), IntTimestamp(t2))
+	//TODO: Substream manipulation code (getting a compute stream by time range and limit is an interpolation
+	//query that needs to be messaged to compute handlers, and response waited)
+
+	dr, err := o.tdb.GetTimeRange(sname+substream, IntTimestamp(t1), IntTimestamp(t2))
 	if limit > 0 {
 		dr = timebatchdb.NewNumRange(dr, uint64(limit))
 	}
@@ -130,15 +141,16 @@ func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64
 
 //GetStreamIndexRange Reads the given stream by index range
 func (o *Database) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error) {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamIndexRangeByID(strm.StreamId, i1, i2)
+	return o.GetStreamIndexRangeByID(strm.StreamId, i1, i2, substream)
 }
 
 //GetStreamIndexRangeByID reads index range by ID
-func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64) (DatapointReader, error) {
+func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (DatapointReader, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -149,6 +161,6 @@ func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64) (
 		return nil, err
 	}
 
-	dr, err := o.tdb.GetIndexRange(sname, uint64(i1), uint64(i2))
+	dr, err := o.tdb.GetIndexRange(sname+substream, uint64(i1), uint64(i2))
 	return NewRangeReader(dr, strm.s, ""), err
 }
