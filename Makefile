@@ -11,7 +11,7 @@ build: resources $(OBJ)
 
 bin:
 	mkdir bin
-	cp -r src/connectordb/setup/config bin/config
+	cp -r src/connectordb/services/config bin/config
 
 resources: bin
 	cp -r src/connectordb/plugins/webclient/static/ bin/
