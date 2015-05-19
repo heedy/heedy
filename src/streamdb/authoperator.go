@@ -3,6 +3,7 @@ package streamdb
 import (
 	"errors"
 	"streamdb/users"
+	"streamdb/util"
 	"strings"
 )
 
@@ -66,7 +67,7 @@ func (o *AuthOperator) Permissions(perm users.PermissionLevel) bool {
 func (o *AuthOperator) SetAdmin(path string, isadmin bool) error {
 	switch strings.Count(path, "/") {
 	default:
-		return ErrBadPath
+		return util.ErrBadPath
 	case 0:
 		u, err := o.ReadUser(path)
 		if err != nil {

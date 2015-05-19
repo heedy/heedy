@@ -1,14 +1,17 @@
 package streamdb
 
-import "streamdb/users"
+import (
+	"streamdb/users"
+	"streamdb/util"
+)
 
 //ReadStreamDevice gets the device associated with the given stream path
 func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err error) {
-	username, devicename, _, err := splitStreamPath(streampath)
+	_, devicepath, _, _, _, err := util.SplitStreamPath(streampath, nil)
 	if err != nil {
 		return nil, err
 	}
-	return o.ReadDevice(username + "/" + devicename)
+	return o.ReadDevice(devicepath)
 }
 
 //ReadStreamAndDevice reads both stream and device

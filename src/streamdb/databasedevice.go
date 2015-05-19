@@ -2,25 +2,14 @@ package streamdb
 
 import (
 	"streamdb/users"
-	"strings"
+	"streamdb/util"
 
 	"github.com/nu7hatch/gouuid"
 )
 
-//Technically, it is inefficient to pass in a path in a/b format, but our use case is
-//so extremely dominated by database query/network, that it is essentially free to make stuff
-//as pretty as possible.
-func splitDevicePath(devicepath string) (usr string, dev string, err error) {
-	splitted := strings.Split(devicepath, "/")
-	if len(splitted) != 2 {
-		return "", "", ErrBadPath
-	}
-	return splitted[0], splitted[1], nil
-}
-
 //ReadDeviceUser gets the user associated with the given device path
 func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) {
-	username, _, err := splitDevicePath(devicepath)
+	username, _, err := util.SplitDevicePath(devicepath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +32,7 @@ func (o *Database) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) 
 
 //CreateDevice creates a new device at the given path
 func (o *Database) CreateDevice(devicepath string) error {
-	userName, deviceName, err := splitDevicePath(devicepath)
+	userName, deviceName, err := util.SplitDevicePath(devicepath, nil)
 	if err != nil {
 		return err
 	}
@@ -68,7 +57,7 @@ func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 		return &dev, nil
 	}
 	//Apparently not. Get the device from userdb
-	usrname, devname, err := splitDevicePath(devicepath)
+	usrname, devname, err := util.SplitDevicePath(devicepath, nil)
 	if err != nil {
 		return nil, err
 	}

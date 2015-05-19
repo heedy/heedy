@@ -1,4 +1,4 @@
-package streamdb
+package util
 
 import (
 	"strings"

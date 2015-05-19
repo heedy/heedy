@@ -7,6 +7,7 @@ import (
 	"streamdb/dbutil"
 	"streamdb/timebatchdb"
 	"streamdb/users"
+	"streamdb/util"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,9 +20,6 @@ const (
 )
 
 var (
-
-	//ErrBadPath is thrown when a user device or stream cannot be extracted from the path
-	ErrBadPath = errors.New("The given path is invalid.")
 	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
 	ErrAdmin = errors.New("An administrative operator has no user or device")
 
@@ -47,9 +45,9 @@ type Database struct {
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 
 	//The caches are to keep frequently used stuff in memory for a reasonable time before reloading from database
-	userCache   *TimedCache
-	deviceCache *TimedCache
-	streamCache *TimedCache
+	userCache   *util.TimedCache
+	deviceCache *util.TimedCache
+	streamCache *util.TimedCache
 }
 
 // Calls open from the arguments in the given configuration
@@ -102,9 +100,9 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
 	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
 
-	db.userCache, err = NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)
-	db.deviceCache, err = NewTimedCache(DeviceCacheSize, int64(CacheExpireTime), err)
-	db.streamCache, err = NewTimedCache(StreamCacheSize, int64(CacheExpireTime), err)
+	db.userCache, err = util.NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)
+	db.deviceCache, err = util.NewTimedCache(DeviceCacheSize, int64(CacheExpireTime), err)
+	db.streamCache, err = util.NewTimedCache(StreamCacheSize, int64(CacheExpireTime), err)
 
 	if err != nil {
 		db.Close()
@@ -149,7 +147,7 @@ func (db *Database) UserLoginOperator(username, password string) (Operator, erro
 func (db *Database) LoginOperator(path, password string) (Operator, error) {
 	switch strings.Count(path, "/") {
 	default:
-		return nil, ErrBadPath
+		return nil, util.ErrBadPath
 	case 1:
 		return db.DeviceLoginOperator(path, password)
 	case 0:
@@ -161,7 +159,7 @@ func (db *Database) LoginOperator(path, password string) (Operator, error) {
 func (db *Database) Operator(path string) (Operator, error) {
 	switch strings.Count(path, "/") {
 	default:
-		return nil, ErrBadPath
+		return nil, util.ErrBadPath
 	case 0:
 		path += "/user"
 	case 1:
@@ -265,7 +263,7 @@ func (db *Database) Permissions(perm users.PermissionLevel) bool {
 func (db *Database) SetAdmin(path string, isadmin bool) error {
 	switch strings.Count(path, "/") {
 	default:
-		return ErrBadPath
+		return util.ErrBadPath
 	case 0:
 		u, err := db.ReadUser(path)
 		if err != nil {

@@ -1,18 +1,15 @@
 package streamdb
 
 import (
+	"errors"
 	"streamdb/schema"
 	"streamdb/users"
-	"strings"
+	"streamdb/util"
 )
 
-func splitStreamPath(streampath string) (usr string, dev string, stream string, err error) {
-	splitted := strings.Split(streampath, "/")
-	if len(splitted) != 3 {
-		return "", "", "", ErrBadPath
-	}
-	return splitted[0], splitted[1], splitted[2], nil
-}
+var (
+	ErrUnimplemented = errors.New("This operation is not yet implemented")
+)
 
 //ReadAllStreams reads all the streams for the given device
 func (o *Database) ReadAllStreams(devicepath string) ([]Stream, error) {
@@ -37,11 +34,15 @@ func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error) {
 
 //CreateStream makes a new stream
 func (o *Database) CreateStream(streampath, jsonschema string) error {
-	username, devicename, streamname, err := splitStreamPath(streampath)
+	_, devicepath, _, streamname, substreams, err := util.SplitStreamPath(streampath, nil)
 	if err != nil {
 		return err
 	}
-	dev, err := o.ReadDevice(username + "/" + devicename)
+	if substreams != "" {
+		return ErrUnimplemented
+	}
+
+	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return err
 	}
@@ -65,11 +66,14 @@ func (o *Database) ReadStream(streampath string) (*Stream, error) {
 		return &strm, nil
 	}
 	//Apparently not. Get the stream from userdb
-	username, devicename, streamname, err := splitStreamPath(streampath)
+	_, devicepath, _, streamname, substreams, err := util.SplitStreamPath(streampath, nil)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := o.ReadDevice(username + "/" + devicename)
+	if substreams != "" {
+		return nil, ErrUnimplemented
+	}
+	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return nil, err
 	}
