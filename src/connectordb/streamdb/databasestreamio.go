@@ -23,6 +23,28 @@ func (o *Database) getStreamTimebatchName(strm *Stream) (string, error) {
 	return getTimebatchDeviceName(dev) + "/" + strconv.FormatInt(strm.StreamId, 32) + "/", nil
 }
 
+func (o *Database) getStreamPath(strm *Stream) (string, error) {
+	//First try to extract the path from cache
+	_, streampath, _ := o.streamCache.GetByID(strm.StreamId)
+	if streampath != "" {
+		return streampath, nil
+	}
+	_, devicepath, _ := o.deviceCache.GetByID(strm.DeviceId)
+	if devicepath != "" {
+		return devicepath + "/" + strm.Name, nil
+	}
+	//Aight, f this. We need to extract the name - time to pound the database
+	dev, err := o.ReadDeviceByID(strm.DeviceId)
+	if err != nil {
+		return "", err
+	}
+	usr, err := o.ReadUserByID(dev.UserId)
+	if err != nil {
+		return "", err
+	}
+	return usr.Name + "/" + dev.Name + "/" + strm.Name, nil
+}
+
 //LengthStream returns the total number of datapoints in the given stream
 func (o *Database) LengthStream(streampath string) (int64, error) {
 	strm, err := o.ReadStream(streampath)
@@ -97,10 +119,22 @@ func (o *Database) InsertStreamByID(streamID int64, data []Datapoint, substream 
 	if err != nil {
 		return err
 	}
+	streampath, err := o.getStreamPath(strm)
+	if substream != "" {
+		sname = sname + substream
+		streampath = streampath + "/" + substream
+	}
 
 	//TODO(daniel): We need substream validation code here. This requires the KV store
 
-	return o.tdb.Insert(sname+substream, dpa)
+	if !strm.Ephemeral {
+		err = o.tdb.Insert(sname, dpa)
+		if err != nil {
+			return err
+		}
+	}
+
+	return o.msg.Publish(sname, Message{streampath, data})
 }
 
 //IntTimestamp converts a floating point unix timestamp to nanoseconds
