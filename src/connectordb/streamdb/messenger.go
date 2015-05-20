@@ -12,6 +12,9 @@ import (
 	"github.com/apcera/nats"
 )
 
+//MessageEncoding is the encoding used for messages
+const MessageEncoding string = "json"
+
 //Package messenger provides a simple messaging service using gnatsd, which can be used to
 //send fast messages to a given user/device/stream from a given user/device
 
@@ -41,7 +44,7 @@ func ConnectMessenger(url string, err error) (*Messenger, error) {
 	if err != nil {
 		return nil, err
 	}
-	seconn, err := nats.NewEncodedConn(sconn, "json")
+	seconn, err := nats.NewEncodedConn(sconn, MessageEncoding)
 	if err != nil {
 		sconn.Close()
 		return nil, err
@@ -53,7 +56,7 @@ func ConnectMessenger(url string, err error) (*Messenger, error) {
 		sconn.Close()
 		return nil, err
 	}
-	reconn, err := nats.NewEncodedConn(rconn, "json")
+	reconn, err := nats.NewEncodedConn(rconn, MessageEncoding)
 	if err != nil {
 		seconn.Close()
 		sconn.Close()
