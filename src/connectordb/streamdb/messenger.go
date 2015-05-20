@@ -96,4 +96,5 @@ func (m *Messenger) Subscribe(routing string, chn chan operator.Message) (*nats.
 //Flush makes sure all commands are acknowledged by the server
 func (m *Messenger) Flush() {
 	m.SendEconn.Flush()
+	m.RecvEconn.Flush()
 }
