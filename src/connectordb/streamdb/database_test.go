@@ -1,7 +1,6 @@
 package streamdb
 
 import (
-	"connectordb/streamdb/users"
 	"database/sql"
 	"testing"
 
@@ -34,9 +33,6 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 	defer db.Close()
 	go db.RunWriter()
 
-	require.Equal(t, db, db.Database())
-	require.NoError(t, db.Reload())
-
 	_, err = db.User()
 	require.Equal(t, err, ErrAdmin)
 
@@ -45,7 +41,6 @@ func TestDatabaseOperatorBasics(t *testing.T) {
 
 	require.Equal(t, AdminName, db.Name())
 
-	require.True(t, db.Permissions(users.ROOT))
 }
 
 func TestCacheCuriosities(t *testing.T) {

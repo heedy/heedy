@@ -3,6 +3,8 @@ package streamdb
 import (
 	"testing"
 
+	"connectordb/streamdb/operator"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +19,7 @@ func TestAuthStreamIO(t *testing.T) {
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
 	require.NoError(t, db.CreateDevice("tst/tst"))
 
-	o, err := db.Operator("tst/tst")
+	o, err := db.GetOperator("tst/tst")
 	require.NoError(t, err)
 
 	require.NoError(t, o.CreateStream("tst/tst/tst", `{"type": "integer"}`))
@@ -31,7 +33,7 @@ func TestAuthStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	l, err = o.LengthStreamByID(strm.StreamId)
 
-	data := []Datapoint{Datapoint{
+	data := []operator.Datapoint{operator.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}
@@ -103,10 +105,10 @@ func TestAuthSubstream(t *testing.T) {
 	require.NoError(t, db.UpdateStream(s))
 
 	require.NoError(t, db.SetAdmin("tst/tst", true))
-	o, err := db.Operator("tst/tst")
+	o, err := db.GetOperator("tst/tst")
 	require.NoError(t, err)
 
-	data := []Datapoint{Datapoint{
+	data := []operator.Datapoint{operator.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}

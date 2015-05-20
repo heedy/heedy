@@ -20,7 +20,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	testdevice, err := db.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 
-	o, err := db.Operator("streamdb_test")
+	o, err := db.GetOperator("streamdb_test")
 	require.NoError(t, err)
 
 	devs, err := o.ReadAllDevices("streamdb_test")
@@ -114,7 +114,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	require.NoError(t, db.CreateDevice("tstusr/testdevice"))
 	require.NoError(t, db.CreateDevice("tstusr/test"))
 
-	o, err := db.Operator("tstusr/test")
+	o, err := db.GetOperator("tstusr/test")
 	require.NoError(t, err)
 
 	//This device should not be able to CRUD other devices

@@ -1,4 +1,4 @@
-package streamdb
+package operator
 
 import (
 	"connectordb/streamdb/schema"

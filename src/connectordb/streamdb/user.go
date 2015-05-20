@@ -93,39 +93,6 @@ func (o *Database) UpdateUser(modifieduser *users.User) error {
 	return err
 }
 
-//ChangeUserPassword changes the password for the given user
-func (o *Database) ChangeUserPassword(username, newpass string) error {
-	u, err := o.ReadUser(username)
-	if err != nil {
-		return err
-	}
-	u.SetNewPassword(newpass)
-	return o.UpdateUser(u)
-}
-
-//DeleteUser deletes the given user - only admin can delete
-func (o *Database) DeleteUser(username string) error {
-	usr, err := o.ReadUser(username)
-	if err != nil {
-		return err //Workaround for issue #81
-	}
-
-	err = o.Userdb.DeleteUserByName(username)
-
-	//We want the user removed from user cache after it is deleted from UserDB,
-	//so that no process can reinsert in while it is deleting
-	o.userCache.RemoveName(username)
-
-	//This is inefficient but absolutely necessary for not giving errors
-	o.deviceCache.UnlinkNamePrefix(username + "/")
-	o.streamCache.UnlinkNamePrefix(username + "/")
-
-	if err == nil {
-		err = o.tdb.DeletePrefix(getTimebatchUserName(usr.UserId) + "/")
-	}
-	return err
-}
-
 //DeleteUserByID deletes a user using its ID
 func (o *Database) DeleteUserByID(userID int64) error {
 	usr, err := o.ReadUserByID(userID)

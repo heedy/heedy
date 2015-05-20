@@ -1,9 +1,9 @@
 package streamdb
 
 import (
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
 	"strconv"
 )
 
@@ -15,7 +15,7 @@ func getTimebatchDeviceName(dev *users.Device) string {
 	return getTimebatchUserName(dev.UserId) + "/" + strconv.FormatInt(dev.DeviceId, 32)
 }
 
-func (o *Database) getStreamTimebatchName(strm *Stream) (string, error) {
+func (o *Database) getStreamTimebatchName(strm *operator.Stream) (string, error) {
 	dev, err := o.ReadDeviceByID(strm.DeviceId)
 	if err != nil {
 		return "", err
@@ -23,7 +23,7 @@ func (o *Database) getStreamTimebatchName(strm *Stream) (string, error) {
 	return getTimebatchDeviceName(dev) + "/" + strconv.FormatInt(strm.StreamId, 32) + "/", nil
 }
 
-func (o *Database) getStreamPath(strm *Stream) (string, error) {
+func (o *Database) getStreamPath(strm *operator.Stream) (string, error) {
 	//First try to extract the path from cache
 	_, streampath, _ := o.streamCache.GetByID(strm.StreamId)
 	if streampath != "" {
@@ -45,15 +45,6 @@ func (o *Database) getStreamPath(strm *Stream) (string, error) {
 	return usr.Name + "/" + dev.Name + "/" + strm.Name, nil
 }
 
-//LengthStream returns the total number of datapoints in the given stream
-func (o *Database) LengthStream(streampath string) (int64, error) {
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return 0, err
-	}
-	return o.LengthStreamByID(strm.StreamId)
-}
-
 //LengthStreamByID returns the total number of datapoints in the stream by ID
 func (o *Database) LengthStreamByID(streamID int64) (int64, error) {
 	strm, err := o.ReadStreamByID(streamID)
@@ -66,15 +57,6 @@ func (o *Database) LengthStreamByID(streamID int64) (int64, error) {
 	}
 	slen, err := o.tdb.Len(sname)
 	return int64(slen), err
-}
-
-//TimeToIndexStream returns the index closest to the given timestamp
-func (o *Database) TimeToIndexStream(streampath string, time float64) (int64, error) {
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return 0, err
-	}
-	return o.TimeToIndexStreamByID(strm.StreamId, time)
 }
 
 //TimeToIndexStreamByID returns the index for the given timestamp
@@ -91,27 +73,14 @@ func (o *Database) TimeToIndexStreamByID(streamID int64, time float64) (int64, e
 	return int64(sindex), err
 }
 
-//InsertStream inserts the given array of datapoints into the given stream.
-func (o *Database) InsertStream(streampath string, data []Datapoint) error {
-	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
-	if err != nil {
-		return err
-	}
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return err
-	}
-	return o.InsertStreamByID(strm.StreamId, data, substream)
-}
-
 //InsertStreamByID inserts into the stream given by the ID
-func (o *Database) InsertStreamByID(streamID int64, data []Datapoint, substream string) error {
+func (o *Database) InsertStreamByID(streamID int64, data []operator.Datapoint, substream string) error {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err
 	}
 
-	dpa, err := strm.convertDatapointArray(data)
+	dpa, err := strm.ConvertDatapointArray(data)
 	if err != nil {
 		return err
 	}
@@ -134,7 +103,7 @@ func (o *Database) InsertStreamByID(streamID int64, data []Datapoint, substream 
 		}
 	}
 
-	return o.msg.Publish(sname, Message{streampath, data})
+	return o.msg.Publish(sname, operator.Message{streampath, data})
 }
 
 //IntTimestamp converts a floating point unix timestamp to nanoseconds
@@ -142,18 +111,8 @@ func IntTimestamp(t float64) int64 {
 	return int64(1e9 * t)
 }
 
-//GetStreamTimeRange Reads the given stream by time range
-func (o *Database) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
-	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return nil, err
-	}
-	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2, limit, substream)
-}
-
 //GetStreamTimeRangeByID reads time range by ID
-func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (DatapointReader, error) {
+func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (operator.DatapointReader, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -170,21 +129,11 @@ func (o *Database) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64
 	if limit > 0 {
 		dr = timebatchdb.NewNumRange(dr, uint64(limit))
 	}
-	return NewRangeReader(dr, strm.s, ""), err
-}
-
-//GetStreamIndexRange Reads the given stream by index range
-func (o *Database) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error) {
-	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath, nil)
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return nil, err
-	}
-	return o.GetStreamIndexRangeByID(strm.StreamId, i1, i2, substream)
+	return operator.NewRangeReader(dr, strm.GetSchema(), ""), err
 }
 
 //GetStreamIndexRangeByID reads index range by ID
-func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (DatapointReader, error) {
+func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (operator.DatapointReader, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -196,5 +145,5 @@ func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, s
 	}
 
 	dr, err := o.tdb.GetIndexRange(sname+substream, uint64(i1), uint64(i2))
-	return NewRangeReader(dr, strm.s, ""), err
+	return operator.NewRangeReader(dr, strm.GetSchema(), ""), err
 }

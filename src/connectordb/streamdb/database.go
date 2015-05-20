@@ -2,7 +2,9 @@ package streamdb
 
 import (
 	"connectordb/config"
+	"connectordb/streamdb/authoperator"
 	"connectordb/streamdb/dbutil"
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
 	"connectordb/streamdb/util"
@@ -37,6 +39,8 @@ var (
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
+	operator.Operator //We need to do some magic so that the functions in Operator catch
+
 	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
 
 	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
@@ -114,40 +118,41 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 		go db.tdb.WriteDatabase()
 	}
 
+	//Magic: Allows using the Database object as an operator.
+	db.Operator = operator.Operator{&db}
+
 	return &db, nil
 
 }
 
 //DeviceLoginOperator returns the operator associated with the given API key
-func (db *Database) DeviceLoginOperator(devicepath, apikey string) (Operator, error) {
+func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Operator, error) {
 	dev, err := db.ReadDevice(devicepath)
 	if err != nil || dev.ApiKey != apikey {
-		return nil, ErrPermissions //Don't leak whether the device exists
+		return operator.Operator{}, authoperator.ErrPermissions //Don't leak whether the device exists
 	}
-
-	return &AuthOperator{db, devicepath, dev.DeviceId}, err
+	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
 //UserLoginOperator returns the operator associated with the given username/password combination
-func (db *Database) UserLoginOperator(username, password string) (Operator, error) {
+func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
 	dev, err := db.ReadDevice(username + "/user")
 	if err != nil {
-		return nil, ErrPermissions
+		return operator.Operator{}, authoperator.ErrPermissions
 	}
 
 	usr, err := db.ReadUserByID(dev.UserId)
 	if err != nil || !usr.ValidatePassword(password) {
-		return nil, ErrPermissions //We don't want to leak if a user exists or not
+		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
 	}
-
-	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, nil
+	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
 //LoginOperator logs in as a user or device, depending on which is passed in
-func (db *Database) LoginOperator(path, password string) (Operator, error) {
+func (db *Database) LoginOperator(path, password string) (operator.Operator, error) {
 	switch strings.Count(path, "/") {
 	default:
-		return nil, util.ErrBadPath
+		return operator.Operator{}, operator.ErrBadPath
 	case 1:
 		return db.DeviceLoginOperator(path, password)
 	case 0:
@@ -156,10 +161,10 @@ func (db *Database) LoginOperator(path, password string) (Operator, error) {
 }
 
 //Operator gets the operator by usr or device name
-func (db *Database) Operator(path string) (Operator, error) {
+func (db *Database) GetOperator(path string) (operator.Operator, error) {
 	switch strings.Count(path, "/") {
 	default:
-		return nil, util.ErrBadPath
+		return operator.Operator{}, operator.ErrBadPath
 	case 0:
 		path += "/user"
 	case 1:
@@ -167,22 +172,14 @@ func (db *Database) Operator(path string) (Operator, error) {
 	}
 	dev, err := db.ReadDevice(path)
 	if err != nil {
-		return nil, err //We use dev.Name, so must return error earlier
+		return operator.Operator{}, err //We use dev.Name, so must return error earlier
 	}
-	return &AuthOperator{db, path, dev.DeviceId}, err
+	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
 //DeviceOperator returns the operator for the given device ID
-func (db *Database) DeviceOperator(deviceID int64) (Operator, error) {
-	dev, err := db.ReadDeviceByID(deviceID)
-	if err != nil {
-		return nil, err
-	}
-	usr, err := db.ReadUserByID(dev.UserId)
-	if err != nil {
-		return nil, err
-	}
-	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId}, err
+func (db *Database) DeviceOperator(deviceID int64) (operator.Operator, error) {
+	return authoperator.NewAuthOperator(db, deviceID)
 }
 
 //Close closes all database connections and releases all resources.
@@ -191,11 +188,9 @@ func (db *Database) Close() {
 	if db.tdb != nil {
 		db.tdb.Close()
 	}
-
 	if db.msg != nil {
 		db.msg.Close()
 	}
-
 	if db.sqldb != nil {
 		db.sqldb.Close()
 	}
@@ -231,11 +226,6 @@ func (db *Database) Name() string {
 	return AdminName
 }
 
-//Database just returns self
-func (db *Database) Database() *Database {
-	return db
-}
-
 //Reload for a full database purges the entire cache
 func (db *Database) Reload() error {
 	db.userCache.Purge()
@@ -252,31 +242,4 @@ func (db *Database) User() (usr *users.User, err error) {
 //Device returns the current device
 func (db *Database) Device() (*users.Device, error) {
 	return nil, ErrAdmin
-}
-
-//Permissions returns whether the operator has permissions given by the string
-func (db *Database) Permissions(perm users.PermissionLevel) bool {
-	return true
-}
-
-//SetAdmin does exactly what it claims. It works on both users and devices
-func (db *Database) SetAdmin(path string, isadmin bool) error {
-	switch strings.Count(path, "/") {
-	default:
-		return util.ErrBadPath
-	case 0:
-		u, err := db.ReadUser(path)
-		if err != nil {
-			return err
-		}
-		u.Admin = isadmin
-		return db.UpdateUser(u)
-	case 1:
-		dev, err := db.ReadDevice(path)
-		if err != nil {
-			return err
-		}
-		dev.IsAdmin = isadmin
-		return db.UpdateDevice(dev)
-	}
 }

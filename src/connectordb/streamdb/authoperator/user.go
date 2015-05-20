@@ -1,4 +1,4 @@
-package streamdb
+package authoperator
 
 import "connectordb/streamdb/users"
 
@@ -75,24 +75,6 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
 	o.Db.UpdateUser(modifieduser)
 	return err
-}
-
-//ChangeUserPassword changes the password for the given user
-func (o *AuthOperator) ChangeUserPassword(username, newpass string) error {
-	u, err := o.ReadUser(username)
-	if err != nil {
-		return err
-	}
-	u.SetNewPassword(newpass)
-	return o.UpdateUser(u)
-}
-
-//DeleteUser deletes the given user - only admin can delete
-func (o *AuthOperator) DeleteUser(username string) error {
-	if !o.Permissions(users.ROOT) {
-		return ErrPermissions
-	}
-	return o.Db.DeleteUser(username)
 }
 
 //DeleteUserByID deletes the given user - only admin can delete

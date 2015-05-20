@@ -22,7 +22,6 @@ func TestAuthOperatorBasics(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "streamdb_test/user", o.Name())
-	require.Equal(t, db, o.Database())
 
 	u, err := o.User()
 	require.NoError(t, err)

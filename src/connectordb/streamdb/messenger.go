@@ -6,6 +6,7 @@ as well as the messaging system that allows real-time low-latency data analysis.
 */
 
 import (
+	"connectordb/streamdb/operator"
 	"strings"
 
 	"github.com/apcera/nats"
@@ -46,7 +47,7 @@ func ConnectMessenger(url string, err error) (*Messenger, error) {
 }
 
 //Publish sends the given message over the connection
-func (m *Messenger) Publish(routing string, msg Message) error {
+func (m *Messenger) Publish(routing string, msg operator.Message) error {
 	routing = strings.Replace(routing, "/", ".", -1)
 	if routing[len(routing)-1] == '.' {
 		routing = routing[0 : len(routing)-1]
@@ -63,7 +64,7 @@ func (m *Messenger) Publish(routing string, msg Message) error {
 //	msgr.Subscribe(">",chn)
 //Subscribing to a stream is:
 // msgr.Subscribe("user/device/stream")
-func (m *Messenger) Subscribe(routing string, chn chan Message) (*nats.Subscription, error) {
+func (m *Messenger) Subscribe(routing string, chn chan operator.Message) (*nats.Subscription, error) {
 	return m.Econn.BindRecvChan(strings.Replace(routing, "/", ".", -1), chn)
 }
 

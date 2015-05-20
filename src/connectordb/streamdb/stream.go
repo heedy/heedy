@@ -1,68 +1,159 @@
 package streamdb
 
 import (
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/schema"
-	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
-	"encoding/json"
 	"errors"
 )
 
 var (
-	//ErrSchema is thrown when schemas don't match
-	ErrSchema = errors.New("The datapoints did not match the stream's schema")
+	//ErrUnimplemented is thrown when we don't know what to do
+	ErrUnimplemented = errors.New("This operation is not yet implemented")
 )
 
-//Stream is a wrapper for the users.Stream object which encodes the schema and other parts of a stream
-type Stream struct {
-	users.Stream
-	Schema map[string]interface{} `json:"schema"` //This allows the JsonSchema to be directly unmarshalled
+//ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
+func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]operator.Stream, error) {
+	usrstrms, err := o.Userdb.ReadStreamsByDevice(deviceID)
 
-	//These are used internally for the stream to work out
-	s *schema.Schema //The schema associated with the stream
+	//Now convert the users.Stream to Stream objects
+	strms := make([]operator.Stream, len(usrstrms))
+	for i := range usrstrms {
+		strms[i], err = operator.NewStream(&usrstrms[i], err)
+	}
+	return strms, err
 }
 
-//NewStream returns a new stream object
-func NewStream(s *users.Stream, err error) (Stream, error) {
-	if err != nil {
-		return Stream{}, err
+//CreateStreamByDeviceID creates a stream using a device ID instead of path
+func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
+	//Validate that the schema is correct
+	if _, err := schema.NewSchema(jsonschema); err != nil {
+		return err
 	}
-
-	strmschema, err := schema.NewSchema(s.Type)
-	if err != nil {
-		return Stream{}, err
-	}
-	var schemamap map[string]interface{}
-
-	err = json.Unmarshal([]byte(s.Type), &schemamap)
-
-	return Stream{*s, schemamap, strmschema}, err
+	return o.Userdb.CreateStream(streamname, jsonschema, deviceID)
 }
 
-//Validate ensures the array of datapoints conforms to the schema and such
-func (s *Stream) Validate(data []Datapoint) bool {
-	for i := range data {
-		if !s.s.IsValid(data[i].Data) {
-			return false
+//ReadStream reads the given stream
+func (o *Database) ReadStream(streampath string) (*operator.Stream, error) {
+	//Make sure that substreams are stripped from read
+	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath, nil)
+	if err != nil {
+		return nil, err
+	}
+	//Check if the stream is in the cache
+	if s, ok := o.streamCache.GetByName(streampath); ok {
+		strm := s.(operator.Stream)
+		return &strm, nil
+	}
+
+	dev, err := o.ReadDevice(devicepath)
+	if err != nil {
+		return nil, err
+	}
+	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(dev.DeviceId, streamname)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+
+	//Now we add the stream to cache
+	o.streamCache.Set(streampath, strm.StreamId, strm) //This makes a copy in the cache
+	return &strm, nil
+}
+
+//ReadStreamByID reads a stream using a stream's ID
+func (o *Database) ReadStreamByID(streamID int64) (*operator.Stream, error) {
+	if s, _, ok := o.streamCache.GetByID(streamID); ok {
+		strm := s.(operator.Stream)
+		return &strm, nil
+	}
+
+	usrstrm, err := o.Userdb.ReadStreamById(streamID)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+
+	//Add the stream to the cache. Since we don't know its full path, see if its device is cached,
+	//and attempt to take the path from there
+	if _, devpath, ok := o.deviceCache.GetByID(strm.DeviceId); ok && devpath != "" {
+		o.streamCache.Set(devpath+"/"+strm.Name, strm.StreamId, strm)
+	} else {
+		o.streamCache.SetID(strm.StreamId, strm)
+	}
+
+	return &strm, err
+}
+
+//ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
+func (o *Database) ReadStreamByDeviceID(deviceID int64, streamname string) (*operator.Stream, error) {
+	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+	o.streamCache.SetID(strm.StreamId, strm)
+	return &strm, nil
+}
+
+//UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
+//if someone attempts to update the schema (which is an illegal operation anyways)
+func (o *Database) UpdateStream(modifiedstream *operator.Stream) error {
+	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
+	if err != nil {
+		return err
+	}
+	if modifiedstream.RevertUneditableFields(strm.Stream, users.ROOT) > 0 {
+		return ErrNotChangeable
+	}
+
+	err = o.Userdb.UpdateStream(&modifiedstream.Stream)
+	if err == nil {
+		if strm.Downlink == true && modifiedstream.Downlink == false {
+			//There was a downlink here. Since the downlink was removed, we delete the associated
+			//downlink substream
+			o.DeleteStreamByID(strm.StreamId, "downlink")
+		}
+
+		//If the stream name was changed, modify the stream name in cache
+		if strm.Name == modifiedstream.Name {
+			o.streamCache.Update(strm.StreamId, *modifiedstream)
+		} else {
+			//Attempt to recover the path by name using only cache
+			if _, devpath, _ := o.deviceCache.GetByID(strm.DeviceId); devpath != "" {
+				o.streamCache.Set(devpath+"/"+modifiedstream.Name, strm.StreamId, *modifiedstream)
+			} else {
+				o.streamCache.SetID(strm.StreamId, *modifiedstream)
+			}
 		}
 	}
-	return true
+	return err
 }
 
-//Converts a datapoint array to the timebatch equivalent, which is based on byte arrays
-func (s *Stream) convertDatapointArray(data []Datapoint) (*timebatchdb.DatapointArray, error) {
-	if !s.Validate(data) {
-		return nil, ErrSchema
+//DeleteStreamByID deletes the stream using ID
+func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
+	strm, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return err //Workaround #81
 	}
 
-	tbdpa := make([]timebatchdb.Datapoint, len(data))
-	for i := range data {
-		dpbytes, err := s.s.Marshal(data[i].Data)
-		if err != nil {
-			return nil, err
+	sname, err := o.getStreamTimebatchName(strm)
+	if err != nil {
+		return err
+	}
+	if substream != "" {
+		//We just delete the substream
+		err = o.tdb.Delete(sname + substream)
+	} else {
+		//We remove all substreams from timebatch. Right now it is only the downlink substream
+		o.tdb.Delete(sname + "downlink")
+
+		err = o.Userdb.DeleteStream(streamID)
+		if err == nil {
+			err = o.tdb.Delete(sname)
 		}
-		tbdpa[i] = timebatchdb.NewDatapoint(data[i].IntTimestamp(), dpbytes, data[i].Sender)
+		o.streamCache.RemoveID(streamID)
 	}
+	return err
 
-	return timebatchdb.NewDatapointArray(tbdpa), nil
 }

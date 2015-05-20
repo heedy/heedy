@@ -1,47 +1,22 @@
 package streamdb
 
 import (
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
-
-	"github.com/nu7hatch/gouuid"
 )
 
 //ReadDeviceUser gets the user associated with the given device path
 func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) {
-	username, _, err := util.SplitDevicePath(devicepath, nil)
+	username, _, err := operator.SplitDevicePath(devicepath, nil)
 	if err != nil {
 		return nil, err
 	}
 	return o.ReadUser(username)
 }
 
-//ReadAllDevices for the given user
-func (o *Database) ReadAllDevices(username string) ([]users.Device, error) {
-	u, err := o.ReadUser(username)
-	if err != nil {
-		return nil, err
-	}
-	return o.ReadAllDevicesByUserID(u.UserId)
-}
-
 //ReadAllDevicesByUserID reads all devices for the given user's ID
 func (o *Database) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) {
 	return o.Userdb.ReadDevicesForUserId(userID)
-}
-
-//CreateDevice creates a new device at the given path
-func (o *Database) CreateDevice(devicepath string) error {
-	userName, deviceName, err := util.SplitDevicePath(devicepath, nil)
-	if err != nil {
-		return err
-	}
-	u, err := o.ReadUser(userName)
-	if err != nil {
-		return err
-	}
-
-	return o.CreateDeviceByUserID(u.UserId, deviceName)
 }
 
 //CreateDeviceByUserID makes a new device using the UserID as source user
@@ -57,7 +32,7 @@ func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 		return &dev, nil
 	}
 	//Apparently not. Get the device from userdb
-	usrname, devname, err := util.SplitDevicePath(devicepath, nil)
+	usrname, devname, err := operator.SplitDevicePath(devicepath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,29 +109,6 @@ func (o *Database) UpdateDevice(modifieddevice *users.Device) error {
 		}
 	}
 	return err
-}
-
-//ChangeDeviceAPIKey generates a new api key for the given device, and returns the key
-func (o *Database) ChangeDeviceAPIKey(devicepath string) (apikey string, err error) {
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return "", err
-	}
-	newkey, err := uuid.NewV4()
-	if err != nil {
-		return "", err
-	}
-	dev.ApiKey = newkey.String()
-	return dev.ApiKey, o.UpdateDevice(dev)
-}
-
-//DeleteDevice deletes an existing device
-func (o *Database) DeleteDevice(devicepath string) error {
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return err //Workaround for #81
-	}
-	return o.DeleteDeviceByID(dev.DeviceId)
 }
 
 //DeleteDeviceByID deletes the device using its deviceID

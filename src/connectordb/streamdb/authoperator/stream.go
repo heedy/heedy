@@ -1,13 +1,13 @@
-package streamdb
+package authoperator
 
 import (
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
 )
 
 //ReadStreamDevice gets the device associated with the given stream path
 func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err error) {
-	_, devicepath, _, _, _, err := util.SplitStreamPath(streampath, nil)
+	_, devicepath, _, _, _, err := operator.SplitStreamPath(streampath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -15,7 +15,7 @@ func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err
 }
 
 //ReadStreamAndDevice reads both stream and device
-func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, s *Stream, err error) {
+func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, s *operator.Stream, err error) {
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, nil, err
@@ -24,24 +24,8 @@ func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, 
 	return dev, strm, err
 }
 
-//ReadAllStreams reads all streams associated with the device
-func (o *AuthOperator) ReadAllStreams(devicepath string) ([]Stream, error) {
-	odev, err := o.Device()
-	if err != nil {
-		return nil, err
-	}
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return nil, err
-	}
-	if odev.RelationToDevice(dev).Gte(users.FAMILY) {
-		return o.Db.ReadAllStreams(devicepath)
-	}
-	return nil, err
-}
-
 //ReadAllStreamsByDeviceID reads all streams associated with the device
-func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error) {
+func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]operator.Stream, error) {
 	odev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -54,22 +38,6 @@ func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error
 		return o.Db.ReadAllStreamsByDeviceID(deviceID)
 	}
 	return nil, err
-}
-
-//CreateStream creates a new stream
-func (o *AuthOperator) CreateStream(streampath, jsonschema string) error {
-	odev, err := o.Device()
-	if err != nil {
-		return err
-	}
-	dev, err := o.ReadStreamDevice(streampath)
-	if err != nil {
-		return err
-	}
-	if odev.RelationToDevice(dev).Gte(users.DEVICE) {
-		return o.Db.CreateStream(streampath, jsonschema)
-	}
-	return ErrPermissions
 }
 
 //CreateStreamByDeviceID creates a new stream
@@ -89,7 +57,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 }
 
 //ReadStream reads the given stream
-func (o *AuthOperator) ReadStream(streampath string) (*Stream, error) {
+func (o *AuthOperator) ReadStream(streampath string) (*operator.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -110,7 +78,7 @@ func (o *AuthOperator) ReadStream(streampath string) (*Stream, error) {
 }
 
 //ReadStreamByID reads the given stream using its ID
-func (o *AuthOperator) ReadStreamByID(streamID int64) (*Stream, error) {
+func (o *AuthOperator) ReadStreamByID(streamID int64) (*operator.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -131,7 +99,7 @@ func (o *AuthOperator) ReadStreamByID(streamID int64) (*Stream, error) {
 }
 
 //ReadStreamByDeviceID reads the stream given a device ID and the stream name
-func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*Stream, error) {
+func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*operator.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -152,7 +120,7 @@ func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 }
 
 //UpdateStream updates the stream
-func (o *AuthOperator) UpdateStream(modifiedstream *Stream) error {
+func (o *AuthOperator) UpdateStream(modifiedstream *operator.Stream) error {
 	odev, err := o.Device()
 	if err != nil {
 		return err
@@ -167,25 +135,9 @@ func (o *AuthOperator) UpdateStream(modifiedstream *Stream) error {
 	}
 	permission := odev.RelationToStream(&strm.Stream, dev)
 	if modifiedstream.RevertUneditableFields(strm.Stream, permission) > 0 {
-		return ErrNotChangeable
+		return ErrPermissions
 	}
 	return o.Db.UpdateStream(modifiedstream)
-}
-
-//DeleteStream deletes the stream at the given path
-func (o *AuthOperator) DeleteStream(streampath string) error {
-	odev, err := o.Device()
-	if err != nil {
-		return err
-	}
-	dev, strm, err := o.ReadStreamAndDevice(streampath)
-	if err != nil {
-		return err
-	}
-	if odev.RelationToStream(&strm.Stream, dev).Gte(users.DEVICE) {
-		return o.Db.DeleteStream(streampath)
-	}
-	return ErrPermissions
 }
 
 //DeleteStreamByID Delete the stream using ID... This doesn't actually use the ID internally

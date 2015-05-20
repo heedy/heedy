@@ -1,6 +1,7 @@
 package streamdb
 
 import (
+	"connectordb/streamdb/operator"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,13 +31,13 @@ func TestStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l)
 
-	data := []Datapoint{Datapoint{
+	data := []operator.Datapoint{operator.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}
 	require.Error(t, db.InsertStream("tst/tst/tst", data), "insert succeeds on data which does not fit schema")
 
-	data = []Datapoint{Datapoint{
+	data = []operator.Datapoint{operator.Datapoint{
 		Timestamp: 1.0,
 		Data:      "Hello World!",
 	}}
@@ -46,10 +47,10 @@ func TestStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), l)
 
-	data = []Datapoint{Datapoint{
+	data = []operator.Datapoint{operator.Datapoint{
 		Timestamp: 2.0,
 		Data:      "2",
-	}, Datapoint{
+	}, operator.Datapoint{
 		Timestamp: 3.0,
 		Data:      "3",
 	}}

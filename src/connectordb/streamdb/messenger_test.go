@@ -1,6 +1,7 @@
 package streamdb
 
 import (
+	"connectordb/streamdb/operator"
 	"errors"
 	"testing"
 	"time"
@@ -27,12 +28,12 @@ func TestMessenger(t *testing.T) {
 	require.NoError(t, err)
 	defer msg2.Close()
 
-	recvchan := make(chan Message)
+	recvchan := make(chan operator.Message)
 
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- Message{"TIMEOUT", []Datapoint{}}
+		recvchan <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
 	}()
 
 	_, err = msg2.Subscribe("user1/device1/stream1", recvchan)
@@ -43,7 +44,7 @@ func TestMessenger(t *testing.T) {
 	msg2.Flush()
 
 	//Now, publish a message
-	err = msg.Publish("user1/device1/stream1/", Message{"user1/device1/stream1", []Datapoint{Datapoint{Data: "Hello"}}})
+	err = msg.Publish("user1/device1/stream1/", operator.Message{"user1/device1/stream1", []operator.Datapoint{operator.Datapoint{Data: "Hello"}}})
 	require.NoError(t, err)
 
 	m := <-recvchan
@@ -56,7 +57,7 @@ func TestMessenger(t *testing.T) {
 	require.NoError(t, err)
 
 	msg2.Flush()
-	require.NoError(t, msg.Publish("user1/device2/stream2", Message{"user1/device2/stream2", []Datapoint{Datapoint{Data: "Hi"}}}))
+	require.NoError(t, msg.Publish("user1/device2/stream2", operator.Message{"user1/device2/stream2", []operator.Datapoint{operator.Datapoint{Data: "Hi"}}}))
 
 	m = <-recvchan
 	require.Equal(t, m.Stream, "user1/device2/stream2")

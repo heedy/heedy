@@ -22,7 +22,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, db.CreateDevice("tst/testdevice2"))
 	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
 
-	o, err := db.Operator("tst/testdevice")
+	o, err := db.GetOperator("tst/testdevice")
 	require.NoError(t, err)
 
 	dev, err := db.ReadDevice("tst/testdevice2")
