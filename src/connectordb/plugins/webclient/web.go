@@ -2,6 +2,7 @@ package webclient
 
 import (
 	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
 	"encoding/gob"
 	"html/template"
@@ -26,7 +27,7 @@ var (
 	loginPageTemplate  *template.Template
 
 	firstrun    bool
-	webOperator *streamdb.Operator
+	webOperator *operator.Operator
 )
 
 func init() {

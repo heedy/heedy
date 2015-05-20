@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +20,7 @@ func getStreamPath(request *http.Request) (username string, devicename string, s
 }
 
 //ListStreams lists the streams that the given device has
-func ListStreams(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, devpath := getDevicePath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListStreams", "arg": devpath})
 	logger.Debugln()
@@ -29,7 +29,7 @@ func ListStreams(o streamdb.Operator, writer http.ResponseWriter, request *http.
 }
 
 //CreateStream creates a new stream from a REST API request
-func CreateStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, streamname, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateStream", "arg": streampath})
 	logger.Infoln()
@@ -62,7 +62,7 @@ func CreateStream(o streamdb.Operator, writer http.ResponseWriter, request *http
 }
 
 //ReadStream reads a stream from a REST API request
-func ReadStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 
 	if err := BadQ(o, writer, request, streampath); err != nil {
@@ -77,7 +77,7 @@ func ReadStream(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //UpdateStream updates the metadata for existing stream from a REST API request
-func UpdateStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateStream", "arg": streampath})
 	logger.Infoln()
@@ -104,7 +104,7 @@ func UpdateStream(o streamdb.Operator, writer http.ResponseWriter, request *http
 }
 
 //DeleteStream deletes existing stream from a REST API request
-func DeleteStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteStream", "arg": streampath})
 	logger.Infoln()

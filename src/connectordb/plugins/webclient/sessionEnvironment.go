@@ -1,7 +1,7 @@
 package webclient
 
 import (
-	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
 	"errors"
 	"net/http"
@@ -22,7 +22,7 @@ type SessionEnvironment struct {
 	Session  *sessions.Session
 	User     *users.User
 	Device   *users.Device
-	Operator streamdb.Operator
+	Operator operator.Operator
 }
 
 // Logs a user out of the system by destroying keys in their session

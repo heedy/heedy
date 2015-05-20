@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"encoding/json"
 	"errors"
 	"io"
@@ -81,7 +81,7 @@ func ValidName(n string, err error) error {
 }
 
 //BadQ checks if there is a q= part to the given query, and gives an error if there is
-func BadQ(o streamdb.Operator, writer http.ResponseWriter, request *http.Request, arg string) error {
+func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, arg string) error {
 	if val := request.URL.Query().Get("q"); val != "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr,

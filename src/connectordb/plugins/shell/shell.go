@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"connectordb/plugins"
 	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"fmt"
 	"os"
 	"strings"
@@ -69,7 +70,7 @@ type Shell struct {
 	host            string
 	reader          *bufio.Reader
 	sdb             *streamdb.Database
-	operator        streamdb.Operator
+	operator        operator.Operator
 	operatorName    string // can be changed when we do a su
 }
 
@@ -118,7 +119,7 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
-	s.operator = sdb
+	s.operator = sdb.Operator
 	s.operatorName = "ConnectorDB"
 	return &s
 }

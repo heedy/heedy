@@ -2,6 +2,7 @@ package rest
 
 import (
 	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -30,7 +31,7 @@ var (
 )
 
 //APIHandler is a function that handles some part of the REST API given a specific operator on the database.
-type APIHandler func(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error
+type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request) error
 
 func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

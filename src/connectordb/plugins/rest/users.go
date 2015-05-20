@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -10,7 +10,7 @@ import (
 )
 
 //ListUsers lists the users that the given operator can see
-func ListUsers(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ListUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListUsers"})
 	logger.Debugln()
 	u, err := o.ReadAllUsers()
@@ -28,7 +28,7 @@ type userCreator struct {
 }
 
 //CreateUser creates a new user from a REST API request
-func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateUser", "arg": usrname})
 	logger.Infoln()
@@ -51,7 +51,7 @@ func CreateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //ReadUser reads the given user
-func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ReadUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
 
 	if err := BadQ(o, writer, request, usrname); err != nil {
@@ -70,7 +70,7 @@ func ReadUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Req
 }
 
 //UpdateUser updates the metadata for existing user from a REST API request
-func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateUser", "arg": usrname})
 	logger.Infoln()
@@ -103,7 +103,7 @@ func UpdateUser(o streamdb.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //DeleteUser deletes existing user from a REST API request
-func DeleteUser(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	usrname := mux.Vars(request)["user"]
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteUser", "arg": usrname})
 	logger.Infoln()

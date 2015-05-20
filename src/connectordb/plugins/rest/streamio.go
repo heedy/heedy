@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"errors"
 	"io"
 	"net/http"
@@ -18,7 +18,7 @@ var (
 )
 
 //GetStreamLength gets the stream length
-func GetStreamLength(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamLength", "arg": streampath})
 	logger.Debugln()
@@ -29,11 +29,11 @@ func GetStreamLength(o streamdb.Operator, writer http.ResponseWriter, request *h
 }
 
 //WriteStream writes the given stream
-func WriteStream(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "WriteStream", "arg": streampath})
 
-	var datapoints []streamdb.Datapoint
+	var datapoints []operator.Datapoint
 	err := UnmarshalRequest(request, &datapoints)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -52,14 +52,14 @@ func WriteStream(o streamdb.Operator, writer http.ResponseWriter, request *http.
 	return OK(writer)
 }
 
-func writeJSONResult(writer http.ResponseWriter, dr streamdb.DatapointReader, logger *log.Entry, err error) error {
+func writeJSONResult(writer http.ResponseWriter, dr operator.DatapointReader, logger *log.Entry, err error) error {
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
 		return err
 	}
 
-	jreader, err := streamdb.NewJsonReader(dr)
+	jreader, err := operator.NewJsonReader(dr)
 	if err != nil {
 		if err == io.EOF {
 			writer.WriteHeader(http.StatusOK)
@@ -81,7 +81,7 @@ func writeJSONResult(writer http.ResponseWriter, dr streamdb.DatapointReader, lo
 }
 
 //GetStreamRangeI reads the given stream by index
-func GetStreamRangeI(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamRangeI", "arg": streampath})
 	q := request.URL.Query()
@@ -112,7 +112,7 @@ func GetStreamRangeI(o streamdb.Operator, writer http.ResponseWriter, request *h
 }
 
 //GetStreamRangeT reads the given stream by index
-func GetStreamRangeT(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamRangeT(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamRangeT", "arg": streampath})
 	q := request.URL.Query()
@@ -159,7 +159,7 @@ func GetStreamRangeT(o streamdb.Operator, writer http.ResponseWriter, request *h
 }
 
 //StreamTime2Index gets the time associated with the index
-func StreamTime2Index(o streamdb.Operator, writer http.ResponseWriter, request *http.Request) error {
+func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "Time2Index", "arg": streampath})
 

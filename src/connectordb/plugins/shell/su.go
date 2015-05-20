@@ -35,7 +35,7 @@ func (h Su) Execute(shell *Shell, args []string) {
 
 	username := args[1]
 
-	suOperator, err := shell.sdb.Database().Operator(username)
+	suOperator, err := shell.sdb.GetOperator(username)
 	if shell.PrintError(err) {
 		return
 	}
