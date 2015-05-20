@@ -100,7 +100,7 @@ start
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
-go test -cover streamdb/...
+go test -cover connectordb/...
 test_status=$?
 stop
 check_pids

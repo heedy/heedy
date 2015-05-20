@@ -1,20 +1,21 @@
 package main
 
 import (
+	_ "connectordb/plugins/run"
+	_ "connectordb/plugins/shell"
+	_ "connectordb/plugins/webclient"
+
+	"connectordb/config"
+	"connectordb/plugins"
+	"connectordb/services"
+	"connectordb/streamdb"
+	"connectordb/streamdb/util"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"plugins"
-	_ "plugins/run"
-	_ "plugins/shell"
-	_ "plugins/webclient"
 	"runtime"
 	"runtime/pprof"
-	"streamdb"
-	"streamdb/config"
-	"streamdb/dbmaker"
-	"streamdb/util"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -144,19 +145,19 @@ func createDatabase() error {
 	log.Debugln("CONFIG:", config.GetConfiguration())
 
 	log.Debugln("CONNECTORDB: Doing Init")
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+	if err := services.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
 	log.Debugln("CONNECTORDB: Creating Files")
-	if err := dbmaker.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
+	if err := services.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
 		return err
 	}
 
 	log.Println("CONNECTORDB: Stopping any subsystems")
 
-	dbmaker.Stop(config.GetConfiguration())
-	//dbmaker.Kill(config.GetConfiguration())
+	services.Stop(config.GetConfiguration())
+	//services.Kill(config.GetConfiguration())
 
 	fmt.Printf("\nDatabase created successfully.\n")
 	return nil
@@ -175,11 +176,11 @@ func startDatabase(dbPath string) error {
 		return err
 	}
 
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+	if err := services.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	return dbmaker.Start(config.GetConfiguration())
+	return services.Start(config.GetConfiguration())
 }
 
 func stopDatabase(dbPath string) error {
@@ -191,11 +192,11 @@ func stopDatabase(dbPath string) error {
 		return err
 	}
 
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+	if err := services.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
+	if err := services.Stop(config.GetConfiguration()); err != nil {
 		log.Errorln(err.Error())
 	}
 
@@ -213,7 +214,7 @@ func upgradeDatabase(dbPath string) error {
 
 	// Start the server
 
-	return dbmaker.Upgrade()
+	return services.Upgrade()
 }
 
 func runPlugin(cmd, dbPath string) error {

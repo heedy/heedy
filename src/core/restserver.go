@@ -1,12 +1,12 @@
 package main
 
 import (
+	"connectordb/plugins/rest"
+	"connectordb/streamdb"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"plugins/rest"
-	"streamdb"
 
 	log "github.com/Sirupsen/logrus"
 )
