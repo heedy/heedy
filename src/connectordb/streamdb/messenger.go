@@ -17,14 +17,18 @@ import (
 
 //Messenger holds an open connection to the gnatsd daemon
 type Messenger struct {
-	Conn  *nats.Conn        //The NATS connection
-	Econn *nats.EncodedConn //The Encoded conn, ie, a data message
+	SendConn  *nats.Conn        //The NATS connection
+	SendEconn *nats.EncodedConn //The Encoded conn, ie, a data message
+	RecvConn  *nats.Conn
+	RecvEconn *nats.EncodedConn
 }
 
 //Close shuts down a Messenger
 func (m *Messenger) Close() {
-	m.Econn.Close()
-	m.Conn.Close()
+	m.SendEconn.Close()
+	m.RecvEconn.Close()
+	m.RecvConn.Close()
+	m.SendConn.Close()
 }
 
 //ConnectMessenger initializes a connection with the gnatsd messenger. Allows daisy-chaining errors
@@ -33,17 +37,31 @@ func ConnectMessenger(url string, err error) (*Messenger, error) {
 		return nil, err
 	}
 
-	conn, err := nats.Connect("nats://" + url)
+	sconn, err := nats.Connect("nats://" + url)
 	if err != nil {
 		return nil, err
 	}
-	econn, err := nats.NewEncodedConn(conn, "gob")
+	seconn, err := nats.NewEncodedConn(sconn, "json")
 	if err != nil {
-		conn.Close()
+		sconn.Close()
 		return nil, err
 	}
 
-	return &Messenger{conn, econn}, nil
+	rconn, err := nats.Connect("nats://" + url)
+	if err != nil {
+		seconn.Close()
+		sconn.Close()
+		return nil, err
+	}
+	reconn, err := nats.NewEncodedConn(rconn, "json")
+	if err != nil {
+		seconn.Close()
+		sconn.Close()
+		rconn.Close()
+		return nil, err
+	}
+
+	return &Messenger{sconn, seconn, rconn, reconn}, nil
 }
 
 //Publish sends the given message over the connection
@@ -52,7 +70,7 @@ func (m *Messenger) Publish(routing string, msg operator.Message) error {
 	if routing[len(routing)-1] == '.' {
 		routing = routing[0 : len(routing)-1]
 	}
-	return m.Econn.Publish(routing, msg)
+	return m.SendEconn.Publish(routing, msg)
 }
 
 //Subscribe creates a subscription for the given routing string. The routing string is of the format:
@@ -65,10 +83,14 @@ func (m *Messenger) Publish(routing string, msg operator.Message) error {
 //Subscribing to a stream is:
 // msgr.Subscribe("user/device/stream")
 func (m *Messenger) Subscribe(routing string, chn chan operator.Message) (*nats.Subscription, error) {
-	return m.Econn.BindRecvChan(strings.Replace(routing, "/", ".", -1), chn)
+	routing = strings.Replace(routing, "/", ".", -1)
+	if routing[len(routing)-1] == '.' {
+		routing = routing[0 : len(routing)-1]
+	}
+	return m.RecvEconn.BindRecvChan(routing, chn)
 }
 
 //Flush makes sure all commands are acknowledged by the server
 func (m *Messenger) Flush() {
-	m.Econn.Flush()
+	m.SendEconn.Flush()
 }

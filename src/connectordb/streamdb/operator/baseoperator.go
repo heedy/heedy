@@ -1,6 +1,10 @@
 package operator
 
-import "connectordb/streamdb/users"
+import (
+	"connectordb/streamdb/users"
+
+	"github.com/apcera/nats"
+)
 
 //BaseOperator are the functions which must be implemented in order to use Operator.
 //If these functions are implemented, then the operator is complete, and all functionality
@@ -50,4 +54,8 @@ type BaseOperator interface {
 	InsertStreamByID(streamID int64, data []Datapoint, substream string) error
 	GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (DatapointReader, error)
 	GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (DatapointReader, error)
+
+	SubscribeUserByID(userID int64, chn chan Message) (*nats.Subscription, error)
+	SubscribeDeviceByID(deviceID int64, chn chan Message) (*nats.Subscription, error)
+	SubscribeStreamByID(streamID int64, substream string, chn chan Message) (*nats.Subscription, error)
 }

@@ -4,6 +4,7 @@ import (
 	"connectordb/streamdb/users"
 	"strings"
 
+	"github.com/apcera/nats"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -32,6 +33,18 @@ func (o Operator) SetAdmin(path string, isadmin bool) error {
 		}
 		dev.IsAdmin = isadmin
 		return o.UpdateDevice(dev)
+	}
+}
+
+//Subscribe given a path, attempts to subscribe to it and its childrens
+func (o Operator) Subscribe(path string, chn chan Message) (*nats.Subscription, error) {
+	switch strings.Count(path, "/") {
+	default:
+		return o.SubscribeStream(path, chn)
+	case 0:
+		return o.SubscribeUser(path, chn)
+	case 1:
+		return o.SubscribeDevice(path, chn)
 	}
 }
 
@@ -169,6 +182,9 @@ func (o Operator) InsertStream(streampath string, data []Datapoint) error {
 //GetStreamTimeRange Reads the given stream by time range
 func (o Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
 	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	if err != nil {
+		return nil, err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
@@ -179,9 +195,43 @@ func (o Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, 
 //GetStreamIndexRange Reads the given stream by index range
 func (o Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error) {
 	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	if err != nil {
+		return nil, err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
 	return o.GetStreamIndexRangeByID(strm.StreamId, i1, i2, substream)
+}
+
+//SubscribeUser subscribes to everything the user does
+func (o Operator) SubscribeUser(username string, chn chan Message) (*nats.Subscription, error) {
+	usr, err := o.ReadUser(username)
+	if err != nil {
+		return nil, err
+	}
+	return o.SubscribeUserByID(usr.UserId, chn)
+}
+
+//SubscribeDevice subscribes to everythnig the device does
+func (o Operator) SubscribeDevice(devpath string, chn chan Message) (*nats.Subscription, error) {
+	dev, err := o.ReadDevice(devpath)
+	if err != nil {
+		return nil, err
+	}
+	return o.SubscribeDeviceByID(dev.DeviceId, chn)
+}
+
+//SubscribeStream subscribes to the given stream
+func (o Operator) SubscribeStream(streampath string, chn chan Message) (*nats.Subscription, error) {
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	if err != nil {
+		return nil, err
+	}
+	strm, err := o.ReadStream(streampath)
+	if err != nil {
+		return nil, err
+	}
+	return o.SubscribeStreamByID(strm.StreamId, substream, chn)
 }
