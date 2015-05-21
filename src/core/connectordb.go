@@ -1,20 +1,21 @@
 package main
 
 import (
+	_ "connectordb/plugins/run"
+	_ "connectordb/plugins/shell"
+	_ "connectordb/plugins/webclient"
+
+	"connectordb/config"
+	"connectordb/plugins"
+	"connectordb/services"
+	"connectordb/streamdb"
+	"connectordb/streamdb/util"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"plugins"
-	_ "plugins/run"
-	_ "plugins/shell"
-	_ "plugins/webclient"
 	"runtime"
 	"runtime/pprof"
-	"streamdb"
-	"streamdb/config"
-	"streamdb/dbmaker"
-	"streamdb/util"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -117,7 +118,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("Error: A problem occured during %v:\n\n%v\n", commandName, err)
+		log.Errorf("A problem occured during %v:\n\n%v\n", commandName, err)
 	}
 }
 
@@ -133,7 +134,7 @@ func createDatabase() error {
 	//extract the username and password from the formatted string
 	usernamePasswordArray := strings.Split(*createUsernamePassword, ":")
 	if len(usernamePasswordArray) != 2 {
-		fmt.Println("--user: Username and password not given in format <username>:<password>")
+		log.Errorln("--user: Username and password not given in format <username>:<password>")
 		createFlags.PrintDefaults()
 		return nil
 	}
@@ -143,20 +144,20 @@ func createDatabase() error {
 	config.GetConfiguration().DatabaseType = *createDbType
 	log.Debugln("CONFIG:", config.GetConfiguration())
 
-	log.Println("CONNECTORDB: Doing Init")
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+	log.Debugln("CONNECTORDB: Doing Init")
+	if err := services.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	log.Println("CONNECTORDB: Creating Files")
-	if err := dbmaker.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
+	log.Debugln("CONNECTORDB: Creating Files")
+	if err := services.Create(config.GetConfiguration(), username, password, *createEmail); err != nil {
 		return err
 	}
 
 	log.Println("CONNECTORDB: Stopping any subsystems")
 
-	dbmaker.Stop(config.GetConfiguration())
-	//dbmaker.Kill(config.GetConfiguration())
+	services.Stop(config.GetConfiguration())
+	//services.Kill(config.GetConfiguration())
 
 	fmt.Printf("\nDatabase created successfully.\n")
 	return nil
@@ -171,16 +172,15 @@ func startDatabase(dbPath string) error {
 		if err == util.ErrAlreadyRunning && !*forceStart {
 			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
 			return err
-		} else {
-			return err
 		}
-	}
-
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	return dbmaker.Start(config.GetConfiguration())
+	if err := services.Init(config.GetConfiguration()); err != nil {
+		return err
+	}
+
+	return services.Start(config.GetConfiguration())
 }
 
 func stopDatabase(dbPath string) error {
@@ -188,16 +188,16 @@ func stopDatabase(dbPath string) error {
 
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
 	if err == nil {
-		log.Printf("Connectordb looks like it isn't already running, but we'll try anyway.")
+		log.Warningln("Connectordb looks like it isn't already running, but we'll try anyway.")
 		return err
 	}
 
-	if err := dbmaker.Init(config.GetConfiguration()); err != nil {
+	if err := services.Init(config.GetConfiguration()); err != nil {
 		return err
 	}
 
-	if err := dbmaker.Stop(config.GetConfiguration()); err != nil {
-		log.Printf("%v", err.Error())
+	if err := services.Stop(config.GetConfiguration()); err != nil {
+		log.Errorln(err.Error())
 	}
 
 	return nil
@@ -214,7 +214,7 @@ func upgradeDatabase(dbPath string) error {
 
 	// Start the server
 
-	return dbmaker.Upgrade()
+	return services.Upgrade()
 }
 
 func runPlugin(cmd, dbPath string) error {

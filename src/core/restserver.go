@@ -1,12 +1,12 @@
 package main
 
 import (
+	"connectordb/plugins/rest"
+	"connectordb/streamdb"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"plugins/rest"
-	"streamdb"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -48,7 +48,7 @@ func main() {
 	db, err := streamdb.Open(*sqlserver, *redisserver, *msgserver)
 
 	if err != nil {
-		log.Panic("Cannot open StreamDB", err)
+		log.Panic("Cannot open StreamDB: ", err)
 	}
 	defer db.Close()
 
