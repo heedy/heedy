@@ -7,19 +7,29 @@ import (
 	//"fmt"
 )
 
+// A PermissionLevel within the system. These determine which devices can
+// edit/read all the data in the database.
 type PermissionLevel uint
 
-type DatabaseType struct {
-}
-
 const (
-	NOBODY  = PermissionLevel(6) // Highest permission level, no device can modify must do it straight in DB
-	ROOT    = PermissionLevel(5) // Highest interface permission level or above
-	USER    = PermissionLevel(4) // Users can modify their own stuff or above
-	DEVICE  = PermissionLevel(3) // the owning device of a given stream or above
-	FAMILY  = PermissionLevel(2) // a device that is a sibbling of the given device or an aunt to a stream
-	ENABLED = PermissionLevel(1) // any enabled device
-	ANYBODY = PermissionLevel(0) // lowest permission level, any user logged in or not
+	// NOBODY is the highest permission level, nobody has it; if something needs
+	// to be changed with a NOBODY permission, it must be done using SQL. These
+	// operations are to keep dangerous things from happening, like modifying
+	// primary keys
+	NOBODY = PermissionLevel(6)
+	// ROOT is the highest permission level given to admin devices/users
+	ROOT = PermissionLevel(5)
+	// USER is the permission level given to devices that can modify user data
+	// and act on a user's behalf
+	USER = PermissionLevel(4)
+	// DEVICE the device that owns a stream or can operate on itself.
+	DEVICE = PermissionLevel(3)
+	// FAMILY is for devices with the same owner, but no edit permissions
+	FAMILY = PermissionLevel(2)
+	// ENABLED is for any device that can do reading in the system
+	ENABLED = PermissionLevel(1)
+	// ANYBODY is for doing completely unpriviliged operations.
+	ANYBODY = PermissionLevel(0)
 )
 
 func strToPermissionLevel(s string) (PermissionLevel, error) {
@@ -43,37 +53,9 @@ func strToPermissionLevel(s string) (PermissionLevel, error) {
 	return ANYBODY, errors.New("Given string is not a valid permission type")
 }
 
-// Checks that the given permission is at least what the desired one should be
+// Gte checks that the given permission is at least what the desired one should be
 func (actual PermissionLevel) Gte(desired PermissionLevel) bool {
 	return uint(actual) >= uint(desired)
-}
-
-// Meta information about streamdb
-// for example, the database version
-type StreamdbMeta struct {
-	Key   string `modifiable:"root"`
-	Value string `modifiable:"root"`
-}
-
-// A per-user KV store
-type UserKeyValue struct {
-	UserId int64
-	Key    string `modifiable:"root"`
-	Value  string `modifiable:"user"`
-}
-
-// A per-stream KV store
-type StreamKeyValue struct {
-	StreamId int64
-	Key      string `modifiable:"root"`
-	Value    string `modifiable:"device"`
-}
-
-// A per-device KV store
-type DeviceKeyValue struct {
-	DeviceId int64
-	Key      string `modifiable:"root"`
-	Value    string `modifiable:"device"`
 }
 
 // User is the storage type for rows of the database.
@@ -96,7 +78,7 @@ type User struct {
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (u *User) ValidityCheck() error {
-	if ! IsValidName(u.Name) {
+	if !IsValidName(u.Name) {
 		return InvalidUsernameError
 	}
 
@@ -110,7 +92,6 @@ func (u *User) ValidityCheck() error {
 
 	return nil
 }
-
 
 func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
@@ -153,7 +134,6 @@ func (u *User) UpgradePassword(password string) bool {
 // Devices are general purposed external and internal data users,
 //
 type Device struct {
-	DatabaseType
 	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
 	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
 	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
@@ -169,7 +149,7 @@ type Device struct {
 }
 
 func (d *Device) ValidityCheck() error {
-	if ! IsValidName(d.Name) {
+	if !IsValidName(d.Name) {
 		return InvalidNameError
 	}
 
@@ -266,11 +246,6 @@ func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel)
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
-// Returns the icon for the device in base 64
-func (d *Device) GetIconB64() string {
-	return DEFAULT_ICON
-}
-
 func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value, p PermissionLevel) int {
 
 	//fmt.Printf("Getting original elem %v\n", originalValue.Kind())
@@ -308,21 +283,4 @@ func revertUneditableFields(toChange reflect.Value, originalValue reflect.Value,
 
 	// and bob's your uncle!
 	return changeNumber
-}
-
-// Check if the device is enabled
-func (d *Device) IsActive() bool {
-	return d.Enabled
-}
-
-func (d *Device) WriteAllowed() bool {
-	return d.CanWrite
-}
-
-func (d *Device) WriteAnywhereAllowed() bool {
-	return d.CanWriteAnywhere
-}
-
-func (d *Device) IsOwnedBy(user *User) bool {
-	return d.UserId == user.UserId
 }

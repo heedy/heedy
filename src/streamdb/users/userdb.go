@@ -37,6 +37,8 @@ var (
 
 type UserDatabase struct {
 	dbutil.SqlxMixin
+
+	ukv = createClosure("a", "b")
 }
 
 func (db *UserDatabase) InitUserDatabase(sqldb *sql.DB, dbtype string) {

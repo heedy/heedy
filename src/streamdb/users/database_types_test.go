@@ -3,9 +3,11 @@ package users
 
 import (
 	"testing"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
 func TestSetNewPassword(t *testing.T) {
 	var j User
 	var k User
@@ -33,10 +35,9 @@ func TestAdmin(t *testing.T) {
 	assert.NotEqual(t, j.IsAdmin(), false, "false negative admin")
 }
 
-
 type ExpectedPemissions struct {
-    in  string
-    out PermissionLevel
+	in          string
+	out         PermissionLevel
 	errExpected bool
 }
 
@@ -51,17 +52,17 @@ var permissionsTest = []ExpectedPemissions{
 	{"", ANYBODY, true}}
 
 func TestStrToPermissionLevel(t *testing.T) {
-    for _, test := range permissionsTest {
+	for _, test := range permissionsTest {
 		pl, err := strToPermissionLevel(test.in)
 
-		if test.errExpected && err == nil || ! test.errExpected && err != nil {
+		if test.errExpected && err == nil || !test.errExpected && err != nil {
 			t.Errorf("Error failed for test %v", test.in)
 		}
 
 		if pl != test.out {
 			t.Errorf("Wrong permission for %v, got %v expected %v", test.in, pl, test.out)
 		}
-    }
+	}
 }
 
 func TestDevicePermissions(t *testing.T) {
@@ -79,18 +80,8 @@ func TestDevicePermissions(t *testing.T) {
 	var disabledSuper Device
 	disabledSuper.IsAdmin = true
 
-	assert.False(t, none.IsActive(), "improper active check")
-	assert.True(t, onlyEnabled.IsActive(), "improper active check")
 	assert.False(t, onlyEnabled.IsAdmin, "improper elevation of privliges")
 	assert.True(t, all.IsAdmin, "correct admin was denied")
-
-	// WriteAllowed
-	assert.False(t, none.WriteAllowed(), "granted write to unprivliged")
-	assert.True(t, all.WriteAllowed(), "denied write to privliged")
-
-	// WriteAnywhereAllowed
-	assert.False(t, none.WriteAnywhereAllowed(), "Granted WriteAnywhereAllowed to unprivliged")
-	assert.True(t, all.WriteAnywhereAllowed(), "Denied WriteAnywhereAllowed to privliged device")
 
 	// CanModifyUser
 	assert.False(t, none.CanActAsUser)
@@ -127,7 +118,7 @@ func TestGeneralPermissions(t *testing.T) {
 }
 
 func TestRelationToUser(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -153,12 +144,12 @@ func TestRelationToUser(t *testing.T) {
 		assert.Equal(t, dev.RelationToUser(u), DEVICE, "devices under a user should be a device")
 
 		dev.UserId = -1
-		assert.Equal(t, dev.RelationToUser(u),  ANYBODY, "unrelated devices should be anybody")
+		assert.Equal(t, dev.RelationToUser(u), ANYBODY, "unrelated devices should be anybody")
 	}
 }
 
 func TestRelationToDevice(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -184,8 +175,8 @@ func TestRelationToDevice(t *testing.T) {
 		assert.Equal(t, dev.RelationToDevice(d2), USER, "devices with same userid should be users")
 		dev.CanActAsUser = false
 
-		assert.Equal(t, dev.RelationToDevice(d2),   FAMILY, "devices under a user should be a family")
-		assert.Equal(t, dev.RelationToDevice(dev),  DEVICE, "Devices should be device with themselves")
+		assert.Equal(t, dev.RelationToDevice(d2), FAMILY, "devices under a user should be a family")
+		assert.Equal(t, dev.RelationToDevice(dev), DEVICE, "Devices should be device with themselves")
 
 		dev.UserId = -1
 		assert.Equal(t, dev.RelationToDevice(d2), ENABLED, "unrelated devices should be enabled")
@@ -193,7 +184,7 @@ func TestRelationToDevice(t *testing.T) {
 }
 
 func TestRelationToStream(t *testing.T) {
-	for i, testdb := range(testdatabases) {
+	for i, testdb := range testdatabases {
 		if testdb == nil {
 			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
 			continue
@@ -221,7 +212,7 @@ func TestRelationToStream(t *testing.T) {
 		d2.UserId = d2.UserId + 1
 		d2.DeviceId = d2.DeviceId + 1
 		assert.Equal(t, d2.RelationToStream(stream, dev), ENABLED,
-						"different user devices got %v", dev.RelationToStream(stream, &d2))
+			"different user devices got %v", dev.RelationToStream(stream, &d2))
 
 		d2 = *dev
 		d2.CanActAsUser = true
