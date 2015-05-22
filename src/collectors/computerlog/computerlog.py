@@ -15,7 +15,7 @@ win32gui.ShowWindow(win,0)
 def NewDatapoint(keypresses,activewindow):
     timestamp = time.time()
     datapoint = {"t": time.time(), "d": {"keypresses":keypresses,"activewindow": activewindow}}
-    f=open("keylog.txt","r+")
+    f=open("keylog.txt","a")
     f.write(str(datapoint)+"\n")
     f.close()
 
