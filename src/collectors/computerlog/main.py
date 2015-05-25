@@ -1,13 +1,30 @@
 import sys
-from PyQt4 import QtGui,QtCore
+from PyQt4 import QtGui,QtCore, uic
 
-class OptionsWindow(QtGui.QWidget):
+class OptionsWindow(QtGui.QMainWindow):
     def __init__(self,windowIcon,parent=None):
         super(OptionsWindow,self).__init__(parent=parent)
+        
+        uic.loadUi("optionswindow.ui",self)
 
-        self.resize(400,400)
         self.setWindowTitle("ConnectorDB Logger Options")
         self.setWindowIcon(windowIcon)
+
+        self.serverUrl.addItem("https://connectordb.com")
+
+        self.saveButton.clicked.connect(self.saveClicked)
+
+    def saveClicked(self):
+        #self.serverUrl.
+        print "Options Updated"
+        print "Device Name:",self.deviceName.text()
+        print "API KEY:",self.apiKey.text()
+        print "Server URL: ",str(self.serverUrl.currentText())
+        print "Keypresses:",bool(self.log_keypresses.checkState())
+        print "ActiveWindow:",bool(self.log_activewindow.checkState())
+        print "GatherTime:",self.datapointFrequency.value()
+        print "Sync Time:",self.syncFrequency.value()
+        self.hide()
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
