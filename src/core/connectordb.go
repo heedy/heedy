@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "connectordb/plugins/rest"
 	_ "connectordb/plugins/run"
 	_ "connectordb/plugins/shell"
 	_ "connectordb/plugins/webclient"

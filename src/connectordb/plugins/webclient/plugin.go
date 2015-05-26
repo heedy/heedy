@@ -8,10 +8,12 @@ plugin registry when we're imported without side effects.
 import (
 	"connectordb/config"
 	"connectordb/plugins"
+	"connectordb/security"
 	"connectordb/streamdb"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"net/http"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
@@ -25,7 +27,7 @@ func exec(db *streamdb.Database, args []string) error {
 	log.Printf("Starting Server on port %d", config.GetConfiguration().WebPort)
 	r := mux.NewRouter()
 	Setup(r, db)
-	http.Handle("/", r)
+	http.Handle("/", security.SecurityHeaderHandler(r))
 
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.GetConfiguration().WebPort), nil)
 }
