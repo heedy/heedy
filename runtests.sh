@@ -100,6 +100,7 @@ start
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
+#go test -v -cover connectordb/...
 go test -cover connectordb/...
 test_status=$?
 stop
