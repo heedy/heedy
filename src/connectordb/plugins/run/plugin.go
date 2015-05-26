@@ -34,11 +34,33 @@ func exec(db *streamdb.Database, args []string) error {
 	rest.Router(db, s)
 
 	// all else goes to the webserver
-	http.Handle("/", r)
+	http.Handle("/", securityHeaderHandler(r))
 
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.GetConfiguration().WebPort), nil)
 }
 
 func usage() {
 	fmt.Println(`run: runs the HTTP and rest servers`)
+}
+
+
+func securityHeaderHandler(h http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+		// See the OWASP security project for these headers:
+		// https://www.owasp.org/index.php/List_of_useful_HTTP_headers
+
+		// Don't allow our site to be embedded in another
+	    writer.Header().Set("X-Frame-Options", "deny")
+
+		// Enable the client side XSS filter
+	    writer.Header().Set("X-XSS-Protection", "1; mode=block")
+
+		// Disable content sniffing which could lead to improperly executed
+		// scripts or such from malicious user uploads
+	    writer.Header().Set("X-Content-Type-Options", "nosniff")
+
+		h.ServeHTTP(writer, request)
+	})
 }
