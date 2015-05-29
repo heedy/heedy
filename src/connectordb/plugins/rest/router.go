@@ -105,6 +105,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	//Device CRUD
 	prefix.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
+	prefix.HandleFunc("/{user}/{device}", authenticator(RunWebsocket, db)).Methods("GET").Queries("q", "ws")
 	prefix.HandleFunc("/{user}/{device}", authenticator(ReadDevice, db)).Methods("GET")
 	prefix.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
 	prefix.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
