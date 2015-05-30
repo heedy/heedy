@@ -51,8 +51,8 @@ func LoadDatapoint(schema *schema.Schema, timestamp int64, data []byte, sender s
 
 //The Message is a struct holding field data which is sent through Messenger
 type Message struct {
-	Stream string      //The stream that the message is aimed at
-	Data   []Datapoint //The datapoints associated with the message
+	Stream string      `json:"stream"` //The stream that the message is aimed at
+	Data   []Datapoint `json:"data"`   //The datapoints associated with the message
 }
 
 //String returns a stringified representation of the message

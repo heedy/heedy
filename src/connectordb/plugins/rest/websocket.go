@@ -31,6 +31,7 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 )
 
@@ -50,10 +51,11 @@ type WebsocketConnection struct {
 
 //NewWebsocketConnection creates a new websocket connection based on the operators and stuff
 func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, request *http.Request) (*WebsocketConnection, error) {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr})
+	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ws"})
 
 	ws, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
+		logger.Errorln(err)
 		return nil, err
 	}
 
@@ -72,12 +74,12 @@ func (c *WebsocketConnection) Close() {
 	c.UnsubscribeAll()
 	close(c.c)
 	c.ws.Close()
-	c.logger.WithFields(log.Fields{"op": "ws/close"}).Debugln()
+	c.logger.WithField("cmd", "close").Debugln()
 }
 
 //Subscribe to the given data stream
 func (c *WebsocketConnection) Subscribe(s string) {
-	logger := c.logger.WithFields(log.Fields{"op": "ws/subscribe", "arg": s})
+	logger := c.logger.WithFields(log.Fields{"cmd": "subscribe", "arg": s})
 	if _, ok := c.subscriptions[s]; !ok {
 		subs, err := c.o.Subscribe(s, c.c)
 		if err != nil {
@@ -93,7 +95,7 @@ func (c *WebsocketConnection) Subscribe(s string) {
 
 //Unsubscribe from the given data stream
 func (c *WebsocketConnection) Unsubscribe(s string) {
-	logger := c.logger.WithFields(log.Fields{"op": "ws/unsubscribe", "arg": s})
+	logger := c.logger.WithFields(log.Fields{"cmd": "unsubscribe", "arg": s})
 	if val, ok := c.subscriptions[s]; ok {
 		logger.Debugln()
 		val.Unsubscribe()
@@ -105,7 +107,7 @@ func (c *WebsocketConnection) Unsubscribe(s string) {
 
 //UnsubscribeAll from all streams of data
 func (c *WebsocketConnection) UnsubscribeAll() {
-	c.logger.WithField("op", "ws/unsubscribeALL").Debugln()
+	c.logger.WithField("cmd", "unsubscribeALL").Debugln()
 	for _, val := range c.subscriptions {
 		val.Unsubscribe()
 	}
@@ -114,60 +116,72 @@ func (c *WebsocketConnection) UnsubscribeAll() {
 
 //A command is a cmd and the arg operation
 type websocketCommand struct {
-	cmd string
-	arg string
+	Cmd string
+	Arg string
 }
 
+//RunReader runs the reading routine. It also maps the commands to actual subscriptions
 func (c *WebsocketConnection) RunReader() {
+
+	//Set up the heartbeat reader(makes sure that sockets are alive)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.ws.SetPongHandler(func(string) error {
+		c.logger.WithField("cmd", "PONG").Debugln()
+		c.ws.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 
 	var cmd websocketCommand
 	for {
 		err := c.ws.ReadJSON(&cmd)
 		if err != nil {
-			c.logger.WithField("op", "ws/READ").Errorln(err)
+			c.logger.Errorln(err)
 			break
 		}
-		switch cmd.cmd {
+		switch cmd.Cmd {
 		default:
+			c.logger.Warningln("Command not recognized:", cmd.Cmd)
 			//Do nothing - the command is not recognized
 		case "subscribe":
-			c.Subscribe(cmd.arg)
+			c.Subscribe(cmd.Arg)
 		case "unsubscribe":
-			c.Unsubscribe(cmd.arg)
+			c.Unsubscribe(cmd.Arg)
 		case "unsubscribe_all":
 			c.UnsubscribeAll()
 		}
 	}
 }
 
-//Runs the writer
+//RunWriter writes the subscription data as well as the heartbeat pings.
 func (c *WebsocketConnection) RunWriter() {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
+	for {
+		select {
+		case dp, ok := <-c.c:
+			if !ok {
+				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				return
 
-	select {
-	case dp, ok := <-c.c:
-		if !ok {
+			}
+			c.logger.WithFields(log.Fields{"cmd": "MSG", "arg": dp.Stream}).Debugln()
+			if err := c.write(dp); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.logger.WithField("cmd", "PING").Debugln()
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-			return
-
-		}
-		if err := c.write(dp); err != nil {
-			return
-		}
-	case <-ticker.C:
-		c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-		if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-			return
+			if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return
+			}
 		}
 	}
 }
 
 //Run the websocket operations
 func (c *WebsocketConnection) Run() error {
+	c.logger.Debugln("Running websocket...")
 	go c.RunWriter()
 	c.RunReader()
 	return nil
@@ -177,7 +191,6 @@ func (c *WebsocketConnection) Run() error {
 func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	conn, err := NewWebsocketConnection(o, writer, request)
 	if err != nil {
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ws/UPGRADE"}).Errorln(err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
