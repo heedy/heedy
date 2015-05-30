@@ -4,6 +4,10 @@ import time
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
 from jsonschema import validate, Draft4Validator
+import websocket
+import threading
+import logging
+
 
 
 class AuthenticationError(Exception):
@@ -18,6 +22,12 @@ class ServerError(Exception):
         return repr(self.value)
 
 class DataError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+class ConnectionError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
@@ -108,7 +118,6 @@ class Device(ConnectorObject):
         #Returns the list of users accessible to this operator
         strms = []
         result = self.db.urlget(self.metaname+"/?q=ls")
-        print result
         for s in result.json():
             tmps = Stream(self.db,s["name"])
             tmps.metadata = s
@@ -195,6 +204,7 @@ class Stream(ConnectorObject):
         return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
 
 
+
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
     #Alternately, you can log in using your username and password by setting
@@ -203,7 +213,75 @@ class ConnectorDB(Device):
         self.auth = HTTPBasicAuth(user,password)
         self.url = url
 
+        
+        self.subscriptions = {}
+        self.ws = None
+        self.ws_thread = None
+        self.on_message = None
+
         Device.__init__(self,self,self.urlget("?q=this").text)
+
+
+    def __del__(self):
+        if self.ws is not None:
+            try:
+                self.ws.close()
+            except:
+                pass
+
+    def __on_wsmessage(self,ws,msg):
+        logging.debug("websocket message: %s",msg)
+        if self.on_message is not None:
+            self.on_message(json.loads(msg))
+    def __on_wsopen(self,opn):
+        logging.debug("websocket open")
+        self.openlock.release()
+    def __on_wsclose(self,arg):
+        logging.debug("websocket close")
+        self.ws=None
+        self.ws_thread=None
+        self.openlock.release()
+        
+    def __on_error(self,e):
+        logging.debug("ERROR %s",str(e))
+        self.ws=None
+        self.ws_thread=None
+        self.openlock.release()
+
+
+    def getWebsocketURI(self):
+        #Extract the
+        ws_url = "wss://" + self.url[8:]
+        if self.url.startswith("http://"):   #Unsecured websocket is only really there for testing
+            ws_url = "ws://"+self.url[7:]
+        return ws_url
+    def getHeaders(self):
+        class tmpObj():
+            def __init__(self):
+                self.headers= {}
+        tmp = tmpObj()
+        self.auth(tmp)
+        return tmp.headers
+
+    #Connects to the websocket if there is no connection active
+    def __connectWebsocket(self):
+        if self.ws_thread is None:
+            authheader = self.getHeaders()
+            self.ws = websocket.WebSocketApp(self.getWebsocketURI(),header=["Authorization: %s"%(authheader["Authorization"],)],
+                                             on_message = self.__on_wsmessage,
+                                             on_close = self.__on_wsclose,
+                                             on_open = self.__on_wsopen)
+            self.ws_thread = threading.Thread(target=self.ws.run_forever)
+            self.ws_thread.daemon=True
+
+            self.ws_isrunning = None
+            self.openlock = threading.Lock()
+            self.openlock.acquire()
+            self.ws_thread.start()
+            self.openlock.acquire()
+            if self.ws is None:
+                raise ConnectionError("Could not connect to "+self.getWebsocketURI())
+
 
 
     #Does error handling for a request result
@@ -229,6 +307,12 @@ class ConnectorDB(Device):
         return self.handleresult(requests.request("UPDATE",urljoin(self.url,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
 
+    def subscribe(self,address=None,callback=None):
+        #if address is None:
+        #    Device.subscribe(self)
+        self.__connectWebsocket()
+        self.ws.send(json.dumps({"cmd": "subscribe","arg": address}))
+
     def getuser(self,usrname):
         return User(self,usrname)
 
@@ -240,3 +324,14 @@ class ConnectorDB(Device):
             tmpu.metadata = u
             usrs.append(tmpu)
         return usrs
+
+    #We want to be able to get an arbitrary user/device/stream in a simple way
+    def __call__(self,address):
+        n = address.count("/")
+        if n==0:
+            return User(self,address)
+        elif n==1:
+            return Device(self,address)
+        else:
+            return Stream(self,address)
+

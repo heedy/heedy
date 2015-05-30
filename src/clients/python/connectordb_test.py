@@ -1,6 +1,11 @@
 import unittest
 import connectordb
 from jsonschema import SchemaError
+import websocket
+import time
+import logging
+
+websocket.enableTrace(True)
 
 class TestConnectorDB(unittest.TestCase):
     def setUp(self):
@@ -9,6 +14,7 @@ class TestConnectorDB(unittest.TestCase):
             db.getuser("python_test").delete()
         except:
             pass
+    
     def test_authfail(self):
         try:
             db = connectordb.ConnectorDB("notauser","badpass",url="http://localhost:8000")
@@ -178,3 +184,36 @@ class TestConnectorDB(unittest.TestCase):
 
         self.assertEqual("Hello World!",s[0]["d"])
         self.assertEqual("Hello World!",s(0)[0]["d"])
+
+    
+    def test_subscribe(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+
+        self.assertTrue(dev.exists)
+        db = connectordb.ConnectorDB("python_test/mydevice",dev.apikey,url="http://localhost:8000")
+
+        s = db["teststream"]
+        s.create({"type": "string"})
+
+        db.subscribe("python_test/mydevice")
+        
+        class tmpO():
+            def __init__(self):
+                self.gotmessage = False
+            def messagegetter(self,msg):
+                logging.info("GOT: %s",msg)
+                if msg["stream"]=="python_test/mydevice/teststream":
+                    logging.info("SETTING TRUE")
+                    self.gotmessage=True
+        tmp = tmpO()
+        db.on_message = tmp.messagegetter
+
+        s.insert("Hello!")
+
+        time.sleep(0.5)
+        logging.info("Checking Truth")
+        self.assertTrue(tmp.gotmessage)
