@@ -45,3 +45,10 @@ class ConnectorObject(object):
     @name.setter
     def name(self,value):
         self.set({"name": value})
+
+    def subscribe(self,callback):
+        #Subscribes to the given object
+        self.db.ws.subscribe(self.metaname,callback)
+
+    def unsubscribe(self):
+        self.db.ws.unsubscribe(self.metaname)

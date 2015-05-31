@@ -14,12 +14,15 @@ from errors import *
 from _device import Device
 from _user import User
 from _stream import Stream
+from _websocket import WebsocketHandler
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
     def __init__(self,user,password,url="https://connectordb.com/api/v1"):
         self.auth = HTTPBasicAuth(user,password)
         self.url = url
+
+        self.ws = WebsocketHandler(self.url,self.auth)
 
         Device.__init__(self,self,self.urlget("?q=this").text)
 

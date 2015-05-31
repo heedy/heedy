@@ -186,7 +186,7 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual("Hello World!",s[0]["d"])
         self.assertEqual("Hello World!",s(0)[0]["d"])
 
-    """
+    
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
         usr = db.getuser("python_test")
@@ -199,23 +199,29 @@ class TestConnectorDB(unittest.TestCase):
 
         s = db["teststream"]
         s.create({"type": "string"})
-
-        db.subscribe("python_test/mydevice")
         
         class tmpO():
             def __init__(self):
                 self.gotmessage = False
-            def messagegetter(self,msg):
-                logging.info("GOT: %s",msg)
-                if msg["stream"]=="python_test/mydevice/teststream":
+            def messagegetter(self,stream,datapoints):
+                logging.info("GOT: %s",stream)
+                if stream=="python_test/mydevice/teststream":
                     logging.info("SETTING TRUE")
                     self.gotmessage=True
         tmp = tmpO()
-        db.on_message = tmp.messagegetter
+        s.subscribe(tmp.messagegetter)
 
         s.insert("Hello!")
 
-        time.sleep(0.5)
+        time.sleep(0.1)
         logging.info("Checking Truth")
         self.assertTrue(tmp.gotmessage)
-    """
+    
+        tmp.gotmessage=False
+
+        s.unsubscribe()
+
+        s.insert("Hello Again!")
+
+        time.sleep(0.1)
+        self.assertFalse(tmp.gotmessage)

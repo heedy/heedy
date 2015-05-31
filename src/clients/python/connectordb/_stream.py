@@ -26,7 +26,7 @@ class Stream(ConnectorObject):
         self.db.urlupdate(self.metaname,o)
 
     def insert(self,o):
-        self.insertMany([{"t": int(time.time()),"d":o}])
+        self.insertMany([{"t": time.time(),"d":o}])
 
     def __getitem__(self,obj):
         #Allows to access the stream's elements as if they were an array
@@ -38,3 +38,13 @@ class Stream(ConnectorObject):
     def __call__(self,t1,t2=0,limit=0):
         #Allows to get the datapoints in a stream between two times or with a limit
         return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
+
+    def subscribe(self,callback,downlink=False,substream=""):
+        #Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
+        #so we subscribe according to that
+        sname = self.metaname
+        if downlink:
+            sname += "/downlink"
+        elif len(substream)>0:
+            sname += "/"+substream
+        self.db.ws.subscribe(sname,callback)
