@@ -1,5 +1,6 @@
 import unittest
 import connectordb
+from connectordb.errors import *
 from jsonschema import SchemaError
 import websocket
 import time
@@ -18,7 +19,7 @@ class TestConnectorDB(unittest.TestCase):
     def test_authfail(self):
         try:
             db = connectordb.ConnectorDB("notauser","badpass",url="http://localhost:8000")
-        except connectordb.AuthenticationError as e:
+        except AuthenticationError as e:
             return
 
 
@@ -55,7 +56,7 @@ class TestConnectorDB(unittest.TestCase):
         usr.admin = False
         self.assertEqual(usr.admin,False)
 
-        self.assertRaises(connectordb.ServerError,usr.set,{"admin": "Hello"})
+        self.assertRaises(ServerError,usr.set,{"admin": "Hello"})
 
         self.assertEqual(len(db.users()),2)
 
@@ -78,11 +79,11 @@ class TestConnectorDB(unittest.TestCase):
 
         self.assertEqual(len(db.users()),1,"Shouldn't see the test user")
 
-        self.assertRaises(connectordb.AuthenticationError,db.getuser("hi").create,"a@b","lol")
+        self.assertRaises(AuthenticationError,db.getuser("hi").create,"a@b","lol")
 
         self.assertEqual(db.getuser("test").exists,False)
 
-        self.assertRaises(connectordb.AuthenticationError,db.getuser("test").delete)
+        self.assertRaises(AuthenticationError,db.getuser("test").delete)
 
 
         usr = db.user
@@ -114,10 +115,10 @@ class TestConnectorDB(unittest.TestCase):
         db.nickname = "testnick"
         self.assertEqual(db.nickname,"testnick")
         self.assertEqual(db.user.email,"py@email")
-        self.assertRaises(connectordb.AuthenticationError,db.delete)
+        self.assertRaises(AuthenticationError,db.delete)
 
         newkey = db.resetKey()
-        self.assertRaises(connectordb.AuthenticationError,db.refresh)
+        self.assertRaises(AuthenticationError,db.refresh)
 
 
         db = connectordb.ConnectorDB("python_test/mydevice",newkey,url="http://localhost:8000")
@@ -185,7 +186,7 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual("Hello World!",s[0]["d"])
         self.assertEqual("Hello World!",s(0)[0]["d"])
 
-    
+    """
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
         usr = db.getuser("python_test")
@@ -217,3 +218,4 @@ class TestConnectorDB(unittest.TestCase):
         time.sleep(0.5)
         logging.info("Checking Truth")
         self.assertTrue(tmp.gotmessage)
+    """
