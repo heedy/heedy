@@ -41,21 +41,21 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		if !ok {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
-			log.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
+			log.WithFields(log.Fields{"op": "AUTH", "addr": request.RemoteAddr, "uri": request.URL.String()}).Warningln("Login attempt w/o auth")
 			return
 		}
 
 		//Handle a panic without crashing the whole rest interface
 		defer func() {
 			if r := recover(); r != nil {
-				log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "PANIC"}).Errorln(r)
+				log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "uri": request.URL.String(), "op": "PANIC"}).Errorln(r)
 			}
 		}()
 
 		o, err := db.LoginOperator(authUser, authPass)
 
 		if err != nil {
-			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "op": "AUTH"}).Warningln(err.Error())
+			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "uri": request.URL.String(), "op": "AUTH"}).Warningln(err.Error())
 
 			//So there was an unsuccessful attempt at login, huh?
 			time.Sleep(300 * time.Millisecond)
@@ -95,6 +95,8 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.HandleFunc("/", authenticator(ListUsers, db)).Queries("q", "ls")
 	prefix.HandleFunc("/", authenticator(GetThis, db)).Queries("q", "this")
 	prefix.HandleFunc("/favicon.ico", serveFavicon)
+
+	prefix.HandleFunc("/", authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
 	//User CRUD
 	prefix.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
