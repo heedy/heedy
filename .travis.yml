@@ -11,7 +11,7 @@ virtualenv:
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
-    - pip install --user nose requests jsonschema websocket-client coverage
+    - pip install --user nose requests jsonschema websocket-client coverage apsw
     - go get golang.org/x/tools/cmd/cover
     - make go-dependencies
 

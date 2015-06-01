@@ -26,6 +26,10 @@ class ConnectorDB(Device):
 
         Device.__init__(self,self,self.urlget("?q=this").text)
 
+    def ping(self):
+        #Makes sure the connectino is open, and auth is working
+        self.urlget("?q=this")
+
     #Does error handling for a request result
     def handleresult(self,r):
         if r.status_code==401 or r.status_code==403:
