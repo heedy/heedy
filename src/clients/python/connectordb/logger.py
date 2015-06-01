@@ -15,13 +15,14 @@ from jsonschema import validate
 class ConnectorLogger(object):
     #Allows logging datapoints for a deferred sync with connectordb (allowing to sync eg. once an hour,
     #despite taking data continuously)
-    def __init__(self,dbfile,cdb=None):
+    def __init__(self,dbfile,cdb=None,on_create=None):
         #Given a database file and the connectordb database (db is optional, since might want
-        #to log without internet
+        #to log without internet). on_create is a callback that is called with this logger object
+        #if the database is being created from scratch
         self.conn = apsw.Connection(dbfile)
         self.dbfile = dbfile
 
-        self.__createDatabase()
+        run_createcallback = self.__createDatabase()
         self.__loadMeta()
         self.__loadStreams()
 
@@ -30,6 +31,9 @@ class ConnectorLogger(object):
         self.synclock = threading.Lock()
 
         self.syncer = None
+
+        if run_createcallback:
+            on_create(self)
 
     def __del__(self):
         self.stop()
@@ -41,22 +45,27 @@ class ConnectorLogger(object):
             raise ConnectionError("The logger does not have a connectordb connection active!")
 
     def __createDatabase(self):
+        created = False
         #Create the database tables that will make up the cache if they don't exist yet
         c = self.conn.cursor()
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cache';")
         if c.fetchone() is None:
+            created=True
             logging.debug("Creating table cache")
             c.execute("CREATE TABLE cache (streamname text, timestamp real, data text);")
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='streams';")
         if c.fetchone() is None:
+            created=True
             logging.debug("Creating table streams")
             c.execute("CREATE TABLE streams (streamname TEXT PRIMARY KEY, schema TEXT);")
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='metadata';")
         if c.fetchone() is None:
+            created=True
             logging.debug("Creating table streams")
             c.execute("CREATE TABLE metadata (devicename TEXT, lastsync real, syncperiod real);")
             #The default sync period is 10 minutes
             c.execute("INSERT INTO metadata VALUES ('',0,600);")
+        return created
 
     @property
     def syncperiod(self):
@@ -88,7 +97,7 @@ class ConnectorLogger(object):
         for row in c.fetchall():
             self.streams[row[0]]= json.loads(row[1])
 
-    def __setDeviceName(self,devname):
+    def setDeviceName(self,devname):
         self.devicename = devname
         c = self.conn.cursor()
         c.execute("UPDATE metadata SET devicename=?;",(devname,))
@@ -99,7 +108,7 @@ class ConnectorLogger(object):
             self.cdb = cdb
 
             if self.devicename=="":
-                self.__setDeviceName(self.cdb.metaname)
+                self.setDeviceName(self.cdb.metaname)
 
     def __len__(self):
         #Returns the number of datapoints currently cached

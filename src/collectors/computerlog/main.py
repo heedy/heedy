@@ -1,6 +1,8 @@
 import sys
 from PyQt4 import QtGui,QtCore, uic
 
+import log
+
 class OptionsWindow(QtGui.QMainWindow):
     def __init__(self,windowIcon,parent=None):
         super(OptionsWindow,self).__init__(parent=parent)
@@ -58,14 +60,20 @@ class MainTray(QtGui.QSystemTrayIcon):
 
         self.optionsWindow = OptionsWindow(self.icon)
 
+        self.l = log.DataCache()
+
 
     def exitButtonPressed(self):
+        self.l.stop()
         sys.exit(0)
     def optionsButtonPressed(self):
         self.optionsWindow.show()
 
     def logToggleButtonPressed(self):
-        print "TOGGLE LOGGING:",self.toggleAction.isChecked()
+        if self.toggleAction.isChecked():
+            self.l.start()
+        else:
+            self.l.stop()
           
 
 if __name__=="__main__":
