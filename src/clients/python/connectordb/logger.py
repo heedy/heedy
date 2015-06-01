@@ -122,10 +122,15 @@ class ConnectorLogger(object):
         if not stream.exists:
             raise errors.ServerError("The stream '%s' was not found"%(stream.metaname,))
 
+        self.force_addStream(stream.metaname,stream.schema)
+        
+    def force_addStream(self,streampath,streamschema):
+        #Forces a stream add without checking connectordb to make sure the stream exists.
+        #Requires the full path to the stream
         c = self.conn.cursor()
-        c.execute("INSERT OR REPLACE INTO streams VALUES (?,?);",(stream.metaname,json.dumps(stream.schema)))
+        c.execute("INSERT OR REPLACE INTO streams VALUES (?,?);",(streampath,json.dumps(streamschema)))
 
-        self.streams[stream.metaname] = stream.schema
+        self.streams[streampath] = streamschema
 
 
     def insert(self,streamname,value):
