@@ -38,7 +38,7 @@ class DataCache():
             self.cache.insert("keypresses",kp)
         if self.gatherer.log_activewindow:
             wt = self.gatherer.windowtext()
-            print "WindowText:",self.gatherer.windowtext()
+            print "WindowText:",wt
             self.cache.insert("activewindow",wt)
         print "There are %i datapoints in cache."%(len(self.cache),)
 
