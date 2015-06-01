@@ -119,7 +119,7 @@ rest_server=$!
 echo "==================================================="
 echo "Starting API Tests"
 echo "==================================================="
-nosetests --with-coverage --cover-package=connectordb src/clients/python/connectordb_test.py
+nosetests --with-coverage --cover-package=connectordb src/clients/python/*_test.py
 test_status=$?
 
 kill $rest_server
