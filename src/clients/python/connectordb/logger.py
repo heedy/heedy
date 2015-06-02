@@ -266,7 +266,7 @@ class ConnectorLogger(object):
         self.syncer = threading.Timer(self.syncperiod,self.__run)
         self.syncer.start()
 
-    def run(self,period=None):
+    def start(self,period=None):
         logging.debug("Started running background sync with period "+str(self.syncperiod))
         #Runs the syncer in the background with the given sync period
         if period is not None:

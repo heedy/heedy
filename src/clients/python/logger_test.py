@@ -95,7 +95,7 @@ class TestLogger(unittest.TestCase):
         self.assertEqual(0,len(s))
         self.assertEqual(0,len(l))
 
-        l.run()
+        l.start()
         l.insert("mystream","hi")
         l.insert("mystream","hello")
         self.assertEqual(0,len(s))

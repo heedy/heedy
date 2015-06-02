@@ -81,7 +81,7 @@ class DataCache():
                 self.syncer.start()
 
 
-            self.cache.run()
+            self.cache.start()
             return True
         except:
             return False
