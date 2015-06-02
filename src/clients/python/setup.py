@@ -14,6 +14,7 @@ setup(name='ConnectorDB',
       install_requires=[
           "jsonschema",
           "requests",
-          "websocket-client"
+          "websocket-client",
+          "apsw"
           ]
      )
