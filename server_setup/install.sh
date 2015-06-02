@@ -35,6 +35,9 @@ ln -s /etc/nginx/sites-available/connectordb /etc/nginx/sites-enabled/connectord
 
 sudo systemctl restart nginx.service
 
+#Copy dot files
+for f in DOT_*; do mv $f ".${f#DOT_}"; done
+
 #And now, install a recent version of golang
 mkdir tmp
 cd tmp
