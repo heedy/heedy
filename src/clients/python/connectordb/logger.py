@@ -75,6 +75,11 @@ class ConnectorLogger(object):
             c.execute("INSERT INTO metadata VALUES ('','',?,0,600,'{}');",(API_URL,))
         return created
 
+    def __clearCDB(self):
+        self.synclock.acquire()
+        self.cdb = None
+        self.synclock.release()
+
     @property
     def syncperiod(self):
         return self.__syncperiod
@@ -101,6 +106,7 @@ class ConnectorLogger(object):
         self.__devicename = value
         c = self.conn.cursor()
         c.execute("UPDATE metadata SET devicename=?;",(value,))
+        self.__clearCDB()
 
 
     @property
@@ -111,7 +117,7 @@ class ConnectorLogger(object):
         self.__apikey = value
         c = self.conn.cursor()
         c.execute("UPDATE metadata SET apikey=?;",(value,))
-
+        self.__clearCDB()
 
     @property
     def url(self):
@@ -121,6 +127,7 @@ class ConnectorLogger(object):
         self.__url = value
         c = self.conn.cursor()
         c.execute("UPDATE metadata SET url=?;",(value,))
+        self.__clearCDB()
     
     #The data property allows the user to save settings/data in the database, so that
     #there does not need to be extra code messing around with settings
@@ -255,10 +262,12 @@ class ConnectorLogger(object):
             self.sync()
         except:
             logging.warn("ConnectorDB sync failed")
+        logging.debug("Next sync in "+str(self.syncperiod))
         self.syncer = threading.Timer(self.syncperiod,self.__run)
         self.syncer.start()
 
     def run(self,period=None):
+        logging.debug("Started running background sync with period "+str(self.syncperiod))
         #Runs the syncer in the background with the given sync period
         if period is not None:
             self.syncperiod = period

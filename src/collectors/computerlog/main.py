@@ -3,29 +3,70 @@ from PyQt4 import QtGui,QtCore, uic
 
 import log
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 class OptionsWindow(QtGui.QMainWindow):
-    def __init__(self,windowIcon,parent=None):
+    def __init__(self,windowIcon,l,parent=None):
         super(OptionsWindow,self).__init__(parent=parent)
         
+        self.l = l
+
         uic.loadUi("optionswindow.ui",self)
 
         self.setWindowTitle("ConnectorDB Logger Options")
         self.setWindowIcon(windowIcon)
 
-        self.serverUrl.addItem("https://connectordb.com")
-
         self.saveButton.clicked.connect(self.saveClicked)
 
-    def saveClicked(self):
-        #self.serverUrl.
-        print "Options Updated"
+        self.load()
+
+    def load(self):
+        #Now load the current values of the settings
+        self.deviceName.setText(self.l.cache.name)
+        self.apiKey.setText(self.l.cache.apikey)
+        self.serverUrl.setText(self.l.cache.url)
+
+        d = self.l.cache.data
+
+        if not d["keypresses"]:
+            self.log_keypresses.setCheckState(QtCore.Qt.Unchecked)
+        if not d["activewindow"]:
+            self.log_activewindow.setCheckState(QtCore.Qt.Unchecked)
+
+        self.datapointFrequency.setValue(d["gathertime"]/60.)
+
+        self.syncFrequency.setValue(self.l.cache.syncperiod/60.)
+
+        self.printOptions()
+
+    def printOptions(self):
+        print "------------------"
+        print "Option Values:"
         print "Device Name:",self.deviceName.text()
         print "API KEY:",self.apiKey.text()
-        print "Server URL: ",str(self.serverUrl.currentText())
+        print "Server URL: ",self.serverUrl.text()
         print "Keypresses:",bool(self.log_keypresses.checkState())
         print "ActiveWindow:",bool(self.log_activewindow.checkState())
         print "GatherTime:",self.datapointFrequency.value()
         print "Sync Time:",self.syncFrequency.value()
+        print "------------------"
+
+    def saveClicked(self):
+        self.printOptions()
+
+        self.l.cache.name = str(self.deviceName.text())
+        self.l.cache.apikey = str(self.apiKey.text())
+        self.l.cache.url = str(self.serverUrl.text())
+        self.l.cache.syncperiod = float(self.syncFrequency.value())*60
+
+        d = self.l.cache.data 
+        d["keypresses"] = bool(self.log_keypresses.checkState())
+        d["activewindow"] = bool(self.log_activewindow.checkState())
+        d["gathertime"] = float(self.datapointFrequency.value())*60
+        self.l.cache.data = d
+
         self.hide()
 
     def keyPressEvent(self, e):
@@ -58,10 +99,13 @@ class MainTray(QtGui.QSystemTrayIcon):
         self.setContextMenu(menu)
         self.menu = menu
 
-        self.optionsWindow = OptionsWindow(self.icon)
-
         self.l = log.DataCache()
 
+        self.optionsWindow = OptionsWindow(self.icon,self.l)
+
+        
+        if self.l.cache.data["isrunning"]:
+            toggleAction.setChecked(QtCore.Qt.Checked)
 
     def exitButtonPressed(self):
         self.l.stop()
@@ -71,9 +115,14 @@ class MainTray(QtGui.QSystemTrayIcon):
 
     def logToggleButtonPressed(self):
         if self.toggleAction.isChecked():
-            self.l.start()
+            val = self.l.start()
+            if not val:
+                self.toggleAction.setChecked(QtCore.Qt.Unchecked)
         else:
             self.l.stop()
+            d = self.l.cache.data
+            d["isrunning"]=False
+            self.l.cache.data = d
           
 
 if __name__=="__main__":

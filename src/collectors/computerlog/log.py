@@ -17,18 +17,29 @@ class DataCache():
 
         self.gatherer = DataGatherer()
 
-        self.gather_period = 60 #One minute
         self.syncer = None
+
+        if self.cache.data["isrunning"]:
+            self.start()
 
     def create_callback(self,c):
         print "Creating cache"
         #Since we are debugging without connectordb access, we manually set the device
         #and force the streams
-        c.setDeviceName("test/test")
+        c.name = "test/test"
         c.force_addStream("test/test/keypresses",{"type":"integer",
                                                   "description": "Number of keypresses in the time period of gathering"})
         c.force_addStream("test/test/activewindow",{"type":"string",
                                                   "description": "The currently active window titlebar text"})
+        
+        #Set the default options
+        c.data = {
+            "keypresses": True,
+            "activewindow": True,
+            "gathertime": 60.0, #60 seconds
+            "isrunning": False
+            }
+        
         print "cache created"
 
     def gather(self):
@@ -43,20 +54,41 @@ class DataCache():
         print "There are %i datapoints in cache."%(len(self.cache),)
 
     def __run(self):
+        gather_period = self.cache.data["gathertime"]
         self.gather()
-        self.syncer = threading.Timer(self.gather_period,self.__run)
+        self.syncer = threading.Timer(gather_period,self.__run)
         self.syncer.start()
 
     def start(self):
-        print "Starting logging with period "+str(self.gather_period)
-        self.gatherer.start()
+        try:
 
-        if self.syncer is None:
-            self.syncer = threading.Timer(self.gather_period,self.__run)
-            self.syncer.start()
+            #Try to set up the streams (if they exist, then great). If not, then start fails
+            self.cache.addStream("keypresses",{"type":"integer",
+                                                  "description": "Number of keypresses in the time period of gathering"})
+            self.cache.addStream("activewindow",{"type":"string",
+                                                  "description": "The currently active window titlebar text"})
+        
+            #Set the default options
+            d = self.cache.data
+            d["isrunning"]=True
+            self.cache.data = d
+            gather_period = d["gathertime"]
+            print "Starting logging with period "+str(gather_period)
+            self.gatherer.start()
+
+            if self.syncer is None:
+                self.syncer = threading.Timer(gather_period,self.__run)
+                self.syncer.start()
+
+
+            self.cache.run()
+            return True
+        except:
+            return False
 
     def stop(self):
         print "Stopping gathering"
+        self.cache.stop()
         self.gatherer.stop()
         if self.syncer is not None:
             self.syncer.cancel()
