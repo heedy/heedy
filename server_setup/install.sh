@@ -43,6 +43,13 @@ tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz
 cd ..
 rm -rf tmp
 
+#Now clone the database - needs auth
+git clone https://github.com/dkumor/connectordb.git
+
+#And finally, set up the python module. This installs the deps for python module
+cd connectordb/src/clients/python
+python setup.py install
+cd ~
 
 #aaaand we're done
 echo "Finished"
