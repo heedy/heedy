@@ -1,4 +1,4 @@
-Setting Up Production Server
+Setting Up a Server
 ==============================
 
 The instructions were created during initial setup of connectordb.com server using a DigitalOcean droplet
@@ -15,7 +15,7 @@ apt-get dist-upgrade
 Then create the support user:
 ```
 adduser support
-gpasswd -a sudo support
+gpasswd -a support sudo
 ```
 
 log in as the support user, and copy the dotfiles from this repo to the home directory.
@@ -60,31 +60,29 @@ This pem file needs to be put in the correct folder:
 
 # Install Script
 
-After having the `connectordb.crt` and `connectordb.key` files, you need to copy the productionfiles directory to the server, and put the two ssl files in it.
+After having the `connectordb.crt` and `connectordb.key` files, you need to copy the server_setup directory to the server, and put the two ssl files in the ssl subdirectory
 
-Then, you can run the install script (NOTE: Install script was not yet tested!!!):
+make sure you have tmux installed (or make sure that you stay logged in after copying files)
+
+Then, you can run the install script
 ```
-mv connectordb.key productionfiles/
-mv connectordb.crt productionfiles/
-cd productionfiles
 chmod +x install.sh
 sudo ./install.sh
 ```
-
-After the install script finishes, you will have the prerequisites for running connectordb installed.
-Check to make sure that everything is working by navigating to http://{{nameHere}}.com.
-
-Two things should happen: the http should be redirected to https, and the https should be green (valid).
-Furthermore, the page should be a 404 explicitly saying something about connectordb.
 
 At that point, create a password for the connectordb user
 ```
 passwd connectordb
 ```
-and that will allow you to push-to-deploy:
+
+...and log in as connectordb, and get stuff running:
 ```
-connectordb@connectordb.com/git/public.git #Jekyll website at /public . Must have a 404 page.
-connectordb@connectordb.com/git/connectordb.git #The connectordb repo - auto-deploys a production repository on push.
+git clone https://github.com/dkumor/connectordb.git
+cd connectordb
+make
+cd ..
+./connectordb/bin/connectordb create database
+./connectordb/bin/connectordb start database
 ```
 
-There is about a chance that something won't work right away. The nginx error logs are in `/var/log/nginx`
+There is about a 99% chance that something won't work right away. The nginx error logs are in `/var/log/nginx`
