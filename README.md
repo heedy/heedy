@@ -17,11 +17,13 @@ The following will create all necessary binaries
 make
 ```
 
-At that point, binaries are located in `/bin`. Good default config files are located in `/config`.
+At that point, binaries are located in `/bin`.
+
+To have the python libs work, go to `src/clients/python` and follow instructions in readme there.
 
 ## Testing
 
-This will run all tests, spawning the necessary servers (except Mongo) in the process:
+This will run all tests, spawning the necessary servers in the process:
 ```bash
 make test
 ```

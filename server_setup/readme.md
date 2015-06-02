@@ -9,7 +9,7 @@ I am assuming this is a clean droplet. [Good instructions are here](https://www.
 Starting off:
 ```
 apt-get update
-apt-get dist-upgrade
+apt-get upgrade
 ```
 
 Then create the support user:
@@ -69,20 +69,19 @@ Then, you can run the install script
 chmod +x install.sh
 sudo ./install.sh
 ```
+The install script will probably need your git auth (since private repo).
 
-At that point, create a password for the connectordb user
-```
-passwd connectordb
-```
+Once it finishes,
 
-...and log in as connectordb, and get stuff running:
-```
-git clone https://github.com/dkumor/connectordb.git
+```bash
 cd connectordb
 make
 cd ..
-./connectordb/bin/connectordb create database
-./connectordb/bin/connectordb start database
+cp -R connectordb/bin ./bin
+
+./bin/connectordb create database
+./bin/connectordb start database
+./bin/connectordb run database
 ```
 
 There is about a 99% chance that something won't work right away. The nginx error logs are in `/var/log/nginx`

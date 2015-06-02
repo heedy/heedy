@@ -1,7 +1,5 @@
 #!/bin/bash
 
-chmod +x .tmx
-
 INSTALLDIR=$(pwd)
 
 #This script is run on a just-initialized server. It needs root access.
@@ -37,6 +35,7 @@ sudo systemctl restart nginx.service
 
 #Copy dot files
 for f in DOT_*; do mv $f ".${f#DOT_}"; done
+chmod +x .tmx
 
 #And now, install a recent version of golang
 mkdir tmp
