@@ -37,6 +37,20 @@ sudo systemctl restart nginx.service
 for f in DOT_*; do mv $f ".${f#DOT_}"; done
 chmod +x .tmx
 
+#Set up iptables rules
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+sudo iptables -A INPUT -j DROP
+sudo apt-get -y install iptables-persistent #Just say yes to everything that it asks when installing
+
+#fail2ban should come automatically with sshd enabled. We should look at implementing a fail2ban module for connectordb
+sudo apt-get -y install fail2ban    #Ain't nobody password-spamming our servers
+sudo systemctl enable fail2ban.service
+sudo systemctl start fail2ban.service 
+
 #And now, install a recent version of golang
 mkdir tmp
 cd tmp
@@ -44,6 +58,7 @@ wget https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz
 tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz
 cd ..
 rm -rf tmp
+
 
 #Now clone the database - needs auth
 git clone https://github.com/dkumor/connectordb.git
