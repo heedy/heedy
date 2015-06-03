@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Works because bash automatically trims by assigning to variables and by 
+# passing arguments
+trim() { echo $1; }
+
+base_session="tmux"
+# This actually works without the trim() on all systems except OSX
+tmux_nb=$(trim `tmux ls 2> /dev/null | grep "^$base_session" | wc -l`)
+tmux_at=$(trim `tmux ls 2> /dev/null | grep "^$base_session" | grep "(attached)" | wc -l`)
+if [[ "$tmux_nb" == "0" ]]; then
+    tmux new-session -s $base_session
+else
+    if [[ "$tmux_at" == "0" ]]; then
+        tmux attach -t $base_session
+    else
+        # Make sure we are not already in a tmux session
+        if [[ -z "$TMUX" ]]; then
+            tmux new-session -t $base_session \; set-option destroy-unattached
+        fi
+    fi
+fi
