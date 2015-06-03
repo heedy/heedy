@@ -2,6 +2,7 @@ import websocket
 import threading
 import logging
 import json
+import errors
 
 class WebsocketHandler(object):
     #SubscriptionHandler manages the websocket connection and fires off all subscriptions
@@ -137,4 +138,4 @@ class WebsocketHandler(object):
             self.ws_openlock.release()
 
             if not self.isconnected:
-                raise ConnectionError("Could not connect to "+self.uri)
+                raise errors.ConnectionError("Could not connect to "+self.uri)
