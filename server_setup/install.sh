@@ -20,7 +20,8 @@ systemctl stop postgresql.service
 #Replace {{CONNECTORDB_DIR}} with the install directory
 find . -type f -print0 | xargs -0 sed -i "s@{{CONNECTORDB_DIR}}@${INSTALLDIR}@g"
 
-#Okay, we now put all files where they belong
+#Set up ssl dhparams (logjam testers want at least 2048 key)
+openssl dhparam -out ssl/dhparams.pem 2048
 chmod -R 000 ssl
 
 #Alright, now set up nginx

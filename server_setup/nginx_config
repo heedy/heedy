@@ -29,6 +29,8 @@ server {
 	ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # don't use SSLv3 ref: POODLE
 	ssl_ciphers "HIGH:!aNULL:!MD5 or HIGH:!aNULL:!MD5:!3DES";
 	ssl_prefer_server_ciphers on;
+    
+    ssl_dhparam {{CONNECTORDB_DIR}}/ssl/dhparams.pem;
 
 	location / {
 		proxy_set_header Host $host;
