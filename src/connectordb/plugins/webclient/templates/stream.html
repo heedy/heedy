@@ -40,9 +40,9 @@
             <form id="result-form"></form>
         </div>
     </div>
-    
+
     <!-- Stream specific javascript libraries for jsonform-->
-    
+
     <script type='text/javascript' src='/static/js/underscore.js'></script>
     <script type='text/javascript' src='/static/js/jsv.js'></script>
     <script type='text/javascript' src='/static/js/jsonform.js'></script>
@@ -52,13 +52,18 @@
         var schema = JSON.parse({{ .stream.Type }})
         console.log(schema)
         $('#result-form').jsonForm({
-          schema:  { datapoint: schema},
+          schema:  schema,
           onSubmit: function (errors, values) {
-              alert(JSON.stringify(values));
+            if (errors) {
+              alert('<p>I beg your pardon?</p>');
+              console.log(errors);
+            }
+            else {
+                alert(JSON.stringify(values));
+            }
           }
         });
-    });
-
+      });
     </script>
 
 {{end}}

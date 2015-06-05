@@ -15,7 +15,8 @@ const (
 	"type": "object",
 	"properties": {
 		"value": {
-			"type": "number"
+			"type": "number",
+			"description":"A numeric value"
 		}
 	}
 }`
@@ -74,7 +75,12 @@ redirect:
 func createStreamAction(se *SessionEnvironment) {
 	vars := mux.Vars(se.Request)
 	devids := vars["id"]
+	streamtype := se.Request.PostFormValue("datatype")
 	name := se.Request.PostFormValue("name")
+
+	if streamtype == "" {
+		streamtype = defaultTemplate
+	}
 
 	devid, _ := strconv.Atoi(devids)
 	device, err := se.Operator.ReadDeviceByID(int64(devid))
@@ -85,7 +91,7 @@ func createStreamAction(se *SessionEnvironment) {
 		goto redirect
 	}
 
-	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, defaultTemplate)
+	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, streamtype)
 
 	if err != nil {
 		log.Errorf(err.Error())
