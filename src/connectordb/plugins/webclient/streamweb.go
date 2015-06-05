@@ -9,6 +9,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var (
+	DefaultSchema = `{"type": "number"}`
+	)
+
 func readStreamPage(se *SessionEnvironment) {
 	pageData := make(map[string]interface{})
 	vars := mux.Vars(se.Request)
@@ -73,7 +77,7 @@ func createStreamAction(se *SessionEnvironment) {
 		goto redirect
 	}
 
-	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, "x")
+	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, DefaultSchema)
 
 	if err != nil {
 		log.Errorf(err.Error())

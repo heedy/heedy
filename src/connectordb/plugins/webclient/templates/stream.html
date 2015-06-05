@@ -1,5 +1,10 @@
 {{define "title"}} {{ .stream.Name }} {{end}}
-
+{{define "scripts"}}
+<!-- Stream specific javascript libraries for jsonform-->
+<script type='text/javascript' src='/static/js/jsv.js'></script>
+<script type='text/javascript' src='/static/js/underscore.js'></script>
+<script type='text/javascript' src='/static/js/jsonform.js'></script>
+{{end}}
 {{define "body"}}
     <div class="panel panel-default panel-primary">
         <div class="panel-heading">{{ .stream.Name }} Overview</div>
@@ -30,7 +35,26 @@
             </table>
         </div>
     </div>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Manually add data</div>
+        <div class="panel-body">
+            <form id="result-form"></form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+        $('#result-form').jsonForm({
+          schema: {{ .stream.Type }} ,
+          onSubmit: function (errors, values) {
+              alert(JSON.stringify(values));
+          }
+        });
+    });
+
+    </script>
+
 {{end}}
-
-
 {{template "base" . }}

@@ -150,7 +150,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	folderPath, _ := osext.ExecutableFolder()
 	includepath := path.Join(folderPath, "static")
 	log.Debugf("Include path set to: %v", includepath)
-	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
+	subroutePrefix.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(includepath))))
 
 	subroutePrefix.HandleFunc("/login/", http.HandlerFunc(getLogin))
 	subroutePrefix.HandleFunc("/login/action/login", http.HandlerFunc(postLogin))
