@@ -1,9 +1,6 @@
 {{define "title"}} {{ .stream.Name }} {{end}}
 {{define "scripts"}}
-<!-- Stream specific javascript libraries for jsonform-->
-<script type='text/javascript' src='/static/js/jsv.js'></script>
-<script type='text/javascript' src='/static/js/underscore.js'></script>
-<script type='text/javascript' src='/static/js/jsonform.js'></script>
+
 {{end}}
 {{define "body"}}
     <div class="panel panel-default panel-primary">
@@ -43,11 +40,19 @@
             <form id="result-form"></form>
         </div>
     </div>
+    
+    <!-- Stream specific javascript libraries for jsonform-->
+    
+    <script type='text/javascript' src='/static/js/underscore.js'></script>
+    <script type='text/javascript' src='/static/js/jsv.js'></script>
+    <script type='text/javascript' src='/static/js/jsonform.js'></script>
 
     <script type="text/javascript">
     $(document).ready(function(){
+        var schema = JSON.parse({{ .stream.Type }})
+        console.log(schema)
         $('#result-form').jsonForm({
-          schema: {{ .stream.Type }} ,
+          schema:  { datapoint: schema},
           onSubmit: function (errors, values) {
               alert(JSON.stringify(values));
           }

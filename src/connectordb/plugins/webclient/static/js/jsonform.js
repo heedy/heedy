@@ -26,7 +26,7 @@
 
 (function(serverside, global, $, _, JSON) {
   if (serverside) {
-    _ = require('underscore');
+    //_ = require('underscore');
   }
 
   /**
