@@ -72,7 +72,7 @@
       <string>Api Key:</string>
      </property>
     </widget>
-    <widget class="QComboBox" name="serverUrl">
+    <widget class="QLineEdit" name="serverUrl">
      <property name="geometry">
       <rect>
        <x>50</x>
@@ -80,9 +80,6 @@
        <width>151</width>
        <height>31</height>
       </rect>
-     </property>
-     <property name="editable">
-      <bool>true</bool>
      </property>
     </widget>
     <widget class="QLabel" name="label_3">

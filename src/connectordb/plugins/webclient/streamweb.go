@@ -9,9 +9,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var (
-	DefaultSchema = `{"type": "number"}`
-	)
+const (
+	defaultTemplate = `
+{
+	"type": "object",
+	"properties": {
+		"value": {
+			"type": "number"
+		}
+	}
+}`
+)
 
 func readStreamPage(se *SessionEnvironment) {
 	pageData := make(map[string]interface{})
@@ -77,7 +85,7 @@ func createStreamAction(se *SessionEnvironment) {
 		goto redirect
 	}
 
-	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, DefaultSchema)
+	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, defaultTemplate)
 
 	if err != nil {
 		log.Errorf(err.Error())
