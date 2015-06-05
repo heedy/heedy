@@ -46,7 +46,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		fields := log.Fields{"addr": request.RemoteAddr, "uri": request.URL.String()}
 		if realIP := request.Header.Get("X-Real-IP"); realIP != "" {
 			fields["faddr"] = realIP
-			if !strings.HasPrefix(request.RemoteAddr, "127.0.0.1") && !strings.HasPrefix(request.RemoteAddr, "::1") {
+			if strings.HasPrefix(request.RemoteAddr, "127.0.0.1") || strings.HasPrefix(request.RemoteAddr, "::1") {
 				delete(fields, "addr")
 			}
 		}
