@@ -7,8 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -26,39 +26,58 @@ A5xUYweqavIKBzj1zlNXt3Zf19lqDb7kNICQAAAAABJRU5ErkJggg==`
 )
 
 var (
-	//ErrUnderConstruction is returned when an API call is valid, but currently unimplemented
-	ErrUnderConstruction = errors.New("This part of the API is under construction.")
+	//The amount of time to wait between each unsuccessful login attempt
+	UnsuccessfulLoginWait = 300 * time.Millisecond
 )
 
 //APIHandler is a function that handles some part of the REST API given a specific operator on the database.
-type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request) error
+type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error
 
 func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+		//Set up the logger for this connection
+
+		//Since an important use case is behind nginx, the following rule is followed:
+		//localhost address is not logged if real-ip header exists (since it is from localhost)
+		//if real-ip header exists, faddr=address (forwardedAddress) is logged
+		//In essence, if behind nginx, there is no need for the addr=blah
+
+		fields := log.Fields{"addr": request.RemoteAddr, "uri": request.URL.String()}
+		if realIP := request.Header.Get("X-Real-IP"); realIP != "" {
+			fields["faddr"] = realIP
+			if !strings.HasPrefix(request.RemoteAddr, "127.0.0.1") && !strings.HasPrefix(request.RemoteAddr, "::1") {
+				delete(fields, "addr")
+			}
+		}
+
+		logger := log.WithFields(fields)
+
+		//Check authentication
 		authUser, authPass, ok := request.BasicAuth()
 
 		//If there is no basic auth header, return unauthorized
 		if !ok {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
-			log.WithFields(log.Fields{"op": "AUTH", "addr": request.RemoteAddr, "uri": request.URL.String()}).Warningln("Login attempt w/o auth")
+			logger.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
 			return
 		}
 
 		//Handle a panic without crashing the whole rest interface
 		defer func() {
 			if r := recover(); r != nil {
-				log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "uri": request.URL.String(), "op": "PANIC"}).Errorln(r)
+				logger.WithFields(log.Fields{"dev": authUser, "op": "PANIC"}).Errorln(r)
 			}
 		}()
 
 		o, err := db.LoginOperator(authUser, authPass)
 
 		if err != nil {
-			log.WithFields(log.Fields{"dev": authUser, "addr": request.RemoteAddr, "uri": request.URL.String(), "op": "AUTH"}).Warningln(err.Error())
+			logger.WithFields(log.Fields{"dev": authUser, "op": "AUTH"}).Warningln(err.Error())
 
 			//So there was an unsuccessful attempt at login, huh?
-			time.Sleep(300 * time.Millisecond)
+			time.Sleep(UnsuccessfulLoginWait)
 
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
@@ -68,7 +87,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		}
 
 		//If we got here, o is a valid operator
-		err = apifunc(o, writer, request)
+		err = apifunc(o, writer, request, logger.WithField("dev", o.Name()))
 		if err != nil {
 			writer.Write([]byte(err.Error()))
 		}

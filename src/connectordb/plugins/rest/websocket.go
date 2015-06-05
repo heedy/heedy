@@ -50,8 +50,8 @@ type WebsocketConnection struct {
 }
 
 //NewWebsocketConnection creates a new websocket connection based on the operators and stuff
-func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, request *http.Request) (*WebsocketConnection, error) {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ws"})
+func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*WebsocketConnection, error) {
+	logger = logger.WithField("op", "ws")
 
 	ws, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
@@ -188,8 +188,8 @@ func (c *WebsocketConnection) Run() error {
 }
 
 //RunWebsocket runs the websocket handler
-func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
-	conn, err := NewWebsocketConnection(o, writer, request)
+func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	conn, err := NewWebsocketConnection(o, writer, request, logger)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return err

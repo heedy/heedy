@@ -81,11 +81,10 @@ func ValidName(n string, err error) error {
 }
 
 //BadQ checks if there is a q= part to the given query, and gives an error if there is
-func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, arg string) error {
+func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	if val := request.URL.Query().Get("q"); val != "" {
 		writer.WriteHeader(http.StatusBadRequest)
-		log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr,
-			"op": "Q", "arg": arg}).Warningln("Bad Q: ", val)
+		logger.WithField("op", "Q").Warningln("Bad Q: ", val)
 		return ErrBadQ
 	}
 	return nil

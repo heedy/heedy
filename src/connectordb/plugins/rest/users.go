@@ -10,8 +10,8 @@ import (
 )
 
 //ListUsers lists the users that the given operator can see
-func ListUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListUsers"})
+func ListUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	logger = logger.WithField("op", "ListUsers")
 	logger.Debugln()
 	u, err := o.ReadAllUsers()
 	if err != nil {
@@ -28,9 +28,9 @@ type userCreator struct {
 }
 
 //CreateUser creates a new user from a REST API request
-func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateUser", "arg": usrname})
+	logger = logger.WithField("op", "CreateUser")
 	logger.Infoln()
 	var a userCreator
 	err := UnmarshalRequest(request, &a)
@@ -47,18 +47,18 @@ func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 		return err
 	}
 
-	return ReadUser(o, writer, request)
+	return ReadUser(o, writer, request, logger)
 }
 
 //ReadUser reads the given user
-func ReadUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ReadUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
 
-	if err := BadQ(o, writer, request, usrname); err != nil {
+	if err := BadQ(o, writer, request, logger); err != nil {
 		return err
 	}
 
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadUser", "arg": usrname})
+	logger = logger.WithField("op", "ReadUser")
 	logger.Debugln()
 	u, err := o.ReadUser(usrname)
 
@@ -70,9 +70,9 @@ func ReadUser(o operator.Operator, writer http.ResponseWriter, request *http.Req
 }
 
 //UpdateUser updates the metadata for existing user from a REST API request
-func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateUser", "arg": usrname})
+	logger = logger.WithField("op", "UpdateUser")
 	logger.Infoln()
 	u, err := o.ReadUser(usrname)
 	if err != nil {
@@ -103,9 +103,9 @@ func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //DeleteUser deletes existing user from a REST API request
-func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteUser", "arg": usrname})
+	logger = logger.WithField("op", "DeleteUser")
 	logger.Infoln()
 	err := o.DeleteUser(usrname)
 	if err != nil {
