@@ -5,6 +5,7 @@ import (
 	"connectordb/plugins"
 	"connectordb/streamdb"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/users"
 	"fmt"
 	"os"
 	"strings"
@@ -72,6 +73,7 @@ type Shell struct {
 	sdb             *streamdb.Database
 	operator        operator.Operator
 	operatorName    string // can be changed when we do a su
+	pwd             string // the present working directory of path commands
 }
 
 func (s *Shell) Repl() {
@@ -115,12 +117,16 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 		ListUsers{},
 		Cat{},
 		Su{},
-		ListDevices{}}
+		ListDevices{},
+		Passwd{},
+		Rm{},
+		Ls{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
 	s.operator = sdb.Operator
 	s.operatorName = "ConnectorDB"
+	s.pwd = ""
 	return &s
 }
 
@@ -158,6 +164,32 @@ func (s *Shell) ReadLine() string {
 	return strings.TrimSpace(str)
 }
 
+// Reads a password from the command line
+func (s *Shell) ReadPassword() string {
+	fmt.Printf("Password: " + Password)
+	passwd := s.ReadLine()
+	fmt.Println(Reset)
+	return passwd
+}
+
+// Reads a password from the command line, return will be blank on failure
+func (s *Shell) ReadRepeatPassword() string {
+	fmt.Printf("Password: " + Password)
+	passwd := s.ReadLine()
+	fmt.Println(Reset)
+
+	fmt.Printf("Repeat Password: " + Password)
+	passwd2 := s.ReadLine()
+	fmt.Println(Reset)
+
+	if passwd != passwd2 {
+		fmt.Println(Yellow + "Passwords did not match" + Reset)
+		return ""
+	}
+
+	return passwd
+}
+
 // Prints an error if it exists. Returns true if printed, false if not
 func (s *Shell) PrintError(err error) bool {
 	if err != nil {
@@ -165,6 +197,20 @@ func (s *Shell) PrintError(err error) bool {
 	}
 
 	return err != nil
+}
+
+// Reads the user, device and stream at a path
+func (s *Shell) ReadPath(path string) (usr *users.User, dev *users.Device, stream *operator.Stream) {
+	usr, _ = s.operator.ReadUser(path)
+	dev, _ = s.operator.ReadDevice(path)
+	stream, _ = s.operator.ReadStream(path)
+
+	return usr, dev, stream
+}
+
+// prepends the current working place to the give path
+func (s *Shell) ResolvePath(path string) string {
+	return s.pwd + path
 }
 
 // The ShellCommand is an internal command within our internal shell.
@@ -227,100 +273,4 @@ func (h Help) Execute(shell *Shell, args []string) {
 
 func (h Help) Name() string {
 	return "help"
-}
-
-// The Exit command
-type Exit struct {
-}
-
-func (h Exit) Help() string {
-	return "Quits the interactive shell"
-}
-
-func (h Exit) Usage() string {
-	return h.Help()
-}
-
-func (h Exit) Execute(shell *Shell, args []string) {
-	fmt.Printf("exit\n")
-	shell.running = false
-}
-
-func (h Exit) Name() string {
-	return "exit"
-}
-
-// The clear command
-type Clear struct {
-}
-
-func (h Clear) Help() string {
-	return "Clears the screen"
-}
-
-func (h Clear) Usage() string {
-	return ""
-}
-
-func (h Clear) Execute(shell *Shell, args []string) {
-	fmt.Println(Reset) // clear the shell's color problems if any
-	shell.Cls()
-}
-
-func (h Clear) Name() string {
-	return "clear"
-}
-
-// The clear command
-type AddUser struct {
-}
-
-func (h AddUser) Help() string {
-	return "Creates a new user"
-}
-
-func (h AddUser) Usage() string {
-	return ""
-}
-
-func (h AddUser) Execute(shell *Shell, args []string) {
-	// TODO grant admin
-	fmt.Print("Enter the name for the new user: ")
-	name := shell.ReadLine()
-
-	fmt.Print("Enter the email for the new user: ")
-	email := shell.ReadLine()
-
-	// Do the password check
-	passdiff := true
-	pass1 := ""
-	for passdiff {
-		fmt.Println("Enter password for new user:")
-		fmt.Print(Password)
-		pass1 = shell.ReadLine()
-		fmt.Println(Reset + "Re-enter password:" + Black)
-		pass2 := shell.ReadLine()
-		fmt.Print(Reset)
-
-		if pass1 == pass2 {
-			passdiff = false
-		} else {
-			fmt.Println("Passwords did not match, type 'yes' to try again")
-			decision := shell.ReadLine()
-			if decision != "yes" {
-				return
-			}
-		}
-	}
-
-	fmt.Printf("Creating User %v at %v\n", name, email)
-
-	err := shell.operator.CreateUser(name, email, pass1)
-	if err != nil {
-		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
-	}
-}
-
-func (h AddUser) Name() string {
-	return "adduser"
 }
