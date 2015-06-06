@@ -9,6 +9,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 )
 
 var (
@@ -21,10 +22,22 @@ var (
 
 	runwriter = flag.Bool("dbwriter", true, "Run the Database Writer (needed if dbwriter service off)")
 	loglevel  = flag.String("log", "INFO", "The log level to run at")
+	logfile   = flag.String("logfile", "", "The log file to write to")
 )
 
 func main() {
 	flag.Parse()
+
+	//Set up the log file
+	if *logfile != "" {
+		f, err := os.OpenFile(*logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Panicf("Could not open file %s: %s", *logfile, err.Error())
+		}
+		defer f.Close()
+		log.SetFormatter(new(log.JSONFormatter))
+		log.SetOutput(f)
+	}
 
 	switch *loglevel {
 	default:
@@ -55,8 +68,8 @@ func main() {
 	if *runwriter {
 		go db.RunWriter()
 	}
-
-	r := rest.Router(db, nil)
+	r := mux.NewRouter()
+	rest.Router(db, r.PathPrefix("/api/v1").Subrouter())
 	http.Handle("/", r)
 
 	fmt.Println("Running REST API on port", *serverport)

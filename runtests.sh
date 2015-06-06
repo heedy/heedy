@@ -111,10 +111,10 @@ start
 #Now test the python stuff, while rebuilding the db to make sure that
 #the go tests didn't invalidate the db
 echo "==================================================="
-echo "Starting Rest"
+echo "Starting Server"
 echo "==================================================="
-./bin/restserver --sql=postgres://127.0.0.1:52592/connectordb?sslmode=disable &
-rest_server=$!
+./bin/connectordb run $DBDIR &
+cdb_server=$!
 
 echo "==================================================="
 echo "Starting API Tests"
@@ -122,7 +122,7 @@ echo "==================================================="
 nosetests --with-coverage --cover-package=connectordb src/clients/python/connectordb_test.py
 test_status=$?
 
-kill $rest_server
+kill $cdb_server
 stop
 
 check_pids

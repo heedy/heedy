@@ -17,7 +17,7 @@ from _stream import Stream
 from _websocket import WebsocketHandler
 
 
-API_URL = "https://connectordb.com/api/v1/"
+API_URL = "https://connectordb.com"
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
@@ -27,7 +27,7 @@ class ConnectorDB(Device):
             url = url +"/"
 
         self.auth = HTTPBasicAuth(user,password)
-        self.url = url
+        self.url = urljoin(url,"/api/v1/")
 
         self.ws = WebsocketHandler(self.url,self.auth)
 
