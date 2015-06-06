@@ -52,7 +52,7 @@ func Init(configuration *config.Configuration) error {
 		return ErrAlreadyInitialized
 	}
 
-	log.Printf("Initializing subsystems")
+	log.Debugf("Initializing subsystems")
 	gnatsdInstance = NewConfigGnatsdService(configuration)
 	redisInstance = NewConfigRedisService(configuration)
 
@@ -67,7 +67,7 @@ func Init(configuration *config.Configuration) error {
 	if err := redisInstance.Init(); err != nil {
 		return err
 	}
-	log.Printf("Finished initializing subsystems")
+	log.Debugf("Finished initializing subsystems")
 
 	doneInit = true
 	return nil
@@ -94,7 +94,7 @@ func startSqlDatabase(configuration *config.Configuration) error {
 
 //Start the necessary servers to run StreamDB
 func Start(configuration *config.Configuration) error {
-	log.Printf("Starting subsystems")
+	log.Debugf("Starting subsystems")
 
 	if err := startSqlDatabase(configuration); err != nil {
 		return err
@@ -127,7 +127,7 @@ func stopSqlDatabase(configuration *config.Configuration) error {
 
 //Start the necessary servers to run StreamDB
 func Stop(configuration *config.Configuration) error {
-	log.Printf("Stopping subsystems")
+	log.Debugf("Stopping subsystems")
 
 	var globerr error
 	if err := stopSqlDatabase(configuration); err != nil {
@@ -154,7 +154,7 @@ func Stop(configuration *config.Configuration) error {
 
 //Start the necessary servers to run StreamDB
 func Kill(configuration *config.Configuration) error {
-	log.Printf("Killing subsystems")
+	log.Debugf("Killing subsystems")
 
 	var globerr error
 	sqlDatabaseType := configuration.DatabaseType

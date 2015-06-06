@@ -44,14 +44,14 @@ func NewGnatsdService(host string, port int, streamdbDirectory string) *GnatsdSe
 
 //InitializeGnatsd sets up the configuration of the gnatsd messaging daemon
 func (srv *GnatsdService) Setup() error {
-	log.Printf("Setting up Gnatsd server")
+	log.Infof("Setting up Gnatsd server")
 
 	//Now copy the configuration file
 	return CopyConfig(srv.streamdbDirectory, "gnatsd.conf", nil)
 }
 
 func (srv *GnatsdService) Init() error {
-	log.Printf("Initializing Gnatsd")
+	log.Debugf("Initializing Gnatsd")
 
 	srv.Stat = StatusInit
 	// Nothing to do here, may want to which/look for the executables in the
@@ -69,7 +69,7 @@ func (srv *GnatsdService) Start() error {
 		return ErrNotInitialized
 	}
 
-	log.Printf("Starting gNATSd server on port %d", srv.port)
+	log.Infof("Starting gNATSd server on port %d", srv.port)
 
 	configReplacements := GenerateConfigReplacements(srv.streamdbDirectory, "gnatsd", srv.host, srv.port)
 	configfile, err := SetConfig(srv.streamdbDirectory, "gnatsd.conf", configReplacements, nil)

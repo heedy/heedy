@@ -24,7 +24,7 @@ import (
 
 var (
 	createFlags            = flag.NewFlagSet("create", flag.ExitOnError)
-	createUsernamePassword = createFlags.String("user", "admin:admin", "The initial user in username:password format")
+	createUsernamePassword = createFlags.String("user", "", "The initial user in username:password format")
 	createEmail            = createFlags.String("email", "root@localhost", "The email address for the root user")
 	createDbType           = createFlags.String("dbtype", "postgres", "The type of database to create.")
 
@@ -36,6 +36,8 @@ var (
 	upgradeFlags = flag.NewFlagSet("upgrade", flag.ExitOnError)
 
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
+	loglevel = flag.String("log", "INFO", "The log level to run at")
 )
 
 //PrintUsage gives a nice message of the functionality available from the executable
@@ -69,6 +71,20 @@ func main() {
 
 	// global system stuff
 	flag.Parse()
+
+	switch *loglevel {
+	default:
+		log.Panic("Unrecognized log level ", *loglevel)
+	case "INFO":
+		log.SetLevel(log.InfoLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	}
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
@@ -92,7 +108,7 @@ func main() {
 
 	// Make sure this is abs.
 	dbPath, _ = filepath.Abs(dbPath)
-	log.Println(dbPath)
+	log.Debugln("Database path:", dbPath)
 	// init and save later
 	config.InitConfiguration(dbPath)
 	defer config.SaveConfiguration()
@@ -155,7 +171,7 @@ func createDatabase() error {
 		return err
 	}
 
-	log.Println("CONNECTORDB: Stopping any subsystems")
+	log.Debugln("CONNECTORDB: Stopping any subsystems")
 
 	services.Stop(config.GetConfiguration())
 	//services.Kill(config.GetConfiguration())
@@ -168,13 +184,13 @@ func startDatabase(dbPath string) error {
 	processFlags(startFlags)
 
 	dbPath, err := util.ProcessConnectordbDirectory(dbPath)
-
 	if err != nil {
 		if err == util.ErrAlreadyRunning && !*forceStart {
 			fmt.Println("Use -force to force start the database even with connectordb.pid in there.")
 			return err
+		} else if err != util.ErrAlreadyRunning {
+			return err
 		}
-		return err
 	}
 
 	if err := services.Init(config.GetConfiguration()); err != nil {

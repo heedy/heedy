@@ -49,7 +49,7 @@ func Create(config *config.Configuration, username, password, email string) erro
 
 func createSqlDatabase(configuration *config.Configuration, username, password, email string) error {
 	sqlDatabaseType := configuration.DatabaseType
-	log.Printf("Creating sql database of type %s", sqlDatabaseType)
+	log.Debugf("Creating sql database of type %s", sqlDatabaseType)
 
 	switch sqlDatabaseType {
 	case config.Postgres:
@@ -64,7 +64,7 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 		return ErrUnrecognizedDatabase
 	}
 
-	log.Printf("Creating user %s (%s)", username, email)
+	log.Infof("Creating user %s (%s)", username, email)
 
 	// Make the connection
 	spath := configuration.GetDatabaseConnectionString()
