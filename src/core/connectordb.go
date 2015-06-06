@@ -77,7 +77,7 @@ func main() {
 	if *logfile != "" {
 		f, err := os.OpenFile(*logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			log.Panicf("Could not open file %s: %s", *logfile, err.Error())
+			log.Fatalf("Could not open file %s: %s", *logfile, err.Error())
 		}
 		defer f.Close()
 		log.SetFormatter(new(log.JSONFormatter))
@@ -86,7 +86,7 @@ func main() {
 
 	switch *loglevel {
 	default:
-		log.Panic("Unrecognized log level ", *loglevel)
+		log.Fatalln("Unrecognized log level ", *loglevel)
 	case "INFO":
 		log.SetLevel(log.InfoLevel)
 	case "WARN":

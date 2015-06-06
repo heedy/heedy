@@ -73,8 +73,16 @@ func authWrapper(h WebHandler) http.HandlerFunc {
 			http.Redirect(writer, request, "/login/", http.StatusTemporaryRedirect)
 			return
 		}
+		logger = logger.WithField("usr", se.User.Name)
 
-		h(&se, logger.WithField("usr", se.User.Name))
+		//Handle a panic without crashing the whole server
+		defer func() {
+			if r := recover(); r != nil {
+				logger.WithField("op", "PANIC").Errorln(r)
+			}
+		}()
+
+		h(&se, logger)
 	})
 }
 
@@ -103,7 +111,9 @@ func getLogin(writer http.ResponseWriter, request *http.Request) {
 func getLogout(writer http.ResponseWriter, request *http.Request) {
 
 	se, _ := NewSessionEnvironment(writer, request)
-	getLogger(request).WithField("usr", se.User.Name).Debugf("logout")
+	if se.User != nil {
+		getLogger(request).WithField("usr", se.User.Name).Info("Logout")
+	}
 	se.Logoff()
 	se.Save()
 
@@ -116,8 +126,6 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	userstr := request.PostFormValue("username")
 	passstr := request.PostFormValue("password")
 
-	logger.WithField("usr", userstr).Debugf("Log in attempt")
-
 	usroperator, err := userdb.LoginOperator(userstr, passstr)
 	if err != nil {
 		logger.WithFields(log.Fields{"op": "AUTH", "usr": userstr}).Warn(err.Error())
@@ -126,6 +134,9 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	}
 	user, _ := usroperator.User()
 	userdev, _ := usroperator.Device()
+
+	logger = logger.WithField("usr", user.Name)
+	logger.Debug("Login")
 
 	// Get a session. We're ignoring the error resulted from decoding an
 	// existing session: Get() always returns a session, even if empty.
@@ -136,6 +147,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	session.Values["OrigUser"] = *user
 
 	if err := session.Save(request, writer); err != nil {
+		logger.Error(err.Error())
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
