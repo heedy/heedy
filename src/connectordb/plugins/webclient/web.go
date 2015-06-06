@@ -136,7 +136,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	userdev, _ := usroperator.Device()
 
 	logger = logger.WithField("usr", user.Name)
-	logger.Debug("Login")
+	logger.Info("Login")
 
 	// Get a session. We're ignoring the error resulted from decoding an
 	// existing session: Get() always returns a session, even if empty.
