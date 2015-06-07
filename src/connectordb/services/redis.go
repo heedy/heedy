@@ -50,7 +50,7 @@ func (srv *RedisService) Setup() error {
 }
 
 func (srv *RedisService) Init() error {
-	log.Printf("Initializing redis")
+	log.Debugf("Initializing redis")
 	srv.Stat = StatusInit
 	// Nothing to do here, may want to which/look for the executables in the
 	// future and check the port is open
@@ -67,7 +67,7 @@ func (srv *RedisService) Start() error {
 		return ErrNotInitialized
 	}
 
-	log.Printf("Starting Redis server on port %d", srv.port)
+	log.Infof("Starting Redis server on port %d", srv.port)
 
 	configReplacements := GenerateConfigReplacements(srv.streamdbDirectory, "redis", srv.host, srv.port)
 	configfile, err := SetConfig(srv.streamdbDirectory, "redis.conf", configReplacements, nil)
@@ -75,7 +75,7 @@ func (srv *RedisService) Start() error {
 		return err
 	}
 
-	log.Println(configfile)
+	log.Debugln(configfile)
 
 	err = RunDaemon(err, "redis-server", configfile)
 	err = WaitPort(srv.host, srv.port, err)
@@ -88,6 +88,7 @@ func (srv *RedisService) Start() error {
 }
 
 func (srv *RedisService) Stop() error {
+	log.Print("Stopping redis...")
 	portString := strconv.Itoa(srv.port)
 
 	return RunCommand(nil, "redis-cli", "-p", portString, "shutdown")
