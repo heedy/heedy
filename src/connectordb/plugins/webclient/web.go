@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -35,40 +36,62 @@ func init() {
 	gob.Register(users.Device{})
 }
 
+func getLogger(request *http.Request) *log.Entry {
+	//Since an important use case is behind nginx, the following rule is followed:
+	//localhost address is not logged if real-ip header exists (since it is from localhost)
+	//if real-ip header exists, faddr=address (forwardedAddress) is logged
+	//In essence, if behind nginx, there is no need for the addr=blah
+
+	fields := log.Fields{"addr": request.RemoteAddr, "uri": request.URL.String()}
+	if realIP := request.Header.Get("X-Real-IP"); realIP != "" {
+		fields["faddr"] = realIP
+		if strings.HasPrefix(request.RemoteAddr, "127.0.0.1") || strings.HasPrefix(request.RemoteAddr, "::1") {
+			delete(fields, "addr")
+		}
+	}
+
+	return log.WithFields(fields)
+}
+
 /**
 func internalServerError(err error) {
 
 }
 **/
 
-type WebHandler func(se *SessionEnvironment)
+type WebHandler func(se *SessionEnvironment, logger *log.Entry)
 
 func authWrapper(h WebHandler) http.HandlerFunc {
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		logger := getLogger(request)
 
-		log.Printf("Doing login\n")
 		se, err := NewSessionEnvironment(writer, request)
-		log.Debugf("Created session\n")
 
 		if err != nil || se.User == nil || se.Device == nil {
-			log.Errorf("Error: %v, %v\n", err, se)
+			logger.Errorf("Error: %v, %v\n", err, se)
 			http.Redirect(writer, request, "/login/", http.StatusTemporaryRedirect)
 			return
 		}
-		log.Debugf("Serving page\n")
+		logger = logger.WithField("usr", se.User.Name)
 
-		h(&se)
+		//Handle a panic without crashing the whole server
+		defer func() {
+			if r := recover(); r != nil {
+				logger.WithField("op", "PANIC").Errorln(r)
+			}
+		}()
+
+		h(&se, logger)
 	})
 }
 
 // Display the login page
 func getLogin(writer http.ResponseWriter, request *http.Request) {
-
-	log.Printf("Showing login page")
+	logger := getLogger(request)
+	logger.Debugf("Showing login page")
 
 	se, err := NewSessionEnvironment(writer, request)
-	log.Debugf("got session")
 
 	// Don't log in somebody that's already logged in
 	if err == nil && se.User != nil && se.Device != nil {
@@ -86,9 +109,11 @@ func getLogin(writer http.ResponseWriter, request *http.Request) {
 
 // Display the login page
 func getLogout(writer http.ResponseWriter, request *http.Request) {
-	log.Printf("logout")
 
 	se, _ := NewSessionEnvironment(writer, request)
+	if se.User != nil {
+		getLogger(request).WithField("usr", se.User.Name).Info("Logout")
+	}
 	se.Logoff()
 	se.Save()
 
@@ -97,18 +122,21 @@ func getLogout(writer http.ResponseWriter, request *http.Request) {
 
 // Process a login POST message
 func postLogin(writer http.ResponseWriter, request *http.Request) {
+	logger := getLogger(request)
 	userstr := request.PostFormValue("username")
 	passstr := request.PostFormValue("password")
 
-	log.Printf("Log in attempt: %v", userstr)
-
 	usroperator, err := userdb.LoginOperator(userstr, passstr)
 	if err != nil {
+		logger.WithFields(log.Fields{"op": "AUTH", "usr": userstr}).Warn(err.Error())
 		http.Redirect(writer, request, "/login/?failed=true", http.StatusTemporaryRedirect)
 		return
 	}
 	user, _ := usroperator.User()
 	userdev, _ := usroperator.Device()
+
+	logger = logger.WithField("usr", user.Name)
+	logger.Info("Login")
 
 	// Get a session. We're ignoring the error resulted from decoding an
 	// existing session: Get() always returns a session, even if empty.
@@ -119,6 +147,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	session.Values["OrigUser"] = *user
 
 	if err := session.Save(request, writer); err != nil {
+		logger.Error(err.Error())
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}

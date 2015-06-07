@@ -34,7 +34,7 @@ func WaitPort(host string, port int, err error) error {
 
 	hostPort := fmt.Sprintf("%s:%d", host, port)
 
-	log.Printf("Waiting for %v to open...", hostPort)
+	log.Debugf("Waiting for %v to open...", hostPort)
 
 	_, err = net.Dial("tcp", hostPort)
 	i := 0
@@ -46,7 +46,7 @@ func WaitPort(host string, port int, err error) error {
 		return ErrTimeout
 	}
 
-	log.Printf("...%v is now open.", hostPort)
+	log.Debugf("...%v is now open.", hostPort)
 	return nil
 }
 
@@ -59,7 +59,7 @@ func RunCommand(err error, command string, args ...string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf(cmd2Str(command, args...))
+	log.Debugf(cmd2Str(command, args...))
 
 	cmd := exec.Command(command, args...)
 
@@ -74,7 +74,7 @@ func RunDaemon(err error, command string, args ...string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf(cmd2Str(command, args...))
+	log.Debugf(cmd2Str(command, args...))
 
 	cmd := exec.Command(command, args...)
 
@@ -96,7 +96,7 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 
 	pidfile := filepath.Join(streamdbDirectory, procname+".pid")
 	if !util.PathExists(pidfile) {
-		log.Printf("Pid Not Found For: %s", procname)
+		log.Errorf("Pid Not Found For: %s", procname)
 		return nil, ErrProcessNotFound
 	}
 
@@ -108,7 +108,7 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 	pids := strings.Fields(string(pidbytes))
 
 	if len(pids) < 1 {
-		log.Printf("Numpids = 0 for: %s", procname)
+		log.Errorf("Numpids = 0 for: %s", procname)
 		return nil, ErrProcessNotFound
 	}
 
@@ -127,7 +127,7 @@ func StopProcess(streamdbDirectory, procname string, err error) error {
 		return err
 	}
 
-	log.Printf("Stopping process %d '%s'", p.Pid, procname)
+	log.Debugf("Stopping process %d '%s'", p.Pid, procname)
 	if err := p.Signal(os.Interrupt); err != nil {
 		return err
 	}

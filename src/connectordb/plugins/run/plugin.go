@@ -38,9 +38,11 @@ func exec(db *streamdb.Database, args []string) error {
 	// all else goes to the webserver
 	http.Handle("/", security.SecurityHeaderHandler(r))
 
+	go db.RunWriter()
+
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.GetConfiguration().WebPort), nil)
 }
 
 func usage() {
-	fmt.Println(`run: runs the HTTP and rest servers`)
+	fmt.Println(`run: Runs the full ConnectorDB system`)
 }

@@ -18,27 +18,27 @@ func getDevicePath(request *http.Request) (username string, devicename string, d
 }
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
-func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
-	log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "PingThis"}).Debugln()
+func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	logger.WithField("op", "PingThis").Debugln()
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(o.Name()))
 	return nil
 }
 
 //ListDevices lists the devices that the given user has
-func ListDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
-	usrname := mux.Vars(request)["user"]
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ListDevices", "arg": usrname})
+func ListDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	logger = logger.WithField("op", "ListDevices")
 	logger.Debugln()
+	usrname := mux.Vars(request)["user"]
 	d, err := o.ReadAllDevices(usrname)
 	return JSONWriter(writer, d, logger, err)
 }
 
 //CreateDevice creates a new user from a REST API request
-func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
-	_, devname, devpath := getDevicePath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "CreateDevice", "arg": devpath})
+func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	logger = logger.WithField("op", "CreateDevice")
 	logger.Infoln()
+	_, devname, devpath := getDevicePath(request)
 	err := ValidName(devname, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -52,18 +52,18 @@ func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 		return err
 	}
 
-	return ReadDevice(o, writer, request)
+	return ReadDevice(o, writer, request, logger)
 }
 
 //ReadDevice gets an existing device from a REST API request
-func ReadDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func ReadDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, devpath := getDevicePath(request)
 
-	if err := BadQ(o, writer, request, devpath); err != nil {
+	if err := BadQ(o, writer, request, logger); err != nil {
 		return err
 	}
 
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "ReadDevice", "arg": devpath})
+	logger = logger.WithField("op", "ReadDevice")
 	logger.Debugln()
 	d, err := o.ReadDevice(devpath)
 
@@ -71,9 +71,9 @@ func ReadDevice(o operator.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //UpdateDevice updates the metadata for existing device from a REST API request
-func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, devpath := getDevicePath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "UpdateDevice", "arg": devpath})
+	logger = logger.WithField("op", "UpdateDevice")
 	logger.Infoln()
 
 	d, err := o.ReadDevice(devpath)
@@ -111,9 +111,9 @@ func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //DeleteDevice deletes existing device from a REST API request
-func DeleteDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func DeleteDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, devpath := getDevicePath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "DeleteDevice", "arg": devpath})
+	logger = logger.WithField("op", "DeleteDevice")
 	logger.Infoln()
 	err := o.DeleteDevice(devpath)
 	if err != nil {

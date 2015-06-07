@@ -48,7 +48,7 @@ func (srv *SqliteService) Setup() error {
 	util.Touch(srv.sqliteFilepath)
 
 	//Initialize the database tables
-	log.Printf("Setting up initial tables\n")
+	log.Debugf("Setting up initial tables\n")
 	return dbutil.UpgradeDatabase(srv.sqliteFilepath, true)
 }
 

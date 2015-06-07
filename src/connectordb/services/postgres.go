@@ -47,7 +47,7 @@ func NewPostgresService(host string, port int, streamdbDirectory string) *Postgr
 
 	ps.InitServiceHelper(streamdbDirectory, "postgres")
 
-	log.Printf("Creating new postgres service at %s:%d, %s using %p", host, port, streamdbDirectory, &ps)
+	log.Debugf("Creating new postgres service at %s:%d, %s using %p", host, port, streamdbDirectory, &ps)
 	return &ps
 }
 
@@ -84,14 +84,14 @@ func (srv *PostgresService) Setup() error {
 		return err
 	}
 
-	log.Printf("Setting up initial tables")
+	log.Debugf("Setting up initial tables")
 	spath := config.GetDatabaseConnectionString()
 	return dbutil.UpgradeDatabase(spath, true)
 }
 
 // Init the postgres service
 func (srv *PostgresService) Init() error {
-	log.Printf("Initializing Postgres")
+	log.Debugf("Initializing Postgres")
 	srv.Stat = StatusInit
 
 	// Nothing to do here, may want to which/look for the executables in the
@@ -115,8 +115,8 @@ func (srv *PostgresService) Start() error {
 	postgresDir := filepath.Join(srv.streamdbDirectory, postgresDatabaseName)
 	postgresSettingsPath := filepath.Join(postgresDir, "postgresql.conf")
 
-	log.Printf("Postgres Directory: %s", postgresDir)
-	log.Printf("Postgres Settings Path: %s", postgresSettingsPath)
+	log.Debugf("Postgres Directory: %s", postgresDir)
+	log.Debugf("Postgres Settings Path: %s", postgresSettingsPath)
 
 	configReplacements := GenerateConfigReplacements(srv.streamdbDirectory, "postgres", srv.host, srv.port)
 
@@ -141,6 +141,7 @@ func (srv *PostgresService) Start() error {
 }
 
 func (srv *PostgresService) Stop() error {
+	log.Print("Stopping postgres...")
 	pgctl := dbutil.FindPostgresPgctl()
 	postgresDir := filepath.Join(srv.streamdbDirectory, postgresDatabaseName)
 

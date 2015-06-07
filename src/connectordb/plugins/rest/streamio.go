@@ -18,9 +18,9 @@ var (
 )
 
 //GetStreamLength gets the stream length
-func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamLength", "arg": streampath})
+	logger = logger.WithField("op", "StreamLength")
 	logger.Debugln()
 
 	l, err := o.LengthStream(streampath)
@@ -29,9 +29,9 @@ func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *h
 }
 
 //WriteStream writes the given stream
-func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "WriteStream", "arg": streampath})
+	logger = logger.WithField("op", "WriteStream")
 
 	var datapoints []operator.Datapoint
 	err := UnmarshalRequest(request, &datapoints)
@@ -81,9 +81,9 @@ func writeJSONResult(writer http.ResponseWriter, dr operator.DatapointReader, lo
 }
 
 //GetStreamRangeI reads the given stream by index
-func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamRangeI", "arg": streampath})
+	logger = logger.WithField("op", "StreamRangeI")
 	q := request.URL.Query()
 
 	i1s := q.Get("i1")
@@ -112,9 +112,9 @@ func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *h
 }
 
 //GetStreamRangeT reads the given stream by index
-func GetStreamRangeT(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func GetStreamRangeT(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "StreamRangeT", "arg": streampath})
+	logger = logger.WithField("op", "StreamRangeT")
 	q := request.URL.Query()
 
 	t1s := q.Get("t1")
@@ -159,9 +159,9 @@ func GetStreamRangeT(o operator.Operator, writer http.ResponseWriter, request *h
 }
 
 //StreamTime2Index gets the time associated with the index
-func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger := log.WithFields(log.Fields{"dev": o.Name(), "addr": request.RemoteAddr, "op": "Time2Index", "arg": streampath})
+	logger = logger.WithField("op", "Time2Index")
 
 	ts := request.URL.Query().Get("t")
 	t, err := strconv.ParseFloat(ts, 64)
