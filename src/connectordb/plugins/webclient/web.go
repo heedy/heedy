@@ -206,6 +206,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}", authWrapper(readStreamPage))
 	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))
+	subroutePrefix.HandleFunc("/secure/stream/action/add/streamid/{id:[0-9]+}", authWrapper(insertStreamAction))
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
 
 }

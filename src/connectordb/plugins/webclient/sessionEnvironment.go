@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/sessions"
 )
 
@@ -34,6 +35,19 @@ func (se *SessionEnvironment) Logoff() {
 // Saves the session environment
 func (se *SessionEnvironment) Save() {
 	store.Save(se.Request, se.Writer, se.Session)
+}
+
+// HandleError handles a given error if it exists, if the error was caught and
+// logged, we add a flash, and return true.
+func (se *SessionEnvironment) HandleError(err error, flash string, logger *log.Entry) bool {
+	if err == nil {
+		return false
+	}
+
+	logger.Warn(err.Error())
+	se.Session.AddFlash(flash)
+
+	return true
 }
 
 func NewSessionEnvironment(rw http.ResponseWriter, req *http.Request) (se SessionEnvironment, err error) {
