@@ -1,7 +1,7 @@
 describe("ConnectorDB admin user", function () {
     var cdb;
     beforeEach(function () {
-        cdb = new ConnectorDB("test", "test", "http://192.168.137.246:8000");
+        cdb = new ConnectorDB("test", "test", "http://localhost:8000");
     });
 
     it("should be able to read user", function (done) {
