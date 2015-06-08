@@ -6,12 +6,24 @@ import (
 	"time"
 )
 
-//The Datapoint struct is used to encode a single element of information, ready to be Marshalled/unmarshalled into any of the various types
+//The Datapoint struct is used to encode a single element of information, ready
+// to be Marshalled/unmarshalled into any of the various types
 type Datapoint struct {
-	Timestamp float64     `json:"t" xml:"t,attr"`
-	Data      interface{} `json:"d"`
-	Sender    string      `json:"o,omitempty" xml:"o,attr"`
-	Stream    string      `json:"s,omitempty" xml:"s,attr"`
+	// Unix timestamp as a float
+	Timestamp float64 `json:"t" xml:"t,attr"`
+	// The actual data associated with this point
+	Data   interface{} `json:"d"`
+	Sender string      `json:"o,omitempty" xml:"o,attr"`
+	Stream string      `json:"s,omitempty" xml:"s,attr"`
+}
+
+// Creates a new datapoint with empty sender, stream and the current timestamp
+// good for creating and parsing data on the fly
+func NewDatapoint(Data interface{}) Datapoint {
+	var dp Datapoint
+	dp.Data = Data
+	dp.Timestamp = float64(time.Now().Unix())
+	return dp
 }
 
 //IntTimestamp returns the unix nanoseconds timestamp
