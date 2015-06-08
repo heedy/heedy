@@ -1,8 +1,6 @@
 package webclient
 
 import (
-	"connectordb/streamdb/operator"
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -89,12 +87,15 @@ func createStreamAction(se *SessionEnvironment, logger *log.Entry) {
 	devids := vars["id"]
 	streamtype := se.Request.PostFormValue("datatype")
 	name := se.Request.PostFormValue("name")
-	logger.Infof("Creating: %v", name)
+<<<<<<< HEAD
 
 	if streamtype == "" {
 		streamtype = defaultTemplate
 	}
 
+=======
+	logger.Infof("Creating: %v", name)
+>>>>>>> d617f7c4ebc732bdc05ca604fe5765cb9a83866e
 	devid, _ := strconv.Atoi(devids)
 	device, err := se.Operator.ReadDeviceByID(int64(devid))
 
@@ -114,36 +115,4 @@ func createStreamAction(se *SessionEnvironment, logger *log.Entry) {
 redirect:
 	se.Save()
 	http.Redirect(se.Writer, se.Request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
-}
-
-func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
-	// Don't log anything user-related, as this may kill a little bit of security
-
-	// Init all variables and check them
-	vars := mux.Vars(se.Request)
-	streamids := vars["id"]
-	var datapointjson interface{}
-	var datapoint operator.Datapoint
-	streamData := se.Request.PostFormValue("formdata")
-
-	streamid, err := strconv.Atoi(streamids)
-	if se.HandleError(err, "Error inserting data; invalid stream id.", logger) {
-		goto redirect
-	}
-
-	// Convert the data we need to json
-	err = json.Unmarshal([]byte(streamData), &datapointjson)
-	if se.HandleError(err, "Error inserting data; invalid format.", logger) {
-		goto redirect
-	}
-
-	// Save the data
-	datapoint = operator.NewDatapoint(datapointjson)
-	err = se.Operator.InsertStreamByID(int64(streamid), []operator.Datapoint{datapoint}, "")
-	se.HandleError(err, "Error saving data.", logger)
-
-redirect:
-	se.Save()
-	http.Redirect(se.Writer, se.Request, "/secure/stream/"+streamids, http.StatusTemporaryRedirect)
-
 }

@@ -37,7 +37,12 @@
     <div class="panel panel-default">
         <div class="panel-heading">Manually add data</div>
         <div class="panel-body">
-            <form id="result-form"></form>
+            <form id="result-form">
+            </form>
+
+            <form id="shadow-form" action="/secure/stream/action/add/streamid/{{ .stream.StreamId }}" method="POST">
+                <input id="formdata" type="hidden" name="formdata"></input>
+            </form>
         </div>
     </div>
 
@@ -57,10 +62,12 @@
             if (errors) {
               alert('<p>I beg your pardon?</p>');
               console.log(errors);
+              return false;
             }
-            else {
-                alert(JSON.stringify(values));
-            }
+            $("#formdata").val(JSON.stringify(values));
+            alert(JSON.stringify(values));
+            $("#shadow-form").submit();
+            return false;
           }
         });
       });
