@@ -102,7 +102,7 @@ body {
 .form-control:focus{
 background-image:none;
 
-  padding: 1em;
+  /**padding: 1em;**/
   float: none;
   border: 1px solid #66afe9;
 
