@@ -11,6 +11,7 @@ class Stream(ConnectorObject):
     @property
     def nickname(self):
         return self.data["nickname"]
+        
     @nickname.setter
     def nickname(self,value):
         self.set({"nickname": value})
@@ -21,6 +22,7 @@ class Stream(ConnectorObject):
         if v is None:
             return False
         return v
+        
     @downlink.setter
     def downlink(self,value):
         self.set({"downlink": value})
@@ -31,6 +33,7 @@ class Stream(ConnectorObject):
         if v is None:
             return False
         return v
+        
     @ephemeral.setter
     def ephemeral(self,value):
         self.set({"ephemeral": value})
@@ -64,12 +67,15 @@ class Stream(ConnectorObject):
         return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
 
     def subscribe(self,callback,downlink=False):
-        #Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
-        #so we subscribe according to that
+        '''Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
+        so we subscribe according to that
+        '''
+        
         sname = self.metaname
         if downlink:
             sname += "/downlink"
         self.db.ws.subscribe(sname,callback)
+        
     def unsubscribe(self,downlink=False):
         sname = self.metaname
         if downlink:
