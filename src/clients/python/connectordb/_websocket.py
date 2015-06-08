@@ -18,7 +18,7 @@ class WebsocketHandler(object):
         self.subscription_lock = threading.Lock()
 
         self.isconnected = False
-
+        
 
         self.ws = None
         self.ws_thread = None
@@ -86,7 +86,7 @@ class WebsocketHandler(object):
 
         if msg["stream"] in self.subscriptions:
             runfnc(self.subscriptions[msg["stream"]])
-
+            
 
         #Now handle the more general subscriptions to device or user
         pathparts = msg["stream"].split("/")
@@ -95,7 +95,7 @@ class WebsocketHandler(object):
             #We don't want to get downlinks or substreams in this
             if pathparts[0] in self.subscriptions:
                 runfnc(self.subscriptions[pathparts[0]])
-
+              
             if pathparts[0]+"/"+pathparts[1] in self.subscriptions:
                 runfnc(self.subscriptions[pathparts[0]+"/"+pathparts[1]])
 
@@ -121,7 +121,7 @@ class WebsocketHandler(object):
                 reconnector = threading.Timer(self.reconnectbackoff,self.__reconnect_callback)
                 reconnector.daemon=True
                 reconnector.start()
-
+                
     def __reconnect_callback(self):
         """ Updates the reconnectbackoff in a method similar to TCP Tahoe and
         attempts a reconnect.
@@ -136,7 +136,7 @@ class WebsocketHandler(object):
 
         try:
             logging.debug("Reconnecting websocket...")
-            self.connect()
+            self.connect(forceretry=True)
             self.__resubscribe()
             logging.warn("Reconnect Successful")
         except:
@@ -147,7 +147,7 @@ class WebsocketHandler(object):
         with self.subscription_lock:
             for sub in self.subscriptions:
                 logging.debug("Resubscribing to %s",sub)
-                self.send("subscribe",sub)
+                self.send({"cmd": "subscribe", "arg":sub})
 
     def send(self,cmd):
         with self.ws_sendlock:
@@ -194,12 +194,12 @@ class WebsocketHandler(object):
         with self.subscription_lock:
             self.subscriptions = {}
 
-    def connect(self):
-        if not self.isconnected and self.wantsconnection:
+    def connect(self,forceretry=False):
+        if not self.isconnected and self.wantsconnection and not forceretry:
             return False    #Means that is in process of retrying
         self.wantsconnection = True
         #Connects to the server if there is no connection active
-        if not self.isconnected:
+        if not self.isconnected or forceretry:
             self.ws = websocket.WebSocketApp(self.uri,header=self.headers,
                                              on_message = self.__on_message,
                                              on_close = self.__on_close,
