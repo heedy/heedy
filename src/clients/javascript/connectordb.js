@@ -2,7 +2,7 @@
 "use strict";
 
 function ConnectorDB(device, apikey, url) {
-    url = url || "http://localhost:8000";
+    url = url || "https://connectordb.com";
 
     this.url = url + "/api/v1/"
 
