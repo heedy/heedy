@@ -3,6 +3,7 @@ import threading
 import logging
 import json
 import errors
+import random
 
 class WebsocketHandler(object):
     #SubscriptionHandler manages the websocket connection and fires off all subscriptions
@@ -14,10 +15,16 @@ class WebsocketHandler(object):
         self.subscription_lock = threading.Lock()
 
         self.isconnected = False
+        
 
         self.ws = None
         self.ws_thread = None
         self.ws_openlock = threading.Lock()    #Allows us to synchronously wait for connection to be ready
+
+        #If it wants a connection, then if websocket dies, it is reconnected immediately
+        self.wantsconnection = False
+        self.isretry = False
+        self.reconnectbackoff= 1.0
 
 
     def getWebsocketURI(self,url):
@@ -45,8 +52,9 @@ class WebsocketHandler(object):
         self.isconnected = isconnected
         try:
             self.ws_openlock.release()
+            return True
         except:
-            pass
+            return False
 
 
     def __on_message(self,ws,msg):
@@ -83,18 +91,49 @@ class WebsocketHandler(object):
     def __on_open(self,ws):
         logging.debug("ConnectorDB: Websocket opened")
         self.unlockopen(True)
+        self.reconnectbackoff=1.0
     def __on_close(self,ws):
         logging.debug("ConnectorDB: Websocket Closed")
         self.unlockopen()
-    def __on_error(self,e):
+    def __on_error(self,ws,e):
         logging.debug("ConnectorDB: Websocket error: %s",str(e))
-        self.unlockopen()
+        v = self.unlockopen()
+        if not v or self.isretry:
+            if not self.isconnected and self.wantsconnection:
+                self.isretry = True
+                logging.warn("Disconnected from websocket. Retrying in %.2fs"%(self.reconnectbackoff,))
+                #The connection was already unlocked, is not connected, and it wants a connection.
+                reconnector = threading.Timer(self.reconnectbackoff,self.__reconnect_callback)
+                reconnector.daemon=True
+                reconnector.start()
+                
+    def __reconnect_callback(self):
+        #Random reconnect times will have the server not get pounded if disconnect happens 
+        self.reconnectbackoff += random.uniform(-1,5)
+        if self.reconnectbackoff < 1.0:
+            self.reconnectbackoff=1.0
+        try:
+            logging.debug("Reconnecting websocket...")
+            self.connect()
+            self.__resubscribe()
+            logging.warn("Reconnect Successful")
+        except:
+            pass
+    def __resubscribe(self):
+        #Subscribe to all existing subscriptions (happens on reconnect)
+        self.subscription_lock.acquire()
+        for sub in self.subscriptions:
+            logging.debug("Resubscribing to %s",sub)
+            self.send("subscribe",sub)
+        self.subscription_lock.release()
 
     def send(self,cmd,arg):
         self.ws.send(json.dumps({"cmd":cmd,"arg":arg}))
 
     def subscribe(self,uri,callback):
         self.connect()
+
+        logging.debug("Subscribing to %s",uri)
         #Subscribes to the given uri with the given callback
         self.send("subscribe",uri)
         self.subscription_lock.acquire()
@@ -108,16 +147,20 @@ class WebsocketHandler(object):
         #Unsubscribes from the given uri
         self.subscription_lock.acquire()
         del self.subscriptions[uri]
-        if len(self.subscriptions)==0:
-            self.close()
         self.subscription_lock.release()
 
-    def close(self):
+    def disconnect(self):
+        self.wantsconnection = False
         #Closes the connection if it exists
         if self.ws is not None:
             self.ws.close()
 
+        self.subscription_lock.acquire()
+        self.subscriptions = {}
+        self.subscription_lock.release()
+
     def connect(self):
+        self.wantsconnection = True
         #Connects to the server if there is no connection active
         if not self.isconnected:
             self.ws = websocket.WebSocketApp(self.uri,header=self.headers,
@@ -139,3 +182,5 @@ class WebsocketHandler(object):
 
             if not self.isconnected:
                 raise errors.ConnectionError("Could not connect to "+self.uri)
+            else:
+                self.isretry=False

@@ -81,3 +81,8 @@ class ConnectorDB(Device):
         else:
             return Stream(self,address)
 
+    #Connect and disconnect tell whether to use websocket or not
+    def connect(self):
+        self.ws.connect()
+    def disconnect(self):
+        self.ws.disconnect()
