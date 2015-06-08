@@ -217,6 +217,7 @@ class TestConnectorDB(unittest.TestCase):
                     self.gotmessage=True
         tmp = tmpO()
         s.subscribe(tmp.messagegetter)
+        time.sleep(0.1)
 
         s.insert("Hello!")
 
@@ -274,7 +275,7 @@ class TestConnectorDB(unittest.TestCase):
 
         s2.subscribe(tmp.messagegetter)
         s2.subscribe(tmp.messagegetter,downlink=True)
-
+        time.sleep(0.1)
         s.insert("Hello!")
 
         time.sleep(0.1)
