@@ -70,6 +70,15 @@ print "mystream has",len(mystream),"datapoint"
 print mystream[0]["d"]
 ```
 
+if you need super fast inserts, you can enable websocket inserts:
+
+```python
+db.wsinsert = True
+```
+
+which will make `db.insert` use websocket.
+Beware, though: inserting thru websocket does not return errors!
+
 Subscriptions
 -------------------
 
@@ -95,4 +104,38 @@ mystream.insert("Hello World!")
 
 ```
 
-If you are implementing a downlink stream (a stream that accepts input from other devices, such as a light switch), subscribe to the downlink: `mystream.subscribe(callbackFunction,downlink=True)`. The downlink stream is specifically for commands that were not yet executed.
+If you are implementing a downlink stream (a stream that accepts input from other devices, such as a light switch), subscribe to the downlink:
+
+```python
+from connectordb import ConnectorDB
+import time
+
+db = ConnectorDB("myname/mydevice","apikeysadfdsf98439g")
+
+mystream = db["mylight"]
+
+if not mystream.exists:
+	mystream.create({"type": "boolean"})
+
+def callbackFunction(streampath,data):
+	ison = data[-1]["d"]
+	if ison:
+		turn_on_light()
+	else:
+		turn_off_light()
+	#This acknowledges the datapoint by writing the action that was taken to the real stream
+	#As a shortcut, you can also use return True to acknowledge the unmodified data
+	#meaning that return True would return the original data as given by the data variable
+	#Not returning anything or returning False does not acknowledge the downlink.
+	#WARNING: Make sure only ONE callback acknowledges the downlink to avoid double-inserts
+	#DANGER: Make sure you only acknowledge downlinks to streams that belong to the currently
+	#authenticated device, since inserting as a different device will redirect to
+	#the downlink stream, creating an infinite insert loop.
+	return [{"t":time.time(),"d": ison}]
+
+mystream.subscribe(callbackFunction)
+
+#Sleep forever waiting for inputs. You can also just do an infinite loop with sleep.
+#in fact, that's what sleepforever does
+db.sleepforever()
+```

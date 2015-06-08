@@ -186,6 +186,13 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual("Hello World!",s[0]["d"])
         self.assertEqual("Hello World!",s(0)[0]["d"])
 
+        s.ephemeral = True
+
+        s.insert("Hello World!")
+        s.insert("Hello World!")
+
+        self.assertEqual(1,len(s))
+
     
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
@@ -214,17 +221,68 @@ class TestConnectorDB(unittest.TestCase):
         s.insert("Hello!")
 
         time.sleep(0.1)
-        logging.info("Checking Truth")
         self.assertTrue(tmp.gotmessage)
     
         tmp.gotmessage=False
 
-        s.unsubscribe()
-
+        s.ephemeral = True
         s.insert("Hello Again!")
 
         time.sleep(0.1)
+        self.assertTrue(tmp.gotmessage)
+
+        tmp.gotmessage=False
+        s.unsubscribe()
+
+        s.insert("Hello Again!!")
+
+        time.sleep(0.1)
         self.assertFalse(tmp.gotmessage)
+
+        db.wsdisconnect()
+
+    def test_downlink(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        s = db("python_test/mydevice/teststream")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+
+        self.assertTrue(dev.exists)
+        db = connectordb.ConnectorDB("python_test/mydevice",dev.apikey,url="http://localhost:8000")
+
+        s2 = db["teststream"]
+        s2.create({"type": "string"})
+
+        
+        
+        class tmpO():
+            def __init__(self):
+                self.gotmessage = False
+                self.gotdownlink = False
+            def messagegetter(self,stream,datapoints):
+                logging.info("GOT: %s",stream)
+                if stream=="python_test/mydevice/teststream":
+                    self.gotmessage=True
+                elif stream=="python_test/mydevice/teststream/downlink":
+                    self.gotdownlink=True
+                    return True #Pass the insert along to the real stream (non-downlink) to acknowledge receipt
+        tmp = tmpO()
+
+        s.downlink = True
+
+        s2.subscribe(tmp.messagegetter)
+        s2.subscribe(tmp.messagegetter,downlink=True)
+
+        s.insert("Hello!")
+
+        time.sleep(0.1)
+        logging.info("Checking Truth")
+        self.assertTrue(tmp.gotmessage)
+        self.assertTrue(tmp.gotdownlink)
+
+        db.wsdisconnect()
 
     def test_wsinsert(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
@@ -254,3 +312,6 @@ class TestConnectorDB(unittest.TestCase):
 
         self.assertEqual("Hello World!",s[0]["d"])
         self.assertEqual("Hello World!",s(0)[0]["d"])
+
+        #Have this one not disconnect, so that rest server's response is visible
+        #db.wsdisconnect()

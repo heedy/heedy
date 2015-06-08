@@ -16,6 +16,26 @@ class Stream(ConnectorObject):
         self.set({"nickname": value})
 
     @property
+    def downlink(self):
+        v = self.data["downlink"]
+        if v is None:
+            return False
+        return v
+    @downlink.setter
+    def downlink(self,value):
+        self.set({"downlink": value})
+
+    @property
+    def ephemeral(self):
+        v = self.data["ephemeral"]
+        if v is None:
+            return False
+        return v
+    @ephemeral.setter
+    def ephemeral(self,value):
+        self.set({"ephemeral": value})
+
+    @property
     def schema(self):
         return self.data["schema"]
 
@@ -43,12 +63,15 @@ class Stream(ConnectorObject):
         #Allows to get the datapoints in a stream between two times or with a limit
         return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
 
-    def subscribe(self,callback,downlink=False,substream=""):
+    def subscribe(self,callback,downlink=False):
         #Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
         #so we subscribe according to that
         sname = self.metaname
         if downlink:
             sname += "/downlink"
-        elif len(substream)>0:
-            sname += "/"+substream
         self.db.ws.subscribe(sname,callback)
+    def unsubscribe(self,downlink=False):
+        sname = self.metaname
+        if downlink:
+            sname += "/downlink"
+        self.db.ws.unsubscribe(sname)

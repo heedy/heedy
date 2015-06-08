@@ -6,7 +6,7 @@ Made in 2015 by the ConnectorDB team.
 
 import requests
 import json
-
+import time
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
 
@@ -98,3 +98,8 @@ class ConnectorDB(Device):
         self.ws.connect()
     def wsdisconnect(self):
         self.ws.disconnect()
+
+    def sleepforever(self):
+        #This isn't really anything interesting
+        while True:
+            time.sleep(100)

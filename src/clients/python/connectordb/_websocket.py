@@ -20,6 +20,7 @@ class WebsocketHandler(object):
         self.ws = None
         self.ws_thread = None
         self.ws_openlock = threading.Lock()    #Allows us to synchronously wait for connection to be ready
+        self.ws_sendlock = threading.Lock()
 
         #If it wants a connection, then if websocket dies, it is reconnected immediately
         self.wantsconnection = False
@@ -68,7 +69,16 @@ class WebsocketHandler(object):
             #Run the callbacks, but release the lock, just in case subscribing/unsubscribing happens
             #in the callbacks
             self.subscription_lock.release()
-            fnc(msg["stream"],msg["data"])
+            s = msg["stream"]
+            res = fnc(s,msg["data"])
+            if res==True:
+                #This is a convenience function - if True is returned by the subcription callback,
+                #it means that the callback wants the same datapoints (without changed timestamps) to be inserted.
+                res = msg["data"]
+            if res!=False and res is not None and s.endswith("/downlink") and s.count("/")==3:
+                #The downlink was acknowledged - write the datapoints through websocket,
+                #so that it is visible that it was processed
+                self.insert(msg["stream"][:-9],res)
             self.subscription_lock.acquire()
 
         if msg["stream"] in self.subscriptions:
@@ -131,7 +141,13 @@ class WebsocketHandler(object):
         self.subscription_lock.release()
 
     def send(self,cmd):
-        self.ws.send(json.dumps(cmd))
+        self.ws_sendlock.acquire()
+        try:
+            self.ws.send(json.dumps(cmd))
+            self.ws_sendlock.release()
+        except:
+            self.ws_sendlock.release()
+            raise
 
     def insert(self,uri,data):
         if not self.connect():
