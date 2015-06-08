@@ -118,10 +118,13 @@ redirect:
 
 func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
 	// Don't log anything user-related, as this may kill a little bit of security
+	logger = logger.WithField("op", "InsertStreamAction")
 
 	// Init all variables and check them
 	vars := mux.Vars(se.Request)
 	streamids := vars["id"]
+	logger.Debugf("Inserting stream: %v", streamids)
+
 	var datapointjson interface{}
 	var datapoint operator.Datapoint
 	streamData := se.Request.PostFormValue("formdata")
