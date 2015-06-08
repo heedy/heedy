@@ -26,7 +26,7 @@ A5xUYweqavIKBzj1zlNXt3Zf19lqDb7kNICQAAAAABJRU5ErkJggg==`
 )
 
 var (
-	//The amount of time to wait between each unsuccessful login attempt
+	//UnsuccessfulLoginWait is the amount of time to wait between each unsuccessful login attempt
 	UnsuccessfulLoginWait = 300 * time.Millisecond
 )
 
@@ -111,40 +111,43 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.StrictSlash(true)
 
 	// Special items
-	prefix.HandleFunc("/", authenticator(ListUsers, db)).Queries("q", "ls")
-	prefix.HandleFunc("/", authenticator(GetThis, db)).Queries("q", "this")
 	prefix.HandleFunc("/favicon.ico", serveFavicon)
-
 	prefix.HandleFunc("/", authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
+	//The 'd' prefix corresponds to data
+	d := prefix.PathPrefix("/d").Subrouter()
+
+	d.HandleFunc("/", authenticator(ListUsers, db)).Queries("q", "ls")
+	d.HandleFunc("/", authenticator(GetThis, db)).Queries("q", "this")
+
 	//User CRUD
-	prefix.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
-	prefix.HandleFunc("/{user}", authenticator(ReadUser, db)).Methods("GET")
-	prefix.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
-	prefix.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
+	d.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
+	d.HandleFunc("/{user}", authenticator(ReadUser, db)).Methods("GET")
+	d.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
+	d.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
+	d.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
 
 	//Device CRUD
-	prefix.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
-	prefix.HandleFunc("/{user}/{device}", authenticator(ReadDevice, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
-	prefix.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
+	d.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
+	d.HandleFunc("/{user}/{device}", authenticator(ReadDevice, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
+	d.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
+	d.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
 
 	//Stream CRUD
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(ReadStream, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(ReadStream, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
 
 	//Stream IO
-	prefix.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
+	d.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
 
-	prefix.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1:[0-9]+}")
-	prefix.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1:[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?}")
+	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1:[0-9]+}")
+	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1:[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?}")
 
-	prefix.HandleFunc("/{user}/{device}/{stream}/length", authenticator(GetStreamLength, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}/{stream}/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}/{stream}/length", authenticator(GetStreamLength, db)).Methods("GET")
+	d.HandleFunc("/{user}/{device}/{stream}/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
 
 	return prefix
 }

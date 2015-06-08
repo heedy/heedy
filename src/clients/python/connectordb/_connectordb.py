@@ -46,18 +46,18 @@ class ConnectorDB(Device):
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
-    def urlget(self,location):
-        return self.handleresult(requests.get(urljoin(self.url,location),auth=self.auth))
-    def urldelete(self,location):
-        return self.handleresult(requests.delete(urljoin(self.url,location),auth=self.auth))
-    def urlpost(self,location,data={}):
-        return self.handleresult(requests.post(urljoin(self.url,location),auth=self.auth,
+    def urlget(self,location,cmd="d/"):
+        return self.handleresult(requests.get(urljoin(self.url+cmd,location),auth=self.auth))
+    def urldelete(self,location,cmd="d/"):
+        return self.handleresult(requests.delete(urljoin(self.url+cmd,location),auth=self.auth))
+    def urlpost(self,location,data={},cmd="d/"):
+        return self.handleresult(requests.post(urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
-    def urlput(self,location,data):
-        return self.handleresult(requests.put(urljoin(self.url,location),auth=self.auth,
+    def urlput(self,location,data,cmd="d/"):
+        return self.handleresult(requests.put(urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
-    def urlupdate(self,location,data):
-        return self.handleresult(requests.request("UPDATE",urljoin(self.url,location),auth=self.auth,
+    def urlupdate(self,location,data,cmd="d/"):
+        return self.handleresult(requests.request("UPDATE",urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
     def getuser(self,usrname):
         return User(self,usrname)
