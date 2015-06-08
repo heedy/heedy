@@ -1,23 +1,20 @@
 
 "use strict";
 
-function ConnectorDB(user, password, url) {
-    password = password | "";
-    this.url = url | "https://connectordb.com/api/v1/";
+function ConnectorDB(device, apikey, url) {
+    url = url || "https://connectordb.com";
 
-    this.user = user;
-    this.password = password | user;
-    this.authHeader = "Basic " + btoa(user + ":" + password);
+    this.url = url + "/api/v1/"
 
-    if (password.length == 0) {
-        this.authHeader = "Basic " + btoa(":" + user);
-        this.user = "";
-    }
+    this.device = device;
+    
+    this.authHeader = "Basic " + btoa(device + ":" + apikey);
+
 }
 
 ConnectorDB.prototype = {
     thisdevice: function () {
-        return this.url;
+        return this.device;
     },
 
     // Internal mechanism for doing requests
@@ -27,19 +24,26 @@ ConnectorDB.prototype = {
     // returns a promise.
     _doRequest: function(path, reqtype, object) {
         var url = this.url + path;
-        var user = this.user;
-        var pass = this.password;
+        var user = this.device;
+        var pass = this.apikey;
+        var auth = this.authHeader
 
         return new Promise(function(resolve, reject) {
             var req = new XMLHttpRequest();
 
             // type, url, async, basicauth credentials
-            req.open(reqtype, url, true, user, password);
+            req.open(reqtype, url, true);
+
+            req.setRequestHeader("Authorization",auth)
 
             // normal response from server
             req.onload = function() {
                 if (req.status == 200) {
-                    resolve(req.response);
+                    try {
+                        resolve(JSON.parse(req.response));
+                    } catch(err) {
+                        resolve(req.response);
+                    }
                 }
                 else {
                     reject(Error(req.statusText));
@@ -64,7 +68,7 @@ ConnectorDB.prototype = {
     // behavior is undefined if an item coming before a defined item is undefined
     // e.g. _getPath(undefined, "foo", "bar");
     _getPath: function(user, dev, stream) {
-        var path = "/";
+        var path = "d/";
         if(user !== undefined) {
             path += user;
         }
@@ -76,7 +80,7 @@ ConnectorDB.prototype = {
         }
 
         return path;
-    }
+    },
 
     // Creates a new user
     createUser: function(username, email, password) {
@@ -100,6 +104,12 @@ ConnectorDB.prototype = {
     deleteUser: function(username) {
         var path = this._getPath(username)
         return this._doRequest(path, "DELETE");
+    },
+
+    // Lists all the devices accessible form the user
+    listDevices: function(username) {
+        var path = this._getPath(username)+"?q=ls"
+        return this._doRequest(path, "GET");
     },
 
     // Creates a device on the connectordb instance for the given user.
@@ -127,9 +137,15 @@ ConnectorDB.prototype = {
         return this._doRequest(path, "DELETE");
     },
 
-    createStream: function(username, devicename, streamname) {
+    // Lists all the devices accessible form the user
+    listStreams: function(username,devicename) {
+        var path = this._getPath(username,devicename)+"?q=ls"
+        return this._doRequest(path, "GET");
+    },
+
+    createStream: function(username, devicename, streamname,schema) {
         var path = this._getPath(username, devicename, streamname)
-        return this._doRequest(path, "POST");
+        return this._doRequest(path, "POST",schema);
     },
 
     readStream: function(username, devicename, streamname) {
@@ -145,5 +161,32 @@ ConnectorDB.prototype = {
     deleteStream: function(username, devicename, streamname) {
         var path = this._getPath(username, devicename, streamname)
         return this._doRequest(path, "DELETE");
-    }
+    },
+
+    //Insert a single datapoint into the stream
+    insertStream: function (username, devicename, streamname, data) {
+        var datapoints = [{ t: (new Date).getTime() * 0.001, d: data }]
+        var path = this._getPath(username, devicename, streamname)
+        return this._doRequest(path, "UPDATE", datapoints);
+    },
+
+    //Get length of stream
+    lengthStream: function (username, devicename, streamname) {
+        var path = this._getPath(username, devicename, streamname) + "/length"
+        return this._doRequest(path, "GET").then(function (result) { return parseInt(result); });
+    },
+
+    //Query by index range [i1,i2)
+    indexStream: function (username, devicename, streamname,i1,i2) {
+        var path = this._getPath(username, devicename, streamname) + "/data?i1=" + i1 + "&i2=" + i2;
+        return this._doRequest(path, "GET");
+    },
+
+    //Query by time range [t1,t2) with a limited number of datapoints.
+    //Current time is (new Date).getTime() * 0.001
+    timeStream: function (username, devicename, streamname,t1,t2,limit) {
+        limit = limit || 0;
+        var path = this._getPath(username, devicename, streamname) + "/data?t1=" + t1 + "&t2=" + t2 + "&limit=" + limit;
+        return this._doRequest(path, "GET");
+    },
 };

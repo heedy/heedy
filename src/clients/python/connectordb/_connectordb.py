@@ -6,7 +6,7 @@ Made in 2015 by the ConnectorDB team.
 
 import requests
 import json
-
+import time
 from urlparse import urljoin
 from requests.auth import HTTPBasicAuth
 
@@ -30,6 +30,7 @@ class ConnectorDB(Device):
         self.url = urljoin(url,"/api/v1/")
 
         self.ws = WebsocketHandler(self.url,self.auth)
+        self.__wsinsert = False
 
         Device.__init__(self,self,self.urlget("?q=this").text)
 
@@ -46,18 +47,18 @@ class ConnectorDB(Device):
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
-    def urlget(self,location):
-        return self.handleresult(requests.get(urljoin(self.url,location),auth=self.auth))
-    def urldelete(self,location):
-        return self.handleresult(requests.delete(urljoin(self.url,location),auth=self.auth))
-    def urlpost(self,location,data={}):
-        return self.handleresult(requests.post(urljoin(self.url,location),auth=self.auth,
+    def urlget(self,location,cmd="d/"):
+        return self.handleresult(requests.get(urljoin(self.url+cmd,location),auth=self.auth))
+    def urldelete(self,location,cmd="d/"):
+        return self.handleresult(requests.delete(urljoin(self.url+cmd,location),auth=self.auth))
+    def urlpost(self,location,data={},cmd="d/"):
+        return self.handleresult(requests.post(urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
-    def urlput(self,location,data):
-        return self.handleresult(requests.put(urljoin(self.url,location),auth=self.auth,
+    def urlput(self,location,data,cmd="d/"):
+        return self.handleresult(requests.put(urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
-    def urlupdate(self,location,data):
-        return self.handleresult(requests.request("UPDATE",urljoin(self.url,location),auth=self.auth,
+    def urlupdate(self,location,data,cmd="d/"):
+        return self.handleresult(requests.request("UPDATE",urljoin(self.url+cmd,location),auth=self.auth,
                                                  headers={'content-type': 'application/json'},data=json.dumps(data)))
     def getuser(self,usrname):
         return User(self,usrname)
@@ -80,4 +81,25 @@ class ConnectorDB(Device):
             return Device(self,address)
         else:
             return Stream(self,address)
+    
+    #wsinsert is the property which specifies whether inserts are attempted thru websockets
+    @property
+    def wsinsert(self):
+        #Returns whether or not websocket is used for insert
+        return self.__wsinsert
+    @wsinsert.setter
+    def wsinsert(self,value):
+        self.__wsinsert = value
+        if value:
+            self.wsconnect()
 
+    #Connect and disconnect tell whether to use websocket or not
+    def wsconnect(self):
+        self.ws.connect()
+    def wsdisconnect(self):
+        self.ws.disconnect()
+
+    def sleepforever(self):
+        #This isn't really anything interesting
+        while True:
+            time.sleep(100)
