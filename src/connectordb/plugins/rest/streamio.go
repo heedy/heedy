@@ -62,6 +62,7 @@ func writeJSONResult(writer http.ResponseWriter, dr operator.DatapointReader, lo
 	jreader, err := operator.NewJsonReader(dr)
 	if err != nil {
 		if err == io.EOF {
+			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 			writer.WriteHeader(http.StatusOK)
 			writer.Write([]byte("[]")) //If there are no datapoints, just return empty
 			return nil
@@ -72,6 +73,7 @@ func writeJSONResult(writer http.ResponseWriter, dr operator.DatapointReader, lo
 	}
 
 	defer jreader.Close()
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	_, err = io.Copy(writer, jreader)
 	if err != nil {
