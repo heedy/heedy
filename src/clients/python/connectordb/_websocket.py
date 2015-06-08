@@ -127,27 +127,21 @@ class WebsocketHandler(object):
             self.reconnectbackoff = 10*60.0 + random.uniform(-60,60)
         try:
             logging.debug("Reconnecting websocket...")
-            self.connect()
+            self.connect(forceretry=True)
             self.__resubscribe()
             logging.warn("Reconnect Successful")
         except:
             pass
     def __resubscribe(self):
         #Subscribe to all existing subscriptions (happens on reconnect)
-        self.subscription_lock.acquire()
-        for sub in self.subscriptions:
-            logging.debug("Resubscribing to %s",sub)
-            self.send("subscribe",sub)
-        self.subscription_lock.release()
+        with self.subscription_lock:
+            for sub in self.subscriptions:
+                logging.debug("Resubscribing to %s",sub)
+                self.send({"cmd": "subscribe", "arg":sub})
 
     def send(self,cmd):
-        self.ws_sendlock.acquire()
-        try:
+        with self.ws_sendlock:
             self.ws.send(json.dumps(cmd))
-            self.ws_sendlock.release()
-        except:
-            self.ws_sendlock.release()
-            raise
 
     def insert(self,uri,data):
         if not self.connect():
@@ -193,12 +187,12 @@ class WebsocketHandler(object):
         self.subscriptions = {}
         self.subscription_lock.release()
 
-    def connect(self):
-        if not self.isconnected and self.wantsconnection:
+    def connect(self,forceretry=False):
+        if not self.isconnected and self.wantsconnection and not forceretry:
             return False    #Means that is in process of retrying
         self.wantsconnection = True
         #Connects to the server if there is no connection active
-        if not self.isconnected:
+        if not self.isconnected or forceretry:
             self.ws = websocket.WebSocketApp(self.uri,header=self.headers,
                                              on_message = self.__on_message,
                                              on_close = self.__on_close,
