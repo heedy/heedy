@@ -23,6 +23,10 @@ class Stream(ConnectorObject):
         return int(self.db.urlget(self.metaname+"/length").text)
 
     def insertMany(self,o):
+        #attempt to use websocket if websocket inserts are enabled, but fall back on update if fail
+        if self.db.wsinsert:
+            if self.db.ws.insert(self.metaname,o):
+                return
         self.db.urlupdate(self.metaname,o)
 
     def insert(self,o):

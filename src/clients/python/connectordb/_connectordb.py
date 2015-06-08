@@ -30,6 +30,7 @@ class ConnectorDB(Device):
         self.url = urljoin(url,"/api/v1/")
 
         self.ws = WebsocketHandler(self.url,self.auth)
+        self.__wsinsert = False
 
         Device.__init__(self,self,self.urlget("?q=this").text)
 
@@ -80,9 +81,20 @@ class ConnectorDB(Device):
             return Device(self,address)
         else:
             return Stream(self,address)
+    
+    #wsinsert is the property which specifies whether inserts are attempted thru websockets
+    @property
+    def wsinsert(self):
+        #Returns whether or not websocket is used for insert
+        return self.__wsinsert
+    @wsinsert.setter
+    def wsinsert(self,value):
+        self.__wsinsert = value
+        if value:
+            self.wsconnect()
 
     #Connect and disconnect tell whether to use websocket or not
-    def connect(self):
+    def wsconnect(self):
         self.ws.connect()
-    def disconnect(self):
+    def wsdisconnect(self):
         self.ws.disconnect()

@@ -225,3 +225,32 @@ class TestConnectorDB(unittest.TestCase):
 
         time.sleep(0.1)
         self.assertFalse(tmp.gotmessage)
+
+    def test_wsinsert(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+
+        self.assertTrue(dev.exists)
+        db = connectordb.ConnectorDB("python_test/mydevice",dev.apikey,url="http://localhost:8000")
+
+        s = db["teststream"]
+
+        self.assertFalse(s.exists)
+
+        s.create({"type": "string"})
+        self.assertTrue(s.exists)
+
+        self.assertEqual(0,len(s))
+
+        #Use websocket for inserts
+        db.wsinsert = True
+
+        s.insert("Hello World!")
+
+        self.assertEqual(1,len(s))
+
+        self.assertEqual("Hello World!",s[0]["d"])
+        self.assertEqual("Hello World!",s(0)[0]["d"])

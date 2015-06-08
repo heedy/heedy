@@ -112,6 +112,9 @@ class WebsocketHandler(object):
         self.reconnectbackoff += random.uniform(-1,5)
         if self.reconnectbackoff < 1.0:
             self.reconnectbackoff=1.0
+        elif self.reconnectbackoff > 10*60.0:
+            #If more than 10 minutes, make next reconnect in 10 minutes += 1 minute
+            self.reconnectbackoff = 10*60.0 + random.uniform(-60,60)
         try:
             logging.debug("Reconnecting websocket...")
             self.connect()
@@ -127,23 +130,38 @@ class WebsocketHandler(object):
             self.send("subscribe",sub)
         self.subscription_lock.release()
 
-    def send(self,cmd,arg):
-        self.ws.send(json.dumps({"cmd":cmd,"arg":arg}))
+    def send(self,cmd):
+        self.ws.send(json.dumps(cmd))
+
+    def insert(self,uri,data):
+        if not self.connect():
+            return False
+        try:
+            logging.debug("Inserting thru websocket")
+            self.send({"cmd": "insert", "arg": uri,"d": data})
+        except:
+            return False
+        return True
 
     def subscribe(self,uri,callback):
-        self.connect()
+        if not self.connect():
+            return False
 
         logging.debug("Subscribing to %s",uri)
         #Subscribes to the given uri with the given callback
-        self.send("subscribe",uri)
+        self.send({"cmd": "subscribe", "arg": uri})
         self.subscription_lock.acquire()
         self.subscriptions[uri] = callback
         self.subscription_lock.release()
 
-    def unsubscribe(self,uri):
-        self.connect()
+        return True
 
-        self.send("unsubscribe",uri)
+    def unsubscribe(self,uri):
+        logging.debug("Unsubscribing from %s",uri)
+        try:
+            self.send({"cmd": "unsubscribe", "arg": uri})
+        except:
+            pass
         #Unsubscribes from the given uri
         self.subscription_lock.acquire()
         del self.subscriptions[uri]
@@ -160,6 +178,8 @@ class WebsocketHandler(object):
         self.subscription_lock.release()
 
     def connect(self):
+        if not self.isconnected and self.wantsconnection:
+            return False    #Means that is in process of retrying
         self.wantsconnection = True
         #Connects to the server if there is no connection active
         if not self.isconnected:
@@ -184,3 +204,4 @@ class WebsocketHandler(object):
                 raise errors.ConnectionError("Could not connect to "+self.uri)
             else:
                 self.isretry=False
+        return True
