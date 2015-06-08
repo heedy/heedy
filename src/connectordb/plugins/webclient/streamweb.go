@@ -140,7 +140,11 @@ func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
 	// Save the data
 	datapoint = operator.NewDatapoint(datapointjson)
 	err = se.Operator.InsertStreamByID(int64(streamid), []operator.Datapoint{datapoint}, "")
-	se.HandleError(err, "Error saving data.", logger)
+	if se.HandleError(err, "Error saving data.", logger) {
+		goto redirect
+	}
+
+	se.Session.AddFlash("Created data point.")
 
 redirect:
 	se.Save()
