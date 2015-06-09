@@ -81,3 +81,6 @@ class Stream(ConnectorObject):
         if downlink:
             sname += "/downlink"
         self.db.ws.unsubscribe(sname)
+
+    def __repr__(self):
+        return "[Stream:%s]"%(self.metaname,)

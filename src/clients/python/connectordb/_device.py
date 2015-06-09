@@ -62,3 +62,6 @@ class Device(ConnectorObject):
     @property
     def name(self):
         return self.metaname
+
+    def __repr__(self):
+        return "[Device:%s]"%(self.metaname,)

@@ -23,6 +23,9 @@ class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
     def __init__(self,user,password,url=API_URL):
 
+        if not url.startswith("http"):
+            url = "http://"+url
+
         if not url.endswith("/"):
             url = url +"/"
 
@@ -111,3 +114,6 @@ class ConnectorDB(Device):
         #This isn't really anything interesting
         while True:
             time.sleep(100)
+
+    def __repr__(self):
+        return "[ConnectorDB:%s]"%(self.metaname,)
