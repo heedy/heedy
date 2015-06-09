@@ -6,7 +6,8 @@ import errors
 import random
 
 MAX_RECONNECT_TIME_SECONDS = 8 * 60.0
-RECONNECT_TIME_BACKOFF_RATE = 2.0
+RECONNECT_TIME_BACKOFF_RATE = 1.5
+INITIAL_RECONNECT_DELAY = 1.0
 
 class WebsocketHandler(object):
     #SubscriptionHandler manages the websocket connection and fires off all subscriptions
@@ -28,7 +29,7 @@ class WebsocketHandler(object):
         #If it wants a connection, then if websocket dies, it is reconnected immediately
         self.wantsconnection = False
         self.isretry = False
-        self.reconnectbackoff= 1.0
+        self.reconnectbackoff= INITIAL_RECONNECT_DELAY
 
 
     def getWebsocketURI(self,url):
@@ -104,7 +105,7 @@ class WebsocketHandler(object):
     def __on_open(self,ws):
         logging.debug("ConnectorDB: Websocket opened")
         self.unlockopen(True)
-        self.reconnectbackoff = self.reconnectbackoff / RECONNECT_TIME_BACKOFF_RATE
+        self.reconnectbackoff = INITIAL_RECONNECT_DELAY
 
     def __on_close(self,ws):
         logging.debug("ConnectorDB: Websocket Closed")
@@ -133,6 +134,12 @@ class WebsocketHandler(object):
         # don't overflow our backoff time, or else the user will be mad
         if self.reconnectbackoff > MAX_RECONNECT_TIME_SECONDS:
             self.reconnectbackoff = MAX_RECONNECT_TIME_SECONDS
+
+        #Now add randomness to the backoff rate - necessary not to pound the server if it goes down
+        self.reconnectbackoff *= 1 + random.uniform(-0.2,0.2)
+
+        if self.reconnectbackoff < INITIAL_RECONNECT_DELAY:
+            self.reconnectbackoff = INITIAL_RECONNECT_DELAY
 
         try:
             logging.debug("Reconnecting websocket...")
