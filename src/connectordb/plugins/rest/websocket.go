@@ -77,6 +77,17 @@ func (c *WebsocketConnection) Close() {
 	c.logger.WithField("cmd", "close").Debugln()
 }
 
+//Insert a datapoint using the websocket
+func (c *WebsocketConnection) Insert(ws *websocketCommand) {
+	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
+	logger.Infoln("Inserting", len(ws.D), "dp")
+	err := c.o.InsertStream(ws.Arg, ws.D)
+	if err != nil {
+		//TODO: Notify user of insert failure
+		logger.Warn(err.Error())
+	}
+}
+
 //Subscribe to the given data stream
 func (c *WebsocketConnection) Subscribe(s string) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "subscribe", "arg": s})
@@ -118,6 +129,7 @@ func (c *WebsocketConnection) UnsubscribeAll() {
 type websocketCommand struct {
 	Cmd string
 	Arg string
+	D   []operator.Datapoint //If the command is "insert", it needs an additional datapoint
 }
 
 //RunReader runs the reading routine. It also maps the commands to actual subscriptions
@@ -142,6 +154,8 @@ func (c *WebsocketConnection) RunReader() {
 		default:
 			c.logger.Warningln("Command not recognized:", cmd.Cmd)
 			//Do nothing - the command is not recognized
+		case "insert":
+			c.Insert(&cmd)
 		case "subscribe":
 			c.Subscribe(cmd.Arg)
 		case "unsubscribe":

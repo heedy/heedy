@@ -45,6 +45,7 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry,
 		return err
 	}
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
 	return nil
