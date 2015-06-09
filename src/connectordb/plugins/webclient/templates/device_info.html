@@ -1,5 +1,5 @@
 {{define "title"}} {{ .device.Name }} {{end}}
-
+{{define "scripts"}}{{end}}
 {{define "body"}}
     <div class="panel panel-default panel-primary">
         <div class="panel-heading">Device Information</div>
@@ -66,6 +66,13 @@
                 <div class="form-group">
                     <label for="streamName">Stream Name</label>
                     <input type="text" name="name" class="form-control" id="streamName" placeholder="Stream Name">
+                </div>
+                <div class="form-group">
+                    <label for="datatype">Type of Data</label>
+                    <select id="datatype" name="datatype" class="form-control">
+                      <option value="{&quot;type&quot;: &quot;object&quot;,&quot;properties&quot;: {&quot;value&quot;: {&quot;type&quot;: &quot;number&quot;,&quot;description&quot;:&quot;A numeric value&quot;}}}">Number</option>
+                      <option value="{&quot;type&quot;: &quot;object&quot;,&quot;properties&quot;: {&quot;latitude&quot;: {&quot;type&quot;: &quot;number&quot;,&quot;description&quot;:&quot;Latitude in DD&quot;},&quot;longitude&quot;: {&quot;type&quot;: &quot;number&quot;,&quot;description&quot;:&quot;Longitude in DD&quot;}}}">Coordinate</option>
+                    </select>
                 </div>
                 <input class="btn btn-primary" type="submit" value="Create">
             </form>

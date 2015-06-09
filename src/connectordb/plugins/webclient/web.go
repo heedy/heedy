@@ -179,7 +179,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	folderPath, _ := osext.ExecutableFolder()
 	includepath := path.Join(folderPath, "static")
 	log.Debugf("Include path set to: %v", includepath)
-	subroutePrefix.PathPrefix("/inc/").Handler(http.StripPrefix("/inc/", http.FileServer(http.Dir(includepath))))
+	subroutePrefix.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(includepath))))
 
 	subroutePrefix.HandleFunc("/login/", http.HandlerFunc(getLogin))
 	subroutePrefix.HandleFunc("/login/action/login", http.HandlerFunc(postLogin))
@@ -206,6 +206,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}", authWrapper(readStreamPage))
 	subroutePrefix.HandleFunc("/secure/stream/action/create/devid/{id:[0-9]+}", authWrapper(createStreamAction))
+	subroutePrefix.HandleFunc("/secure/stream/action/add/streamid/{id:[0-9]+}", authWrapper(insertStreamAction))
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
 
 }

@@ -1,5 +1,7 @@
 {{define "title"}} {{ .stream.Name }} {{end}}
+{{define "scripts"}}
 
+{{end}}
 {{define "body"}}
     <div class="panel panel-default panel-primary">
         <div class="panel-heading">{{ .stream.Name }} Overview</div>
@@ -20,7 +22,7 @@
                     <td>{{ .stream.Type }}</td>
                 </tr>
                 <tr>
-                    <th>Is the data stored?</th>
+                    <th>Is the data temporary?</th>
                     <td>{{ .stream.Ephemeral }}</td>
                 </tr>
                 <tr>
@@ -30,7 +32,46 @@
             </table>
         </div>
     </div>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Manually add data</div>
+        <div class="panel-body">
+            <form id="result-form">
+            </form>
+
+            <form id="shadow-form" action="/secure/stream/action/add/streamid/{{ .stream.StreamId }}" method="POST">
+                <input id="formdata" type="hidden" name="formdata"></input>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stream specific javascript libraries for jsonform-->
+
+    <script type='text/javascript' src='/static/js/underscore.js'></script>
+    <script type='text/javascript' src='/static/js/jsv.js'></script>
+    <script type='text/javascript' src='/static/js/jsonform.js'></script>
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+        var schema = JSON.parse({{ .stream.Type }})
+        console.log(schema)
+        $('#result-form').jsonForm({
+          schema:  schema,
+          onSubmit: function (errors, values) {
+            if (errors) {
+              alert('There is a problem with your input.');
+              console.log(errors);
+              return false;
+            }
+            $("#formdata").val(JSON.stringify(values));
+            alert(JSON.stringify(values));
+            $("#shadow-form").submit();
+            return false;
+          }
+        });
+      });
+    </script>
+
 {{end}}
-
-
 {{template "base" . }}

@@ -1,6 +1,8 @@
 package webclient
 
 import (
+	"connectordb/streamdb/operator"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -15,7 +17,8 @@ const (
 	"type": "object",
 	"properties": {
 		"value": {
-			"type": "number"
+			"type": "number",
+			"description":"A numeric value"
 		}
 	}
 }`
@@ -84,8 +87,14 @@ func createStreamAction(se *SessionEnvironment, logger *log.Entry) {
 
 	vars := mux.Vars(se.Request)
 	devids := vars["id"]
+	streamtype := se.Request.PostFormValue("datatype")
 	name := se.Request.PostFormValue("name")
 	logger.Infof("Creating: %v", name)
+
+	if streamtype == "" {
+		streamtype = defaultTemplate
+	}
+
 	devid, _ := strconv.Atoi(devids)
 	device, err := se.Operator.ReadDeviceByID(int64(devid))
 
@@ -95,7 +104,7 @@ func createStreamAction(se *SessionEnvironment, logger *log.Entry) {
 		goto redirect
 	}
 
-	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, defaultTemplate)
+	err = se.Operator.CreateStreamByDeviceID(device.DeviceId, name, streamtype)
 
 	if err != nil {
 		logger.Warn(err.Error())
@@ -105,4 +114,43 @@ func createStreamAction(se *SessionEnvironment, logger *log.Entry) {
 redirect:
 	se.Save()
 	http.Redirect(se.Writer, se.Request, "/secure/device/"+devids, http.StatusTemporaryRedirect)
+}
+
+func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
+	// Don't log anything user-related, as this may kill a little bit of security
+	logger = logger.WithField("op", "InsertStreamAction")
+
+	// Init all variables and check them
+	vars := mux.Vars(se.Request)
+	streamids := vars["id"]
+	logger.Debugf("Inserting stream: %v", streamids)
+
+	var datapointjson interface{}
+	var datapoint operator.Datapoint
+	streamData := se.Request.PostFormValue("formdata")
+
+	streamid, err := strconv.Atoi(streamids)
+	if se.HandleError(err, "Error inserting data; invalid stream id.", logger) {
+		goto redirect
+	}
+
+	// Convert the data we need to json
+	err = json.Unmarshal([]byte(streamData), &datapointjson)
+	if se.HandleError(err, "Error inserting data; invalid format.", logger) {
+		goto redirect
+	}
+
+	// Save the data
+	datapoint = operator.NewDatapoint(datapointjson)
+	err = se.Operator.InsertStreamByID(int64(streamid), []operator.Datapoint{datapoint}, "")
+	if se.HandleError(err, "Error saving data.", logger) {
+		goto redirect
+	}
+
+	se.Session.AddFlash("Created data point.")
+
+redirect:
+	se.Save()
+	http.Redirect(se.Writer, se.Request, "/secure/stream/"+streamids, http.StatusTemporaryRedirect)
+
 }

@@ -20,7 +20,7 @@ abbr {
     display:block;
     width:1.5em;
     height:1.5em;
-    background-image:url(/inc/img/check.svg);
+    background-image:url(/static/img/check.svg);
     background-size: 100% 100%;
     background-repeat: no-repeat;
 
@@ -31,7 +31,7 @@ abbr {
     display:block;
     width:1.5em;
     height:1.5em;
-    background-image:url(/inc/img/x.svg);
+    background-image:url(/static/img/x.svg);
     background-size: 100% 100%;
     background-repeat: no-repeat;
 }
@@ -41,14 +41,14 @@ abbr {
     display:block;
     width:1.5em;
     height:1.5em;
-    background-image:url(/inc/img/super.svg);
+    background-image:url(/static/img/super.svg);
     background-size: 100% 100%;
     background-repeat: no-repeat;
 }
 
 .breadcrumb {
     display: inline;
-    background-image: url("/inc/img/right_arrow.svg");
+    background-image: url("/static/img/right_arrow.svg");
     background-size: 2.2em;
     background-repeat: no-repeat;
     background-position: left top;
@@ -102,7 +102,7 @@ body {
 .form-control:focus{
 background-image:none;
 
-  padding: 1em;
+  /**padding: 1em;**/
   float: none;
   border: 1px solid #66afe9;
 

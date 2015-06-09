@@ -38,9 +38,17 @@ class ConnectorDB(Device):
         #Makes sure the connectino is open, and auth is working
         self.urlget("?q=this")
 
-    #Does error handling for a request result
     def handleresult(self,r):
-        if r.status_code==401 or r.status_code==403:
+        """Handles HTTP error codes for a given request result
+
+        Raises:
+            AuthenticationError on the appropriate 4** errors
+            ServerError if the response is not an ok (200)
+
+        Arguments:
+            r -- The request result
+        """
+        if r.status_code in [401, 403]:
             raise AuthenticationError(r.text)
         elif r.status_code !=200:
             raise ServerError(r.text)
@@ -81,7 +89,7 @@ class ConnectorDB(Device):
             return Device(self,address)
         else:
             return Stream(self,address)
-    
+
     #wsinsert is the property which specifies whether inserts are attempted thru websockets
     @property
     def wsinsert(self):

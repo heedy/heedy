@@ -5,6 +5,9 @@ import json
 import errors
 import random
 
+MAX_RECONNECT_TIME_SECONDS = 8 * 60.0
+RECONNECT_TIME_BACKOFF_RATE = 2.0
+
 class WebsocketHandler(object):
     #SubscriptionHandler manages the websocket connection and fires off all subscriptions
     def __init__(self,url,basicAuth):
@@ -54,7 +57,7 @@ class WebsocketHandler(object):
         try:
             self.ws_openlock.release()
             return True
-        except:
+        except threading.ThreadError:
             return False
 
 
@@ -101,10 +104,12 @@ class WebsocketHandler(object):
     def __on_open(self,ws):
         logging.debug("ConnectorDB: Websocket opened")
         self.unlockopen(True)
-        self.reconnectbackoff=1.0
+        self.reconnectbackoff = self.reconnectbackoff / RECONNECT_TIME_BACKOFF_RATE
+
     def __on_close(self,ws):
         logging.debug("ConnectorDB: Websocket Closed")
         self.unlockopen()
+
     def __on_error(self,ws,e):
         logging.debug("ConnectorDB: Websocket error: %s",str(e))
         v = self.unlockopen()
@@ -118,13 +123,17 @@ class WebsocketHandler(object):
                 reconnector.start()
                 
     def __reconnect_callback(self):
-        #Random reconnect times will have the server not get pounded if disconnect happens 
-        self.reconnectbackoff += random.uniform(-1,5)
-        if self.reconnectbackoff < 1.0:
-            self.reconnectbackoff=1.0
-        elif self.reconnectbackoff > 10*60.0:
-            #If more than 10 minutes, make next reconnect in 10 minutes += 1 minute
-            self.reconnectbackoff = 10*60.0 + random.uniform(-60,60)
+        """ Updates the reconnectbackoff in a method similar to TCP Tahoe and
+        attempts a reconnect.
+
+        """
+        # Double the reconnect time
+        self.reconnectbackoff *= RECONNECT_TIME_BACKOFF_RATE
+
+        # don't overflow our backoff time, or else the user will be mad
+        if self.reconnectbackoff > MAX_RECONNECT_TIME_SECONDS:
+            self.reconnectbackoff = MAX_RECONNECT_TIME_SECONDS
+
         try:
             logging.debug("Reconnecting websocket...")
             self.connect(forceretry=True)
@@ -132,6 +141,7 @@ class WebsocketHandler(object):
             logging.warn("Reconnect Successful")
         except:
             pass
+
     def __resubscribe(self):
         #Subscribe to all existing subscriptions (happens on reconnect)
         with self.subscription_lock:
@@ -160,9 +170,8 @@ class WebsocketHandler(object):
         logging.debug("Subscribing to %s",uri)
         #Subscribes to the given uri with the given callback
         self.send({"cmd": "subscribe", "arg": uri})
-        self.subscription_lock.acquire()
-        self.subscriptions[uri] = callback
-        self.subscription_lock.release()
+        with self.subscription_lock:
+            self.subscriptions[uri] = callback
 
         return True
 
@@ -173,9 +182,8 @@ class WebsocketHandler(object):
         except:
             pass
         #Unsubscribes from the given uri
-        self.subscription_lock.acquire()
-        del self.subscriptions[uri]
-        self.subscription_lock.release()
+        with self.subscription_lock:
+            del self.subscriptions[uri]
 
     def disconnect(self):
         self.wantsconnection = False
@@ -183,9 +191,8 @@ class WebsocketHandler(object):
         if self.ws is not None:
             self.ws.close()
 
-        self.subscription_lock.acquire()
-        self.subscriptions = {}
-        self.subscription_lock.release()
+        with self.subscription_lock:
+            self.subscriptions = {}
 
     def connect(self,forceretry=False):
         if not self.isconnected and self.wantsconnection and not forceretry:
