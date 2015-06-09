@@ -2,6 +2,7 @@ package rest
 
 import (
 	"connectordb/streamdb/operator"
+	"io"
 	"net/http"
 	"time"
 
@@ -16,7 +17,7 @@ const (
 	messageSizeLimit = 4086
 
 	//The time allowed to write a message
-	writeWait = 10 * time.Second
+	writeWait = 2 * time.Second
 
 	//Ping pong stuff - making sure that the connectino still exists
 	pongWait   = 60 * time.Second
@@ -133,7 +134,7 @@ type websocketCommand struct {
 }
 
 //RunReader runs the reading routine. It also maps the commands to actual subscriptions
-func (c *WebsocketConnection) RunReader() {
+func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 
 	//Set up the heartbeat reader(makes sure that sockets are alive)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -147,7 +148,11 @@ func (c *WebsocketConnection) RunReader() {
 	for {
 		err := c.ws.ReadJSON(&cmd)
 		if err != nil {
-			c.logger.Errorln(err)
+			if err == io.EOF {
+				readmessenger <- "EXIT"
+				return //On EOF, do nothing - it is just a close
+			}
+			c.logger.Warningln(err)
 			break
 		}
 		switch cmd.Cmd {
@@ -164,40 +169,66 @@ func (c *WebsocketConnection) RunReader() {
 			c.UnsubscribeAll()
 		}
 	}
+	//Since the reader is exiting, notify the writer to send close message
+	readmessenger <- "@EXIT"
 }
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
-func (c *WebsocketConnection) RunWriter() {
+func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan bool) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
+loop:
 	for {
 		select {
 		case dp, ok := <-c.c:
 			if !ok {
 				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-
+				break loop
 			}
 			c.logger.WithFields(log.Fields{"cmd": "MSG", "arg": dp.Stream}).Debugln()
 			if err := c.write(dp); err != nil {
-				return
+				break loop
 			}
 		case <-ticker.C:
 			c.logger.WithField("cmd", "PING").Debugln()
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				return
+				break loop
 			}
+		case msg := <-readmessenger:
+			if msg == "EXIT" {
+				break loop
+			} else if msg == "@EXIT" {
+				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				break loop
+			}
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			c.ws.WriteMessage(websocket.TextMessage, []byte(msg))
 		}
 	}
+	exitchan <- true
 }
 
 //Run the websocket operations
 func (c *WebsocketConnection) Run() error {
 	c.logger.Debugln("Running websocket...")
-	go c.RunWriter()
-	c.RunReader()
+
+	//The reader can communicate with the writer through the channel
+	msgchn := make(chan string, 1)
+	exitchan := make(chan bool, 1)
+	go c.RunWriter(msgchn, exitchan)
+	c.RunReader(msgchn)
+	//Wait for writer to exit, or for the exit timeout to happen
+	go func() {
+		time.Sleep(writeWait)
+		exitchan <- false
+	}()
+
+	if !<-exitchan {
+		c.logger.Error("writer exit timeout")
+	}
 	return nil
 }
 
