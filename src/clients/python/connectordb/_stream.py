@@ -58,7 +58,13 @@ class Stream(ConnectorObject):
     def __getitem__(self,obj):
         #Allows to access the stream's elements as if they were an array
         if isinstance(obj,slice):
-            return self.db.urlget(self.metaname+"/data?i1="+str(obj.start)+"&i2="+str(obj.stop)).json()
+            start = obj.start
+            if start is None:
+                start = 0
+            stop = obj.stop
+            if stop is None:
+                stop = 0
+            return self.db.urlget(self.metaname+"/data?i1="+str(start)+"&i2="+str(stop)).json()
         else:
             return self.db.urlget(self.metaname+"/data?i1="+str(obj)+"&i2="+str(obj+1)).json()[0]
 

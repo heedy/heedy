@@ -193,6 +193,15 @@ class TestConnectorDB(unittest.TestCase):
 
         self.assertEqual(1,len(s))
 
+        s.ephemeral = False
+
+        s.insert("1")
+        s.insert("2")
+
+        self.assertEqual("2",s[-1]["d"])
+        self.assertEqual(2,len(s[1:]))
+        self.assertEqual(3,len(s[:]))
+
     
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")

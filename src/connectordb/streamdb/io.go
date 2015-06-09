@@ -144,6 +144,33 @@ func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, s
 		return nil, err
 	}
 
+	if i1 < 0 || i2 < 0 || i2 == 0 {
+		//We handle negative indices python-style
+
+		streamlength, err := o.LengthStreamByID(streamID)
+		if err != nil {
+			return nil, err
+		}
+
+		if i1 < 0 {
+			i1 = streamlength + i1
+
+		}
+
+		if i2 == 0 {
+			//For example, getting last datapoint should be (-1,0) in the query
+			i2 = streamlength
+		} else if i2 < 0 {
+			i2 = streamlength + i2
+		}
+
+		if i1 < 0 || i2 < 0 {
+			//Uh oh - these are still negative. Make the indices 0,0 to fail gracefully
+			i1 = 0
+			i2 = 0
+		}
+	}
+
 	dr, err := o.tdb.GetIndexRange(sname+substream, uint64(i1), uint64(i2))
 	return operator.NewRangeReader(dr, strm.GetSchema(), ""), err
 }
