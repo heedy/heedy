@@ -37,13 +37,12 @@ def test_reconnect():
     
         print "\n\n============================================"
         print "NOW RESTART THE SERVER (so that websocket dies)"
-        print "type ENTER when done"
+        print "type ENTER when reconnect is complete"
         print "============================================\n\n"
         raw_input("waiting for ENTER\n")
         print "========================================"
-        print "Waiting 10 seconds for reconnect"
+        print "ENTER PRESSED"
         print "========================================"
-        time.sleep(10)
 
         s.insert("Hello2!")
         time.sleep(0.1)

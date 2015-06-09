@@ -3,6 +3,7 @@ import threading
 import logging
 import json
 import errors
+import time
 import random
 
 MAX_RECONNECT_TIME_SECONDS = 8 * 60.0
@@ -30,6 +31,8 @@ class WebsocketHandler(object):
         self.wantsconnection = False
         self.isretry = False
         self.reconnectbackoff= INITIAL_RECONNECT_DELAY
+        self.connectedtime = 0.0
+        self.lastdisconnect = 0.0
 
 
     def getWebsocketURI(self,url):
@@ -55,6 +58,7 @@ class WebsocketHandler(object):
     def unlockopen(self,isconnected=False):
         #Unlocks the open
         self.isconnected = isconnected
+
         try:
             self.ws_openlock.release()
             return True
@@ -104,8 +108,10 @@ class WebsocketHandler(object):
 
     def __on_open(self,ws):
         logging.debug("ConnectorDB: Websocket opened")
+        self.connectedtime = time.time()
         self.unlockopen(True)
-        self.reconnectbackoff = INITIAL_RECONNECT_DELAY
+        
+        
 
     def __on_close(self,ws):
         logging.debug("ConnectorDB: Websocket Closed")
@@ -117,6 +123,19 @@ class WebsocketHandler(object):
         if not v or self.isretry:
             if not self.isconnected and self.wantsconnection:
                 self.isretry = True
+
+                if self.connectedtime > self.lastdisconnect:
+                    self.lastdisconnect = time.time()
+                    #We JUST got disconnected. So we reset the backoff parameter based on how
+                    #long we were connected
+                    if self.lastdisconnect - self.connectedtime > 15*60:
+                        self.reconnectbackoff = INITIAL_RECONNECT_DELAY
+                    else:
+                        self.reconnectbackoff /= RECONNECT_TIME_BACKOFF_RATE**2 #It will be multiplied by it again in a moment
+
+
+                if self.reconnectbackoff < INITIAL_RECONNECT_DELAY:
+                    self.reconnectbackoff = INITIAL_RECONNECT_DELAY
                 logging.warn("Disconnected from websocket. Retrying in %.2fs"%(self.reconnectbackoff,))
                 #The connection was already unlocked, is not connected, and it wants a connection.
                 reconnector = threading.Timer(self.reconnectbackoff,self.__reconnect_callback)
@@ -138,8 +157,7 @@ class WebsocketHandler(object):
         #Now add randomness to the backoff rate - necessary not to pound the server if it goes down
         self.reconnectbackoff *= 1 + random.uniform(-0.2,0.2)
 
-        if self.reconnectbackoff < INITIAL_RECONNECT_DELAY:
-            self.reconnectbackoff = INITIAL_RECONNECT_DELAY
+        
 
         try:
             logging.debug("Reconnecting websocket...")

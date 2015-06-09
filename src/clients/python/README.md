@@ -126,15 +126,15 @@ def callbackFunction(streampath,data):
 		turn_off_light()
 	#This acknowledges the datapoint by writing the action that was taken to the real stream
 	#As a shortcut, you can also use return True to acknowledge the unmodified data
-	#meaning that return True would return the original data as given by the data variable
+	#meaning that return True would return the original data as given by the data variable.
 	#Not returning anything or returning False does not acknowledge the downlink.
 	#WARNING: Make sure only ONE callback acknowledges the downlink to avoid double-inserts
 	#DANGER: Make sure you only acknowledge downlinks to streams that belong to the currently
 	#authenticated device, since inserting as a different device will redirect to
 	#the downlink stream, creating an infinite insert loop.
-	return [{"t":time.time(),"d": ison}]
+	return [{"t": time.time(),"d": ison}]
 
-mystream.subscribe(callbackFunction)
+mystream.subscribe(callbackFunction,downlink=True)
 
 #Sleep forever waiting for inputs. You can also just do an infinite loop with sleep.
 #in fact, that's what sleepforever does
