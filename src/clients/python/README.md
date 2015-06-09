@@ -116,6 +116,7 @@ mystream = db["mylight"]
 
 if not mystream.exists:
 	mystream.create({"type": "boolean"})
+	mystream.downlink = True
 
 def callbackFunction(streampath,data):
 	ison = data[-1]["d"]
