@@ -32,24 +32,34 @@ func (h Cat) Usage() string {
 }
 
 func (h Cat) Execute(shell *Shell, args []string) {
+	var err error
+	var toPrint interface{}
+
 	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a name" + Reset)
+		fmt.Println(Red + "Must supply a path" + Reset)
 		return
 	}
 
-	operator := shell.operator
-	user, err := operator.ReadUser(args[1])
+	path := shell.ResolvePath(args[1])
+	usr, dev, stream := shell.ReadPath(path)
+
+	switch {
+	default:
+		toPrint = ""
+	case stream != nil:
+		toPrint = stream
+	case dev != nil:
+		toPrint = dev
+	case usr != nil:
+		toPrint = usr
+	}
+
+	bytes, err := njson.MarshalIndentWithTag(toPrint, "", "  ", "")
 	if shell.PrintError(err) {
 		return
 	}
 
-	bytes, err := njson.MarshalIndentWithTag(user, "", "  ", "DOESNOTEXIST")
-	if shell.PrintError(err) {
-		return
-	}
-
-	fmt.Printf(string(bytes))
-	fmt.Println("")
+	fmt.Println(string(bytes))
 }
 
 func (h Cat) Name() string {
