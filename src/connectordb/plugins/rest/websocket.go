@@ -20,8 +20,8 @@ const (
 	writeWait = 2 * time.Second
 
 	//Ping pong stuff - making sure that the connection still exists
-	pingPeriod = 5 * time.Minute
-	pongWait   = pingPeriod + 10*time.Second
+	pongWait   = 60 * time.Second
+	pingPeriod = (pongWait * 9) / 10
 
 	//The number of messages to buffer
 	messageBuffer = 3
