@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	//The max size of a websocket message (shouldn't need to be large)
-	messageSizeLimit = 4086
+	//The max size of a websocket message
+	messageSizeLimit = 1 * Mb
 
 	//The time allowed to write a message
 	writeWait = 2 * time.Second
 
-	//Ping pong stuff - making sure that the connectino still exists
-	pongWait   = 60 * time.Second
-	pingPeriod = (pongWait * 9) / 10
+	//Ping pong stuff - making sure that the connection still exists
+	pingPeriod = 5 * time.Minute
+	pongWait   = pingPeriod + 10*time.Second
 
 	//The number of messages to buffer
 	messageBuffer = 3
@@ -139,7 +139,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 	//Set up the heartbeat reader(makes sure that sockets are alive)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error {
-		c.logger.WithField("cmd", "PONG").Debugln()
+		c.logger.WithField("cmd", "PingPong").Debugln()
 		c.ws.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
@@ -191,7 +191,7 @@ loop:
 				break loop
 			}
 		case <-ticker.C:
-			c.logger.WithField("cmd", "PING").Debugln()
+			//c.logger.WithField("cmd", "PING").Debugln()
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				break loop
