@@ -139,7 +139,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 	//Set up the heartbeat reader(makes sure that sockets are alive)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error {
-		c.logger.WithField("cmd", "PingPong").Debugln()
+		//c.logger.WithField("cmd", "PingPong").Debugln()
 		c.ws.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
