@@ -17,7 +17,7 @@ import (
 
 //The StreamDB version string
 const (
-	Version   = "0.2.0"
+	Version   = "0.2.1"
 	AdminName = " ADMIN "
 )
 
@@ -26,7 +26,7 @@ var (
 	ErrAdmin = errors.New("An administrative operator has no user or device")
 
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
-	BatchSize = 250
+	BatchSize = 50
 
 	//CacheSizes are the number of users/devices/streams to cache
 	UserCacheSize   = 100

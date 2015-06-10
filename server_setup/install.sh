@@ -10,8 +10,10 @@ apt-get -y upgrade
 apt-get -y autoremove  #Sometimes kernels are not removed automatically
 
 #Next, get all the necessary libraries
-apt-get -y install tmux postgresql build-essential redis-server git nginx htop wget
+apt-get -y install cryptsetup python-dev build-essential htop wget tmux
+apt-get -y install postgresql redis-server git nginx 
 apt-get -y install python-nose python-apsw python-coverage python-pip
+pip install subprocess32
 
 #We don't want the servers to start on boot (except for nginx)
 systemctl disable postrgresql.service
@@ -68,6 +70,8 @@ git clone https://github.com/dkumor/connectordb.git
 cd connectordb/src/clients/python
 python setup.py install
 cd ~
+
+chmod +x cryptify
 
 #aaaand we're done
 echo "Finished"

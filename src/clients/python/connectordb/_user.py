@@ -41,3 +41,6 @@ class User(ConnectorObject):
     def __getitem__(self,val):
         #Gets a child device by its name
         return _device.Device(self.db,self.metaname+"/"+val)
+
+    def __repr__(self):
+        return "[User:%s]"%(self.metaname,)

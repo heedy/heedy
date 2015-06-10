@@ -99,6 +99,38 @@ func TestStreamIO(t *testing.T) {
 
 	dr.Close()
 
+	dr, err = db.GetStreamIndexRange("tst/tst/tst", -1, 0)
+	require.NoError(t, err)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, "3", dp.Data)
+	require.Equal(t, 3.0, dp.Timestamp)
+	require.Equal(t, "", dp.Sender)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
+	dr.Close()
+
+	dr, err = db.GetStreamIndexRange("tst/tst/tst", -2, -1)
+	require.NoError(t, err)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, "2", dp.Data)
+	require.Equal(t, 2.0, dp.Timestamp)
+	require.Equal(t, "", dp.Sender)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
+	dr.Close()
+
 	i, err := db.TimeToIndexStream("tst/tst/tst", 1.3)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), i)

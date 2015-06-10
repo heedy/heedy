@@ -1,0 +1,158 @@
+#!/usr/bin/env python
+from subprocess32 import Popen,call,PIPE
+import base64
+import os
+import pwd
+
+class CryptoLuks(object):
+    def __init__(self,cryptfile,mountdir):
+        self.cryptfile = cryptfile
+        self.mountdir = mountdir
+        self.fuuid = base64.b64encode(cryptfile)
+        self.maploc = os.path.join("/dev/mapper",self.fuuid)
+
+    def create(self,password,fsize=64,randomInit=False,owner=pwd.getpwuid(os.getuid())[0]):
+        """Creates a new LUKS container, and mounts it at the given mountpoint.
+        Tries to undo changes if there is an error.
+
+        Keyword Arguments:
+        fsize -- the file size in megabytes (int)
+        randomInit -- Whether or not to initialize created file with random bits (bool), takes longer if True.
+        """
+
+        if (os.path.exists(self.cryptfile)==False):
+            if (randomInit==True):
+                if (call(["sudo","dd","if=/dev/urandom","of="+self.cryptfile,"bs=1M","count="+str(fsize)])!=0):
+                    raise IOError("Failed to create file \""+self.cryptfile+"\" (urandom init)")
+            else:
+                if (call(["sudo","fallocate","-l",str(fsize)+"M",self.cryptfile])!=0):
+                    raise IOError("Failed to create file \""+self.cryptfile+"\" (fallocate)")
+        else:
+            raise IOError("File \""+self.cryptfile+"\" already exists!")
+
+        if not os.path.exists(self.mountdir):
+            os.mkdir(self.mountdir)
+        elif (os.listdir(self.mountdir) != []):
+            os.remove(self.cryptfile)
+            raise IOError("Mount directory \""+self.cryptfile+"\" is not empty!")
+
+        #Format the file
+        csetup = Popen(["sudo","cryptsetup","luksFormat",self.cryptfile],stdin=PIPE)
+        csetup.communicate(password+"\n")
+        csetup.wait()
+        if (csetup.returncode != 0):
+            os.remove(self.cryptfile)
+            os.rmdir(self.mountdir)
+            raise IOError("CryptSetup luksFormat failed!")
+
+        #Open the volume
+        csetup = Popen(["sudo","cryptsetup","luksOpen",self.cryptfile,self.fuuid],stdin=PIPE)
+        csetup.communicate(password+"\n")
+        csetup.wait()
+        if (csetup.returncode != 0):
+            os.remove(self.cryptfile)
+            os.rmdir(self.mountdir)
+            raise IOError("CryptSetup luksOpen failed!")
+
+        if (call(["sudo","mkfs.ext4","-j",self.maploc])!= 0):
+            call(["sudo","cryptsetup","luksClose",self.fuuid])
+            os.remove(self.cryptfile)
+            os.rmdir(self.mountdir)
+            raise IOError("mkfs.ext4 failed!")
+
+        if (call(["sudo","mount",self.maploc,self.mountdir])!= 0):
+            call(["sudo","cryptsetup","luksClose",self.fuuid])
+            os.remove(self.cryptfile)
+            os.rmdir(self.mountdir)
+            raise IOError("mount failed!")
+
+        #Allows the owner to access the directory and file - since we are currently root
+        if (owner!="root"):
+            call(["sudo","chown",owner+":"+owner,self.mountdir])
+            call(["sudo","chown",owner+":"+owner,self.cryptfile])
+
+        #For security, only owner can even touch the directory.
+        call(["chmod","700",self.mountdir])
+
+    def open(self,password, owner = None):
+        """Opens the LUKS file and mounts it"""
+        csetup = Popen(["sudo","cryptsetup","luksOpen",self.cryptfile,self.fuuid],stdin=PIPE)
+        csetup.communicate(password+"\n")
+        csetup.wait()
+        if (csetup.returncode != 0):
+            raise IOError("luksOpen failed")
+
+        #mount it!
+        if ( call(["sudo","mount",self.maploc,self.mountdir])!= 0):
+            call(["cryptsetup","luksClose",self.fuuid])
+            raise IOError("mount failed")
+
+        #If we have an owner, make sure that the correct user can access the files, and
+        #   that this user is the ONLY user that can access these files
+        if (owner is not None and owner!="root"):
+            call(["sudo","chown","-R",owner+":"+owner,self.mountdir])
+            call(["sudo","chmod","-R","700",self.mountdir])
+
+    def close(self):
+        """Unmounts and closes the LUKS file"""
+        if (call(["sudo","umount",self.mountdir])!=0):
+            self.panic()
+        else:
+            call(["sudo","cryptsetup","luksClose",self.fuuid])
+
+
+    def suspend(self):
+        """Calls luksSuspend. Stops all IO, and purges keys from kernel. Note that it does not purge the password from this class, so suspend will not guarantee that password is not in memory."""
+        call(["sudo","cryptsetup","luksSuspend",self.fuuid])
+    def resume(self,password):
+        """Resumes previously suspended container"""
+        csetup = Popen(["sudo","cryptsetup","luksResume",self.fuuid],stdin=PIPE)
+        csetup.communicate(password+"\n")
+        csetup.wait()
+        if (csetup.returncode != 0):
+            raise IOError("luksResume failed!")
+
+    def panic(self):
+        """Immediately suspends IO to the volume and attempts closing it. Closing is dependent on processes, while suspend is immediate. Can cause loss of data - use only in emergencies."""
+        call(["sudo","fuser","-km",self.mountdir])
+        self.close()
+
+if (__name__=="__main__"):
+    import sys
+    import os
+    import getpass
+    import argparse
+
+    import argparse
+    parser = argparse.ArgumentParser("Sets up and runs LUKS containers")
+    parser.add_argument("command",help="create,open,close")
+    parser.add_argument("-i","--container",default="foldercrypt.crypt",help="The container to hold encrypted data in")
+    parser.add_argument("-o","--mountpoint",default="foldercrypt",help="The mountpoint of the container")
+    parser.add_argument("-s","--size",default=1000,type=int,help="The size of the container in megabytes")
+    parser.add_argument("-u","--user",default=pwd.getpwuid(os.getuid())[0],help="The user name ("+pwd.getpwuid(os.getuid())[0]+")")
+
+    args = parser.parse_args()
+
+    cryptfile = os.path.abspath(args.container)
+    mountpoint = os.path.abspath(args.mountpoint)
+    user = args.user
+    csize = args.size
+
+    print "Running:",cryptfile,"->",mountpoint
+
+    c = CryptoLuks(cryptfile,mountpoint)
+
+    if args.command=="create":
+        print "\nCreating",csize,"megabyte container as",user
+        c.create(getpass.getpass(),fsize=csize,owner=user)
+    elif args.command=="open":
+        if not (os.path.exists(cryptfile)):
+            print "Could not find",cryptfile
+            sys.exit(1)
+        c.open(getpass.getpass(),owner=user)
+    elif args.command=="close":
+        c.close()
+    else:
+        parser.print_usage()
+
+        print "Valid commands: create,open,close"

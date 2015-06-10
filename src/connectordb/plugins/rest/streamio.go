@@ -89,7 +89,7 @@ func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *h
 	q := request.URL.Query()
 
 	i1s := q.Get("i1")
-	i1, err := strconv.ParseUint(i1s, 0, 64)
+	i1, err := strconv.ParseInt(i1s, 0, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)
@@ -97,7 +97,7 @@ func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *h
 	}
 
 	i2s := q.Get("i2")
-	i2, err := strconv.ParseUint(i2s, 0, 64)
+	i2, err := strconv.ParseInt(i2s, 0, 64)
 	if i2s != "" && err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)
@@ -108,7 +108,8 @@ func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *h
 	}
 
 	logger.Debugf("irange [%s,%s)", i1s, i2s)
-	dr, err := o.GetStreamIndexRange(streampath, int64(i1), int64(i2))
+
+	dr, err := o.GetStreamIndexRange(streampath, i1, i2)
 
 	return writeJSONResult(writer, dr, logger, err)
 }

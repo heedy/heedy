@@ -22,8 +22,8 @@ class DataGatherer(object):
     def __init__(self):
 
         #Hide the console window if it is visible
-        #win=win32console.GetConsoleWindow()
-        #win32gui.ShowWindow(win,0)
+        win=win32console.GetConsoleWindow()
+        win32gui.ShowWindow(win,0)
 
         #Have the "activation variables defined for all logging activities, but they only
         #enable/disable the background processes on start and stop

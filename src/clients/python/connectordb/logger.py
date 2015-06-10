@@ -41,9 +41,6 @@ class ConnectorLogger(object):
     def __del__(self):
         self.stop()
 
-    def __contains__(self,val):
-        return val in self.streams
-
     def __ensureDatabase(self):
         #Run by commands that require a connection to the REST interface to ensure that a connectordb
         #object is connected
@@ -51,6 +48,7 @@ class ConnectorLogger(object):
             if len(self.name)==0 or len(self.apikey)==0 or len(self.url)==0:
                 raise errors.ConnectionError("Logger does not have login data set! Can't log in without login data!")
             self.cdb = ConnectorDB(self.name,self.apikey,self.url)
+
 
     def __createDatabase(self):
         created = False
@@ -76,18 +74,23 @@ class ConnectorLogger(object):
         return created
 
     def __clearCDB(self):
-        self.synclock.acquire()
-        self.cdb = None
-        self.synclock.release()
+        with self.synclock:
+            self.cdb = None
 
     @property
     def syncperiod(self):
         return self.__syncperiod
     @syncperiod.setter
     def syncperiod(self,value):
-        self.__syncperiod = value
-        c = self.conn.cursor()
-        c.execute("UPDATE metadata SET syncperiod=?;",(value,))
+        resync = False
+        with self.synclock:
+            self.__syncperiod = value
+            c = self.conn.cursor()
+            c.execute("UPDATE metadata SET syncperiod=?;",(value,))
+            if self.syncer is not None:
+                resync = True
+        if resync:
+            self.__setsync()
 
     @property
     def lastsync(self):
@@ -223,32 +226,25 @@ class ConnectorLogger(object):
             self.cdb.ping()
 
             #Alright - the sync needs to be locked. Doing 2 syncs at the same time is a BIG no-no
-            self.synclock.acquire()
-
-            c = self.conn.cursor()
-            for stream in self.streams:
-                s = self.cdb(stream)
-                if not s.exists:
-                    self.synclock.release()
-                    DataError("Stream %s no longer exists!"%(stream,))
-                c.execute("SELECT * FROM cache WHERE streamname=? ORDER BY timestamp ASC;",(stream,))
-                datapointArray=[]
-                for dp in c.fetchall():
-                    datapointArray.append({"t":dp[1],"d":json.loads(dp[2])})
-                if len(datapointArray)>0:
-                    logging.debug("%s: syncing %i datapoints"%(stream,len(datapointArray)))
-                    try:
+            with self.synclock:
+                c = self.conn.cursor()
+                for stream in self.streams:
+                    s = self.cdb(stream)
+                    if not s.exists:
+                        raise errors.DataError("Stream %s no longer exists!"%(stream,))
+                    c.execute("SELECT * FROM cache WHERE streamname=? ORDER BY timestamp ASC;",(stream,))
+                    datapointArray=[]
+                    for dp in c.fetchall():
+                        datapointArray.append({"t":dp[1],"d":json.loads(dp[2])})
+                    if len(datapointArray)>0:
+                        logging.debug("%s: syncing %i datapoints"%(stream,len(datapointArray)))
                         s.insertMany(datapointArray)
-                    except:
-                        self.synclock.release()
-                        raise
 
-                    #If there was no error inserting, delete the datapoints from the cache
-                    c.execute("DELETE FROM cache WHERE streamname=? AND timestamp <=?",(stream,datapointArray[-1]["t"]))
+                        #If there was no error inserting, delete the datapoints from the cache
+                        c.execute("DELETE FROM cache WHERE streamname=? AND timestamp <=?",(stream,datapointArray[-1]["t"]))
 
-            self.lastsync = time.time()
+                self.lastsync = time.time()
 
-            self.synclock.release()
         except:
             #Handle the sync failure callback
             reraise = True
@@ -257,26 +253,46 @@ class ConnectorLogger(object):
             if reraise:
                 raise
 
+    def __setsync(self):
+        with self.synclock:
+            logging.debug("Next sync attempt in "+str(self.syncperiod))
+            if self.syncer is not None:
+                self.syncer.cancel()
+            self.syncer = threading.Timer(self.syncperiod,self.__run)
+            self.syncer.start()
+
     def __run(self):
         try:
             self.sync()
-        except:
-            logging.warn("ConnectorDB sync failed")
-        logging.debug("Next sync in "+str(self.syncperiod))
-        self.syncer = threading.Timer(self.syncperiod,self.__run)
-        self.syncer.start()
+        except Exception as e:
+            logging.warn("ConnectorDB sync failed: "+str(e))
+        self.__setsync()
 
     def start(self,period=None):
-        logging.debug("Started running background sync with period "+str(self.syncperiod))
-        #Runs the syncer in the background with the given sync period
-        if period is not None:
-            self.syncperiod = period
+        self.__ensureDatabase()
+        with self.synclock:
+            if self.syncer is not None:
+                logging.warn("start called on syncer that is already running")
+                return
+
+            logging.debug("Started running background sync with period "+str(self.syncperiod))
+            #Runs the syncer in the background with the given sync period
+            if period is not None:
+                self.syncperiod = period
         
-        self.syncer = threading.Timer(self.syncperiod,self.__run)
-        self.syncer.start()
+            self.syncer = threading.Timer(self.syncperiod,self.__run)
+            self.syncer.start()
 
     def stop(self):
         #Stops the syncer
-        if self.syncer is not None:
-            self.syncer.cancel()
-            self.syncer= None
+        with self.synclock:
+            if self.syncer is not None:
+                self.syncer.cancel()
+                self.syncer= None
+
+    def __contains__(self,streampath):
+        #Whether the logger is caching the given stream name
+        if streampath.count("/")==0:
+            return self.name+"/"+streampath in self.streams
+        else:
+            return streampath in self.streams

@@ -15,7 +15,13 @@ class TestConnectorDB(unittest.TestCase):
             db.getuser("python_test").delete()
         except:
             pass
-    
+    def tearDown(self):
+        try:
+            db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+            db.getuser("python_test").delete()
+        except:
+            pass
+
     def test_authfail(self):
         try:
             db = connectordb.ConnectorDB("notauser","badpass",url="http://localhost:8000")
@@ -192,6 +198,15 @@ class TestConnectorDB(unittest.TestCase):
         s.insert("Hello World!")
 
         self.assertEqual(1,len(s))
+
+        s.ephemeral = False
+
+        s.insert("1")
+        s.insert("2")
+
+        self.assertEqual("2",s[-1]["d"])
+        self.assertEqual(2,len(s[1:]))
+        self.assertEqual(3,len(s[:]))
 
     
     def test_subscribe(self):
