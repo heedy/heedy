@@ -1,6 +1,7 @@
 from connectordb.logger import ConnectorLogger
 import platform
 import threading
+import logging
 
 my_os = platform.system()
 if my_os=="Windows":
@@ -23,16 +24,10 @@ class DataCache():
             self.start()
 
     def create_callback(self,c):
-        print "Creating cache"
+        logging.info("Creating cache")
         #Since we are debugging without connectordb access, we manually set the device
         #and force the streams
-        c.name = "test/test"
-        c.force_addStream("test/test/keypresses",{"type":"integer",
-                                                  "description": "Number of keypresses in the time period of gathering"})
-        c.force_addStream("test/test/activewindow",{"type":"string",
-                                                  "description": "The currently active window titlebar text"})
-        
-        #Set the default options
+
         c.data = {
             "keypresses": True,
             "activewindow": True,
@@ -40,18 +35,31 @@ class DataCache():
             "isrunning": False
             }
         
-        print "cache created"
+        logging.info("cache created")
+
+    def setupstreams(self):
+        try:
+            c = self.cache
+            if not "keypresses" in c:
+                logging.info("Adding keypress stream")
+                c.addStream("keypresses",{"type":"integer",
+                                                        "description": "Number of keypresses in the time period of gathering"})
+            if not "activewindow" in c:
+                logging.info("Adding active window stream")
+                c.addStream("activewindow",{"type":"string",
+                                                        "description": "The currently active window titlebar text"})
+            return ""
+        except Exception as e:
+            return str(e)
 
     def gather(self):
         if self.gatherer.log_keypresses:
             kp = self.gatherer.keypresses()
-            print "Keypresses:",kp
             self.cache.insert("keypresses",kp)
         if self.gatherer.log_activewindow:
             wt = self.gatherer.windowtext()
-            print "WindowText:",wt
             self.cache.insert("activewindow",wt)
-        print "There are %i datapoints in cache."%(len(self.cache),)
+        logging.info("There are %i datapoints in cache."%(len(self.cache),))
 
     def __run(self):
         gather_period = self.cache.data["gathertime"]
@@ -61,19 +69,13 @@ class DataCache():
 
     def start(self):
         try:
-
-            #Try to set up the streams (if they exist, then great). If not, then start fails
-            self.cache.addStream("keypresses",{"type":"integer",
-                                                  "description": "Number of keypresses in the time period of gathering"})
-            self.cache.addStream("activewindow",{"type":"string",
-                                                  "description": "The currently active window titlebar text"})
         
             #Set the default options
             d = self.cache.data
             d["isrunning"]=True
             self.cache.data = d
             gather_period = d["gathertime"]
-            print "Starting logging with period "+str(gather_period)
+            logging.info("Starting logging with period "+str(gather_period))
             self.gatherer.start()
 
             if self.syncer is None:
@@ -87,7 +89,7 @@ class DataCache():
             return False
 
     def stop(self):
-        print "Stopping gathering"
+        logging.info("Stopping gathering")
         self.cache.stop()
         self.gatherer.stop()
         if self.syncer is not None:

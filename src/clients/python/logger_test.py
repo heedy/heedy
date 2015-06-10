@@ -19,7 +19,12 @@ class TestLogger(unittest.TestCase):
 
         if os.path.exists("test.db"):
             os.remove("test.db")
-        
+    def tearDown(self):
+        try:
+            db = connectordb.ConnectorDB("test","test",url=self.url)
+            db.getuser("python_test").delete()
+        except:
+            pass
 
     def test_inserting(self):
         db = connectordb.ConnectorDB("test","test",url=self.url)

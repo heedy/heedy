@@ -5,7 +5,7 @@ import log
 
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,filename="cache.log")
 
 class OptionsWindow(QtGui.QMainWindow):
     def __init__(self,windowIcon,l,parent=None):
@@ -42,16 +42,16 @@ class OptionsWindow(QtGui.QMainWindow):
         self.printOptions()
 
     def printOptions(self):
-        print "------------------"
-        print "Option Values:"
-        print "Device Name:",self.deviceName.text()
-        print "API KEY:",self.apiKey.text()
-        print "Server URL: ",self.serverUrl.text()
-        print "Keypresses:",bool(self.log_keypresses.checkState())
-        print "ActiveWindow:",bool(self.log_activewindow.checkState())
-        print "GatherTime:",self.datapointFrequency.value()
-        print "Sync Time:",self.syncFrequency.value()
-        print "------------------"
+        logging.info("------------------")
+        logging.info("Option Values:")
+        logging.info("Device Name: %s",self.deviceName.text())
+        logging.info("API KEY: %s",self.apiKey.text())
+        logging.info("Server URL: %s",self.serverUrl.text())
+        logging.info("Keypresses: %i",bool(self.log_keypresses.checkState()))
+        logging.info("ActiveWindow: %i",bool(self.log_activewindow.checkState()))
+        logging.info("GatherTime: %f",self.datapointFrequency.value())
+        logging.info("Sync Time: %f",self.syncFrequency.value())
+        logging.info("------------------")
 
     def saveClicked(self):
         self.printOptions()
@@ -114,10 +114,19 @@ class MainTray(QtGui.QSystemTrayIcon):
         self.optionsWindow.show()
 
     def logToggleButtonPressed(self):
+
         if self.toggleAction.isChecked():
-            val = self.l.start()
-            if not val:
+            err = self.l.setupstreams()
+            if len(err) > 0:
                 self.toggleAction.setChecked(QtCore.Qt.Unchecked)
+                self.optionsWindow.show()
+                QtGui.QMessageBox.warning(self.optionsWindow,"Error",err)
+            else:
+                val = self.l.start()
+                if not val:
+                    self.toggleAction.setChecked(QtCore.Qt.Unchecked)
+                    self.optionsWindow.show()
+                    QtGui.QMessageBox.warning(self.optionsWindow,"Error","There was an error connecting to the server... are the settings correct?")
         else:
             self.l.stop()
             d = self.l.cache.data

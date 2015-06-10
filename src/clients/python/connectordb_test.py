@@ -15,7 +15,13 @@ class TestConnectorDB(unittest.TestCase):
             db.getuser("python_test").delete()
         except:
             pass
-    
+    def tearDown(self):
+        try:
+            db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+            db.getuser("python_test").delete()
+        except:
+            pass
+
     def test_authfail(self):
         try:
             db = connectordb.ConnectorDB("notauser","badpass",url="http://localhost:8000")

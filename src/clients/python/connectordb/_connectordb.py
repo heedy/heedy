@@ -4,10 +4,10 @@ Made in 2015 by the ConnectorDB team.
 """
 
 
-import requests
 import json
 import time
 from urlparse import urljoin
+from requests import Session
 from requests.auth import HTTPBasicAuth
 
 from errors import *
@@ -29,10 +29,15 @@ class ConnectorDB(Device):
         if not url.endswith("/"):
             url = url +"/"
 
-        self.auth = HTTPBasicAuth(user,password)
         self.url = urljoin(url,"/api/v1/")
 
-        self.ws = WebsocketHandler(self.url,self.auth)
+        auth = HTTPBasicAuth(user,password)
+        self.r = Session()  #A Session allows us to reuse connections
+        self.r.auth = auth
+        self.r.headers.update({'content-type': 'application/json'})
+
+
+        self.ws = WebsocketHandler(self.url,auth)
         self.__wsinsert = False
 
         Device.__init__(self,self,self.urlget("?q=this").text)
@@ -59,18 +64,16 @@ class ConnectorDB(Device):
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
     def urlget(self,location,cmd="d/"):
-        return self.handleresult(requests.get(urljoin(self.url+cmd,location),auth=self.auth))
+        return self.handleresult(self.r.get(urljoin(self.url+cmd,location)))
     def urldelete(self,location,cmd="d/"):
-        return self.handleresult(requests.delete(urljoin(self.url+cmd,location),auth=self.auth))
+        return self.handleresult(self.r.delete(urljoin(self.url+cmd,location)))
     def urlpost(self,location,data={},cmd="d/"):
-        return self.handleresult(requests.post(urljoin(self.url+cmd,location),auth=self.auth,
-                                                 headers={'content-type': 'application/json'},data=json.dumps(data)))
+        return self.handleresult(self.r.post(urljoin(self.url+cmd,location),data=json.dumps(data)))
     def urlput(self,location,data,cmd="d/"):
-        return self.handleresult(requests.put(urljoin(self.url+cmd,location),auth=self.auth,
-                                                 headers={'content-type': 'application/json'},data=json.dumps(data)))
+        return self.handleresult(self.r.put(urljoin(self.url+cmd,location),data=json.dumps(data)))
     def urlupdate(self,location,data,cmd="d/"):
-        return self.handleresult(requests.request("UPDATE",urljoin(self.url+cmd,location),auth=self.auth,
-                                                 headers={'content-type': 'application/json'},data=json.dumps(data)))
+        return self.handleresult(self.r.request("UPDATE",urljoin(self.url+cmd,location),data=json.dumps(data)))
+    
     def getuser(self,usrname):
         return User(self,usrname)
 
