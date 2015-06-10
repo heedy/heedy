@@ -79,9 +79,35 @@ make
 cd ..
 cp -R connectordb/bin ./bin
 
-./bin/connectordb create database
+./bin/connectordb create database -user=myuser:mypassword
 ./bin/connectordb start database
 ./bin/connectordb run database
 ```
 
 There is about a 99% chance that something won't work right away. The nginx error logs are in `/var/log/nginx`
+
+# Crypto Setup
+
+ConnectorDB does not yet support encryption out of the box. Since we are storing sensitive data, we provide a convenience python program `cryptify`, which sets up a LUKS encrypted container in which you can store a database.
+
+Creating a 10GB container is as follows:
+```bash
+./cryptify --size 10000 create
+```
+
+On future reboots, when the container already exists, you can just run:
+```bash
+./cryptify open
+```
+
+At this point you have a `foldercrypt.crypt` file, which is mounted at the `foldercrypt` folder.
+
+You can now init a database inside it:
+```
+connectordb create foldercrypt/database -user=myuser:mypassword
+```
+
+Then, when done:
+```bash
+./cryptify close
+```
