@@ -41,9 +41,6 @@ class ConnectorLogger(object):
     def __del__(self):
         self.stop()
 
-    def __contains__(self,val):
-        return val in self.streams
-
     def __ensureDatabase(self):
         #Run by commands that require a connection to the REST interface to ensure that a connectordb
         #object is connected
