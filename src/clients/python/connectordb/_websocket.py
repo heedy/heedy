@@ -40,6 +40,12 @@ class WebsocketHandler(object):
         self.pingtimer = None
 
 
+    def __del__(self):
+        self.disconnect()
+        #A weird error was showing up if the program exited without stopping the ping - the timer ran once the time module was unloaded
+        if self.pingtimer is not None:
+            self.pingtimer.cancel()
+
     def getWebsocketURI(self,url):
         #Given a URL to the REST API, get the websocket uri
         ws_url = "wss://" + url[8:]
@@ -120,8 +126,9 @@ class WebsocketHandler(object):
         #Sets the timer which ensures that we keep receiving ping messages from server
         self.lastping = time.time()
 
+
     def __ensure_ping(self):
-        if time.time()-self.lastping > self.ping_timeout:
+        if (time.time()-self.lastping > self.ping_timeout):
             logging.warn("Websocket ping timer timed out!")
             if self.ws is not None:
                 self.ws.close()
@@ -244,6 +251,7 @@ class WebsocketHandler(object):
         #Closes the connection if it exists
         if self.ws is not None:
             self.ws.close()
+
 
         with self.subscription_lock:
             self.subscriptions = {}
