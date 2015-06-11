@@ -133,6 +133,7 @@ class WebsocketHandler(object):
             if self.ws is not None:
                 self.ws.close()
         self.pingtimer = threading.Timer(self.ping_timeout,self.__ensure_ping)
+        self.pingtimer.setDaemon(True)
         self.pingtimer.start()
 
 
