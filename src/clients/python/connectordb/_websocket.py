@@ -34,6 +34,11 @@ class WebsocketHandler(object):
         self.connectedtime = 0.0
         self.lastdisconnect = 0.0
 
+        #The timestamp of the most recent ping message from server
+        self.lastping = 0.0
+        self.ping_timeout = 60*2 #Set timeout to be 2 minutes without ping
+        self.pingtimer = None
+
 
     def getWebsocketURI(self,url):
         #Given a URL to the REST API, get the websocket uri
@@ -58,6 +63,9 @@ class WebsocketHandler(object):
     def unlockopen(self,isconnected=False):
         #Unlocks the open
         self.isconnected = isconnected
+
+        if self.pingtimer is not None:
+            self.pingtimer.cancel()
 
         try:
             self.ws_openlock.release()
@@ -106,14 +114,35 @@ class WebsocketHandler(object):
 
         self.subscription_lock.release()
 
+    #The server sends ping messages - to ensure that we don't lose connection, count the pings, 
+    #and make sure that they are all received - if now, it means the connection is broken!
+    def __on_ping(self,ws,data):
+        #Sets the timer which ensures that we keep receiving ping messages from server
+        self.lastping = time.time()
+
+    def __ensure_ping(self):
+        if time.time()-self.lastping > self.ping_timeout:
+            logging.warn("Websocket ping timer timed out!")
+            if self.ws is not None:
+                self.ws.close()
+        self.pingtimer = threading.Timer(self.ping_timeout,self.__ensure_ping)
+        self.pingtimer.start()
+
+
     def __on_open(self,ws):
         logging.debug("ConnectorDB: Websocket opened")
         self.connectedtime = time.time()
         self.unlockopen(True)
+
+        self.lastping = time.time() #Set the ping timer to current time.
+        self.__ensure_ping()
         
         
 
     def __on_close(self,ws):
+        if self.wantsconnection:
+            self.__on_error(ws,Exception("Websocket was closed..."))
+            return
         logging.debug("ConnectorDB: Websocket Closed")
         self.unlockopen()
 
@@ -131,7 +160,7 @@ class WebsocketHandler(object):
                     if self.lastdisconnect - self.connectedtime > 15*60:
                         self.reconnectbackoff = INITIAL_RECONNECT_DELAY
                     else:
-                        self.reconnectbackoff /= RECONNECT_TIME_BACKOFF_RATE**2 #It will be multiplied by it again in a moment
+                        self.reconnectbackoff /= RECONNECT_TIME_BACKOFF_RATE #It will be multiplied by it again in a moment
 
 
                 if self.reconnectbackoff < INITIAL_RECONNECT_DELAY:
@@ -229,7 +258,8 @@ class WebsocketHandler(object):
                                              on_message = self.__on_message,
                                              on_close = self.__on_close,
                                              on_open = self.__on_open,
-                                             on_error = self.__on_error)
+                                             on_error = self.__on_error,
+                                             on_ping = self.__on_ping)
 
             self.ws_thread = threading.Thread(target=self.ws.run_forever)
             self.ws_thread.daemon=True
