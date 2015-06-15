@@ -1,5 +1,6 @@
 package com.connectordb.dataconnect;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -14,6 +15,9 @@ public class MainActivity extends CordovaActivity
 
         // Set by <content src="index.html" /> in config.xml
         loadUrl(launchUrl);
+
+        // Start the logger service if it isn't running
+        startService(new Intent(this,LoggerService.class));
 
     }
 }
