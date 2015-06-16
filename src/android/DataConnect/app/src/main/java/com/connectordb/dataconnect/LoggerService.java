@@ -19,13 +19,15 @@ public class LoggerService extends Service {
     //The list of active loggers
     public GPSLogger gpslogger;
     public PhoneLogger phonelogger;
+    public FitLogger fitlogger;
 
     @Override
     public void onCreate() {
         Log.d(TAG,"Initializing loggers...");
 
-        gpslogger = new GPSLogger(this,10000);
+        gpslogger = new GPSLogger(this,0);
         phonelogger = new PhoneLogger(this,1);
+        fitlogger = new FitLogger(this,10000);
     }
 
     @Override
@@ -33,5 +35,6 @@ public class LoggerService extends Service {
         Log.d(TAG,"Shutting down logger service");
         gpslogger.close();
         phonelogger.close();
+        fitlogger.close();
     }
 }

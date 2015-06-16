@@ -86,10 +86,11 @@ public class GPSLogger implements LocationListener, GoogleApiClient.ConnectionCa
     }
 
     public void close() {
+        Log.d(TAG,"Closing GPS Logger");
         if (googleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient,this);
             googleApiClient.disconnect();
         }
-        Log.d(TAG,"Closing GPS Logger");
+
     }
 }
