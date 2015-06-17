@@ -5,7 +5,7 @@ import (
 	"connectordb/streamdb/schema"
 	"connectordb/streamdb/users"
 	"errors"
-
+)
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
 func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]operator.Stream, error) {
