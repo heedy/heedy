@@ -3,6 +3,8 @@ package com.connectordb.dataconnect;
 
 import android.util.Log;
 
+import com.connectordb.connector.Logger;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
@@ -19,6 +21,9 @@ public class DataConnectorPlugin extends CordovaPlugin {
             Log.i(TAG,"Setting sync credentials: "+args.getString(0)+" "+args.getString(1));
             callbackContext.success();
             return true;
+        } else if (action.equals("getcachesize")) {
+            Log.i(TAG,"Getting cache size");
+            callbackContext.success(Logger.get(this.webView.getContext()).Size());
         }
         return false;
     }

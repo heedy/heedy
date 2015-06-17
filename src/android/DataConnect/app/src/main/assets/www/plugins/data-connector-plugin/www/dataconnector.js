@@ -4,6 +4,9 @@ cordova.define("com.connectordb.dataconnect.dataconnector", function(require, ex
 	module.exports = {
 		setCredentials: function(devicename,apikey) {
 			exec(null,null,"DataConnectorPlugin","setcred",[devicename,apikey]);
+		},
+		cachesize: function(successCallback) {
+		    exec(successCallback,null,"DataConnectorPlugin","getcachesize",[]);
 		}
 	};
 });

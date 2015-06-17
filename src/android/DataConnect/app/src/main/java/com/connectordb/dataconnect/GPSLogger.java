@@ -11,13 +11,23 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import com.connectordb.connector.Logger;
+
 public class GPSLogger implements LocationListener, GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = "GPSLogger";
+
+    private Context context;
 
     private LocationRequest locationRequest;
     private GoogleApiClient googleApiClient;
 
     public GPSLogger(Context c,int logtime) {
+        context = c;
+
+        Logger l = Logger.get(c);
+        l.ensureStream("location", "{\"type\":\"object\",\"properties\":{\"latitude\":{\"type\":\"number\"},\"longitude\": {\"type\": \"number\"},\"altitude\": {\"type\": \"number\"},\"accuracy\": {\"type\": \"number\"},\"speed\": {\"type\": \"number\"},\"bearing\": {\"type\": \"number\"}},\"required\": [\"latitude\",\"longitude\"]}");
+
+
         Log.d(TAG, "Connecting to Google Play services");
 
         googleApiClient = new GoogleApiClient.Builder(c)
@@ -37,13 +47,13 @@ public class GPSLogger implements LocationListener, GoogleApiClient.ConnectionCa
         } else if (value==0) {
             Log.i(TAG,"Setting Battery Saver mode");
             locationRequest = new LocationRequest();
-            locationRequest.setFastestInterval(100);
+            locationRequest.setFastestInterval(1000);
             locationRequest.setPriority(LocationRequest.PRIORITY_NO_POWER);
         } else {
             Log.i(TAG, "Setting location ms: " + Integer.toString(value));
             locationRequest = new LocationRequest();
             locationRequest.setInterval(value);
-            locationRequest.setFastestInterval(5000);
+            locationRequest.setFastestInterval(1000);
             locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         }
     }
@@ -81,8 +91,8 @@ public class GPSLogger implements LocationListener, GoogleApiClient.ConnectionCa
             data+= ", \"bearing\": " + Double.toString(location.getBearing());
         }
 
-        //location.getTime()
-        Log.i(TAG,"Got location: "+data+"}");
+        Logger.get(context).Insert("location",location.getTime(),data+"}");
+
     }
 
     public void close() {

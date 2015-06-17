@@ -7,6 +7,8 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.util.Log;
 
+import com.connectordb.connector.Logger;
+
 
 public class PhoneLogger {
     private static final String TAG = "PhoneLogger";
@@ -18,23 +20,24 @@ public class PhoneLogger {
         public void onReceive(Context context, Intent intent) {
             long timestamp = System.currentTimeMillis();
             if(intent.getAction().equals(Intent.ACTION_SCREEN_ON)){
-                Log.i(TAG,"screen_on: true");
+                Logger.get(context).Insert("screen_on", timestamp, "true");
             } else if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)){
-                Log.i(TAG, "screen_on: false");
+                Logger.get(context).Insert("screen_on", timestamp, "false");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
                 int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
                 switch (plugged) {
                     case BatteryManager.BATTERY_PLUGGED_USB:
                     case BatteryManager.BATTERY_PLUGGED_AC:
                         if (hadBatteryMessage && !currentStatus || !hadBatteryMessage) {
-                            Log.i(TAG, "plugged_in: true");
+                            Logger.get(context).Insert("plugged_in", timestamp, "true");
                             hadBatteryMessage = true;
                             currentStatus = true;
                         }
                         break;
                     case 0:
                         if (hadBatteryMessage && currentStatus || !hadBatteryMessage) {
-                            Log.i(TAG, "plugged_in: false");
+                            Logger.get(context).Insert("plugged_in", timestamp, "false");
+
                             hadBatteryMessage = true;
                             currentStatus = false;
                         }
@@ -50,6 +53,10 @@ public class PhoneLogger {
 
     public PhoneLogger(Context c, int logtime) {
         mycontext = c;
+
+        Logger.get(c).ensureStream("plugged_in","{\"type\":\"boolean\"}");
+        Logger.get(c).ensureStream("screen_on","{\"type\":\"boolean\"}");
+
         Log.d(TAG, "Registering to monitor phone metadata");
         setLogTime(logtime);
     }

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 
+import com.connectordb.connector.Logger;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -33,6 +34,10 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
     public FitLogger(Context c, int logtime_) {
         mycontext = c;
         logtime = logtime_;
+
+        Logger.get(c).ensureStream("steps","{\"type\":\"number\"}");
+        Logger.get(c).ensureStream("heart_rate","{\"type\":\"number\"}");
+        Logger.get(c).ensureStream("activity","{\"type\":\"string\"}");
 
         googleApiClient = new GoogleApiClient.Builder(c)
                 .addConnectionCallbacks(this)
@@ -164,7 +169,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
             }
             endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
 
-            Log.i(TAG,"steps: "+data);
+            Logger.get(mycontext).Insert("steps", endTime, data);
         }
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
             String data = "";
@@ -174,8 +179,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                 }
             }
             endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-
-            Log.i(TAG,"activity: "+data);
+            Logger.get(mycontext).Insert("activity", endTime, data);
         }
         for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_HEART_RATE_BPM).getDataPoints()) {
             String data = "";
@@ -185,8 +189,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                 }
             }
             endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-
-            Log.i(TAG,"heart_rate: "+data);
+            Logger.get(mycontext).Insert("heart_rate", endTime, data);
         }
     }
 
