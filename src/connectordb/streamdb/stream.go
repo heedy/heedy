@@ -5,12 +5,7 @@ import (
 	"connectordb/streamdb/schema"
 	"connectordb/streamdb/users"
 	"errors"
-)
 
-var (
-	//ErrUnimplemented is thrown when we don't know what to do
-	ErrUnimplemented = errors.New("This operation is not yet implemented")
-)
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
 func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]operator.Stream, error) {

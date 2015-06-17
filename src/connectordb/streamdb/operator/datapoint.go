@@ -13,7 +13,9 @@ type Datapoint struct {
 	Timestamp float64 `json:"t" xml:"t,attr"`
 	// The actual data associated with this point
 	Data   interface{} `json:"d"`
+	// Sender is optional, path to a device.
 	Sender string      `json:"o,omitempty" xml:"o,attr"`
+	// Stream may not be used yet.
 	Stream string      `json:"s,omitempty" xml:"s,attr"`
 }
 

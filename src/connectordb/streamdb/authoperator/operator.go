@@ -14,14 +14,14 @@ var (
 //AuthOperator is the database proxy for a particular device.
 //TODO: Operator does not auto-expire after time period
 type AuthOperator struct {
-	Db operator.BaseOperator //The operator which is used to interact with the database
+	Db operator.BaseOperatorInterface //The operator which is used to interact with the database
 
 	operatorPath string //The operator path is the string name of the operator
 	devID        int64  //the id of the device - operatorPath is not enough, since name changes can happen in other threads
 }
 
 //NewAuthOperator creates a new authenticated operator,
-func NewAuthOperator(db operator.BaseOperator, deviceID int64) (operator.Operator, error) {
+func NewAuthOperator(db operator.BaseOperatorInterface, deviceID int64) (operator.Operator, error) {
 	dev, err := db.ReadDeviceByID(deviceID)
 	if err != nil {
 		return operator.Operator{}, err

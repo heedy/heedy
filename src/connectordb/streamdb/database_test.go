@@ -25,7 +25,7 @@ func ResetTimeBatch() error {
 	return db.tdb.Clear()
 }
 
-func TestDatabaseOperatorBasics(t *testing.T) {
+func TestDataBaseOperatorInterfaceBasics(t *testing.T) {
 	require.NoError(t, ResetTimeBatch())
 
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")

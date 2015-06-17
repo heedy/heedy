@@ -7,7 +7,7 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 	if o.Permissions(users.ROOT) {
 		return o.Db.ReadAllUsers()
 	}
-	//If not admin, then we only know about our own device
+	//If not admin, then we only know about our own user
 	u, err := o.User()
 	if err != nil {
 		return []users.User{}, err
@@ -17,10 +17,11 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 
 //CreateUser makes a new user
 func (o *AuthOperator) CreateUser(username, email, password string) error {
-	if !o.Permissions(users.ROOT) {
-		return ErrPermissions
+	if o.Permissions(users.ROOT) {
+		return o.Db.CreateUser(username, email, password)
 	}
-	return o.Db.CreateUser(username, email, password)
+	return ErrPermissions
+
 }
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
@@ -80,7 +81,8 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 //DeleteUserByID deletes the given user - only admin can delete
 func (o *AuthOperator) DeleteUserByID(userID int64) error {
 	if !o.Permissions(users.ROOT) {
-		return ErrPermissions
+		return o.Db.DeleteUserByID(userID)
 	}
-	return o.Db.DeleteUserByID(userID)
+
+	return ErrPermissions
 }

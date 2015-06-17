@@ -25,6 +25,9 @@ const (
 
 	//The number of messages to buffer
 	messageBuffer = 3
+
+	webSocketClosed = "EXIT"
+	webSocketClosedNonClean = "@EXIT"
 )
 
 //The websocket upgrader
@@ -32,6 +35,7 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		// Allow from all origins
 		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 )
@@ -149,7 +153,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 		err := c.ws.ReadJSON(&cmd)
 		if err != nil {
 			if err == io.EOF {
-				readmessenger <- "EXIT"
+				readmessenger <- webSocketClosed
 				return //On EOF, do nothing - it is just a close
 			}
 			c.logger.Warningln(err)
@@ -170,7 +174,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 		}
 	}
 	//Since the reader is exiting, notify the writer to send close message
-	readmessenger <- "@EXIT"
+	readmessenger <- webSocketClosedNonClean
 }
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
@@ -197,9 +201,9 @@ loop:
 				break loop
 			}
 		case msg := <-readmessenger:
-			if msg == "EXIT" {
+			if msg == webSocketClosed {
 				break loop
-			} else if msg == "@EXIT" {
+			} else if msg == webSocketClosedNonClean {
 				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				break loop

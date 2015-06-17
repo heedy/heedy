@@ -8,10 +8,10 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
-//Operator defines extension functions which work with any BaseOperator, adding extra functionality.
+//Operator defines extension functions which work with any BaseOperatorInterface, adding extra functionality.
 //In particular, Operator makes querying stuff by name so much easier
 type Operator struct {
-	BaseOperator
+	BaseOperatorInterface
 }
 
 //SetAdmin does exactly what it claims. It works on both users and devices
