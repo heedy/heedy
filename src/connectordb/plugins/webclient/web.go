@@ -5,6 +5,7 @@ import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
 	"encoding/gob"
+	"fmt"
 	"html/template"
 	"net/http"
 	"path"
@@ -174,6 +175,17 @@ func init() {
 	loginPageTemplate = tMust("login.html")
 }
 
+/** Creates errors with a specified number.
+**/
+func ResponseCodeHandler(responseCode int) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(responseCode)
+
+		response := fmt.Sprintf("You got a %d error!", responseCode)
+		writer.Write([]byte(response))
+	})
+}
+
 func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	userdb = udb
 	folderPath, _ := osext.ExecutableFolder()
@@ -209,4 +221,7 @@ func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
 	subroutePrefix.HandleFunc("/secure/stream/action/add/streamid/{id:[0-9]+}", authWrapper(insertStreamAction))
 	subroutePrefix.HandleFunc("/secure/stream/{id:[0-9]+}/action/edit", authWrapper(editStreamAction))
 
+	// Testing Purposes
+	subroutePrefix.Handle("/secure/action/500", ResponseCodeHandler(500))
+	subroutePrefix.Handle("/secure/action/400", ResponseCodeHandler(400))
 }
