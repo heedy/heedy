@@ -1,6 +1,9 @@
 package security
 
 import (
+	"bufio"
+	"errors"
+	"net"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -60,4 +63,12 @@ func (e *ErrorMaskingResponseWriter) Write(body []byte) (int, error) {
 	} else {
 		return e.ResponseWriter.Write(body)
 	}
+}
+
+func (e *ErrorMaskingResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hj, ok := e.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("Hijacking not supported")
+	}
+	return hj.Hijack()
 }
