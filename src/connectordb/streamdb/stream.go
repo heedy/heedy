@@ -4,7 +4,6 @@ import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/schema"
 	"connectordb/streamdb/users"
-	"errors"
 )
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
