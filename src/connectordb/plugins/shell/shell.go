@@ -168,6 +168,8 @@ func (s *Shell) ReadLine() string {
 func (s *Shell) ReadPassword() string {
 	fmt.Printf("Password: " + Password)
 	passwd := s.ReadLine()
+	fmt.Print("\033[1A\033[2K") // clear previous line
+	fmt.Print("")
 	fmt.Println(Reset)
 	return passwd
 }

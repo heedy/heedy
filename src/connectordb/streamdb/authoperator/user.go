@@ -80,7 +80,7 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 
 //DeleteUserByID deletes the given user - only admin can delete
 func (o *AuthOperator) DeleteUserByID(userID int64) error {
-	if !o.Permissions(users.ROOT) {
+	if o.Permissions(users.ROOT) {
 		return o.Db.DeleteUserByID(userID)
 	}
 
