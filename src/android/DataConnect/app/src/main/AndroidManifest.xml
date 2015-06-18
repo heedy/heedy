@@ -30,7 +30,8 @@
         <service
             android:name=".LoggerService"
             android:enabled="true"
-            android:exported="true" >
+            android:exported="true"
+            android:process=":LoggerService">
         </service>
 
         <receiver

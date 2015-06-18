@@ -19,6 +19,8 @@ public class DataConnectorPlugin extends CordovaPlugin {
         Log.d(TAG,"execute called: "+action);
         if (action.equals("setcred")) {
             Log.i(TAG,"Setting sync credentials: "+args.getString(0)+" "+args.getString(1));
+            Logger.get(this.webView.getContext()).SetCred(args.getString(0),args.getString(1));
+
             callbackContext.success();
             return true;
         } else if (action.equals("getcachesize")) {

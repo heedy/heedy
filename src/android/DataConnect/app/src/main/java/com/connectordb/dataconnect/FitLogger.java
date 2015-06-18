@@ -2,6 +2,7 @@ package com.connectordb.dataconnect;
 
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -57,6 +58,14 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
         Log.d(TAG, "Google play services connected.");
         //LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
         setLogTime(logtime);
+        if (logtime > 0 ) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    FitLogger.this.getData();
+                }
+            }, logtime);
+        }
     }
 
     @Override
@@ -138,59 +147,116 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
 
     //This stuff here gets the data (it is run in the background)
     public void getData() {
-        if (!googleApiClient.isConnected()) {
-            Log.w(TAG,"Can't read data: API client is not connected!");
-        }
-        //First get the time range for the queries on data
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long startTime = 0;
-        long endTime = cal.getTimeInMillis();
-
-        DataReadRequest readRequest = new DataReadRequest.Builder()
-                .read(DataType.TYPE_ACTIVITY_SAMPLE)
-                .read(DataType.TYPE_STEP_COUNT_DELTA)
-                .read(DataType.TYPE_HEART_RATE_BPM)
-                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-                .build();
-
-        DataReadResult dataReadResult =
-                Fitness.HistoryApi.readData(googleApiClient, readRequest).await(5, TimeUnit.MINUTES);
-
-        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_DELTA).getDataPoints()) {
-            //I didn't look too hard, since fuck spending more than 20 seconds to figure out how to read a damn datapoint,
-            //so I did it the only way I could figure out: brute force. TL;DR: There is probably a better way of reading datapoints...
-            String data = "";
-            for(Field field : dp.getDataType().getFields()) {
-                if (field.getName().equals("steps")) {
-                    data += dp.getValue(field);
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void ...params) {
+                if (!googleApiClient.isConnected()) {
+                    Log.w(TAG,"Can't read data: API client is not connected!");
                 }
-            }
-            endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+                Log.i(TAG,"Syncing google fit");
 
-            Logger.get(mycontext).Insert("steps", endTime, data);
-        }
-        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
-            String data = "";
-            for(Field field : dp.getDataType().getFields()) {
-                if (field.getName().equals("activity")) {
-                    data += dp.getValue(field).asActivity();
+                //First get the time range for the queries on data
+                Calendar cal = Calendar.getInstance();
+                Date now = new Date();
+                cal.setTime(now);
+                long endTime = cal.getTimeInMillis();
+
+                long actStartTime = 1;
+                try {
+                    actStartTime = Long.parseLong(Logger.get(mycontext).GetKey("fit_act_time"));
+                } catch(NumberFormatException nfe) {}
+
+                long stepStartTime = 1;
+                try {
+                    stepStartTime = Long.parseLong(Logger.get(mycontext).GetKey("fit_step_time"));
+                } catch(NumberFormatException nfe) {}
+
+                long heartStartTime = 1;
+                try {
+                    heartStartTime = Long.parseLong(Logger.get(mycontext).GetKey("fit_heart_time"));
+                } catch(NumberFormatException nfe) {}
+
+                Log.v(TAG,"Step start time: "+ stepStartTime);
+                DataReadRequest readRequest = new DataReadRequest.Builder()
+                        .read(DataType.TYPE_STEP_COUNT_DELTA)
+                        .setTimeRange(stepStartTime, endTime, TimeUnit.MILLISECONDS)
+                        .build();
+
+                DataReadResult dataReadResult =
+                        Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+                endTime = stepStartTime;
+                for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_DELTA).getDataPoints()) {
+                    //I didn't look too hard, since fuck spending more than 20 seconds to figure out how to read a damn datapoint,
+                    //so I did it the only way I could figure out: brute force. TL;DR: There is probably a better way of reading datapoints...
+                    String data = "";
+                    for(Field field : dp.getDataType().getFields()) {
+                        if (field.getName().equals("steps")) {
+                            data += dp.getValue(field);
+                        }
+                    }
+                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+
+                    Logger.get(mycontext).Insert("steps", endTime, data);
                 }
-            }
-            endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-            Logger.get(mycontext).Insert("activity", endTime, data);
-        }
-        for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_HEART_RATE_BPM).getDataPoints()) {
-            String data = "";
-            for(Field field : dp.getDataType().getFields()) {
-                if (field.getName().equals("bpm")) {
-                    data += dp.getValue(field);
+
+                Logger.get(mycontext).SetKey("fit_step_time", Long.toString(endTime));
+
+
+                Log.v(TAG,"Activity start time: "+ actStartTime);
+                endTime = actStartTime;
+                readRequest = new DataReadRequest.Builder()
+                        .read(DataType.TYPE_ACTIVITY_SAMPLE)
+                        .setTimeRange(actStartTime, cal.getTimeInMillis(), TimeUnit.MILLISECONDS)
+                        .build();
+
+                dataReadResult =
+                        Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+                for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
+                    String data = "";
+                    for(Field field : dp.getDataType().getFields()) {
+                        if (field.getName().equals("activity")) {
+                            data += dp.getValue(field).asActivity();
+                        }
+                    }
+                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+                    Logger.get(mycontext).Insert("activity", endTime, data);
                 }
+                Logger.get(mycontext).SetKey("fit_act_time",Long.toString(endTime));
+
+
+                Log.v(TAG,"Heart start time: "+ heartStartTime);
+                endTime = heartStartTime;
+                readRequest = new DataReadRequest.Builder()
+                        .read(DataType.TYPE_HEART_RATE_BPM)
+                        .setTimeRange(heartStartTime, cal.getTimeInMillis(), TimeUnit.MILLISECONDS)
+                        .build();
+
+                dataReadResult =
+                        Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+                for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_HEART_RATE_BPM).getDataPoints()) {
+                    String data = "";
+                    for(Field field : dp.getDataType().getFields()) {
+                        if (field.getName().equals("bpm")) {
+                            data += dp.getValue(field);
+                        }
+                    }
+                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+                    Logger.get(mycontext).Insert("heart_rate", endTime, data);
+                }
+
+                Logger.get(mycontext).SetKey("fit_heart_time",Long.toString(endTime));
+
+                if (logtime > 0 ) {
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            FitLogger.this.getData();
+                        }
+                    }, logtime);
+                }
+                return null;
             }
-            endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-            Logger.get(mycontext).Insert("heart_rate", endTime, data);
-        }
+        }.execute();
     }
 
 

@@ -140,6 +140,6 @@ public class Logger extends SQLiteOpenHelper {
 
     public void SetCred(String device, String apikey) {
         this.SetKey("devicename",device);
-        this.SetKey("apikey",apikey);
+        this.SetKey("__apikey",apikey);
     }
 }
