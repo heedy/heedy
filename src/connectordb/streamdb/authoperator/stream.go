@@ -7,7 +7,7 @@ import (
 
 //ReadStreamDevice gets the device associated with the given stream path
 func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err error) {
-	_, devicepath, _, _, _, err := operator.SplitStreamPath(streampath, nil)
+	_, devicepath, _, _, _, err := operator.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}

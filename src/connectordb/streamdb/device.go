@@ -7,7 +7,7 @@ import (
 
 // ReadDeviceUser gets the user associated with the given device path
 func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) {
-	username, _, err := operator.SplitDevicePath(devicepath, nil)
+	username, _, err := operator.SplitDevicePath(devicepath)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 		return &dev, nil
 	}
 	// Apparently not. Get the device from userdb
-	usrname, devname, err := operator.SplitDevicePath(devicepath, nil)
+	usrname, devname, err := operator.SplitDevicePath(devicepath)
 	if err != nil {
 		return nil, err
 	}

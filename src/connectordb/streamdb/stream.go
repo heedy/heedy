@@ -30,7 +30,7 @@ func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema
 //ReadStream reads the given stream
 func (o *Database) ReadStream(streampath string) (*operator.Stream, error) {
 	//Make sure that substreams are stripped from read
-	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath, nil)
+	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}
