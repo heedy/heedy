@@ -131,33 +131,36 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	d.HandleFunc("/", authenticator(GetThis, db)).Queries("q", "this")
 
 	//User CRUD
-	d.HandleFunc("/{user}", authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
-	d.HandleFunc("/{user}", authenticator(ReadUser, db)).Methods("GET")
-	d.HandleFunc("/{user}", authenticator(CreateUser, db)).Methods("POST")
-	d.HandleFunc("/{user}", authenticator(UpdateUser, db)).Methods("PUT")
-	d.HandleFunc("/{user}", authenticator(DeleteUser, db)).Methods("DELETE")
+	userPath := "/{user}"
+	d.HandleFunc(userPath, authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
+	d.HandleFunc(userPath, authenticator(ReadUser, db)).Methods("GET")
+	d.HandleFunc(userPath, authenticator(CreateUser, db)).Methods("POST")
+	d.HandleFunc(userPath, authenticator(UpdateUser, db)).Methods("PUT")
+	d.HandleFunc(userPath, authenticator(DeleteUser, db)).Methods("DELETE")
 
 	//Device CRUD
-	d.HandleFunc("/{user}/{device}", authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
-	d.HandleFunc("/{user}/{device}", authenticator(ReadDevice, db)).Methods("GET")
-	d.HandleFunc("/{user}/{device}", authenticator(CreateDevice, db)).Methods("POST")
-	d.HandleFunc("/{user}/{device}", authenticator(UpdateDevice, db)).Methods("PUT")
-	d.HandleFunc("/{user}/{device}", authenticator(DeleteDevice, db)).Methods("DELETE")
+	devicePath := userPath + "/{device}"
+	d.HandleFunc(devicePath, authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
+	d.HandleFunc(devicePath, authenticator(ReadDevice, db)).Methods("GET")
+	d.HandleFunc(devicePath, authenticator(CreateDevice, db)).Methods("POST")
+	d.HandleFunc(devicePath, authenticator(UpdateDevice, db)).Methods("PUT")
+	d.HandleFunc(devicePath, authenticator(DeleteDevice, db)).Methods("DELETE")
 
 	//Stream CRUD
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(ReadStream, db)).Methods("GET")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(CreateStream, db)).Methods("POST")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(UpdateStream, db)).Methods("PUT")
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(DeleteStream, db)).Methods("DELETE")
+	streamPath := devicePath + "/{stream}"
+	d.HandleFunc(streamPath, authenticator(ReadStream, db)).Methods("GET")
+	d.HandleFunc(streamPath, authenticator(CreateStream, db)).Methods("POST")
+	d.HandleFunc(streamPath, authenticator(UpdateStream, db)).Methods("PUT")
+	d.HandleFunc(streamPath, authenticator(DeleteStream, db)).Methods("DELETE")
 
 	//Stream IO
-	d.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE")
+	d.HandleFunc(streamPath, authenticator(WriteStream, db)).Methods("UPDATE")
 
-	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1}")
-	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1}")
+	d.HandleFunc(streamPath+"/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1}")
+	d.HandleFunc(streamPath+"/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1}")
 
-	d.HandleFunc("/{user}/{device}/{stream}/length", authenticator(GetStreamLength, db)).Methods("GET")
-	d.HandleFunc("/{user}/{device}/{stream}/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
+	d.HandleFunc(streamPath+"/length", authenticator(GetStreamLength, db)).Methods("GET")
+	d.HandleFunc(streamPath+"/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
 
 	return prefix
 }
