@@ -26,4 +26,6 @@ dependencies {
     compile 'com.google.android.gms:play-services-location:7.5.0'
     compile "com.google.android.gms:play-services-base:7.5.0"
     compile 'com.google.android.gms:play-services:7.5.0'
+    compile files('libs/cordova-4.0.2.jar')
+    //compile 'org.apache.cordova:cordova:4.0.2'
 }

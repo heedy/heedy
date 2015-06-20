@@ -1,3 +1,3 @@
 include ':app'
-include ":CordovaLib"
-
+//include ":CordovaLib"
+//include ":cordova:library"
