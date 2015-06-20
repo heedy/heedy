@@ -7,6 +7,7 @@ import com.connectordb.connector.Logger;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -25,7 +26,14 @@ public class DataConnectorPlugin extends CordovaPlugin {
             return true;
         } else if (action.equals("getcachesize")) {
             Log.i(TAG,"Getting cache size");
+            //callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,Logger.get(this.webView.getContext()).Size()));
             callbackContext.success(Logger.get(this.webView.getContext()).Size());
+            return true;
+        } else if (action.equals("sync")) {
+            Log.i(TAG,"Running sync");
+            Logger.get(this.webView.getContext()).BGSync();
+            callbackContext.success();
+            return true;
         }
         return false;
     }

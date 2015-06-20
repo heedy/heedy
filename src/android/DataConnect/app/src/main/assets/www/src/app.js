@@ -49,6 +49,8 @@ var app = {
         document.addEventListener('deviceready', this.onDeviceReady, false);
     },
 
+    deviceCallback: null,
+
     onDeviceReady: function () {
         //Override HTML alert with native dialog
         if (navigator.notification) {
@@ -58,6 +60,10 @@ var app = {
         }
         console.log("The device is ready.")
         app.device = true;
+
+        if (app.deviceCallback!=null) {
+            app.deviceCallback()
+        }
     },
 
 };

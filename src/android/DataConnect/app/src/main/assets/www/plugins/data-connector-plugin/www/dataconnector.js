@@ -7,6 +7,10 @@ cordova.define("com.connectordb.dataconnect.dataconnector", function(require, ex
 		},
 		cachesize: function(successCallback) {
 		    exec(successCallback,null,"DataConnectorPlugin","getcachesize",[]);
+		},
+		sync: function() {
+			exec(null,null,"DataConnectorPlugin","sync",[]);
 		}
+
 	};
 });

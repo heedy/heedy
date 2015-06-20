@@ -8,7 +8,11 @@ var LoginForm = React.createClass({
 		app.setUsername(uname);
 		app.setApiKey(pwd);
 		connector.setCredentials(uname,pwd);
+		//connector.sync();
 		console.log("Login attempt");
+
+		//Show the main screen
+		app.render(<MainPage />)
 
 	},
 
@@ -43,4 +47,4 @@ var LoginForm = React.createClass({
 			</form>
 		);
 	}
-})
+});
