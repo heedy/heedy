@@ -23,7 +23,8 @@ const (
 	Cyan    = "\x1b[36m"
 	White   = "\x1b[37m"
 
-	Password = "\x1b[30;40m" // black on black
+	Password      = "\033[30;40m" // black on black
+	ClearLastLine = "\033[1A\033[2K\033[1A"
 
 	cdbshell = `
    ___                      _           ___  ___   ___ _        _ _
@@ -168,7 +169,7 @@ func (s *Shell) ReadLine() string {
 func (s *Shell) ReadPassword() string {
 	fmt.Printf("Password: " + Password)
 	passwd := s.ReadLine()
-	fmt.Println(Reset)
+	fmt.Println(Reset + ClearLastLine)
 	return passwd
 }
 
@@ -176,11 +177,11 @@ func (s *Shell) ReadPassword() string {
 func (s *Shell) ReadRepeatPassword() string {
 	fmt.Printf("Password: " + Password)
 	passwd := s.ReadLine()
-	fmt.Println(Reset)
+	fmt.Println(Reset + ClearLastLine)
 
 	fmt.Printf("Repeat Password: " + Password)
 	passwd2 := s.ReadLine()
-	fmt.Println(Reset)
+	fmt.Println(Reset + ClearLastLine)
 
 	if passwd != passwd2 {
 		fmt.Println(Yellow + "Passwords did not match" + Reset)
