@@ -1,3 +1,33 @@
+var StarRating = React.createClass({
+	render: function() {
+		return (
+			<div>
+			<h4>{this.props.name}</h4>
+			<div className="rating">
+			<span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span>
+			<span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span>
+			</div>
+			</div>
+		)
+	}
+});
+
+var RatingView = React.createClass({
+	render: function() {
+		return (
+			<div className="card">
+			<ul className="table-view">
+			<li className="table-view-cell table-view-divider">How are you feeling right now?</li>
+			<li className="table-view-cell"><StarRating name="Mood" /></li>
+			<li className="table-view-cell"><StarRating name="Productivity" /></li>
+			<li className="table-view-cell"><StarRating name="Life Satisfaction" /></li>
+			<li className="table-view-cell"><StarRating name="Progress Towards Goals" /></li>
+			</ul>
+			</div>
+		)
+	}
+});
+
 var MainPage = React.createClass({
 
 	getInitialState: function() {
@@ -34,31 +64,29 @@ var MainPage = React.createClass({
 		});
 	},
 
-	handleLogout: function(val) {
-		connector.setCredentials("","");
-		app.setUsername("");
-		app.setApiKey("");
-
-		console.log("Logout");
-
-		//Show the login screen
-		app.render(<LoginForm />)
-	},
-
 	handleSync: function(val) {
 		console.log("Syncing");
 
 		connector.sync();
 	},
 
+	handleSettings: function() {
+		app.render(<SettingsPage />);
+	},
+
 
 	render: function() {
 		return (
 			<div>
-			<h1>{this.state.username}</h1>
-			<p>There are {this.state.cachelength} datapoints in cache.</p>
-			<a className="btn btn-lg btn-primary btn-block" onClick={this.handleSync}>Sync</a>
-			<a className="btn btn-lg btn-primary btn-block" onClick={this.handleLogout}>Log Out</a>
+			<header className="bar bar-nav bar-colored">
+			  <a className="icon icon-gear pull-right icon-nav" onClick={this.handleSettings}></a>
+				<button className="btn pull-left btn-nav"  onClick={this.handleSync}>Sync<span className="badge badge-positive">{this.state.cachelength}</span></button>
+			  <h1 className="title">{this.state.username}</h1>
+			</header>
+
+			<div className="content">
+			<RatingView />
+			</div>
 			</div>
 		);
 	}

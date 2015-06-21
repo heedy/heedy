@@ -31,6 +31,8 @@ var app = {
         }
     },
 
+    connector: null, 
+
     // Application Constructor
     initialize: function() {
         this.bindEvents();
@@ -70,3 +72,11 @@ var app = {
 
 app.initialize();
 FastClick.attach(document.body);
+
+
+//Initialize the app
+if (app.getUsername().length > 0) {
+	app.render(<MainPage />);
+} else {
+	app.render(<LoginForm />);
+}
