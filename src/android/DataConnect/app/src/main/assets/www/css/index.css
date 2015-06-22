@@ -91,27 +91,40 @@ body {
   border-top-right-radius: 0;
 }
 */
-
-.rating {
-  unicode-bidi: bidi-override;
-  direction: rtl;
-  text-align: center;
-  padding-bottom: 10px;
-}
-.rating > span {
-  display: inline-block;
-  position: relative;
-  width: 1.1em;
-}
-.rating > span:hover,
-.rating > span:hover ~ span {
-  color: transparent;
+.starRating {
+  display        : inline-block;
+  /*width          : 7.5em;*/
+  height         : 1.5em;
+  overflow       : hidden;
+  vertical-align : bottom;
 }
 
-.rating > span:hover:before,
-.rating > span:hover ~ span:before {
-   content: "\2605";
-   position: absolute;
-   left: 0;
-   color: gold;
+.starRating > input{
+  margin-right : -100%;
+  opacity      : 0;
+}
+
+.starRating > label{
+  display         : block;
+  float           : right;
+  position        : relative;
+  background      : url('../img/star-off.svg');
+  background-size : contain;
+}
+
+.starRating > label:before{
+  content         : '';
+  display         : block;
+  width           : 1.5em;
+  height          : 1.5em;
+  background      : url('../img/star-on.svg');
+  background-size : contain;
+  opacity         : 0;
+  transition      : opacity 0.2s linear;
+}
+
+.starRating > label:hover:before,
+.starRating > label:hover ~ label:before,
+.starRating:not(:hover) > :checked ~ label:before{
+  opacity : 1;
 }

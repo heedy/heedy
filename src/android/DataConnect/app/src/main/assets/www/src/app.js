@@ -31,11 +31,12 @@ var app = {
         }
     },
 
-    connector: null, 
+    connector: null,
 
     // Application Constructor
     initialize: function() {
         this.bindEvents();
+        this.connector = new ConnectorDB(this.getUsername()+"/user",this.getApiKey());
 
     },
 
@@ -72,7 +73,6 @@ var app = {
 
 app.initialize();
 FastClick.attach(document.body);
-
 
 //Initialize the app
 if (app.getUsername().length > 0) {
