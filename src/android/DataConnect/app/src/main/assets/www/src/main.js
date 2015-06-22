@@ -7,32 +7,45 @@ var StarRating = React.createClass({
 		};
 	},
 
-	saveValue: function(num) {
+	setValue: function(num) {
+		console.log("Setting "+this.props.sname+" to "+num);
 		localStorage.setItem(this.props.sname+"_rating",num);
 		this.setState({
 			checkval: num
 		});
+	},
+	saveValue: function(num) {
+		oldvalue = parseInt(localStorage.getItem(this.props.sname+"_rating")) || 0;
+		this.setValue(num);
 
 		//Now attempt to connect to the server to set the value
 		mythis = this;
+
+		//The error catcher
+		catcher = function(err) {
+			if (err==null) {
+				console.log(mythis.props.sname+": no internet");
+				alert("Failed to save "+mythis.props.name+": Could not connect to the internet!");
+			} else {
+				console.log(mythis.props.sname+": "+err.status + " "+err.response);
+				alert("Failed to save "+mythis.props.name+" with error: "+err.status + " "+err.response);
+			}
+			mythis.setValue(oldvalue);
+		}
+
 		app.connector.insertStream(app.getUsername(),"user",mythis.props.sname,num).then(function(res) {
 			console.log(mythis.props.sname+": Successfully inserted rating.")
 		}).catch(function(err) {
-			if (err.status >= 400) {
+			if (err != null && err.status >= 400) {
 				console.log(mythis.props.sname+": Error inserting - attempting create.");
 				app.connector.createStream(app.getUsername(),"user",mythis.props.sname,{type: "number",maximum: 10,minimum: 0}).then(function(res) {
 					console.log(mythis.props.sname+": Create stream succeeded. Trying insert.");
 					app.connector.insertStream(app.getUsername(),"user",mythis.props.sname,num).then(function(res) {
 						console.log(mythis.props.sname+": Successfully inserted rating.")
-					}).catch(function(err) {
-						alert("Failed to save "+mythis.props.sname+" with error: "+err.status + " "+err.response);
-					});
-				}).catch(function(err) {
-					alert("Failed to save "+mythis.props.sname+" with error: "+err.status + " "+err.response);
-				}).done();
+					}).catch(catcher);
+				}).catch(catcher).done();
 			} else {
-				console.log(mythis.props.sname+": "+err.status + " "+err.response);
-				alert("Failed to save "+mythis.props.sname+" with error: "+err.result);
+				catcher(err);
 			}
 		}).done();
 	},

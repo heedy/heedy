@@ -123,8 +123,6 @@ body {
   transition      : opacity 0.2s linear;
 }
 
-.starRating > label:hover:before,
-.starRating > label:hover ~ label:before,
-.starRating:not(:hover) > :checked ~ label:before{
+.starRating > :checked ~ label:before{
   opacity : 1;
 }
