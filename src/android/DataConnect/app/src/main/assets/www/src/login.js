@@ -6,32 +6,78 @@ var LoginForm = React.createClass({
 
 	handleSubmit: function(e) {
 		e.preventDefault();
-		var uname = React.findDOMNode(this.refs.username).value;
+		var uname = React.findDOMNode(this.refs.username).value.trim().toLowerCase();
 		var pwd = React.findDOMNode(this.refs.password).value;
+		var loginbtn = React.findDOMNode(this.refs.password);
 
-		/*
+		loginbtn.disabled= true;
 		app.connector = new ConnectorDB(uname,pwd);
 
 		lf = this
+		lf.clearLog();
 		lf.addLog("Knock Knock",false);
 
-		app.connector.readUser(uname).then(function (result) {
+		app.connector.readDevice(uname,"user").then(function (result) {
 			lf.addLog("Who's there?",true);
-        }).catch(function (error) {
-            lf.addLog("*cricket*",true);
-			lf.addLog("Are you connected to the internet?", false)
-        });
-		*/
+
+			//Now log in using the API key of the user device
+			pwd = result.apikey;
+			app.connector = new ConnectorDB(uname+"/user",pwd);
+			lf.addLog(uname+"'s phone, "+device.model+"!",false);
+			app.connector.readDevice(uname,device.model).then(function(res) {
+				lf.addLog("I know you! Come right in!",true);
+				connector.setCredentials(uname+"/"+device.model,res.apikey);
+				app.setUsername(uname);
+				app.setApiKey(pwd);
+				app.render(<MainPage />);
+			}).catch(function(res) {
+				if (res.status==401) {
+					lf.addLog("Uhh... I don't know you.",true);
+					lf.addLog("There was a problem setting up the phone.",false);
+					loginbtn.disabled=false;
+				} else if (res.status==404) {
+					lf.addLog("Ooooh, shiny!",true);
+					lf.addLog("Can I come in?",false);
+					app.connector.createDevice(uname,device.model).then(function(res) {
+						lf.addLog("Yes! Welcome!",true);
+						connector.setCredentials(uname+"/"+device.model,res.apikey);
+						app.setUsername(uname);
+						app.setApiKey(pwd);
+						app.render(<MainPage />);
+					}).catch(function(res) {
+						lf.addLog("No! "+res.result,true);
+						lf.addLog("Looks like the server is being annoying...",false);
+						loginbtn.disabled=false;
+					});
+				}
+			});
+        }).catch(function (req) {
+			console.log("Connection error:"+req);
+			if (req==null) {
+				lf.addLog("*cricket*",true);
+				lf.addLog("Are you connected to the internet?", false)
+			} else if (req.status==401) {
+				lf.addLog("Who's there?",true);
+				lf.addLog(uname+"!",false);
+				lf.addLog("Get off my lawn, "+uname+"!",true);
+				lf.addLog("Looks like the username or password is wrong...",false);
+			} else {
+	            lf.addLog(req.status+": "+req.response,true);
+				lf.addLog("It looks like the server is drunk...", false)
+			}
+			loginbtn.disabled=false;
+        }).done();
 
 
-		app.setUsername(uname);
-		app.setApiKey(pwd);
+
+		//app.setUsername(uname);
+		//app.setApiKey(pwd);
 		//connector.setCredentials(uname,pwd);
 		//connector.sync();
 		console.log("Login attempt");
 
 		//Show the main screen
-		app.render(<MainPage />)
+		//app.render(<MainPage />)
 
 	},
 
@@ -47,6 +93,7 @@ var LoginForm = React.createClass({
 
 
 	clearLog: function() {
+		this.userlog = "";
 		this.setState({
 			userlog: ""
 		});
@@ -87,9 +134,9 @@ var LoginForm = React.createClass({
 				value={this.state.username} onChange={this.handleUsername} required autofocus />
 			<input type="password" ref="password" placeholder="Password"
 				value={this.state.password} onChange={this.handlePassword} required />
-			<button className="btn btn-positive btn-block" type="submit">Sign in</button>
+			<button className="btn btn-positive btn-block" ref="submit" type="submit">Sign in</button>
 			</form>
-			<p className="content-padded loginlog">{this.state.userlog}</p>
+			<p className="content-padded loginlog"><span dangerouslySetInnerHTML={{__html: this.state.userlog}} /></p>
 			</div>
 			</div>
 		);
