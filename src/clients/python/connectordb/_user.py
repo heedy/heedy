@@ -33,7 +33,7 @@ class User(ConnectorObject):
         devs = []
         result = self.db.urlget(self.metaname+"/?q=ls")
         for d in result.json():
-            tmpd = _device.Device(self.db,d["name"])
+            tmpd = _device.Device(self.db,self.metaname+"/"+d["name"])
             tmpd.metadata = d
             devs.append(tmpd)
         return devs

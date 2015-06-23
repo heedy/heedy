@@ -36,7 +36,13 @@ func exec(db *streamdb.Database, args []string) error {
 	rest.Router(db, s)
 
 	// all else goes to the webserver
-	http.Handle("/", security.SecurityHeaderHandler(r))
+	http.Handle("/", security.NewSecurityBuilder(r).
+		//LogEverything().
+		IncludeSecureHeaders().
+		Hide500Errors().
+		Build())
+
+	//security.FiveHundredHandler(security.SecurityHeaderHandler(r)))
 
 	go db.RunWriter()
 

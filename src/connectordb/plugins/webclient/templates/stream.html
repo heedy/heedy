@@ -54,8 +54,27 @@
 
     <script type="text/javascript">
     $(document).ready(function(){
+        // We get the schama for this stream, but it may not be ready to be
+        // parsed by jsonForm, since jsonForm doesn't fully follow the
+        // jsonschema specification.
         var schema = JSON.parse({{ .stream.Type }})
         console.log(schema)
+
+        // Did we have to wrap the schema to get it to play nicely with jsonform?
+        var schemaIsWrapped = false;
+        if(schema["type"] !== "object") {
+            schemaIsWrapped = true;
+            var tmp = {
+                "type":"object",
+                "properties": {
+                    "value":schema
+                }
+            }
+
+            // wrap the schema
+            schema = tmp
+        }
+
         $('#result-form').jsonForm({
           schema:  schema,
           onSubmit: function (errors, values) {
@@ -64,8 +83,14 @@
               console.log(errors);
               return false;
             }
-            $("#formdata").val(JSON.stringify(values));
-            alert(JSON.stringify(values));
+
+            if(schemaIsWrapped) {
+                $("#formdata").val(JSON.stringify(values["value"]));
+            } else {
+                $("#formdata").val(JSON.stringify(values));
+            }
+
+            alert($("#formdata").val());
             $("#shadow-form").submit();
             return false;
           }

@@ -46,6 +46,7 @@ func (se *SessionEnvironment) HandleError(err error, flash string, logger *log.E
 
 	logger.Warn(err.Error())
 	se.Session.AddFlash(flash)
+	se.Save()
 
 	return true
 }
