@@ -32,16 +32,17 @@ func readStreamPage(se *SessionEnvironment, logger *log.Entry) {
 	streamids := vars["id"]
 	streamid, _ := strconv.Atoi(streamids)
 	stream, err := se.Operator.ReadStreamByID(int64(streamid))
-	if err != nil {
-		logger.Warn(err.Error())
-		pageData["alert"] = "Error getting stream."
+	if se.HandleError(err, "Error getting stream.", logger) {
+		http.Redirect(se.Writer, se.Request, "/secure/", http.StatusTemporaryRedirect)
+		return
 	}
 
 	device, err := se.Operator.ReadDeviceByID(stream.DeviceId)
-	if err != nil {
-		logger.Warn(err.Error())
-		pageData["alert"] = "Error getting stream."
+	if se.HandleError(err, "Error getting stream.", logger) {
+		http.Redirect(se.Writer, se.Request, "/secure/", http.StatusTemporaryRedirect)
+		return
 	}
+
 	logger.Debugf("Reading stream: %v/%v", device.Name, stream.Name)
 	pageData["stream"] = stream
 	pageData["user"] = se.User
