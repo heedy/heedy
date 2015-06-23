@@ -14,6 +14,10 @@ var SettingsPage = React.createClass({
 	handleBack: function() {
 		app.render(<MainPage />);
 	},
+
+	handleDataBG: function() {
+		alert("Background data is not yet implemented.");
+	},
 	clearHandler: function() {
 		connector.clear();
 	},
@@ -28,7 +32,7 @@ var SettingsPage = React.createClass({
 			<ul className="table-view">
 			  <li className="table-view-divider">Data</li>
 			  <li className="table-view-cell">Background Sync
-					<div className="toggle"><div className="toggle-handle"></div></div>
+					<div className="toggle" onClick={this.hangleDataBG}><div className="toggle-handle"></div></div>
 			  </li>
 			<li className="table-view-cell" onClick={this.clearHandler}>Clear Cache</li>
 			  <li className="table-view-divider">Account</li>

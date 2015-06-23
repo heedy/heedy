@@ -4,17 +4,17 @@ var app = {
 
     getApiKey: function() {
         if (typeof(Storage) !=="undefined") {
-            return localStorage.getItem("cdb_apikey")
+            return localStorage.getItem("cdb_apikey") || "";
         }
-        console.error("Could not access local storage")
-        return ""
+        console.error("Could not access local storage");
+        return "";
     },
     getUsername: function() {
         if (typeof(Storage) !=="undefined") {
-            return localStorage.getItem("cdb_username")
+            return localStorage.getItem("cdb_username") || "";
         }
-        console.error("Could not access local storage")
-        return ""
+        console.error("Could not access local storage");
+        return "";
     },
     setApiKey: function(val) {
         if (typeof(Storage) !=="undefined") {

@@ -188,7 +188,7 @@ public class Logger extends SQLiteOpenHelper {
             totaldata.append("[");
             for (int j=0; j< dtacount; j++) {
                 dta.moveToNext();
-                double timestamp = dta.getDouble(0)/1000.;
+                double timestamp = dta.getDouble(0);
                 if (timestamp>oldtime) {
                     oldtime = timestamp;
                     totaldata.append("{\"t\": ");
@@ -210,7 +210,7 @@ public class Logger extends SQLiteOpenHelper {
                 }
 
                 //Now delete the data from the cache
-                db.execSQL("DELETE FROM cache WHERE streamname=? AND timestamp <=?",new Object[]{streamname, oldtime*1000.0});
+                db.execSQL("DELETE FROM cache WHERE streamname=? AND timestamp <=?",new Object[]{streamname, oldtime});
             }
 
         }
