@@ -17,7 +17,6 @@ public class DataConnectorPlugin extends CordovaPlugin {
     public DataConnectorPlugin() {}
 
     public boolean execute(final String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        Log.d(TAG,"execute called: "+action);
         if (action.equals("setcred")) {
             Log.i(TAG,"Setting sync credentials: "+args.getString(0)+" "+args.getString(1));
             Logger.get(this.webView.getContext()).SetCred(args.getString(0),args.getString(1));
@@ -25,13 +24,18 @@ public class DataConnectorPlugin extends CordovaPlugin {
             callbackContext.success();
             return true;
         } else if (action.equals("getcachesize")) {
-            Log.i(TAG,"Getting cache size");
+            Log.v(TAG,"Getting cache size");
             //callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,Logger.get(this.webView.getContext()).Size()));
             callbackContext.success(Logger.get(this.webView.getContext()).Size());
             return true;
         } else if (action.equals("sync")) {
             Log.i(TAG,"Running sync");
             Logger.get(this.webView.getContext()).BGSync();
+            callbackContext.success();
+            return true;
+        } else if (action.equals("clear")) {
+            Log.i(TAG,"Clear cache");
+            Logger.get(this.webView.getContext()).Clear();
             callbackContext.success();
             return true;
         }

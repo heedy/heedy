@@ -194,12 +194,15 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                             data += dp.getValue(field);
                         }
                     }
-                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
+                    long et= dp.getEndTime(TimeUnit.MILLISECONDS);
+                    if (et > endTime) {
+                        endTime = et;
+                    }
 
-                    Logger.get(mycontext).Insert("steps", endTime, data);
+                    Logger.get(mycontext).Insert("steps", et, data);
                 }
 
-                Logger.get(mycontext).SetKey("fit_step_time", Long.toString(endTime));
+                Logger.get(mycontext).SetKey("fit_step_time", Long.toString(endTime+1));
 
 
                 Log.v(TAG,"Activity start time: "+ actStartTime);
@@ -212,16 +215,24 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                 dataReadResult =
                         Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
                 for (DataPoint dp : dataReadResult.getDataSet(DataType.TYPE_ACTIVITY_SAMPLE).getDataPoints()) {
+                    double confidence = 0.;
                     String data = "";
                     for(Field field : dp.getDataType().getFields()) {
                         if (field.getName().equals("activity")) {
                             data += dp.getValue(field).asActivity();
+                        } else {
+                            confidence = dp.getValue(field).asFloat();
                         }
                     }
-                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-                    Logger.get(mycontext).Insert("activity", endTime, data);
+                    if (confidence > 0.5) {
+                        long et= dp.getEndTime(TimeUnit.MILLISECONDS);
+                        if (et > endTime) {
+                            endTime = et;
+                        }
+                        Logger.get(mycontext).Insert("activity", et, "\"" + data + "\"");
+                    }
                 }
-                Logger.get(mycontext).SetKey("fit_act_time",Long.toString(endTime));
+                Logger.get(mycontext).SetKey("fit_act_time",Long.toString(endTime+1));
 
 
                 Log.v(TAG,"Heart start time: "+ heartStartTime);
@@ -240,11 +251,14 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                             data += dp.getValue(field);
                         }
                     }
-                    endTime = dp.getEndTime(TimeUnit.MILLISECONDS);
-                    Logger.get(mycontext).Insert("heart_rate", endTime, data);
+                    long et= dp.getEndTime(TimeUnit.MILLISECONDS);
+                    if (et > endTime) {
+                        endTime = et;
+                    }
+                    Logger.get(mycontext).Insert("heart_rate", et, data);
                 }
 
-                Logger.get(mycontext).SetKey("fit_heart_time",Long.toString(endTime));
+                Logger.get(mycontext).SetKey("fit_heart_time",Long.toString(endTime+1));
 
                 if (logtime > 0 ) {
                     handler.postDelayed(new Runnable() {

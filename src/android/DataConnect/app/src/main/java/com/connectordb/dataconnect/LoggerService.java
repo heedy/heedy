@@ -27,6 +27,7 @@ public class LoggerService extends Service {
 
         gpslogger = new GPSLogger(this,0);
         phonelogger = new PhoneLogger(this,1);
+        //fitlogger = new FitLogger(this,60000);
         fitlogger = new FitLogger(this,60*60000);
     }
 

@@ -10,6 +10,9 @@ cordova.define("com.connectordb.dataconnect.dataconnector", function(require, ex
 		},
 		sync: function() {
 			exec(null,null,"DataConnectorPlugin","sync",[]);
+		},
+		clear: function() {
+			exec(null,null,"DataConnectorPlugin","clear",[]);
 		}
 
 	};

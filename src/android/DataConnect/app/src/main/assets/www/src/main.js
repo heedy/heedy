@@ -128,6 +128,17 @@ var MainPage = React.createClass({
 		console.log("Syncing");
 
 		connector.sync();
+
+		//Now run frequent cache updates for the next coupe seconds
+		cupdater = this.cacheUpdate
+		for (var i=0; i< 15; i++) {
+			setTimeout(function() {
+				connector.cachesize(function(v) {
+					cupdater(v);
+				});
+			},i*500);
+		}
+
 	},
 
 	handleSettings: function() {

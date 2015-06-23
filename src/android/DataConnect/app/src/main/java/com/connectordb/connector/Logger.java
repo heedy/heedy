@@ -140,7 +140,7 @@ public class Logger extends SQLiteOpenHelper {
         String server = this.GetKey("server");
         String devicename = this.GetKey("devicename");
         String apikey = this.GetKey("__apikey");
-
+        Log.v(TAG,"API KEY: "+apikey);
         ConnectorDB cdb;
         try {
             cdb=new ConnectorDB(server,devicename,apikey);
@@ -149,12 +149,71 @@ public class Logger extends SQLiteOpenHelper {
             return false;
         }
 
-        if (cdb.Ping().isEmpty()) {
+        if (!cdb.Ping()) {
             Log.e(TAG,"Ping failed");
             return false;
         }
 
         SQLiteDatabase db = this.getWritableDatabase();
+
+        //For each stream in database
+        Cursor res = db.rawQuery("SELECT streamname,schema FROM streams", new String[]{});
+        int resultcount = res.getCount();
+        if (resultcount ==0 ) {
+            Log.i(TAG,"No streams to sync");
+            return true;
+        }
+
+        for (int i =0; i<resultcount; i++) {
+            res.moveToNext();
+            String streamname = res.getString(0);
+            String schema = res.getString(1);
+            Log.v(TAG,"Syncing stream "+streamname);
+            if (!cdb.HasStream(streamname)) {
+                Log.w(TAG,"Stream does not exist: "+streamname);
+                //Create the stream
+                if (!cdb.CreateStream(streamname,schema)) {
+                    Log.e(TAG,"Creating stream failed: "+streamname);
+                    return false;
+                }
+            }
+
+            //Insert the datapoints
+            Cursor dta = db.rawQuery("SELECT timestamp,data FROM cache WHERE streamname=? ORDER BY timestamp ASC;", new String[]{streamname});
+            int dtacount = dta.getCount();
+
+            Log.i(TAG,"Writing "+dtacount+" datapoints to "+streamname);
+            double oldtime = 0;
+            StringBuilder totaldata = new StringBuilder();
+            totaldata.append("[");
+            for (int j=0; j< dtacount; j++) {
+                dta.moveToNext();
+                double timestamp = dta.getDouble(0)/1000.;
+                if (timestamp>oldtime) {
+                    oldtime = timestamp;
+                    totaldata.append("{\"t\": ");
+                    totaldata.append(timestamp);
+                    totaldata.append(", \"d\": ");
+                    totaldata.append(dta.getString(1));
+                    totaldata.append("},");
+                } else {
+                    Log.w(TAG,streamname+": Skipping duplicate timestamp");
+                }
+            }
+            String totaldatas = totaldata.toString();
+            totaldatas = totaldatas.substring(0, totaldata.length()-1)+"]";
+
+            if (totaldatas.length()>1) {
+                if (!cdb.Insert(streamname,totaldatas)) {
+                    Log.e(TAG,"FAILED TO INSERT "+streamname);
+                    return false;
+                }
+
+                //Now delete the data from the cache
+                db.execSQL("DELETE FROM cache WHERE streamname=? AND timestamp <=?",new Object[]{streamname, oldtime*1000.0});
+            }
+
+        }
 
         Log.v(TAG,"Sync successful");
         return true;
@@ -187,6 +246,11 @@ public class Logger extends SQLiteOpenHelper {
         contentValues.put("key", key);
         contentValues.put("value", value);
         db.replace("kv",null,contentValues);
+    }
+
+    public void Clear() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM cache;");
     }
 
     public void SetCred(String device, String apikey) {

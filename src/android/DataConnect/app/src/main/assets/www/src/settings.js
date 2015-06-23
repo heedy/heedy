@@ -14,7 +14,9 @@ var SettingsPage = React.createClass({
 	handleBack: function() {
 		app.render(<MainPage />);
 	},
-
+	clearHandler: function() {
+		connector.clear();
+	},
 	render: function() {
 		return (
 			<div>
@@ -28,6 +30,7 @@ var SettingsPage = React.createClass({
 			  <li className="table-view-cell">Background Sync
 					<div className="toggle"><div className="toggle-handle"></div></div>
 			  </li>
+			<li className="table-view-cell" onClick={this.clearHandler}>Clear Cache</li>
 			  <li className="table-view-divider">Account</li>
 			  <li className="table-view-cell" onClick={this.handleLogout}>Log Out</li>
 			</ul>
