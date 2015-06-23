@@ -13,12 +13,14 @@ var LoginForm = React.createClass({
 		loginbtn.disabled= true;
 		app.connector = new ConnectorDB(uname,pwd);
 
+		var devmodel = device.model.replace(/ /g,"_");
+
 		lf = this
 		lf.clearLog();
 		lf.addLog("Knock Knock",false);
 
 		loginfn = function(uname,pass,apikey) {
-			connector.setCredentials(uname+"/"+device.model,apikey);
+			connector.setCredentials(uname+"/"+devmodel,apikey);
 			app.setUsername(uname);
 			app.setApiKey(pass);
 
@@ -34,8 +36,8 @@ var LoginForm = React.createClass({
 			//Now log in using the API key of the user device
 			pwd = result.apikey;
 			app.connector = new ConnectorDB(uname+"/user",pwd);
-			lf.addLog(uname+"'s phone, "+device.model+"!",false);
-			app.connector.readDevice(uname,device.model).then(function(res) {
+			lf.addLog(uname+"'s phone, "+devmodel+"!",false);
+			app.connector.readDevice(uname,devmodel).then(function(res) {
 				lf.addLog("I know you! Come right in!",true);
 				loginfn(uname,pwd,res.apikey);
 			}).catch(function(res) {
@@ -46,12 +48,12 @@ var LoginForm = React.createClass({
 				} else if (res.status==404) {
 					lf.addLog("Ooooh, shiny!",true);
 					lf.addLog("Can I come in?",false);
-					app.connector.createDevice(uname,device.model).then(function(res) {
+					app.connector.createDevice(uname,devmodel).then(function(res) {
 						lf.addLog("Yes! Welcome!",true);
 						loginfn(uname,pwd,res.apikey);
 					}).catch(function(res) {
-						lf.addLog("No! "+res.result,true);
-						lf.addLog("Looks like the server is being annoying...",false);
+						lf.addLog("No! I don't like your phone! ("+res.response+")",true);
+						lf.addLog("Looks like the phone name didn't pass sanitation. This is a bug.",false);
 						loginbtn.disabled=false;
 					});
 				}
