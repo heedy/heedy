@@ -38,6 +38,18 @@ public class DataConnectorPlugin extends CordovaPlugin {
             Logger.get(this.webView.getContext()).Clear();
             callbackContext.success();
             return true;
+        } else if (action.equals("background")) {
+            double synctime = args.getDouble(0);
+            Log.i(TAG,"Setting background sync: "+synctime);
+            if (synctime <= 1.) {
+                //Disable bg sync
+                Logger.get(this.webView.getContext()).DisableTimedSync();
+            } else {
+                //Set bg sync to the given number
+                Logger.get(this.webView.getContext()).EnableTimedSync((long)(synctime*1000.));
+            }
+            callbackContext.success();
+            return true;
         }
         return false;
     }

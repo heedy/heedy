@@ -17,6 +17,17 @@ var LoginForm = React.createClass({
 		lf.clearLog();
 		lf.addLog("Knock Knock",false);
 
+		loginfn = function(uname,pass,apikey) {
+			connector.setCredentials(uname+"/"+device.model,apikey);
+			app.setUsername(uname);
+			app.setApiKey(pass);
+
+			localStorage.setItem("settings_bgsync",60*60);
+			connector.setSync(60*60);
+
+			app.render(<MainPage />);
+		}
+
 		app.connector.readDevice(uname,"user").then(function (result) {
 			lf.addLog("Who's there?",true);
 
@@ -26,10 +37,7 @@ var LoginForm = React.createClass({
 			lf.addLog(uname+"'s phone, "+device.model+"!",false);
 			app.connector.readDevice(uname,device.model).then(function(res) {
 				lf.addLog("I know you! Come right in!",true);
-				connector.setCredentials(uname+"/"+device.model,res.apikey);
-				app.setUsername(uname);
-				app.setApiKey(pwd);
-				app.render(<MainPage />);
+				loginfn(uname,pwd,res.apikey);
 			}).catch(function(res) {
 				if (res.status==401) {
 					lf.addLog("Uhh... I don't know you.",true);
@@ -40,10 +48,7 @@ var LoginForm = React.createClass({
 					lf.addLog("Can I come in?",false);
 					app.connector.createDevice(uname,device.model).then(function(res) {
 						lf.addLog("Yes! Welcome!",true);
-						connector.setCredentials(uname+"/"+device.model,res.apikey);
-						app.setUsername(uname);
-						app.setApiKey(pwd);
-						app.render(<MainPage />);
+						loginfn(uname,pwd,res.apikey);
 					}).catch(function(res) {
 						lf.addLog("No! "+res.result,true);
 						lf.addLog("Looks like the server is being annoying...",false);

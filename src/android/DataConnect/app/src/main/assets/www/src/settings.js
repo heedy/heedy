@@ -1,7 +1,23 @@
 
 var SettingsPage = React.createClass({
 
+	componentDidMount: function() {
+		document.querySelector("#bgsynctoggle").addEventListener("toggle",this.handleDataBG);
+	},
+
+	componentWillUnmount: function() {
+		document.querySelector("#bgsynctoggle").removeEventListener("toggle",this.handleDataBG)
+	},
+
+	getInitialState: function() {
+		return {
+			databg: parseFloat(localStorage.getItem("settings_bgsync")) || -1
+		};
+	},
+
 	handleLogout: function(val) {
+		//Turn off background sync before logging out
+		this.setBGSync(0);
 		connector.setCredentials("","");
 		app.setUsername("");
 		app.setApiKey("");
@@ -9,15 +25,30 @@ var SettingsPage = React.createClass({
 		console.log("Logout");
 
 		//Show the login screen
-		app.render(<LoginForm />)
+		app.render(<LoginForm />);
 	},
 	handleBack: function() {
 		app.render(<MainPage />);
 	},
 
-	handleDataBG: function() {
-		alert("Background data is not yet implemented.");
+	handleDataBG: function(e) {
+		//If it was toggled off, set negative number. If toggled on, send the time period to sync with
+		if (e.detail.isActive) {
+			this.setBGSync(60*60);	//Once an hour
+		} else {
+			this.setBGSync(0);
+		}
 	},
+	setBGSync: function(t) {
+		localStorage.setItem("settings_bgsync",t);
+		this.setState(
+			{
+				databg: t
+			}
+		);
+		connector.setSync(t);
+	},
+
 	clearHandler: function() {
 		connector.clear();
 	},
@@ -32,7 +63,7 @@ var SettingsPage = React.createClass({
 			<ul className="table-view">
 			  <li className="table-view-divider">Data</li>
 			  <li className="table-view-cell">Background Sync
-					<div className="toggle" onClick={this.hangleDataBG}><div className="toggle-handle"></div></div>
+					<div className={this.state.databg > 0? "toggle active": "toggle"} id="bgsynctoggle"><div className="toggle-handle"></div></div>
 			  </li>
 			<li className="table-view-cell" onClick={this.clearHandler}>Clear Cache</li>
 			  <li className="table-view-divider">Account</li>

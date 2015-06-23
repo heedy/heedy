@@ -113,7 +113,6 @@ public class Logger extends SQLiteOpenHelper {
     }
 
     public void StartSyncWait() {
-        this.SetKey("syncenabled", "1");
 
 
         long waittime = Long.parseLong(this.GetKey("syncperiod"));
@@ -122,6 +121,20 @@ public class Logger extends SQLiteOpenHelper {
             Log.v(TAG,"Setting next sync in "+ waittime);
             handler.postDelayed(syncer,waittime);
         }
+    }
+
+    public void DisableTimedSync() {
+        Log.v(TAG, "Disabling syncer");
+        handler.removeCallbacks(syncer);
+        this.SetKey("syncenabled", "0");
+
+    }
+
+    public void EnableTimedSync(long time) {
+        DisableTimedSync();
+        this.SetKey("syncenabled", "1");
+        this.SetKey("syncperiod",Long.toString(time));
+        StartSyncWait();
     }
 
     public void BGSync() {
