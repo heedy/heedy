@@ -153,7 +153,7 @@ public class Logger extends SQLiteOpenHelper {
         String server = this.GetKey("server");
         String devicename = this.GetKey("devicename");
         String apikey = this.GetKey("__apikey");
-        Log.v(TAG,"API KEY: "+apikey);
+
         ConnectorDB cdb;
         try {
             cdb=new ConnectorDB(server,devicename,apikey);
@@ -196,7 +196,14 @@ public class Logger extends SQLiteOpenHelper {
             int dtacount = dta.getCount();
 
             Log.i(TAG,"Writing "+dtacount+" datapoints to "+streamname);
+
+            //Get the most recently inserted timestamp
             double oldtime = 0;
+            String keyname = "sync_oldtime_"+streamname;
+            try {
+                oldtime = Double.parseDouble(GetKey(keyname));
+            } catch(NumberFormatException nfe) {}
+
             StringBuilder totaldata = new StringBuilder();
             totaldata.append("[");
             for (int j=0; j< dtacount; j++) {
@@ -224,6 +231,8 @@ public class Logger extends SQLiteOpenHelper {
 
                 //Now delete the data from the cache
                 db.execSQL("DELETE FROM cache WHERE streamname=? AND timestamp <=?",new Object[]{streamname, oldtime});
+
+                SetKey(keyname, Double.toString(oldtime));
             }
 
         }

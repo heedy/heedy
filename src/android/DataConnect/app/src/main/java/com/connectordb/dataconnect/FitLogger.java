@@ -202,7 +202,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                     Logger.get(mycontext).Insert("steps", et, data);
                 }
 
-                Logger.get(mycontext).SetKey("fit_step_time", Long.toString(endTime+1));
+                Logger.get(mycontext).SetKey("fit_step_time", Long.toString(endTime));
 
 
                 Log.v(TAG,"Activity start time: "+ actStartTime);
@@ -232,7 +232,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                         Logger.get(mycontext).Insert("activity", et, "\"" + data + "\"");
                     }
                 }
-                Logger.get(mycontext).SetKey("fit_act_time",Long.toString(endTime+1));
+                Logger.get(mycontext).SetKey("fit_act_time",Long.toString(endTime));
 
 
                 Log.v(TAG,"Heart start time: "+ heartStartTime);
@@ -258,7 +258,7 @@ public class FitLogger implements GoogleApiClient.ConnectionCallbacks,GoogleApiC
                     Logger.get(mycontext).Insert("heart_rate", et, data);
                 }
 
-                Logger.get(mycontext).SetKey("fit_heart_time",Long.toString(endTime+1));
+                Logger.get(mycontext).SetKey("fit_heart_time",Long.toString(endTime));
 
                 if (logtime > 0 ) {
                     handler.postDelayed(new Runnable() {
