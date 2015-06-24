@@ -22,7 +22,7 @@ type Datapoint struct {
 func NewDatapoint(Data interface{}) Datapoint {
 	var dp Datapoint
 	dp.Data = Data
-	dp.Timestamp = float64(time.Now().Unix())
+	dp.Timestamp = float64(time.Now().UnixNano()) * 1e-9
 	return dp
 }
 
