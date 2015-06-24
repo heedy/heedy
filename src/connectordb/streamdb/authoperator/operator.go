@@ -4,6 +4,8 @@ import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
 	"errors"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -87,13 +89,18 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 
 	dp := operator.NewDatapoint(data)
 	dp.Sender = o.Name()
-	return o.Db.InsertStreamByID(o.userlogID, []operator.Datapoint{dp}, "")
+	err := o.Db.InsertStreamByID(o.userlogID, []operator.Datapoint{dp}, "")
+	if err != nil {
+		log.WithFields(log.Fields{"cmd": cmd, "arg": arg, "o": o.Name()}).Error("Userlog insert failed: ", err)
+	}
+
+	return err
 }
 
 //Returns the stream ID of the user log stream (and tries to create it if the stream does not exist)
 func getUserLogStream(db operator.BaseOperator, userID int64) (streamID int64, err error) {
 	o := operator.Operator{db}
-	usr, err := db.ReadUserByID(userID)
+	usr, err := o.ReadUserByID(userID)
 	if err != nil {
 		return 0, err
 	}

@@ -36,6 +36,7 @@ func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 		if err == nil {
 			o.UserLog("CreateDevice", usr.Name+"/"+devicename)
 		}
+		return err
 	}
 	return ErrPermissions
 }
@@ -104,6 +105,7 @@ func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
 		if err == nil {
 			o.UserLogDeviceID(dev.DeviceId, "UpdateDevice")
 		}
+		return err
 	}
 	return ErrPermissions
 }
@@ -124,6 +126,7 @@ func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
 		if err == nil && err2 == nil {
 			o.UserLog("DeleteDevice", devpath)
 		}
+		return err
 	}
 	return ErrPermissions
 }
