@@ -32,7 +32,10 @@ func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 		return err
 	}
 	if dev.RelationToUser(usr).Gte(users.USER) {
-		return o.Db.CreateDeviceByUserID(userID, devicename)
+		err = o.Db.CreateDeviceByUserID(userID, devicename)
+		if err == nil {
+			o.UserLog("CreateDevice", usr.Name+"/"+devicename)
+		}
 	}
 	return ErrPermissions
 }
@@ -97,7 +100,10 @@ func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
 	}
 	permission := operatordevice.RelationToDevice(dev)
 	if permission.Gte(users.DEVICE) && updateddevice.RevertUneditableFields(*dev, permission) == 0 {
-		return o.Db.UpdateDevice(updateddevice)
+		err = o.Db.UpdateDevice(updateddevice)
+		if err == nil {
+			o.UserLogDeviceID(dev.DeviceId, "UpdateDevice")
+		}
 	}
 	return ErrPermissions
 }
@@ -113,7 +119,11 @@ func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
 		return err
 	}
 	if operatordevice.RelationToDevice(dev).Gte(users.USER) {
-		return o.Db.DeleteDeviceByID(deviceID)
+		devpath, err2 := o.getDevicePath(deviceID)
+		err = o.Db.DeleteDeviceByID(deviceID)
+		if err == nil && err2 == nil {
+			o.UserLog("DeleteDevice", devpath)
+		}
 	}
 	return ErrPermissions
 }

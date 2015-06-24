@@ -51,7 +51,14 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 		return err
 	}
 	if odev.RelationToDevice(dev).Gte(users.DEVICE) {
-		return o.Db.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+		err = o.Db.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+		if err == nil {
+			devpath, err2 := o.getDevicePath(deviceID)
+			if err2 == nil {
+				o.UserLog("CreateStream", devpath+"/"+streamname)
+			}
+		}
+		return err
 	}
 	return ErrPermissions
 }
@@ -137,7 +144,11 @@ func (o *AuthOperator) UpdateStream(modifiedstream *operator.Stream) error {
 	if modifiedstream.RevertUneditableFields(strm.Stream, permission) > 0 {
 		return ErrPermissions
 	}
-	return o.Db.UpdateStream(modifiedstream)
+	err = o.Db.UpdateStream(modifiedstream)
+	if err == nil {
+		o.UserLogStreamID(strm.StreamId, "UpdateStream")
+	}
+	return err
 }
 
 //DeleteStreamByID Delete the stream using ID... This doesn't actually use the ID internally
@@ -155,7 +166,14 @@ func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error 
 		return err
 	}
 	if odev.RelationToStream(&strm.Stream, dev).Gte(users.DEVICE) {
-		return o.Db.DeleteStreamByID(streamID, substream)
+
+		spath, err2 := o.getStreamPath(streamID)
+
+		err = o.Db.DeleteStreamByID(streamID, substream)
+		if err == nil && err2 == nil {
+			o.UserLog("DeleteStream", spath)
+		}
+		return err
 	}
 	return ErrPermissions
 }
