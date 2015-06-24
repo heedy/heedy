@@ -73,23 +73,23 @@ func getDevicePage(se *SessionEnvironment, logger *log.Entry) {
 	devid, _ := strconv.Atoi(devids)
 
 	device, err := se.Operator.ReadDeviceByID(int64(devid))
+	if se.HandleError(err, "Error getting device.", logger) {
+		http.Redirect(se.Writer, se.Request, "/secure/", http.StatusTemporaryRedirect)
+		return
+	}
+
 	pageData["device"] = device
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()
-
-	if err != nil {
-		logger.Warn(err.Error())
-		pageData["alert"] = "Error getting device."
-	}
 
 	logger.Debugf("dev: %v", device.Name)
 
 	streams, err := se.Operator.ReadAllStreamsByDeviceID(device.DeviceId)
 	pageData["streams"] = streams
 
-	if err != nil {
-		logger.Warn(err.Error())
-		pageData["alert"] = "Error getting device streams"
+	if se.HandleError(err, "Error getting device streams.", logger) {
+		http.Redirect(se.Writer, se.Request, "/secure/", http.StatusTemporaryRedirect)
+		return
 	}
 
 	se.Save()

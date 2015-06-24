@@ -18,10 +18,13 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 //CreateUser makes a new user
 func (o *AuthOperator) CreateUser(username, email, password string) error {
 	if o.Permissions(users.ROOT) {
-		return o.Db.CreateUser(username, email, password)
+		err := o.Db.CreateUser(username, email, password)
+		if err == nil {
+			o.UserLog("CreateUser", username)
+		}
+		return err
 	}
 	return ErrPermissions
-
 }
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
@@ -74,15 +77,24 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 		return ErrPermissions
 	}
 	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
-	o.Db.UpdateUser(modifieduser)
+	err = o.Db.UpdateUser(modifieduser)
+	if err == nil {
+		o.UserLog("UpdateUser", modifieduser.Name)
+	}
 	return err
 }
 
 //DeleteUserByID deletes the given user - only admin can delete
 func (o *AuthOperator) DeleteUserByID(userID int64) error {
 	if o.Permissions(users.ROOT) {
-		return o.Db.DeleteUserByID(userID)
-	}
+		usr, err1 := o.ReadUserByID(userID)
 
+		err := o.Db.DeleteUserByID(userID)
+		if err == nil && err1 == nil {
+			o.UserLog("DeleteUser", usr.Name)
+		}
+		return err
+	}
 	return ErrPermissions
+
 }
