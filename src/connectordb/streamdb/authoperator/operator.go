@@ -26,7 +26,7 @@ var (
 //AuthOperator is the database proxy for a particular device.
 //TODO: Operator does not auto-expire after time period
 type AuthOperator struct {
-	Db operator.BaseOperator //The operator which is used to interact with the database
+	Db operator.BaseOperatorInterface //The operator which is used to interact with the database
 
 	operatorPath string //The operator path is the string name of the operator
 	devID        int64  //the id of the device - operatorPath is not enough, since name changes can happen in other threads
@@ -35,7 +35,7 @@ type AuthOperator struct {
 }
 
 //NewAuthOperator creates a new authenticated operator,
-func NewAuthOperator(db operator.BaseOperator, deviceID int64) (operator.Operator, error) {
+func NewAuthOperator(db operator.BaseOperatorInterface, deviceID int64) (operator.Operator, error) {
 	dev, err := db.ReadDeviceByID(deviceID)
 	if err != nil {
 		return operator.Operator{}, err
@@ -98,7 +98,7 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 }
 
 //Returns the stream ID of the user log stream (and tries to create it if the stream does not exist)
-func getUserLogStream(db operator.BaseOperator, userID int64) (streamID int64, err error) {
+func getUserLogStream(db operator.BaseOperatorInterface, userID int64) (streamID int64, err error) {
 	o := operator.Operator{db}
 	usr, err := o.ReadUserByID(userID)
 	if err != nil {
@@ -144,6 +144,7 @@ func (o *AuthOperator) getStreamPath(streamID int64) (path string, err error) {
 	return devpath + "/" + s.Name, err
 }
 
+//UserLogDeviceID writes the userlog using a device ID
 func (o *AuthOperator) UserLogDeviceID(deviceID int64, cmd string) error {
 	devpath, err := o.getDevicePath(deviceID)
 	if err != nil {
@@ -152,6 +153,7 @@ func (o *AuthOperator) UserLogDeviceID(deviceID int64, cmd string) error {
 	return o.UserLog(cmd, devpath)
 }
 
+//UserLogStreamID writes the userlog using a streamID
 func (o *AuthOperator) UserLogStreamID(streamID int64, cmd string) error {
 	spath, err := o.getStreamPath(streamID)
 	if err != nil {

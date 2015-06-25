@@ -9,21 +9,21 @@ import (
 func TestAuthUserCrud(t *testing.T) {
 	require.NoError(t, ResetTimeBatch())
 
+	// Open and connect to all services.
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	require.NoError(t, err)
 	defer db.Close()
-	//go db.RunWriter()
 
+	//Create extra users that exist
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
+	require.NoError(t, db.CreateUser("streamdb_test2", "root@localhost2", "mypass"))
+	require.NoError(t, db.CreateUser("streamdb_test3", "root@localhost3", "mypass"))
 
 	o, err := db.GetOperator("streamdb_test")
 	require.NoError(t, err)
 
+	// Try to create a user not as an admin
 	require.Error(t, o.CreateUser("notanadmin", "lol@you", "fail"))
-
-	//Create extra users that exist
-	require.NoError(t, db.CreateUser("streamdb_test2", "root@localhost2", "mypass"))
-	require.NoError(t, db.CreateUser("streamdb_test3", "root@localhost3", "mypass"))
 
 	//Make sure there are 3
 	usrs, err := db.ReadAllUsers()

@@ -1,14 +1,13 @@
 package operator
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestSplitStreamPath(t *testing.T) {
-	username, devicepath, streampath, streamname, substreams, err := SplitStreamPath("user/device/stream/sub1/sub2", nil)
+	username, devicepath, streampath, streamname, substreams, err := SplitStreamPath("user/device/stream/sub1/sub2")
 
 	require.NoError(t, err)
 	require.Equal(t, username, "user")
@@ -17,13 +16,10 @@ func TestSplitStreamPath(t *testing.T) {
 	require.Equal(t, streamname, "stream")
 	require.Equal(t, substreams, "sub1/sub2")
 
-	_, _, _, _, _, err = SplitStreamPath("user/device", nil)
+	_, _, _, _, _, err = SplitStreamPath("user/device")
 	require.Error(t, err)
 
-	_, _, _, _, _, err = SplitStreamPath("user/device/stream/sub1/sub2", errors.New("FAILE"))
-	require.Error(t, err)
-
-	username, devicepath, streampath, streamname, substreams, err = SplitStreamPath("user/device/stream", nil)
+	username, devicepath, streampath, streamname, substreams, err = SplitStreamPath("user/device/stream")
 
 	require.NoError(t, err)
 	require.Equal(t, username, "user")
@@ -34,15 +30,13 @@ func TestSplitStreamPath(t *testing.T) {
 }
 
 func TestSplitDevicePath(t *testing.T) {
-	u, d, err := SplitDevicePath("user/device", nil)
+	u, d, err := SplitDevicePath("user/device")
 
 	require.NoError(t, err)
 	require.Equal(t, u, "user")
 	require.Equal(t, d, "device")
 
-	_, _, err = SplitDevicePath("user/device/something", nil)
+	_, _, err = SplitDevicePath("user/device/something")
 	require.Error(t, err)
 
-	_, _, err = SplitDevicePath("user/device", errors.New("FAIL"))
-	require.Error(t, err)
 }

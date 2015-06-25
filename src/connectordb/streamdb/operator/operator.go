@@ -8,10 +8,10 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
-//Operator defines extension functions which work with any BaseOperator, adding extra functionality.
+//Operator defines extension functions which work with any BaseOperatorInterface, adding extra functionality.
 //In particular, Operator makes querying stuff by name so much easier
 type Operator struct {
-	BaseOperator
+	BaseOperatorInterface
 }
 
 //SetAdmin does exactly what it claims. It works on both users and devices
@@ -78,7 +78,7 @@ func (o Operator) ReadAllDevices(username string) ([]users.Device, error) {
 
 //CreateDevice creates a new device at the given path
 func (o Operator) CreateDevice(devicepath string) error {
-	userName, deviceName, err := SplitDevicePath(devicepath, nil)
+	userName, deviceName, err := SplitDevicePath(devicepath)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (o Operator) ReadAllStreams(devicepath string) ([]Stream, error) {
 
 //CreateStream makes a new stream
 func (o Operator) CreateStream(streampath, jsonschema string) error {
-	_, devicepath, _, streamname, _, err := SplitStreamPath(streampath, nil)
+	_, devicepath, _, streamname, _, err := SplitStreamPath(streampath)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (o Operator) CreateStream(streampath, jsonschema string) error {
 
 //DeleteStream deletes the given stream given its path
 func (o Operator) DeleteStream(streampath string) error {
-	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (o Operator) TimeToIndexStream(streampath string, time float64) (int64, err
 
 //InsertStream inserts the given array of datapoints into the given stream.
 func (o Operator) InsertStream(streampath string, data []Datapoint) error {
-	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (o Operator) InsertStream(streampath string, data []Datapoint) error {
 
 //GetStreamTimeRange Reads the given stream by time range
 func (o Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
-	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (o Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, 
 
 //GetStreamIndexRange Reads the given stream by index range
 func (o Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error) {
-	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (o Operator) SubscribeDevice(devpath string, chn chan Message) (*nats.Subsc
 
 //SubscribeStream subscribes to the given stream
 func (o Operator) SubscribeStream(streampath string, chn chan Message) (*nats.Subscription, error) {
-	_, _, streampath, _, substream, err := SplitStreamPath(streampath, nil)
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}

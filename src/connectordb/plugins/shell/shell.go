@@ -169,6 +169,7 @@ func (s *Shell) ReadLine() string {
 func (s *Shell) ReadPassword() string {
 	fmt.Printf("Password: " + Password)
 	passwd := s.ReadLine()
+
 	fmt.Println(Reset + ClearLastLine)
 	return passwd
 }

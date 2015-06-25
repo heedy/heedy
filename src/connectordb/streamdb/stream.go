@@ -4,12 +4,6 @@ import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/schema"
 	"connectordb/streamdb/users"
-	"errors"
-)
-
-var (
-	//ErrUnimplemented is thrown when we don't know what to do
-	ErrUnimplemented = errors.New("This operation is not yet implemented")
 )
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
@@ -36,7 +30,7 @@ func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema
 //ReadStream reads the given stream
 func (o *Database) ReadStream(streampath string) (*operator.Stream, error) {
 	//Make sure that substreams are stripped from read
-	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath, nil)
+	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}

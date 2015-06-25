@@ -135,7 +135,7 @@ func (u *User) UpgradePassword(password string) bool {
 //
 type Device struct {
 	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
-	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Name             string `modifiable:"root" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
 	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
 	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
 	ApiKey           string `modifiable:"device" json:"apikey,omitempty"`         // A uuid used as an api key to verify against
