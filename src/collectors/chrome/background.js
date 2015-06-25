@@ -39,7 +39,7 @@ function LogDatapoint(pgurl,title) {
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (changeInfo.url !=null ) {
-        LogDatapoint(tab.url)
+        LogDatapoint(tab.url,tab.title)
     }
 
 });
