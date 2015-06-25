@@ -26,7 +26,7 @@ const (
 	//The number of messages to buffer
 	messageBuffer = 3
 
-	webSocketClosed = "EXIT"
+	webSocketClosed         = "EXIT"
 	webSocketClosedNonClean = "@EXIT"
 )
 
@@ -36,7 +36,7 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		// Allow from all origins
-		CheckOrigin:     func(r *http.Request) bool { return true },
+		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 )
 
@@ -85,7 +85,7 @@ func (c *WebsocketConnection) Close() {
 //Insert a datapoint using the websocket
 func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
-	logger.Infoln("Inserting", len(ws.D), "dp")
+	logger.Debugln("Inserting", len(ws.D), "dp")
 	err := c.o.InsertStream(ws.Arg, ws.D)
 	if err != nil {
 		//TODO: Notify user of insert failure
