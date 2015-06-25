@@ -4,16 +4,15 @@ import threading
 import logging
 
 my_os = platform.system()
-if my_os=="Windows":
+if my_os == "Windows":
     from winlog import DataGatherer
 else:
-    #from linlog import DataGatherer
-    raise Exception("THIS OPERATING SYSTEM DOES NOT YET HAVE DATA GATHERING IMPLEMENTED")
+    from linux_log import DataGatherer
 
 
 class DataCache():
     def __init__(self):
-        self.cache = ConnectorLogger("cache.db",on_create=self.create_callback)
+        self.cache = ConnectorLogger("cache.db", on_create=self.create_callback)
 
 
         self.gatherer = DataGatherer()
@@ -34,7 +33,7 @@ class DataCache():
             "gathertime": 60.0, #60 seconds
             "isrunning": False
             }
-        
+
         logging.info("cache created")
 
     def setupstreams(self):
@@ -48,9 +47,10 @@ class DataCache():
                 logging.info("Adding active window stream")
                 c.addStream("activewindow",{"type":"string",
                                                         "description": "The currently active window titlebar text"})
-            return ""
         except Exception as e:
             return str(e)
+
+        return ""
 
     def gather(self):
         if self.gatherer.log_keypresses:
@@ -59,6 +59,25 @@ class DataCache():
         if self.gatherer.log_activewindow:
             wt = self.gatherer.windowtext()
             self.cache.insert("activewindow",wt)
+
+        # do the dynamically retrieved data
+        try:
+            data = self.gatherer.get_data()
+
+            for item in data:
+                title = item["title"]
+                schema = item["schema"]
+                data = item["value"]
+
+                if not title in self.cache:
+                    logging.info("Adding {} stream".format(title))
+                    self.cache.addStream(title, schema)
+
+                self.cache.insert(title, data)
+
+        except Exception as e:
+            return str(e)
+
         logging.info("There are %i datapoints in cache."%(len(self.cache),))
 
     def __run(self):
@@ -69,7 +88,7 @@ class DataCache():
 
     def start(self):
         try:
-        
+
             #Set the default options
             d = self.cache.data
             d["isrunning"]=True
@@ -95,4 +114,3 @@ class DataCache():
         if self.syncer is not None:
             self.syncer.cancel()
             self.syncer= None
-        
