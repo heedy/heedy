@@ -105,7 +105,7 @@ func (s *Shell) RunCommand(cmdstring string) {
 
 func CreateShell(sdb *streamdb.Database) *Shell {
 	var s Shell
-	s.VersionString = "ConnectorDB Shell v 1.0"
+	s.VersionString = "ConnectorDB Shell v" + streamdb.Version
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
 	s.commands = []ShellCommand{
