@@ -27,7 +27,7 @@ func init() {
 }
 
 func exec(db *streamdb.Database, args []string) error {
-	log.Printf("Starting Server on port %d", config.GetConfiguration().WebPort)
+	log.Printf("Running ConnectorDB v%s on port %d", streamdb.Version, config.GetConfiguration().WebPort)
 	r := mux.NewRouter()
 	webclient.Setup(r, db)
 
