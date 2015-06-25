@@ -107,7 +107,6 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			//So there was an unsuccessful attempt at login, huh?
 			time.Sleep(UnsuccessfulLoginWait)
 
-			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
 			writer.Write([]byte(err.Error()))
 
