@@ -15,23 +15,23 @@ type Datapoint struct {
 	Buf []byte //The binary bytes associated with a datapoint
 }
 
-//Len returns the size in bytes of the datapoint
-func (d Datapoint) Len() int {
+// Len returns the size in bytes of the datapoint
+func (d *Datapoint) Len() int {
 	return len(d.Buf)
 }
 
-//DataLen returns length of the data bytes stored in the datapoint
-func (d Datapoint) DataLen() int {
+// DataLen returns length of the data bytes stored in the datapoint
+func (d *Datapoint) DataLen() int {
 	return len(d.Data())
 }
 
-//Bytes returns the byte array representation of the entire datapoint
-func (d Datapoint) Bytes() []byte {
+// Bytes returns the byte array representation of the entire datapoint
+func (d *Datapoint) Bytes() []byte {
 	return d.Buf
 }
 
-//String returns a nice pretty-printed representation of the datapoint
-func (d Datapoint) String() string {
+// String returns a nice pretty-printed representation of the datapoint
+func (d *Datapoint) String() string {
 	s := "[TIME=" + time.Unix(0, d.Timestamp()).String() + " DATA=" + string(d.Data())
 	if k := d.Key(); k != "" { //The key is optional
 		s += " KEY=" + k
@@ -39,20 +39,20 @@ func (d Datapoint) String() string {
 	return s + " ]"
 }
 
-//Timestamp returns the datapoint's timestamp
-func (d Datapoint) Timestamp() (ts int64) {
+// Timestamp returns the datapoint's timestamp
+func (d *Datapoint) Timestamp() (ts int64) {
 	binary.Read(bytes.NewBuffer(d.Buf), binary.LittleEndian, &ts)
 	return ts
 }
 
-//Data returns the data byte array associated with the datapoint
-func (d Datapoint) Data() []byte {
+// Data returns the data byte array associated with the datapoint
+func (d *Datapoint) Data() []byte {
 	datasize, bytesRead := binary.Uvarint(d.Buf[8:])
 	return d.Buf[8+uint64(bytesRead) : 8+uint64(bytesRead)+datasize]
 }
 
-//Key returns the string key associated with the datapoint
-func (d Datapoint) Key() string {
+// Key returns the string key associated with the datapoint
+func (d *Datapoint) Key() string {
 	datasize, bytesRead := binary.Uvarint(d.Buf[8:])
 	startloc := 8 + uint64(bytesRead) + datasize
 	_, bytesRead = binary.Uvarint(d.Buf[startloc:])
@@ -111,15 +111,15 @@ func DatapointIntoBuffer(w *bytes.Buffer, timestamp int64, data []byte, key stri
 	w.Write(keyb)
 }
 
-//NewDatapoint creates a datapoint from a timetamp and data byte array
+// NewDatapoint creates a datapoint from a timetamp and data byte array
 func NewDatapoint(timestamp int64, data []byte, key string) Datapoint {
 	buf := new(bytes.Buffer)
 	DatapointIntoBuffer(buf, timestamp, data, key)
 	return Datapoint{buf.Bytes()} //The bytes the buffer read are our datapoint
 }
 
-//DatapointFromBytes takes an arbitrarily sized byte array, and reads one datapoint from it (and uses a slice of the byte array as its internal storage).
-//This allows to read a large array of datapoints by using this function repeatedly.
+// DatapointFromBytes takes an arbitrarily sized byte array, and reads one datapoint from it (and uses a slice of the byte array as its internal storage).
+// This allows to read a large array of datapoints by using this function repeatedly.
 func DatapointFromBytes(buf []byte) (d Datapoint, bytesread uint64) {
 	size, bytesRead := binary.Uvarint(buf[8:]) //Get the data length
 	bytesread = 8 + uint64(bytesRead) + size

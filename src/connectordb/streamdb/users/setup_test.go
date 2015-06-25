@@ -20,10 +20,10 @@ var (
 	nextNameId  = 0
 	nextEmailId = 0
 
-	testSqlite3   *UserDatabase
-	testPostgres  *UserDatabase
-	testdatabases = []*UserDatabase{}
-	//testdb *UserDatabase
+	testSqlite3   *SqlUserDatabase
+	testPostgres  *SqlUserDatabase
+	testdatabases = []*SqlUserDatabase{}
+	//testdb *SqlUserDatabase
 	testdatabasesNames = []string{}
 	testPassword       = "P@$$W0Rd123"
 )
@@ -42,13 +42,13 @@ func init() {
 	testSqlite3 := initDB("testing.sqlite3")
 	testPostgres := initDB("sslmode=disable dbname=connectordb port=52592")
 
-	testdatabases = []*UserDatabase{testSqlite3, testPostgres}
+	testdatabases = []*SqlUserDatabase{testSqlite3, testPostgres}
 	testdatabasesNames = []string{"sqlite3", "postgres"}
 
 	//testdb = testSqlite3
 }
 
-func initDB(dbName string) *UserDatabase {
+func initDB(dbName string) *SqlUserDatabase {
 	_ = os.Remove(dbName) // may fail if postgres
 
 	// Init the db
@@ -58,20 +58,20 @@ func initDB(dbName string) *UserDatabase {
 		return nil
 	}
 
-	db := &UserDatabase{}
+	db := &SqlUserDatabase{}
 
 	sql, dbtype, err := dbutil.OpenSqlDatabase(dbName)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	db.InitUserDatabase(sql, dbtype)
+	db.InitSqlUserDatabase(sql, dbtype)
 
 	CleanTestDB(db)
 	return db
 }
 
-func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {
+func CreateTestStream(testdb *SqlUserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
 	err := testdb.CreateStream(name, "", dev.DeviceId)
 	if err != nil {
@@ -81,7 +81,7 @@ func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {
 	return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
 }
 
-func CleanTestDB(testdb *UserDatabase) {
+func CleanTestDB(testdb *SqlUserDatabase) {
 	testdb.Exec("DELETE * FROM PhoneCarriers;")
 	testdb.Exec("DELETE * FROM Users;")
 	testdb.Exec("DELETE * FROM Devices;")
@@ -92,7 +92,7 @@ func CleanTestDB(testdb *UserDatabase) {
 	testdb.Exec("DELETE * FROM StreamKeyValues;")
 }
 
-func CreateTestUser(testdb *UserDatabase) (*User, error) {
+func CreateTestUser(testdb *SqlUserDatabase) (*User, error) {
 	name := GetNextName()
 	email := GetNextEmail()
 
@@ -107,7 +107,7 @@ func CreateTestUser(testdb *UserDatabase) (*User, error) {
 	return testdb.ReadUserByName(name)
 }
 
-func CreateTestDevice(testdb *UserDatabase, usr *User) (*Device, error) {
+func CreateTestDevice(testdb *SqlUserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
 	err := testdb.CreateDevice(name, usr.UserId)
 	if err != nil {
@@ -118,7 +118,7 @@ func CreateTestDevice(testdb *UserDatabase, usr *User) (*Device, error) {
 }
 
 // Creates a connected user, device and stream
-func CreateUDS(testdb *UserDatabase) (*User, *Device, *Stream, error) {
+func CreateUDS(testdb *SqlUserDatabase) (*User, *Device, *Stream, error) {
 	u, err := CreateTestUser(testdb)
 
 	if err != nil {

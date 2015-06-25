@@ -41,7 +41,7 @@ var (
 type Database struct {
 	operator.Operator //We need to do some magic so that the functions in Operator catch
 
-	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
+	Userdb users.SqlUserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
 	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
 	msg *Messenger            //messenger is a connection to the messaging client
@@ -96,7 +96,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
+	db.Userdb.InitSqlUserDatabase(db.sqldb, sqltype)
 
 	log.Debugln("Opening messenger with uri ", msguri)
 	db.msg, err = ConnectMessenger(msguri, err)
@@ -136,15 +136,16 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Ope
 
 //UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
-	dev, err := db.ReadDevice(username + "/user")
+	usr, err := db.ReadUser(username)
+	if err != nil || !usr.ValidatePassword(password) {
+		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
+	}
+
+	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
 	if err != nil {
 		return operator.Operator{}, authoperator.ErrPermissions
 	}
 
-	usr, err := db.ReadUserByID(dev.UserId)
-	if err != nil || !usr.ValidatePassword(password) {
-		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
-	}
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 

@@ -8,9 +8,10 @@ import (
 	"connectordb/streamdb/dbutil"
 	"database/sql"
 	"errors"
+	"strings"
+
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"strings"
 )
 
 const (
@@ -35,12 +36,14 @@ var (
 	READONLY_ERR = errors.New("Database is Read Only")
 )
 
-type UserDatabase struct {
+type SqlUserDatabase struct {
 	dbutil.SqlxMixin
+	sqldb *sql.DB
 }
 
-func (db *UserDatabase) InitUserDatabase(sqldb *sql.DB, dbtype string) {
+func (db *SqlUserDatabase) InitSqlUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.InitSqlxMixin(sqldb, dbtype)
+	db.sqldb = sqldb
 }
 
 // Checks to see if the name of a user/device/stream is legal.

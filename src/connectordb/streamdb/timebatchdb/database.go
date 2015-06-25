@@ -16,7 +16,7 @@ var (
 	//ErrorIndexMismatch is thrown when the index in RedisCache does not match index in SqlStore. It means that there seems to be data missing from the database
 	ErrorIndexMismatch = errors.New("Database internal index mismatch")
 	//ErrorUserFail is returned when the data ranges requested are either both the same, or are somehow invalid.
-	ErrorUserFail = errors.New("U FAIL @ LYFE (Check your data range)")
+	ErrorUserFail = errors.New("Data range error.")
 )
 
 //The databaseRange structure conforms to the DataRange interface. It represents a range of data from a given stream. The structure is used internally.

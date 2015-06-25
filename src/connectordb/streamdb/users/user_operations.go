@@ -13,9 +13,9 @@ var (
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
+func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 
-	existing, _ := userdb.ReadByNameOrEmail(Name, Email)
+	existing, _ := userdb.readByNameOrEmail(Name, Email)
 
 	// Check for existance of user to provide helpful notices
 	switch {
@@ -23,7 +23,7 @@ func (userdb *UserDatabase) CreateUser(Name, Email, Password string) error {
 		return ERR_EMAIL_EXISTS
 	case existing.Name == Name:
 		return ERR_USERNAME_EXISTS
-	case ! IsValidName(Name):
+	case !IsValidName(Name):
 		return InvalidUsernameError
 	}
 
@@ -53,8 +53,8 @@ Finally, grabs the User device for performing user actions from.
 Returns an error along with the user and device if something went wrong
 
 **/
-func (userdb *UserDatabase) Login(Username, Password string) (*User, *Device, error) {
-	user, err := userdb.ReadByNameOrEmail(Username, Username)
+func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device, error) {
+	user, err := userdb.readByNameOrEmail(Username, Username)
 	if err != nil {
 		return nil, nil, InvalidUsernameError
 	}
@@ -73,42 +73,36 @@ func (userdb *UserDatabase) Login(Username, Password string) (*User, *Device, er
 }
 
 // Reads the operating device for the user (the implicity device the user uses)
-func (userdb *UserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
+func (userdb *SqlUserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
 	return userdb.ReadDeviceForUserByName(user.UserId, "user")
 }
 
-// ReadUserByEmail returns a User instance if a user exists with the given
-// email address.
-func (userdb *UserDatabase) ReadByNameOrEmail(Name, Email string) (*User, error) {
+// readByNameOrEmail returns a User instance if a user exists with the given
+// email address or username
+func (userdb *SqlUserDatabase) readByNameOrEmail(Name, Email string) (*User, error) {
 	var exists User
 
 	err := userdb.Get(&exists, "SELECT * FROM Users WHERE upper(Name) = upper(?) OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
 
+	//err := userdb.Get(&exists, "SELECT * FROM Users WHERE Name = ? OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
+
 	return &exists, err
-}
-
-// ReadUserByEmail returns a User instance if a user exists with the given
-// email address.
-func (userdb *UserDatabase) ReadUserByEmail(Email string) (*User, error) {
-	var user User
-
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Email) = upper(?) LIMIT 1;", Email)
-
-	return &user, err
 }
 
 // ReadUserByName returns a User instance if a user exists with the given
 // username.
-func (userdb *UserDatabase) ReadUserByName(Name string) (*User, error) {
+func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 	var user User
+	//err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Name) = upper(?) LIMIT 1;", Name)
 
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Name) = upper(?) LIMIT 1;", Name)
+	err := userdb.Get(&user, "SELECT * FROM Users WHERE Name = ? LIMIT 1;", Name)
+
 	return &user, err
 }
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func (userdb *UserDatabase) ReadUserById(UserId int64) (*User, error) {
+func (userdb *SqlUserDatabase) ReadUserById(UserId int64) (*User, error) {
 	var user User
 	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserId = ? LIMIT 1;", UserId)
 
@@ -116,13 +110,13 @@ func (userdb *UserDatabase) ReadUserById(UserId int64) (*User, error) {
 }
 
 /**
-func (userdb *UserDatabase) ReadUsersForDevice(devId uint64) ([]User, error){
+func (userdb *SqlUserDatabase) ReadUsersForDevice(devId uint64) ([]User, error){
 	var users []User
 	err := userdb.Select(&users, "SELECT u* FROM Users u, Devices d WHERE d.DeviceId = ? AND u.UserId = d.UserId OR ? = TRUE")
 }
 **/
 
-func (userdb *UserDatabase) ReadAllUsers() ([]User, error) {
+func (userdb *SqlUserDatabase) ReadAllUsers() ([]User, error) {
 	var users []User
 
 	err := userdb.Select(&users, "SELECT * FROM Users")
@@ -130,22 +124,9 @@ func (userdb *UserDatabase) ReadAllUsers() ([]User, error) {
 	return users, err
 }
 
-func (userdb *UserDatabase) ReadStreamOwner(StreamId int64) (*User, error) {
-	var user User
-
-	err := userdb.Get(&user, `SELECT u.*
-	                              FROM Users u, Streams s, Devices d
-	                              WHERE s.StreamId = ?
-	                                AND d.DeviceId = s.DeviceId
-	                                AND u.UserId = d.UserId
-	                              LIMIT 1;`, StreamId)
-
-	return &user, err
-}
-
 // UpdateUser updates the user with the given id in the database using the
 // information provided in the user struct.
-func (userdb *UserDatabase) UpdateUser(user *User) error {
+func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	if user == nil {
 		return ERR_INVALID_PTR
 	}
@@ -173,13 +154,7 @@ func (userdb *UserDatabase) UpdateUser(user *User) error {
 }
 
 // DeleteUser removes a user from the database
-func (userdb *UserDatabase) DeleteUser(UserId int64) error {
+func (userdb *SqlUserDatabase) DeleteUser(UserId int64) error {
 	_, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
-	return err
-}
-
-// DeleteUserByName removes a user from the database by name
-func (userdb *UserDatabase) DeleteUserByName(Username string) error {
-	_, err := userdb.Exec(`DELETE FROM Users WHERE Name = ?;`, Username)
 	return err
 }

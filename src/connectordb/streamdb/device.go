@@ -27,10 +27,10 @@ func (o *Database) CreateDeviceByUserID(userID int64, deviceName string) error {
 //ReadDevice reads the given device
 func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 	//Check if the device is in the cache
-	if d, ok := o.deviceCache.GetByName(devicepath); ok {
+	/**if d, ok := o.deviceCache.GetByName(devicepath); ok {
 		dev := d.(users.Device)
 		return &dev, nil
-	}
+	}**/
 	//Apparently not. Get the device from userdb
 	usrname, devname, err := operator.SplitDevicePath(devicepath, nil)
 	if err != nil {

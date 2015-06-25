@@ -74,8 +74,8 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 	}
 	defer db.Close()
 
-	var udb users.UserDatabase
-	udb.InitUserDatabase(db, string(driver))
+	var udb users.SqlUserDatabase
+	udb.InitSqlUserDatabase(db, string(driver))
 	err = udb.CreateUser(username, email, password)
 	if err != nil {
 		return err

@@ -6,10 +6,10 @@ import (
 
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id
-func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
+func (userdb *SqlUserDatabase) CreateDevice(Name string, UserId int64) error {
 	ApiKey, _ := uuid.NewV4()
 
-	if ! IsValidName(Name) {
+	if !IsValidName(Name) {
 		return InvalidNameError
 	}
 
@@ -22,7 +22,7 @@ func (userdb *UserDatabase) CreateDevice(Name string, UserId int64) error {
 	return err
 }
 
-func (userdb *UserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error) {
+func (userdb *SqlUserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error) {
 	var devices []Device
 
 	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserId = ?;", UserId)
@@ -30,7 +30,7 @@ func (userdb *UserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error)
 	return devices, err
 }
 
-func (userdb *UserDatabase) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
+func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserId = ? AND Name = ? LIMIT 1;", userid, devicename)
@@ -39,7 +39,7 @@ func (userdb *UserDatabase) ReadDeviceForUserByName(userid int64, devicename str
 }
 
 // ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
-func (userdb *UserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
+func (userdb *SqlUserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceId = ? LIMIT 1", DeviceId)
@@ -50,7 +50,7 @@ func (userdb *UserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 
 // ReadDeviceByApiKey reads a device by an api key and returns it, it will be
 // nil if an error was encountered and error will be set.
-func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
+func (userdb *SqlUserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE ApiKey = ? LIMIT 1;", Key)
@@ -60,7 +60,7 @@ func (userdb *UserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 
 // UpdateDevice updates the given device in the database with all fields in the
 // struct.
-func (userdb *UserDatabase) UpdateDevice(device *Device) error {
+func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 	if device == nil {
 		return ERR_INVALID_PTR
 	}
@@ -68,7 +68,6 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 	if err := device.ValidityCheck(); err != nil {
 		return err
 	}
-
 
 	_, err := userdb.Exec(`UPDATE Devices SET
 	    Name = ?,
@@ -99,13 +98,7 @@ func (userdb *UserDatabase) UpdateDevice(device *Device) error {
 }
 
 // DeleteDevice removes a device from the system.
-func (userdb *UserDatabase) DeleteDevice(Id int64) error {
+func (userdb *SqlUserDatabase) DeleteDevice(Id int64) error {
 	_, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
-	return err
-}
-
-//Avoids deleting the "user" device, which is critical to the user's operation
-func (userdb *UserDatabase) DeleteAllDevicesForUser(userId int64) error {
-	_, err := userdb.Exec(`DELETE FROM Devices WHERE UserId = ? AND Name != ?;`, userId, "user")
 	return err
 }

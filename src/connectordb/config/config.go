@@ -2,9 +2,12 @@ package config
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"path/filepath"
 )
 
 /**
@@ -18,8 +21,6 @@ All Rights Reserved
 
 **/
 
-import ()
-
 const (
 	// The database types we support
 	Sqlite           = "sqlite3"
@@ -29,6 +30,10 @@ const (
 	// Localhost variables, both net and string
 	LocalhostIpV4 = "127.0.0.1"
 	LocalhostIpV6 = "0:0:0:0:0:0:0:1"
+
+	ConfigFileName = "connectordb_config.json"
+
+	currentConfigVersion = 0
 )
 
 var (
@@ -39,6 +44,7 @@ var (
 )
 
 type Configuration struct {
+	ConfigVersion            int
 	Nodetype                 string
 	RedisHost                string
 	RedisPort                int
@@ -80,7 +86,7 @@ func (config *Configuration) GetDatabaseConnectionString() string {
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", configuration.PostgresHost, configuration.PostgresPort)
 }
 
-// Checks if a database needs to be started lcoally
+// Checks if a database needs to be started locally
 func IsDatabaseLocal() bool {
 	if configuration.DatabaseType == Sqlite {
 		return true
@@ -116,6 +122,7 @@ func (config *Configuration) GetGnatsdUri() string {
 
 func newConfiguration() *Configuration {
 	var cfg Configuration
+	cfg.ConfigVersion = currentConfigVersion
 	cfg.Nodetype = "master"
 	cfg.RedisHost = LocalhostIpV4
 	cfg.RedisPort = 6379
@@ -133,29 +140,55 @@ func newConfiguration() *Configuration {
 	return &cfg
 }
 
+func loadConfigurationFromFile(cdbDirectory string) error {
+	path := filepath.Join(cdbDirectory, ConfigFileName)
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(file, configuration)
+	return nil
+}
+
+func dumpConfigurationToFile(cdbDirectory string) error {
+	path := filepath.Join(cdbDirectory, ConfigFileName)
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(file, configuration)
+	return nil
+}
+
 // Loads a configuration from a path if possible
 func InitConfiguration(path string) error {
 	if doneInit {
 		return nil
 	}
-	doneInit = true
+	err := loadConfigurationFromFile(path)
 
 	configuration.StreamdbDirectory = path // save for saving
+	doneInit = true
 
-	// TODO load config from here if possible
-	return nil
+	return err
 }
 
-func ReloadConfiguration() {
-
+// Loads the configuration from the same place it was loaded from originally
+func ReloadConfiguration() error {
+	return loadConfigurationFromFile(configuration.StreamdbDirectory)
 }
 
 func GetConfiguration() *Configuration {
 	return configuration
 }
 
+// Dumps the configuration to the place it was loaded from originally.
 func SaveConfiguration() error {
-	return nil
+	return dumpConfigurationToFile(configuration.StreamdbDirectory)
 }
 
-//TODO: add a saving daemon and check for reload signal/file changes
+// TODO: add a saving daemon and check for reload signal/file changes

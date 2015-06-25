@@ -116,7 +116,6 @@ func BenchmarkUserLogin(b *testing.B) {
 
 func BenchmarkUserLoginNoCache(b *testing.B) {
 	ResetTimeBatch()
-	origExpire := CacheExpireTime
 	CacheExpireTime = 0 //Cache expires IMMEDIATELY
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	if err != nil {
@@ -128,12 +127,14 @@ func BenchmarkUserLoginNoCache(b *testing.B) {
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_, err = db.LoginOperator("streamdb_test", "mypass")
-		if err != nil {
-			b.Errorf("Login Failed: %v", err)
-			return
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err = db.LoginOperator("streamdb_test", "mypass")
+			if err != nil {
+				b.Errorf("Login Failed: %v", err)
+				return
+			}
 		}
-	}
-	CacheExpireTime = origExpire
+	})
 }
