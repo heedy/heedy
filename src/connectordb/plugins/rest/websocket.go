@@ -4,6 +4,7 @@ import (
 	"connectordb/streamdb/operator"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/apcera/nats"
@@ -90,6 +91,8 @@ func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	if err != nil {
 		//TODO: Notify user of insert failure
 		logger.Warn(err.Error())
+	} else {
+		atomic.AddUint32(&StatsInserts, uint32(len(ws.D)))
 	}
 }
 

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"connectordb/streamdb"
+	"connectordb/streamdb/authoperator"
 	"connectordb/streamdb/operator"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 	"net/http"
 	"strings"
+	"sync/atomic"
 
 	"github.com/gorilla/mux"
 )
@@ -16,7 +18,30 @@ import (
 var (
 	//UnsuccessfulLoginWait is the amount of time to wait between each unsuccessful login attempt
 	UnsuccessfulLoginWait = 300 * time.Millisecond
+
+	//The following globals are atomically incremented/decreemnted to give statistics
+	StatsAuthFails  = uint32(0)
+	StatsQueries    = uint32(0)
+	StatsInserts    = uint32(0)
+	StatsTimePeriod = 5.0 * time.Minute
 )
+
+func StatsAddFail(err error) {
+	if err == authoperator.ErrPermissions {
+		atomic.AddUint32(&StatsAuthFails, 1)
+	}
+}
+
+//StatsRun shows the current statistics
+func StatsRun() {
+	for {
+		time.Sleep(StatsTimePeriod)
+		q := atomic.SwapUint32(&StatsQueries, 0)
+		a := atomic.SwapUint32(&StatsAuthFails, 0)
+		i := atomic.SwapUint32(&StatsInserts, 0)
+		log.WithFields(log.Fields{"queries": q, "authfails": a, "inserts": i}).Infof("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
+	}
+}
 
 func getLogger(request *http.Request) *log.Entry {
 	//Since an important use case is behind nginx, the following rule is followed:
@@ -47,6 +72,9 @@ type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *h
 
 func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		//Increment the queries handled
+		atomic.AddUint32(&StatsQueries, 1)
+
 		//Set up the logger for this connection
 		logger := getLogger(request)
 
@@ -60,6 +88,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
 			logger.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
+			atomic.AddUint32(&StatsAuthFails, 1)
 			return
 		}
 
@@ -82,6 +111,8 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			writer.WriteHeader(http.StatusUnauthorized)
 			writer.Write([]byte(err.Error()))
 
+			atomic.AddUint32(&StatsAuthFails, 1)
+
 			return
 		}
 
@@ -103,6 +134,7 @@ func notfoundHandler(writer http.ResponseWriter, request *http.Request) {
 
 //on OPTIONS to allow cross-site XMLHTTPRequest, allow access control origin
 func optionsHandler(writer http.ResponseWriter, request *http.Request) {
+	atomic.AddUint32(&StatsQueries, 1)
 	getLogger(request).WithField("method", request.Method).Debug()
 	writeAccessControlHeaders(writer)
 	writer.WriteHeader(http.StatusOK)

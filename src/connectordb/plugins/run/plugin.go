@@ -46,6 +46,8 @@ func exec(db *streamdb.Database, args []string) error {
 
 	go db.RunWriter()
 
+	go rest.StatsRun()
+
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.GetConfiguration().WebPort), nil)
 }
 
