@@ -40,7 +40,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		logger.Warningln(err)
 		return err
 	}
-	logger.Infoln("Inserting", len(datapoints), "dp")
+	logger.Debugln("Inserting", len(datapoints), "dp")
 
 	err = o.InsertStream(streampath, datapoints)
 	if err != nil {
