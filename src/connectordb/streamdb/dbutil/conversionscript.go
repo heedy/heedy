@@ -1,6 +1,5 @@
 package dbutil
 
-
 const dbconversion = `
 -- Properties Needed for golang template
 -- DBVersion, string, the current DB version or "00000000" if none
@@ -110,6 +109,9 @@ CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
 
 {{end}}
 
+{{/*========================================================================*/}}
+{{/*Changes: updates to all tables in the database for newer schemas*/}}
+{{/*========================================================================*/}}
 
 
 {{if lt .DBVersion "20150328"}}
@@ -308,5 +310,23 @@ DROP TABLE Users20150328;
 
 
 {{end}}
-{{/*end conversion 20150328*/}}
+
+
+
+{{/*========================================================================*/}}
+{{/*Changes: drop the unused phone carriers table and key/value tables*/}}
+{{/*========================================================================*/}}
+
+{{if lt .DBVersion "2015062826"}}
+
+UPDATE StreamdbMeta SET Value = '2015062826' WHERE Key = 'DBVersion';
+
+DROP TABLE PhoneCarriers;
+DROP TABLE StreamKeyValues;
+DROP TABLE UserKeyValues;
+DROP TABLE DeviceKeyValues;
+
+{{end}}
+
+
 `

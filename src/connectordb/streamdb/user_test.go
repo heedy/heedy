@@ -39,10 +39,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test", usr.Name)
 
-	usr, err = db.ReadUserByEmail("root@localhost")
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test", usr.Name)
-
 	usr.Admin = true
 	usr.Email = "testemail@test.com"
 	require.NoError(t, db.UpdateUser(usr))
@@ -92,8 +88,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.NoError(t, db.DeleteUserByID(usr.UserId))
 
 	_, err = db.ReadUser("streamdb_test")
-	require.Error(t, err)
-	_, err = db.ReadUserByEmail("streamdb_test")
 	require.Error(t, err)
 	_, err = db.ReadUserByID(usr.UserId)
 	require.Error(t, err)

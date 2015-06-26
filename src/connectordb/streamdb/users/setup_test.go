@@ -11,9 +11,10 @@ All Rights Reserved
 
 import (
 	"connectordb/streamdb/dbutil"
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -82,7 +83,6 @@ func CreateTestStream(testdb *SqlUserDatabase, dev *Device) (*Stream, error) {
 }
 
 func CleanTestDB(testdb *SqlUserDatabase) {
-	testdb.Exec("DELETE * FROM PhoneCarriers;")
 	testdb.Exec("DELETE * FROM Users;")
 	testdb.Exec("DELETE * FROM Devices;")
 	testdb.Exec("DELETE * FROM Streams;")
