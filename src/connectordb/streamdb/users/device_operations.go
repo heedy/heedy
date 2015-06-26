@@ -1,8 +1,125 @@
 package users
 
 import (
+	"reflect"
+
 	"github.com/nu7hatch/gouuid"
 )
+
+// Devices are general purposed external and internal data users,
+//
+type Device struct {
+	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
+	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
+	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
+	ApiKey           string `modifiable:"device" json:"apikey,omitempty"`         // A uuid used as an api key to verify against
+	Enabled          bool   `modifiable:"user" json:"enabled"`                    // Whether or not this device can do reading and writing
+	IsAdmin          bool   `modifiable:"root" json:"admin,omitempty"`            // Whether or not this is a "superdevice" which has access to the whole API
+	CanWrite         bool   `modifiable:"user" json:"canwrite,omitempty"`         // Can this device write to streams? (inactive right now)
+	CanWriteAnywhere bool   `modifiable:"user" json:"canwriteanywhere,omitempty"` // Can this device write to others streams? (inactive right now)
+	CanActAsUser     bool   `modifiable:"user" json:"user,omitempty"`             // Can this device operate as a user? (inactive right now)
+	IsVisible        bool   `modifiable:"root" json:"visible"`
+	UserEditable     bool   `modifiable:"root" json:"-"`
+}
+
+func (d *Device) ValidityCheck() error {
+	if !IsValidName(d.Name) {
+		return InvalidNameError
+	}
+
+	return nil
+}
+
+func (d *Device) GeneralPermissions() PermissionLevel {
+	if !d.Enabled {
+		return ANYBODY
+	}
+
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	return ENABLED
+}
+
+func (d *Device) RelationToUser(user *User) PermissionLevel {
+	// guards
+	if user == nil || !d.Enabled {
+		return ANYBODY
+	}
+
+	// Permision Levels
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	if d.UserId == user.UserId {
+		if d.CanActAsUser {
+			return USER
+		}
+
+		return DEVICE
+	}
+
+	return ANYBODY
+}
+
+func (d *Device) RelationToDevice(device *Device) PermissionLevel {
+	// guards
+	if device == nil || !d.Enabled {
+		return ANYBODY
+	}
+
+	// Permision Levels
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	if d.UserId == device.UserId {
+		if d.CanActAsUser {
+			return USER
+		}
+
+		if d.DeviceId == device.DeviceId {
+			return DEVICE
+		}
+
+		return FAMILY
+	}
+
+	return ENABLED
+}
+
+func (d *Device) RelationToStream(stream *Stream, streamParent *Device) PermissionLevel {
+	// guards
+	if stream == nil || streamParent == nil || !d.Enabled {
+		return ANYBODY
+	}
+
+	// Permision Levels
+	if d.IsAdmin {
+		return ROOT
+	}
+
+	if d.CanActAsUser && d.UserId == streamParent.UserId {
+		return USER
+	}
+
+	if d.DeviceId == stream.DeviceId {
+		return DEVICE
+	}
+
+	if d.UserId == streamParent.UserId {
+		return FAMILY
+	}
+
+	return ENABLED
+}
+
+func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) int {
+	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+}
 
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id

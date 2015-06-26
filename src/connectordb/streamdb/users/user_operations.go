@@ -3,6 +3,7 @@ package users
 
 import (
 	"errors"
+	"reflect"
 )
 
 var (
@@ -10,6 +11,79 @@ var (
 	InvalidUsernameError = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
 	InvalidEmailError    = errors.New("Invalid Email Address")
 )
+
+// User is the storage type for rows of the database.
+type User struct {
+	UserId int64  `modifiable:"nobody" json:"-"`   // The primary key
+	Name   string `modifiable:"root" json:"name"`  // The public username of the user
+	Email  string `modifiable:"user" json:"email"` // The user's email address
+
+	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
+	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
+	PasswordHashScheme string `modifiable:"user" json:"-"`                  // A string representing the hashing scheme used
+
+	Admin bool `modifiable:"root" json:"admin,omitempty"` // True/False if this is an administrator
+
+	//Since we temporarily don't use limits, I have disabled cluttering results with them on json output
+	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
+	ProcessingLimit_S int `modifiable:"root" json:"-"` // processing limit in seconds/day
+	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
+}
+
+// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+func (u *User) ValidityCheck() error {
+	if !IsValidName(u.Name) {
+		return InvalidUsernameError
+	}
+
+	if u.Email == "" {
+		return InvalidEmailError
+	}
+
+	if u.PasswordSalt == "" || u.PasswordHashScheme == "" {
+		return InvalidPasswordError
+	}
+
+	return nil
+}
+
+func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
+	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+}
+
+// Sets a new password for an account
+func (u *User) SetNewPassword(newPass string) {
+	hash, salt, scheme := UpgradePassword(newPass)
+
+	u.PasswordHashScheme = scheme
+	u.PasswordSalt = salt
+	u.Password = hash
+}
+
+// Checks if the device is enabled and a superdevice
+func (u *User) IsAdmin() bool {
+	return u.Admin
+}
+
+func (u *User) ValidatePassword(password string) bool {
+	return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
+}
+
+// Upgrades the security of the password, returns True if the user needs to be
+// saved again because an upgrade was performed.
+func (u *User) UpgradePassword(password string) bool {
+	hash, salt, scheme := UpgradePassword(password)
+
+	if u.PasswordHashScheme == scheme {
+		return false
+	}
+
+	u.PasswordHashScheme = scheme
+	u.PasswordSalt = salt
+	u.Password = hash
+
+	return true
+}
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
