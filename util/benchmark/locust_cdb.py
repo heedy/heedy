@@ -12,9 +12,15 @@ class ConnectorDBLocust(connectordb.ConnectorDB):
 		self.r = client
 		self.r.auth = auth
 		self.r.headers.update({'content-type': 'application/json'})
+
 		if (ud is None):
 			ud = user
+
 		connectordb.Device.__init__(self,self,ud)
+
+	@property
+	def wsinsert(self):
+		return False
 
 class BenchLocust(HttpLocust):
 	host = "http://192.168.137.21:8000"

@@ -2,11 +2,10 @@
 from locust_cdb import *
 
 class PingTask(TaskSet):
-	def on_start(self):
-		self.cdb = ConnectorDBLocust(self.client,"test","test","test/user")
+
 	@task
 	def ping(self):
-		self.cdb.ping()
+		self.client.get("?q=this",auth=("test","test"))
 
 
 

@@ -19,16 +19,13 @@ Navigate to `localhost:8089` and then *POUND* the server with as many operations
 Results
 ============
 
-Daniel - I need to find a good way to run locust, since it looks like locust is CPU-limited on my computer (I think my poor results are due to locust simply not being able to handle the requests I wanted to give it) - it took basically 100% of all my cpus.
-The cool part is that while locust was tearing up my processor, the actual server was barely using any.
+- writing stream was easily bottlenecked, with the majority of time spent
+doing stuff to redis - I am curious as to what exactly was the issue
+- gorilla is not a problem under real load - most of the time is spent doing our stuff.
+
 
 ```
-benchmark   usernumber    median   average  max
-Pinger      1000          14       29       598
-```
-
-Joseph
-```
-benchmark   usernumber    median   average  max
-Pinger      1000          ?        ?        ?
+benchmark      usernumber    median   average  max
+Pinger         1000          10       16       325 (LOCUST LIMITED)
+StreamWriter   1000          300      400      2300 (approximate)
 ```
