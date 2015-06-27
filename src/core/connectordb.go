@@ -98,6 +98,7 @@ func main() {
 	}
 
 	if *cpuprofile != "" {
+		log.Debug("Running CPU profile into: ", *cpuprofile)
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal(err)
@@ -105,6 +106,7 @@ func main() {
 
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+		defer f.Close()
 	}
 
 	// Make sure we don't go OOB
