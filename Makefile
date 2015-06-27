@@ -28,7 +28,7 @@ clean:
 
 go-dependencies:
 	# services
-	go get github.com/apcera/nats github.com/apcera/gnatsd
+	go get github.com/nats-io/nats github.com/nats-io/gnatsd
 	go get github.com/garyburd/redigo/redis
 
 	# databases
@@ -38,6 +38,7 @@ go-dependencies:
 
 	# utilities
 	go get github.com/xeipuuv/gojsonschema
+	go get gopkg.in/vmihailenco/msgpack.v2
 	go get github.com/vharitonsky/iniflags
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid
@@ -52,7 +53,7 @@ go-dependencies:
 
 
 bin/dep/gnatsd: bin/dep go-dependencies
-	go build -o bin/dep/gnatsd github.com/apcera/gnatsd
+	go build -o bin/dep/gnatsd github.com/nats-io/gnatsd
 
 bin/dep:
 	mkdir -p bin/dep

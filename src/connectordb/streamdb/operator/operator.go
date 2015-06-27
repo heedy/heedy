@@ -4,7 +4,7 @@ import (
 	"connectordb/streamdb/users"
 	"strings"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 	"github.com/nu7hatch/gouuid"
 )
 

@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apcera/nats"
 	"github.com/gorilla/websocket"
+	"github.com/nats-io/nats"
 
 	log "github.com/Sirupsen/logrus"
 )

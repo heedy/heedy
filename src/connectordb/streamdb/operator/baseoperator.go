@@ -3,7 +3,7 @@ package operator
 import (
 	"connectordb/streamdb/users"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 )
 
 //BaseOperatorInterface are the functions which must be implemented in order to use Operator.

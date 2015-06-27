@@ -3,7 +3,7 @@ package streamdb
 import (
 	"connectordb/streamdb/operator"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 )
 
 //SubscribeUserByID subscribes to everything a user creates
