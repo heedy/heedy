@@ -32,27 +32,27 @@ func TestRangeReader(t *testing.T) {
 	rr := NewRangeReader(dpa, dpschema, "user1/device1/stream1")
 
 	dp, err := rr.Next()
-	if err != nil || dp.Data.(float64) != 0. || dp.IntTimestamp() != 1000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
+	if err != nil || dp.Data.(int64) != 0 || dp.IntTimestamp() != 1000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
 		t.Errorf("Incorrect read: %v %s", err, dp)
 		return
 	}
 	dp, err = rr.Next()
-	if err != nil || dp.Data.(float64) != 1. || dp.IntTimestamp() != 1500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
+	if err != nil || dp.Data.(int64) != 1 || dp.IntTimestamp() != 1500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
 		t.Errorf("Incorrect read: %v %s", err, dp)
 		return
 	}
 	dp, err = rr.Next()
-	if err != nil || dp.Data.(float64) != 2. || dp.IntTimestamp() != 2001 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
+	if err != nil || dp.Data.(int64) != 2 || dp.IntTimestamp() != 2001 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
 		t.Errorf("Incorrect read: %v %s", err, dp)
 		return
 	}
 	dp, err = rr.Next()
-	if err != nil || dp.Data.(float64) != 3. || dp.IntTimestamp() != 2500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
+	if err != nil || dp.Data.(int64) != 3 || dp.IntTimestamp() != 2500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
 		t.Errorf("Incorrect read: %v %s", err, dp)
 		return
 	}
 	dp, err = rr.Next()
-	if err != nil || dp.Data.(float64) != 4. || dp.IntTimestamp() != 3000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
+	if err != nil || dp.Data.(int64) != 4 || dp.IntTimestamp() != 3000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
 		t.Errorf("Incorrect read: %v %s", err, dp)
 		return
 	}

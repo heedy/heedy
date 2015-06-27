@@ -6,7 +6,7 @@ suitable for storage in timebatchdb
 */
 
 import (
-	"encoding/json"
+	"gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -24,12 +24,12 @@ func (s *Schema) IsValid(datapoint interface{}) bool {
 
 //Marshal a datapoint (assumed to be validity-checked) into a byte array ready to be written to the database
 func (s *Schema) Marshal(datapoint interface{}) ([]byte, error) {
-	return json.Marshal(datapoint)
+	return msgpack.Marshal(datapoint)
 }
 
 //Unmarshal the data into the given interface.
 func (s *Schema) Unmarshal(data []byte, v interface{}) error {
-	return json.Unmarshal(data, v)
+	return msgpack.Unmarshal(data, v)
 }
 
 //NewSchema loads a schema from the JsonSchema string

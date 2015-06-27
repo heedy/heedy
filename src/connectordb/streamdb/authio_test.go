@@ -49,7 +49,7 @@ func TestAuthStreamIO(t *testing.T) {
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "", dp.Sender)
 
@@ -65,7 +65,7 @@ func TestAuthStreamIO(t *testing.T) {
 	dp, err = dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "", dp.Sender)
 
@@ -124,7 +124,7 @@ func TestAuthSubstream(t *testing.T) {
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "tst/tst", dp.Sender)
 

@@ -19,9 +19,10 @@ func TestDatapoint(t *testing.T) {
 
 	require.Equal(t, int64(13234000000), dp.IntTimestamp())
 
-	_, err = LoadDatapoint(sstring, dp.IntTimestamp(), []byte(`"Hello!"`), "sender", "stream", errors.New("FALE"))
+	dta, _ := sstring.Marshal("Hello!")
+	_, err = LoadDatapoint(sstring, dp.IntTimestamp(), dta, "sender", "stream", errors.New("FALE"))
 	require.Error(t, err)
-	dp2, err := LoadDatapoint(sstring, dp.IntTimestamp(), []byte(`"Hello!"`), "sender", "stream", nil)
+	dp2, err := LoadDatapoint(sstring, dp.IntTimestamp(), dta, "sender", "stream", nil)
 	require.NoError(t, err)
 
 	if dp2.Data.(string) != "Hello!" || dp2.Timestamp != 13.234 || dp2.Sender != "sender" || dp2.Stream != "stream" {
