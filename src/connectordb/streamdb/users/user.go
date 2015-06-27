@@ -10,6 +10,8 @@ var (
 	InvalidPasswordError = errors.New("Invalid Password")
 	InvalidUsernameError = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
 	InvalidEmailError    = errors.New("Invalid Email Address")
+	EmailExistsError     = errors.New("A user already exists with this email")
+	UsernameExistsError  = errors.New("A user already exists with this username")
 )
 
 // User is the storage type for rows of the database.
@@ -94,9 +96,9 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 	// Check for existance of user to provide helpful notices
 	switch {
 	case existing.Email == Email:
-		return ERR_EMAIL_EXISTS
+		return EmailExistsError
 	case existing.Name == Name:
-		return ERR_USERNAME_EXISTS
+		return UsernameExistsError
 	case !IsValidName(Name):
 		return InvalidUsernameError
 	}
@@ -202,7 +204,7 @@ func (userdb *SqlUserDatabase) ReadAllUsers() ([]User, error) {
 // information provided in the user struct.
 func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	if user == nil {
-		return ERR_INVALID_PTR
+		return InvalidPointerError
 	}
 
 	if err := user.ValidityCheck(); err != nil {
@@ -229,6 +231,6 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 
 // DeleteUser removes a user from the database
 func (userdb *SqlUserDatabase) DeleteUser(UserId int64) error {
-	_, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
-	return err
+	result, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
+	return getDeleteError(result, err)
 }

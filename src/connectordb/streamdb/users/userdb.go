@@ -14,26 +14,18 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const (
-	// A black and qhite question mark
-	DEFAULT_ICON = `iVBORw0KGgoAAAANSUhEUgAAAEAAAABAAQMAAACQp+OdAAAABlBMVEUAA
-	AAAAAClZ7nPAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxMAAAsTAQCanBgAAACVS
-	URBVCjPjdGxDcQgDAVQRxSUHoFRMtoxWkZhBEoKK/+IsaNc0ElQxE8K3xhBtLa4Gj4YNQBFEYHxjwFRJ
-	OBU7AAsZOgVWSEJR68bajSUoOjfoK07NkP+h/jAiI8g2WgGdqRx+jVa/r0P2cx9EPE2zduUVxv2NHs6n
-	Q6Z0BZQaX3F4/0od3xvE2TCtOeOs12UQl6c5Quj42jQ5zt8GQAAAABJRU5ErkJggg==`
-	DEFAULT_PASSWORD_HASH = "SHA512"
-)
-
 var (
 	// Standard Errors
-	ERR_EMAIL_EXISTS    = errors.New("A user already exists with this email")
-	ERR_USERNAME_EXISTS = errors.New("A user already exists with this username")
-	ERR_INVALID_PTR     = errors.New("The provided pointer is nil")
 	InvalidNameError    = errors.New("The provided name is not valid, it may not contain /, \\, space, ? or be blank")
-
+	InvalidPointerError = errors.New("The provided pointer is nil")
 	// statements
 
 	READONLY_ERR = errors.New("Database is Read Only")
+
+	ErrNothingToDelete = errors.New("The selected resource was not found, so it was not deleted.")
+	ErrUserNotFound    = errors.New("The requested user was not found.")
+	ErrDeviceNotFound  = errors.New("The requested device was not found.")
+	ErrStreamNotFound  = errors.New("The requested stream was not found.")
 )
 
 type SqlUserDatabase struct {
@@ -61,4 +53,23 @@ func IsValidName(n string) bool {
 	}
 
 	return true
+}
+
+// Performs a set of tests on the result and error of a
+// DELETE call to see what kind of error we should return.
+func getDeleteError(result sql.Result, err error) error {
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNothingToDelete
+	}
+
+	return nil
 }

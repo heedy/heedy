@@ -52,7 +52,7 @@ func TestUpdateStream(t *testing.T) {
 		}
 
 		err = testdb.UpdateStream(nil)
-		assert.Equal(t, err,  ERR_INVALID_PTR, "Function safeguards failed")
+		assert.Equal(t, err,  InvalidPointerError, "Function safeguards failed")
 	}
 }
 

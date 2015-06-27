@@ -107,6 +107,10 @@ test_status=$?
 stop
 check_pids
 
+if [ $1 == "coveronly" ] then
+    exit 0
+fi
+
 
 create
 start

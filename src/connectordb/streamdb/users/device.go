@@ -179,7 +179,7 @@ func (userdb *SqlUserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 // struct.
 func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 	if device == nil {
-		return ERR_INVALID_PTR
+		return InvalidPointerError
 	}
 
 	if err := device.ValidityCheck(); err != nil {
@@ -216,6 +216,6 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 
 // DeleteDevice removes a device from the system.
 func (userdb *SqlUserDatabase) DeleteDevice(Id int64) error {
-	_, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
-	return err
+	result, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
+	return getDeleteError(result, err)
 }

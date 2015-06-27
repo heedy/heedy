@@ -123,7 +123,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 
 		err := testdb.UpdateUser(nil)
-		assert.Equal(t, err, ERR_INVALID_PTR, "Didn't catch nil")
+		assert.Equal(t, err, InvalidPointerError, "Didn't catch nil")
 
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)

@@ -80,7 +80,7 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, er
 // replacing all prior contents.
 func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 	if stream == nil {
-		return ERR_INVALID_PTR
+		return InvalidPointerError
 	}
 
 	if err := stream.ValidityCheck(); err != nil {
@@ -108,6 +108,6 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 
 // DeleteStream removes a stream from the database
 func (userdb *SqlUserDatabase) DeleteStream(Id int64) error {
-	_, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
-	return err
+	result, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
+	return getDeleteError(result, err)
 }
