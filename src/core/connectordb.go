@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
@@ -103,10 +104,25 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer f.Close()
 
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
-		defer f.Close()
+
+		//It turns out that ctrl+c literally crashes the program, making defers not called.
+		//This is a workaround
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			for sig := range c {
+				log.Printf("caught %v, writing cpu profile...", sig)
+
+				pprof.StopCPUProfile()
+				f.Close()
+				os.Exit(1)
+			}
+		}()
+
 	}
 
 	// Make sure we don't go OOB
