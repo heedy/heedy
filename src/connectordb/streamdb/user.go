@@ -30,16 +30,16 @@ func (o *Database) ReadAllUsers() ([]users.User, error) {
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUser(username string) (*users.User, error) {
 	//Check if the user is in the cache
-	/**if u, ok := o.userCache.GetByName(username); ok {
+	if u, ok := o.userCache.GetByName(username); ok {
 		usr := u.(users.User)
 		return &usr, nil
-	}**/
+	}
 
 	usr, err := o.Userdb.ReadUserByName(username)
-	/**if err == nil {
+	if err == nil {
 		//put the user into the cache
 		o.userCache.Set(usr.Name, usr.UserId, *usr)
-	}**/
+	}
 	return usr, err
 }
 

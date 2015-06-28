@@ -28,12 +28,18 @@ func AssertEqMiddlewareTest(t *testing.T, testResult, expectedResult interface{}
 	t.Errorf("Error in %s test# %d | expected: %v got: %v", testname, testindex, expectedResult, testResult)
 }
 
-func TestMiddlewareCreateDevice(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
+func GetCommonTestcases() []MiddlewareTestcase {
+	cacheTest1, _ := NewCacheMiddleware(&ErrBackend, 100, 100, 100)
+	cacheTest2, _ := NewCacheMiddleware(&KnownBackend, 100, 100, 100)
+	return []MiddlewareTestcase{
 		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
 		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+		{&ErrBackend, cacheTest1, 1},
+		{&KnownBackend, cacheTest2, 1}}
+}
+
+func TestMiddlewareCreateDevice(t *testing.T) {
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -48,11 +54,7 @@ func TestMiddlewareCreateDevice(t *testing.T) {
 }
 
 func TestMiddlewareCreateStream(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -67,11 +69,7 @@ func TestMiddlewareCreateStream(t *testing.T) {
 }
 
 func TestMiddlewareCreateUser(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -86,11 +84,7 @@ func TestMiddlewareCreateUser(t *testing.T) {
 }
 
 func TestMiddlewareDeleteUser(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -105,11 +99,7 @@ func TestMiddlewareDeleteUser(t *testing.T) {
 }
 
 func TestMiddlewareDeleteDevice(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -124,11 +114,7 @@ func TestMiddlewareDeleteDevice(t *testing.T) {
 }
 
 func TestMiddlewareDeleteStream(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -143,11 +129,7 @@ func TestMiddlewareDeleteStream(t *testing.T) {
 }
 
 func TestMiddlewareUpdateUser(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -162,11 +144,7 @@ func TestMiddlewareUpdateUser(t *testing.T) {
 }
 
 func TestMiddlewareUpdateDevice(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -181,11 +159,7 @@ func TestMiddlewareUpdateDevice(t *testing.T) {
 }
 
 func TestMiddlewareUpdateStream(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -200,11 +174,7 @@ func TestMiddlewareUpdateStream(t *testing.T) {
 }
 
 func TestMiddlewareReadAllUsers(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -220,11 +190,7 @@ func TestMiddlewareReadAllUsers(t *testing.T) {
 }
 
 func TestMiddlewareReadDeviceByApiKey(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -241,11 +207,7 @@ func TestMiddlewareReadDeviceByApiKey(t *testing.T) {
 }
 
 func TestMiddlewareReadDeviceById(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -262,16 +224,12 @@ func TestMiddlewareReadDeviceById(t *testing.T) {
 }
 
 func TestMiddlewareReadUserOperatingDevice(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadUserOperatingDevice(nil)
-		baseResult, baseError := testcase.Base.ReadUserOperatingDevice(nil)
+		testResult, testError := testCounter.ReadUserOperatingDevice(&User{})
+		baseResult, baseError := testcase.Base.ReadUserOperatingDevice(&User{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -283,11 +241,7 @@ func TestMiddlewareReadUserOperatingDevice(t *testing.T) {
 }
 
 func TestMiddlewareReadReadDeviceForUserByName(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -304,11 +258,7 @@ func TestMiddlewareReadReadDeviceForUserByName(t *testing.T) {
 }
 
 func TestMiddlewareReadDeviceForUserId(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -325,11 +275,7 @@ func TestMiddlewareReadDeviceForUserId(t *testing.T) {
 }
 
 func TestMiddlewareReadStreamByDeviceIdAndName(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -346,11 +292,7 @@ func TestMiddlewareReadStreamByDeviceIdAndName(t *testing.T) {
 }
 
 func TestMiddlewareReadStreamById(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -367,11 +309,7 @@ func TestMiddlewareReadStreamById(t *testing.T) {
 }
 
 func TestMiddlewareReadStreamByDevice(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -388,11 +326,7 @@ func TestMiddlewareReadStreamByDevice(t *testing.T) {
 }
 
 func TestMiddlewareReadUserById(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -409,11 +343,7 @@ func TestMiddlewareReadUserById(t *testing.T) {
 }
 
 func TestMiddlewareReadUserByName(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
@@ -430,11 +360,7 @@ func TestMiddlewareReadUserByName(t *testing.T) {
 }
 
 func TestMiddlewareLogin(t *testing.T) {
-	var testcases = []MiddlewareTestcase{
-		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},
-		{&ErrBackend, &CacheMiddleware{&ErrBackend}, 1},
-		{&KnownBackend, &CacheMiddleware{&KnownBackend}, 1}}
+	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
