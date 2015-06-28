@@ -50,17 +50,6 @@ func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 	return nil, ErrPermissions
 }
 
-//ReadUserByEmail reads a user - or rather reads any user that this device has permissions to read
-func (o *AuthOperator) ReadUserByEmail(email string) (*users.User, error) {
-	if o.Permissions(users.ROOT) {
-		return o.Db.ReadUserByEmail(email)
-	}
-	if u, err := o.User(); err == nil && u.Email == email {
-		return u, nil
-	}
-	return nil, ErrPermissions
-}
-
 //UpdateUser performs the given modifications
 func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 	user, err := o.ReadUserByID(modifieduser.UserId)

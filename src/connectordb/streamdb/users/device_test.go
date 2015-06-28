@@ -113,7 +113,7 @@ func TestUpdateDevice(t *testing.T) {
 		}
 
 		err = testdb.UpdateDevice(nil)
-		assert.Equal(t, err, ERR_INVALID_PTR, "Allowed nil pointer through")
+		assert.Equal(t, err, InvalidPointerError, "Allowed nil pointer through")
 	}
 }
 

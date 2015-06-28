@@ -28,8 +28,6 @@ type BaseOperatorInterface interface {
 	CreateUser(username, email, password string) error
 	ReadUser(username string) (*users.User, error)
 	ReadUserByID(userID int64) (*users.User, error)
-	ReadUserByEmail(email string) (*users.User, error)
-	// It is assumed that modifieduser has the same UserId as the original.
 	UpdateUser(modifieduser *users.User) error
 	DeleteUserByID(userID int64) error
 

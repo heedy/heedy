@@ -52,19 +52,8 @@ func TestAuthUserCrud(t *testing.T) {
 	_, err = db.LoginOperator("streamdb_test", "pass2")
 	require.NoError(t, err)
 
-	u, err = o.ReadUserByEmail("root@localhost2")
-	require.Error(t, err)
-
-	u, err = o.ReadUserByEmail("root@localhost")
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test", u.Name)
-
-	u.Email = "testemail@test.com"
-	require.NoError(t, o.UpdateUser(u))
-
 	u, err = o.User()
 	require.NoError(t, err)
-	require.Equal(t, "testemail@test.com", u.Email)
 
 	require.Error(t, o.DeleteUser("streamdb_test2"))
 	require.Error(t, o.DeleteUser("streamdb_test"))
@@ -83,10 +72,6 @@ func TestAuthUserCrud(t *testing.T) {
 
 	u, err = o.ReadUser("streamdb_test2")
 	require.NoError(t, err)
-
-	u, err = o.ReadUserByEmail("root@localhost2")
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test2", u.Name)
 
 	require.NoError(t, o.DeleteUser("streamdb_test2"))
 

@@ -7,7 +7,6 @@ import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
 	"database/sql"
 	"errors"
 	"strings"
@@ -28,30 +27,19 @@ var (
 	//BatchSize is the batch size that StreamDB uses for its batching process. See Database.RunWriter()
 	BatchSize = 100
 
-	//CacheSizes are the number of users/devices/streams to cache
-	UserCacheSize   = 100
-	DeviceCacheSize = 1000
-	StreamCacheSize = 10000
-
-	//Cache eviction timer in seconds. Can be huge on single-node setups
-	CacheExpireTime = 60
+	EnableCaching = true
 )
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
 	operator.Operator //We need to do some magic so that the functions in Operator catch
 
-	Userdb users.UserDatabase //UserDatabase holds the methods needed to CRUD users/devices/streams
+	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
 	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
 	msg *Messenger            //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
-
-	//The caches are to keep frequently used stuff in memory for a reasonable time before reloading from database
-	userCache   *util.TimedCache
-	deviceCache *util.TimedCache
-	streamCache *util.TimedCache
 }
 
 // Calls open from the arguments in the given configuration
@@ -96,17 +84,13 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb.InitUserDatabase(db.sqldb, sqltype)
+	db.Userdb = users.NewUserDatabase(db.sqldb, sqltype, EnableCaching)
 
 	log.Debugln("Opening messenger with uri ", msguri)
 	db.msg, err = ConnectMessenger(msguri, err)
 
 	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
 	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
-
-	db.userCache, err = util.NewTimedCache(UserCacheSize, int64(CacheExpireTime), err)
-	db.deviceCache, err = util.NewTimedCache(DeviceCacheSize, int64(CacheExpireTime), err)
-	db.streamCache, err = util.NewTimedCache(StreamCacheSize, int64(CacheExpireTime), err)
 
 	if err != nil {
 		db.Close()
@@ -136,15 +120,16 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Ope
 
 // UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
-	dev, err := db.ReadDevice(username + "/user")
+	usr, err := db.ReadUser(username)
+	if err != nil || !usr.ValidatePassword(password) {
+		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
+	}
+
+	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
 	if err != nil {
 		return operator.Operator{}, authoperator.ErrPermissions
 	}
 
-	usr, err := db.ReadUserByID(dev.UserId)
-	if err != nil || !usr.ValidatePassword(password) {
-		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
-	}
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
@@ -229,9 +214,6 @@ func (db *Database) Name() string {
 
 //Reload for a full database purges the entire cache
 func (db *Database) Reload() error {
-	db.userCache.Purge()
-	db.deviceCache.Purge()
-	db.streamCache.Purge()
 	return nil
 }
 

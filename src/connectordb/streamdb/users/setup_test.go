@@ -11,19 +11,20 @@ All Rights Reserved
 
 import (
 	"connectordb/streamdb/dbutil"
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
 	nextNameId  = 0
 	nextEmailId = 0
 
-	testSqlite3   *UserDatabase
-	testPostgres  *UserDatabase
-	testdatabases = []*UserDatabase{}
-	//testdb *UserDatabase
+	testSqlite3   UserDatabase
+	testPostgres  UserDatabase
+	testdatabases = []UserDatabase{}
+	//testdb *SqlUserDatabase
 	testdatabasesNames = []string{}
 	testPassword       = "P@$$W0Rd123"
 )
@@ -39,16 +40,15 @@ func GetNextEmail() string {
 }
 
 func init() {
-	testSqlite3 := initDB("testing.sqlite3")
 	testPostgres := initDB("sslmode=disable dbname=connectordb port=52592")
 
-	testdatabases = []*UserDatabase{testSqlite3, testPostgres}
-	testdatabasesNames = []string{"sqlite3", "postgres"}
+	testdatabases = []UserDatabase{testPostgres}
+	testdatabasesNames = []string{"postgres"}
 
 	//testdb = testSqlite3
 }
 
-func initDB(dbName string) *UserDatabase {
+func initDB(dbName string) UserDatabase {
 	_ = os.Remove(dbName) // may fail if postgres
 
 	// Init the db
@@ -58,20 +58,17 @@ func initDB(dbName string) *UserDatabase {
 		return nil
 	}
 
-	db := &UserDatabase{}
-
 	sql, dbtype, err := dbutil.OpenSqlDatabase(dbName)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	db.InitUserDatabase(sql, dbtype)
+	db := NewUserDatabase(sql, dbtype, false)
 
-	CleanTestDB(db)
 	return db
 }
 
-func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {
+func CreateTestStream(testdb UserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
 	err := testdb.CreateStream(name, "", dev.DeviceId)
 	if err != nil {
@@ -81,18 +78,7 @@ func CreateTestStream(testdb *UserDatabase, dev *Device) (*Stream, error) {
 	return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
 }
 
-func CleanTestDB(testdb *UserDatabase) {
-	testdb.Exec("DELETE * FROM PhoneCarriers;")
-	testdb.Exec("DELETE * FROM Users;")
-	testdb.Exec("DELETE * FROM Devices;")
-	testdb.Exec("DELETE * FROM Streams;")
-	testdb.Exec("DELETE * FROM timeseriestable;")
-	testdb.Exec("DELETE * FROM UserKeyValues;")
-	testdb.Exec("DELETE * FROM DeviceKeyValues;")
-	testdb.Exec("DELETE * FROM StreamKeyValues;")
-}
-
-func CreateTestUser(testdb *UserDatabase) (*User, error) {
+func CreateTestUser(testdb UserDatabase) (*User, error) {
 	name := GetNextName()
 	email := GetNextEmail()
 
@@ -107,7 +93,7 @@ func CreateTestUser(testdb *UserDatabase) (*User, error) {
 	return testdb.ReadUserByName(name)
 }
 
-func CreateTestDevice(testdb *UserDatabase, usr *User) (*Device, error) {
+func CreateTestDevice(testdb UserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
 	err := testdb.CreateDevice(name, usr.UserId)
 	if err != nil {
@@ -118,7 +104,7 @@ func CreateTestDevice(testdb *UserDatabase, usr *User) (*Device, error) {
 }
 
 // Creates a connected user, device and stream
-func CreateUDS(testdb *UserDatabase) (*User, *Device, *Stream, error) {
+func CreateUDS(testdb UserDatabase) (*User, *Device, *Stream, error) {
 	u, err := CreateTestUser(testdb)
 
 	if err != nil {
