@@ -116,7 +116,8 @@ func BenchmarkUserLogin(b *testing.B) {
 
 func BenchmarkUserLoginNoCache(b *testing.B) {
 	ResetTimeBatch()
-	CacheExpireTime = 0 //Cache expires IMMEDIATELY
+	EnableCaching = false
+	//CacheExpireTime = 0 //Cache expires IMMEDIATELY
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
 	if err != nil {
 		b.Errorf("Couldn't open database: %v", err)

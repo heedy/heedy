@@ -26,11 +26,6 @@ func (o *Database) CreateDeviceByUserID(userID int64, deviceName string) error {
 
 //ReadDevice reads the given device
 func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
-	//Check if the device is in the cache
-	if d, ok := o.deviceCache.GetByName(devicepath); ok {
-		dev := d.(users.Device)
-		return &dev, nil
-	}
 	//Apparently not. Get the device from userdb
 	usrname, devname, err := operator.SplitDevicePath(devicepath, nil)
 	if err != nil {
@@ -41,46 +36,18 @@ func (o *Database) ReadDevice(devicepath string) (*users.Device, error) {
 		return nil, err
 	}
 	dev, err := o.Userdb.ReadDeviceForUserByName(u.UserId, devname)
-	if err == nil {
-		//Save the device in cache
-		o.deviceCache.Set(devicepath, dev.DeviceId, *dev)
-	}
-
 	return dev, err
 }
 
 //ReadDeviceByID Note: This version does not cache the path names, so querying by path to device
 //will result in cache miss
 func (o *Database) ReadDeviceByID(deviceID int64) (*users.Device, error) {
-	//Check if the device is in the cache
-	if d, _, ok := o.deviceCache.GetByID(deviceID); ok {
-		dev := d.(users.Device)
-		return &dev, nil
-	}
-
-	dev, err := o.Userdb.ReadDeviceById(deviceID)
-
-	if err == nil {
-		//We add the device to the cache. But we don't know its full path, so see if the user is cached
-		//to attempt recovery of username. If not, then just cache by ID alone
-		if _, usrname, ok := o.userCache.GetByID(dev.UserId); ok {
-			o.deviceCache.Set(usrname+"/"+dev.Name, dev.DeviceId, *dev)
-		} else {
-			o.deviceCache.SetID(dev.DeviceId, *dev)
-		}
-	}
-
-	return dev, err
+	return o.Userdb.ReadDeviceById(deviceID)
 }
 
 //ReadDeviceByUserID reads a device given a user's ID and the device name
 func (o *Database) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
-	dev, err := o.Userdb.ReadDeviceForUserByName(userID, devicename)
-	if err == nil {
-		//TODO: Be more clever with finding the name here
-		o.deviceCache.SetID(dev.DeviceId, *dev)
-	}
-	return dev, err
+	return o.Userdb.ReadDeviceForUserByName(userID, devicename)
 }
 
 //UpdateDevice updates the device at devicepath to the modifed device passed in
@@ -93,42 +60,10 @@ func (o *Database) UpdateDevice(modifieddevice *users.Device) error {
 		return ErrNotChangeable
 	}
 
-	err = o.Userdb.UpdateDevice(modifieddevice)
-
-	//Now update the cache to the best of our ability
-	if err == nil {
-		if dev.Name == modifieddevice.Name {
-			o.deviceCache.Update(dev.DeviceId, *modifieddevice) //Setting an ID
-		} else {
-			//Attempt to find the device path without database queries
-			if _, usrname, _ := o.userCache.GetByID(dev.UserId); usrname != "" {
-				o.deviceCache.Set(usrname+"/"+modifieddevice.Name, dev.DeviceId, *modifieddevice)
-			} else {
-				o.deviceCache.SetID(dev.DeviceId, *modifieddevice) //No luck with finding devpath
-			}
-		}
-	}
-	return err
+	return o.Userdb.UpdateDevice(modifieddevice)
 }
 
 //DeleteDeviceByID deletes the device using its deviceID
 func (o *Database) DeleteDeviceByID(deviceID int64) error {
-	dev, err := o.ReadDeviceByID(deviceID)
-	if err != nil {
-		return err //Workaround #81
-	}
-
-	//We read the user to clear the cache of the device's streams
-	usr, err := o.ReadUserByID(dev.UserId)
-	if err != nil {
-		return err
-	}
-
-	err = o.Userdb.DeleteDevice(deviceID)
-	o.deviceCache.RemoveID(deviceID)
-	o.streamCache.UnlinkNamePrefix(usr.Name + "/" + dev.Name + "/")
-	if err == nil {
-		err = o.tdb.DeletePrefix(getTimebatchDeviceName(dev) + "/")
-	}
-	return err
+	return o.Userdb.DeleteDevice(deviceID)
 }

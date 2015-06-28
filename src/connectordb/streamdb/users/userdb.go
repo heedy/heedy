@@ -33,9 +33,22 @@ type SqlUserDatabase struct {
 	sqldb *sql.DB
 }
 
-func (db *SqlUserDatabase) InitSqlUserDatabase(sqldb *sql.DB, dbtype string) {
+func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.InitSqlxMixin(sqldb, dbtype)
 	db.sqldb = sqldb
+}
+
+func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool) UserDatabase {
+	basedb := SqlUserDatabase{}
+	basedb.initSqlUserDatabase(sqldb, dbtype)
+
+	if cache == false {
+		return &basedb
+	}
+
+	cached, _ := NewCacheMiddleware(&basedb, 1000, 10000, 10000)
+
+	return cached
 }
 
 // Checks to see if the name of a user/device/stream is legal.

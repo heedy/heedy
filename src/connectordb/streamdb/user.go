@@ -29,34 +29,12 @@ func (o *Database) ReadAllUsers() ([]users.User, error) {
 
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *Database) ReadUser(username string) (*users.User, error) {
-	//Check if the user is in the cache
-	if u, ok := o.userCache.GetByName(username); ok {
-		usr := u.(users.User)
-		return &usr, nil
-	}
-
-	usr, err := o.Userdb.ReadUserByName(username)
-	if err == nil {
-		//put the user into the cache
-		o.userCache.Set(usr.Name, usr.UserId, *usr)
-	}
-	return usr, err
+	return o.Userdb.ReadUserByName(username)
 }
 
 //ReadUserByID reads a user by its ID
 func (o *Database) ReadUserByID(userID int64) (*users.User, error) {
-	//Check if the user is in the cache
-	if u, _, ok := o.userCache.GetByID(userID); ok {
-		usr := u.(users.User)
-		return &usr, nil
-	}
-
-	usr, err := o.Userdb.ReadUserById(userID)
-	if err == nil {
-		//put the user into the cache
-		o.userCache.Set(usr.Name, usr.UserId, *usr)
-	}
-	return usr, err
+	return o.Userdb.ReadUserById(userID)
 }
 
 //UpdateUser performs the given modifications
@@ -69,32 +47,10 @@ func (o *Database) UpdateUser(modifieduser *users.User) error {
 		return ErrNotChangeable
 	}
 
-	err = o.Userdb.UpdateUser(modifieduser)
-	if err == nil {
-		o.userCache.Set(modifieduser.Name, modifieduser.UserId, *modifieduser)
-
-		//Modifications to user can modify properties of user device, so
-		//clear the device from cache
-		dev, err := o.ReadDevice(modifieduser.Name + "/user")
-		if err == nil {
-			o.deviceCache.RemoveID(dev.DeviceId)
-		}
-	}
-	return err
+	return o.Userdb.UpdateUser(modifieduser)
 }
 
 //DeleteUserByID deletes a user using its ID
 func (o *Database) DeleteUserByID(userID int64) error {
-	usr, err := o.ReadUserByID(userID)
-	if err != nil {
-		return err //Workaround for issue #81
-	}
-	err = o.Userdb.DeleteUser(userID)
-	o.userCache.RemoveID(userID)
-	o.deviceCache.UnlinkNamePrefix(usr.Name + "/")
-	o.streamCache.UnlinkNamePrefix(usr.Name + "/")
-	if err == nil {
-		err = o.tdb.DeletePrefix(getTimebatchUserName(usr.UserId) + "/")
-	}
-	return err
+	return o.Userdb.DeleteUser(userID)
 }
