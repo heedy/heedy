@@ -10,11 +10,7 @@ import (
 
 func TestCreateUser(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
+	for _, testdb := range testdatabases {
 		err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass")
 		require.Nil(t, err)
 
@@ -26,29 +22,9 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
-/**
-func BenchmarkCreateUser(b *testing.B) {
-
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-	    for i := 0; i < b.N; i++ {
-	        testdb.CreateUser(GetNextName(), GetNextEmail(), "TestCreateUser_pass2")
-	    }
-	}
-}**/
-
 func TestReadAllUsers(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		for i := 0; i < 5; i++ {
 			_, err := CreateTestUser(testdb)
 			require.Nil(t, err)
@@ -71,12 +47,7 @@ func TestReadAllUsers(t *testing.T) {
 
 func TestReadUserByName(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		// test failures on non existance
 		usr, err := testdb.ReadUserByName("")
 		assert.NotNil(t, err)
@@ -94,12 +65,7 @@ func TestReadUserByName(t *testing.T) {
 
 func TestReadUserById(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		// test failures on non existance
 		usr, err := testdb.ReadUserById(-1)
 		assert.NotNil(t, err)
@@ -116,12 +82,7 @@ func TestReadUserById(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		err := testdb.UpdateUser(nil)
 		assert.Equal(t, err, InvalidPointerError, "Didn't catch nil")
 
@@ -148,12 +109,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -162,17 +118,15 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err = testdb.ReadUserById(usr.UserId)
 		require.NotNil(t, err, "The user with ID %v should have errored out, but it did not", usr.UserId)
+
+		err = testdb.DeleteUser(usr.UserId)
+		require.Equal(t, err, ErrNothingToDelete, "Didn't catch try to delete deleted user")
 	}
 }
 
 func TestReadUserDevice(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -194,12 +148,7 @@ func TestReadUserDevice(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 
 		_, _, err = testdb.Login(user.Name, testPassword)
@@ -218,12 +167,7 @@ func TestLogin(t *testing.T) {
 
 func TestUpgradePassword(t *testing.T) {
 
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 

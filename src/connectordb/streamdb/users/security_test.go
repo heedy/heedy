@@ -118,12 +118,7 @@ func TestGeneralPermissions(t *testing.T) {
 }
 
 func TestRelationToUser(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		u, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -149,12 +144,7 @@ func TestRelationToUser(t *testing.T) {
 }
 
 func TestRelationToDevice(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		u, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -184,12 +174,7 @@ func TestRelationToDevice(t *testing.T) {
 }
 
 func TestRelationToStream(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		_, dev, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 

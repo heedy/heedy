@@ -43,10 +43,56 @@ func NewCacheMiddleware(parent UserDatabase, userCacheSize, deviceCacheSize, str
 	return &cm, nil
 }
 
-func (userdb *CacheMiddleware) clearCaches() {
-	userdb.userCache.Purge()
-	userdb.deviceCache.Purge()
-	userdb.streamCache.Purge()
+// Removes a particular user and its dependents from the cache
+func (userdb *CacheMiddleware) clearCachedUser(UserId int64) {
+
+	// Grab the streams we're supposed to remove.
+	streams, err := userdb.ReadStreamsByUser(UserId)
+
+	// Something bad happened, dump everything
+	if err != nil {
+		userdb.userCache.Purge()
+		userdb.deviceCache.Purge()
+		userdb.streamCache.Purge()
+		return
+	}
+
+	// Perform the removes
+	userdb.userCache.Remove(fmt.Sprintf("id:%d", UserId))
+
+	// Remove all devices with the proper UserId
+	userdb.deviceCache.RemoveManyFunc(func(item interface{}) (shouldRemove bool) {
+		dev := item.(Device)
+		return dev.UserId == UserId
+	})
+
+	// Change our streams into a set for O(n) search.
+	streamIds := map[int64]bool{}
+	for _, stream := range streams {
+		streamIds[stream.StreamId] = true
+	}
+
+	userdb.streamCache.RemoveManyFunc(func(item interface{}) bool {
+		stream := item.(Stream)
+		_, ok := streamIds[stream.StreamId]
+		return ok
+	})
+}
+
+// Removes a device from the caches along with all its children streams
+func (userdb *CacheMiddleware) clearCachedDevice(DeviceId int64) {
+	userdb.deviceCache.Remove(fmt.Sprintf("id:%d", DeviceId))
+
+	// Now remove all streams that are children
+	userdb.streamCache.RemoveManyFunc(func(item interface{}) (shouldRemove bool) {
+		stream := item.(Stream)
+		return stream.DeviceId == DeviceId
+	})
+}
+
+// Removes a stream with the given id from the cache
+func (userdb *CacheMiddleware) clearCachedStream(StreamId int64) {
+	userdb.streamCache.Remove(fmt.Sprintf("id:%d", StreamId))
 }
 
 func (userdb *CacheMiddleware) cacheUser(user *User, err error) {
@@ -116,44 +162,23 @@ func (userdb *CacheMiddleware) readDevice(key string) (dev Device, ok bool) {
 	return tmp.(Device), ok
 }
 
-func (userdb *CacheMiddleware) CreateDevice(Name string, UserId int64) error {
-	err := userdb.UserDatabase.CreateDevice(Name, UserId)
-	return err
-}
-
-func (userdb *CacheMiddleware) CreateStream(Name, Type string, DeviceId int64) error {
-	err := userdb.UserDatabase.CreateStream(Name, Type, DeviceId)
-	return err
-}
-
 func (userdb *CacheMiddleware) DeleteDevice(Id int64) error {
-	err := userdb.UserDatabase.DeleteDevice(Id)
-	// As for now, we have no idea what percentage of requests will be deletes,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
-	return err
+	userdb.clearCachedDevice(Id)
+
+	return userdb.UserDatabase.DeleteDevice(Id)
 }
 
 func (userdb *CacheMiddleware) DeleteStream(Id int64) error {
-	err := userdb.UserDatabase.DeleteStream(Id)
-	// As for now, we have no idea what percentage of requests will be deletes,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
-	return err
+	userdb.clearCachedStream(Id)
+
+	return userdb.UserDatabase.DeleteStream(Id)
 }
 
 func (userdb *CacheMiddleware) DeleteUser(UserId int64) error {
-	err := userdb.UserDatabase.DeleteUser(UserId)
-	// As for now, we have no idea what percentage of requests will be deletes,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
-	return err
+	// Do this first since we need the db in the same state
+	userdb.clearCachedUser(UserId)
+
+	return userdb.UserDatabase.DeleteUser(UserId)
 }
 
 func (userdb *CacheMiddleware) Login(Username, Password string) (*User, *Device, error) {
@@ -208,10 +233,6 @@ func (userdb *CacheMiddleware) ReadDeviceForUserByName(userid int64, devicename 
 	return dev, err
 }
 
-func (userdb *CacheMiddleware) ReadDevicesForUserId(UserId int64) ([]Device, error) {
-	return userdb.UserDatabase.ReadDevicesForUserId(UserId)
-}
-
 func (userdb *CacheMiddleware) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
 	cached, ok := userdb.readStream(fmt.Sprintf("dev:%dname:%s", DeviceId, streamName))
 	if ok {
@@ -236,10 +257,6 @@ func (userdb *CacheMiddleware) ReadStreamById(StreamId int64) (*Stream, error) {
 	userdb.cacheStream(stream, err)
 
 	return stream, err
-}
-
-func (userdb *CacheMiddleware) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
-	return userdb.UserDatabase.ReadStreamsByDevice(DeviceId)
 }
 
 func (userdb *CacheMiddleware) ReadUserById(UserId int64) (*User, error) {
@@ -282,31 +299,35 @@ func (userdb *CacheMiddleware) ReadUserOperatingDevice(user *User) (*Device, err
 }
 
 func (userdb *CacheMiddleware) UpdateDevice(device *Device) error {
+	if device == nil {
+		return InvalidPointerError
+	}
+
 	err := userdb.UserDatabase.UpdateDevice(device)
-	// As for now, we have no idea what percentage of requests updates will be,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
+	userdb.clearCachedDevice(device.DeviceId)
 	return err
 }
 
 func (userdb *CacheMiddleware) UpdateStream(stream *Stream) error {
+	if stream == nil {
+		return InvalidPointerError
+	}
+
 	err := userdb.UserDatabase.UpdateStream(stream)
-	// As for now, we have no idea what percentage of requests updates will be,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
+	userdb.clearCachedStream(stream.StreamId)
 	return err
 }
 
 func (userdb *CacheMiddleware) UpdateUser(user *User) error {
+	if user == nil {
+		return InvalidPointerError
+	}
+
+	// Do this first since the db should still be in the same state
+	userdb.clearCachedUser(user.UserId)
 	err := userdb.UserDatabase.UpdateUser(user)
-	// As for now, we have no idea what percentage of requests updates will be,
-	// the assumption is that they will be very small, which seems reasonable.
-	// as such, it isn't worth making the code "smarter" due to the inherently
-	// higher complexity and potential side-effects.
-	userdb.clearCaches()
+	// Do this again since permissions can change when updating a user.
+	userdb.clearCachedUser(user.UserId)
+
 	return err
 }

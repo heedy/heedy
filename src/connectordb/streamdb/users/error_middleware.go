@@ -73,6 +73,10 @@ func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceId int64) ([]Stream, error)
 	return nil, ErrorUserdbError
 }
 
+func (userdb *ErrorUserdb) ReadStreamsByUser(UserId int64) ([]Stream, error) {
+	return nil, ErrorUserdbError
+}
+
 func (userdb *ErrorUserdb) ReadUserById(UserId int64) (*User, error) {
 	return nil, ErrorUserdbError
 }
