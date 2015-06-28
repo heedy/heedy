@@ -18,8 +18,6 @@ All Rights Reserved
 
 **/
 
-import ()
-
 const (
 	// The database types we support
 	Sqlite           = "sqlite3"

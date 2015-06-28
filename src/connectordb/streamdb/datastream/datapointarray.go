@@ -21,6 +21,24 @@ func LoadDatapointArray(data []byte) (dpa DatapointArray, err error) {
 	return dpa, err
 }
 
+//DatapointArrayFromDataStrings is given the strings of data, each associated with the bytes
+//of a datapoint, and it converts them to a DatapointArray
+func DatapointArrayFromDataStrings(data []string) (dpa DatapointArray, err error) {
+	if len(data) == 0 {
+		return DatapointArray{}, nil
+	}
+
+	dpa = make(DatapointArray, len(data))
+
+	for i := range data {
+		dpa[i], err = DatapointFromBytes([]byte(data[i]))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return dpa, nil
+}
+
 //Bytes writes the DatapointArray into binary data
 func (dpa DatapointArray) Bytes() ([]byte, error) {
 	return msgpack.Marshal(dpa)

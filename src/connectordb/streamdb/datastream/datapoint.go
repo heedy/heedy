@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/xeipuuv/gojsonschema"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 //Datapoint is the
@@ -17,6 +18,12 @@ type Datapoint struct {
 	Sender string `json:"o,omitempty" msgpack:"o,omitempty"`
 }
 
+//DatapointFromBytes reads a datapoint from its byte representation
+func DatapointFromBytes(data []byte) (d Datapoint, err error) {
+	err = msgpack.Unmarshal(data, &d)
+	return d, err
+}
+
 //String prints out a pretty string representation of the datapoint
 func (d *Datapoint) String() string {
 	s := fmt.Sprintf("[T=%.3f D=%v", d.Timestamp, d.Data)
@@ -24,6 +31,11 @@ func (d *Datapoint) String() string {
 		s += " S=" + d.Sender
 	}
 	return s + "]"
+}
+
+//Bytes returns the msgpack marshalled representation of the datapoint
+func (d *Datapoint) Bytes() ([]byte, error) {
+	return msgpack.Marshal(d)
 }
 
 //IsEqual checks if the datapoint is equal to another datapoint
