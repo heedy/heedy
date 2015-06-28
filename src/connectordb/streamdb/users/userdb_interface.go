@@ -23,6 +23,7 @@ type UserDatabase interface {
 	ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error)
 	ReadStreamById(StreamId int64) (*Stream, error)
 	ReadStreamsByDevice(DeviceId int64) ([]Stream, error)
+	ReadStreamsByUser(UserId int64) ([]Stream, error)
 	ReadUserById(UserId int64) (*User, error)
 	ReadUserByName(Name string) (*User, error)
 	ReadUserOperatingDevice(user *User) (*Device, error)

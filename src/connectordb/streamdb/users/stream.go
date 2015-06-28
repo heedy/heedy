@@ -76,6 +76,18 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, er
 	return streams, err
 }
 
+func (userdb *SqlUserDatabase) ReadStreamsByUser(UserId int64) ([]Stream, error) {
+	var streams []Stream
+
+	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, Devices d, Users u
+	WHERE
+		u.UserId = ? AND
+		d.UserId = u.UserId AND
+		s.DeviceId = d.DeviceId`, UserId)
+
+	return streams, err
+}
+
 // UpdateStream updates the stream with the given ID with the provided data
 // replacing all prior contents.
 func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {

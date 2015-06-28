@@ -133,8 +133,8 @@ func TestMiddlewareUpdateUser(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.UpdateUser(nil)
-		baseError := testcase.Base.UpdateUser(nil)
+		testError := testCounter.UpdateUser(&User{})
+		baseError := testcase.Base.UpdateUser(&User{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -148,8 +148,8 @@ func TestMiddlewareUpdateDevice(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.UpdateDevice(nil)
-		baseError := testcase.Base.UpdateDevice(nil)
+		testError := testCounter.UpdateDevice(&Device{})
+		baseError := testcase.Base.UpdateDevice(&Device{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -163,8 +163,8 @@ func TestMiddlewareUpdateStream(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.UpdateStream(nil)
-		baseError := testcase.Base.UpdateStream(nil)
+		testError := testCounter.UpdateStream(&Stream{})
+		baseError := testcase.Base.UpdateStream(&Stream{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
