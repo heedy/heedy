@@ -6,12 +6,23 @@ import (
 	"connectordb/streamdb/users"
 	"encoding/json"
 	"errors"
+
+	"github.com/josephlewis42/multicache"
+)
+
+const (
+	schemaCacheSize = 1000
 )
 
 var (
 	//ErrSchema is thrown when schemas don't match
-	ErrSchema = errors.New("The datapoints did not match the stream's schema")
+	ErrSchema   = errors.New("The datapoints did not match the stream's schema")
+	schemaCache *multicache.Multicache
 )
+
+func init() {
+	schemaCache, _ = multicache.NewDefaultMulticache(schemaCacheSize)
+}
 
 //Stream is a wrapper for the users.Stream object which encodes the schema and other parts of a stream
 type Stream struct {
@@ -32,9 +43,21 @@ func NewStream(s *users.Stream, err error) (Stream, error) {
 	if err != nil {
 		return Stream{}, err
 	}
-	var schemamap map[string]interface{}
 
-	err = json.Unmarshal([]byte(s.Type), &schemamap)
+	var schemamap map[string]interface{}
+	var sm interface{}
+	ok := false
+
+	// We initialized it to empty, go on without the cache.
+	if schemaCache != nil {
+		sm, ok = schemaCache.Get(s.Type)
+	}
+
+	if ok {
+		schemamap = sm.(map[string]interface{})
+	} else {
+		err = json.Unmarshal([]byte(s.Type), &schemamap)
+	}
 
 	return Stream{*s, schemamap, strmschema}, err
 }
