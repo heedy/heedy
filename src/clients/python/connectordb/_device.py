@@ -11,7 +11,7 @@ class Device(ConnectorObject):
         strms = []
         result = self.db.urlget(self.metaname+"/?q=ls")
         for s in result.json():
-            tmps = _stream.Stream(self.db,s["name"])
+            tmps = _stream.Stream(self.db,self.metaname+"/"+s["name"])
             tmps.metadata = s
             strms.append(tmps)
         return strms

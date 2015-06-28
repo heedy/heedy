@@ -38,6 +38,7 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 
@@ -98,6 +99,7 @@ func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http
 	if err = o.UpdateStream(s); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return JSONWriter(writer, s, logger, err)
@@ -112,6 +114,7 @@ func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return OK(writer)

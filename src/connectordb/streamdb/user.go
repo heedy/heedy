@@ -10,7 +10,6 @@ These functions allow Database to conform to the Operator interface
 */
 
 var (
-
 	//ErrNotChangeable is thrown when changing a field that can't be changed
 	ErrNotChangeable = errors.New("The given fields are not modifiable.")
 )

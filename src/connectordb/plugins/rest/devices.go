@@ -49,6 +49,7 @@ func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 	if err = o.CreateDevice(devpath); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 
@@ -105,6 +106,7 @@ func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 	if err = o.UpdateDevice(d); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return JSONWriter(writer, d, logger, err)
@@ -119,6 +121,7 @@ func DeleteDevice(o operator.Operator, writer http.ResponseWriter, request *http
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return OK(writer)

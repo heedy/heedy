@@ -51,27 +51,24 @@ class ConnectorLogger(object):
 
 
     def __createDatabase(self):
-        created = False
         #Create the database tables that will make up the cache if they don't exist yet
         c = self.conn.cursor()
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cache';")
-        if c.fetchone() is None:
-            created=True
-            logging.debug("Creating table cache")
-            c.execute("CREATE TABLE cache (streamname text, timestamp real, data text);")
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='streams';")
-        if c.fetchone() is None:
-            created=True
-            logging.debug("Creating table streams")
-            c.execute("CREATE TABLE streams (streamname TEXT PRIMARY KEY, schema TEXT);")
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='metadata';")
-        if c.fetchone() is None:
-            created=True
-            logging.debug("Creating table metadata")
-            c.execute("CREATE TABLE metadata (devicename TEXT, apikey TEXT, url TEXT, lastsync real, syncperiod real, userdata TEXT);")
+        try:
+            logging.debug("Creating table cache if not exists")
+            c.execute("CREATE TABLE IF NOT EXISTS cache (streamname text, timestamp real, data text);")
+
+            logging.debug("Creating table streams if not exists")
+            c.execute("CREATE TABLE IF NOT EXISTS streams (streamname TEXT PRIMARY KEY, schema TEXT);")
+
+            logging.debug("Creating table metadata if not exists")
+            c.execute("CREATE TABLE IF NOT EXISTS metadata (devicename TEXT, apikey TEXT, url TEXT, lastsync real, syncperiod real, userdata TEXT);")
+
             #The default sync period is 10 minutes
             c.execute("INSERT INTO metadata VALUES ('','',?,0,600,'{}');",(API_URL,))
-        return created
+        except apsw.SQLError:
+            return False
+
+        return True
 
     def __clearCDB(self):
         with self.synclock:
@@ -131,14 +128,14 @@ class ConnectorLogger(object):
         c = self.conn.cursor()
         c.execute("UPDATE metadata SET url=?;",(value,))
         self.__clearCDB()
-    
+
     #The data property allows the user to save settings/data in the database, so that
     #there does not need to be extra code messing around with settings
     @property
     def data(self):
         c = self.conn.cursor()
         c.execute("SELECT userdata FROM metadata;")
-        return json.loads(c.fetchone()[0])
+        return json.loads(c.next()[0])
     @data.setter
     def data(self,value):
         c = self.conn.cursor()
@@ -147,7 +144,7 @@ class ConnectorLogger(object):
     def __loadMeta(self):
         c = self.conn.cursor()
         c.execute("SELECT devicename,apikey,lastsync,syncperiod,url FROM metadata;")
-        self.__devicename,self.__apikey,self.__lastsync,self.__syncperiod,self.__url = c.fetchone()
+        self.__devicename,self.__apikey,self.__lastsync,self.__syncperiod,self.__url = c.next()
 
     def __loadStreams(self):
         c = self.conn.cursor()
@@ -155,7 +152,7 @@ class ConnectorLogger(object):
         self.streams={}
         for row in c.fetchall():
             self.streams[row[0]]= json.loads(row[1])
-    
+
     def setlogin(self,devicename,apikey,url="https://connectordb.com/api/v1"):
         cdb = ConnectorDB(devicename,apikey,url=url)
         self.synclock.acquire()
@@ -170,7 +167,7 @@ class ConnectorLogger(object):
         #Returns the number of datapoints currently cached
         c = self.conn.cursor()
         c.execute("SELECT COUNT() FROM cache;");
-        return c.fetchone()[0]
+        return c.next()[0]
 
     def addStream(self,streampath,schema=None):
         #Adds the given stream to the streams that logger can cache.
@@ -184,7 +181,7 @@ class ConnectorLogger(object):
             stream = self.cdb[streampath]
         else:
             stream = self.cdb(streampath)
-        
+
         if not stream.exists:
             if schema is not None:
                 stream.create(schema)
@@ -192,7 +189,7 @@ class ConnectorLogger(object):
                 raise errors.ServerError("The stream '%s' was not found"%(stream.metaname,))
 
         self.force_addStream(stream.metaname,stream.schema)
-        
+
     def force_addStream(self,streampath,streamschema):
         #Forces a stream add without checking connectordb to make sure the stream exists.
         #Requires the full path to the stream
@@ -279,7 +276,7 @@ class ConnectorLogger(object):
             #Runs the syncer in the background with the given sync period
             if period is not None:
                 self.syncperiod = period
-        
+
             self.syncer = threading.Timer(self.syncperiod,self.__run)
             self.syncer.start()
 

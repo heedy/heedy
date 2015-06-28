@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync/atomic"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -40,7 +41,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		logger.Warningln(err)
 		return err
 	}
-	logger.Infoln("Inserting", len(datapoints), "dp")
+	logger.Debugln("Inserting", len(datapoints), "dp")
 
 	err = o.InsertStream(streampath, datapoints)
 	if err != nil {
@@ -48,7 +49,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		logger.Warningln(err)
 		return err
 	}
-
+	atomic.AddUint32(&StatsInserts, uint32(len(datapoints)))
 	return OK(writer)
 }
 

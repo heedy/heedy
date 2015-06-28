@@ -324,6 +324,8 @@ class TestConnectorDB(unittest.TestCase):
 
         s.insert("Hello World!")
 
+        time.sleep(0.5)
+
         self.assertEqual(1,len(s))
 
         self.assertEqual("Hello World!",s[0]["d"])

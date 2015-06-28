@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG,filename="cache.log")
 class OptionsWindow(QtGui.QMainWindow):
     def __init__(self,windowIcon,l,parent=None):
         super(OptionsWindow,self).__init__(parent=parent)
-        
+
         self.l = l
 
         uic.loadUi("optionswindow.ui",self)
@@ -61,7 +61,7 @@ class OptionsWindow(QtGui.QMainWindow):
         self.l.cache.url = str(self.serverUrl.text())
         self.l.cache.syncperiod = float(self.syncFrequency.value())*60
 
-        d = self.l.cache.data 
+        d = self.l.cache.data
         d["keypresses"] = bool(self.log_keypresses.checkState())
         d["activewindow"] = bool(self.log_activewindow.checkState())
         d["gathertime"] = float(self.datapointFrequency.value())*60
@@ -72,19 +72,19 @@ class OptionsWindow(QtGui.QMainWindow):
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
             self.hide()
-    
+
     def closeEvent(self,event):
         event.ignore()
         self.hide()
-    
+
 class MainTray(QtGui.QSystemTrayIcon):
     def __init__(self,icon,parent=None):
         super(MainTray,self).__init__(icon,parent)
-        
+
         self.icon = icon
 
         menu = QtGui.QMenu()
-        
+
         toggleAction = menu.addAction("Run Logger")
         toggleAction.setCheckable(True)
         toggleAction.triggered.connect(self.logToggleButtonPressed)
@@ -103,13 +103,14 @@ class MainTray(QtGui.QSystemTrayIcon):
 
         self.optionsWindow = OptionsWindow(self.icon,self.l)
 
-        
+
         if self.l.cache.data["isrunning"]:
             toggleAction.setChecked(QtCore.Qt.Checked)
 
     def exitButtonPressed(self):
         self.l.stop()
         sys.exit(0)
+    
     def optionsButtonPressed(self):
         self.optionsWindow.show()
 
@@ -132,10 +133,10 @@ class MainTray(QtGui.QSystemTrayIcon):
             d = self.l.cache.data
             d["isrunning"]=False
             self.l.cache.data = d
-          
+
 
 if __name__=="__main__":
-    
+
     app = QtGui.QApplication(sys.argv)
     mainIcon = QtGui.QIcon("ic_launcher.png")
     tray = MainTray(mainIcon,app)

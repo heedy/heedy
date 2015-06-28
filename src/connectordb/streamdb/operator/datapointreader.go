@@ -62,6 +62,8 @@ func (r *JsonReader) Close() {
 }
 
 //Read reads the given number of bytes from the range
+// p is the buffer to read into
+//
 func (r *JsonReader) Read(p []byte) (n int, err error) {
 	n = 0
 	for len(p) > 0 {
@@ -72,15 +74,19 @@ func (r *JsonReader) Read(p []byte) (n int, err error) {
 			p = p[i:]
 			n += i
 		}
+
+		// If datapoint reader is done, return number of bytes read and EOF.
 		if r.dreader == nil {
 			return n, io.EOF
 		}
+
 		if len(r.currentbuffer) == 0 {
 			//The current buffer is empty - read in a new datapoint
 			dp, err := r.dreader.Next()
 			if err != nil {
 				return n, err
 			}
+			// Datapoint reader is over
 			if dp == nil {
 				r.currentbuffer = []byte("]")
 				r.dreader.Close()

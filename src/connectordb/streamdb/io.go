@@ -97,6 +97,7 @@ func (o *Database) InsertStreamByID(streamID int64, data []operator.Datapoint, s
 }
 
 //IntTimestamp converts a floating point unix timestamp to nanoseconds
+// TODO standardize this across all the places we do this conversion
 func IntTimestamp(t float64) int64 {
 	return int64(1e9 * t)
 }
@@ -152,12 +153,6 @@ func (o *Database) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, s
 			i2 = streamlength
 		} else if i2 < 0 {
 			i2 = streamlength + i2
-		}
-
-		if i1 < 0 || i2 < 0 {
-			//Uh oh - these are still negative. Make the indices 0,0 to fail gracefully
-			i1 = 0
-			i2 = 0
 		}
 	}
 

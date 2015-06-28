@@ -4,6 +4,7 @@ import (
 	"connectordb/streamdb/operator"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/apcera/nats"
@@ -25,6 +26,9 @@ const (
 
 	//The number of messages to buffer
 	messageBuffer = 3
+
+	webSocketClosed         = "EXIT"
+	webSocketClosedNonClean = "@EXIT"
 )
 
 //The websocket upgrader
@@ -32,7 +36,8 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		CheckOrigin:     func(r *http.Request) bool { return true },
+		// Allow from all origins
+		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 )
 
@@ -81,11 +86,13 @@ func (c *WebsocketConnection) Close() {
 //Insert a datapoint using the websocket
 func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
-	logger.Infoln("Inserting", len(ws.D), "dp")
+	logger.Debugln("Inserting", len(ws.D), "dp")
 	err := c.o.InsertStream(ws.Arg, ws.D)
 	if err != nil {
 		//TODO: Notify user of insert failure
 		logger.Warn(err.Error())
+	} else {
+		atomic.AddUint32(&StatsInserts, uint32(len(ws.D)))
 	}
 }
 
@@ -149,7 +156,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 		err := c.ws.ReadJSON(&cmd)
 		if err != nil {
 			if err == io.EOF {
-				readmessenger <- "EXIT"
+				readmessenger <- webSocketClosed
 				return //On EOF, do nothing - it is just a close
 			}
 			c.logger.Warningln(err)
@@ -170,7 +177,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 		}
 	}
 	//Since the reader is exiting, notify the writer to send close message
-	readmessenger <- "@EXIT"
+	readmessenger <- webSocketClosedNonClean
 }
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
@@ -197,9 +204,9 @@ loop:
 				break loop
 			}
 		case msg := <-readmessenger:
-			if msg == "EXIT" {
+			if msg == webSocketClosed {
 				break loop
-			} else if msg == "@EXIT" {
+			} else if msg == webSocketClosedNonClean {
 				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				break loop

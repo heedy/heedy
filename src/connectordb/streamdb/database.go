@@ -16,7 +16,7 @@ import (
 
 //The StreamDB version string
 const (
-	Version   = "0.2.1"
+	Version   = "0.2.2"
 	AdminName = " ADMIN "
 )
 
@@ -102,7 +102,7 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 		go db.tdb.WriteDatabase()
 	}
 
-	//Magic: Allows using the Database object as an operator.
+	// Magic: Allows using the Database object as an operator.
 	db.Operator = operator.Operator{&db}
 
 	return &db, nil
@@ -118,7 +118,7 @@ func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Ope
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
-//UserLoginOperator returns the operator associated with the given username/password combination
+// UserLoginOperator returns the operator associated with the given username/password combination
 func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
 	usr, err := db.ReadUser(username)
 	if err != nil || !usr.ValidatePassword(password) {
@@ -133,7 +133,7 @@ func (db *Database) UserLoginOperator(username, password string) (operator.Opera
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
 
-//LoginOperator logs in as a user or device, depending on which is passed in
+// LoginOperator logs in as a user or device, depending on which is passed in
 func (db *Database) LoginOperator(path, password string) (operator.Operator, error) {
 	switch strings.Count(path, "/") {
 	default:
@@ -204,9 +204,10 @@ func (db *Database) RunWriter() {
 	db.tdb.WriteDatabase()
 }
 
-//These functions allow the Database object to conform to the Operator interface
+//These functions allow the Database object to conform to the BaseOperatorInterface
 
 //Name here is a special one meaning that it is the database administration operator
+// It is not a valid username
 func (db *Database) Name() string {
 	return AdminName
 }

@@ -44,6 +44,8 @@ func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 	if err = o.CreateUser(usrname, a.Email, a.Password); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+
+		StatsAddFail(err)
 		return err
 	}
 
@@ -97,6 +99,7 @@ func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 	if err = o.UpdateUser(&modusr); err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return JSONWriter(writer, modusr, logger, err)
@@ -111,6 +114,7 @@ func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)
+		StatsAddFail(err)
 		return err
 	}
 	return OK(writer)

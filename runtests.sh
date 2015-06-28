@@ -101,13 +101,13 @@ echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
 #go test -v -cover connectordb/...
-#go test -cover connectordb/...
-go test -bench . connectordb/...
+go test -cover connectordb/...
+#go test -bench . connectordb/...
 test_status=$?
 stop
 check_pids
 
-if [ $1 == "coveronly" ] then
+if [ $1 == "coveronly" ]; then
     exit 0
 fi
 
