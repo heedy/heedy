@@ -334,8 +334,6 @@ func OpenSqlStore(db *sql.DB, sqldriver string, err error) (*SqlStore, error) {
 		return nil, err
 	}
 	switch sqldriver {
-	case config.Sqlite:
-		return OpenSQLiteStore(db)
 	case config.Postgres:
 		return OpenPostgresStore(db)
 	}
