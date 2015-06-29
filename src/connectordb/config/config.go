@@ -23,9 +23,7 @@ All Rights Reserved
 
 const (
 	// The database types we support
-	Sqlite           = "sqlite3"
-	Postgres         = "postgres"
-	SqliteExecutable = "sqlite3"
+	Postgres = "postgres"
 
 	// Localhost variables, both net and string
 	LocalhostIpV4 = "127.0.0.1"
@@ -57,7 +55,6 @@ type Configuration struct {
 	RunDaisy                 bool
 	PostgresPort             int
 	PostgresHost             string
-	SqliteDbPath             string
 	DatabaseType             string
 	StreamdbDirectory        string
 	DisallowedNames          []string
@@ -79,19 +76,11 @@ func GetDatabaseConnectionString() string {
 
 // Returns the database connection string for the current database
 func (config *Configuration) GetDatabaseConnectionString() string {
-	if configuration.DatabaseType == Sqlite {
-		return "sqlite://" + configuration.StreamdbDirectory + "/" + configuration.SqliteDbPath
-	}
-
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", configuration.PostgresHost, configuration.PostgresPort)
 }
 
 // Checks if a database needs to be started locally
 func IsDatabaseLocal() bool {
-	if configuration.DatabaseType == Sqlite {
-		return true
-	}
-
 	ips, err := net.LookupIP(configuration.PostgresHost)
 
 	if err != nil {
@@ -132,7 +121,6 @@ func newConfiguration() *Configuration {
 	cfg.RunApi = true
 	cfg.RunWeb = true
 	cfg.RunDaisy = false
-	cfg.SqliteDbPath = ""
 	cfg.PostgresHost = LocalhostIpV4
 	cfg.PostgresPort = 52592
 	cfg.DatabaseType = Postgres

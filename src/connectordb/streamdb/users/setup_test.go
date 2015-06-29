@@ -21,7 +21,6 @@ var (
 	nextNameId  = 0
 	nextEmailId = 0
 
-	testSqlite3        UserDatabase
 	testPostgres       UserDatabase
 	testdatabases      = []SqlUserDatabase{}
 	testdatabasesNames = []string{}
