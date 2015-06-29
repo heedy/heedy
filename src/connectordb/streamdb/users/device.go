@@ -1,6 +1,7 @@
 package users
 
 import (
+	"database/sql"
 	"reflect"
 
 	"github.com/nu7hatch/gouuid"
@@ -144,6 +145,10 @@ func (userdb *SqlUserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, err
 
 	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserId = ?;", UserId)
 
+	if err == sql.ErrNoRows {
+		return nil, ErrDeviceNotFound
+	}
+
 	return devices, err
 }
 
@@ -151,6 +156,10 @@ func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename 
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserId = ? AND Name = ? LIMIT 1;", userid, devicename)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrDeviceNotFound
+	}
 
 	return &dev, err
 }
@@ -160,6 +169,10 @@ func (userdb *SqlUserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceId = ? LIMIT 1", DeviceId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrDeviceNotFound
+	}
 
 	return &dev, err
 
@@ -171,6 +184,10 @@ func (userdb *SqlUserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	var dev Device
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE ApiKey = ? LIMIT 1;", Key)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrDeviceNotFound
+	}
 
 	return &dev, err
 }

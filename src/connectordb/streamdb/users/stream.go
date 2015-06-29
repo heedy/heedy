@@ -8,7 +8,10 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 All Rights Reserved
 **/
 
-import "reflect"
+import (
+	"database/sql"
+	"reflect"
+)
 
 type Stream struct {
 	StreamId  int64  `modifiable:"nobody" json:"-"`
@@ -23,7 +26,7 @@ type Stream struct {
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
 	if !IsValidName(s.Name) {
-		return InvalidUsernameError
+		return ErrInvalidUsername
 	}
 
 	return nil
@@ -55,6 +58,10 @@ func (userdb *SqlUserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
 
 	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamId = ? LIMIT 1;", StreamId)
 
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
+
 	return &stream, err
 }
 
@@ -65,6 +72,10 @@ func (userdb *SqlUserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, strea
 
 	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
 
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
+
 	return &stream, err
 }
 
@@ -72,6 +83,10 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, er
 	var streams []Stream
 
 	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceId = ?;", DeviceId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
 
 	return streams, err
 }
@@ -84,6 +99,10 @@ func (userdb *SqlUserDatabase) ReadStreamsByUser(UserId int64) ([]Stream, error)
 		u.UserId = ? AND
 		d.UserId = u.UserId AND
 		s.DeviceId = d.DeviceId`, UserId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
 
 	return streams, err
 }
