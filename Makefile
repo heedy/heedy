@@ -33,7 +33,6 @@ go-dependencies:
 
 	# databases
 	go get github.com/lib/pq
-	go get github.com/mattn/go-sqlite3
 	go get github.com/josephlewis42/sqlx # our own so we don't depend on someone who claims the library will change in the future
 
 	# utilities

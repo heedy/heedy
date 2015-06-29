@@ -55,15 +55,8 @@ func OpenFromConfig(cfg *config.Configuration) (*Database, error) {
 Open StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
 server.
 
-StreamDB can use both postgres and sqlite as its storage engine. To run StreamDB with sqlite, give a
-path to the database file ending with .db. If the file does not end in .db, use "sqlite://" in the path
-to make sure that is the database engine used:
-  streamdb.Open("sqlite://path/to/database","localhost:6379","localhost:4222")
-One important thing to note when running StreamDB with sqlite: Open() automatically starts RunWriter() in a goroutine
-on open, since it is assumed that this is the only object from which the database is accessed.
-
-The normal use case for StreamDB is postgres. For postgres, just use the url of the connection. If you are worried
-that StreamDB will mistake your url for a sqlite location, you can start your database string with "postgres://".
+The normal use case for StreamDB is postgres. For postgres, just use the url of the connection. tart your database string w
+ith "postgres://".
 An example of a postgres url will be:
   streamdb.Open("postgres://username:password@localhost:port/databasename?sslmode=verify-full","localhost:6379","localhost:4222")
 If just running locally, then you can use:
@@ -95,11 +88,6 @@ func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
 	if err != nil {
 		db.Close()
 		return nil, err
-	}
-
-	// If it is an sqlite database, run the timebatchdb writer (since it is guaranteed to be only process)
-	if sqltype == config.Sqlite {
-		go db.tdb.WriteDatabase()
 	}
 
 	// Magic: Allows using the Database object as an operator.
@@ -185,8 +173,7 @@ func (db *Database) Close() {
 RunWriter exists because StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
 an sql database in batches of size BatchSize (global var). This allows great insert speed as well as fantastic read speed on large
 ranges of data. RunWriter runs this 'batching' process, which happens in the background.
-When running a single instance with posgres, you need to call RunWriter once manually (as a goroutine). You do not need to
-run it if on sqlite, since it is run automatically.
+When running a single instance with posgres, you need to call RunWriter once manually (as a goroutine).
 If running as a cluster, then it is probably a good idea to have RunWriter be run as an entirely separate process.
 
 For example:

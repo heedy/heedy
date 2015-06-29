@@ -4,11 +4,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,32 +19,33 @@ func TestDatabasError(t *testing.T) {
 	}
 }
 
-func TestDatabaseInsert(t *testing.T) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
+func openTestingEnvironment(t testing.TB) (*Database, *RedisCache, *SqlStore, error) {
 	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		t.Errorf("Open Redis error %v", err)
-		return
-	}
-	defer rc.Close()
+	require.Nil(t, err, "Couldn't open redis %v", err)
 
-	//Cleans the cache
+	// Clear the cache before testing
 	rc.Clear()
 
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 3, nil)
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
+	sdb, err := sql.Open("postgres", "postgres://127.0.0.1:52592/connectordb?sslmode=disable")
+	require.Nil(t, err, "Couldn't open database %v", err)
+	TableMakerTestCreate(sdb)
+
+	db, err := Open(sdb, "postgres", "localhost:6379", 3, nil)
+	require.Nil(t, err, "Couldn't call open: %v", err)
+
+	s, err := OpenSqlStore(sdb, "postgres", nil)
+	require.Nil(t, err, "Couldn't create sqlstore: %v", err)
+
+	return db, rc, s, err
+}
+
+func TestDatabaseInsert(t *testing.T) {
+
+	db, rc, s, err := openTestingEnvironment(t)
+	require.Nil(t, err, "Could not setup testing.")
+	defer rc.Close()
 	defer db.Close()
+	defer s.Close()
 
 	//First, test unordered input
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000, 3100, 3100}
@@ -97,37 +96,11 @@ func TestDatabaseInsert(t *testing.T) {
 }
 
 func TestDatabaseWrite(t *testing.T) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-	s, err := OpenSqlStore(sdb, "sqlite3", nil)
-	if err != nil {
-		t.Errorf("Couldn't create SQLiteStore: %v", err)
-		return
-	}
-	defer s.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		t.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(t)
+	require.Nil(t, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 3, nil)
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000, 3100}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
@@ -167,31 +140,11 @@ func TestDatabaseWrite(t *testing.T) {
 }
 
 func TestDatabaseRead(t *testing.T) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		t.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(t)
+	require.Nil(t, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 4, nil)
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
@@ -279,31 +232,11 @@ func TestDatabaseRead(t *testing.T) {
 }
 
 func TestDatabaseDelete(t *testing.T) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		t.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(t)
+	require.Nil(t, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 4, nil)
-	if err != nil {
-		t.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	timestamps := []int64{1000, 1500, 2000, 2100, 2200, 2500, 3000}
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
@@ -385,82 +318,13 @@ func TestDatabaseDelete(t *testing.T) {
 	}
 }
 
-//This is a benchmark of how fast we can read out a thousand-datapoint range from sqlite in chunks of 100
-func BenchmarkThousandS_S(b *testing.B) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		b.Errorf("Open Redis error %v", err)
-		return
-	}
-	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 100, nil)
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	defer db.Close()
-
-	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
-		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
-	for n := int64(0); n < 100; n++ {
-		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-	}
-	for i := 0; i < 10; i++ {
-		db.WriteDatabaseIteration()
-	}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		r, _ := db.GetIndexRange("testkey", 0, 1000)
-
-		r.Init()
-		for dp, _ := r.Next(); dp != nil; dp, _ = r.Next() {
-			dp.Timestamp()
-			dp.Data()
-		}
-		r.Close()
-	}
-}
-
 //This is a benchmark of how fast we can read out a thousand-datapoint range from postgres in chunks of 100
 func BenchmarkThousandS_P(b *testing.B) {
-	sdb, err := sql.Open("postgres", TEST_postgresString)
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		b.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(b)
+	require.Nil(b, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "postgres", "localhost:6379", 100, nil)
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
@@ -488,31 +352,11 @@ func BenchmarkThousandS_P(b *testing.B) {
 
 //This is a benchmark of how fast we can read out a thousand-datapoint range from redis
 func BenchmarkThousandR(b *testing.B) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		b.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(b)
+	require.Nil(b, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 100, nil)
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
@@ -535,31 +379,11 @@ func BenchmarkThousandR(b *testing.B) {
 }
 
 func BenchmarkInsert(b *testing.B) {
-	os.Remove("TESTING_timebatch.db")
-	sdb, err := sql.Open("sqlite3", "TESTING_timebatch.db")
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
-	TableMakerTestCreate(sdb)
-	defer sdb.Close()
-
-	rc, err := OpenRedisCache("localhost:6379", nil)
-	if err != nil {
-		b.Errorf("Open Redis error %v", err)
-		return
-	}
+	db, rc, s, err := openTestingEnvironment(b)
+	require.Nil(b, err, "Could not setup testing.")
 	defer rc.Close()
-
-	//Cleans the cache
-	rc.Clear()
-
-	db, err := Open(sdb, "sqlite3", "localhost:6379", 4, nil)
-	if err != nil {
-		b.Errorf("Couldn't open database: %v", err)
-		return
-	}
 	defer db.Close()
+	defer s.Close()
 
 	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
 		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
