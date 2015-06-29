@@ -318,36 +318,6 @@ func TestDatabaseDelete(t *testing.T) {
 	}
 }
 
-//This is a benchmark of how fast we can read out a thousand-datapoint range from sqlite in chunks of 100
-func BenchmarkThousandS_S(b *testing.B) {
-	db, rc, s, err := openTestingEnvironment(b)
-	require.Nil(b, err, "Could not setup testing.")
-	defer rc.Close()
-	defer db.Close()
-	defer s.Close()
-
-	data := [][]byte{[]byte("test0"), []byte("test1"), []byte("test2"), []byte("test3"),
-		[]byte("test4"), []byte("test5"), []byte("test6"), []byte("test7"), []byte("test8"), []byte("test9")}
-	for n := int64(0); n < 100; n++ {
-		timestamps := []int64{0 + n*10, 1 + n*10, 2 + n*10, 3 + n*10, 4 + n*10, 5 + n*10, 6 + n*10, 7 + n*10, 8 + n*10, 9 + n*10}
-		db.Insert("testkey", CreateDatapointArray(timestamps, data, ""))
-	}
-	for i := 0; i < 10; i++ {
-		db.WriteDatabaseIteration()
-	}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		r, _ := db.GetIndexRange("testkey", 0, 1000)
-
-		r.Init()
-		for dp, _ := r.Next(); dp != nil; dp, _ = r.Next() {
-			dp.Timestamp()
-			dp.Data()
-		}
-		r.Close()
-	}
-}
-
 //This is a benchmark of how fast we can read out a thousand-datapoint range from postgres in chunks of 100
 func BenchmarkThousandS_P(b *testing.B) {
 	db, rc, s, err := openTestingEnvironment(b)

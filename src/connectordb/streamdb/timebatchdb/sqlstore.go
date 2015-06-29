@@ -306,17 +306,6 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 	return ss, nil
 }
 
-//OpenSQLiteStore initializes an sqlite database to work with an SqlStore.
-func OpenSQLiteStore(db *sql.DB) (*SqlStore, error) {
-	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES (?,?,?,?,?);",
-		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=? AND EndTime > ? ORDER BY EndTime ASC",
-		"SELECT Version,EndIndex,Data FROM timebatchtable WHERE Key=? AND EndIndex > ? ORDER BY EndIndex ASC",
-		"SELECT ifnull(max(EndIndex),0) FROM timebatchtable WHERE Key=?",
-		"DELETE FROM timebatchtable WHERE Key=?",
-		"DELETE FROM timebatchtable WHERE Key LIKE ?",
-		"DELETE FROM timebatchtable")
-}
-
 //OpenPostgresStore initializes a postgres database to work with an SqlStore.
 func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
 	return prepareSqlStore(db, "INSERT INTO timebatchtable VALUES ($1,$2,$3,$4,$5);",
