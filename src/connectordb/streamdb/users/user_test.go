@@ -158,7 +158,7 @@ func TestLogin(t *testing.T) {
 		assert.Nil(t, err)
 
 		_, _, err = testdb.Login("", testPassword)
-		assert.Equal(t, err, InvalidUsernameError, "Wrong type returned %v", err)
+		assert.Equal(t, err, ErrInvalidUsername, "Wrong type returned %v", err)
 
 		_, _, err = testdb.Login(user.Name, "")
 		assert.NotNil(t, err, "Accepted blank password")

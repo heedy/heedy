@@ -2,16 +2,17 @@
 package users
 
 import (
+	"database/sql"
 	"errors"
 	"reflect"
 )
 
 var (
-	InvalidPasswordError = errors.New("Invalid Password")
-	InvalidUsernameError = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
-	InvalidEmailError    = errors.New("Invalid Email Address")
-	EmailExistsError     = errors.New("A user already exists with this email")
-	UsernameExistsError  = errors.New("A user already exists with this username")
+	ErrInvalidPassword = errors.New("Invalid Password")
+	ErrInvalidUsername = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
+	ErrInvalidEmail    = errors.New("Invalid Email Address")
+	ErrEmailExists     = errors.New("A user already exists with this email")
+	ErrUsernameExists  = errors.New("A user already exists with this username")
 )
 
 // User is the storage type for rows of the database.
@@ -35,15 +36,15 @@ type User struct {
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (u *User) ValidityCheck() error {
 	if !IsValidName(u.Name) {
-		return InvalidUsernameError
+		return ErrInvalidUsername
 	}
 
 	if u.Email == "" {
-		return InvalidEmailError
+		return ErrInvalidEmail
 	}
 
 	if u.PasswordSalt == "" || u.PasswordHashScheme == "" {
-		return InvalidPasswordError
+		return ErrInvalidPassword
 	}
 
 	return nil
@@ -91,21 +92,23 @@ func (u *User) UpgradePassword(password string) bool {
 // If a user already exists with the given credentials, an error is thrown.
 func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 
-	existing, _ := userdb.readByNameOrEmail(Name, Email)
+	existing, err := userdb.readByNameOrEmail(Name, Email)
 
-	// Check for existance of user to provide helpful notices
-	switch {
-	case existing.Email == Email:
-		return EmailExistsError
-	case existing.Name == Name:
-		return UsernameExistsError
-	case !IsValidName(Name):
-		return InvalidUsernameError
+	if err == nil {
+		// Check for existance of user to provide helpful notices
+		switch {
+		case existing.Email == Email:
+			return ErrEmailExists
+		case existing.Name == Name:
+			return ErrUsernameExists
+		case !IsValidName(Name):
+			return ErrInvalidUsername
+		}
 	}
 
 	dbpass, salt, hashtype := UpgradePassword(Password)
 
-	_, err := userdb.Exec(`INSERT INTO Users (
+	_, err = userdb.Exec(`INSERT INTO Users (
 	    Name,
 	    Email,
 	    Password,
@@ -132,11 +135,11 @@ Returns an error along with the user and device if something went wrong
 func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device, error) {
 	user, err := userdb.readByNameOrEmail(Username, Username)
 	if err != nil {
-		return nil, nil, InvalidUsernameError
+		return nil, nil, ErrInvalidUsername
 	}
 
 	if !user.ValidatePassword(Password) {
-		return user, nil, InvalidPasswordError
+		return user, nil, ErrInvalidPassword
 	}
 
 	if user.UpgradePassword(Password) {
@@ -161,6 +164,9 @@ func (userdb *SqlUserDatabase) readByNameOrEmail(Name, Email string) (*User, err
 	err := userdb.Get(&exists, "SELECT * FROM Users WHERE upper(Name) = upper(?) OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
 
 	//err := userdb.Get(&exists, "SELECT * FROM Users WHERE Name = ? OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
 
 	return &exists, err
 }
@@ -169,9 +175,12 @@ func (userdb *SqlUserDatabase) readByNameOrEmail(Name, Email string) (*User, err
 // username.
 func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 	var user User
-	//err := userdb.Get(&user, "SELECT * FROM Users WHERE upper(Name) = upper(?) LIMIT 1;", Name)
 
 	err := userdb.Get(&user, "SELECT * FROM Users WHERE Name = ? LIMIT 1;", Name)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
 
 	return &user, err
 }
@@ -182,20 +191,21 @@ func (userdb *SqlUserDatabase) ReadUserById(UserId int64) (*User, error) {
 	var user User
 	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserId = ? LIMIT 1;", UserId)
 
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
+
 	return &user, err
 }
-
-/**
-func (userdb *SqlUserDatabase) ReadUsersForDevice(devId uint64) ([]User, error){
-	var users []User
-	err := userdb.Select(&users, "SELECT u* FROM Users u, Devices d WHERE d.DeviceId = ? AND u.UserId = d.UserId OR ? = TRUE")
-}
-**/
 
 func (userdb *SqlUserDatabase) ReadAllUsers() ([]User, error) {
 	var users []User
 
 	err := userdb.Select(&users, "SELECT * FROM Users")
+
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
 
 	return users, err
 }
