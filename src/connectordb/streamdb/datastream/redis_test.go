@@ -7,9 +7,6 @@ import (
 )
 
 func TestRedisBasics(t *testing.T) {
-	rc, err := NewRedisConnection(&testOptions)
-	require.NoError(t, err)
-	defer rc.Close()
 
 	require.NoError(t, rc.Clear())
 
@@ -33,9 +30,6 @@ func TestRedisBasics(t *testing.T) {
 }
 
 func TestRedisInsert(t *testing.T) {
-	rc, err := NewRedisConnection(&testOptions)
-	require.NoError(t, err)
-	defer rc.Close()
 
 	require.NoError(t, rc.Clear())
 
@@ -68,9 +62,6 @@ func TestRedisInsert(t *testing.T) {
 }
 
 func TestRedisRestamp(t *testing.T) {
-	rc, err := NewRedisConnection(&testOptions)
-	require.NoError(t, err)
-	defer rc.Close()
 
 	require.NoError(t, rc.Clear())
 
@@ -89,9 +80,6 @@ func TestRedisRestamp(t *testing.T) {
 }
 
 func TestSubstream(t *testing.T) {
-	rc, err := NewRedisConnection(&testOptions)
-	require.NoError(t, err)
-	defer rc.Close()
 
 	require.NoError(t, rc.Clear())
 
@@ -119,13 +107,7 @@ func TestSubstream(t *testing.T) {
 }
 
 func BenchmarkRedis1Insert(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rc.Insert("mystream", "", DatapointArray{Datapoint{float64(n), true, ""}}, false)
@@ -133,13 +115,7 @@ func BenchmarkRedis1Insert(b *testing.B) {
 }
 
 func BenchmarkRedis1InsertRestamp(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	rc.Insert("mystream", "", DatapointArray{Datapoint{2.0, true, ""}}, false)
 	b.ResetTimer()
@@ -149,13 +125,9 @@ func BenchmarkRedis1InsertRestamp(b *testing.B) {
 }
 
 func BenchmarkRedis1InsertParallel(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
+
 	rc.Clear()
-	defer rc.Close()
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -165,13 +137,7 @@ func BenchmarkRedis1InsertParallel(b *testing.B) {
 }
 
 func BenchmarkRedis1000Insert(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 1000)
 	for i := 0; i < 1000; i++ {
@@ -185,13 +151,7 @@ func BenchmarkRedis1000Insert(b *testing.B) {
 }
 
 func BenchmarkRedis1000InsertParallel(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 1000)
 	for i := 0; i < 1000; i++ {
@@ -207,13 +167,7 @@ func BenchmarkRedis1000InsertParallel(b *testing.B) {
 }
 
 func BenchmarkRedis1000InsertRestamp(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 1000)
 	for i := 0; i < 1000; i++ {
@@ -229,13 +183,7 @@ func BenchmarkRedis1000InsertRestamp(b *testing.B) {
 }
 
 func BenchmarkRedisStreamLength(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 1000)
 	for i := 0; i < 1000; i++ {
@@ -251,13 +199,7 @@ func BenchmarkRedisStreamLength(b *testing.B) {
 }
 
 func BenchmarkRedis1000Get(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 1000)
 	for i := 0; i < 1000; i++ {
@@ -271,13 +213,7 @@ func BenchmarkRedis1000Get(b *testing.B) {
 }
 
 func BenchmarkRedis250Get(b *testing.B) {
-	rc, err := NewRedisConnection(&testOptions)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	rc.Clear()
-	defer rc.Close()
 
 	dpa := make(DatapointArray, 250)
 	for i := 0; i < 250; i++ {

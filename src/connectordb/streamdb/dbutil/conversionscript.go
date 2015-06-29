@@ -1,6 +1,5 @@
 package dbutil
 
-
 const dbconversion = `
 -- Properties Needed for golang template
 -- DBVersion, string, the current DB version or "00000000" if none
@@ -95,18 +94,19 @@ CREATE INDEX StreamNameIndex ON Stream (Name);
 CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 
-CREATE TABLE IF NOT EXISTS timebatchtable (
-    Key VARCHAR NOT NULL,
+CREATE TABLE IF NOT EXISTS datastream (
+    StreamId INTEGER NOT NULL,
+	Substream VARCHAR,
     EndTime BIGINT,
     EndIndex BIGINT,
 	Version INTEGER,
     Data BYTEA,
-    UNIQUE (Key, EndIndex),
-    PRIMARY KEY (Key, EndIndex)
+    UNIQUE (StreamId, Substream, EndIndex),
+    PRIMARY KEY (StreamId, Substream, EndIndex)
     );
 
 --Index creation should only be run once.
-CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
+CREATE INDEX keytime ON datastream (StreamId,Substream,EndTime ASC);
 
 {{end}}
 

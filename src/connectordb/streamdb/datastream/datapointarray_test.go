@@ -18,6 +18,19 @@ var (
 	dpa5 = DatapointArray{Datapoint{3.0, map[interface{}]interface{}{"hello": 2.0, "y": "hi"}, ""}}
 
 	dpa6 = DatapointArray{Datapoint{1.0, 1.0, ""}, Datapoint{2.0, 2.0, ""}, Datapoint{3.0, 3., ""}, Datapoint{4.0, 4., ""}, Datapoint{5.0, 5., ""}}
+	dpa7 = DatapointArray{
+		Datapoint{1., "test0", ""},
+		Datapoint{2., "test1", ""},
+		Datapoint{3., "test2", ""},
+		Datapoint{4., "test3", ""},
+		Datapoint{5., "test4", ""},
+		Datapoint{6., "test5", ""},
+		Datapoint{6., "test6", ""},
+		Datapoint{7., "test7", ""},
+		Datapoint{8., "test8", ""},
+	}
+
+	dpa8 = DatapointArray{Datapoint{2.0, "helloWorld", "me"}, Datapoint{1.0, "helloWorld2", "me2"}}
 )
 
 func TestDatapointArrayString(t *testing.T) {
@@ -36,7 +49,7 @@ func TestDatapointArrayBytes(t *testing.T) {
 	dpb, err := dpa1.Bytes()
 	require.NoError(t, err)
 
-	dpat, err := LoadDatapointArray(dpb)
+	dpat, err := DatapointArrayFromBytes(dpb)
 	require.NoError(t, err)
 
 	require.True(t, dpa1.IsEqual(dpat))
@@ -44,7 +57,7 @@ func TestDatapointArrayBytes(t *testing.T) {
 	dpb, err = dpa4.Bytes()
 	require.NoError(t, err)
 
-	dpat, err = LoadDatapointArray(dpb)
+	dpat, err = DatapointArrayFromBytes(dpb)
 	require.NoError(t, err)
 
 	require.True(t, dpa4.IsEqual(dpat))
@@ -52,7 +65,7 @@ func TestDatapointArrayBytes(t *testing.T) {
 	dpb, err = dpa5.Bytes()
 	require.NoError(t, err)
 
-	dpat, err = LoadDatapointArray(dpb)
+	dpat, err = DatapointArrayFromBytes(dpb)
 	require.NoError(t, err)
 
 	require.True(t, dpa5.IsEqual(dpat))
@@ -101,11 +114,11 @@ func TestDatapointArrayChunks(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(dbytea))
 
-	d1, err := LoadDatapointArray(dbytea[0])
+	d1, err := DatapointArrayFromBytes(dbytea[0])
 	require.NoError(t, err)
-	d2, err := LoadDatapointArray(dbytea[1])
+	d2, err := DatapointArrayFromBytes(dbytea[1])
 	require.NoError(t, err)
-	d3, err := LoadDatapointArray(dbytea[2])
+	d3, err := DatapointArrayFromBytes(dbytea[2])
 	require.NoError(t, err)
 
 	require.True(t, d1.IsEqual(dpa6[0:2]))
@@ -115,6 +128,48 @@ func TestDatapointArrayChunks(t *testing.T) {
 	dbytea, err = dpa1.SplitIntoChunks(2)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(dbytea))
-	d1, err = LoadDatapointArray(dbytea[0])
+	d1, err = DatapointArrayFromBytes(dbytea[0])
 	require.True(t, d1.IsEqual(dpa1[0:2]))
+}
+
+func TestDatapointArrayEncodeDecode(t *testing.T) {
+	_, err := dpa1.Encode(3)
+	require.Error(t, err)
+
+	da, err := dpa1.Encode(MsgPackVersion)
+	require.NoError(t, err)
+
+	dpa, err := DecodeDatapointArray(da, 3)
+	require.Error(t, err)
+
+	dpa, err = DecodeDatapointArray(da, 2)
+	require.Error(t, err)
+
+	dpa, err = DecodeDatapointArray(da, MsgPackVersion)
+	require.NoError(t, err)
+	require.Equal(t, dpa.String(), dpa1.String())
+
+	da, err = dpa1.Encode(CompressedMsgPackVersion)
+	require.NoError(t, err)
+
+	dpa, err = DecodeDatapointArray(da, CompressedMsgPackVersion)
+	require.NoError(t, err)
+	require.Equal(t, dpa.String(), dpa1.String())
+}
+
+func TestTimestampOrdered(t *testing.T) {
+	require.True(t, dpa7.IsTimestampOrdered())
+	require.False(t, dpa8.IsTimestampOrdered())
+}
+
+func TestTimeIndex(t *testing.T) {
+	require.Equal(t, DatapointArray{}.FindTimeIndex(1.0), -1)
+	require.Equal(t, -1, dpa7.FindTimeIndex(20.0))
+	require.Equal(t, 3, dpa7.FindTimeIndex(3.0))
+	require.Equal(t, 7, dpa7.FindTimeIndex(6.0))
+}
+
+func TestTRange(t *testing.T) {
+	require.Equal(t, dpa7.TRange(0.5, 6.0).String(), dpa7[:7].String())
+	require.Equal(t, dpa7.TRange(0.5, 80.0).String(), dpa7.String())
 }
