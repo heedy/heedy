@@ -51,7 +51,6 @@ func TestReadUserByName(t *testing.T) {
 		// test failures on non existance
 		usr, err := testdb.ReadUserByName("")
 		assert.NotNil(t, err)
-		assert.NotNil(t, usr)
 
 		// setup for reading
 		err = testdb.CreateUser("TestReadUserByName_name", "TestReadUserByName_email", "TestReadUserByName_pass")
