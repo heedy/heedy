@@ -82,6 +82,8 @@ var RatingView = React.createClass({
 			<li className="table-view-cell"><StarRating name="Productivity" sname="rating_productivity"/></li>
 			<li className="table-view-cell"><StarRating name="Life Satisfaction" sname="rating_satisfaction"/></li>
 			<li className="table-view-cell"><StarRating name="Progress Towards Goals" sname="rating_progress" /></li>
+			<li className="table-view-cell"><StarRating name="Depth" sname="rating_depth" /></li>
+			<li className="table-view-cell"><StarRating name="Motivation" sname="rating_motivation" /></li>
 			</ul>
 			</div>
 		);
