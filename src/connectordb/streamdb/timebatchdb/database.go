@@ -280,7 +280,7 @@ func (d *Database) WriteDatabase() (err error) {
 	for err == nil {
 		err = d.WriteDatabaseIteration()
 	}
-	log.Errorln("TimebatchDB:WriteDatabase:", err)
+	//log.Errorln("TimebatchDB:WriteDatabase:", err)
 	return err
 }
 
