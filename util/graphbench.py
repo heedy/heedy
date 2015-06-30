@@ -53,6 +53,13 @@ for k in benchmarks:
 print nameArray
 print benchValues
 print benchNames
+
+#Sort by number (based on first element)
+sorted = np.argsort(-np.array(benchValues[0]))
+for i in xrange(len(benchValues)):
+    benchValues[i] = np.array(benchValues[i])[sorted]
+benchNames = np.array(benchNames)[sorted]
+
 ind = np.arange(len(benchNames))  # the x locations for the groups
 width = 0.7/len(nameArray)       # the width of the bars
 

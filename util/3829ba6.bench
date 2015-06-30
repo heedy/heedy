@@ -9,6 +9,7 @@ BenchmarkUpdateUser	     100	  20137976 ns/op
 BenchmarkCreateStream	     100	  17726670 ns/op
 BenchmarkReadStreamNC	    2000	    890183 ns/op
 BenchmarkReadStream	  100000	     14903 ns/op
+BenchmarkStreamLength	    5000	    284128 ns/op
 BenchmarkInsert1	   10000	    243979 ns/op
 BenchmarkInsert1000	     200	   8880512 ns/op
 BenchmarkRead1000	     200	   7111364 ns/op

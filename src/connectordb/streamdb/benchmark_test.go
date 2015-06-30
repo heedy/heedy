@@ -270,6 +270,36 @@ func BenchmarkInsert1(b *testing.B) {
 	}
 }
 
+func BenchmarkStreamLength(b *testing.B) {
+	ResetTimeBatch()
+	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	require.NoError(b, err)
+	defer db.Close()
+	//go db.RunWriter()
+
+	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+
+	o, err := db.LoginOperator("streamdb_test", "mypass")
+	require.NoError(b, err)
+
+	data := make([]operator.Datapoint, 1000)
+	for i := 0; i < 1000; i++ {
+		data[i] = operator.Datapoint{
+			Timestamp: float64(i),
+			Data:      true,
+		}
+	}
+	err = o.InsertStream("streamdb_test/user/mystream", data)
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err = o.LengthStream("streamdb_test/user/mystream")
+		require.NoError(b, err)
+	}
+}
+
 func BenchmarkInsert1000(b *testing.B) {
 	ResetTimeBatch()
 	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
