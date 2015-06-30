@@ -142,6 +142,9 @@ func (dpa DatapointArray) VerifySchema(schema *gojsonschema.Schema) (err error) 
 
 func (dpa DatapointArray) String() string {
 	tot := "DatapointArray{"
+	if len(dpa) == 0 {
+		return tot + "}"
+	}
 	for i := range dpa {
 		tot += dpa[i].String() + ","
 	}

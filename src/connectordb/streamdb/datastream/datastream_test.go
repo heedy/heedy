@@ -20,12 +20,14 @@ var (
 func TestMain(m *testing.M) {
 	rc, err = NewRedisConnection(&DefaultOptions)
 	if err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 	rc.Close()
 
 	rc, err = NewRedisConnection(&DefaultOptions)
 	if err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 

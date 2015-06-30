@@ -7,9 +7,9 @@ import (
 
 //Options holds the configuration for connectordb
 type Options struct {
-	RedisOptions   redis.Options
-	RedisChunkSize int
-	NatsOptions    nats.Options
+	RedisOptions redis.Options
+	BatchSize    int
+	NatsOptions  nats.Options
 }
 
 //Default configuration options for datastream
@@ -23,5 +23,6 @@ func getDefaultOptions() Options {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	}
+	opt.BatchSize = 250
 	return opt
 }

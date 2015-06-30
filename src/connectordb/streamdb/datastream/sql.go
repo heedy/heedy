@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS datastream (
 var (
 	//ErrorDatabaseCorrupted is returned when there is data loss or inconsistency in the database
 	ErrorDatabaseCorrupted = errors.New("Database is corrupted!")
-	//ErrorWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
-	ErrorWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
+	//ErrWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
+	ErrWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
 )
 
 //The SqlStore stores and queries arrays of Datapoints in an SQL database. The table 'datastream' is assumed
@@ -128,7 +128,7 @@ func (s *SqlStore) GetEndIndex(streamID int64, substream string) (ei int64, err 
 		return 0, err
 	}
 	if !rows.Next() {
-		return 0, ErrorWTF //This should never happen
+		return 0, ErrWTF //This should never happen
 	}
 	err = rows.Scan(&ei)
 	rows.Close()
