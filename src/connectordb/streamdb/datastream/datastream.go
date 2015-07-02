@@ -1,16 +1,13 @@
 package datastream
 
-import (
-	"database/sql"
-	"errors"
-	"strconv"
-)
+import "errors"
 
 var (
 	//ErrTimestampOrder is thrown when out of order tiemstamps are detected
 	ErrTimestampOrder = errors.New("The datapoints must be ordered by increasing timestamp")
 )
 
+/*
 //stringStream returns a string representatino of the streamID
 func stringStream(stream int64) string {
 	return strconv.FormatInt(stream, 32)
@@ -50,7 +47,7 @@ func (ds *DataStream) Clear() {
 }
 
 //DeleteStream deletes an entire stream from the database
-func (ds *DataStream) DeleteStream(stream int64, substream string) error {
+func (ds *DataStream) DeleteStream(stream int64) error {
 	err := ds.redis.DeleteStream(stringStream(stream))
 	if err != nil {
 		return err
@@ -67,20 +64,17 @@ func (ds *DataStream) DeleteSubstream(stream int64, substream string) error {
 	return ds.sqls.DeleteSubstream(stream, substream)
 }
 
-//Length returns the length of the stream
-func (ds *DataStream) Length(stream int64, substream string) (int64, error) {
+//StreamLength returns the length of the stream
+func (ds *DataStream) StreamLength(stream int64, substream string) (int64, error) {
 	return ds.redis.StreamLength(stringStream(stream), substream)
 }
 
 //Insert inserts the given datapoint array into the stream, with the option to restamp the data
 //on insert if it has timestamps below the range of already-inserted data. Restamoing allows an insert to always succeed
 func (ds *DataStream) Insert(stream int64, substream string, dpa DatapointArray, restamp bool) error {
-	//To start off, ensure that the datapoint array is ordered by timestamp
-	if !dpa.IsTimestampOrdered() {
-		return ErrTimestampOrder
-	}
+	//NOTE: Assuming that the datapointarray is correctly ordered by timestamp.
 
-	//Next, insert it into redis
+	//Insert the data into redis
 	slength, err := ds.redis.Insert(stringStream(stream), substream, dpa, restamp)
 	if err != nil {
 		return err
@@ -90,12 +84,28 @@ func (ds *DataStream) Insert(stream int64, substream string, dpa DatapointArray,
 	//to the long term storage
 	batchnumber := slength/ds.batchsize - (slength-int64(dpa.Length()))/ds.batchsize
 	if batchnumber > 0 {
-		//We write a batch to the sql database
+		//There are batches to write!
+
 	}
 
 	return nil
 }
 
-func (ds *DataStream) WriteBatch() {
+/*
+//IRange returns a DataRange of datapoints which are in the given range of indices.
+//Indices can be python-like, meaning i1 and i2 negative mean "from the end", and i2=0
+//means to the end.
+func (ds *DataStream) IRange(stream int64, substream string, i1 int64, i2 int64) (dr DataRange, err error) {
+	dpa, i1, i2, err := ds.redis.Range(stringStream(stream), substream, i1, i2)
+	if err != nil {
+		return EmptyRange{}, err
+	}
+	if dpa != nil {
+		//Aww yes, the entire range was in redis
+		return NewDatapointArrayRange(dpa), nil
+	}
 
+	//We query the datastore by index
+	return nil,
 }
+*/

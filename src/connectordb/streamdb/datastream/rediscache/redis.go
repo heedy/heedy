@@ -1,48 +1,52 @@
-package datastream
+package rediscache
 
 import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/redis.v3"
+
+	"connectordb/streamdb/datastream"
 )
 
 /*
 The structure in Redis is as follows:
 
-Each stream has one list and one hset.
-Datapoints are inserted in chunks which can have anywhere from 1 to chunksize datapoints,
-all marshalled into bytes using messagepack
-Suppose that we have stream "mystream"
+Each user has an hset. Each stream has a list. Datapoints are inserted one per list element
+all marshalled into bytes using messagepack.
 
-	'{mystream}::s' = [(datapoint),(datapoint),(datapoint)]
+Suppose that we have a stream "mystream" belonging to "myuser".
 
-	'{mystream}:m' = {
-		'endtime:' : the most recent timestamp of inserted data
-		'starttime:' : the first timestamp of data in redis
-		'length:' : the total number of datapoints in the stream (overall)
+	'{myuser}:mystream:' = [(datapoint),(datapoint),(datapoint)]
+
+	'{myuser}' = {
+		'endtime:mystream:' : the most recent timestamp of inserted data
+		'starttime:mystream:' : the first timestamp of data in redis
+		'length:mystream:' : the total number of datapoints in the stream (overall)
 	}
+
 
 Notice that most elements end in : (or have extra :).
 This is because streams can have substreams. A stream 'mystream' with a downlink substream 'd'
 would look like this:
 
-	'{mystream}::s' = [(datapoint),(datapoint),(datapoint)]
-	'{mystream}:d:s' = [(datapoint),(datapoint),(datapoint)]
+	'{myuser}:mystream:' = [(datapoint),(datapoint),(datapoint)]
+	'{myuser}:mystream:d' = [(datapoint),(datapoint),(datapoint)]
 
-	'{mystream}:m' = {
-		'endtime:' : the most recent timestamp of inserted data
-		'starttime:' : the first timestamp of data in redis
-		'length:' : the total number of datapoints in the stream (overall)
+	'{myuser}' = {
+		'endtime:mystream:' : the most recent timestamp of inserted data
+		'starttime:mystream:' : the first timestamp of data in redis
+		'length:mystream:' : the total number of datapoints in the stream (overall)
 
-		'endtime:d' : the most recent timestamp of inserted data in 'd'
-		'starttime:d' : the first timestamp of data in redis for substream
-		'length:d' : the total number of datapoints in the substream 'd'
+		'endtime:mystream:d' : the most recent timestamp of inserted data in 'd'
+		'starttime:mystream:d' : the first timestamp of data in redis for substream
+		'length:mystream:d' : the total number of datapoints in the substream 'd'
 	}
 
-Lastly, notice the {} around mystream - this is for redis cluster hashing.
-It allows all keys relevant to a stream to be on the same redis instance,
+Lastly, notice the {} around myuser - this is for redis cluster hashing.
+It allows all keys relevant to a user to be on the same redis instance,
 which is exploited heavily in the scripts.
 
 */
@@ -55,16 +59,18 @@ const (
 	//It is given 2 keys:
 	//	stream key - the key where a list of chunks has been inserted
 	//	metadata key - the key where the stream's metadata is stored
+	//	batch writer key - the key to which to write batches
 	//Of the arguments, it is given:
-	//	substream - the name of the substream
+	//	subpath - the name of the stream in "stream:substream" format
 	//	starttime - the start time of the datapoints
 	//	endtime - the end time of the datapoints
 	//	restamp - whether to restamp datapoints if inconsistent timestamps
-	//	... array of the chunks to be inserted ...
+	//	batchsize - the number of datapoints which constitute a batch
+	//	... array of the datapoints to be inserted ...
 	insertScript = `
 		-- Make sure that the timestamps are increasing
-		local stream_endtime = tonumber(redis.call('hget',KEYS[2], 'endtime:' .. ARGV[1]))
-		if (stream_endtime~=nil and stream_endtime > tonumber(ARGV[2])) then
+		local stream_endtime = tonumber(redis.call('hget',KEYS[2], 'endtime:' .. ARGV[1])) or 0
+		if (stream_endtime > tonumber(ARGV[2])) then
 			if (ARGV[4] == '0') then
 				return {["err"]="Greater timestamp already exists for the stream. Insert Failed."}
 			end
@@ -78,7 +84,7 @@ const (
 				stream_endtime = stream_endtime + 0.00001
 			end
 
-			for i=#ARGV,5,-1 do
+			for i=#ARGV,6,-1 do
 				local val = cmsgpack.unpack(ARGV[i])
 				if (val['t'] > stream_endtime) then
 					break
@@ -95,15 +101,30 @@ const (
 		-- Set the end time
 		redis.call('hset',KEYS[2], 'endtime:' .. ARGV[1], ARGV[3])
 		-- Set the total stream length
-		redis.call('hincrby',KEYS[2], 'length:' .. ARGV[1], #ARGV - 4)
+		redis.call('hincrby',KEYS[2], 'length:' .. ARGV[1], #ARGV - 5)
 
 		-- Insert the datapoints into the stream - redis lua has some weird stuff about the maximum
 		-- number of arguments to a function - we avoid this by manually splitting insert into chunks
-		for i=5,#ARGV,5000 do
+		for i=6,#ARGV,5000 do
 			redis.call('rpush',KEYS[1], unpack(ARGV,i,math.min(i+4999,#ARGV)))
 		end
 
-		return redis.call('hget',KEYS[2], 'length:' .. ARGV[1])
+		-- Check to see if we should write a batch
+		local streamlength = tonumber(redis.call('hget',KEYS[2], 'length:' .. ARGV[1]))
+		local batchindex = tonumber(redis.call('hget',KEYS[2], 'batchindex:' .. ARGV[1])) or 0
+		local batchsize = tonumber(ARGV[5])
+		if (streamlength > batchindex + batchsize) then
+			-- Yep, write at least one batch
+			local batchnum = math.floor((streamlength-batchindex)/batchsize)
+			local batches = {}
+			for i=batchindex,streamlength-batchsize,batchsize do
+				table.insert(batches,KEYS[1] .. ":" .. i .. ":" .. (i+batchsize))
+			end
+			redis.call('lpush',KEYS[3],unpack(batches))
+			redis.call('hset',KEYS[2], 'batchindex:' .. ARGV[1], batchindex+batchsize*batchnum)
+		end
+
+		return streamlength
 	`
 
 	//The subdelete script deletes a given substream.
@@ -129,7 +150,7 @@ const (
 	//	the stream key
 	//	the metadata key
 	//In arguments it is given:
-	//	The substream to read
+	//	The stream metadata subpath
 	//	i1 startindex
 	//	i2 endindex
 	rangeScript = `
@@ -186,7 +207,7 @@ const (
 	//	the stream key
 	//	the metadata key
 	//In arguments it is given:
-	//	The substream to read
+	//	The stream path
 	//	index to trim to (ie, keep datapoints AFTER index)
 	trimScript = `
 		local startindex = tonumber(redis.call('hget',KEYS[2], 'length:' .. ARGV[1])) - tonumber(redis.call('llen',KEYS[1]))
@@ -202,11 +223,34 @@ const (
 var (
 	//ErrTimestamp is returned when trying to insert old timestamps
 	ErrTimestamp = errors.New("Greater timestamp already exists for the stream. Insert Failed.")
+
+	//ErrWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
+	ErrWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
 )
+
+//Quite annoyingly, go-redis does not give an interface using which we can connect to redis. We therefore manually create one
+type redisConnection interface {
+	LRange(key string, start, stop int64) *redis.StringSliceCmd
+	HGet(key, field string) *redis.StringCmd
+	HKeys(key string) *redis.StringSliceCmd
+	Del(keys ...string) *redis.IntCmd
+	FlushDb() *redis.StatusCmd
+
+	//This enables us to use a redis.Script object
+	Eval(script string, keys []string, args []string) *redis.Cmd
+	EvalSha(sha1 string, keys []string, args []string) *redis.Cmd
+	ScriptExists(scripts ...string) *redis.BoolSliceCmd
+	ScriptLoad(script string) *redis.StringCmd
+
+	BRPopLPush(source, destination string, timeout time.Duration) *redis.StringCmd
+
+	Close() error
+}
 
 //RedisConnection is the connection to redis server
 type RedisConnection struct {
-	redis *redis.Client
+	Redis     redisConnection
+	BatchSize int64
 
 	//The server side scripts which speed up certain operations
 	insertScript    *redis.Script
@@ -224,24 +268,35 @@ func wrapNil(err error) error {
 	return err
 }
 
+//Converts the stream to an int
+func stringID(id int64) string {
+	return strconv.FormatInt(id, 32)
+}
+
+func streamKey(hash, stream, substream string) string {
+	return "{" + hash + "}" + stream + ":" + substream
+}
+
 //Many of the redis scripts use the same exact keys - this just abstracts that away
-func scriptkeys(stream, substream string) []string {
-	return []string{stream + ":" + substream + ":s", stream + ":m"}
+func scriptkeys(hash, stream, substream string) []string {
+	return []string{streamKey(hash, stream, substream), "{" + hash + "}"}
 }
 
 //Close the redis cluster connection
 func (rc *RedisConnection) Close() {
-	rc.redis.Close()
+	rc.Redis.Close()
 }
 
-//NewRedisConnection creates a new connection to a redis server
-func NewRedisConnection(opt *Options) (rc *RedisConnection, err error) {
-	rclient := redis.NewClient(&opt.RedisOptions)
+//NewRedisConnection creates a new connection to a redis server. This is a single-node
+//	redis connection
+func NewRedisConnection(opt *redis.Options) (rc *RedisConnection, err error) {
+	rclient := redis.NewClient(opt)
 
 	_, err = rclient.Ping().Result()
 
 	return &RedisConnection{
-		redis:           rclient,
+		Redis:           rclient,
+		BatchSize:       250,
 		insertScript:    redis.NewScript(insertScript),
 		subdeleteScript: redis.NewScript(subdeleteScript),
 		rangeScript:     redis.NewScript(rangeScript),
@@ -250,21 +305,21 @@ func NewRedisConnection(opt *Options) (rc *RedisConnection, err error) {
 }
 
 //Get returns all the datapoints cached associated with the given stream/substream
-func (rc *RedisConnection) Get(stream, substream string) (dpa DatapointArray, err error) {
-	sa, err := rc.redis.LRange(stream+":"+substream+":s", 0, -1).Result()
+func (rc *RedisConnection) Get(hash, stream, substream string) (dpa datastream.DatapointArray, err error) {
+	sa, err := rc.Redis.LRange(streamKey(hash, stream, substream), 0, -1).Result()
 	if err != nil {
 		return nil, err
 	}
-	return DatapointArrayFromDataStrings(sa)
+	return datastream.DatapointArrayFromDataStrings(sa)
 
 }
 
-//Insert datapoint array
-func (rc *RedisConnection) Insert(stream, substream string, dpa DatapointArray, restamp bool) (streamlength int64, err error) {
+//Insert datapoint array, writing batches to batchkey
+func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa datastream.DatapointArray, restamp bool) (streamlength int64, err error) {
 	//remember the number of args here
-	args := make([]string, 4+len(dpa))
+	args := make([]string, 5+len(dpa))
 
-	args[0] = substream
+	args[0] = stream + ":" + substream
 	args[1] = strconv.FormatFloat(dpa[0].Timestamp, 'G', -1, 64)
 	args[2] = strconv.FormatFloat(dpa[len(dpa)-1].Timestamp, 'G', -1, 64)
 	if restamp {
@@ -272,70 +327,105 @@ func (rc *RedisConnection) Insert(stream, substream string, dpa DatapointArray, 
 	} else {
 		args[3] = "0"
 	}
+	args[4] = strconv.FormatInt(rc.BatchSize, 10)
 
 	for i := range dpa {
 		b, err := dpa[i].Bytes()
 		if err != nil {
 			return 0, err
 		}
-		args[i+4] = string(b)
+		args[i+5] = string(b)
 	}
 
-	r, err := rc.insertScript.Run(rc.redis, scriptkeys(stream, substream), args).Result()
+	r, err := rc.insertScript.Run(rc.Redis, []string{streamKey(hash, stream, substream), "{" + hash + "}", batchkey}, args).Result()
 
 	if err != nil {
 		return 0, err
 	}
 
-	return strconv.ParseInt(r.(string), 10, 64)
+	return r.(int64), err
 }
 
 //StreamLength returns the stream's length
-func (rc *RedisConnection) StreamLength(stream, substream string) (int64, error) {
-	sc := rc.redis.HGet(stream+":m", "length:"+substream)
+func (rc *RedisConnection) StreamLength(hash, stream, substream string) (int64, error) {
+	sc := rc.Redis.HGet("{"+hash+"}", "length:"+stream+":"+substream)
 
 	i, err := sc.Int64()
 	return i, wrapNil(err)
 }
 
 //DeleteSubstream deletes the given substream from the stream
-func (rc *RedisConnection) DeleteSubstream(stream, substream string) error {
-	return wrapNil(rc.subdeleteScript.Run(rc.redis, scriptkeys(stream, substream),
-		[]string{substream}).Err())
+func (rc *RedisConnection) DeleteSubstream(hash, stream, substream string) error {
+	return wrapNil(rc.subdeleteScript.Run(rc.Redis, scriptkeys(hash, stream, substream),
+		[]string{stream + ":" + substream}).Err())
 }
 
 //DeleteStream removes an entire stream and all substreams from redis
 //WARNING: This is not atomic. If a substream is created in the middle of deletion,
 //the substream's data will become corrupted and not cleaned up. I am assuming that
 //this will become disallowed somehow through the higher level interface
-func (rc *RedisConnection) DeleteStream(stream string) error {
-	//First we must check all the substreams. to do this, we list the keys in metadata
-	keys, err := rc.redis.HKeys(stream + ":m").Result()
+func (rc *RedisConnection) DeleteStream(hash string, stream string) (err error) {
+	//First we must check all the substreams. to do this, we list the keys in hash
+	keys, err := rc.Redis.HKeys("{" + hash + "}").Result()
 	if err != nil {
 		return err
 	}
 
 	for i := range keys {
-		if len(keys[i]) > 7 && strings.HasPrefix(keys[i], "length:") {
-			rc.DeleteSubstream(stream, keys[i][7:len(keys[i])])
+		if len(keys[i]) > 7 && strings.HasPrefix(keys[i], "length:"+stream+":") {
+			rc.DeleteSubstream(hash, stream, keys[i][7+len(stream):])
 		}
 	}
 
-	return rc.redis.Del(stream+":m", stream+"::s").Err()
+	return rc.Redis.Del("{" + hash + "}").Err()
+}
+
+//DeleteHash removes all streams within a hash
+func (rc *RedisConnection) DeleteHash(hash string) (err error) {
+	//First we must check all the substreams. to do this, we list the keys in hash
+	keys, err := rc.Redis.HKeys("{" + hash + "}").Result()
+	if err != nil {
+		return err
+	}
+
+	todelete := []string{"{" + hash + "}"}
+
+	for i := range keys {
+		if len(keys[i]) > 7 && strings.HasPrefix(keys[i], "length:") {
+			todelete = append(todelete, "{"+hash+"}"+keys[i][7:])
+		}
+	}
+
+	return rc.Redis.Del(todelete...).Err()
 }
 
 //TrimStream clears all datapoints up to the index from redis, after they are written
 //to long term storage, so that they don't take up space.
-func (rc *RedisConnection) TrimStream(stream, substream string, index int64) error {
-	return wrapNil(rc.trimScript.Run(rc.redis, scriptkeys(stream, substream), []string{substream, strconv.FormatInt(index, 10)}).Err())
+func (rc *RedisConnection) TrimStream(hash, stream, substream string, index int64) error {
+	return wrapNil(rc.trimScript.Run(rc.Redis, scriptkeys(hash, stream, substream), []string{stream + ":" + substream, strconv.FormatInt(index, 10)}).Err())
+}
+
+//NextBatch waits for the next batch, and pushes it into the "in progress queue"
+func (rc *RedisConnection) NextBatch(batchlist, progresslist string) (string, error) {
+	return rc.Redis.BRPopLPush(batchlist, progresslist, 0).Result()
+}
+
+//GetList gets all the elements of the given list
+func (rc *RedisConnection) GetList(listkey string) ([]string, error) {
+	return rc.Redis.LRange(listkey, 0, -1).Result()
+}
+
+//DeleteKey removes the given key from the database
+func (rc *RedisConnection) DeleteKey(key string) error {
+	return rc.Redis.Del(key).Err()
 }
 
 //Range either gets the entire given range of data from redis, or notifies the indices of data to use in terms
 //of the entire stream. The indices can be negative. For example, i1 negative means "from the end" - i2 = 0 means "to the end",
 //so a range of -1,0 returns the most recent datapoint, -3,-1 returns 2 of the 3 most recent datapoints, 5,-1 returns index 5 to the
 //second to last, and so forth. It is python-like indexing.
-func (rc *RedisConnection) Range(stream, substream string, index1 int64, index2 int64) (dpa DatapointArray, i1, i2 int64, err error) {
-	res, err := rc.rangeScript.Run(rc.redis, scriptkeys(stream, substream), []string{substream, strconv.FormatInt(index1, 10), strconv.FormatInt(index2, 10)}).Result()
+func (rc *RedisConnection) Range(hash, stream, substream string, index1 int64, index2 int64) (dpa datastream.DatapointArray, i1, i2 int64, err error) {
+	res, err := rc.rangeScript.Run(rc.Redis, scriptkeys(hash, stream, substream), []string{stream + ":" + substream, strconv.FormatInt(index1, 10), strconv.FormatInt(index2, 10)}).Result()
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -360,13 +450,13 @@ func (rc *RedisConnection) Range(stream, substream string, index1 int64, index2 
 	for i := 0; i < len(result)-2; i++ {
 		stringresult[i] = result[i].(string)
 	}
-	dpa, err = DatapointArrayFromDataStrings(stringresult)
+	dpa, err = datastream.DatapointArrayFromDataStrings(stringresult)
 	return dpa, i1, i2, err
 
 }
 
 //Clear the cache of all data - for testing purposes only, this obviously poofs all data in the cache, so
-//no use in production environments please.
+//no use in production environments please. WARNING: Undefined behavior for redis cluster
 func (rc *RedisConnection) Clear() error {
-	return rc.redis.FlushDb().Err()
+	return rc.Redis.FlushDb().Err()
 }

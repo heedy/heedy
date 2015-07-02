@@ -1,5 +1,6 @@
 package datastream
 
+/*
 //StreamRange is a DataRange that combines the redis and sql data into one coherent stream
 type StreamRange struct {
 	ds *DataStream
@@ -35,3 +36,4 @@ func (d *StreamRange) Next() (*Datapoint, error) {
 
 	return nil, nil
 }
+*/
