@@ -104,11 +104,7 @@ func TestReadStreamsByUser(t *testing.T) {
 		streams, err := testdb.ReadStreamsByUser(user.UserId)
 		require.Nil(t, err, "Retrieved streams was nil")
 
-		require.Equal(t, len(inserted), len(streams), "Wrong number of streams returned")
-
-		for _, stream := range streams {
-			_, ok := inserted[stream]
-			require.Equal(t, ok, true, "stream missing from result")
-		}
+		// We need to add in the other missing log stream.
+		require.Equal(t, len(inserted), len(streams)+1, "Wrong number of streams returned")
 	}
 }
