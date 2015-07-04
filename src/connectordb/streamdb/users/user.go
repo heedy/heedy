@@ -17,7 +17,7 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId int64  `modifiable:"nobody" json:"-"`   // The primary key
+	UserId int64  `modifiable:"nobody"`            // The primary key
 	Name   string `modifiable:"root" json:"name"`  // The public username of the user
 	Email  string `modifiable:"user" json:"email"` // The user's email address
 
@@ -31,6 +31,8 @@ type User struct {
 	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
 	ProcessingLimit_S int `modifiable:"root" json:"-"` // processing limit in seconds/day
 	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
+
+	Nickname string `modifiable:"user"` // The nickname of the user
 }
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
@@ -113,12 +115,14 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 	    Email,
 	    Password,
 	    PasswordSalt,
-	    PasswordHashScheme) VALUES (?,?,?,?,?);`,
+	    PasswordHashScheme,
+		Nickname) VALUES (?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
-		hashtype)
+		hashtype,
+		Name)
 
 	return err
 }
@@ -222,10 +226,11 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE Users SET
-	                Name=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
+	                Name=?, Nickname=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
 	                Admin=?, UploadLimit_Items=?,
 	                ProcessingLimit_S=?, StorageLimit_Gb=? WHERE UserId = ?`,
 		user.Name,
+		user.Nickname,
 		user.Email,
 		user.Password,
 		user.PasswordSalt,
