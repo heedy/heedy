@@ -53,12 +53,12 @@ CREATE TABLE IF NOT EXISTS Device (
 	Enabled BOOLEAN DEFAULT TRUE,
 	Icon_PngB64 VARCHAR DEFAULT '',
 	Shortname VARCHAR DEFAULT '',
-	Superdevice BOOL DEFAULT FALSE,
+	Superdevice BOOLEAN DEFAULT FALSE,
 	OwnerId INTEGER,
 
-	CanWrite BOOL DEFAULT TRUE,
-	CanWriteAnywhere BOOL DEFAULT TRUE,
-	UserProxy BOOL DEFAULT FALSE,
+	CanWrite BOOLEAN DEFAULT TRUE,
+	CanWriteAnywhere BOOLEAN DEFAULT TRUE,
+	UserProxy BOOLEAN DEFAULT FALSE,
 
 	UNIQUE(Name, OwnerId),
 	FOREIGN KEY(OwnerId) REFERENCES Users(Id) ON DELETE CASCADE
@@ -78,8 +78,8 @@ CREATE TABLE Stream (
     Public BOOLEAN DEFAULT FALSE,
     Type VARCHAR NOT NULL,
     OwnerId INTEGER,
-    Ephemeral BOOL DEFAULT FALSE,
-    Output BOOL DEFAULT FALSE,
+    Ephemeral BOOLEAN DEFAULT FALSE,
+    Output BOOLEAN DEFAULT FALSE,
     UNIQUE(Name, OwnerId),
     FOREIGN KEY(OwnerId) REFERENCES Device(Id) ON DELETE CASCADE
     );
@@ -89,7 +89,7 @@ CREATE INDEX StreamNameIndex ON Stream (Name);
 CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 
-CREATE TABLE IF NOT EXISTS timebatchtable (
+CREATE UNLOGGED TABLE IF NOT EXISTS timebatchtable (
     Key VARCHAR NOT NULL,
     EndTime BIGINT,
     EndIndex BIGINT,
@@ -157,12 +157,12 @@ CREATE TABLE Devices (
     UserId INTEGER,
     ApiKey VARCHAR UNIQUE NOT NULL,
     Enabled BOOLEAN DEFAULT TRUE,
-    IsAdmin BOOL DEFAULT FALSE,
-    CanWrite BOOL DEFAULT TRUE,
-    CanWriteAnywhere BOOL DEFAULT FALSE,
-    CanActAsUser BOOL DEFAULT FALSE,
-    IsVisible BOOL DEFAULT TRUE,
-    UserEditable BOOL DEFAULT TRUE,
+    IsAdmin BOOLEAN DEFAULT FALSE,
+    CanWrite BOOLEAN DEFAULT TRUE,
+    CanWriteAnywhere BOOLEAN DEFAULT FALSE,
+    CanActAsUser BOOLEAN DEFAULT FALSE,
+    IsVisible BOOLEAN DEFAULT TRUE,
+    UserEditable BOOLEAN DEFAULT TRUE,
     UNIQUE(UserId, Name),
     FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE);
 
@@ -173,8 +173,8 @@ CREATE TABLE Streams (
     Nickname VARCHAR NOT NULL DEFAULT '',
     Type VARCHAR NOT NULL,
     DeviceId INTEGER,
-    Ephemeral BOOL DEFAULT FALSE,
-    Downlink BOOL DEFAULT FALSE,
+    Ephemeral BOOLEAN DEFAULT FALSE,
+    Downlink BOOLEAN DEFAULT FALSE,
     UNIQUE(Name, DeviceId),
     FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE);
 
@@ -247,8 +247,6 @@ CREATE INDEX StreamNameIndex20150328 ON Streams (Name);
 CREATE INDEX StreamOwnerIndex20150328 ON Streams (DeviceId);
 CREATE INDEX keytime20150328 ON timebatchtable (Key, EndTime ASC);
 
-
-
 -- Transfer Data
 
 INSERT INTO Users SELECT
@@ -293,9 +291,17 @@ DROP TABLE Users20150328;
 
 
 
-{{/*========================================================================*/}}
-{{/*Changes: drop the unused phone carriers table and key/value tables*/}}
-{{/*========================================================================*/}}
+{{/*========================================================================
+
+Changelog: 2015062826
+
+* drop the unused phone carriers table
+* drop the key/value tables (we don't want to be storing random people's data)
+* create a log stream when the user is created
+* create a table for defunct stream ids. These need to be manually scanned and
+  deleted from redis.
+
+========================================================================*/}}
 
 {{if lt .DBVersion "2015062826"}}
 
@@ -306,7 +312,100 @@ DROP TABLE StreamKeyValues;
 DROP TABLE UserKeyValues;
 DROP TABLE DeviceKeyValues;
 
-{{end}}
+-- Holds deleted streams
+CREATE TABLE DeletedStreamIds (id INTEGER);
 
+-- Updates the DeletedStreamIds with the deleted stream id
+CREATE FUNCTION stream_deleted() RETURNS TRIGGER AS $_$
+BEGIN
+	INSERT INTO DeletedStreamIds VALUES (OLD.StreamId);
+    RETURN OLD;
+END $_$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER StreamDeleteTrigger
+    AFTER DELETE ON Streams
+    FOR EACH ROW
+    EXECUTE PROCEDURE stream_deleted();
+
+-- Create a new trigger for inserting a device that is for a user.
+
+DROP TRIGGER AddUserdev20150328 ON Users;
+
+CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
+DECLARE
+	var_deviceid INTEGER;
+BEGIN
+	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin)
+	    VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE, NEW.Admin);
+
+	SELECT DeviceId INTO var_deviceid FROM Devices
+	    WHERE UserId = NEW.UserId AND Name = 'user';
+
+	INSERT INTO Streams (Name, Type, DeviceId)
+		VALUES ('log',
+			'{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}',
+			var_deviceid);
+
+	RETURN NEW;
+END $_$ LANGUAGE 'plpgsql';
+
+
+CREATE TRIGGER initialize_user AFTER INSERT ON Users FOR EACH ROW
+    EXECUTE PROCEDURE initial_user_setup();
+
+-- Now update the old user Devices
+
+INSERT INTO Streams (Name, Type, DeviceId)
+    SELECT 'log' as "Name",
+		'{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}' as "Type",
+		DeviceId FROM Devices d WHERE d.Name = 'user';
+
+-- Update users to add a nickname
+ALTER TABLE Users
+	ADD COLUMN nickname VARCHAR;
+
+-- Update tables to use a random id
+
+CREATE FUNCTION userid_scramble()
+RETURNS trigger AS $$
+BEGIN
+	NEW.UserId = NEW.UserId * 928559 % 4294967296;
+	RETURN NEW;
+END$$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER userid_scramble_trigger
+	BEFORE INSERT ON Users
+	FOR EACH ROW
+	EXECUTE PROCEDURE userid_scramble();
+
+
+CREATE FUNCTION deviceid_scramble()
+RETURNS trigger AS $$
+BEGIN
+	NEW.DeviceId = NEW.DeviceId * 928553 % 4294967296;
+	RETURN NEW;
+END$$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER deviceid_scramble_trigger
+	BEFORE INSERT ON Devices
+	FOR EACH ROW
+	EXECUTE PROCEDURE deviceid_scramble();
+
+
+CREATE FUNCTION streamid_scramble()
+RETURNS trigger AS $$
+BEGIN
+	NEW.StreamId = NEW.StreamId * 928521 % 4294967296;
+	RETURN NEW;
+END$$ LANGUAGE 'plpgsql';
+
+CREATE TRIGGER streamid_scramble_trigger
+	BEFORE INSERT ON Streams
+	FOR EACH ROW
+	EXECUTE PROCEDURE streamid_scramble();
+
+
+{{/* End 2015062826 */}}
+{{end}}
 
 `

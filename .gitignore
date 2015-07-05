@@ -7,11 +7,16 @@
 *.pyc
 *.pid
 *.out
+*.db
+*.orig
+*.egg-info
+*.log
 
 # Folders
 _obj
 _test
 bin/
+database_test/
 
 # Architecture specific extensions/prefixes
 *.[568vq]
