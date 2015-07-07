@@ -49,6 +49,10 @@ Lastly, notice the {} around myuser - this is for redis cluster hashing.
 It allows all keys relevant to a user to be on the same redis instance,
 which is exploited heavily in the scripts.
 
+Lastly, there is the "batch-list" which is a lsit of batches that are waiting to be written to
+the database. These batches are handled by the batch-writer processes, which is a simple writer
+in a single instance, and a more complicated machinery when working on clusters (not implemented atm)
+
 */
 
 const (
@@ -135,7 +139,7 @@ const (
 	//	the substream to delete
 	subdeleteScript = `
 		redis.call('del',KEYS[1])
-		redis.call('hdel',KEYS[2],'endtime:' .. ARGV[1], 'length:' .. ARGV[1], 'starttime:' .. ARGV[1])
+		redis.call('hdel',KEYS[2],'endtime:' .. ARGV[1], 'length:' .. ARGV[1], 'starttime:' .. ARGV[1], 'batchindex:' .. ARGV[1])
 	`
 
 	//The range script returns the data from the given range of datapoints, and the 2 indices,
@@ -216,6 +220,7 @@ const (
 		if (i > startindex) then
 			-- We can trim data from the end
 			redis.call('ltrim',KEYS[1], i - startindex, -1)
+			return 'ok'
 		end
 	`
 )
@@ -224,7 +229,7 @@ var (
 	//ErrTimestamp is returned when trying to insert old timestamps
 	ErrTimestamp = errors.New("Greater timestamp already exists for the stream. Insert Failed.")
 
-	//ErrWTF is returned when an internal assertion fails - it shoudl not happen. Ever.
+	//ErrWTF is returned when an internal assertion fails - it should not happen. Ever.
 	ErrWTF = errors.New("Something is seriously wrong. A internal assertion failed.")
 )
 
@@ -373,11 +378,13 @@ func (rc *RedisConnection) DeleteStream(hash string, stream string) (err error) 
 
 	for i := range keys {
 		if len(keys[i]) > 7 && strings.HasPrefix(keys[i], "length:"+stream+":") {
-			rc.DeleteSubstream(hash, stream, keys[i][7+len(stream):])
+			err := rc.DeleteSubstream(hash, stream, keys[i][8+len(stream):])
+			if err != nil {
+				return err
+			}
 		}
 	}
-
-	return rc.Redis.Del("{" + hash + "}").Err()
+	return nil
 }
 
 //DeleteHash removes all streams within a hash
@@ -418,6 +425,45 @@ func (rc *RedisConnection) GetList(listkey string) ([]string, error) {
 //DeleteKey removes the given key from the database
 func (rc *RedisConnection) DeleteKey(key string) error {
 	return rc.Redis.Del(key).Err()
+}
+
+//ReadBatch reads a batch of data given the batch string (as returned from NextBatch)
+func (rc *RedisConnection) ReadBatch(batchstring string) (b *datastream.Batch, err error) {
+	stringarray := strings.Split(batchstring, ":")
+
+	if len(stringarray) != 4 {
+		return nil, ErrWTF
+	}
+	substream := stringarray[1]
+	i1, err := strconv.ParseInt(stringarray[2], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	i2, err := strconv.ParseInt(stringarray[3], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	stringarray = strings.Split(stringarray[0], "}")
+	if len(stringarray) != 2 {
+		return nil, ErrWTF
+	}
+
+	stream := stringarray[1]
+	hash := stringarray[0][1:]
+
+	dpa, i1, i2, err := rc.Range(hash, stream, substream, i1, i2)
+	if err != nil {
+		return nil, err
+	}
+
+	return &datastream.Batch{
+		Device:     hash,
+		Stream:     stream,
+		Substream:  substream,
+		StartIndex: i1,
+		Data:       dpa,
+	}, nil
 }
 
 //Range either gets the entire given range of data from redis, or notifies the indices of data to use in terms

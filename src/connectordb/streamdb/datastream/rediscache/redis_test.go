@@ -336,6 +336,28 @@ func TestRedisRange(t *testing.T) {
 	require.Nil(t, dpa)
 }
 
+func TestRedisReadBatch(t *testing.T) {
+	rc.Clear()
+
+	rc.BatchSize = 2
+
+	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false)
+	require.NoError(t, err)
+
+	s, err := rc.NextBatch("mybatcher", "donebatch")
+	require.NoError(t, err)
+	require.Equal(t, "{}mystream::0:2", s)
+
+	b, err := rc.ReadBatch(s)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, b.StartIndex)
+	require.EqualValues(t, 2, b.EndIndex())
+	require.Equal(t, b.Data.String(), dpa6[:2].String())
+
+	rc.BatchSize = 250
+
+}
+
 func BenchmarkRedis1Insert(b *testing.B) {
 	rc.Clear()
 	rc.BatchSize = 250

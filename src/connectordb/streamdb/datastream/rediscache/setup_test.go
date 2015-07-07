@@ -17,7 +17,9 @@ var (
 func TestMain(m *testing.M) {
 
 	rc, err = NewRedisConnection(&redis.Options{
-		Addr:     "localhost:6379",
+        Network: "unix",
+        Addr: "/tmp/redis.sock",
+		//Addr:     "localhost:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
