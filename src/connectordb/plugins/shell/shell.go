@@ -40,7 +40,12 @@ func init() {
 }
 
 func startShellExec(sdb *streamdb.Database, args []string) error {
-	StartShell(sdb)
+	if len(args) == 0 {
+		StartShell(sdb)
+	}
+
+	s := CreateShell(sdb)
+	s.execCommand(args...)
 	return nil
 }
 
@@ -89,6 +94,11 @@ func (s *Shell) Repl() {
 func (s *Shell) RunCommand(cmdstring string) {
 	cmdstring = strings.TrimSpace(cmdstring)
 	command := strings.Split(cmdstring, " ")
+
+	s.execCommand(command...)
+}
+
+func (s *Shell) execCommand(command ...string) {
 	if len(command) == 0 {
 		return
 	}
@@ -100,7 +110,7 @@ func (s *Shell) RunCommand(cmdstring string) {
 		}
 	}
 
-	fmt.Printf("Command '%v' not found, use 'help' to list available commands\n", cmdstring)
+	fmt.Printf("Command '%v' not found, use 'help' to list available commands\n", command[0])
 }
 
 func CreateShell(sdb *streamdb.Database) *Shell {
@@ -121,7 +131,8 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 		ListDevices{},
 		Passwd{},
 		Rm{},
-		Ls{}}
+		Ls{},
+		LsCxn{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
