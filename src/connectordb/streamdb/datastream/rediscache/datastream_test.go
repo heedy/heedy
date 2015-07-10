@@ -76,6 +76,18 @@ func TestDataStream(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, ar)
 
+	dr, err = ds.TRange(0, 1, "", 1.9, 4.0)
+	require.NoError(t, err)
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Equal(t, dpa6[1:2].String(), ar.String())
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Equal(t, dpa6[2:4].String(), ar.String())
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Nil(t, ar)
+
 	sqldb.Close()
 	rc.BatchSize = 250
 }
