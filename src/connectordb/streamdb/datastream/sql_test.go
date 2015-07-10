@@ -6,6 +6,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestWriteBatch(t *testing.T) {
+	sdb.Clear()
+	b := []Batch{Batch{"2", "", "1", 0, dpa1}, Batch{"3", "grr", "1", 0, dpa2}}
+
+	require.NoError(t, sdb.WriteBatches(b))
+
+	i, err := sdb.GetEndIndex(2, "")
+	require.NoError(t, err)
+	require.EqualValues(t, i, len(dpa1))
+
+	i, err = sdb.GetEndIndex(3, "grr")
+	require.NoError(t, err)
+	require.EqualValues(t, i, len(dpa2))
+
+}
+
 func TestEndIndex(t *testing.T) {
 	sdb.Clear()
 

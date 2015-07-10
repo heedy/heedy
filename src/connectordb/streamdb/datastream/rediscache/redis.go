@@ -288,8 +288,8 @@ func scriptkeys(hash, stream, substream string) []string {
 }
 
 //Close the redis cluster connection
-func (rc *RedisConnection) Close() {
-	rc.Redis.Close()
+func (rc *RedisConnection) Close() error {
+	return rc.Redis.Close()
 }
 
 //NewRedisConnection creates a new connection to a redis server. This is a single-node

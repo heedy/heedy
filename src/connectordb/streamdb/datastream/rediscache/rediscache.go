@@ -55,7 +55,9 @@ func (r RedisCache) ReadProcessingQueue() ([]datastream.Batch, error) {
 		if err != nil {
 			return nil, err
 		}
-		barray[i] = *v
+		//The ordering is reversed because batches from the same stream need to come in in order of index
+		//for trim to work properly
+		barray[len(bstrings)-1-i] = *v
 	}
 	return barray, nil
 }

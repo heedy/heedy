@@ -146,6 +146,21 @@ func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da
 	return err
 }
 
+//WriteBatches writes the given batch array
+func (s *SqlStore) WriteBatches(b []Batch) error {
+	for i := 0; i < len(b); i++ {
+		streamID, err := b[i].GetStreamID()
+		if err != nil {
+			return err
+		}
+		err = s.Insert(streamID, b[i].Substream, b[i].StartIndex, b[i].Data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //Append the given DatapointArray to the data stream for key
 func (s *SqlStore) Append(streamID int64, substream string, dp DatapointArray) error {
 	i, err := s.GetEndIndex(streamID, substream)
