@@ -185,7 +185,7 @@ const (
 			i2 = streamlength
 		end
 
-		if (i2<=i1 or i1 < 0) then
+		if (i2 < i1 or i1 < 0) then
 			return {["err"]="Invalid index range."}
 		end
 
@@ -470,7 +470,7 @@ func (rc *RedisConnection) ReadBatch(batchstring string) (b *datastream.Batch, e
 //of the entire stream. The indices can be negative. For example, i1 negative means "from the end" - i2 = 0 means "to the end",
 //so a range of -1,0 returns the most recent datapoint, -3,-1 returns 2 of the 3 most recent datapoints, 5,-1 returns index 5 to the
 //second to last, and so forth. It is python-like indexing.
-func (rc *RedisConnection) Range(hash, stream, substream string, index1 int64, index2 int64) (dpa datastream.DatapointArray, i1, i2 int64, err error) {
+func (rc *RedisConnection) Range(hash, stream, substream string, index1, index2 int64) (dpa datastream.DatapointArray, i1, i2 int64, err error) {
 	res, err := rc.rangeScript.Run(rc.Redis, scriptkeys(hash, stream, substream), []string{stream + ":" + substream, strconv.FormatInt(index1, 10), strconv.FormatInt(index2, 10)}).Result()
 	if err != nil {
 		return nil, 0, 0, err

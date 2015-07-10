@@ -43,7 +43,11 @@ func (d *StreamRange) NextArray() (*DatapointArray, error) {
 		return nil, err
 	}
 
-	return d.dr.NextArray()
+	dpa, err = d.dr.NextArray()
+	if dpa != nil && err == nil {
+		d.index += int64(dpa.Length())
+	}
+	return dpa, err
 }
 
 //Next returns the next datapoint
@@ -60,5 +64,9 @@ func (d *StreamRange) Next() (*Datapoint, error) {
 		return nil, err
 	}
 
-	return d.dr.Next()
+	dp, err = d.dr.Next()
+	if err == nil && dp != nil {
+		d.index++
+	}
+	return dp, err
 }

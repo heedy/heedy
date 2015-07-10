@@ -38,6 +38,19 @@ func TestDataStream(t *testing.T) {
 	ar, err := dr.NextArray()
 	require.NoError(t, err)
 	require.Equal(t, dpa6.String(), ar.String())
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Nil(t, ar)
+
+	//Next check if we can get a Trange from the data
+	dr, err = ds.TRange(0, 1, "", 1.9, 4.0)
+	require.NoError(t, err)
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Equal(t, dpa6[1:4].String(), ar.String())
+	ar, err = dr.NextArray()
+	require.NoError(t, err)
+	require.Nil(t, ar)
 
 	//Write the chunks of data
 	require.NoError(t, ds.WriteChunk())

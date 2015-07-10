@@ -137,3 +137,18 @@ func (ds *DataStream) IRange(device int64, stream int64, substream string, i1 in
 		substream: substream,
 	}, i2-i1), err
 }
+
+//TRange returns a DataRange of datapoints which are in the given range of timestamp.
+func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t2 float64) (dr DataRange, err error) {
+	//TRange works a bit differently from IRange, since time ranges go straight to postgres
+	sqlr, startindex, err := ds.sqls.GetByTime(stream, substream, t1)
+
+	return NewTimeRange(&StreamRange{
+		ds:        ds,
+		dr:        sqlr,
+		index:     startindex,
+		deviceID:  device,
+		streamID:  stream,
+		substream: substream,
+	}, t1, t2), err
+}
