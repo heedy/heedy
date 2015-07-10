@@ -22,8 +22,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.Error(t, err)
 	_, err = db.ReadUserByID(53)
 	require.Error(t, err)
-	_, err = db.ReadUserByEmail("root@localhost")
-	require.Error(t, err)
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
@@ -38,10 +36,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 	//Clear the cache
 	db.Reload()
 	usr, err = db.ReadUserByID(usr.UserId)
-	require.NoError(t, err)
-	require.Equal(t, "streamdb_test", usr.Name)
-
-	usr, err = db.ReadUserByEmail("root@localhost")
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test", usr.Name)
 
@@ -84,8 +78,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 
 	_, err = db.ReadUser("streamdb_test")
 	require.Error(t, err)
-	_, err = db.ReadUserByEmail("streamdb_test")
-	require.Error(t, err)
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
 	usr, err = db.ReadUser("streamdb_test")
@@ -96,8 +88,6 @@ func TestDatabaseUserCrud(t *testing.T) {
 	require.NoError(t, db.DeleteUserByID(usr.UserId))
 
 	_, err = db.ReadUser("streamdb_test")
-	require.Error(t, err)
-	_, err = db.ReadUserByEmail("streamdb_test")
 	require.Error(t, err)
 	_, err = db.ReadUserByID(usr.UserId)
 	require.Error(t, err)

@@ -1,23 +1,16 @@
 package users
 
 import (
-	"testing"
+	"fmt"
 	"reflect"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-
-
 func TestCreateStream(t *testing.T) {
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-		CleanTestDB(testdb)
+	for _, testdb := range testdatabases {
 		_, dev, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -26,15 +19,9 @@ func TestCreateStream(t *testing.T) {
 	}
 }
 
-
 func TestUpdateStream(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		_, _, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -52,18 +39,13 @@ func TestUpdateStream(t *testing.T) {
 		}
 
 		err = testdb.UpdateStream(nil)
-		assert.Equal(t, err,  ERR_INVALID_PTR, "Function safeguards failed")
+		assert.Equal(t, err, InvalidPointerError, "Function safeguards failed")
 	}
 }
 
 func TestDeleteStream(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		_, _, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -77,12 +59,7 @@ func TestDeleteStream(t *testing.T) {
 
 func TestReadStreamByDevice(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -91,5 +68,47 @@ func TestReadStreamByDevice(t *testing.T) {
 		streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
 		require.Nil(t, err)
 		require.Len(t, streams, 2, "didn't get enough streams")
+	}
+}
+
+func TestReadStreamsByUser(t *testing.T) {
+	for _, testdb := range testdatabases {
+		inserted := map[Stream]bool{}
+
+		user, _, stream, err := CreateUDS(testdb)
+		require.Nil(t, err)
+		require.NotNil(t, user)
+		require.NotNil(t, stream)
+
+		fmt.Printf("User Id: %v\n", user.UserId)
+
+		inserted[*stream] = true
+
+		// create a bunch of devices
+		for i := 0; i < 10; i++ {
+			device, err := CreateTestDevice(testdb, user)
+
+			require.Nil(t, err)
+
+			fmt.Printf("Device Id: %v\n", device.DeviceId)
+
+			// create a bunch of streams
+			for j := 0; j < 10; j++ {
+				stream, err := CreateTestStream(testdb, device)
+				require.Nil(t, err)
+				inserted[*stream] = true
+			}
+		}
+
+		// Test selecting them
+		streams, err := testdb.ReadStreamsByUser(user.UserId)
+		require.Nil(t, err, "Retrieved streams was nil")
+
+		require.Equal(t, len(inserted), len(streams), "Wrong number of streams returned")
+
+		for _, stream := range streams {
+			_, ok := inserted[stream]
+			require.Equal(t, ok, true, "stream missing from result")
+		}
 	}
 }

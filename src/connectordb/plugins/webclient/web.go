@@ -23,7 +23,6 @@ var (
 	userEditTemplate   *template.Template
 	loginHomeTemplate  *template.Template
 	deviceInfoTemplate *template.Template
-	firstrunTemplate   *template.Template
 	streamReadTemplate *template.Template
 	addUserTemplate    *template.Template
 	loginPageTemplate  *template.Template
@@ -170,7 +169,6 @@ func init() {
 	userEditTemplate = tMust("user_edit.html")
 	loginHomeTemplate = tMust("root.html")
 	deviceInfoTemplate = tMust("device_info.html")
-	firstrunTemplate = tMust("firstrun.html")
 	addUserTemplate = tMust("newuser.html")
 	loginPageTemplate = tMust("login.html")
 }

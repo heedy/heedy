@@ -1,20 +1,16 @@
 package users
 
 import (
-	"testing"
 	"reflect"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
-)
+	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 func TestCreateUser(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
+	for _, testdb := range testdatabases {
 		err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass")
 		require.Nil(t, err)
 
@@ -25,31 +21,11 @@ func TestCreateUser(t *testing.T) {
 		require.NotNil(t, err)
 	}
 }
-/**
-func BenchmarkCreateUser(b *testing.B) {
-
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-	    for i := 0; i < b.N; i++ {
-	        testdb.CreateUser(GetNextName(), GetNextEmail(), "TestCreateUser_pass2")
-	    }
-	}
-}**/
-
 
 func TestReadAllUsers(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-		for i := 0; i < 5; i++{
+	for _, testdb := range testdatabases {
+		for i := 0; i < 5; i++ {
 			_, err := CreateTestUser(testdb)
 			require.Nil(t, err)
 		}
@@ -58,7 +34,6 @@ func TestReadAllUsers(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, users)
 
-
 		err = testdb.CreateUser("TestReadAllUsers", "TestReadAllUsers_email", "TestReadAllUsers_pass")
 		require.Nil(t, err)
 
@@ -66,44 +41,16 @@ func TestReadAllUsers(t *testing.T) {
 		assert.Nil(t, err, "got err from read all users %v", err)
 		require.NotNil(t, users2, "Could not get all users, was nil")
 
-		assert.Equal(t, 1, len(users2) - len(users), "not taking into account changes")
-	}
-}
-
-func TestReadUserByEmail(t *testing.T) {
-
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-		// test failures on non existance
-		usr, err := testdb.ReadUserByEmail("doesnotexist   because spaces")
-		assert.NotNil(t, err, "no error returned, expected non nil on failing case")
-
-		// setup for reading
-		err = testdb.CreateUser("TestReadUserByEmail_name", "TestReadUserByEmail_email", "TestReadUserByEmail_pass")
-		require.Nil(t, err, "Could not create user for test reading...")
-
-		usr, err = testdb.ReadUserByEmail("TestReadUserByEmail_email")
-		assert.NotNil(t, usr, "did not get a user by email")
-		assert.Nil(t, err, "got an error when trying to get a user that should exist %v", err)
+		assert.Equal(t, 1, len(users2)-len(users), "not taking into account changes")
 	}
 }
 
 func TestReadUserByName(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		// test failures on non existance
 		usr, err := testdb.ReadUserByName("")
 		assert.NotNil(t, err)
-		assert.NotNil(t, usr)
 
 		// setup for reading
 		err = testdb.CreateUser("TestReadUserByName_name", "TestReadUserByName_email", "TestReadUserByName_pass")
@@ -117,12 +64,7 @@ func TestReadUserByName(t *testing.T) {
 
 func TestReadUserById(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		// test failures on non existance
 		usr, err := testdb.ReadUserById(-1)
 		assert.NotNil(t, err)
@@ -139,18 +81,12 @@ func TestReadUserById(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		err := testdb.UpdateUser(nil)
-		assert.Equal(t, err, ERR_INVALID_PTR, "Didn't catch nil")
+		assert.Equal(t, err, InvalidPointerError, "Didn't catch nil")
 
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
-
 
 		usr.Name = "Hello"
 		usr.Email = "hello@example.com"
@@ -172,12 +108,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -186,35 +117,15 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err = testdb.ReadUserById(usr.UserId)
 		require.NotNil(t, err, "The user with ID %v should have errored out, but it did not", usr.UserId)
-	}
-}
 
-func TestReadStreamOwner(t *testing.T) {
-
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
-		user, _, stream, err := CreateUDS(testdb)
-		require.Nil(t, err)
-
-		owner, err := testdb.ReadStreamOwner(stream.StreamId)
-		require.Nil(t, err)
-
-		require.Equal(t, owner.UserId, user.UserId, "Wrong stream owner got %v, expected %v", owner, user)
+		err = testdb.DeleteUser(usr.UserId)
+		require.Equal(t, err, ErrNothingToDelete, "Didn't catch try to delete deleted user")
 	}
 }
 
 func TestReadUserDevice(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -236,12 +147,7 @@ func TestReadUserDevice(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 
 		_, _, err = testdb.Login(user.Name, testPassword)
@@ -251,7 +157,7 @@ func TestLogin(t *testing.T) {
 		assert.Nil(t, err)
 
 		_, _, err = testdb.Login("", testPassword)
-		assert.Equal(t, err, InvalidUsernameError, "Wrong type returned %v", err)
+		assert.Equal(t, err, ErrInvalidUsername, "Wrong type returned %v", err)
 
 		_, _, err = testdb.Login(user.Name, "")
 		assert.NotNil(t, err, "Accepted blank password")
@@ -260,12 +166,7 @@ func TestLogin(t *testing.T) {
 
 func TestUpgradePassword(t *testing.T) {
 
-	for i, testdb := range(testdatabases) {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		user, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -282,17 +183,17 @@ func TestUpgradePassword(t *testing.T) {
 
 func TestRevertUneditableFields(t *testing.T) {
 	// The original value we're trying to change
-	orig := User{1,"Name", "Email", "Password", "passsalt", "hash", true, 1,1,1}
+	orig := User{1, "Name", "Email", "Password", "passsalt", "hash", true, 1, 1, 1}
 
 	// the one we're trying to submit
-	blank := User{0, "", "", "", "", "", false, 0,0,0}
+	blank := User{0, "", "", "", "", "", false, 0, 0, 0}
 
 	// nobody's version
 	nobody := blank
 	// root's version of blank:
-	root := User{1,"", "", "", "", "", false, 0,0,0}
+	root := User{1, "", "", "", "", "", false, 0, 0, 0}
 	// User's version of blank
-	user := User{1,"Name", "", "", "", "", true, 1,1,1}
+	user := User{1, "Name", "", "", "", "", true, 1, 1, 1}
 	// all the rest shouldn't be able to do anything
 	device := orig
 	family := orig
@@ -309,21 +210,21 @@ func TestRevertUneditableFields(t *testing.T) {
 
 	tmpu = blank
 	tmpu.RevertUneditableFields(orig, USER)
-	assert.Equal(t, tmpu , user, "Conversion as user didn't work got %v, expected %v", tmpu, root)
+	assert.Equal(t, tmpu, user, "Conversion as user didn't work got %v, expected %v", tmpu, root)
 
 	tmpu = blank
 	tmpu.RevertUneditableFields(orig, DEVICE)
-	assert.Equal(t, tmpu , device, "Conversion as device didn't work got %v, expected %v", tmpu, root)
+	assert.Equal(t, tmpu, device, "Conversion as device didn't work got %v, expected %v", tmpu, root)
 
 	tmpu = blank
 	tmpu.RevertUneditableFields(orig, FAMILY)
-	assert.Equal(t, tmpu , family, "Conversion as family didn't work got %v, expected %v", tmpu, root)
+	assert.Equal(t, tmpu, family, "Conversion as family didn't work got %v, expected %v", tmpu, root)
 
 	tmpu = blank
 	tmpu.RevertUneditableFields(orig, ENABLED)
-	assert.Equal(t, tmpu , enabled, "Conversion as enabled didn't work got %v, expected %v", tmpu, root)
+	assert.Equal(t, tmpu, enabled, "Conversion as enabled didn't work got %v, expected %v", tmpu, root)
 
 	tmpu = blank
 	tmpu.RevertUneditableFields(orig, ANYBODY)
-	assert.Equal(t, tmpu , anybody, "Conversion as anybody didn't work got %v, expected %v", tmpu, root)
+	assert.Equal(t, tmpu, anybody, "Conversion as anybody didn't work got %v, expected %v", tmpu, root)
 }

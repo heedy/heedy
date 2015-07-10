@@ -3,17 +3,12 @@ package dbutil
 const dbconversion = `
 -- Properties Needed for golang template
 -- DBVersion, string, the current DB version or "00000000" if none
--- DBType, string, sqlite3 or postgres
+-- DBType, string, postgres
 -- DroppingTables, boolean, should we drop old tables?
 
 
 {{/* These variables need to be defined for all databases */}}
 
-
-{{ if eq .DBType "sqlite3" }}
--- Turn on fkey support so we don't do shitty things without realizing it
-PRAGMA foreign_keys = ON;
-{{ end }}
 
 
 -- {{.DBType}} specific template features
@@ -110,6 +105,9 @@ CREATE INDEX keytime ON datastream (StreamId,Substream,EndTime ASC);
 
 {{end}}
 
+{{/*========================================================================*/}}
+{{/*Changes: updates to all tables in the database for newer schemas*/}}
+{{/*========================================================================*/}}
 
 
 {{if lt .DBVersion "20150328"}}
@@ -210,21 +208,6 @@ CREATE TABLE StreamKeyValues (
     PRIMARY KEY (StreamId, Key)
 );
 
-{{ if eq .DBType "sqlite3"}}
-CREATE TRIGGER AddUserdev20150328 AFTER INSERT ON Users FOR EACH ROW
-BEGIN
-INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, 1, 0, NEW.Admin);
-END;
-
-
-CREATE TRIGGER ModifyUserdev20150328 AFTER UPDATE ON Users FOR EACH ROW
-BEGIN
-UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND IsAdmin = 1 ;
-UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND Name = 'user' ;
-END;
-
-{{end}}
-
 {{ if eq .DBType "postgres"}}
 
 CREATE FUNCTION AddUserdev20150328Func() RETURNS TRIGGER AS $_$
@@ -290,7 +273,7 @@ INSERT INTO Streams (StreamId, Name, Type, DeviceId, Ephemeral, Downlink) SELECT
 -- Insert Data
 
 -- Default Carriers
--- do one by one because old sqlite doesn't like multiple
+-- do one by one because some databases don't like multiple
 INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('Alltel US', '@message.alltel.com');
 INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('AT&T US', '@txt.att.net');
 INSERT INTO PhoneCarriers (name, emaildomain) VALUES ('Nextel US', '@messaging.nextel.com');
@@ -308,5 +291,23 @@ DROP TABLE Users20150328;
 
 
 {{end}}
-{{/*end conversion 20150328*/}}
+
+
+
+{{/*========================================================================*/}}
+{{/*Changes: drop the unused phone carriers table and key/value tables*/}}
+{{/*========================================================================*/}}
+
+{{if lt .DBVersion "2015062826"}}
+
+UPDATE StreamdbMeta SET Value = '2015062826' WHERE Key = 'DBVersion';
+
+DROP TABLE PhoneCarriers;
+DROP TABLE StreamKeyValues;
+DROP TABLE UserKeyValues;
+DROP TABLE DeviceKeyValues;
+
+{{end}}
+
+
 `

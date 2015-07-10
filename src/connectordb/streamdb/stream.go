@@ -34,11 +34,6 @@ func (o *Database) ReadStream(streampath string) (*operator.Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-	//Check if the stream is in the cache
-	if s, ok := o.streamCache.GetByName(streampath); ok {
-		strm := s.(operator.Stream)
-		return &strm, nil
-	}
 
 	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
@@ -51,29 +46,15 @@ func (o *Database) ReadStream(streampath string) (*operator.Stream, error) {
 	}
 
 	//Now we add the stream to cache
-	o.streamCache.Set(streampath, strm.StreamId, strm) //This makes a copy in the cache
 	return &strm, nil
 }
 
 //ReadStreamByID reads a stream using a stream's ID
 func (o *Database) ReadStreamByID(streamID int64) (*operator.Stream, error) {
-	if s, _, ok := o.streamCache.GetByID(streamID); ok {
-		strm := s.(operator.Stream)
-		return &strm, nil
-	}
-
 	usrstrm, err := o.Userdb.ReadStreamById(streamID)
 	strm, err := operator.NewStream(usrstrm, err)
 	if err != nil {
 		return nil, err
-	}
-
-	//Add the stream to the cache. Since we don't know its full path, see if its device is cached,
-	//and attempt to take the path from there
-	if _, devpath, ok := o.deviceCache.GetByID(strm.DeviceId); ok && devpath != "" {
-		o.streamCache.Set(devpath+"/"+strm.Name, strm.StreamId, strm)
-	} else {
-		o.streamCache.SetID(strm.StreamId, strm)
 	}
 
 	return &strm, err
@@ -86,7 +67,6 @@ func (o *Database) ReadStreamByDeviceID(deviceID int64, streamname string) (*ope
 	if err != nil {
 		return nil, err
 	}
-	o.streamCache.SetID(strm.StreamId, strm)
 	return &strm, nil
 }
 
@@ -107,18 +87,6 @@ func (o *Database) UpdateStream(modifiedstream *operator.Stream) error {
 			//There was a downlink here. Since the downlink was removed, we delete the associated
 			//downlink substream
 			o.DeleteStreamByID(strm.StreamId, "downlink")
-		}
-
-		//If the stream name was changed, modify the stream name in cache
-		if strm.Name == modifiedstream.Name {
-			o.streamCache.Update(strm.StreamId, *modifiedstream)
-		} else {
-			//Attempt to recover the path by name using only cache
-			if _, devpath, _ := o.deviceCache.GetByID(strm.DeviceId); devpath != "" {
-				o.streamCache.Set(devpath+"/"+modifiedstream.Name, strm.StreamId, *modifiedstream)
-			} else {
-				o.streamCache.SetID(strm.StreamId, *modifiedstream)
-			}
 		}
 	}
 	return err
@@ -146,7 +114,6 @@ func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
 		if err == nil {
 			err = o.tdb.Delete(sname)
 		}
-		o.streamCache.RemoveID(streamID)
 	}
 	return err
 

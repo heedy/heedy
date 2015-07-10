@@ -48,20 +48,10 @@ func Create(config *config.Configuration, username, password, email string) erro
 }
 
 func createSqlDatabase(configuration *config.Configuration, username, password, email string) error {
-	sqlDatabaseType := configuration.DatabaseType
-	log.Debugf("Creating sql database of type %s", sqlDatabaseType)
+	log.Debugf("Creating sql database")
 
-	switch sqlDatabaseType {
-	case config.Postgres:
-		if err := postgresInstance.Setup(); err != nil {
-			return err
-		}
-	case config.Sqlite:
-		if err := sqliteInstance.Setup(); err != nil {
-			return err
-		}
-	default:
-		return ErrUnrecognizedDatabase
+	if err := postgresInstance.Setup(); err != nil {
+		return err
 	}
 
 	log.Infof("Creating user %s (%s)", username, email)
@@ -74,8 +64,7 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 	}
 	defer db.Close()
 
-	var udb users.UserDatabase
-	udb.InitUserDatabase(db, string(driver))
+	udb := users.NewUserDatabase(db, driver, false)
 	err = udb.CreateUser(username, email, password)
 	if err != nil {
 		return err

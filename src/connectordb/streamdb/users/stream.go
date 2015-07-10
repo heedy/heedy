@@ -8,7 +8,10 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 All Rights Reserved
 **/
 
-import "reflect"
+import (
+	"database/sql"
+	"reflect"
+)
 
 type Stream struct {
 	StreamId  int64  `modifiable:"nobody" json:"-"`
@@ -22,8 +25,8 @@ type Stream struct {
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
-	if ! IsValidName(s.Name) {
-		return InvalidUsernameError
+	if !IsValidName(s.Name) {
+		return ErrInvalidUsername
 	}
 
 	return nil
@@ -34,9 +37,9 @@ func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel)
 }
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.
-func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
+func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
 
-	if ! IsValidName(Name) {
+	if !IsValidName(Name) {
 		return InvalidNameError
 	}
 
@@ -50,37 +53,65 @@ func (userdb *UserDatabase) CreateStream(Name, Type string, DeviceId int64) erro
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *UserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
+func (userdb *SqlUserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
 	var stream Stream
 
 	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamId = ? LIMIT 1;", StreamId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
 
 	return &stream, err
 }
 
 // ReadStreamById fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *UserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
+func (userdb *SqlUserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
 	var stream Stream
 
 	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
 
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
+
 	return &stream, err
 }
 
-func (userdb *UserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
+func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
 	var streams []Stream
 
 	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceId = ?;", DeviceId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
+
+	return streams, err
+}
+
+func (userdb *SqlUserDatabase) ReadStreamsByUser(UserId int64) ([]Stream, error) {
+	var streams []Stream
+
+	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, Devices d, Users u
+	WHERE
+		u.UserId = ? AND
+		d.UserId = u.UserId AND
+		s.DeviceId = d.DeviceId`, UserId)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrStreamNotFound
+	}
 
 	return streams, err
 }
 
 // UpdateStream updates the stream with the given ID with the provided data
 // replacing all prior contents.
-func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
+func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 	if stream == nil {
-		return ERR_INVALID_PTR
+		return InvalidPointerError
 	}
 
 	if err := stream.ValidityCheck(); err != nil {
@@ -107,13 +138,7 @@ func (userdb *UserDatabase) UpdateStream(stream *Stream) error {
 }
 
 // DeleteStream removes a stream from the database
-func (userdb *UserDatabase) DeleteStream(Id int64) error {
-	_, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
-	return err
-}
-
-//Allows one query to the database to clean a device of streams
-func (userdb *UserDatabase) DeleteAllStreamsForDevice(deviceId int64) error {
-	_, err := userdb.Exec(`DELETE FROM Streams WHERE DeviceId = ?;`, deviceId)
-	return err
+func (userdb *SqlUserDatabase) DeleteStream(Id int64) error {
+	result, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
+	return getDeleteError(result, err)
 }

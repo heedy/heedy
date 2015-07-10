@@ -9,12 +9,7 @@ import (
 )
 
 func TestCreateDevice(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -35,12 +30,7 @@ func TestCreateDevice(t *testing.T) {
 }
 
 func TestReadDeviceById(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
@@ -58,12 +48,7 @@ func TestReadDeviceById(t *testing.T) {
 }
 
 func TestReadDeviceByApiKey(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
@@ -80,11 +65,7 @@ func TestReadDeviceByApiKey(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
+	for _, testdb := range testdatabases {
 
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
@@ -113,17 +94,12 @@ func TestUpdateDevice(t *testing.T) {
 		}
 
 		err = testdb.UpdateDevice(nil)
-		assert.Equal(t, err, ERR_INVALID_PTR, "Allowed nil pointer through")
+		assert.Equal(t, err, InvalidPointerError, "Allowed nil pointer through")
 	}
 }
 
 func TestDeleteDevice(t *testing.T) {
-	for i, testdb := range testdatabases {
-		if testdb == nil {
-			assert.NotNil(t, testdb, "Could not test database type %v", testdatabasesNames[i])
-			continue
-		}
-
+	for _, testdb := range testdatabases {
 		usr, obj, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 

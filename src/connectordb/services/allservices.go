@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	sqliteInstance   *SqliteService
 	postgresInstance *PostgresService
 	gnatsdInstance   *GnatsdService
 	redisInstance    *RedisService
@@ -26,7 +25,6 @@ func initSqlDatabase(configuration *config.Configuration) error {
 		return ErrAlreadyInitialized
 	}
 
-	sqliteInstance = NewConfigSqliteSerivce(configuration)
 	postgresInstance = NewConfigPostgresService(configuration)
 
 	sqlDatabaseType := configuration.DatabaseType
@@ -34,10 +32,6 @@ func initSqlDatabase(configuration *config.Configuration) error {
 	switch sqlDatabaseType {
 	case config.Postgres:
 		if err := postgresInstance.Init(); err != nil {
-			return err
-		}
-	case config.Sqlite:
-		if err := sqliteInstance.Init(); err != nil {
 			return err
 		}
 	default:
@@ -81,10 +75,7 @@ func startSqlDatabase(configuration *config.Configuration) error {
 		if err := postgresInstance.Start(); err != nil {
 			return err
 		}
-	case config.Sqlite:
-		if err := sqliteInstance.Start(); err != nil {
-			return err
-		}
+
 	default:
 		return ErrUnrecognizedDatabase
 	}
@@ -119,8 +110,6 @@ func stopSqlDatabase(configuration *config.Configuration) error {
 	switch sqlDatabaseType {
 	case config.Postgres:
 		return postgresInstance.Stop()
-	case config.Sqlite:
-		return sqliteInstance.Stop()
 	}
 	return ErrUnrecognizedDatabase
 }
@@ -162,10 +151,6 @@ func Kill(configuration *config.Configuration) error {
 	switch sqlDatabaseType {
 	case config.Postgres:
 		if err := postgresInstance.Kill(); err != nil {
-			globerr = err
-		}
-	case config.Sqlite:
-		if err := sqliteInstance.Kill(); err != nil {
 			globerr = err
 		}
 	default:

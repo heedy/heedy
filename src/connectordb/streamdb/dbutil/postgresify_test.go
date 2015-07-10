@@ -42,12 +42,6 @@ func TestQueryConvert(t *testing.T) {
 	if a1 != answer3 {
 		t.Errorf("Expected input: %v, output: %v, got: %v", query3, answer3, a1)
 	}
-
-	// identity function
-	a1 = QueryConvert(query3, SQLITE3)
-	if a1 != query3 {
-		t.Errorf("Expected input: %v, output: %v, got: %v", query3, query3, a1)
-	}
 }
 
 func TestFindPostgres(t *testing.T) {

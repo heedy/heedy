@@ -24,16 +24,6 @@ func (o *Database) getStreamTimebatchName(strm *operator.Stream) (string, error)
 }
 
 func (o *Database) getStreamPath(strm *operator.Stream) (string, error) {
-	//First try to extract the path from cache
-	_, streampath, _ := o.streamCache.GetByID(strm.StreamId)
-	if streampath != "" {
-		return streampath, nil
-	}
-	_, devicepath, _ := o.deviceCache.GetByID(strm.DeviceId)
-	if devicepath != "" {
-		return devicepath + "/" + strm.Name, nil
-	}
-	//Aight, f this. We need to extract the name - time to pound the database
 	dev, err := o.ReadDeviceByID(strm.DeviceId)
 	if err != nil {
 		return "", err
