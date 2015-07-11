@@ -3,6 +3,11 @@ package streamdb
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"errors"
+)
+
+var (
+	ErrTimestampOrder = errors.New("Timestamps are not ordered!")
 )
 
 func (o *Database) getStreamPath(strm *operator.Stream) (string, error) {
@@ -42,6 +47,15 @@ func (o *Database) InsertStreamByID(streamID int64, substream string, data datas
 	if err != nil {
 		return err
 	}
+	data.SetZeroTime()
+	//Now check that everything is okay
+	if !strm.Validate(data) {
+		return datastream.ErrInvalidDatapoint
+	}
+	if !data.IsTimestampOrdered() {
+		return ErrTimestampOrder
+	}
+
 	streampath, err := o.getStreamPath(strm)
 	if substream != "" {
 		streampath = streampath + "/" + substream
@@ -58,12 +72,6 @@ func (o *Database) InsertStreamByID(streamID int64, substream string, data datas
 	}
 
 	return o.msg.Publish(streampath, operator.Message{streampath, data})
-}
-
-//IntTimestamp converts a floating point unix timestamp to nanoseconds
-// TODO standardize this across all the places we do this conversion
-func IntTimestamp(t float64) int64 {
-	return int64(1e9 * t)
 }
 
 //GetStreamTimeRangeByID reads time range by ID

@@ -19,9 +19,6 @@ func TestMessenger(t *testing.T) {
 		return
 	}
 
-	_, err = ConnectMessenger(&config.DefaultOptions.NatsOptions, nil)
-	require.Error(t, err)
-
 	msg, err := ConnectMessenger(&config.DefaultOptions.NatsOptions, nil)
 	require.NoError(t, err)
 	defer msg.Close()

@@ -1,93 +1,24 @@
 package operator
 
 import (
-	"connectordb/streamdb/schema"
 	"connectordb/streamdb/datastream"
 	"encoding/json"
 	"io"
 	"testing"
 )
 
-func TestRangeReader(t *testing.T) {
-	timestamps := []int64{1000, 1500, 2001, 2500, 3000}
-
-	dpschema, err := schema.NewSchema(`{"type": "integer"}`)
-	if err != nil {
-		t.Errorf("Failed to create schema: %v", err)
-		return
-	}
-
-	dpb := make([][]byte, 5)
-
-	for i := 0; i < 5; i++ {
-		dpb[i], err = dpschema.Marshal(i)
-		if err != nil {
-			t.Errorf("Failed to create data point: %v", err)
-			return
-		}
-	}
-
-	dpa := datastream.CreateDatapointArray(timestamps, dpb, "hello/world")
-
-	rr := NewRangeReader(dpa, dpschema, "user1/device1/stream1")
-
-	dp, err := rr.Next()
-	if err != nil || dp.Data.(int64) != 0 || dp.IntTimestamp() != 1000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-	dp, err = rr.Next()
-	if err != nil || dp.Data.(int64) != 1 || dp.IntTimestamp() != 1500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-	dp, err = rr.Next()
-	if err != nil || dp.Data.(int64) != 2 || dp.IntTimestamp() != 2001 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-	dp, err = rr.Next()
-	if err != nil || dp.Data.(int64) != 3 || dp.IntTimestamp() != 2500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-	dp, err = rr.Next()
-	if err != nil || dp.Data.(int64) != 4 || dp.IntTimestamp() != 3000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-
-	dp, err = rr.Next()
-	if err != nil || dp != nil {
-		t.Errorf("Incorrect read: %v %s", err, dp)
-		return
-	}
-	rr.Close()
-
-}
-
 func TestJsonReader(t *testing.T) {
-	timestamps := []int64{1000, 1500, 2001, 2500, 3000}
+	timestamps := []float64{1000, 1500, 2001, 2500, 3000}
 
-	dpschema, err := schema.NewSchema(`{"type": "integer"}`)
-	if err != nil {
-		t.Errorf("Failed to create schema: %v", err)
-		return
-	}
-
-	dpb := make([][]byte, 5)
+	dpb := make([]datastream.Datapoint, 5)
 
 	for i := 0; i < 5; i++ {
-		dpb[i], err = dpschema.Marshal(i)
-		if err != nil {
-			t.Errorf("Failed to create data point: %v", err)
-			return
-		}
+		dpb[i] = datastream.Datapoint{Timestamp: timestamps[i], Data: i, Sender: "hello/world"}
 	}
 
-	dpa := datastream.CreateDatapointArray(timestamps, dpb, "hello/world")
+	dpa := datastream.NewDatapointArrayRange(dpb)
 
-	jr, err := NewJsonReader(NewRangeReader(dpa, dpschema, "user1/device1/stream1"))
+	jr, err := NewJsonReader(dpa)
 
 	databytes := make([]byte, 5000)
 
@@ -110,7 +41,7 @@ func TestJsonReader(t *testing.T) {
 
 	databytes = databytes[:20+i]
 
-	var arr *[]Datapoint
+	var arr *[]datastream.Datapoint
 	err = json.Unmarshal(databytes, &arr)
 	if err != nil {
 		t.Errorf("Failed to unmarshal: %s", string(databytes))
@@ -122,28 +53,28 @@ func TestJsonReader(t *testing.T) {
 		return
 	}
 
-	if dp := (*arr)[0]; dp.Data.(float64) != 0. || dp.IntTimestamp() != 1000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
+	if dp := (*arr)[0]; dp.Data.(float64) != 0. || dp.Timestamp != 1000 || dp.Sender != "hello/world" {
+		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
 
-	if dp := (*arr)[1]; dp.Data.(float64) != 1. || dp.IntTimestamp() != 1500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
+	if dp := (*arr)[1]; dp.Data.(float64) != 1. || dp.Timestamp != 1500 || dp.Sender != "hello/world" {
+		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
 
-	if dp := (*arr)[2]; dp.Data.(float64) != 2. || dp.IntTimestamp() != 2001 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
+	if dp := (*arr)[2]; dp.Data.(float64) != 2. || dp.Timestamp != 2001 || dp.Sender != "hello/world" {
+		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
 
-	if dp := (*arr)[3]; dp.Data.(float64) != 3. || dp.IntTimestamp() != 2500 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
+	if dp := (*arr)[3]; dp.Data.(float64) != 3. || dp.Timestamp != 2500 || dp.Sender != "hello/world" {
+		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
 
-	if dp := (*arr)[4]; dp.Data.(float64) != 4. || dp.IntTimestamp() != 3000 || dp.Sender != "hello/world" || dp.Stream != "user1/device1/stream1" {
-		t.Errorf("Incorrect read: %v %s", err, dp)
+	if dp := (*arr)[4]; dp.Data.(float64) != 4. || dp.Timestamp != 3000 || dp.Sender != "hello/world" {
+		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
 

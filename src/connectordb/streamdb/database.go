@@ -66,6 +66,9 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 
 	log.Debugln("Opening messenger")
 	db.msg, err = ConnectMessenger(&opt.NatsOptions, err)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debugf("Opening Redis cache")
 	rc, err := rediscache.NewRedisConnection(&opt.RedisOptions)

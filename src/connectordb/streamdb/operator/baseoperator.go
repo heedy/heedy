@@ -10,8 +10,8 @@ import (
 
 //Message is what is sent over NATS
 type Message struct {
-	Stream string
-	Data   datastream.DatapointArray
+	Stream string                    `json:"stream" msgpack:"s,omitempty"`
+	Data   datastream.DatapointArray `json:"data" msgpack:"d,omitempty"`
 }
 
 //BaseOperatorInterface are the functions which must be implemented in order to use Operator.

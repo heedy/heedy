@@ -39,6 +39,12 @@ class WebsocketHandler(object):
         self.ping_timeout = 60*2 #Set timeout to be 2 minutes without ping
         self.pingtimer = None
 
+    def __del__(self):
+        self.disconnect()
+        #A weird error was showing up if the program exited without stopping the ping - the timer ran once the time module was unloaded
+        if self.pingtimer is not None:
+            self.pingtimer.cancel()
+
     def getWebsocketURI(self,url):
         #Given a URL to the REST API, get the websocket uri
         ws_url = "wss://" + url[8:]
