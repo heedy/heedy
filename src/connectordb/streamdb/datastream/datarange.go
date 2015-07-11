@@ -68,7 +68,7 @@ func (r *TimeRange) Next() (*Datapoint, error) {
 		dp, err = r.dr.Next()
 	}
 	//Return nil if the timestamp is beyond our range
-	if dp != nil && r.endtime > 0 && dp.Timestamp > r.endtime {
+	if dp != nil && r.endtime > 0 && r.endtime > 0.0 && dp.Timestamp > r.endtime {
 		//The datapoint is beyond our range.
 		return nil, nil
 	}

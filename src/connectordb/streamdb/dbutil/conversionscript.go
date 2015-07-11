@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS datastream (
 );
 
 --Index creation should only be run once.
-CREATE INDEX keytime ON datastream (StreamId,Substream,EndTime ASC);
+CREATE INDEX datastreamtime ON datastream (StreamId,Substream,EndTime ASC);
 
 {{end}}
 
@@ -246,7 +246,6 @@ CREATE UNIQUE INDEX DeviceAPIIndex20150328 ON Devices (ApiKey);
 CREATE INDEX DeviceOwnerIndex20150328 ON Devices (UserId);
 CREATE INDEX StreamNameIndex20150328 ON Streams (Name);
 CREATE INDEX StreamOwnerIndex20150328 ON Streams (DeviceId);
-CREATE INDEX keytime20150328 ON timebatchtable (Key, EndTime ASC);
 
 -- Transfer Data
 

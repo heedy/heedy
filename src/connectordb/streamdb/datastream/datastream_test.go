@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"connectordb/config"
+
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -70,27 +72,27 @@ func (m *MockCache) Clear() error {
 
 func TestMain(m *testing.M) {
 	mc = &MockCache{}
-	sqldb, err := sql.Open("postgres", "sslmode=disable dbname=connectordb port=52592")
+	sqldb, err := sql.Open(config.DefaultOptions.SqlConnectionType, config.DefaultOptions.SqlConnectionString)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
+	/*
+		_, err = sqldb.Exec(`CREATE TABLE IF NOT EXISTS datastream (
+		    StreamId BIGINT NOT NULL,
+			Substream VARCHAR,
+		    EndTime DOUBLE PRECISION,
+		    EndIndex BIGINT,
+			Version INTEGER,
+		    Data BYTEA,
+		    UNIQUE (StreamId, Substream, EndIndex),
+		    PRIMARY KEY (StreamId, Substream, EndIndex)
+		    );`)
 
-	_, err = sqldb.Exec(`CREATE TABLE IF NOT EXISTS datastream (
-	    StreamId BIGINT NOT NULL,
-		Substream VARCHAR,
-	    EndTime DOUBLE PRECISION,
-	    EndIndex BIGINT,
-		Version INTEGER,
-	    Data BYTEA,
-	    UNIQUE (StreamId, Substream, EndIndex),
-	    PRIMARY KEY (StreamId, Substream, EndIndex)
-	    );`)
-
-	if err != nil {
-		log.Error(err)
-		os.Exit(2)
-	}
+		if err != nil {
+			log.Error(err)
+			os.Exit(2)
+		}*/
 
 	ds, err = OpenDataStream(mc, sqldb, 2)
 	if err != nil {
@@ -136,16 +138,3 @@ func TestBasics(t *testing.T) {
 	mc.On("DeleteDevice", int64(1)).Return(nil)
 	require.NoError(t, ds.DeleteDevice(1))
 }
-
-/*
-func TestInsert(t *testing.T) {
-	ds.Clear()
-	ds.batchsize = 4
-
-	require.NoError(t, ds.Insert(1, "", dpa7, false))
-
-	require.Error(t, ds.Insert(1, "", dpa4, false))
-	require.NoError(t, ds.Insert(1, "", dpa4, true))
-
-}
-*/

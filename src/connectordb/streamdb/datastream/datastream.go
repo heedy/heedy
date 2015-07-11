@@ -152,3 +152,19 @@ func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t
 		substream: substream,
 	}, t1, t2), err
 }
+
+//GetTimeIndex returns the corresponding index of data given a timestamp
+func (ds *DataStream) GetTimeIndex(device int64, stream int64, substream string, t float64) (int64, error) {
+	dr, err := ds.TRange(device, stream, substream, t, 0.0)
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = dr.Next()
+
+	dpi := dr.(*TimeRange).dr.(*StreamRange).index
+	if dpi > 0 {
+		dpi -= 1
+	}
+	return dpi, err
+}

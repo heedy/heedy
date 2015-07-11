@@ -63,12 +63,12 @@ func (m *Messenger) Close() {
 }
 
 //ConnectMessenger initializes a connection with the gnatsd messenger. Allows daisy-chaining errors
-func ConnectMessenger(url string, err error) (*Messenger, error) {
+func ConnectMessenger(opt *nats.Options, err error) (*Messenger, error) {
 	if err != nil {
 		return nil, err
 	}
 
-	sconn, err := nats.Connect("nats://" + url)
+	sconn, err := opt.Connect()
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func ConnectMessenger(url string, err error) (*Messenger, error) {
 		return nil, err
 	}
 
-	rconn, err := nats.Connect("nats://" + url)
+	rconn, err := opt.Connect()
 	if err != nil {
 		seconn.Close()
 		sconn.Close()

@@ -16,7 +16,7 @@ const (
 )
 
 // TODO @josephlewis42, add daniel's upgrade for version number on timebatch stuff.
-// TODO @josephlewis42, add read markers to timebatchdb on read push to aux table, on update aux delete old
+// TODO @josephlewis42, add read markers to datastream on read push to aux table, on update aux delete old
 
 // the database meta type
 type meta struct {

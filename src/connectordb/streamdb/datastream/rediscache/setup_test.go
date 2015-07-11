@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/redis.v3"
+	"connectordb/config"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -16,24 +16,14 @@ var (
 
 func TestMain(m *testing.M) {
 
-	rc, err = NewRedisConnection(&redis.Options{
-        Network: "unix",
-        Addr: "/tmp/redis.sock",
-		//Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	rc, err = NewRedisConnection(&config.DefaultOptions.RedisOptions)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 	rc.Close()
 
-	rc, err = NewRedisConnection(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	rc, err = NewRedisConnection(&config.DefaultOptions.RedisOptions)
 	if err != nil {
 		log.Error(err)
 		os.Exit(2)

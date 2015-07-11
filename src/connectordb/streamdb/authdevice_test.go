@@ -3,15 +3,17 @@ package streamdb
 import (
 	"testing"
 
+	"connectordb/config"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthDeviceUserCrud(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
@@ -103,11 +105,11 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 }
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	require.NoError(t, db.CreateUser("tstusr", "root@localhost", "mypass"))

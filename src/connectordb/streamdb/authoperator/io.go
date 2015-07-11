@@ -1,31 +1,31 @@
 package authoperator
 
 import (
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/users"
 )
 
 //LengthStreamByID returns the length of the stream given its ID
-func (o *AuthOperator) LengthStreamByID(streamID int64) (int64, error) {
+func (o *AuthOperator) LengthStreamByID(streamID int64, substream string) (int64, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return 0, err
 	}
 	//If we could read the stream, then we have permissions to get its length
-	return o.Db.LengthStreamByID(streamID)
+	return o.Db.LengthStreamByID(streamID, substream)
 }
 
 //TimeToIndexStreamByID returns the index for the given timestamp
-func (o *AuthOperator) TimeToIndexStreamByID(streamID int64, time float64) (int64, error) {
+func (o *AuthOperator) TimeToIndexStreamByID(streamID int64, substream string, time float64) (int64, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return 0, err
 	}
-	return o.Db.TimeToIndexStreamByID(streamID, time)
+	return o.Db.TimeToIndexStreamByID(streamID, substream, time)
 }
 
 //InsertStreamByID inserts into a stream given the stream's ID
-func (o *AuthOperator) InsertStreamByID(streamID int64, data []operator.Datapoint, substream string) error {
+func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data datastream.DatapointArray, restamp bool) error {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, data []operator.Datapoin
 	}
 
 	if strm.DeviceId != dev.DeviceId {
-		//The writer is not the owner - we set the operator.Datapoints' sender field
+		//The writer is not the owner - we set the datastream.Datapoints' sender field
 		for i := range data {
 			data[i].Sender = o.Name()
 		}
@@ -60,23 +60,23 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, data []operator.Datapoin
 			data[i].Sender = ""
 		}
 	}
-	return o.Db.InsertStreamByID(streamID, data, substream)
+	return o.Db.InsertStreamByID(streamID, substream, data, restamp)
 }
 
 //GetStreamTimeRangeByID gets the time range by ID
-func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (operator.DatapointReader, error) {
+func (o *AuthOperator) GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamTimeRangeByID(streamID, t1, t2, limit, substream)
+	return o.Db.GetStreamTimeRangeByID(streamID, substream, t1, t2, limit)
 }
 
 //GetStreamIndexRangeByID gets an index range by ID
-func (o *AuthOperator) GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (operator.DatapointReader, error) {
+func (o *AuthOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error) {
 	_, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.GetStreamIndexRangeByID(streamID, i1, i2, substream)
+	return o.Db.GetStreamIndexRangeByID(streamID, substream, i1, i2)
 }

@@ -2,7 +2,7 @@ package operator
 
 import (
 	"connectordb/streamdb/schema"
-	"connectordb/streamdb/timebatchdb"
+	"connectordb/streamdb/datastream"
 	"encoding/json"
 	"io"
 	"testing"
@@ -27,7 +27,7 @@ func TestRangeReader(t *testing.T) {
 		}
 	}
 
-	dpa := timebatchdb.CreateDatapointArray(timestamps, dpb, "hello/world")
+	dpa := datastream.CreateDatapointArray(timestamps, dpb, "hello/world")
 
 	rr := NewRangeReader(dpa, dpschema, "user1/device1/stream1")
 
@@ -85,7 +85,7 @@ func TestJsonReader(t *testing.T) {
 		}
 	}
 
-	dpa := timebatchdb.CreateDatapointArray(timestamps, dpb, "hello/world")
+	dpa := datastream.CreateDatapointArray(timestamps, dpb, "hello/world")
 
 	jr, err := NewJsonReader(NewRangeReader(dpa, dpschema, "user1/device1/stream1"))
 

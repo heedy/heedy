@@ -3,6 +3,7 @@ package datastream
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -47,4 +48,11 @@ func (d *Datapoint) IsEqual(dp Datapoint) bool {
 func (d *Datapoint) HasSchema(schema *gojsonschema.Schema) bool {
 	res, err := schema.Validate(gojsonschema.NewGoLoader(d.Data))
 	return err == nil && res.Valid()
+}
+
+//NewDatapoint returns a datapoint with the current timestamp
+func NewDatapoint() Datapoint {
+	var dp Datapoint
+	dp.Timestamp = float64(time.Now().UnixNano()) * 1e-9
+	return dp
 }

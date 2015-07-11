@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"time"
 
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -193,6 +194,16 @@ func (dpa DatapointArray) IsTimestampOrdered() bool {
 	return true
 }
 
+//SetZeroTime replaces 0 times with current timestamp
+func (dpa DatapointArray) SetZeroTime() {
+	ts := float64(time.Now().UnixNano()) * 1e-9
+	for i := 0; i < len(dpa); i++ {
+		if dpa[i].Timestamp == 0.0 {
+			dpa[i].Timestamp = ts
+		}
+	}
+}
+
 //FindTimeIndex finds the index of the first datapoint in the array which has a timestamp strictly greater
 //than the given reference timestamp.
 //If no datapoints fit this, returns -1
@@ -249,7 +260,7 @@ func (dpa DatapointArray) TRange(timestamp1 float64, timestamp2 float64) Datapoi
 		return nil
 	}
 	i2 := dpa.FindTimeIndex(timestamp2)
-	if i2 == -1 {
+	if i2 == -1 || timestamp2 <= 0.0 {
 		//The endrange is out of bounds - read until the end of the array
 		return dpa[i1:]
 	}

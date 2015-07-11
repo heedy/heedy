@@ -2,7 +2,7 @@ package schema
 
 /*
 Package schema ensures that the given data conforms to the specified schema, and subsequently converts the given data to a byte array
-suitable for storage in timebatchdb
+suitable for storage in datastream
 */
 
 import (
