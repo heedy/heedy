@@ -29,7 +29,7 @@ clean:
 go-dependencies:
 	# services
 	go get github.com/nats-io/nats github.com/nats-io/gnatsd
-	go get github.com/garyburd/redigo/redis
+	go get gopkg.in/redis.v3
 
 	# databases
 	go get github.com/lib/pq
