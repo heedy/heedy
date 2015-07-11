@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"io"
 	"net/http"
@@ -87,7 +88,7 @@ func (c *WebsocketConnection) Close() {
 func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
 	logger.Debugln("Inserting", len(ws.D), "dp")
-	err := c.o.InsertStream(ws.Arg, ws.D)
+	err := c.o.InsertStream(ws.Arg, ws.D, true)
 	if err != nil {
 		//TODO: Notify user of insert failure
 		logger.Warn(err.Error())
@@ -137,7 +138,7 @@ func (c *WebsocketConnection) UnsubscribeAll() {
 type websocketCommand struct {
 	Cmd string
 	Arg string
-	D   []operator.Datapoint //If the command is "insert", it needs an additional datapoint
+	D   []datastream.Datapoint //If the command is "insert", it needs an additional datapoint
 }
 
 //RunReader runs the reading routine. It also maps the commands to actual subscriptions

@@ -1,12 +1,13 @@
 package webclient
 
 import (
-	"connectordb/streamdb/operator"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"connectordb/streamdb/datastream"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -127,7 +128,7 @@ func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
 	logger.Debugf("Inserting stream: %v", streamids)
 
 	var datapointjson interface{}
-	var datapoint operator.Datapoint
+	var datapoint datastream.Datapoint
 	streamData := se.Request.PostFormValue("formdata")
 
 	streamid, err := strconv.Atoi(streamids)
@@ -142,8 +143,9 @@ func insertStreamAction(se *SessionEnvironment, logger *log.Entry) {
 	}
 
 	// Save the data
-	datapoint = operator.NewDatapoint(datapointjson)
-	err = se.Operator.InsertStreamByID(int64(streamid), []operator.Datapoint{datapoint}, "")
+	datapoint = datastream.NewDatapoint()
+	datapoint.Data = datapointjson
+	err = se.Operator.InsertStreamByID(int64(streamid), "", []datastream.Datapoint{datapoint}, true)
 	if se.HandleError(err, "Error saving data.", logger) {
 		goto redirect
 	}

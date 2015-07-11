@@ -11,9 +11,7 @@ All Rights Reserved
 
 **/
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // The clear command
 type GrantAdmin struct {
