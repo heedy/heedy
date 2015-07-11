@@ -103,9 +103,9 @@ func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
 		//We just delete the substream
 		err = o.ds.DeleteSubstream(strm.DeviceId, strm.StreamId, substream)
 	} else {
-		o.ds.DeleteStream(strm.DeviceId, strm.StreamId)
+		err = o.Userdb.DeleteStream(streamID)
 		if err == nil {
-			err = o.Userdb.DeleteStream(streamID)
+			err = o.ds.DeleteStream(strm.DeviceId, strm.StreamId)
 		}
 	}
 	return err
