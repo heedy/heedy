@@ -42,9 +42,11 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		logger.Warningln(err)
 		return err
 	}
-	logger.Debugln("Inserting", len(datapoints), "dp")
+	restamp := request.Method == "PATCH"
 
-	err = o.InsertStream(streampath, datapoints, false)
+	logger.Debugln("Inserting", len(datapoints), "dp restamp=", restamp)
+
+	err = o.InsertStream(streampath, datapoints, restamp)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)

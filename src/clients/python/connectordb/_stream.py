@@ -45,15 +45,18 @@ class Stream(ConnectorObject):
     def __len__(self):
         return int(self.db.urlget(self.metaname+"/length").text)
 
-    def insertMany(self,o):
+    def insertMany(self,o,restamp=False):
         #attempt to use websocket if websocket inserts are enabled, but fall back on update if fail
         if self.db.wsinsert:
             if self.db.ws.insert(self.metaname,o):
                 return
-        self.db.urlupdate(self.metaname,o)
+        if restamp:
+            self.db.urlpatch(self.metaname,o)
+        else:
+            self.db.urlupdate(self.metaname,o)
 
     def insert(self,o):
-        self.insertMany([{"t": time.time(),"d":o}])
+        self.insertMany([{"d":o}],restamp=True)
 
     def __getitem__(self,obj):
         #Allows to access the stream's elements as if they were an array
