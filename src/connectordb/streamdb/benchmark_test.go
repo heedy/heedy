@@ -1,7 +1,8 @@
 package streamdb
 
 import (
-	"connectordb/streamdb/operator"
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 	"strconv"
 	"testing"
 	"time"
@@ -11,12 +12,12 @@ import (
 
 //Let's see if the cache actually helps much with login speed
 func BenchmarkUserLogin(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	if err != nil {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	db.Clear()
 	defer db.Close()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -32,12 +33,12 @@ func BenchmarkUserLogin(b *testing.B) {
 }
 
 func BenchmarkDeviceLogin(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	if err != nil {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
+	db.Clear()
 	defer db.Close()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -54,15 +55,16 @@ func BenchmarkDeviceLogin(b *testing.B) {
 }
 
 func BenchmarkUserLoginNoCache(b *testing.B) {
-	ResetTimeBatch()
+
 	EnableCaching = false
 	//CacheExpireTime = 0 //Cache expires IMMEDIATELY
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	if err != nil {
 		b.Errorf("Couldn't open database: %v", err)
 		return
 	}
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 
@@ -82,10 +84,11 @@ func BenchmarkUserLoginNoCache(b *testing.B) {
 }
 
 func BenchmarkCreateUser(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 	db.SetAdmin("streamdb_test", true)
@@ -101,10 +104,11 @@ func BenchmarkCreateUser(b *testing.B) {
 }
 
 func BenchmarkDeleteUser(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 	db.SetAdmin("streamdb_test", true)
@@ -124,10 +128,11 @@ func BenchmarkDeleteUser(b *testing.B) {
 }
 
 func BenchmarkReadUserNC(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 	db.SetAdmin("streamdb_test", true)
@@ -148,10 +153,11 @@ func BenchmarkReadUserNC(b *testing.B) {
 }
 
 func BenchmarkReadUser(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 
@@ -166,10 +172,11 @@ func BenchmarkReadUser(b *testing.B) {
 }
 
 func BenchmarkUpdateUser(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 
@@ -186,10 +193,11 @@ func BenchmarkUpdateUser(b *testing.B) {
 }
 
 func BenchmarkCreateStream(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
 
@@ -203,10 +211,11 @@ func BenchmarkCreateStream(b *testing.B) {
 }
 
 func BenchmarkReadStreamNC(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -227,10 +236,11 @@ func BenchmarkReadStreamNC(b *testing.B) {
 }
 
 func BenchmarkReadStream(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -247,10 +257,11 @@ func BenchmarkReadStream(b *testing.B) {
 }
 
 func BenchmarkInsert1(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -261,20 +272,21 @@ func BenchmarkInsert1(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		data := []operator.Datapoint{operator.Datapoint{
+		data := []datastream.Datapoint{datastream.Datapoint{
 			Timestamp: float64(n + 1),
 			Data:      true,
 		}}
-		err = o.InsertStream("streamdb_test/user/mystream", data)
+		err = o.InsertStream("streamdb_test/user/mystream", data, false)
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkStreamLength(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	//go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -283,14 +295,14 @@ func BenchmarkStreamLength(b *testing.B) {
 	o, err := db.LoginOperator("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	data := make([]operator.Datapoint, 1000)
+	data := make([]datastream.Datapoint, 1000)
 	for i := 0; i < 1000; i++ {
-		data[i] = operator.Datapoint{
+		data[i] = datastream.Datapoint{
 			Timestamp: float64(i),
 			Data:      true,
 		}
 	}
-	err = o.InsertStream("streamdb_test/user/mystream", data)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -301,10 +313,11 @@ func BenchmarkStreamLength(b *testing.B) {
 }
 
 func BenchmarkInsert1000(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -315,23 +328,24 @@ func BenchmarkInsert1000(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		data := make([]operator.Datapoint, 1000)
+		data := make([]datastream.Datapoint, 1000)
 		for i := 0; i < 1000; i++ {
-			data[i] = operator.Datapoint{
+			data[i] = datastream.Datapoint{
 				Timestamp: float64(1000*n + i),
 				Data:      true,
 			}
 		}
-		err = o.InsertStream("streamdb_test/user/mystream", data)
+		err = o.InsertStream("streamdb_test/user/mystream", data, false)
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkRead1000(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -340,14 +354,14 @@ func BenchmarkRead1000(b *testing.B) {
 	o, err := db.LoginOperator("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	data := make([]operator.Datapoint, 1000)
+	data := make([]datastream.Datapoint, 1000)
 	for i := 0; i < 1000; i++ {
-		data[i] = operator.Datapoint{
+		data[i] = datastream.Datapoint{
 			Timestamp: float64(i),
 			Data:      true,
 		}
 	}
-	err = o.InsertStream("streamdb_test/user/mystream", data)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 	time.Sleep(1 * time.Second) //Wait a moment for batch to have some time to write the data
 
@@ -368,10 +382,11 @@ func BenchmarkRead1000(b *testing.B) {
 }
 
 func BenchmarkReadLast10(b *testing.B) {
-	ResetTimeBatch()
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+
+	db, err := Open(config.DefaultOptions)
 	require.NoError(b, err)
 	defer db.Close()
+	db.Clear()
 	go db.RunWriter()
 
 	db.CreateUser("streamdb_test", "root@localhost", "mypass")
@@ -380,14 +395,14 @@ func BenchmarkReadLast10(b *testing.B) {
 	o, err := db.LoginOperator("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	data := make([]operator.Datapoint, 950)
+	data := make([]datastream.Datapoint, 950)
 	for i := 0; i < 950; i++ {
-		data[i] = operator.Datapoint{
+		data[i] = datastream.Datapoint{
 			Timestamp: float64(i),
 			Data:      true,
 		}
 	}
-	err = o.InsertStream("streamdb_test/user/mystream", data)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 	time.Sleep(1 * time.Second) //Wait a moment for batch to have some time to write the data
 

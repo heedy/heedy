@@ -1,6 +1,7 @@
 package authoperator
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
 	"errors"
@@ -87,9 +88,10 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 	data["cmd"] = cmd
 	data["arg"] = arg
 
-	dp := operator.NewDatapoint(data)
+	dp := datastream.NewDatapoint()
+	dp.Data = data
 	dp.Sender = o.Name()
-	err := o.Db.InsertStreamByID(o.userlogID, []operator.Datapoint{dp}, "")
+	err := o.Db.InsertStreamByID(o.userlogID, "", datastream.DatapointArray{dp}, true)
 	if err != nil {
 		log.WithFields(log.Fields{"cmd": cmd, "arg": arg, "o": o.Name()}).Error("Userlog insert failed: ", err)
 	}

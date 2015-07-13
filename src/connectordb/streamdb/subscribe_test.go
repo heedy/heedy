@@ -1,6 +1,8 @@
 package streamdb
 
 import (
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"testing"
 	"time"
@@ -9,11 +11,11 @@ import (
 )
 
 func TestSubscribe(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -27,10 +29,10 @@ func TestSubscribe(t *testing.T) {
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
-		recvchan2 <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
-		recvchan3 <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
-		recvchan4 <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
+		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan2 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan3 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan4 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	_, err = db.Subscribe("tst", recvchan)
@@ -43,12 +45,12 @@ func TestSubscribe(t *testing.T) {
 	require.NoError(t, err)
 	db.msg.Flush() //Just to avoid problems
 
-	data := []operator.Datapoint{operator.Datapoint{
+	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      "Hello World!",
 	}}
 
-	require.NoError(t, db.InsertStream("tst/tst/tst", data))
+	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 
 	m := <-recvchan
 	require.Equal(t, m.Stream, "tst/tst/tst")
@@ -60,21 +62,21 @@ func TestSubscribe(t *testing.T) {
 	require.Equal(t, m.Stream, "tst/tst/tst")
 	require.Equal(t, m.Data[0].Data, "Hello World!")
 
-	data = []operator.Datapoint{operator.Datapoint{
+	data = []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 2.0,
 		Data:      "2",
 	}}
 
-	require.NoError(t, db.InsertStream("tst/tst/tst/downlink", data))
+	require.NoError(t, db.InsertStream("tst/tst/tst/downlink", data, false))
 	db.msg.Flush()
 	m = <-recvchan4
 	require.Equal(t, m.Stream, "tst/tst/tst/downlink")
 	require.Equal(t, m.Data[0].Data, "2")
 
 	time.Sleep(100 * time.Millisecond)
-	recvchan <- operator.Message{"GOOD", []operator.Datapoint{}}
-	recvchan2 <- operator.Message{"GOOD", []operator.Datapoint{}}
-	recvchan3 <- operator.Message{"GOOD", []operator.Datapoint{}}
+	recvchan <- operator.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan2 <- operator.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan3 <- operator.Message{"GOOD", []datastream.Datapoint{}}
 
 	m = <-recvchan
 	require.Equal(t, m.Stream, "GOOD", "A downlink should not be triggered")

@@ -51,5 +51,19 @@ func (o *Database) UpdateUser(modifieduser *users.User) error {
 
 //DeleteUserByID deletes a user using its ID
 func (o *Database) DeleteUserByID(userID int64) error {
-	return o.Userdb.DeleteUser(userID)
+	//Users are going to be GC'd from redis in the future - but we currently don't have that implemented,
+	//so manually delete all the devices from redis if user delete succeeds
+	dev, err := o.ReadAllDevicesByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	err = o.Userdb.DeleteUser(userID)
+
+	if err == nil {
+		for i := 0; i < len(dev); i++ {
+			o.ds.DeleteDevice(dev[i].DeviceId)
+		}
+	}
+	return err
 }

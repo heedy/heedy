@@ -20,7 +20,7 @@ class WebsocketHandler(object):
         self.subscription_lock = threading.Lock()
 
         self.isconnected = False
-        
+
 
         self.ws = None
         self.ws_thread = None
@@ -38,7 +38,6 @@ class WebsocketHandler(object):
         self.lastping = 0.0
         self.ping_timeout = 60*2 #Set timeout to be 2 minutes without ping
         self.pingtimer = None
-
 
     def __del__(self):
         self.disconnect()
@@ -105,7 +104,7 @@ class WebsocketHandler(object):
 
         if msg["stream"] in self.subscriptions:
             runfnc(self.subscriptions[msg["stream"]])
-            
+
 
         #Now handle the more general subscriptions to device or user
         pathparts = msg["stream"].split("/")
@@ -114,13 +113,13 @@ class WebsocketHandler(object):
             #We don't want to get downlinks or substreams in this
             if pathparts[0] in self.subscriptions:
                 runfnc(self.subscriptions[pathparts[0]])
-              
+
             if pathparts[0]+"/"+pathparts[1] in self.subscriptions:
                 runfnc(self.subscriptions[pathparts[0]+"/"+pathparts[1]])
 
         self.subscription_lock.release()
 
-    #The server sends ping messages - to ensure that we don't lose connection, count the pings, 
+    #The server sends ping messages - to ensure that we don't lose connection, count the pings,
     #and make sure that they are all received - if now, it means the connection is broken!
     def __on_ping(self,ws,data):
         #Sets the timer which ensures that we keep receiving ping messages from server
@@ -128,6 +127,8 @@ class WebsocketHandler(object):
 
 
     def __ensure_ping(self):
+        if time is None:    #A weird little bug - on exiting this was sometimes getting an error
+            return
         if (time.time()-self.lastping > self.ping_timeout):
             logging.warn("Websocket ping timer timed out!")
             if self.ws is not None:
@@ -144,8 +145,8 @@ class WebsocketHandler(object):
 
         self.lastping = time.time() #Set the ping timer to current time.
         self.__ensure_ping()
-        
-        
+
+
 
     def __on_close(self,ws):
         if self.wantsconnection:
@@ -178,7 +179,7 @@ class WebsocketHandler(object):
                 reconnector = threading.Timer(self.reconnectbackoff,self.__reconnect_callback)
                 reconnector.daemon=True
                 reconnector.start()
-                
+
     def __reconnect_callback(self):
         """ Updates the reconnectbackoff in a method similar to TCP Tahoe and
         attempts a reconnect.
@@ -194,7 +195,7 @@ class WebsocketHandler(object):
         #Now add randomness to the backoff rate - necessary not to pound the server if it goes down
         self.reconnectbackoff *= 1 + random.uniform(-0.2,0.2)
 
-        
+
 
         try:
             logging.debug("Reconnecting websocket...")

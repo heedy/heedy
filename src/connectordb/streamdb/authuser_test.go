@@ -3,16 +3,18 @@ package streamdb
 import (
 	"testing"
 
+	"connectordb/config"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthUserCrud(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
 	// Open and connect to all services.
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Create extra users that exist
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))

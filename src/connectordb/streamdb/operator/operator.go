@@ -1,10 +1,11 @@
 package operator
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/users"
 	"strings"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -150,24 +151,32 @@ func (o *Operator) DeleteStream(streampath string) error {
 
 //LengthStream returns the total number of datapoints in the given stream
 func (o *Operator) LengthStream(streampath string) (int64, error) {
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
+	if err != nil {
+		return 0, err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return 0, err
 	}
-	return o.LengthStreamByID(strm.StreamId)
+	return o.LengthStreamByID(strm.StreamId, substream)
 }
 
 //TimeToIndexStream returns the index closest to the given timestamp
 func (o *Operator) TimeToIndexStream(streampath string, time float64) (int64, error) {
+	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
+	if err != nil {
+		return 0, err
+	}
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return 0, err
 	}
-	return o.TimeToIndexStreamByID(strm.StreamId, time)
+	return o.TimeToIndexStreamByID(strm.StreamId, substream, time)
 }
 
 //InsertStream inserts the given array of datapoints into the given stream.
-func (o *Operator) InsertStream(streampath string, data []Datapoint) error {
+func (o *Operator) InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error {
 	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return err
@@ -176,11 +185,11 @@ func (o *Operator) InsertStream(streampath string, data []Datapoint) error {
 	if err != nil {
 		return err
 	}
-	return o.InsertStreamByID(strm.StreamId, data, substream)
+	return o.InsertStreamByID(strm.StreamId, substream, data, restamp)
 }
 
 //GetStreamTimeRange Reads the given stream by time range
-func (o *Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (DatapointReader, error) {
+func (o *Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
 	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
@@ -189,11 +198,11 @@ func (o *Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64,
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamTimeRangeByID(strm.StreamId, t1, t2, limit, substream)
+	return o.GetStreamTimeRangeByID(strm.StreamId, substream, t1, t2, limit)
 }
 
 //GetStreamIndexRange Reads the given stream by index range
-func (o *Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (DatapointReader, error) {
+func (o *Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error) {
 	_, _, streampath, _, substream, err := SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
@@ -202,7 +211,7 @@ func (o *Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (D
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamIndexRangeByID(strm.StreamId, i1, i2, substream)
+	return o.GetStreamIndexRangeByID(strm.StreamId, substream, i1, i2)
 }
 
 //SubscribeUser subscribes to everything the user does

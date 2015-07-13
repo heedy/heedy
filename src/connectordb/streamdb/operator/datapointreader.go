@@ -1,11 +1,11 @@
 package operator
 
 import (
-	"connectordb/streamdb/schema"
-	"connectordb/streamdb/timebatchdb"
 	"encoding/json"
 	"errors"
 	"io"
+
+	"connectordb/streamdb/datastream"
 )
 
 var (
@@ -13,44 +13,11 @@ var (
 	ErrUnrecognizedType = errors.New("Data type unrecognized")
 )
 
-//DatapointReader is an iterator
-type DatapointReader interface {
-	Next() (*Datapoint, error)
-	Close()
-}
-
-//RangeReader allows to read data from a timebatchdb.DataRange
-type RangeReader struct {
-	drange  timebatchdb.DataRange
-	dschema *schema.Schema //The schema to use when reading datapoints
-	stream  string
-}
-
-//Close shuts down the underlying DataRange
-func (r *RangeReader) Close() {
-	r.drange.Close()
-}
-
-//Next gets the next datapoint in the range
-func (r *RangeReader) Next() (dp *Datapoint, err error) {
-	tbdp, err := r.drange.Next()
-	if err != nil || tbdp == nil {
-		return nil, err
-	}
-
-	return LoadDatapoint(r.dschema, tbdp.Timestamp(), tbdp.Data(), tbdp.Key(), r.stream, nil)
-}
-
-//NewRangeReader opens a streamreader with the given
-func NewRangeReader(drange timebatchdb.DataRange, schema *schema.Schema, stream string) *RangeReader {
-	return &RangeReader{drange, schema, stream}
-}
-
-//JsonReader wraps a RangeReader object into one that implements the io.Reader interface, allowing it to be directly
+//JsonReader wraps a DataRange object into one that implements the io.Reader interface, allowing it to be directly
 //used in places where json is wanted
 type JsonReader struct {
-	dreader       DatapointReader //The DatapointReader to read from
-	currentbuffer []byte          //The buffer of the current datapoint's bytes
+	dreader       datastream.DataRange //The DatapointReader to read from
+	currentbuffer []byte               //The buffer of the current datapoint's bytes
 
 }
 
@@ -104,7 +71,7 @@ func (r *JsonReader) Read(p []byte) (n int, err error) {
 }
 
 //NewJsonReader creates a new json reader object. Allows using a RangeReader as an io.Reader type which outputs json.
-func NewJsonReader(dreader DatapointReader) (*JsonReader, error) {
+func NewJsonReader(dreader datastream.DataRange) (*JsonReader, error) {
 	dp, err := dreader.Next()
 	if err != nil {
 		return nil, err

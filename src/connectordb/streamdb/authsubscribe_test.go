@@ -1,6 +1,8 @@
 package streamdb
 
 import (
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"testing"
 	"time"
@@ -9,11 +11,11 @@ import (
 )
 
 func TestAuthSubscribe(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -52,17 +54,17 @@ func TestAuthSubscribe(t *testing.T) {
 
 	db.msg.Flush()
 
-	data := []operator.Datapoint{operator.Datapoint{
+	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      "Hello World!",
 	}}
-	require.NoError(t, o.InsertStream("tst/tst/tst", data))
+	require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
-		recvchan2 <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
-		recvchan3 <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
+		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan2 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan3 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	m := <-recvchan

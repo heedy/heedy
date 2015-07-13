@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"errors"
 	"io"
@@ -34,16 +35,18 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 	_, _, _, streampath := getStreamPath(request)
 	logger = logger.WithField("op", "WriteStream")
 
-	var datapoints []operator.Datapoint
+	var datapoints []datastream.Datapoint
 	err := UnmarshalRequest(request, &datapoints)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)
 		return err
 	}
-	logger.Debugln("Inserting", len(datapoints), "dp")
+	restamp := request.Method == "PATCH"
 
-	err = o.InsertStream(streampath, datapoints)
+	logger.Debugln("Inserting", len(datapoints), "dp restamp=", restamp)
+
+	err = o.InsertStream(streampath, datapoints, restamp)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Warningln(err)
@@ -53,7 +56,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 	return OK(writer)
 }
 
-func writeJSONResult(writer http.ResponseWriter, dr operator.DatapointReader, logger *log.Entry, err error) error {
+func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger *log.Entry, err error) error {
 	if err != nil {
 		writer.WriteHeader(http.StatusForbidden)
 		logger.Warningln(err)

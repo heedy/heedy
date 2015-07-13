@@ -65,5 +65,10 @@ func (o *Database) UpdateDevice(modifieddevice *users.Device) error {
 
 // DeleteDeviceByID deletes the device using its deviceID
 func (o *Database) DeleteDeviceByID(deviceID int64) error {
-	return o.Userdb.DeleteDevice(deviceID)
+
+	err := o.Userdb.DeleteDevice(deviceID)
+	if err == nil {
+		err = o.ds.DeleteDevice(deviceID)
+	}
+	return err
 }

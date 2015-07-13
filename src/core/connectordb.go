@@ -265,7 +265,7 @@ func upgradeDatabase(dbPath string) error {
 }
 
 func runPlugin(cmd, dbPath string) error {
-	db, err := streamdb.OpenFromConfig(config.GetConfiguration())
+	db, err := streamdb.Open(config.DefaultOptions)
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,8 @@
 package operator
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/schema"
-	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
 	"encoding/json"
 	"errors"
@@ -63,31 +63,13 @@ func NewStream(s *users.Stream, err error) (Stream, error) {
 }
 
 //Validate ensures the array of datapoints conforms to the schema and such
-func (s *Stream) Validate(data []Datapoint) bool {
+func (s *Stream) Validate(data datastream.DatapointArray) bool {
 	for i := range data {
 		if !s.s.IsValid(data[i].Data) {
 			return false
 		}
 	}
 	return true
-}
-
-//Converts a datapoint array to the timebatch equivalent, which is based on byte arrays
-func (s *Stream) ConvertDatapointArray(data []Datapoint) (*timebatchdb.DatapointArray, error) {
-	if !s.Validate(data) {
-		return nil, ErrSchema
-	}
-
-	tbdpa := make([]timebatchdb.Datapoint, len(data))
-	for i := range data {
-		dpbytes, err := s.s.Marshal(data[i].Data)
-		if err != nil {
-			return nil, err
-		}
-		tbdpa[i] = timebatchdb.NewDatapoint(data[i].IntTimestamp(), dpbytes, data[i].Sender)
-	}
-
-	return timebatchdb.NewDatapointArray(tbdpa), nil
 }
 
 func (s *Stream) GetSchema() *schema.Schema {
