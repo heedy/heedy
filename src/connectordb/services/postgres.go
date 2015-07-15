@@ -145,7 +145,7 @@ func (srv *PostgresService) Stop() error {
 	pgctl := dbutil.FindPostgresPgctl()
 	postgresDir := filepath.Join(srv.streamdbDirectory, postgresDatabaseName)
 
-	return RunCommand(nil, pgctl, "-D", postgresDir, "-m", "fast", "stop")
+	return RunCommand(nil, pgctl, "-D", postgresDir, "stop") //"-m", "fast", "stop")
 }
 
 func (srv *PostgresService) Kill() error {

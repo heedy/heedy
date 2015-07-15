@@ -48,7 +48,6 @@ go-dependencies:
 
 	# go tools
 	#go get golang.org/x/tools/cmd/cover	#Cover tool is default in 1.4, and this command gives errors
-	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/stretchr/testify
 
 
