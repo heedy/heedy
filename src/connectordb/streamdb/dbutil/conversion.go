@@ -2,6 +2,7 @@ package dbutil
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	log "github.com/Sirupsen/logrus"
@@ -81,6 +82,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 	_, err = db.Exec(conversionstr)
 
 	if err != nil {
+		fmt.Println(conversionstr)
 		return err
 	}
 

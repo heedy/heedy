@@ -119,20 +119,21 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
 	s.commands = []ShellCommand{
+		AddUser{},
+		Cat{},
+		Clear{},
 		Help{},
 		Exit{},
-		Clear{},
 		GrantAdmin{},
-		RevokeAdmin{},
-		AddUser{},
-		ListUsers{},
-		Cat{},
-		Su{},
-		ListDevices{},
 		Passwd{},
 		Rm{},
+		RevokeAdmin{},
 		Ls{},
-		LsCxn{}}
+		LsCxn{},
+		ListUsers{},
+		ListDevices{},
+		Sql{},
+		Su{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
