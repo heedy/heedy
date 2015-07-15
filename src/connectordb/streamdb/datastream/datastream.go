@@ -3,6 +3,8 @@ package datastream
 import (
 	"database/sql"
 	"errors"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -91,6 +93,7 @@ func (ds *DataStream) WriteChunk() error {
 
 //WriteQueue writes the queue of leftover data that might have been half-processed
 func (ds *DataStream) WriteQueue() error {
+	log.Debug("DBWriter: Checking write queue...")
 	b, err := ds.cache.ReadProcessingQueue()
 	if err != nil {
 		return err
@@ -103,11 +106,14 @@ func (ds *DataStream) WriteQueue() error {
 
 //RunWriter runs writer in a loop FOREVAAAARRRR
 func (ds *DataStream) RunWriter() error {
+	log.Debug("Starting Database Writer")
 	err := ds.WriteQueue()
-
+	log.Debug("Running DBWriter")
 	for err == nil {
 		err = ds.WriteChunk()
 	}
+	//This should probably be error level, but it interferes with benchmarks
+	log.Debugf("DBWriter error: %v", err.Error())
 	return err
 }
 

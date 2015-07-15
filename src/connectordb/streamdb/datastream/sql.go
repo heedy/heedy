@@ -3,6 +3,8 @@ package datastream
 import (
 	"database/sql"
 	"errors"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 /*
@@ -149,6 +151,7 @@ func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da
 //WriteBatches writes the given batch array
 func (s *SqlStore) WriteBatches(b []Batch) error {
 	for i := 0; i < len(b); i++ {
+		log.Debugf("Writing batch %s/%s i=%d #=%d", b[i].Stream, b[i].Substream, b[i].StartIndex, len(b[i].Data))
 		streamID, err := b[i].GetStreamID()
 		if err != nil {
 			return err
