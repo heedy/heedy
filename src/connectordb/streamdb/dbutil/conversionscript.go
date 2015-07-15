@@ -366,10 +366,46 @@ ALTER TABLE Users
 
 -- Update tables to use a random id
 
+CREATE FUNCTION permuteQPR(x BIGINT) RETURNS INTEGER AS $$
+DECLARE
+	prime 	INTEGER;
+	residue	BIGINT;
+BEGIN
+	-- see:
+	-- http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+	-- for more information on these calculations
+	prime = 2147483423; -- congruence to 3 % 4 holds to ensure 1:1 mapping
+
+	IF x >= prime THEN
+		RETURN x; -- last 5 digits map to themselves
+	ELSE
+		residue = (x * x) % prime;
+		IF residue <= prime / 2 THEN
+			RETURN residue;
+		ELSE
+			RETURN (prime - residue);
+		END IF;
+	END IF;
+END
+$$ LANGUAGE 'plpgsql';
+
+
+CREATE FUNCTION id_scramble(id INTEGER) RETURNS INTEGER AS $$
+DECLARE
+	xor   	INTEGER;
+	add   	INTEGER;
+BEGIN
+	xor   = 0x5bf03635;
+	add   = 0xDEADBEEF;
+	RETURN permuteQPR(permuteQPR(id) + add) # xor;
+END
+$$ LANGUAGE 'plpgsql';
+
+
 CREATE FUNCTION userid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.UserId = NEW.UserId * 928559 % 4294967296;
+	NEW.UserId = id_scramble(NEW.UserId);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
@@ -382,7 +418,7 @@ CREATE TRIGGER userid_scramble_trigger
 CREATE FUNCTION deviceid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.DeviceId = NEW.DeviceId * 928553 % 4294967296;
+	NEW.DeviceId = id_scramble(NEW.DeviceId);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
@@ -395,7 +431,7 @@ CREATE TRIGGER deviceid_scramble_trigger
 CREATE FUNCTION streamid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.StreamId = NEW.StreamId * 928521 % 4294967296;
+	NEW.StreamId = id_scramble(NEW.StreamId);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
