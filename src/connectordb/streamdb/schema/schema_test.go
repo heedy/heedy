@@ -25,7 +25,7 @@ func TestSchema(t *testing.T) {
 	v_float := 3.14
 	v_obj := map[string]interface{}{"lat": 88.32, "msg": "hi"}
 	v_bobj := map[string]interface{}{"lat": "88.32", "msg": "hi"}
-	duk_obj := map[string]interface{}{"lat": 88.32, "msg": "hi", "testing":123}
+	duk_obj := map[string]interface{}{"lat": 88.32, "msg": "hi", "testing": 123}
 
 	if !s_string.IsValid(v_string) || !s_float.IsValid(v_float) || !s_obj.IsValid(v_obj) {
 		t.Errorf("Validation failed")
@@ -42,6 +42,7 @@ func TestSchema(t *testing.T) {
 	}
 
 	var x interface{}
+	var z interface{}
 
 	val, err := s_string.Marshal(v_string)
 	if err != nil {
@@ -60,15 +61,15 @@ func TestSchema(t *testing.T) {
 
 	val, err = s_float.Marshal(v_float)
 	if err != nil {
-		t.Errorf("Marshal failed")
+		t.Errorf("Marshal failed %v", err)
 		return
 	}
 
-	if err = s_float.Unmarshal(val, &x); err != nil {
-		t.Errorf("unmarshal failed")
+	if err = s_float.Unmarshal(val, &z); err != nil {
+		t.Errorf("unmarshal failed %v", err)
 		return
 	}
-	if v, ok := x.(float64); !ok || v != v_float {
+	if v, ok := z.(float64); !ok || v != v_float {
 		t.Errorf("Crap: %v, %v", ok, v)
 		return
 	}
@@ -79,11 +80,14 @@ func TestSchema(t *testing.T) {
 		return
 	}
 
-	if err = s_obj.Unmarshal(val, &x); err != nil {
+	//msgpack is weird in that it sees the values of previous interfaces - so we need to create a new uninitialized interface here
+	var xo interface{}
+
+	if err = s_obj.Unmarshal(val, &xo); err != nil {
 		t.Errorf("unmarshal failed")
 		return
 	}
-	if v, ok := x.(map[string]interface{}); !ok || v["lat"].(float64) != 88.32 || v["msg"].(string) != "hi" {
+	if v, ok := xo.(map[interface{}]interface{}); !ok || v["lat"].(float64) != 88.32 || v["msg"].(string) != "hi" {
 		t.Errorf("Crap: %v, %v", ok, v)
 		return
 	}

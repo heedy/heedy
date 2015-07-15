@@ -1,6 +1,8 @@
 package streamdb
 
 import (
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"testing"
 	"time"
@@ -12,18 +14,18 @@ func ensureUserlog(t *testing.T, m operator.Message, cmd, arg string) {
 	require.Equal(t, "streamdb_test/user/log", m.Stream)
 	require.Equal(t, "streamdb_test/user", m.Data[0].Sender)
 
-	d, ok := m.Data[0].Data.(map[string]interface{})
+	d, ok := m.Data[0].Data.(map[interface{}]interface{})
 	require.True(t, ok)
 	require.Equal(t, cmd, d["cmd"])
 	require.Equal(t, arg, d["arg"])
 }
 
 func TestUserlog(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
@@ -40,7 +42,7 @@ func TestUserlog(t *testing.T) {
 	//The message timeout
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []operator.Datapoint{}}
+		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	o.CreateDevice("streamdb_test/mydevice")

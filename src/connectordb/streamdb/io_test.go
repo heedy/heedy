@@ -1,18 +1,19 @@
 package streamdb
 
 import (
-	"connectordb/streamdb/operator"
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestStreamIO(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -26,35 +27,35 @@ func TestStreamIO(t *testing.T) {
 
 	strm, err := db.ReadStream("tst/tst/tst")
 	require.NoError(t, err)
-	l, err = db.LengthStreamByID(strm.StreamId)
+	l, err = db.LengthStreamByID(strm.StreamId, "")
 
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l)
 
-	data := []operator.Datapoint{operator.Datapoint{
+	data := datastream.DatapointArray{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}
-	require.Error(t, db.InsertStream("tst/tst/tst", data), "insert succeeds on data which does not fit schema")
+	require.Error(t, db.InsertStream("tst/tst/tst", data, false), "insert succeeds on data which does not fit schema")
 
-	data = []operator.Datapoint{operator.Datapoint{
+	data = []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      "Hello World!",
 	}}
-	require.NoError(t, db.InsertStream("tst/tst/tst", data))
+	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 
 	l, err = db.LengthStream("tst/tst/tst")
 	require.NoError(t, err)
 	require.Equal(t, int64(1), l)
 
-	data = []operator.Datapoint{operator.Datapoint{
+	data = []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 2.0,
 		Data:      "2",
-	}, operator.Datapoint{
+	}, datastream.Datapoint{
 		Timestamp: 3.0,
 		Data:      "3",
 	}}
-	require.NoError(t, db.InsertStream("tst/tst/tst", data))
+	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 
 	l, err = db.LengthStream("tst/tst/tst")
 	require.NoError(t, err)

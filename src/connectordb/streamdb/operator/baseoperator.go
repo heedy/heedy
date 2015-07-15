@@ -3,8 +3,16 @@ package operator
 import (
 	"connectordb/streamdb/users"
 
-	"github.com/apcera/nats"
+	"connectordb/streamdb/datastream"
+
+	"github.com/nats-io/nats"
 )
+
+//Message is what is sent over NATS
+type Message struct {
+	Stream string                    `json:"stream" msgpack:"s,omitempty"`
+	Data   datastream.DatapointArray `json:"data" msgpack:"d,omitempty"`
+}
 
 //BaseOperatorInterface are the functions which must be implemented in order to use Operator.
 //If these functions are implemented, then the operator is complete, and all functionality
@@ -52,9 +60,9 @@ type BaseOperatorInterface interface {
 	DeleteStreamByID(streamID int64, substream string) error
 
 	//These operations concern themselves with the IO of a stream
-	LengthStreamByID(streamID int64) (int64, error)
-	TimeToIndexStreamByID(streamID int64, time float64) (int64, error)
-	InsertStreamByID(streamID int64, data []Datapoint, substream string) error
+	LengthStreamByID(streamID int64, substream string) (int64, error)
+	TimeToIndexStreamByID(streamID int64, substream string, time float64) (int64, error)
+	InsertStreamByID(streamID int64, substream string, data datastream.DatapointArray, restamp bool) error
 
 	/**GetStreamTimeRangeByID Reads all datapoints in the given time range (t1, t2]
 
@@ -64,7 +72,7 @@ type BaseOperatorInterface interface {
 
 	TODO push the substream to an enumerator (Downlink|Null)
 	**/
-	GetStreamTimeRangeByID(streamID int64, t1 float64, t2 float64, limit int64, substream string) (DatapointReader, error)
+	GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error)
 
 	/**GetStreamIndexRangeByID Reads all datapoints in the given index range (i1, i2]
 
@@ -72,7 +80,7 @@ type BaseOperatorInterface interface {
 	        negative indices are from the end.
 	substream - What substream of the stream to use, use empty string.
 	**/
-	GetStreamIndexRangeByID(streamID int64, i1 int64, i2 int64, substream string) (DatapointReader, error)
+	GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error)
 
 	SubscribeUserByID(userID int64, chn chan Message) (*nats.Subscription, error)
 	SubscribeDeviceByID(deviceID int64, chn chan Message) (*nats.Subscription, error)

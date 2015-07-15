@@ -89,18 +89,19 @@ CREATE INDEX StreamNameIndex ON Stream (Name);
 CREATE INDEX StreamOwnerIndex ON Stream (OwnerId);
 
 
-CREATE UNLOGGED TABLE IF NOT EXISTS timebatchtable (
-    Key VARCHAR NOT NULL,
-    EndTime BIGINT,
-    EndIndex BIGINT,
+CREATE TABLE IF NOT EXISTS datastream (
+	StreamId BIGINT NOT NULL,
+	Substream VARCHAR,
+	EndTime DOUBLE PRECISION,
+	EndIndex BIGINT,
 	Version INTEGER,
-    Data BYTEA,
-    UNIQUE (Key, EndIndex),
-    PRIMARY KEY (Key, EndIndex)
-    );
+	Data BYTEA,
+	UNIQUE (StreamId, Substream, EndIndex),
+	PRIMARY KEY (StreamId, Substream, EndIndex)
+);
 
 --Index creation should only be run once.
-CREATE INDEX keytime ON timebatchtable (Key,EndTime ASC);
+CREATE INDEX datastreamtime ON datastream (StreamId,Substream,EndTime ASC);
 
 {{end}}
 
@@ -245,7 +246,6 @@ CREATE UNIQUE INDEX DeviceAPIIndex20150328 ON Devices (ApiKey);
 CREATE INDEX DeviceOwnerIndex20150328 ON Devices (UserId);
 CREATE INDEX StreamNameIndex20150328 ON Streams (Name);
 CREATE INDEX StreamOwnerIndex20150328 ON Streams (DeviceId);
-CREATE INDEX keytime20150328 ON timebatchtable (Key, EndTime ASC);
 
 -- Transfer Data
 

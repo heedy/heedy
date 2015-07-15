@@ -3,9 +3,10 @@ package streamdb
 import (
 	"connectordb/config"
 	"connectordb/streamdb/authoperator"
+	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/datastream/rediscache"
 	"connectordb/streamdb/dbutil"
 	"connectordb/streamdb/operator"
-	"connectordb/streamdb/timebatchdb"
 	"connectordb/streamdb/users"
 	"database/sql"
 	"errors"
@@ -36,56 +37,51 @@ type Database struct {
 
 	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
-	tdb *timebatchdb.Database //timebatchdb holds methods for inserting datapoints into streams
-	msg *Messenger            //messenger is a connection to the messaging client
+	ds  *datastream.DataStream //datastream holds methods for inserting datapoints into streams
+	msg *Messenger             //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
 
-// Calls open from the arguments in the given configuration
-func OpenFromConfig(cfg *config.Configuration) (*Database, error) {
-	redis := cfg.GetRedisUri()
-	gnatsd := cfg.GetGnatsdUri()
-	sql := cfg.GetDatabaseConnectionString()
-
-	return Open(sql, redis, gnatsd)
-}
-
 /**
-Open StreamDB given urls to the SQL database used, to the redis instance and to the gnatsd messenger
-server.
-
-The normal use case for StreamDB is postgres. For postgres, just use the url of the connection. tart your database string w
-ith "postgres://".
-An example of a postgres url will be:
-  streamdb.Open("postgres://username:password@localhost:port/databasename?sslmode=verify-full","localhost:6379","localhost:4222")
-If just running locally, then you can use:
-  streamdb.Open("postgres://localhost:52592/connectordb?sslmode=disable","localhost:6379","localhost:4222")
-The preceding command will use the database "connectordb" (which is assumed to have been created already) on the local machine.
+Open StreamDB given an Options object, which holds the information necessary to connect to the database
 
 Finally, if running in postgres, then at least one process must be running the function RunWriter(). This function
 writes the database's internal data.
 **/
-func Open(sqluri, redisuri, msguri string) (dbp *Database, err error) {
+func Open(opt *config.Options) (dbp *Database, err error) {
 	var db Database
-	var sqltype string
+
+	log.Debugln("Starting StreamDB")
+	log.Debugln(opt.String())
 
 	//Dbutil prints the sqluri to log, so no need to do it here
-	db.sqldb, sqltype, err = dbutil.OpenSqlDatabase(sqluri)
+	db.sqldb, _, err = dbutil.OpenSqlDatabase(opt.SqlConnectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb = users.NewUserDatabase(db.sqldb, sqltype, EnableCaching)
+	db.Userdb = users.NewUserDatabase(db.sqldb, opt.SqlConnectionType, EnableCaching)
 
-	log.Debugln("Opening messenger with uri ", msguri)
-	db.msg, err = ConnectMessenger(msguri, err)
-
-	log.Debugf("Opening timebatchdb with redis url %v batch size: %v", redisuri, BatchSize)
-	db.tdb, err = timebatchdb.Open(db.sqldb, sqltype, redisuri, BatchSize, err)
-
+	log.Debugln("Opening messenger")
+	db.msg, err = ConnectMessenger(&opt.NatsOptions, err)
 	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Opening Redis cache")
+	rc, err := rediscache.NewRedisConnection(&opt.RedisOptions)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	rc.BatchSize = int64(opt.BatchSize)
+
+	log.Debugf("Opening DataStream")
+	db.ds, err = datastream.OpenDataStream(rediscache.RedisCache{rc}, db.sqldb, opt.ChunkSize)
+	if err != nil {
+		rc.Close()
 		db.Close()
 		return nil, err
 	}
@@ -158,8 +154,8 @@ func (db *Database) DeviceOperator(deviceID int64) (operator.Operator, error) {
 //Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
 func (db *Database) Close() {
-	if db.tdb != nil {
-		db.tdb.Close()
+	if db.ds != nil {
+		db.ds.Close()
 	}
 	if db.msg != nil {
 		db.msg.Close()
@@ -188,7 +184,15 @@ If you are just connecting to an already-running StreamDB and RunWriter is alrea
 this database, then NO.
 **/
 func (db *Database) RunWriter() {
-	db.tdb.WriteDatabase()
+	db.ds.RunWriter()
+}
+
+//Clear clears the database (to be used for debugging purposes - NEVER in production)
+func (db *Database) Clear() {
+	db.ds.Clear()
+	db.sqldb.Exec("DELETE FROM Users;")
+	db.sqldb.Exec("DELETE FROM Devices;")
+	db.sqldb.Exec("DELETE FROM Streams;")
 }
 
 //These functions allow the Database object to conform to the BaseOperatorInterface

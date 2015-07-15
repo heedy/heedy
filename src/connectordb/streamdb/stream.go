@@ -99,20 +99,13 @@ func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
 		return err //Workaround #81
 	}
 
-	sname, err := o.getStreamTimebatchName(strm)
-	if err != nil {
-		return err
-	}
 	if substream != "" {
 		//We just delete the substream
-		err = o.tdb.Delete(sname + substream)
+		err = o.ds.DeleteSubstream(strm.DeviceId, strm.StreamId, substream)
 	} else {
-		//We remove all substreams from timebatch. Right now it is only the downlink substream
-		o.tdb.Delete(sname + "downlink")
-
 		err = o.Userdb.DeleteStream(streamID)
 		if err == nil {
-			err = o.tdb.Delete(sname)
+			err = o.ds.DeleteStream(strm.DeviceId, strm.StreamId)
 		}
 	}
 	return err

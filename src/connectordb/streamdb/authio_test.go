@@ -3,17 +3,18 @@ package streamdb
 import (
 	"testing"
 
-	"connectordb/streamdb/operator"
+	"connectordb/config"
+	"connectordb/streamdb/datastream"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamIO(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -31,13 +32,13 @@ func TestAuthStreamIO(t *testing.T) {
 
 	strm, err := o.ReadStream("tst/tst/tst")
 	require.NoError(t, err)
-	l, err = o.LengthStreamByID(strm.StreamId)
+	l, err = o.LengthStreamByID(strm.StreamId, "")
 
-	data := []operator.Datapoint{operator.Datapoint{
+	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}
-	require.NoError(t, o.InsertStream("tst/tst/tst", data))
+	require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
 
 	l, err = o.LengthStream("tst/tst/tst")
 	require.NoError(t, err)
@@ -49,7 +50,7 @@ func TestAuthStreamIO(t *testing.T) {
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "", dp.Sender)
 
@@ -65,7 +66,7 @@ func TestAuthStreamIO(t *testing.T) {
 	dp, err = dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "", dp.Sender)
 
@@ -88,11 +89,11 @@ func TestAuthStreamIO(t *testing.T) {
 }
 
 func TestAuthSubstream(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
 	defer db.Close()
+	db.Clear()
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -108,11 +109,11 @@ func TestAuthSubstream(t *testing.T) {
 	o, err := db.GetOperator("tst/tst")
 	require.NoError(t, err)
 
-	data := []operator.Datapoint{operator.Datapoint{
+	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      1336,
 	}}
-	require.NoError(t, o.InsertStream("tst/tst2/tst", data))
+	require.NoError(t, o.InsertStream("tst/tst2/tst", data, false))
 
 	l, err := o.LengthStream("tst/tst2/tst")
 	require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestAuthSubstream(t *testing.T) {
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, float64(1336), dp.Data)
+	require.Equal(t, int64(1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "tst/tst", dp.Sender)
 

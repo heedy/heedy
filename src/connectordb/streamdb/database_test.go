@@ -1,35 +1,19 @@
 package streamdb
 
 import (
-	"database/sql"
 	"testing"
+
+	"connectordb/config"
 
 	"github.com/stretchr/testify/require"
 )
 
-//Testing timebatchdb really messes with everything, so recreate the necessary stuff here
-func ResetTimeBatch() error {
-	sdb, err := sql.Open("postgres", "postgres://127.0.0.1:52592/connectordb?sslmode=disable")
-	if err != nil {
-		return err
-	}
-	sdb.Exec("DELETE FROM Users;")
-	sdb.Exec("DELETE FROM Devices;")
-	sdb.Close()
-
-	//CLear timebatch
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
-	if err != nil {
-		return err
-	}
-	return db.tdb.Clear()
-}
-
 func TestDataBaseOperatorInterfaceBasics(t *testing.T) {
-	require.NoError(t, ResetTimeBatch())
 
-	db, err := Open("postgres://127.0.0.1:52592/connectordb?sslmode=disable", "localhost:6379", "localhost:4222")
+	db, err := Open(config.DefaultOptions)
 	require.NoError(t, err)
+	db.Clear()
+
 	defer db.Close()
 	go db.RunWriter()
 
