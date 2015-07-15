@@ -312,21 +312,6 @@ DROP TABLE StreamKeyValues;
 DROP TABLE UserKeyValues;
 DROP TABLE DeviceKeyValues;
 
--- Holds deleted streams
-CREATE TABLE DeletedStreamIds (id INTEGER);
-
--- Updates the DeletedStreamIds with the deleted stream id
-CREATE FUNCTION stream_deleted() RETURNS TRIGGER AS $_$
-BEGIN
-	INSERT INTO DeletedStreamIds VALUES (OLD.StreamId);
-    RETURN OLD;
-END $_$ LANGUAGE 'plpgsql';
-
-CREATE TRIGGER StreamDeleteTrigger
-    AFTER DELETE ON Streams
-    FOR EACH ROW
-    EXECUTE PROCEDURE stream_deleted();
-
 -- Create a new trigger for inserting a device that is for a user.
 
 DROP TRIGGER AddUserdev20150328 ON Users;
