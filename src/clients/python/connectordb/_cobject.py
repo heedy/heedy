@@ -25,7 +25,6 @@ class ConnectorObject(object):
         """delete the given object"""
         self.db.urldelete(self.metaname)
 
-    @property
     def exists(self):
         """True if object exists, false otherwise"""
         try:

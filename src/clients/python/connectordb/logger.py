@@ -193,7 +193,7 @@ class ConnectorLogger(object):
         else:
             stream = self.cdb(streampath)
 
-        if not stream.exists:
+        if not stream.exists():
             if schema is not None:
                 stream.create(schema)
             else:
@@ -240,7 +240,7 @@ class ConnectorLogger(object):
                 c = self.conn.cursor()
                 for stream in self.streams:
                     s = self.cdb(stream)
-                    if not s.exists:
+                    if not s.exists():
                         raise errors.DataError("Stream %s no longer exists!"%(stream,))
                     c.execute("SELECT * FROM cache WHERE streamname=? ORDER BY timestamp ASC;",(stream,))
                     datapointArray=[]

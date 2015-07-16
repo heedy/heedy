@@ -58,7 +58,7 @@ db = ConnectorDB("myname/mydevice","apikeysadfdsf98439g")
 
 mystream = db["mystream"]
 
-if not mystream.exists:
+if not mystream.exists():
 	mystream.create({"type": "string"})
 
 mystream.insert("Hello World!")
@@ -91,7 +91,7 @@ db = ConnectorDB("myname/mydevice","apikeysadfdsf98439g")
 
 mystream = db["mystream"]
 
-if not mystream.exists:
+if not mystream.exists():
 	mystream.create({"type": "string"})
 
 def callbackFunction(streampath,data):
@@ -114,7 +114,7 @@ db = ConnectorDB("myname/mydevice","apikeysadfdsf98439g")
 
 mystream = db["mylight"]
 
-if not mystream.exists:
+if not mystream.exists():
 	mystream.create({"type": "boolean"})
 	mystream.downlink = True
 
