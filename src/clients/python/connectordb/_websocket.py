@@ -149,8 +149,8 @@ class WebsocketHandler(object):
 
 
     def __on_close(self,ws):
-        if self.wantsconnection:
-            self.__on_error(ws,Exception("Websocket was closed..."))
+        if self.wantsconnection and not self.isretry:
+            self.__on_error(ws,Exception("Websocket was closed despite wanting a connection..."))
             return
         logging.debug("ConnectorDB: Websocket Closed")
         self.unlockopen()
