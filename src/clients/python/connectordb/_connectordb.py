@@ -43,7 +43,7 @@ class ConnectorDB(Device):
         Device.__init__(self,self,self.urlget("?q=this").text)
 
     def ping(self):
-        #Makes sure the connectino is open, and auth is working
+        """Makes sure the connection is open, and auth is working"""
         self.urlget("?q=this")
 
     def handleresult(self,r):
@@ -80,7 +80,7 @@ class ConnectorDB(Device):
         return User(self,usrname)
 
     def users(self):
-        #Returns the list of users accessible to this operator
+        """Returns the list of users accessible to this operator"""
         usrs = []
         for u in self.urlget("?q=ls").json():
             tmpu = self.getuser(u["name"])
@@ -90,6 +90,13 @@ class ConnectorDB(Device):
 
     #We want to be able to get an arbitrary user/device/stream in a simple way
     def __call__(self,address):
+        """Enables getting arbitrary users/devices/streams in a simple way. Just call the object
+        with the u/d/s uri:
+
+        cdb("user1") -> user1 object
+        cdb("user1/device1") -> device1 object
+        cdb("user1/device1/stream1") -> stream1 object
+        """
         n = address.count("/")
         if n==0:
             return User(self,address)
