@@ -185,8 +185,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	d.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("UPDATE") //Restamp off
 	d.HandleFunc("/{user}/{device}/{stream}", authenticator(WriteStream, db)).Methods("PATCH")  //Restamp on
 
-	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeI, db)).Methods("GET").Queries("i1", "{i1}")
-	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRangeT, db)).Methods("GET").Queries("t1", "{t1}")
+	d.HandleFunc("/{user}/{device}/{stream}/data", authenticator(GetStreamRange, db)).Methods("GET")
 
 	d.HandleFunc("/{user}/{device}/{stream}/length", authenticator(GetStreamLength, db)).Methods("GET")
 	d.HandleFunc("/{user}/{device}/{stream}/time2index", authenticator(StreamTime2Index, db)).Methods("GET")
