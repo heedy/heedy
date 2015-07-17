@@ -90,6 +90,10 @@ There is about a 99% chance that something won't work right away. The nginx erro
 
 ConnectorDB does not yet support encryption out of the box. Since we are storing sensitive data, we provide a convenience python program `cryptify`, which sets up a LUKS encrypted container in which you can store a database.
 
+```
+git clone http://github.com/connectordb/cryptify.git
+```
+
 Creating a 10GB container is as follows:
 ```bash
 ./cryptify --size 10000 create
