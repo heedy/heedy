@@ -86,83 +86,88 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	return nil
 }
 
-//GetStreamRangeI reads the given stream by index
-func GetStreamRangeI(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "StreamRangeI")
+	logger = logger.WithField("op", "StreamRange")
 	q := request.URL.Query()
 
 	i1s := q.Get("i1")
-	i1, err := strconv.ParseInt(i1s, 0, 64)
-	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		return ErrRangeArgs
-	}
-
 	i2s := q.Get("i2")
-	i2, err := strconv.ParseInt(i2s, 0, 64)
-	if i2s != "" && err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		return ErrRangeArgs
-	} else if i2s == "" {
-		i2 = 0
-		i2s = "Inf"
+
+	//If either i1 or i2 are given, then it is a range by index
+	if len(i1s) > 0 || len(i2s) > 0 {
+		i1, err := strconv.ParseInt(i1s, 0, 64)
+		if i1s != "" && err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			logger.Warningln(err)
+			return ErrRangeArgs
+		}
+
+		i2, err := strconv.ParseInt(i2s, 0, 64)
+		if i2s != "" && err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			logger.Warningln(err)
+			return ErrRangeArgs
+		} else if i2s == "" {
+			i2 = 0
+			i2s = "Inf"
+		}
+
+		logger.Debugf("irange [%s,%s)", i1s, i2s)
+
+		dr, err := o.GetStreamIndexRange(streampath, i1, i2)
+
+		return writeJSONResult(writer, dr, logger, err)
 	}
 
-	logger.Debugf("irange [%s,%s)", i1s, i2s)
-
-	dr, err := o.GetStreamIndexRange(streampath, i1, i2)
-
-	return writeJSONResult(writer, dr, logger, err)
-}
-
-//GetStreamRangeT reads the given stream by index
-func GetStreamRangeT(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "StreamRangeT")
-	q := request.URL.Query()
-
+	//It is not a range by index. See if it is a range by time
 	t1s := q.Get("t1")
-	t1, err := strconv.ParseFloat(t1s, 64)
-	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		return ErrRangeArgs
-	}
-
 	t2s := q.Get("t2")
-	t2, err := strconv.ParseFloat(t2s, 64)
-	if t2s != "" && err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		return ErrRangeArgs
-	} else if t2s == "" {
-		t2 = 0.
-		t2s = "Inf"
+	if len(t1s) > 0 || len(t2s) > 0 {
+		t1, err := strconv.ParseFloat(t1s, 64)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			logger.Warningln(err)
+			return ErrRangeArgs
+		}
+
+		t2, err := strconv.ParseFloat(t2s, 64)
+		if t2s != "" && err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			logger.Warningln(err)
+			return ErrRangeArgs
+		} else if t2s == "" {
+			t2 = 0.
+			t2s = "Inf"
+		}
+
+		lims := q.Get("limit")
+		lim, err := strconv.ParseUint(lims, 0, 64)
+		if lims != "" && err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			logger.Warningln(err)
+			return ErrRangeArgs
+		} else if lims == "" {
+			lim = 0
+			lims = "Inf"
+		}
+
+		logger.Debugf("trange [%s,%s) limit=%s", t1s, t2s, lims)
+		dr, err := o.GetStreamTimeRange(streampath, t1, t2, int64(lim))
+		if err != nil {
+			writer.WriteHeader(http.StatusForbidden)
+			logger.Warningln(err)
+			return err
+		}
+
+		return writeJSONResult(writer, dr, logger, err)
 	}
 
-	lims := q.Get("limit")
-	lim, err := strconv.ParseUint(lims, 0, 64)
-	if lims != "" && err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		return ErrRangeArgs
-	} else if lims == "" {
-		lim = 0
-		lims = "Inf"
-	}
+	//None of the limits were recognized. Rather than exploding, return bad request
+	writer.WriteHeader(http.StatusBadRequest)
+	logger.Warningln("Invalid range args")
+	return ErrRangeArgs
 
-	logger.Debugf("trange [%s,%s) limit=%s", t1s, t2s, lims)
-	dr, err := o.GetStreamTimeRange(streampath, t1, t2, int64(lim))
-	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-		return err
-	}
-
-	return writeJSONResult(writer, dr, logger, err)
 }
 
 //StreamTime2Index gets the time associated with the index

@@ -11,8 +11,11 @@ RECONNECT_TIME_BACKOFF_RATE = 1.5
 INITIAL_RECONNECT_DELAY = 1.0
 
 class WebsocketHandler(object):
-    #SubscriptionHandler manages the websocket connection and fires off all subscriptions
+    """WebsocketHandler handles websocket connections to a ConnectorDB server. It gracefully handles
+    subscribing, unsubscribing, and deals with dropped connections."""
+    
     def __init__(self,url,basicAuth):
+        """Given a url, and a object that returns basic auth header when called (as the requests basic auth obj does"""
         self.uri = self.getWebsocketURI(url)
         self.headers = self.getAuthHeaders(basicAuth)
 
@@ -46,14 +49,14 @@ class WebsocketHandler(object):
             self.pingtimer.cancel()
 
     def getWebsocketURI(self,url):
-        #Given a URL to the REST API, get the websocket uri
+        """Given a URL to the REST API, get the websocket uri"""
         ws_url = "wss://" + url[8:]
         if url.startswith("http://"):   #Unsecured websocket is only really there for testing
             ws_url = "ws://"+ url[7:]
         return ws_url
 
     def getAuthHeaders(self,basicAuth):
-        #Use a cheap hack to extract the basic auth header from a requests HTTPBasicAuth object
+        """Use a cheap hack to extract the basic auth header from a requests HTTPBasicAuth object"""
         class tmpObject():
             def __init__(self):
                 self.headers = {}
@@ -66,7 +69,7 @@ class WebsocketHandler(object):
         return headers
 
     def unlockopen(self,isconnected=False):
-        #Unlocks the open
+        """Unlocks the open mutex - and returns false if the mutex is already open"""
         self.isconnected = isconnected
 
         if self.pingtimer is not None:
@@ -80,6 +83,7 @@ class WebsocketHandler(object):
 
 
     def __on_message(self,ws,msg):
+        """called when a message is received from the connectordb server"""
         msg= json.loads(msg)
         logging.debug("ConnectorDB: Got message for '%s'",msg["stream"])
 
@@ -119,14 +123,16 @@ class WebsocketHandler(object):
 
         self.subscription_lock.release()
 
-    #The server sends ping messages - to ensure that we don't lose connection, count the pings,
-    #and make sure that they are all received - if now, it means the connection is broken!
     def __on_ping(self,ws,data):
-        #Sets the timer which ensures that we keep receiving ping messages from server
+        """The server sends ping messages - to ensure that we don't lose connection, we memorize the
+        time that the msot recent ping was received - and we check it in __ensure_ping."""
         self.lastping = time.time()
 
 
     def __ensure_ping(self):
+        """We memorize the timestamp each time we receive a ping from the server. To ensure that the connection
+        is actually still alive, this function is run periodically, and if there was no ping within a prespecified
+        wait time, then the websocket is closed and a reconnect is attempted"""
         if time is None:    #A weird little bug - on exiting this was sometimes getting an error
             return
         if (time.time()-self.lastping > self.ping_timeout):
@@ -139,6 +145,7 @@ class WebsocketHandler(object):
 
 
     def __on_open(self,ws):
+        """Called when the websocket is opened"""
         logging.debug("ConnectorDB: Websocket opened")
         self.connectedtime = time.time()
         self.unlockopen(True)
@@ -149,13 +156,16 @@ class WebsocketHandler(object):
 
 
     def __on_close(self,ws):
-        if self.wantsconnection:
-            self.__on_error(ws,Exception("Websocket was closed..."))
+        """Called when the websocket is closed"""
+        if self.wantsconnection and not self.isretry:
+            self.__on_error(ws,Exception("Websocket was closed despite wanting a connection..."))
             return
         logging.debug("ConnectorDB: Websocket Closed")
         self.unlockopen()
 
     def __on_error(self,ws,e):
+        """Called when a websocket has an error AND when the websocket is closed despite wanting a connection.
+        If this error corresponds to an existing websocket dying, then attempt to reconnect with a backoff"""
         logging.debug("ConnectorDB: Websocket error: %s",str(e))
         v = self.unlockopen()
         if not v or self.isretry:
@@ -206,17 +216,19 @@ class WebsocketHandler(object):
             pass
 
     def __resubscribe(self):
-        #Subscribe to all existing subscriptions (happens on reconnect)
+        """Subscribe to all existing subscriptions (happens on reconnect)"""
         with self.subscription_lock:
             for sub in self.subscriptions:
                 logging.debug("Resubscribing to %s",sub)
                 self.send({"cmd": "subscribe", "arg":sub})
 
     def send(self,cmd):
+        """Send the given command thru websocket"""
         with self.ws_sendlock:
             self.ws.send(json.dumps(cmd))
 
     def insert(self,uri,data):
+        """insert the given data to the given stream"""
         if not self.connect():
             return False
         try:
@@ -227,6 +239,7 @@ class WebsocketHandler(object):
         return True
 
     def subscribe(self,uri,callback):
+        """Given a uri to subscribe to, and a callback function, sets up the callback"""
         if not self.connect():
             return False
 
@@ -239,6 +252,7 @@ class WebsocketHandler(object):
         return True
 
     def unsubscribe(self,uri):
+        """Unsubscribe from the given uri"""
         logging.debug("Unsubscribing from %s",uri)
         try:
             self.send({"cmd": "unsubscribe", "arg": uri})
@@ -249,6 +263,7 @@ class WebsocketHandler(object):
             del self.subscriptions[uri]
 
     def disconnect(self):
+        """Disconnects the websocket"""
         self.wantsconnection = False
         #Closes the connection if it exists
         if self.ws is not None:
@@ -259,6 +274,8 @@ class WebsocketHandler(object):
             self.subscriptions = {}
 
     def connect(self,forceretry=False):
+        """Attempts to connect to the websocket - returns False if it is already attempting connection
+        and true if the websocket is attempting to connect in background"""
         if not self.isconnected and self.wantsconnection and not forceretry:
             return False    #Means that is in process of retrying
         self.wantsconnection = True

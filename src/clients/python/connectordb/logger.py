@@ -15,10 +15,10 @@ from _connectordb import ConnectorDB,API_URL
 
 
 class ConnectorLogger(object):
-    #Allows logging datapoints for a deferred sync with connectordb (allowing to sync eg. once an hour,
-    #despite taking data continuously)
+    """Allows logging datapoints for a deferred sync with connectordb (allowing to sync eg. once an hour,
+    despite taking data continuously)"""
     def __init__(self,dbfile,on_create=None):
-        #Given a database file, and an optional "on create" callback, open the logger
+        """Given a database file, and an optional "on create" callback, open the logger"""
         self.conn = apsw.Connection(dbfile)
         self.dbfile = dbfile
 
@@ -42,8 +42,8 @@ class ConnectorLogger(object):
         self.stop()
 
     def __ensureDatabase(self):
-        #Run by commands that require a connection to the REST interface to ensure that a connectordb
-        #object is connected
+        """Run by commands that require a connection to the REST interface to ensure that a connectordb
+        object is connected"""
         if self.cdb is None:
             if len(self.name)==0 or len(self.apikey)==0 or len(self.url)==0:
                 raise errors.ConnectionError("Logger does not have login data set! Can't log in without login data!")
@@ -51,7 +51,7 @@ class ConnectorLogger(object):
 
 
     def __createDatabase(self):
-        #Create the database tables that will make up the cache if they don't exist yet
+        """Create the database tables that will make up the cache if they don't exist yet"""
         c = self.conn.cursor()
         try:
             logging.debug("Creating table cache if not exists")
@@ -76,6 +76,7 @@ class ConnectorLogger(object):
 
     @property
     def syncperiod(self):
+        """syncperiod is the time in seconds to wait between attempting to sync data to the ConnectorDB server"""
         return self.__syncperiod
     @syncperiod.setter
     def syncperiod(self,value):
@@ -91,6 +92,7 @@ class ConnectorLogger(object):
 
     @property
     def lastsync(self):
+        """lastsync is the timestamp of the most recent synchronization to the server"""
         return self.__lastsync
     @lastsync.setter
     def lastsync(self,value):
@@ -100,6 +102,7 @@ class ConnectorLogger(object):
 
     @property
     def name(self):
+        """The device name that the logger operates as"""
         return self.__devicename
     @name.setter
     def name(self,value):
@@ -111,6 +114,7 @@ class ConnectorLogger(object):
 
     @property
     def apikey(self):
+        """The api key that the logger uses to connect to ConnectorDB"""
         return self.__apikey
     @apikey.setter
     def apikey(self,value):
@@ -121,6 +125,7 @@ class ConnectorLogger(object):
 
     @property
     def url(self):
+        """The URL of the ConnectorDB server"""
         return self.__url
     @url.setter
     def url(self,value):
@@ -129,10 +134,15 @@ class ConnectorLogger(object):
         c.execute("UPDATE metadata SET url=?;",(value,))
         self.__clearCDB()
 
-    #The data property allows the user to save settings/data in the database, so that
-    #there does not need to be extra code messing around with settings
+    
     @property
     def data(self):
+        """The data property allows the user to save settings/data in the database, so that
+            there does not need to be extra code messing around with settings.
+
+        Use this property to save things that can be converted to JSON inside the logger database,
+        so that you don't have to mess with configuration files or saving setting otherwise.
+        """
         c = self.conn.cursor()
         c.execute("SELECT userdata FROM metadata;")
         return json.loads(c.next()[0])
@@ -154,6 +164,7 @@ class ConnectorLogger(object):
             self.streams[row[0]]= json.loads(row[1])
 
     def setlogin(self,devicename,apikey,url="https://connectordb.com/api/v1"):
+        """Set the login credentials that the logger will use to connect ot ConnectorDB"""
         cdb = ConnectorDB(devicename,apikey,url=url)
         self.synclock.acquire()
         self.cdb = cdb
@@ -164,15 +175,15 @@ class ConnectorLogger(object):
         self.url = url
 
     def __len__(self):
-        #Returns the number of datapoints currently cached
+        """Returns the number of datapoints currently cached"""
         c = self.conn.cursor()
         c.execute("SELECT COUNT() FROM cache;");
         return c.next()[0]
 
     def addStream(self,streampath,schema=None):
-        #Adds the given stream to the streams that logger can cache.
-        #Requires an active internet connection. If schema is not None, it creates the stream
-        #if it does not exist
+        """Adds the given stream to the streams that logger can cache.
+        Requires an active internet connection. If schema is not None, it creates the stream
+        if it does not exist"""
         self.__ensureDatabase()
 
         stream = None
@@ -182,7 +193,7 @@ class ConnectorLogger(object):
         else:
             stream = self.cdb(streampath)
 
-        if not stream.exists:
+        if not stream.exists():
             if schema is not None:
                 stream.create(schema)
             else:
@@ -200,6 +211,7 @@ class ConnectorLogger(object):
 
 
     def insert(self,streamname,value):
+        """Insert into a stream that the logger can cache"""
         if streamname.count("/")==0:
             streamname = self.name + "/"+streamname
         if streamname.count("/")<=1 or not streamname in self.streams:
@@ -214,6 +226,7 @@ class ConnectorLogger(object):
         c.execute("INSERT INTO cache VALUES (?,?,?);",(streamname,time.time(),json.dumps(value)))
 
     def sync(self):
+        """Attempt to sync with the ConnectorDB server"""
         try:
             logging.debug("Syncing with connectordb server")
             #Syncs the cache with connectordb
@@ -227,7 +240,7 @@ class ConnectorLogger(object):
                 c = self.conn.cursor()
                 for stream in self.streams:
                     s = self.cdb(stream)
-                    if not s.exists:
+                    if not s.exists():
                         raise errors.DataError("Stream %s no longer exists!"%(stream,))
                     c.execute("SELECT * FROM cache WHERE streamname=? ORDER BY timestamp ASC;",(stream,))
                     datapointArray=[]
@@ -266,6 +279,9 @@ class ConnectorLogger(object):
         self.__setsync()
 
     def start(self,period=None):
+        """Starts the logger synchronization service in the background. This allows you to not
+        need to worry about syncing with ConnectorDB - you jsut add to cache, and the cache will be syncd
+        periodically (accoridng to syncperiod)"""
         self.__ensureDatabase()
         with self.synclock:
             if self.syncer is not None:
@@ -281,14 +297,14 @@ class ConnectorLogger(object):
             self.syncer.start()
 
     def stop(self):
-        #Stops the syncer
+        """Stops the syncer"""
         with self.synclock:
             if self.syncer is not None:
                 self.syncer.cancel()
                 self.syncer= None
 
     def __contains__(self,streampath):
-        #Whether the logger is caching the given stream name
+        """Whether the logger is caching the given stream name"""
         if streampath.count("/")==0:
             return self.name+"/"+streampath in self.streams
         else:

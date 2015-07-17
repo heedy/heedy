@@ -29,7 +29,7 @@ class TestLogger(unittest.TestCase):
     def test_inserting(self):
         db = connectordb.ConnectorDB("test","test",url=self.url)
         s = db("python_test/mydevice/mystream")
-        self.assertFalse(s.exists)
+        self.assertFalse(s.exists())
 
         def test_create(obj):
             obj.setlogin("python_test/mydevice",self.apikey,self.url)
@@ -46,7 +46,7 @@ class TestLogger(unittest.TestCase):
 
         l = ConnectorLogger("test.db",on_create=test_create)
 
-        self.assertTrue(s.exists)
+        self.assertTrue(s.exists())
 
         self.assertEqual("python_test/mydevice",l.name)
         self.assertEqual(self.apikey,l.apikey)
@@ -89,7 +89,7 @@ class TestLogger(unittest.TestCase):
     def test_bgsync(self):
         db = connectordb.ConnectorDB("test","test",url=self.url)
         s = db("python_test/mydevice/mystream")
-        self.assertFalse(s.exists)
+        self.assertFalse(s.exists())
 
         l = ConnectorLogger("test.db")
         l.setlogin("python_test/mydevice",self.apikey,self.url)
