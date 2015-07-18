@@ -12,7 +12,7 @@ All Rights Reserved
 **/
 
 import (
-	"connectordb/streamdb/util/njson"
+	"github.com/connectordb/njson"
 	"fmt"
 )
 

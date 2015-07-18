@@ -44,6 +44,7 @@ go-dependencies:
 	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
 	go get github.com/Sirupsen/logrus
 	go get github.com/josephlewis42/multicache
+	go get github.com/connectordb/njson
 
 	# go tools
 	#go get golang.org/x/tools/cmd/cover	#Cover tool is default in 1.4, and this command gives errors
