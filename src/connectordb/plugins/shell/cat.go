@@ -12,8 +12,9 @@ All Rights Reserved
 **/
 
 import (
-	"connectordb/streamdb/util/njson"
 	"fmt"
+
+	"github.com/connectordb/njson"
 )
 
 // The clear command
