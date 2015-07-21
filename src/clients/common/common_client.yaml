@@ -32,7 +32,7 @@ paths:
       - standard : []
       summary: Fetch User
       description: |
-        Fetches the user with the given name if it exists and you aure 
+        Fetches the user with the given name if it exists and you are
         authorized to see it.
       parameters:
       - name: username
@@ -55,9 +55,9 @@ paths:
       - standard : []
       summary: Create User
       description: |
-        Creates a user given the name, password and email address of the 
+        Creates a user given the name, password and email address of the
         User object. The password must be in plaintext and will be converted
-        on the backend to a hashed format using a one-way function and a 
+        on the backend to a hashed format using a one-way function and a
         salt.
       parameters:
       - name: username
@@ -67,7 +67,7 @@ paths:
       - name: userinfo
         in: body
         required: true
-        schema: 
+        schema:
           $ref: '#/definitions/User'
       responses:
         200:
@@ -80,7 +80,7 @@ paths:
       security:
       - standard : []
       summary: Update User
-      description: | 
+      description: |
         Updates the user at the given path with the new JSON version
         in the body of the put.
       parameters:
@@ -91,7 +91,7 @@ paths:
       - name: user
         in: body
         required: true
-        schema: 
+        schema:
           $ref: '#/definitions/User'
       responses:
         200:
@@ -124,7 +124,7 @@ paths:
         - standard : []
       summary: Fetch Device
       description: |
-        Fetches the device with the given name if it exists and you aure 
+        Fetches the device with the given name if it exists and you aure
         authorized to see it.
       parameters:
         - name: username
@@ -154,7 +154,7 @@ paths:
         - name: newdevice
           in: body
           required: true
-          schema: 
+          schema:
             $ref: '#/definitions/Device'
         - name: username
           in: path
@@ -175,14 +175,14 @@ paths:
       security:
         - standard : []
       summary: Update Device
-      description: | 
+      description: |
         Updates the device at the given path with the new JSON version
         in the body of the put.
       parameters:
         - name: device
           in: body
           required: true
-          schema: 
+          schema:
             $ref: '#/definitions/Device'
         - name: username
           in: path
@@ -220,9 +220,9 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-        
-        
-        
+
+
+
 
   '/d/{username}/{devicename}/{streamname}':
     get:
@@ -230,7 +230,7 @@ paths:
         - standard : []
       summary: Fetch Stream
       description: |
-        Fetches the stream with the given name if it exists and you aue 
+        Fetches the stream with the given name if it exists and you are
         authorized to see it.
       responses:
         200:
@@ -276,7 +276,7 @@ paths:
         - name: newStream
           in: body
           required: true
-          schema: 
+          schema:
             $ref: '#/definitions/Stream'
       responses:
         200:
@@ -289,14 +289,14 @@ paths:
       security:
         - standard : []
       summary: Update Stream
-      description: | 
+      description: |
         Updates the stream at the given path with the new JSON version
         in the body of the put.
       parameters:
         - name: stream
           in: body
           required: true
-          schema: 
+          schema:
             $ref: '#/definitions/Stream'
         - name: username
           in: path
@@ -341,7 +341,35 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
+    patch:
+        security:
+            - standard : []
+        summary: Appends data to the stream. If timestamps are out of range, then they are corrected.
+        parameters:
+          - name: data
+            in: body
+            required: true
+            schema:
+              $ref: '#/definitions/Data'
+          - name: username
+            in: path
+            required: true
+            type: string
+          - name: devicename
+            in: path
+            required: true
+            type: string
+          - name: streamname
+            in: path
+            required: true
+            type: string
+        responses:
+          200:
+            description: Insert succeeded
+          default:
+            description: Unexpected error
+            schema:
+              $ref: '#/definitions/Error'
 definitions:
   Error:
     properties:
@@ -349,7 +377,7 @@ definitions:
         type: string
       message:
         type: string
-  
+
   User:
     properties:
       userId:
@@ -366,7 +394,7 @@ definitions:
         type: boolean
       nickname:
         type: string
-  
+
   Device:
     properties:
       deviceid:
@@ -389,14 +417,14 @@ definitions:
         type: boolean
       visible:
         type: boolean
-        
+
   Stream:
     properties:
       streamid:
         type: integer
       name:
         type: string
-      nickname: 
+      nickname:
         type: string
       type:
         type: string
@@ -406,3 +434,14 @@ definitions:
         type: boolean
       downlink:
         type: boolean
+
+  Data:
+    type: array
+    items:
+      type: object
+      properties:
+        d:
+          description: The datapoint to insert (based upon the json schema of the stream)
+        t:
+          type: number
+          description: The unix timestamp of the datapoint
