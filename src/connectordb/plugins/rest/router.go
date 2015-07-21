@@ -4,6 +4,8 @@ import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/authoperator"
 	"connectordb/streamdb/operator"
+	"encoding/json"
+	"errors"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -60,6 +62,22 @@ func getLogger(request *http.Request) *log.Entry {
 	return log.WithFields(fields)
 }
 
+type ErrorResponse struct {
+	Message string `json:"msg"`
+}
+
+func writeError(writer http.ResponseWriter, err error) {
+	var response ErrorResponse
+	response.Message = err.Error()
+
+	res, err := json.Marshal(response)
+	if err != nil {
+		writer.Write([]byte(`{"msg": "An internal server error occurred! Things exploded!"}`))
+		return
+	}
+	writer.Write(res)
+}
+
 //Writes the access control headers for the site
 func writeAccessControlHeaders(writer http.ResponseWriter) {
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -87,8 +105,10 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		if !ok {
 			writer.Header().Set("WWW-Authenticate", "Basic")
 			writer.WriteHeader(http.StatusUnauthorized)
+			writeError(writer, errors.New("The API requires HTTP BasicAuth authentication."))
 			logger.WithField("op", "AUTH").Warningln("Login attempt w/o auth")
 			atomic.AddUint32(&StatsAuthFails, 1)
+
 			return
 		}
 
@@ -108,7 +128,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			time.Sleep(UnsuccessfulLoginWait)
 
 			writer.WriteHeader(http.StatusUnauthorized)
-			writer.Write([]byte(err.Error()))
+			writeError(writer, err)
 
 			atomic.AddUint32(&StatsAuthFails, 1)
 
@@ -118,7 +138,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		//If we got here, o is a valid operator
 		err = apifunc(o, writer, request, logger.WithField("dev", o.Name()))
 		if err != nil {
-			writer.Write([]byte(err.Error()))
+			writeError(writer, err)
 		}
 	})
 }

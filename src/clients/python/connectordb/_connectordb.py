@@ -57,9 +57,9 @@ class ConnectorDB(Device):
             r -- The request result
         """
         if r.status_code in [401, 403]:
-            raise AuthenticationError(r.text)
+            raise AuthenticationError(r.json()["msg"])
         elif r.status_code !=200:
-            raise ServerError(r.text)
+            raise ServerError(r.json()["msg"])
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
