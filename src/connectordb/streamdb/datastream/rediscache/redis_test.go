@@ -16,7 +16,7 @@ var (
 	dpa4 = datastream.DatapointArray{datastream.Datapoint{3.0, 12.0, ""}}
 
 	//Warning: the map types change depending on marshaller/unmarshaller is used
-	dpa5 = datastream.DatapointArray{datastream.Datapoint{3.0, map[interface{}]interface{}{"hello": 2.0, "y": "hi"}, ""}}
+	dpa5 = datastream.DatapointArray{datastream.Datapoint{3.0, map[string]interface{}{"hello": 2.0, "y": "hi"}, ""}}
 
 	dpa6 = datastream.DatapointArray{datastream.Datapoint{1.0, 1.0, ""}, datastream.Datapoint{2.0, 2.0, ""}, datastream.Datapoint{3.0, 3., ""}, datastream.Datapoint{4.0, 4., ""}, datastream.Datapoint{5.0, 5., ""}}
 	dpa7 = datastream.DatapointArray{
