@@ -44,7 +44,7 @@ func GetRSS(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 	f.Items = make([]*feeds.Item, 0, 500)
 
 	for dp, err := dr.Next(); err == nil && dp != nil; dp, err = dr.Next() {
-		v, err := json.Marshal(dp)
+		v, err := json.Marshal(dp.Data)
 		if err != nil {
 			restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 			return err
