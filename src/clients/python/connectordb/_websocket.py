@@ -74,6 +74,7 @@ class WebsocketHandler(object):
 
         if self.pingtimer is not None:
             self.pingtimer.cancel()
+            self.pingtimer = None
 
         try:
             self.ws_openlock.release()
