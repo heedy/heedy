@@ -21,7 +21,7 @@ API_URL = "https://connectordb.com"
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
-    def __init__(self,user,password,url=API_URL):
+    def __init__(self,user,password=None,url=API_URL):
 
         if not url.startswith("http"):
             url = "http://"+url
@@ -30,6 +30,11 @@ class ConnectorDB(Device):
             url = url +"/"
 
         self.url = urljoin(url,"/api/v1/")
+
+        #Allows login using api key alone
+        if password==None:
+            password = user
+            user = ""
 
         auth = HTTPBasicAuth(user,password)
         self.r = Session()  #A Session allows us to reuse connections
@@ -57,9 +62,9 @@ class ConnectorDB(Device):
             r -- The request result
         """
         if r.status_code in [401, 403]:
-            raise AuthenticationError(r.json()["msg"])
+            raise AuthenticationError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
         elif r.status_code !=200:
-            raise ServerError(r.json()["msg"])
+            raise ServerError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management

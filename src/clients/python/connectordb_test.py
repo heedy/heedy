@@ -222,6 +222,7 @@ class TestConnectorDB(unittest.TestCase):
                     self.gotmessage=True
         tmp = tmpO()
         db["log"].subscribe(tmp.messagegetter)
+        time.sleep(0.1)
 
         usr = db.getuser("python_test")
         usr.create("py@email","mypass")
@@ -360,3 +361,12 @@ class TestConnectorDB(unittest.TestCase):
 
         #Have this one not disconnect, so that rest server's response is visible
         #db.wsdisconnect()
+
+    def test_apikeylogin(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        ak = db.apikey
+        print ak
+
+        db = connectordb.ConnectorDB(ak,url="http://localhost:8000")
+
+        self.assertEqual(db.name,"test/user")
