@@ -5,6 +5,7 @@ import (
 
 	"connectordb/streamdb/datastream"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -110,11 +111,11 @@ func TestRedisInsert(t *testing.T) {
 	}
 	i, err = rc.Insert("mybatcher", "", "mystream", "", dpz, false)
 	require.NoError(t, err)
-	require.Equal(t, int64(6007), i)
+	assert.Equal(t, int64(6007), i)
 
 	i, err = rc.StreamLength("", "mystream", "")
 	require.NoError(t, err)
-	require.Equal(t, int64(6007), i)
+	assert.Equal(t, int64(6007), i)
 }
 
 func TestRedisRestamp(t *testing.T) {
