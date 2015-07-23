@@ -26,7 +26,7 @@ func GetRequestLogger(request *http.Request, opname string) *log.Entry {
 	//if real-ip header exists, faddr=address (forwardedAddress) is logged
 	//In essence, if behind nginx, there is no need for the addr=blah
 
-	fields := log.Fields{"addr": request.RemoteAddr, "uri": request.URL.String(), "op": opname}
+	fields := log.Fields{"addr": request.RemoteAddr, "uri": request.URL.Path, "op": opname}
 	if realIP := request.Header.Get("X-Real-IP"); realIP != "" {
 		fields["faddr"] = realIP
 		if strings.HasPrefix(request.RemoteAddr, "127.0.0.1") || strings.HasPrefix(request.RemoteAddr, "::1") {
@@ -72,12 +72,17 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		//Check authentication
 		authUser, authPass, ok := request.BasicAuth()
 
-		//If there is no basic auth header, return unauthorized
 		if !ok {
-			writer.Header().Set("WWW-Authenticate", "Basic")
-			WriteError(writer, logger, http.StatusUnauthorized, errors.New("Login attempted without Basic Auth"), false)
-			atomic.AddUint32(&StatsAuthFails, 1)
-			return
+			//If there is no basic auth header, check for apikey parameter in the query itself
+			authPass = request.URL.Query().Get("apikey")
+
+			//If there was no apikey, fail asking for basic auth - otherwise, continue login with the api key
+			if len(authPass) == 0 {
+				writer.Header().Set("WWW-Authenticate", "Basic")
+				WriteError(writer, logger, http.StatusUnauthorized, errors.New("Login attempted without authentication"), false)
+				atomic.AddUint32(&StatsAuthFails, 1)
+				return
+			}
 		}
 
 		//Handle a panic without crashing the whole rest interface
