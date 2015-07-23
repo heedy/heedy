@@ -254,6 +254,15 @@ func (dpa DatapointArray) TStart(timestamp float64) DatapointArray {
 	return dpa[i:]
 }
 
+//TEnd returns a DatapointArray which has the given ending bound (like DatapointTRange, but without upperbound)
+func (dpa DatapointArray) TEnd(timestamp float64) DatapointArray {
+	i := dpa.FindTimeIndex(timestamp)
+	if i == -1 || timestamp <= 0.0 {
+		return dpa
+	}
+	return dpa[:i]
+}
+
 //TRange returns the DatapointArray of datapoints which fit within the time range:
 //  (timestamp1,timestamp2]
 func (dpa DatapointArray) TRange(timestamp1 float64, timestamp2 float64) DatapointArray {

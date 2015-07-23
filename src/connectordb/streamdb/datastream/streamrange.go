@@ -18,6 +18,11 @@ func (d *StreamRange) Close() {
 	}
 }
 
+//Index returns the current index of the values
+func (d *StreamRange) Index() int64 {
+	return d.index
+}
+
 func (d *StreamRange) getNextDataRange() (err error) {
 	//If the program got here it means the datarange is empty.
 	//This means we can sorta cheat. If the datarange is empty, it means that the sqlstore

@@ -127,7 +127,7 @@ func (ds *DataStream) IRange(device int64, stream int64, substream string, i1 in
 	}
 	if dpa != nil {
 		//Aww yes, the entire range was in redis
-		return NewDatapointArrayRange(dpa), nil
+		return NewDatapointArrayRange(dpa, i1), nil
 	}
 
 	//At least part of the range was in sql. So query sql with it, and return the StreamRange
@@ -149,6 +149,10 @@ func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t
 	//TRange works a bit differently from IRange, since time ranges go straight to postgres
 	sqlr, startindex, err := ds.sqls.GetByTime(stream, substream, t1)
 
+	if err != nil {
+		return EmptyRange{}, err
+	}
+
 	return NewTimeRange(&StreamRange{
 		ds:        ds,
 		dr:        sqlr,
@@ -156,7 +160,7 @@ func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t
 		deviceID:  device,
 		streamID:  stream,
 		substream: substream,
-	}, t1, t2), err
+	}, t1, t2)
 }
 
 //GetTimeIndex returns the corresponding index of data given a timestamp
@@ -165,12 +169,5 @@ func (ds *DataStream) GetTimeIndex(device int64, stream int64, substream string,
 	if err != nil {
 		return 0, err
 	}
-
-	_, err = dr.Next()
-
-	dpi := dr.(*TimeRange).dr.(*StreamRange).index
-	if dpi > 0 {
-		dpi -= 1
-	}
-	return dpi, err
+	return dr.Index(), nil
 }

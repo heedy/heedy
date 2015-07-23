@@ -3,6 +3,7 @@ package datastream
 //The DataRange interface - this is the object that is returned from different caches/stores - it represents
 //a range of data values stored in a certain way, and Next() gets the next datapoint in the range.
 type DataRange interface {
+	Index() int64                        //Returns the index of the DataRange's next datapoint
 	NextArray() (*DatapointArray, error) //Returns the next chunk of datapoints from the DataRange
 	Next() (*Datapoint, error)           //Returns the next datapoint in the sequence
 	Close()
@@ -11,6 +12,11 @@ type DataRange interface {
 //The EmptyRange is a range that always returns nil - as if there were no datapoints left.
 //It is the DataRange equivalent of nil
 type EmptyRange struct{}
+
+//Index just returns 0
+func (r EmptyRange) Index() int64 {
+	return 0
+}
 
 //Close does absolutely nothing
 func (r EmptyRange) Close() {}
@@ -29,9 +35,17 @@ func (r EmptyRange) Next() (*Datapoint, error) {
 //within the given time range. So if given a DataRange with range [a,b], and the timerange is (c,d], the
 //TimeRange will return all datapoints within the Datarange which are within (c,d].
 type TimeRange struct {
-	dr        DataRange //The DataRange to wrap
-	starttime float64   //The time at which to start the time range
-	endtime   float64   //The time at which to stop returning datapoints
+	dr      DataRange       //The DataRange to wrap
+	endtime float64         //The time at which to stop returning datapoints
+	dpap    *DatapointArray //The current array that is being read
+}
+
+//Index returns the underlying DataRange's index.
+func (r *TimeRange) Index() int64 {
+	if r.dpap != nil {
+		return r.dr.Index() - int64(r.dpap.Length())
+	}
+	return r.dr.Index()
 }
 
 //Close closes the internal DataRange
@@ -41,14 +55,17 @@ func (r *TimeRange) Close() {
 
 //NextArray returns the next datapoint array in sequence from the underlying DataRange, so long as it is within the
 //correct timestamp bounds
-func (r *TimeRange) NextArray() (*DatapointArray, error) {
-	dpap, err := r.dr.NextArray()
-
-	if err != nil || dpap == nil {
-		return dpap, err
+func (r *TimeRange) NextArray() (dpap *DatapointArray, err error) {
+	if r.dpap == nil {
+		r.dpap, err = r.dr.NextArray()
 	}
 
-	dpa := dpap.TRange(r.starttime, r.endtime)
+	if err != nil || r.dpap == nil {
+		return r.dpap, err
+	}
+
+	dpa := r.dpap.TEnd(r.endtime)
+	r.dpap = nil
 	if dpa == nil {
 		return nil, err
 	}
@@ -56,19 +73,26 @@ func (r *TimeRange) NextArray() (*DatapointArray, error) {
 		return &dpa, err
 	}
 
-	return r.NextArray()
+	return nil, nil
 }
 
 //Next returns the next datapoint in sequence from the underlying DataRange, so long as it is within the
 //correct timestamp bounds
-func (r *TimeRange) Next() (*Datapoint, error) {
-	dp, err := r.dr.Next()
-	//Skip datapoints before the starttime
-	for dp != nil && dp.Timestamp <= r.starttime {
+func (r *TimeRange) Next() (dp *Datapoint, err error) {
+	if r.dpap != nil && r.dpap.Length() > 0 {
+		res := (*r.dpap)[0]
+		dpa := (*r.dpap)[1:]
+		r.dpap = &dpa
+		if r.dpap.Length() == 0 {
+			r.dpap = nil
+		}
+		dp = &res
+	} else {
 		dp, err = r.dr.Next()
 	}
+
 	//Return nil if the timestamp is beyond our range
-	if dp != nil && r.endtime > 0 && r.endtime > 0.0 && dp.Timestamp > r.endtime {
+	if dp != nil && r.endtime > 0.0 && dp.Timestamp > r.endtime {
 		//The datapoint is beyond our range.
 		return nil, nil
 	}
@@ -76,8 +100,19 @@ func (r *TimeRange) Next() (*Datapoint, error) {
 }
 
 //NewTimeRange creates a time range given the time range of valid datapoints
-func NewTimeRange(dr DataRange, starttime float64, endtime float64) *TimeRange {
-	return &TimeRange{dr, starttime, endtime}
+func NewTimeRange(dr DataRange, starttime float64, endtime float64) (DataRange, error) {
+
+	//We have a DataRange - but we don't know what time it starts at. We want to skip the
+	// datapoints before starttime
+	dpap, err := dr.NextArray()
+	for dpap != nil && err == nil {
+		dpa := dpap.TStart(starttime)
+		if dpa.Length() > 0 {
+			return &TimeRange{dr, endtime, &dpa}, nil
+		}
+		dpap, err = dr.NextArray()
+	}
+	return EmptyRange{}, err
 }
 
 //NumRange returns only the first given number of datapoints (with an optional skip param) from a DataRange
@@ -89,6 +124,11 @@ type NumRange struct {
 //Close closes the internal DataRange
 func (r *NumRange) Close() {
 	r.dr.Close()
+}
+
+//Index returns the underlying DataRange's index value
+func (r *NumRange) Index() int64 {
+	return r.dr.Index()
 }
 
 //NextArray returns the next datapoint from the underlying DataRange so long as the datapoint array is within the
@@ -142,11 +182,17 @@ func NewNumRange(dr DataRange, datapoints int64) *NumRange {
 type DatapointArrayRange struct {
 	rangeindex int
 	da         DatapointArray
+	startindex int64
 }
 
 //Close resets the range
 func (d *DatapointArrayRange) Close() {
 	d.rangeindex = 0
+}
+
+//Index returns the index of the DatapointArray
+func (d *DatapointArrayRange) Index() int64 {
+	return d.startindex + int64(d.rangeindex)
 }
 
 //Next returns the next datapoint
@@ -169,6 +215,6 @@ func (d *DatapointArrayRange) NextArray() (*DatapointArray, error) {
 }
 
 //NewDatapointArrayRange does exactly what the function says
-func NewDatapointArrayRange(da DatapointArray) *DatapointArrayRange {
-	return &DatapointArrayRange{0, da}
+func NewDatapointArrayRange(da DatapointArray, startindex int64) *DatapointArrayRange {
+	return &DatapointArrayRange{0, da, startindex}
 }
