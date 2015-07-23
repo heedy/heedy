@@ -3,6 +3,7 @@ package datastream
 import (
 	"bytes"
 	"compress/gzip"
+	"connectordb/streamdb/util"
 	"errors"
 	"time"
 
@@ -31,7 +32,8 @@ type DatapointArray []Datapoint
 
 //DatapointArrayFromBytes reads a DatapointArray from its corresponding bytes
 func DatapointArrayFromBytes(data []byte) (dpa DatapointArray, err error) {
-	err = msgpack.Unmarshal(data, &dpa)
+	//We use our custom unmarshaller
+	err = util.MsgPackUnmarshal(data, &dpa)
 	return dpa, err
 }
 
@@ -100,7 +102,7 @@ func DatapointArrayFromCompressedBytes(cdata []byte) (dpa DatapointArray, err er
 	}()
 
 	r, _ := gzip.NewReader(bytes.NewBuffer(cdata))
-	dec := msgpack.NewDecoder(r)
+	dec := util.NewMsgPackDecoder(r)
 	err = dec.Decode(&dpa)
 	return dpa, err
 }

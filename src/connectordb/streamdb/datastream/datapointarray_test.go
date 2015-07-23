@@ -15,7 +15,7 @@ var (
 	dpa4 = DatapointArray{Datapoint{3.0, 12.0, ""}}
 
 	//Warning: the map types change depending on marshaller/unmarshaller is used
-	dpa5 = DatapointArray{Datapoint{3.0, map[interface{}]interface{}{"hello": 2.0, "y": "hi"}, ""}}
+	dpa5 = DatapointArray{Datapoint{3.0, map[string]interface{}{"hello": 2.0, "y": "hi"}, ""}}
 
 	dpa6 = DatapointArray{Datapoint{1.0, 1.0, ""}, Datapoint{2.0, 2.0, ""}, Datapoint{3.0, 3., ""}, Datapoint{4.0, 4., ""}, Datapoint{5.0, 5., ""}}
 	dpa7 = DatapointArray{

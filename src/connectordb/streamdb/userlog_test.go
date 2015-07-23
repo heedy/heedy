@@ -14,7 +14,7 @@ func ensureUserlog(t *testing.T, m operator.Message, cmd, arg string) {
 	require.Equal(t, "streamdb_test/user/log", m.Stream)
 	require.Equal(t, "streamdb_test/user", m.Data[0].Sender)
 
-	d, ok := m.Data[0].Data.(map[interface{}]interface{})
+	d, ok := m.Data[0].Data.(map[string]interface{})
 	require.True(t, ok)
 	require.Equal(t, cmd, d["cmd"])
 	require.Equal(t, arg, d["arg"])
