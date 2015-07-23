@@ -208,6 +208,33 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual(2,len(s[1:]))
         self.assertEqual(3,len(s[:]))
 
+    def test_iostruct(self):
+        #This test is specifically to make sure that structs are correctly returned
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+
+        class tmpO():
+            def __init__(self):
+                self.gotmessage = False
+            def messagegetter(self,stream,datapoints):
+                logging.info("GOT: %s",stream)
+                if stream=="test/user/log" and datapoints[0]["d"]["cmd"]=="CreateUser" and datapoints[0]["d"]["arg"]=="python_test":
+                    logging.info("SETTING TRUE")
+                    self.gotmessage=True
+        tmp = tmpO()
+        db["log"].subscribe(tmp.messagegetter)
+
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+
+        v = db["log"][-1]
+        self.assertEquals(v["d"]["cmd"],"CreateUser")
+        self.assertEquals(v["d"]["arg"],"python_test")
+
+        self.assertTrue(tmp.gotmessage)
+
+        db.close()
+
+
     
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")

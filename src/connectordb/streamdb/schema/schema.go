@@ -8,6 +8,8 @@ suitable for storage in datastream
 import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 
+	"connectordb/streamdb/util"
+
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -29,7 +31,7 @@ func (s *Schema) Marshal(datapoint interface{}) ([]byte, error) {
 
 //Unmarshal the data into the given interface.
 func (s *Schema) Unmarshal(data []byte, v interface{}) error {
-	return msgpack.Unmarshal(data, v)
+	return util.MsgPackUnmarshal(data, v)
 }
 
 //NewSchema loads a schema from the JsonSchema string
