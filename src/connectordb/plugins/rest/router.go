@@ -6,12 +6,46 @@ import (
 
 	"net/http"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/gorilla/mux"
 
+	"connectordb/plugins/rest/dataset"
 	"connectordb/plugins/rest/restcore"
 	"connectordb/plugins/rest/restd"
+	"connectordb/plugins/rest/rss"
+
+	log "github.com/Sirupsen/logrus"
 )
+
+var (
+	//The preferred maximum number of open files
+	PreferredFileLimit = uint64(10000)
+)
+
+//SetFileLimit attempts to set the open file limits
+func SetFileLimit() {
+	var noFile syscall.Rlimit
+	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &noFile)
+	if err != nil {
+		log.Warn("Could not read file limit:", err)
+		return
+	}
+	if noFile.Cur < PreferredFileLimit {
+		change := uint64(0)
+		if noFile.Max < PreferredFileLimit {
+			change = noFile.Max
+			log.Warnf("User hard file limit (%d) is less than preferred %d", noFile.Max, PreferredFileLimit)
+		} else {
+			change = PreferredFileLimit
+		}
+		log.Warnf("Setting user file limit from %d to %d", noFile.Cur, change)
+		noFile.Cur = change
+		if err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &noFile); err != nil {
+			log.Error("Failed to set file limit: ", err)
+		}
+	}
+}
 
 //NotFoundHandler when a path is not found, return a 404 with path not recognized message
 func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
@@ -30,6 +64,8 @@ func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 
 //Router returns a fully formed Gorilla router given an optional prefix
 func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
+	SetFileLimit()
+
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}
@@ -44,8 +80,9 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	// The websocket is run straight from here
 	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
-	//The 'd' prefix corresponds to data
 	restd.Router(db, prefix.PathPrefix("/d").Subrouter())
+	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())
+	rss.Router(db, prefix.PathPrefix("/rss").Subrouter())
 
 	go restcore.RunStats()
 	go restcore.RunQueryTimers()

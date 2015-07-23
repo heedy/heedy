@@ -8,17 +8,7 @@ import (
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
-
-	"github.com/gorilla/mux"
 )
-
-func getStreamPath(request *http.Request) (username string, devicename string, streamname string, streampath string) {
-	username = mux.Vars(request)["user"]
-	devicename = mux.Vars(request)["device"]
-	streamname = mux.Vars(request)["stream"]
-	streampath = username + "/" + devicename + "/" + streamname
-	return username, devicename, streamname, streampath
-}
 
 //ListStreams lists the streams that the given device has
 func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
@@ -29,7 +19,7 @@ func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.
 
 //CreateStream creates a new stream from a REST API request
 func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, streamname, streampath := getStreamPath(request)
+	_, _, streamname, streampath := restcore.GetStreamPath(request)
 
 	err := restcore.ValidName(streamname, nil)
 	if err != nil {
@@ -57,7 +47,7 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 
 //ReadStream reads a stream from a REST API request
 func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	if err := restcore.BadQ(o, writer, request, logger); err != nil {
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
@@ -71,7 +61,7 @@ func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.R
 
 //UpdateStream updates the metadata for existing stream from a REST API request
 func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	s, err := o.ReadStream(streampath)
 	if err != nil {
@@ -93,7 +83,7 @@ func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http
 
 //DeleteStream deletes existing stream from a REST API request
 func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	//Deleting stream is info-worthy
 	logger.Infoln()

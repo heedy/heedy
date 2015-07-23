@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
 
 	log "github.com/Sirupsen/logrus"
@@ -135,4 +136,13 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(errorCode)
 	writer.Write(res)
+}
+
+//GetStreamPath returns the relevant parts of a stream path
+func GetStreamPath(request *http.Request) (username string, devicename string, streamname string, streampath string) {
+	username = mux.Vars(request)["user"]
+	devicename = mux.Vars(request)["device"]
+	streamname = mux.Vars(request)["stream"]
+	streampath = username + "/" + devicename + "/" + streamname
+	return username, devicename, streamname, streampath
 }

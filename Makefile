@@ -41,13 +41,11 @@ go-dependencies:
 	go get github.com/vharitonsky/iniflags
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid
-	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
+	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket github.com/gorilla/feeds
 	go get github.com/Sirupsen/logrus
 	go get github.com/josephlewis42/multicache
 	go get github.com/connectordb/njson
 
-	# go tools
-	#go get golang.org/x/tools/cmd/cover	#Cover tool is default in 1.4, and this command gives errors
 	go get github.com/stretchr/testify
 
 

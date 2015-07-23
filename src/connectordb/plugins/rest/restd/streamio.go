@@ -22,7 +22,7 @@ var (
 
 //GetStreamLength gets the stream length
 func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	l, err := o.LengthStream(streampath)
 
@@ -31,7 +31,7 @@ func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *h
 
 //WriteStream writes the given stream
 func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	var datapoints []datastream.Datapoint
 	err := restcore.UnmarshalRequest(request, &datapoints)
@@ -83,7 +83,7 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 
 //GetStreamRange gets a range of data from a stream
 func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 	logger = logger.WithField("op", "StreamRange")
 	q := request.URL.Query()
 
@@ -161,7 +161,7 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 
 //StreamTime2Index gets the time associated with the index
 func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	_, _, _, streampath := getStreamPath(request)
+	_, _, _, streampath := restcore.GetStreamPath(request)
 	logger = logger.WithField("op", "Time2Index")
 
 	ts := request.URL.Query().Get("t")

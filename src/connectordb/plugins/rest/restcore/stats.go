@@ -122,10 +122,10 @@ func RunStats() {
 		p := atomic.LoadUint32(&StatsPanics)
 
 		//Only display stat view if there was something going on
-		if q > 0 || p > 0 {
+		if q > 0 {
 			logger := log.WithFields(log.Fields{"queries": q, "authfails": a, "inserts": i, "errors": e, "panics": p})
 			if p > 0 {
-				logger.Errorf("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
+				logger.Warnf("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
 			} else {
 				logger.Infof("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
 			}
