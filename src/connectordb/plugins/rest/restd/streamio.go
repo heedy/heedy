@@ -1,6 +1,7 @@
-package rest
+package restd
 
 import (
+	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"errors"
@@ -22,44 +23,38 @@ var (
 //GetStreamLength gets the stream length
 func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "StreamLength")
-	logger.Debugln()
 
 	l, err := o.LengthStream(streampath)
 
-	return JSONWriter(writer, l, logger, err)
+	return restcore.JSONWriter(writer, l, logger, err)
 }
 
 //WriteStream writes the given stream
 func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "WriteStream")
 
 	var datapoints []datastream.Datapoint
-	err := UnmarshalRequest(request, &datapoints)
+	err := restcore.UnmarshalRequest(request, &datapoints)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 	restamp := request.Method == "PATCH"
 
-	logger.Debugln("Inserting", len(datapoints), "dp restamp=", restamp)
+	logger.Debugf("Inserting %d dp restamp=%v", len(datapoints), restamp)
 
 	err = o.InsertStream(streampath, datapoints, restamp)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	atomic.AddUint32(&StatsInserts, uint32(len(datapoints)))
-	return OK(writer)
+	atomic.AddUint32(&restcore.StatsInserts, uint32(len(datapoints)))
+	return restcore.OK(writer)
 }
 
 func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger *log.Entry, err error) error {
 	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
 
@@ -67,12 +62,12 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	if err != nil {
 		if err == io.EOF {
 			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+			writer.Header().Set("Content-Length", "2")
 			writer.WriteHeader(http.StatusOK)
 			writer.Write([]byte("[]")) //If there are no datapoints, just return empty
 			return nil
 		}
-		writer.WriteHeader(http.StatusInternalServerError)
-		logger.Errorln(err)
+		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return err
 	}
 
@@ -86,6 +81,7 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	return nil
 }
 
+//GetStreamRange gets a range of data from a stream
 func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
 	logger = logger.WithField("op", "StreamRange")
@@ -98,15 +94,13 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 	if len(i1s) > 0 || len(i2s) > 0 {
 		i1, err := strconv.ParseInt(i1s, 0, 64)
 		if i1s != "" && err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return ErrRangeArgs
 		}
 
 		i2, err := strconv.ParseInt(i2s, 0, 64)
 		if i2s != "" && err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return ErrRangeArgs
 		} else if i2s == "" {
 			i2 = 0
@@ -126,15 +120,13 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 	if len(t1s) > 0 || len(t2s) > 0 {
 		t1, err := strconv.ParseFloat(t1s, 64)
 		if err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return ErrRangeArgs
 		}
 
 		t2, err := strconv.ParseFloat(t2s, 64)
 		if t2s != "" && err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return ErrRangeArgs
 		} else if t2s == "" {
 			t2 = 0.
@@ -144,8 +136,7 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 		lims := q.Get("limit")
 		lim, err := strconv.ParseUint(lims, 0, 64)
 		if lims != "" && err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return ErrRangeArgs
 		} else if lims == "" {
 			lim = 0
@@ -155,8 +146,7 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 		logger.Debugf("trange [%s,%s) limit=%s", t1s, t2s, lims)
 		dr, err := o.GetStreamTimeRange(streampath, t1, t2, int64(lim))
 		if err != nil {
-			writer.WriteHeader(http.StatusForbidden)
-			logger.Warningln(err)
+			restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 			return err
 		}
 
@@ -164,8 +154,7 @@ func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *ht
 	}
 
 	//None of the limits were recognized. Rather than exploding, return bad request
-	writer.WriteHeader(http.StatusBadRequest)
-	logger.Warningln("Invalid range args")
+	restcore.WriteError(writer, logger, http.StatusBadRequest, ErrRangeArgs, false)
 	return ErrRangeArgs
 
 }
@@ -178,12 +167,11 @@ func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *
 	ts := request.URL.Query().Get("t")
 	t, err := strconv.ParseFloat(ts, 64)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln("invalid args")
+		restcore.WriteError(writer, logger, http.StatusForbidden, ErrTime2IndexArgs, false)
 		return ErrTime2IndexArgs
 	}
 	logger.Debugln("t=", ts)
 
 	i, err := o.TimeToIndexStream(streampath, t)
-	return JSONWriter(writer, i, logger, err)
+	return restcore.JSONWriter(writer, i, logger, err)
 }

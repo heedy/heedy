@@ -1,4 +1,4 @@
-package rest
+package restcore
 
 import (
 	"connectordb/streamdb/operator"
@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
+
+	"github.com/nu7hatch/gouuid"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -33,15 +36,13 @@ func OK(writer http.ResponseWriter) error {
 //JSONWriter writes the given data as http
 func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry, err error) error {
 	if err != nil {
-		writer.WriteHeader(http.StatusNotFound)
-		logger.Warningln(err)
+		WriteError(writer, logger, http.StatusNotFound, err, false)
 		return err
 	}
 
 	res, err := json.Marshal(data)
 	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		logger.Errorln(err)
+		WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return err
 	}
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
@@ -84,9 +85,54 @@ func ValidName(n string, err error) error {
 //BadQ checks if there is a q= part to the given query, and gives an error if there is
 func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	if val := request.URL.Query().Get("q"); val != "" {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.WithField("op", "Q").Warningln("Bad Q: ", val)
 		return ErrBadQ
 	}
 	return nil
+}
+
+//ErrorResponse is the struct which holds the error message and response code
+type ErrorResponse struct {
+	Code      int    `json:"code"`
+	Message   string `json:"msg"`
+	Reference string `json:"ref,omitempty"`
+}
+
+//WriteError takes care of gracefully writing errors to the client in a way that allows
+//for fairly easy debugging.
+func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, err error, iserr bool) {
+	atomic.AddUint32(&StatsErrors, 1)
+
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	u, err2 := uuid.NewV4()
+	if err2 != nil {
+		logger.WithField("ref", "OSHIT").Errorln("Failed to generate error UUID: " + err2.Error())
+		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
+		writer.Write([]byte(`{"code": 520, "msg": "Failed to generate error UUID", "ref": "OSHIT"}`))
+		return
+	}
+	uu := u.String()
+
+	response := ErrorResponse{
+		Code:      errorCode,
+		Message:   err.Error(),
+		Reference: uu,
+	}
+	res, err2 := json.Marshal(response)
+	if err2 != nil {
+		logger.WithField("ref", uu).Errorln("Failed to marshal error struct: " + err2.Error())
+		logger.WithField("ref", uu).Warningln("Original Error: " + err.Error())
+		writer.Write([]byte(`{"code": 520, "msg": "Failed to write error message","ref":"` + uu + `"}`))
+	}
+
+	//Now that we have the error message, we log it and send the messages
+	l := logger.WithFields(log.Fields{"ref": uu, "code": errorCode})
+	if iserr {
+		l.Errorln(err.Error())
+	} else {
+		l.Warningln(err.Error())
+	}
+	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
+	writer.WriteHeader(errorCode)
+	writer.Write(res)
 }

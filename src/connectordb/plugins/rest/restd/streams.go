@@ -1,6 +1,7 @@
-package rest
+package restd
 
 import (
+	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/operator"
 	"io"
 	"io/ioutil"
@@ -22,23 +23,17 @@ func getStreamPath(request *http.Request) (username string, devicename string, s
 //ListStreams lists the streams that the given device has
 func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, devpath := getDevicePath(request)
-	logger = logger.WithField("op", "ListStreams")
-	logger.Debugln()
 	d, err := o.ReadAllStreams(devpath)
-	return JSONWriter(writer, d, logger, err)
+	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //CreateStream creates a new stream from a REST API request
 func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, streamname, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "CreateStream")
-	logger.Infoln()
 
-	err := ValidName(streamname, nil)
+	err := restcore.ValidName(streamname, nil)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
@@ -47,14 +42,12 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 	//Limit the schema to 512KB
 	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 512000))
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
 	if err = o.CreateStream(streampath, string(data)); err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
 
@@ -66,56 +59,49 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
 
-	if err := BadQ(o, writer, request, logger); err != nil {
+	if err := restcore.BadQ(o, writer, request, logger); err != nil {
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
-	logger = logger.WithField("op", "ReadStream")
-	logger.Debugln()
 	s, err := o.ReadStream(streampath)
 
-	return JSONWriter(writer, s, logger, err)
+	return restcore.JSONWriter(writer, s, logger, err)
 }
 
 //UpdateStream updates the metadata for existing stream from a REST API request
 func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "UpdateStream")
-	logger.Infoln()
 
 	s, err := o.ReadStream(streampath)
 	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	err = UnmarshalRequest(request, s)
-	err = ValidName(s.Name, err)
+	err = restcore.UnmarshalRequest(request, s)
+	err = restcore.ValidName(s.Name, err)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 	if err = o.UpdateStream(s); err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	return JSONWriter(writer, s, logger, err)
+	return restcore.JSONWriter(writer, s, logger, err)
 }
 
 //DeleteStream deletes existing stream from a REST API request
 func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := getStreamPath(request)
-	logger = logger.WithField("op", "DeleteStream")
+
+	//Deleting stream is info-worthy
 	logger.Infoln()
+
 	err := o.DeleteStream(streampath)
 	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	return OK(writer)
+	return restcore.OK(writer)
 }
