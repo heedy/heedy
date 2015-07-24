@@ -127,5 +127,13 @@ class ConnectorDB(Device):
         while True:
             time.sleep(100)
 
+    def close(self):
+        #Closes the connection
+        self.wsdisconnect()
+        self.r.close()
+
     def __repr__(self):
         return "[ConnectorDB:%s]"%(self.metaname,)
+
+    def __del__(self):
+        self.close()
