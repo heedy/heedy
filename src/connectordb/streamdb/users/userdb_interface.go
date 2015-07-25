@@ -30,4 +30,13 @@ type UserDatabase interface {
 	UpdateDevice(device *Device) error
 	UpdateStream(stream *Stream) error
 	UpdateUser(user *User) error
+
+	// Returns the total number of users in the database
+	CountUsers() (uint64, error)
+
+	// Returns tht total number of devices in the database
+	CountDevices() (uint64, error)
+
+	// Returns the total number of streams in the database
+	CountStreams() (uint64, error)
 }

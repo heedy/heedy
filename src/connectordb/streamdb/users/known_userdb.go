@@ -100,3 +100,15 @@ func (userdb *KnownUserdb) UpdateStream(stream *Stream) error {
 func (userdb *KnownUserdb) UpdateUser(user *User) error {
 	return nil
 }
+
+func (userdb *KnownUserdb) CountUsers() (uint64, error) {
+	return 1, nil
+}
+
+func (userdb *KnownUserdb) CountStreams() (uint64, error) {
+	return 1, nil
+}
+
+func (userdb *KnownUserdb) CountDevices() (uint64, error) {
+	return 1, nil
+}
