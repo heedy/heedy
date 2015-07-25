@@ -31,6 +31,7 @@ type Text struct {
 
 type Link struct {
 	Href string `xml:"href,attr"`
+	Rel  string `xml:"rel,attr,omitempty"`
 }
 
 type Feed struct {
@@ -49,7 +50,7 @@ type Entry struct {
 	Link    Link    `xml:"link"`
 	Updated string  `xml:"updated"`
 	Author  *Person `xml:"author"`
-	Summary *Text   `xml:"summary"`
+	Content *Text   `xml:"content"`
 }
 
 func getAtomEntry(dpindex int64, dp datastream.Datapoint, streamname string) *Entry {
@@ -59,17 +60,17 @@ func getAtomEntry(dpindex int64, dp datastream.Datapoint, streamname string) *En
 //GetAtom gets an Atom feed of the given stream.
 func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
-	s, dr, err := getFeedData(o, writer, request, logger)
+	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {
 		return err
 	}
-
+	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
 	f := Feed{
 		Title:   streampath,
-		ID:      strconv.FormatInt(s.StreamId, 10),
+		ID:      streamuri,
 		Updated: AtomTime(time.Now()),
 		Author:  &Person{usrname},
-		Link:    Link{Href: "https://connectordb.com/api/v1/d/" + streampath}, //I dislike links. Especially hard-coded ones
+		Link:    Link{Href: streamuri, Rel: "self"}, //I dislike links. Especially hard-coded ones
 		Entry:   make([]*Entry, 0, EntryLimit),
 	}
 	i := dr.Index()
@@ -84,13 +85,15 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			authr = usrname + "/" + devname
 		}
 
+		feeduri := "https://connectordb.com/api/v1/d/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)
+
 		f.Entry = append(f.Entry, &Entry{
 			Updated: AtomTime(time.Unix(0, int64(dp.Timestamp*1e9))),
-			Title:   "",
-			Link:    Link{Href: "https://connectordb.com/api/v1/d/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)},
-			ID:      strconv.FormatInt(s.StreamId, 10) + ":" + strconv.FormatInt(i, 10),
+			Title:   "Datapoint",
+			Link:    Link{Href: feeduri},
+			ID:      feeduri,
 			Author:  &Person{authr},
-			Summary: &Text{Body: string(v)},
+			Content: &Text{Body: string(v)},
 		})
 		i = dr.Index()
 
@@ -101,10 +104,12 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return err
 	}
+	xmlheader := []byte("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
 
-	writer.Header().Set("Content-Length", strconv.Itoa(len(result)))
+	writer.Header().Set("Content-Length", strconv.Itoa(len(result)+len(xmlheader)))
 	writer.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
+	writer.Write(xmlheader)
 	writer.Write(result)
 	return nil
 }
