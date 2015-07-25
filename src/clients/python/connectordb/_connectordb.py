@@ -68,17 +68,17 @@ class ConnectorDB(Device):
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
-    def urlget(self,location,cmd="d/"):
+    def urlget(self,location,cmd="crud/"):
         return self.handleresult(self.r.get(urljoin(self.url+cmd,location)))
-    def urldelete(self,location,cmd="d/"):
+    def urldelete(self,location,cmd="crud/"):
         return self.handleresult(self.r.delete(urljoin(self.url+cmd,location)))
-    def urlpost(self,location,data={},cmd="d/"):
+    def urlpost(self,location,data={},cmd="crud/"):
         return self.handleresult(self.r.post(urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlput(self,location,data,cmd="d/"):
+    def urlput(self,location,data,cmd="crud/"):
         return self.handleresult(self.r.put(urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlupdate(self,location,data,cmd="d/"):
+    def urlupdate(self,location,data,cmd="crud/"):
         return self.handleresult(self.r.request("UPDATE",urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlpatch(self,location,data,cmd="d/"):
+    def urlpatch(self,location,data,cmd="crud/"):
         return self.handleresult(self.r.request("PATCH",urljoin(self.url+cmd,location),data=json.dumps(data)))
 
     def getuser(self,usrname):

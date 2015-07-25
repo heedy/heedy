@@ -1,4 +1,4 @@
-package restd
+package crud
 
 import (
 	"connectordb/plugins/rest/restcore"

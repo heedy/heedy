@@ -68,7 +68,7 @@ ConnectorDB.prototype = {
     // behavior is undefined if an item coming before a defined item is undefined
     // e.g. _getPath(undefined, "foo", "bar");
     _getPath: function(user, dev, stream) {
-        var path = "d/";
+        var path = "crud/";
         if(user !== undefined) {
             path += user;
         }

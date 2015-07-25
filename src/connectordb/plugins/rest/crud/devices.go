@@ -1,4 +1,4 @@
-package restd
+package crud
 
 import (
 	"connectordb/streamdb/operator"

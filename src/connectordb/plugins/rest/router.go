@@ -10,10 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"connectordb/plugins/rest/crud"
 	"connectordb/plugins/rest/dataset"
 	"connectordb/plugins/rest/feed"
 	"connectordb/plugins/rest/restcore"
-	"connectordb/plugins/rest/restd"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -80,7 +80,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	// The websocket is run straight from here
 	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
-	restd.Router(db, prefix.PathPrefix("/d").Subrouter())
+	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())
 	feed.Router(db, prefix.PathPrefix("/feed").Subrouter())
 
