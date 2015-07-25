@@ -11,15 +11,15 @@ import (
 	"github.com/gorilla/mux"
 
 	"connectordb/plugins/rest/dataset"
+	"connectordb/plugins/rest/feed"
 	"connectordb/plugins/rest/restcore"
 	"connectordb/plugins/rest/restd"
-	"connectordb/plugins/rest/rss"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 var (
-	//The preferred maximum number of open files
+	//PreferredFileLimit sets the preferred maximum number of open files
 	PreferredFileLimit = uint64(10000)
 )
 
@@ -82,7 +82,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	restd.Router(db, prefix.PathPrefix("/d").Subrouter())
 	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())
-	rss.Router(db, prefix.PathPrefix("/rss").Subrouter())
+	feed.Router(db, prefix.PathPrefix("/feed").Subrouter())
 
 	go restcore.RunStats()
 	go restcore.RunQueryTimers()

@@ -54,9 +54,12 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	//funcname is a full path - to simplify logs, we split it into just the function name, assuming that function names are strictly unique
 	funcname = strings.Split(funcname, ".")[1]
 
-	//Sets up the query timer for this api call
-	qtimer := &QueryTimer{}
-	QueryTimers[funcname] = qtimer
+	//Sets up the query timer for this api call if it doesn't exist yet
+	qtimer, ok := QueryTimers[funcname]
+	if !ok {
+		qtimer = &QueryTimer{}
+		QueryTimers[funcname] = qtimer
+	}
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		tstart := time.Now()
