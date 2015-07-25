@@ -6,7 +6,6 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"net/http"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -22,16 +21,13 @@ var (
 func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*operator.Stream, datastream.DataRange, error) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
-	tnow := time.Now()
-	t7day := tnow.Add(-7 * 24 * time.Hour)
-
 	s, err := o.ReadStream(streampath)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return nil, nil, err
 	}
 
-	dr, err := o.GetStreamTimeRange(streampath, float64(t7day.Unix()), float64(tnow.Unix()), EntryLimit)
+	dr, err := o.GetStreamIndexRange(streampath, -EntryLimit, 0)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return nil, nil, err
