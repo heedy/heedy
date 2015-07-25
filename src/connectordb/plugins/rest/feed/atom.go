@@ -89,7 +89,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 
 		f.Entry = append(f.Entry, &Entry{
 			Updated: AtomTime(time.Unix(0, int64(dp.Timestamp*1e9))),
-			Title:   "Datapoint",
+			Title:   "Datapoint " + strconv.FormatInt(i+1, 10),
 			Link:    Link{Href: feeduri},
 			ID:      feeduri,
 			Author:  &Person{authr},
