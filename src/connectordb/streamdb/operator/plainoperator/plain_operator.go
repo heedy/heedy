@@ -3,6 +3,7 @@ package plainoperator
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/messenger"
+	"connectordb/streamdb/operator/plainoperator"
 	"connectordb/streamdb/users"
 	"errors"
 )
@@ -25,6 +26,10 @@ Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
 All Rights Reserved
 
 **/
+
+func NewPlainOperator(udb users.UserDatabase, ds *datastream.DataStream, msg *messenger.Messenger) plainoperator.PlainOperator {
+	return plainoperator.PlainOperator{udb, ds, msg}
+}
 
 // This operator is very insecure but very fast, good for embedded environments
 // where all you care about is speed and can trust all your users

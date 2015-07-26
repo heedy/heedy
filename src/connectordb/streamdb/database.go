@@ -185,6 +185,7 @@ func (db *Database) RunWriter() {
 	db.ds.RunWriter()
 }
 
+/**
 //Clear clears the database (to be used for debugging purposes - NEVER in production)
 func (db *Database) Clear() {
 	db.ds.Clear()
@@ -192,3 +193,4 @@ func (db *Database) Clear() {
 	db.sqldb.Exec("DELETE FROM Devices;")
 	db.sqldb.Exec("DELETE FROM Streams;")
 }
+**/
