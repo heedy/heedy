@@ -17,7 +17,6 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.StrictSlash(true)
 
 	prefix.HandleFunc("/", restcore.Authenticator(ListUsers, db)).Queries("q", "ls")
-	prefix.HandleFunc("/", restcore.Authenticator(GetThis, db)).Queries("q", "this")
 
 	//User CRUD
 	prefix.HandleFunc("/{user}", restcore.Authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")

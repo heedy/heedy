@@ -45,11 +45,11 @@ class ConnectorDB(Device):
         self.ws = WebsocketHandler(self.url,auth)
         self.__wsinsert = False
 
-        Device.__init__(self,self,self.urlget("?q=this").text)
+        Device.__init__(self,self,self.urlget("?q=this","").text)
 
     def ping(self):
         """Makes sure the connection is open, and auth is working"""
-        self.urlget("?q=this")
+        self.urlget("?q=this","")
 
     def handleresult(self,r):
         """Handles HTTP error codes for a given request result

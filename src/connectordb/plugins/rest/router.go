@@ -2,6 +2,7 @@ package rest
 
 import (
 	"connectordb/streamdb"
+	"connectordb/streamdb/operator"
 	"errors"
 
 	"net/http"
@@ -62,6 +63,13 @@ func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+//GetThis is a command to return the "username/devicename" of the currently authenticated thing
+func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte(o.Name()))
+	return nil
+}
+
 //Router returns a fully formed Gorilla router given an optional prefix
 func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	SetFileLimit()
@@ -79,6 +87,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	// The websocket is run straight from here
 	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
+	prefix.HandleFunc("/", restcore.Authenticator(GetThis, db)).Queries("q", "this").Methods("GET")
 
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())
