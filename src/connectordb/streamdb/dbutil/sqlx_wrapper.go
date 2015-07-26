@@ -1,22 +1,22 @@
 package dbutil
 
 import (
-    "github.com/josephlewis42/sqlx"
-    "database/sql"
+	"database/sql"
+
+	"github.com/josephlewis42/sqlx"
 )
 
-
 type SqlxMixin struct {
-	sqlxdb *sqlx.DB
-	sqlxPreparedStmtCache map[string] *sqlx.Stmt
-    sqlxdbtype string
+	sqlxdb                *sqlx.DB
+	sqlxPreparedStmtCache map[string]*sqlx.Stmt
+	sqlxdbtype            string
 }
 
 // Initializes a sqlx mixin
 func (db *SqlxMixin) InitSqlxMixin(sqldb *sql.DB, dbtype string) {
-    db.sqlxPreparedStmtCache = make(map[string] *sqlx.Stmt)
+	db.sqlxPreparedStmtCache = make(map[string]*sqlx.Stmt)
 	db.sqlxdb = sqlx.NewDb(sqldb, dbtype)
-    db.sqlxdbtype = dbtype
+	db.sqlxdbtype = dbtype
 }
 
 // This function returns a prepared statement, or prepares one for the given query
@@ -42,7 +42,6 @@ func (db *SqlxMixin) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 	db.sqlxPreparedStmtCache[query] = prepared
 	return prepared, nil
 }
-
 
 /**
 This is a wrapper for the Get done in sqlx, it does auto conversion to stored
@@ -76,7 +75,6 @@ func (db *SqlxMixin) Select(dest interface{}, query string, args ...interface{})
 
 	return prep.Select(dest, args...)
 }
-
 
 /**
 This is a wrapper for the Exec done in sqlx, it does auto conversion to stored

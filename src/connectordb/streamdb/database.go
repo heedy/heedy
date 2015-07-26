@@ -33,8 +33,6 @@ var (
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
-	operator.Operator //We need to do some magic so that the functions in Operator catch
-
 	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
 	ds  *datastream.DataStream //datastream holds methods for inserting datapoints into streams

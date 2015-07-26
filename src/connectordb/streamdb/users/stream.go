@@ -9,9 +9,28 @@ All Rights Reserved
 **/
 
 import (
+	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/schema"
 	"database/sql"
+	"errors"
 	"reflect"
+
+	"github.com/josephlewis42/multicache"
 )
+
+const (
+	schemaCacheSize = 1000
+)
+
+var (
+	ErrSchema   = errors.New("The datapoints did not match the stream's schema")
+	streamCache *multicache.Multicache
+)
+
+func init() {
+	// error triggered if we have size of 0, so don't set this to 0
+	streamCache, _ = multicache.NewDefaultMulticache(10000)
+}
 
 type Stream struct {
 	StreamId  int64  `modifiable:"nobody" json:"-"`
@@ -34,6 +53,38 @@ func (s *Stream) ValidityCheck() error {
 
 func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) int {
 	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+}
+
+// Validate ensures the array of datapoints conforms to the schema and such
+func (s *Stream) Validate(data datastream.DatapointArray) bool {
+	schema, err := s.GetSchema()
+	if err != nil {
+		return false
+	}
+
+	for _, datum := range data {
+		if !schema.IsValid(datum) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Gets the jsonschema associated with this stream
+func (s *Stream) GetSchema() (schema.Schema, error) {
+	strmschema, ok := streamCache.Get(s.Type)
+	if ok {
+		return strmschema.(schema.Schema), nil
+	}
+
+	computedSchema, err := schema.NewSchema(s.Type)
+	if err != nil || computedSchema == nil {
+		return schema.Schema{}, err
+	}
+
+	streamCache.Add(s.Type, *computedSchema)
+	return *computedSchema, nil
 }
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values.

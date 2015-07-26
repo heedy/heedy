@@ -5,15 +5,6 @@ import (
 	"connectordb/streamdb/users"
 )
 
-// ReadDeviceUser gets the user associated with the given device path
-func (o *Database) ReadDeviceUser(devicepath string) (u *users.User, err error) {
-	username, _, err := operator.SplitDevicePath(devicepath)
-	if err != nil {
-		return nil, err
-	}
-	return o.ReadUser(username)
-}
-
 // ReadAllDevicesByUserID reads all devices for the given user's ID
 func (o *Database) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) {
 	return o.Userdb.ReadDevicesForUserId(userID)

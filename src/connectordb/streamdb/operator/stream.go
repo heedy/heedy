@@ -1,77 +1,112 @@
 package operator
 
 import (
-	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/schema"
 	"connectordb/streamdb/users"
-	"encoding/json"
-	"errors"
-
-	"github.com/josephlewis42/multicache"
 )
 
-const (
-	schemaCacheSize = 1000
-)
+//ReadAllStreamsByDeviceID reads all streams associated with the device with the given id
+func (o *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
+	usrstrms, err := o.Userdb.ReadStreamsByDevice(deviceID)
 
-var (
-	//ErrSchema is thrown when schemas don't match
-	ErrSchema   = errors.New("The datapoints did not match the stream's schema")
-	schemaCache *multicache.Multicache
-)
-
-func init() {
-	schemaCache, _ = multicache.NewDefaultMulticache(schemaCacheSize)
+	//Now convert the users.Stream to Stream objects
+	strms := make([]users.Stream, len(usrstrms))
+	for i := range usrstrms {
+		strms[i], err = operator.NewStream(&usrstrms[i], err)
+	}
+	return strms, err
 }
 
-//Stream is a wrapper for the users.Stream object which encodes the schema and other parts of a stream
-type Stream struct {
-	users.Stream
-	Schema map[string]interface{} `json:"schema"` //This allows the JsonSchema to be directly unmarshalled
-
-	//These are used internally for the stream to work out
-	s *schema.Schema //The schema associated with the stream
+//CreateStreamByDeviceID creates a stream using a device ID instead of path
+func (o *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
+	//Validate that the schema is correct
+	if _, err := schema.NewSchema(jsonschema); err != nil {
+		return err
+	}
+	return o.Userdb.CreateStream(streamname, jsonschema, deviceID)
 }
 
-//NewStream returns a new stream object
-func NewStream(s *users.Stream, err error) (Stream, error) {
+//ReadStream reads the given stream
+func (o *Database) ReadStream(streampath string) (*users.Stream, error) {
+	//Make sure that substreams are stripped from read
+	_, devicepath, streampath, streamname, _, err := operator.SplitStreamPath(streampath)
 	if err != nil {
-		return Stream{}, err
+		return nil, err
 	}
 
-	strmschema, err := schema.NewSchema(s.Type)
+	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
-		return Stream{}, err
+		return nil, err
+	}
+	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(dev.DeviceId, streamname)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
 	}
 
-	var schemamap map[string]interface{}
-	var sm interface{}
-	ok := false
-
-	// We initialized it to empty, go on without the cache.
-	if schemaCache != nil {
-		sm, ok = schemaCache.Get(s.Type)
-	}
-
-	if ok {
-		schemamap = sm.(map[string]interface{})
-	} else {
-		err = json.Unmarshal([]byte(s.Type), &schemamap)
-	}
-
-	return Stream{*s, schemamap, strmschema}, err
+	//Now we add the stream to cache
+	return &strm, nil
 }
 
-//Validate ensures the array of datapoints conforms to the schema and such
-func (s *Stream) Validate(data datastream.DatapointArray) bool {
-	for i := range data {
-		if !s.s.IsValid(data[i].Data) {
-			return false
+//ReadStreamByID reads a stream using a stream's ID
+func (o *Database) ReadStreamByID(streamID int64) (*users.Stream, error) {
+	usrstrm, err := o.Userdb.ReadStreamById(streamID)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &strm, err
+}
+
+//ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
+func (o *Database) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
+	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
+	strm, err := operator.NewStream(usrstrm, err)
+	if err != nil {
+		return nil, err
+	}
+	return &strm, nil
+}
+
+//UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
+//if someone attempts to update the schema (which is an illegal operation anyways)
+func (o *Database) UpdateStream(modifiedstream *users.Stream) error {
+	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
+	if err != nil {
+		return err
+	}
+	if modifiedstream.RevertUneditableFields(strm.Stream, users.ROOT) > 0 {
+		return ErrNotChangeable
+	}
+
+	err = o.Userdb.UpdateStream(&modifiedstream.Stream)
+	if err == nil {
+		if strm.Downlink == true && modifiedstream.Downlink == false {
+			//There was a downlink here. Since the downlink was removed, we delete the associated
+			//downlink substream
+			o.DeleteStreamByID(strm.StreamId, "downlink")
 		}
 	}
-	return true
+	return err
 }
 
-func (s *Stream) GetSchema() *schema.Schema {
-	return s.s
+//DeleteStreamByID deletes the stream using ID
+func (o *Database) DeleteStreamByID(streamID int64, substream string) error {
+	strm, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return err //Workaround #81
+	}
+
+	if substream != "" {
+		//We just delete the substream
+		err = o.ds.DeleteSubstream(strm.DeviceId, strm.StreamId, substream)
+	} else {
+		err = o.Userdb.DeleteStream(streamID)
+		if err == nil {
+			err = o.ds.DeleteStream(strm.DeviceId, strm.StreamId)
+		}
+	}
+	return err
+
 }

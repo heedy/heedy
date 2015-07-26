@@ -51,12 +51,12 @@ type BaseOperatorInterface interface {
 
 	//The stream operations are exactly the same as device operations. You pass in paths
 	//in the form "username/devicename/streamname"
-	ReadAllStreamsByDeviceID(deviceID int64) ([]Stream, error)
+	ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error)
 	CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error
-	ReadStream(streampath string) (*Stream, error)
-	ReadStreamByID(streamID int64) (*Stream, error)
-	ReadStreamByDeviceID(deviceID int64, streamname string) (*Stream, error)
-	UpdateStream(modifiedstream *Stream) error
+	ReadStream(streampath string) (*users.Stream, error)
+	ReadStreamByID(streamID int64) (*users.Stream, error)
+	ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error)
+	UpdateStream(modifiedstream *users.Stream) error
 	DeleteStreamByID(streamID int64, substream string) error
 
 	//These operations concern themselves with the IO of a stream
@@ -86,4 +86,16 @@ type BaseOperatorInterface interface {
 	SubscribeDeviceByID(deviceID int64, chn chan Message) (*nats.Subscription, error)
 	// TODO also change this substream to the enum
 	SubscribeStreamByID(streamID int64, substream string, chn chan Message) (*nats.Subscription, error)
+
+	// CountUsers returns the number of existing users in the database at the
+	// time of calling or an error if the database could not be reached.
+	CountUsers() (uint64, error)
+
+	// CountStreams returns the number of existing streams in the database at the
+	// time of calling or an error if the database could not be reached.
+	CountStreams() (uint64, error)
+
+	// CountDevices returns the number of existing devices in the database at the
+	// time of calling or an error if the database could not be reached.
+	CountDevices() (uint64, error)
 }

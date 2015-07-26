@@ -54,6 +54,14 @@ func NewAuthOperator(db operator.BaseOperatorInterface, deviceID int64) (operato
 	return operator.Operator{&AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId, userlogID}}, nil
 }
 
+func (o *AuthOperator) devPermissionsGte(dev *device.Device, permissions users.Permissions) {
+
+}
+
+func (o *AuthOperator) usrPermissionsGte(dev *device.Device, permissions users.Permissions) {
+
+}
+
 //Name is the path to the device underlying the operator
 func (o *AuthOperator) Name() string {
 	return o.operatorPath

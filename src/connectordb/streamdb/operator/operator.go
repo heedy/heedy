@@ -10,7 +10,7 @@ import (
 )
 
 //Operator defines extension functions which work with any BaseOperatorInterface, adding extra functionality.
-//In particular, Operator makes querying stuff by name so much easier
+//In particular, Operator makes querying stuff by name easier
 type Operator struct {
 	BaseOperatorInterface
 }
@@ -75,6 +75,21 @@ func (o *Operator) ReadAllDevices(username string) ([]users.Device, error) {
 		return nil, err
 	}
 	return o.ReadAllDevicesByUserID(u.UserId)
+}
+
+// ReadDevice reads the given device
+func (o *Operator) ReadDevice(devicepath string) (*users.Device, error) {
+	//Apparently not. Get the device from userdb
+	usrname, devname, err := SplitDevicePath(devicepath)
+	if err != nil {
+		return nil, err
+	}
+	u, err := o.ReadUser(usrname)
+	if err != nil {
+		return nil, err
+	}
+	dev, err := o.ReadDeviceForUserByName(u.UserId, devname)
+	return dev, err
 }
 
 //CreateDevice creates a new device at the given path
@@ -243,4 +258,19 @@ func (o *Operator) SubscribeStream(streampath string, chn chan Message) (*nats.S
 		return nil, err
 	}
 	return o.SubscribeStreamByID(strm.StreamId, substream, chn)
+}
+
+// ReadDevice reads the given device
+func (o *Operator) ReadDevice(devicepath string) (*users.Device, error) {
+	//Apparently not. Get the device from userdb
+	usrname, devname, err := SplitDevicePath(devicepath)
+	if err != nil {
+		return nil, err
+	}
+	u, err := o.ReadUser(usrname)
+	if err != nil {
+		return nil, err
+	}
+	dev, err := o.ReadDeviceForUserByName(u.UserId, devname)
+	return dev, err
 }
