@@ -19,13 +19,6 @@ func getDevicePath(request *http.Request) (username string, devicename string, d
 	return username, devicename, devicepath
 }
 
-//GetThis is a command to return the "username/devicename" of the currently authenticated thing
-func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(o.Name()))
-	return nil
-}
-
 //ListDevices lists the devices that the given user has
 func ListDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
