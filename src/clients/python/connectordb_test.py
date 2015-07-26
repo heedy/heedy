@@ -230,7 +230,7 @@ class TestConnectorDB(unittest.TestCase):
         v = db["log"][-1]
         self.assertEquals(v["d"]["cmd"],"CreateUser")
         self.assertEquals(v["d"]["arg"],"python_test")
-
+        time.sleep(0.1)
         self.assertTrue(tmp.gotmessage)
 
         db.close()

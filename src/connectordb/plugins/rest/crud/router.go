@@ -39,14 +39,11 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.HandleFunc("/{user}/{device}/{stream}", restcore.Authenticator(UpdateStream, db)).Methods("PUT")
 	prefix.HandleFunc("/{user}/{device}/{stream}", restcore.Authenticator(DeleteStream, db)).Methods("DELETE")
 
-	//Stream IO
-	prefix.HandleFunc("/{user}/{device}/{stream}", restcore.Authenticator(WriteStream, db)).Methods("UPDATE") //Restamp off
-	prefix.HandleFunc("/{user}/{device}/{stream}", restcore.Authenticator(WriteStream, db)).Methods("PATCH")  //Restamp on
-
-	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(GetStreamRange, db)).Methods("GET")
-
-	prefix.HandleFunc("/{user}/{device}/{stream}/length", restcore.Authenticator(GetStreamLength, db)).Methods("GET")
-	prefix.HandleFunc("/{user}/{device}/{stream}/time2index", restcore.Authenticator(StreamTime2Index, db)).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(StreamLength, db)).Methods("GET").Queries("q", "length")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(StreamTime2Index, db)).Methods("GET").Queries("q", "time2index")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(StreamRange, db)).Methods("GET")
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(WriteStream, db)).Methods("POST") //Restamp off
+	prefix.HandleFunc("/{user}/{device}/{stream}/data", restcore.Authenticator(WriteStream, db)).Methods("PUT")  //Restamp on
 
 	return prefix
 }

@@ -85,7 +85,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			authr = usrname + "/" + devname
 		}
 
-		feeduri := "https://connectordb.com/api/v1/d/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)
+		feeduri := "https://connectordb.com/api/v1/crud/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)
 
 		f.Entry = append(f.Entry, &Entry{
 			Updated: AtomTime(time.Unix(0, int64(dp.Timestamp*1e9))),

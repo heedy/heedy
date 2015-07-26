@@ -167,12 +167,12 @@ ConnectorDB.prototype = {
     insertStream: function (username, devicename, streamname, data) {
         var datapoints = [{ t: (new Date).getTime() * 0.001, d: data }]
         var path = this._getPath(username, devicename, streamname)
-        return this._doRequest(path, "UPDATE", datapoints);
+        return this._doRequest(path+"/data", "PUT", datapoints);
     },
 
     //Get length of stream
     lengthStream: function (username, devicename, streamname) {
-        var path = this._getPath(username, devicename, streamname) + "/length"
+        var path = this._getPath(username, devicename, streamname) + "/data?q=length"
         return this._doRequest(path, "GET").then(function (result) { return parseInt(result); });
     },
 

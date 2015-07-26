@@ -76,11 +76,6 @@ class ConnectorDB(Device):
         return self.handleresult(self.r.post(urljoin(self.url+cmd,location),data=json.dumps(data)))
     def urlput(self,location,data,cmd="crud/"):
         return self.handleresult(self.r.put(urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlupdate(self,location,data,cmd="crud/"):
-        return self.handleresult(self.r.request("UPDATE",urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlpatch(self,location,data,cmd="crud/"):
-        return self.handleresult(self.r.request("PATCH",urljoin(self.url+cmd,location),data=json.dumps(data)))
-
     def getuser(self,usrname):
         return User(self,usrname)
 

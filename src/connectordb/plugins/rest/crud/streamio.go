@@ -20,8 +20,8 @@ var (
 	ErrTime2IndexArgs = errors.New(`time2index requires an argument of "t" which is a decimal timestamp`)
 )
 
-//GetStreamLength gets the stream length
-func GetStreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+//StreamLength gets the stream length
+func StreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	l, err := o.LengthStream(streampath)
@@ -39,7 +39,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
-	restamp := request.Method == "PATCH"
+	restamp := request.Method == "PUT"
 
 	logger.Debugf("Inserting %d dp restamp=%v", len(datapoints), restamp)
 
@@ -81,8 +81,8 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	return nil
 }
 
-//GetStreamRange gets a range of data from a stream
-func GetStreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+//StreamRange gets a range of data from a stream
+func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 	logger = logger.WithField("op", "StreamRange")
 	q := request.URL.Query()
