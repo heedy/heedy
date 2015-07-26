@@ -58,11 +58,11 @@ func getAtomEntry(dpindex int64, dp datastream.Datapoint, streamname string) *En
 }
 
 //GetAtom gets an Atom feed of the given stream.
-func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
 	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {
-		return err
+		return 1, ""
 	}
 	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
 	f := Feed{
@@ -77,8 +77,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	for dp, err := dr.Next(); err == nil && dp != nil; dp, err = dr.Next() {
 		v, err := json.Marshal(dp.Data)
 		if err != nil {
-			restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
-			return err
+			return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		}
 		authr := dp.Sender
 		if authr == "" {
@@ -101,8 +100,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 
 	result, err := xml.Marshal(f)
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 	}
 	xmlheader := []byte("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
 
@@ -111,5 +109,5 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(xmlheader)
 	writer.Write(result)
-	return nil
+	return 0, ""
 }

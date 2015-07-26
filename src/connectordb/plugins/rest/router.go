@@ -65,28 +65,28 @@ func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
-func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	res := []byte(o.Name())
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return nil
+	return 0, ""
 }
 
 //CountAllUsers gets all of the users in the entire database
-func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountAllUsers()
 	return restcore.IntWriter(writer, l, logger, err)
 }
 
 //CountAllDevices gets all of the devices in the entire database
-func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountAllDevices()
 	return restcore.IntWriter(writer, l, logger, err)
 }
 
 //CountAllStreams gets all of the streams in the entire database
-func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountAllStreams()
 	return restcore.IntWriter(writer, l, logger, err)
 }

@@ -11,20 +11,19 @@ import (
 )
 
 //ListStreams lists the streams that the given device has
-func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
 	d, err := o.ReadAllStreams(devpath)
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //CreateStream creates a new stream from a REST API request
-func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, streamname, streampath := restcore.GetStreamPath(request)
 
 	err := restcore.ValidName(streamname, nil)
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
 	defer request.Body.Close()
@@ -32,13 +31,11 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 	//Limit the schema to 512KB
 	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 512000))
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
 	if err = o.CreateStream(streampath, string(data)); err != nil {
-		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 
 	return ReadStream(o, writer, request, logger)
@@ -46,12 +43,11 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //ReadStream reads a stream from a REST API request
-func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	if err := restcore.BadQ(o, writer, request, logger); err != nil {
-		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
 	s, err := o.ReadStream(streampath)
@@ -60,38 +56,32 @@ func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //UpdateStream updates the metadata for existing stream from a REST API request
-func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	s, err := o.ReadStream(streampath)
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 	err = restcore.UnmarshalRequest(request, s)
 	err = restcore.ValidName(s.Name, err)
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 	if err = o.UpdateStream(s); err != nil {
-		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 	return restcore.JSONWriter(writer, s, logger, err)
 }
 
 //DeleteStream deletes existing stream from a REST API request
-func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
-
-	//Deleting stream is info-worthy
-	logger.Infoln()
 
 	err := o.DeleteStream(streampath)
 	if err != nil {
-		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-		return err
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
-	return restcore.OK(writer)
+	restcore.OK(writer)
+	return 0, ""
 }

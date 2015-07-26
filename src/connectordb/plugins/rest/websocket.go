@@ -241,13 +241,16 @@ func (c *WebsocketConnection) Run() error {
 }
 
 //RunWebsocket runs the websocket handler
-func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	conn, err := NewWebsocketConnection(o, writer, request, logger)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		return err
+		return 3, err.Error()
 	}
 	defer conn.Close()
-
-	return conn.Run()
+	err = conn.Run()
+	if err != nil {
+		return 2, err.Error()
+	}
+	return 0, ""
 }

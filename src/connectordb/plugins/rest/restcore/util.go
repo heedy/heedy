@@ -35,36 +35,34 @@ func OK(writer http.ResponseWriter) error {
 }
 
 //JSONWriter writes the given data as http
-func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry, err error) error {
+func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry, err error) (int, string) {
 	if err != nil {
-		WriteError(writer, logger, http.StatusNotFound, err, false)
-		return err
+		return WriteError(writer, logger, http.StatusNotFound, err, false)
 	}
 
 	res, err := json.Marshal(data)
 	if err != nil {
-		WriteError(writer, logger, http.StatusInternalServerError, err, true)
-		return err
+		return WriteError(writer, logger, http.StatusInternalServerError, err, true)
+
 	}
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return nil
+	return 0, ""
 }
 
 //IntWriter writes an integer
-func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error) error {
+func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error) (int, string) {
 	if err != nil {
-		WriteError(writer, logger, http.StatusForbidden, err, false)
-		return err
+		return WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 
 	res := []byte(strconv.FormatInt(i, 10))
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return nil
+	return 0, ""
 }
 
 //UnmarshalRequest unmarshals the input data to the given interface
@@ -114,7 +112,7 @@ type ErrorResponse struct {
 
 //WriteError takes care of gracefully writing errors to the client in a way that allows
 //for fairly easy debugging.
-func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, err error, iserr bool) {
+func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, err error, iserr bool) (int, string) {
 	atomic.AddUint32(&StatsErrors, 1)
 
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -125,7 +123,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to generate error UUID", "ref": "OSHIT"}`))
-		return
+		return 1, ""
 	}
 	uu := u.String()
 
@@ -140,7 +138,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", uu).Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to write error message","ref":"` + uu + `"}`))
-		return
+		return 1, ""
 	}
 
 	//Now that we have the error message, we log it and send the messages
@@ -153,6 +151,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(errorCode)
 	writer.Write(res)
+	return 1, ""
 }
 
 //GetStreamPath returns the relevant parts of a stream path
