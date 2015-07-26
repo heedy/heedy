@@ -1,13 +1,13 @@
 package authoperator
 
 import (
-	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"
+	"connectordb/streamdb/util"
 )
 
 //ReadStreamDevice gets the device associated with the given stream path
 func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err error) {
-	_, devicepath, _, _, _, err := operator.SplitStreamPath(streampath)
+	_, devicepath, _, _, _, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
 	}
@@ -15,7 +15,7 @@ func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err
 }
 
 //ReadStreamAndDevice reads both stream and device
-func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, s *operator.Stream, err error) {
+func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, s *users.Stream, err error) {
 	strm, err := o.ReadStream(streampath)
 	if err != nil {
 		return nil, nil, err
@@ -25,7 +25,7 @@ func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, 
 }
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device
-func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]operator.Stream, error) {
+func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
 	odev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 }
 
 //ReadStream reads the given stream
-func (o *AuthOperator) ReadStream(streampath string) (*operator.Stream, error) {
+func (o *AuthOperator) ReadStream(streampath string) (*users.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -78,14 +78,14 @@ func (o *AuthOperator) ReadStream(streampath string) (*operator.Stream, error) {
 		return nil, err
 	}
 
-	if dev.RelationToStream(&strm.Stream, sdevice).Gte(users.DEVICE) {
+	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
 		return strm, nil
 	}
 	return nil, ErrPermissions
 }
 
 //ReadStreamByID reads the given stream using its ID
-func (o *AuthOperator) ReadStreamByID(streamID int64) (*operator.Stream, error) {
+func (o *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -99,14 +99,14 @@ func (o *AuthOperator) ReadStreamByID(streamID int64) (*operator.Stream, error) 
 		return nil, err
 	}
 
-	if dev.RelationToStream(&strm.Stream, sdevice).Gte(users.DEVICE) {
+	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
 		return strm, nil
 	}
 	return nil, ErrPermissions
 }
 
 //ReadStreamByDeviceID reads the stream given a device ID and the stream name
-func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*operator.Stream, error) {
+func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -120,14 +120,14 @@ func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 		return nil, err
 	}
 
-	if dev.RelationToStream(&strm.Stream, sdevice).Gte(users.DEVICE) {
+	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
 		return strm, nil
 	}
 	return nil, ErrPermissions
 }
 
 //UpdateStream updates the stream
-func (o *AuthOperator) UpdateStream(modifiedstream *operator.Stream) error {
+func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 	odev, err := o.Device()
 	if err != nil {
 		return err
@@ -140,8 +140,8 @@ func (o *AuthOperator) UpdateStream(modifiedstream *operator.Stream) error {
 	if err != nil {
 		return err
 	}
-	permission := odev.RelationToStream(&strm.Stream, dev)
-	if modifiedstream.RevertUneditableFields(strm.Stream, permission) > 0 {
+	permission := odev.RelationToStream(strm, dev)
+	if modifiedstream.RevertUneditableFields(*strm, permission) > 0 {
 		return ErrPermissions
 	}
 	err = o.Db.UpdateStream(modifiedstream)
@@ -165,7 +165,7 @@ func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error 
 	if err != nil {
 		return err
 	}
-	if odev.RelationToStream(&strm.Stream, dev).Gte(users.DEVICE) {
+	if odev.RelationToStream(strm, dev).Gte(users.DEVICE) {
 
 		spath, err2 := o.getStreamPath(streamID)
 

@@ -1,4 +1,4 @@
-package operator
+package messenger
 
 import (
 	"connectordb/config"

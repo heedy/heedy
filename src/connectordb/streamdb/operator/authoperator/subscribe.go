@@ -1,14 +1,14 @@
 package authoperator
 
 import (
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
 
 	"github.com/nats-io/nats"
 )
 
 //SubscribeUserByID subscribes to everything a user creates
-func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan operator.Message) (*nats.Subscription, error) {
+func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan messenger.Message) (*nats.Subscription, error) {
 	usr, err := o.Db.ReadUserByID(userID)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan operator.Message
 }
 
 //SubscribeDeviceByID subscribes to all streams of the given device
-func (o *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan operator.Message) (*nats.Subscription, error) {
+func (o *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan messenger.Message) (*nats.Subscription, error) {
 	readdev, err := o.ReadDeviceByID(deviceID)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (o *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan operator.Mes
 }
 
 //SubscribeStreamByID subscribes to the given stream by ID
-func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn chan operator.Message) (*nats.Subscription, error) {
+func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn chan messenger.Message) (*nats.Subscription, error) {
 	dev, err := o.Device()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn
 		return nil, err
 	}
 
-	if dev.RelationToStream(&strm.Stream, sdevice).Gte(users.DEVICE) {
+	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
 		return o.Db.SubscribeStreamByID(streamID, substream, chn)
 	}
 	return nil, ErrPermissions

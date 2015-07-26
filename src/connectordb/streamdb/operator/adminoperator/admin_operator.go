@@ -1,4 +1,4 @@
-package operator
+package adminoperator
 
 /**
 
@@ -11,6 +11,7 @@ All Rights Reserved
 **/
 
 import (
+	"connectordb/streamdb/operator/plainoperator"
 	"connectordb/streamdb/users"
 	"errors"
 )
@@ -20,7 +21,7 @@ var (
 )
 
 type AdminOperator struct {
-	PlainOperator
+	plainoperator.PlainOperator
 }
 
 // UpdateDevice updates the device at devicepath to the modifed device passed in
@@ -57,7 +58,7 @@ func (o *AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
 		return err
 	}
 
-	if modifiedstream.RevertUneditableFields(strm.Stream, users.ROOT) > 0 {
+	if modifiedstream.RevertUneditableFields(*strm, users.ROOT) > 0 {
 		return ErrNotChangeable
 	}
 

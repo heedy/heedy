@@ -40,7 +40,7 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 		return err
 	}
 
-	if !dev.RelationToStream(&strm.Stream, sdevice).Gte(users.DEVICE) {
+	if !dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
 		return ErrPermissions
 	}
 

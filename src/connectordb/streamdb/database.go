@@ -2,15 +2,13 @@ package streamdb
 
 import (
 	"connectordb/config"
-	"connectordb/streamdb/authoperator"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/datastream/rediscache"
 	"connectordb/streamdb/dbutil"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
 	"database/sql"
 	"errors"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -36,7 +34,7 @@ type Database struct {
 	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
 	ds  *datastream.DataStream //datastream holds methods for inserting datapoints into streams
-	msg *Messenger             //messenger is a connection to the messaging client
+	msg *messenger.Messenger   //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
@@ -63,7 +61,7 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	db.Userdb = users.NewUserDatabase(db.sqldb, opt.SqlConnectionType, EnableCaching)
 
 	log.Debugln("Opening messenger")
-	db.msg, err = ConnectMessenger(&opt.NatsOptions, err)
+	db.msg, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +83,13 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	}
 
 	// Magic: Allows using the Database object as an operator.
-	db.Operator = operator.Operator{&db}
+	//	db.Operator = operator.Operator{&db}
 
 	return &db, nil
 
 }
 
+/**
 //DeviceLoginOperator returns the operator associated with the given API key
 func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Operator, error) {
 	dev, err := db.ReadDevice(devicepath)
@@ -148,6 +147,7 @@ func (db *Database) GetOperator(path string) (operator.Operator, error) {
 func (db *Database) DeviceOperator(deviceID int64) (operator.Operator, error) {
 	return authoperator.NewAuthOperator(db, deviceID)
 }
+**/
 
 //Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
@@ -191,27 +191,4 @@ func (db *Database) Clear() {
 	db.sqldb.Exec("DELETE FROM Users;")
 	db.sqldb.Exec("DELETE FROM Devices;")
 	db.sqldb.Exec("DELETE FROM Streams;")
-}
-
-//These functions allow the Database object to conform to the BaseOperatorInterface
-
-//Name here is a special one meaning that it is the database administration operator
-// It is not a valid username
-func (db *Database) Name() string {
-	return AdminName
-}
-
-//Reload for a full database purges the entire cache
-func (db *Database) Reload() error {
-	return nil
-}
-
-//User returns the current user
-func (db *Database) User() (usr *users.User, err error) {
-	return nil, ErrAdmin
-}
-
-//Device returns the current device
-func (db *Database) Device() (*users.Device, error) {
-	return nil, ErrAdmin
 }

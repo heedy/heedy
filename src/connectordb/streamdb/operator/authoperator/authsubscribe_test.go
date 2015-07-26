@@ -1,9 +1,9 @@
-package streamdb
+package authoperator
 
 import (
 	"connectordb/config"
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"testing"
 	"time"
 
@@ -23,9 +23,9 @@ func TestAuthSubscribe(t *testing.T) {
 	require.NoError(t, db.CreateDevice("tst/tst2"))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
-	recvchan := make(chan operator.Message, 2)
-	recvchan2 := make(chan operator.Message, 2)
-	recvchan3 := make(chan operator.Message, 2)
+	recvchan := make(chan messenger.Message, 2)
+	recvchan2 := make(chan messenger.Message, 2)
+	recvchan3 := make(chan messenger.Message, 2)
 
 	o, err := db.GetOperator("tst/tst2")
 	require.NoError(t, err)
@@ -62,9 +62,9 @@ func TestAuthSubscribe(t *testing.T) {
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan2 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan3 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan2 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan3 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	m := <-recvchan

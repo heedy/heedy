@@ -1,4 +1,4 @@
-package streamdb
+package authoperator
 
 import (
 	"testing"

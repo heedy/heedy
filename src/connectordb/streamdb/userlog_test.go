@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ensureUserlog(t *testing.T, m operator.Message, cmd, arg string) {
+func ensureUserlog(t *testing.T, m messenger.Message, cmd, arg string) {
 	require.Equal(t, "streamdb_test/user/log", m.Stream)
 	require.Equal(t, "streamdb_test/user", m.Data[0].Sender)
 
@@ -33,7 +33,7 @@ func TestUserlog(t *testing.T) {
 	require.NoError(t, err)
 
 	//Now subscribe to the userlog
-	recvchan := make(chan operator.Message, 2)
+	recvchan := make(chan messenger.Message, 2)
 	_, err = o.Subscribe("streamdb_test/user/log", recvchan)
 	require.NoError(t, err)
 
@@ -42,7 +42,7 @@ func TestUserlog(t *testing.T) {
 	//The message timeout
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	o.CreateDevice("streamdb_test/mydevice")

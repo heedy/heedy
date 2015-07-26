@@ -1,10 +1,9 @@
-package operator
+package plainoperator
 
 import (
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/schema"
+	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
 	"errors"
 )
 
@@ -32,13 +31,13 @@ All Rights Reserved
 type PlainOperator struct {
 	Userdb users.UserDatabase     // SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 	ds     *datastream.DataStream // datastream holds methods for inserting datapoints into streams
-	msg    *Messenger             // messenger is a connection to the messaging client
+	msg    *messenger.Messenger   // messenger is a connection to the messaging client
 }
 
 //Name here is a special one meaning that it is the database administration operator
 // It is not a valid username
 func (db *PlainOperator) Name() string {
-	return AdminName
+	return PlainOperatorName
 }
 
 //User returns the current user
@@ -127,63 +126,22 @@ func (o *PlainOperator) CountStreams() (uint64, error) {
 	return o.Userdb.CountUsers()
 }
 
-func (o *PlainOperator) ReadAllStreamsByDeviceID() (uint64, error) {
-	return o.Userdb.CountUsers()
-}
-
 func (o *PlainOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
 	return o.Userdb.ReadStreamsByDevice(deviceID)
 }
 
 func (o *PlainOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
-	//Validate that the schema is correct
-	if _, err := schema.NewSchema(jsonschema); err != nil {
-		return err
-	}
 	return o.Userdb.CreateStream(streamname, jsonschema, deviceID)
-}
-
-//ReadStream reads the given stream
-func (o *PlainOperator) ReadStream(streampath string) (*users.Stream, error) {
-	//Make sure that substreams are stripped from read
-	_, devicepath, streampath, streamname, _, err := util.SplitStreamPath(streampath)
-	if err != nil {
-		return nil, err
-	}
-
-	dev, err := o.ReadDevice(devicepath)
-	if err != nil {
-		return nil, err
-	}
-	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(dev.DeviceId, streamname)
-	strm, err := NewStream(usrstrm, err)
-	if err != nil {
-		return nil, err
-	}
-
-	//Now we add the stream to cache
-	return &strm, nil
 }
 
 //ReadStreamByID reads a stream using a stream's ID
 func (o *PlainOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
-	usrstrm, err := o.Userdb.ReadStreamById(streamID)
-	strm, err := NewStream(usrstrm, err)
-	if err != nil {
-		return nil, err
-	}
-
-	return &strm, err
+	return o.Userdb.ReadStreamById(streamID)
 }
 
 //ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
 func (o *PlainOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
-	usrstrm, err := o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
-	strm, err := NewStream(usrstrm, err)
-	if err != nil {
-		return nil, err
-	}
-	return &strm, nil
+	return o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
 }
 
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
@@ -194,7 +152,7 @@ func (o *PlainOperator) UpdateStream(modifiedstream *users.Stream) error {
 		return err
 	}
 
-	err = o.Userdb.UpdateStream(&modifiedstream)
+	err = o.Userdb.UpdateStream(modifiedstream)
 
 	if err == nil && strm.Downlink == true && modifiedstream.Downlink == false {
 		//There was a downlink here. Since the downlink was removed, we delete the associated

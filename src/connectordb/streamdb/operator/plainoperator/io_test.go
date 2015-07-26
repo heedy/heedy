@@ -1,4 +1,4 @@
-package streamdb
+package plainoperator
 
 import (
 	"connectordb/config"

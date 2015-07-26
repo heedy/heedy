@@ -2,7 +2,7 @@ package authoperator
 
 import (
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/plainoperator"
 	"connectordb/streamdb/users"
 	"errors"
 
@@ -27,39 +27,12 @@ var (
 //AuthOperator is the database proxy for a particular device.
 //TODO: Operator does not auto-expire after time period
 type AuthOperator struct {
-	Db operator.BaseOperatorInterface //The operator which is used to interact with the database
+	Db plainoperator.PlainOperator //The operator which is used to interact with the database
 
 	operatorPath string //The operator path is the string name of the operator
 	devID        int64  //the id of the device - operatorPath is not enough, since name changes can happen in other threads
 
 	userlogID int64 //The ID of the stream which provides the userlog
-}
-
-//NewAuthOperator creates a new authenticated operator,
-func NewAuthOperator(db operator.BaseOperatorInterface, deviceID int64) (operator.Operator, error) {
-	dev, err := db.ReadDeviceByID(deviceID)
-	if err != nil {
-		return operator.Operator{}, err
-	}
-	usr, err := db.ReadUserByID(dev.UserId)
-	if err != nil {
-		return operator.Operator{}, err
-	}
-
-	userlogID, err := getUserLogStream(db, usr.UserId)
-	if err != nil {
-		return operator.Operator{}, err
-	}
-
-	return operator.Operator{&AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId, userlogID}}, nil
-}
-
-func (o *AuthOperator) devPermissionsGte(dev *device.Device, permissions users.Permissions) {
-
-}
-
-func (o *AuthOperator) usrPermissionsGte(dev *device.Device, permissions users.Permissions) {
-
 }
 
 //Name is the path to the device underlying the operator
@@ -105,31 +78,6 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 	}
 
 	return err
-}
-
-//Returns the stream ID of the user log stream (and tries to create it if the stream does not exist)
-func getUserLogStream(db operator.BaseOperatorInterface, userID int64) (streamID int64, err error) {
-	o := operator.Operator{db}
-	usr, err := o.ReadUserByID(userID)
-	if err != nil {
-		return 0, err
-	}
-
-	streamname := usr.Name + "/user/log"
-
-	//Now attempt to go straight for the log stream
-	logstream, err := o.ReadStream(streamname)
-	if err != nil {
-		//We had an error - try to create the stream (the user device is assumed to exist)
-		err = o.CreateStream(streamname, UserlogSchema)
-		if err != nil {
-			return 0, err
-		}
-
-		//Now try to read the
-		logstream, err = o.ReadStream(streamname)
-	}
-	return logstream.StreamId, err
 }
 
 func (o *AuthOperator) getDevicePath(deviceID int64) (path string, err error) {

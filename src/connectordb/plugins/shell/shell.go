@@ -214,7 +214,7 @@ func (s *Shell) PrintError(err error) bool {
 }
 
 // Reads the user, device and stream at a path
-func (s *Shell) ReadPath(path string) (usr *users.User, dev *users.Device, stream *operator.Stream) {
+func (s *Shell) ReadPath(path string) (usr *users.User, dev *users.Device, stream *users.Stream) {
 	usr, _ = s.operator.ReadUser(path)
 	dev, _ = s.operator.ReadDevice(path)
 	stream, _ = s.operator.ReadStream(path)

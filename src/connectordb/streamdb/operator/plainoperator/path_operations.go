@@ -1,14 +1,18 @@
-package operator
+package plainoperator
 
-/**
-//Operator defines extension functions which work with any BaseOperatorInterface, adding extra functionality.
-//In particular, Operator makes querying stuff by name easier
-type Operator struct {
-	plainoperator.PlainOperator
-}
+import (
+	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/messenger"
+	"connectordb/streamdb/users"
+	"connectordb/streamdb/util"
+	"strings"
+
+	"github.com/nats-io/nats"
+	"github.com/nu7hatch/gouuid"
+)
 
 //SetAdmin does exactly what it claims. It works on both users and devices
-func (o *Operator) SetAdmin(path string, isadmin bool) error {
+func (o *PlainOperator) SetAdmin(path string, isadmin bool) error {
 	switch strings.Count(path, "/") {
 	default:
 		return util.ErrBadPath
@@ -30,7 +34,7 @@ func (o *Operator) SetAdmin(path string, isadmin bool) error {
 }
 
 //Subscribe given a path, attempts to subscribe to it and its childrens
-func (o *Operator) Subscribe(path string, chn chan messenger.Message) (*nats.Subscription, error) {
+func (o *PlainOperator) Subscribe(path string, chn chan messenger.Message) (*nats.Subscription, error) {
 	switch strings.Count(path, "/") {
 	default:
 		return o.SubscribeStream(path, chn)
@@ -42,7 +46,7 @@ func (o *Operator) Subscribe(path string, chn chan messenger.Message) (*nats.Sub
 }
 
 //ChangeUserPassword changes the password for the given user
-func (o *Operator) ChangeUserPassword(username, newpass string) error {
+func (o *PlainOperator) ChangeUserPassword(username, newpass string) error {
 	u, err := o.ReadUser(username)
 	if err != nil {
 		return err
@@ -52,7 +56,7 @@ func (o *Operator) ChangeUserPassword(username, newpass string) error {
 }
 
 //DeleteUser deletes a user given the user's name
-func (o *Operator) DeleteUser(username string) error {
+func (o *PlainOperator) DeleteUser(username string) error {
 	u, err := o.ReadUser(username)
 	if err != nil {
 		return err
@@ -61,7 +65,7 @@ func (o *Operator) DeleteUser(username string) error {
 }
 
 //ReadAllDevices for the given user
-func (o *Operator) ReadAllDevices(username string) ([]users.Device, error) {
+func (o *PlainOperator) ReadAllDevices(username string) ([]users.Device, error) {
 	u, err := o.ReadUser(username)
 	if err != nil {
 		return nil, err
@@ -70,7 +74,7 @@ func (o *Operator) ReadAllDevices(username string) ([]users.Device, error) {
 }
 
 // ReadDevice reads the given device
-func (o *Operator) ReadDevice(devicepath string) (*users.Device, error) {
+func (o *PlainOperator) ReadDevice(devicepath string) (*users.Device, error) {
 	//Apparently not. Get the device from userdb
 	usrname, devname, err := util.SplitDevicePath(devicepath)
 	if err != nil {
@@ -85,7 +89,7 @@ func (o *Operator) ReadDevice(devicepath string) (*users.Device, error) {
 }
 
 //ReadStream reads the given stream
-func (o *Operator) ReadStream(streampath string) (*users.Stream, error) {
+func (o *PlainOperator) ReadStream(streampath string) (*users.Stream, error) {
 	//Make sure that substreams are stripped from read
 	_, devicepath, streampath, streamname, _, err := util.SplitStreamPath(streampath)
 	if err != nil {
@@ -100,7 +104,7 @@ func (o *Operator) ReadStream(streampath string) (*users.Stream, error) {
 }
 
 //CreateDevice creates a new device at the given path
-func (o *Operator) CreateDevice(devicepath string) error {
+func (o *PlainOperator) CreateDevice(devicepath string) error {
 	userName, deviceName, err := util.SplitDevicePath(devicepath)
 	if err != nil {
 		return err
@@ -114,7 +118,7 @@ func (o *Operator) CreateDevice(devicepath string) error {
 }
 
 //ChangeDeviceAPIKey generates a new api key for the given device, and returns the key
-func (o *Operator) ChangeDeviceAPIKey(devicepath string) (apikey string, err error) {
+func (o *PlainOperator) ChangeDeviceAPIKey(devicepath string) (apikey string, err error) {
 	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return "", err
@@ -128,7 +132,7 @@ func (o *Operator) ChangeDeviceAPIKey(devicepath string) (apikey string, err err
 }
 
 //DeleteDevice deletes an existing device
-func (o *Operator) DeleteDevice(devicepath string) error {
+func (o *PlainOperator) DeleteDevice(devicepath string) error {
 	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return err //Workaround for #81
@@ -137,7 +141,7 @@ func (o *Operator) DeleteDevice(devicepath string) error {
 }
 
 //ReadAllStreams reads all the streams for the given device
-func (o *Operator) ReadAllStreams(devicepath string) ([]users.Stream, error) {
+func (o *PlainOperator) ReadAllStreams(devicepath string) ([]users.Stream, error) {
 	dev, err := o.ReadDevice(devicepath)
 	if err != nil {
 		return nil, err
@@ -146,7 +150,7 @@ func (o *Operator) ReadAllStreams(devicepath string) ([]users.Stream, error) {
 }
 
 //CreateStream makes a new stream
-func (o *Operator) CreateStream(streampath, jsonschema string) error {
+func (o *PlainOperator) CreateStream(streampath, jsonschema string) error {
 	_, devicepath, _, streamname, _, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return err
@@ -159,7 +163,7 @@ func (o *Operator) CreateStream(streampath, jsonschema string) error {
 }
 
 //DeleteStream deletes the given stream given its path
-func (o *Operator) DeleteStream(streampath string) error {
+func (o *PlainOperator) DeleteStream(streampath string) error {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return err
@@ -172,7 +176,7 @@ func (o *Operator) DeleteStream(streampath string) error {
 }
 
 //LengthStream returns the total number of datapoints in the given stream
-func (o *Operator) LengthStream(streampath string) (int64, error) {
+func (o *PlainOperator) LengthStream(streampath string) (int64, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return 0, err
@@ -185,7 +189,7 @@ func (o *Operator) LengthStream(streampath string) (int64, error) {
 }
 
 //TimeToIndexStream returns the index closest to the given timestamp
-func (o *Operator) TimeToIndexStream(streampath string, time float64) (int64, error) {
+func (o *PlainOperator) TimeToIndexStream(streampath string, time float64) (int64, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return 0, err
@@ -198,7 +202,7 @@ func (o *Operator) TimeToIndexStream(streampath string, time float64) (int64, er
 }
 
 //InsertStream inserts the given array of datapoints into the given stream.
-func (o *Operator) InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error {
+func (o *PlainOperator) InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return err
@@ -211,7 +215,7 @@ func (o *Operator) InsertStream(streampath string, data datastream.DatapointArra
 }
 
 //GetStreamTimeRange Reads the given stream by time range
-func (o *Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
+func (o *PlainOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
@@ -224,7 +228,7 @@ func (o *Operator) GetStreamTimeRange(streampath string, t1 float64, t2 float64,
 }
 
 //GetStreamIndexRange Reads the given stream by index range
-func (o *Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error) {
+func (o *PlainOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
@@ -237,7 +241,7 @@ func (o *Operator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (d
 }
 
 //SubscribeUser subscribes to everything the user does
-func (o *Operator) SubscribeUser(username string, chn chan messenger.Message) (*nats.Subscription, error) {
+func (o *PlainOperator) SubscribeUser(username string, chn chan messenger.Message) (*nats.Subscription, error) {
 	usr, err := o.ReadUser(username)
 	if err != nil {
 		return nil, err
@@ -246,7 +250,7 @@ func (o *Operator) SubscribeUser(username string, chn chan messenger.Message) (*
 }
 
 //SubscribeDevice subscribes to everythnig the device does
-func (o *Operator) SubscribeDevice(devpath string, chn chan messenger.Message) (*nats.Subscription, error) {
+func (o *PlainOperator) SubscribeDevice(devpath string, chn chan messenger.Message) (*nats.Subscription, error) {
 	dev, err := o.ReadDevice(devpath)
 	if err != nil {
 		return nil, err
@@ -255,7 +259,7 @@ func (o *Operator) SubscribeDevice(devpath string, chn chan messenger.Message) (
 }
 
 //SubscribeStream subscribes to the given stream
-func (o *Operator) SubscribeStream(streampath string, chn chan messenger.Message) (*nats.Subscription, error) {
+func (o *PlainOperator) SubscribeStream(streampath string, chn chan messenger.Message) (*nats.Subscription, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return nil, err
@@ -266,5 +270,3 @@ func (o *Operator) SubscribeStream(streampath string, chn chan messenger.Message
 	}
 	return o.SubscribeStreamByID(strm.StreamId, substream, chn)
 }
-
-**/

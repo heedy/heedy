@@ -1,4 +1,4 @@
-package streamdb
+package plainoperator
 
 import (
 	"connectordb/config"
@@ -22,17 +22,17 @@ func TestSubscribe(t *testing.T) {
 	require.NoError(t, db.CreateDevice("tst/tst"))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
-	recvchan := make(chan operator.Message, 2)
-	recvchan2 := make(chan operator.Message, 2)
-	recvchan3 := make(chan operator.Message, 2)
-	recvchan4 := make(chan operator.Message, 2)
+	recvchan := make(chan messenger.Message, 2)
+	recvchan2 := make(chan messenger.Message, 2)
+	recvchan3 := make(chan messenger.Message, 2)
+	recvchan4 := make(chan messenger.Message, 2)
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan2 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan3 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan4 <- operator.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan2 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan3 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan4 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
 	_, err = db.Subscribe("tst", recvchan)
@@ -74,9 +74,9 @@ func TestSubscribe(t *testing.T) {
 	require.Equal(t, m.Data[0].Data, "2")
 
 	time.Sleep(100 * time.Millisecond)
-	recvchan <- operator.Message{"GOOD", []datastream.Datapoint{}}
-	recvchan2 <- operator.Message{"GOOD", []datastream.Datapoint{}}
-	recvchan3 <- operator.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan <- messenger.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan2 <- messenger.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan3 <- messenger.Message{"GOOD", []datastream.Datapoint{}}
 
 	m = <-recvchan
 	require.Equal(t, m.Stream, "GOOD", "A downlink should not be triggered")

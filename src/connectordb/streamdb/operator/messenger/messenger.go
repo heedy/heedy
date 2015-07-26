@@ -1,4 +1,4 @@
-package streamdb
+package messenger
 
 /*
 Package Messenger is a package that implements the pub/sub messaging system used for streaming uplinks and downlinks
@@ -7,7 +7,6 @@ as well as the messaging system that allows real-time low-latency data analysis.
 
 import (
 	"bytes"
-	"connectordb/streamdb/operator"
 	"strings"
 
 	"github.com/nats-io/nats"
@@ -96,7 +95,7 @@ func ConnectMessenger(opt *nats.Options, err error) (*Messenger, error) {
 }
 
 //Publish sends the given message over the connection
-func (m *Messenger) Publish(routing string, msg operator.Message) error {
+func (m *Messenger) Publish(routing string, msg Message) error {
 	routing = strings.Replace(routing, "/", ".", -1)
 	if routing[len(routing)-1] == '.' {
 		routing = routing[0 : len(routing)-1]
@@ -113,7 +112,7 @@ func (m *Messenger) Publish(routing string, msg operator.Message) error {
 //	msgr.Subscribe(">",chn)
 //Subscribing to a stream is:
 // msgr.Subscribe("user/device/stream")
-func (m *Messenger) Subscribe(routing string, chn chan operator.Message) (*nats.Subscription, error) {
+func (m *Messenger) Subscribe(routing string, chn chan Message) (*nats.Subscription, error) {
 	routing = strings.Replace(routing, "/", ".", -1)
 	if routing[len(routing)-1] == '.' {
 		routing = routing[0 : len(routing)-1]

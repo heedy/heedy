@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
 
 	"connectordb/streamdb/datastream"
@@ -8,16 +9,10 @@ import (
 	"github.com/nats-io/nats"
 )
 
-//Message is what is sent over NATS
-type Message struct {
-	Stream string                    `json:"stream" msgpack:"s,omitempty"`
-	Data   datastream.DatapointArray `json:"data" msgpack:"d,omitempty"`
-}
-
 //BaseOperatorInterface are the functions which must be implemented in order to use Operator.
 //If these functions are implemented, then the operator is complete, and all functionality
 //of the database is available
-type BaseOperatorInterface interface {
+type Operator interface {
 
 	//Returns an identifier for the device this operator is acting as.
 	//AuthOperator has this as the path to the device the operator is acting as
@@ -82,10 +77,10 @@ type BaseOperatorInterface interface {
 	**/
 	GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error)
 
-	SubscribeUserByID(userID int64, chn chan Message) (*nats.Subscription, error)
-	SubscribeDeviceByID(deviceID int64, chn chan Message) (*nats.Subscription, error)
+	SubscribeUserByID(userID int64, chn chan messenger.Message) (*nats.Subscription, error)
+	SubscribeDeviceByID(deviceID int64, chn chan messenger.Message) (*nats.Subscription, error)
 	// TODO also change this substream to the enum
-	SubscribeStreamByID(streamID int64, substream string, chn chan Message) (*nats.Subscription, error)
+	SubscribeStreamByID(streamID int64, substream string, chn chan messenger.Message) (*nats.Subscription, error)
 
 	// CountUsers returns the number of existing users in the database at the
 	// time of calling or an error if the database could not be reached.
@@ -98,4 +93,46 @@ type BaseOperatorInterface interface {
 	// CountDevices returns the number of existing devices in the database at the
 	// time of calling or an error if the database could not be reached.
 	CountDevices() (uint64, error)
+
+	// Changes the given device's api key to a new random UUID4. Returns the new
+	// key
+	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
+
+	// Updates a user's password with the given one.
+	ChangeUserPassword(username, newpass string) error
+
+	// Creates a new device at the given path automatically inferring the
+	// device name and user
+	CreateDevice(devicepath string) error
+
+	// Creates a new device at the given path automatically inferring the
+	// device, stream and user names
+	CreateStream(streampath, jsonschema string) error
+
+	// Removes the device at the given path
+	DeleteDevice(devicepath string) error
+
+	// Removes the stream at the given path
+	DeleteStream(streampath string) error
+
+	// Deletes the user with the given name
+	DeleteUser(username string) error
+
+	// Reads all devices for the user with the given name
+	ReadAllDevices(username string) ([]users.Device, error)
+	// Reads all streams for the device at the given path
+	ReadAllStreams(devicepath string) ([]users.Stream, error)
+
+	// Sets/removes a user or device from being admin
+	SetAdmin(path string, isadmin bool) error
+
+	GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error)
+	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error)
+	InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error
+	LengthStream(streampath string) (int64, error)
+	Subscribe(path string, chn chan messenger.Message) (*nats.Subscription, error)
+	SubscribeDevice(devpath string, chn chan messenger.Message) (*nats.Subscription, error)
+	SubscribeStream(streampath string, chn chan messenger.Message) (*nats.Subscription, error)
+	SubscribeUser(username string, chn chan messenger.Message) (*nats.Subscription, error)
+	TimeToIndexStream(streampath string, time float64) (int64, error)
 }

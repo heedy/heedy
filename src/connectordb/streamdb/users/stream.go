@@ -23,8 +23,9 @@ const (
 )
 
 var (
-	ErrSchema   = errors.New("The datapoints did not match the stream's schema")
-	streamCache *multicache.Multicache
+	ErrSchema        = errors.New("The datapoints did not match the stream's schema")
+	ErrInvalidSchema = errors.New("The provided schema is not a valid JSONSchema")
+	streamCache      *multicache.Multicache
 )
 
 func init() {
@@ -44,6 +45,12 @@ type Stream struct {
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
+
+	_, err := s.GetSchema()
+	if err != nil {
+		return ErrInvalidSchema
+	}
+
 	if !IsValidName(s.Name) {
 		return ErrInvalidUsername
 	}
@@ -92,6 +99,11 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) e
 
 	if !IsValidName(Name) {
 		return InvalidNameError
+	}
+
+	// Validate that the schema is correct
+	if _, err := schema.NewSchema(Type); err != nil {
+		return ErrInvalidSchema
 	}
 
 	_, err := userdb.Exec(`INSERT INTO Streams

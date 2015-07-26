@@ -2,7 +2,7 @@ package rest
 
 import (
 	"connectordb/streamdb"
-	"connectordb/streamdb/authoperator"
+	"connectordb/streamdb/operator/authoperator"
 	"connectordb/streamdb/operator"
 	"encoding/json"
 	"errors"
