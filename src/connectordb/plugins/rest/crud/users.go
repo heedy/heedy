@@ -1,7 +1,9 @@
-package rest
+package crud
 
 import (
+	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/operator"
+
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,15 +13,13 @@ import (
 
 //ListUsers lists the users that the given operator can see
 func ListUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	logger = logger.WithField("op", "ListUsers")
-	logger.Debugln()
 	u, err := o.ReadAllUsers()
 	if err != nil {
 		for i := 0; i < len(u); i++ {
 			u[i].Password = ""
 		}
 	}
-	return JSONWriter(writer, u, logger, err)
+	return restcore.JSONWriter(writer, u, logger, err)
 }
 
 type userCreator struct {
@@ -30,24 +30,21 @@ type userCreator struct {
 //CreateUser creates a new user from a REST API request
 func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger = logger.WithField("op", "CreateUser")
-	logger.Infoln()
 	var a userCreator
-	err := UnmarshalRequest(request, &a)
-	err = ValidName(usrname, err)
+	err := restcore.UnmarshalRequest(request, &a)
+	err = restcore.ValidName(usrname, err)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
 	if err = o.CreateUser(usrname, a.Email, a.Password); err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
+
+	//Creating user is an info level event
+	logger.Infoln()
 
 	return ReadUser(o, writer, request, logger)
 }
@@ -56,39 +53,35 @@ func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 func ReadUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
 
-	if err := BadQ(o, writer, request, logger); err != nil {
+	if err := restcore.BadQ(o, writer, request, logger); err != nil {
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
-	logger = logger.WithField("op", "ReadUser")
-	logger.Debugln()
 	u, err := o.ReadUser(usrname)
 
 	if err == nil {
 		u.Password = ""
 	}
 
-	return JSONWriter(writer, u, logger, err)
+	return restcore.JSONWriter(writer, u, logger, err)
 }
 
 //UpdateUser updates the metadata for existing user from a REST API request
 func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger = logger.WithField("op", "UpdateUser")
-	logger.Infoln()
+
 	u, err := o.ReadUser(usrname)
 	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
 
 	modusr := *u
-	err = UnmarshalRequest(request, &modusr)
-	err = ValidName(modusr.Name, err)
+	err = restcore.UnmarshalRequest(request, &modusr)
+	err = restcore.ValidName(modusr.Name, err)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
-		logger.Warningln(err)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return err
 	}
 
@@ -97,25 +90,20 @@ func UpdateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 		modusr.SetNewPassword(modusr.Password)
 	}
 	if err = o.UpdateUser(&modusr); err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	return JSONWriter(writer, modusr, logger, err)
+	return restcore.JSONWriter(writer, modusr, logger, err)
 }
 
 //DeleteUser deletes existing user from a REST API request
 func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	usrname := mux.Vars(request)["user"]
-	logger = logger.WithField("op", "DeleteUser")
-	logger.Infoln()
 	err := o.DeleteUser(usrname)
 	if err != nil {
-		writer.WriteHeader(http.StatusForbidden)
-		logger.Warningln(err)
-		StatsAddFail(err)
+		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return err
 	}
-	return OK(writer)
+	logger.Infoln()
+	return restcore.OK(writer)
 }

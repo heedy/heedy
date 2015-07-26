@@ -17,7 +17,7 @@ import (
 
 //The StreamDB version string
 const (
-	Version   = "0.2.2"
+	Version   = "0.3.0"
 	AdminName = " ADMIN "
 )
 
@@ -93,11 +93,20 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 
 }
 
-//DeviceLoginOperator returns the operator associated with the given API key
+//DeviceLoginOperator returns the operator associated with the given device+API key combo
 func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Operator, error) {
 	dev, err := db.ReadDevice(devicepath)
 	if err != nil || dev.ApiKey != apikey {
 		return operator.Operator{}, authoperator.ErrPermissions //Don't leak whether the device exists
+	}
+	return authoperator.NewAuthOperator(db, dev.DeviceId)
+}
+
+//APILoginOperator returns the operator associated with the given API key
+func (db *Database) APILoginOperator(apikey string) (operator.Operator, error) {
+	dev, err := db.Userdb.ReadDeviceByApiKey(apikey)
+	if err != nil {
+		return operator.Operator{}, err
 	}
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
@@ -119,6 +128,9 @@ func (db *Database) UserLoginOperator(username, password string) (operator.Opera
 
 // LoginOperator logs in as a user or device, depending on which is passed in
 func (db *Database) LoginOperator(path, password string) (operator.Operator, error) {
+	if len(path) == 0 {
+		return db.APILoginOperator(password)
+	}
 	switch strings.Count(path, "/") {
 	default:
 		return operator.Operator{}, operator.ErrBadPath

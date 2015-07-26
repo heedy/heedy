@@ -16,7 +16,7 @@ func TestJsonReader(t *testing.T) {
 		dpb[i] = datastream.Datapoint{Timestamp: timestamps[i], Data: i, Sender: "hello/world"}
 	}
 
-	dpa := datastream.NewDatapointArrayRange(dpb)
+	dpa := datastream.NewDatapointArrayRange(dpb, 0)
 
 	jr, err := NewJsonReader(dpa)
 

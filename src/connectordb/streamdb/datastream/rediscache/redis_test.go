@@ -16,7 +16,7 @@ var (
 	dpa4 = datastream.DatapointArray{datastream.Datapoint{3.0, 12.0, ""}}
 
 	//Warning: the map types change depending on marshaller/unmarshaller is used
-	dpa5 = datastream.DatapointArray{datastream.Datapoint{3.0, map[interface{}]interface{}{"hello": 2.0, "y": "hi"}, ""}}
+	dpa5 = datastream.DatapointArray{datastream.Datapoint{3.0, map[string]interface{}{"hello": 2.0, "y": "hi"}, ""}}
 
 	dpa6 = datastream.DatapointArray{datastream.Datapoint{1.0, 1.0, ""}, datastream.Datapoint{2.0, 2.0, ""}, datastream.Datapoint{3.0, 3., ""}, datastream.Datapoint{4.0, 4., ""}, datastream.Datapoint{5.0, 5., ""}}
 	dpa7 = datastream.DatapointArray{
@@ -279,8 +279,23 @@ func TestRedisTrim(t *testing.T) {
 	require.Equal(t, dpa7[3:].String(), dpa.String())
 }
 
+func TestRedisEmptyRange(t *testing.T) {
+	require.NoError(t, rc.Clear())
+
+	_, i1, i2, err := rc.Range("", "systream", "s1", -20, 0)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, i1)
+	require.EqualValues(t, 0, i2)
+
+	_, i1, i2, err = rc.Range("", "systream", "s1", 0, 5)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, i1)
+	require.EqualValues(t, 0, i2)
+}
+
 func TestRedisRange(t *testing.T) {
 	require.NoError(t, rc.Clear())
+
 	i, err := rc.Insert("mybatcher", "", "mystream", "", dpa7, false)
 	require.NoError(t, err)
 	require.EqualValues(t, 9, i)
@@ -318,7 +333,10 @@ func TestRedisRange(t *testing.T) {
 	require.Equal(t, dpa7[7:].String(), dpa.String())
 
 	dpa, i1, i2, err = rc.Range("", "mystream", "", -20, 0)
-	require.Error(t, err)
+	require.NoError(t, err)
+	require.EqualValues(t, i1, 0)
+	require.EqualValues(t, i2, dpa7.Length())
+	require.Equal(t, dpa7.String(), dpa.String())
 
 	//Now trim the range, to make sure that correct values
 	//are returned if not all data is in redis

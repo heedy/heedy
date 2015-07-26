@@ -220,8 +220,8 @@ func (s *SqlStore) GetByTime(streamID int64, substream string, starttime float64
 		rows.Close()
 		return EmptyRange{}, endindex, ErrorDatabaseCorrupted
 	}
-
-	return &SqlRange{rows, da}, endindex - int64(da.Length()), nil
+	curindex := endindex - int64(da.Length())
+	return &SqlRange{rows, da, curindex}, curindex, nil
 }
 
 //GetByIndex returns a DataRange of datapoints starting at the nearest dataindex to the given startindex
@@ -266,6 +266,6 @@ func (s *SqlStore) GetByIndex(streamID int64, substream string, startindex int64
 		//The index we want is within the datarange
 		da = da.IRange(da.Length()-int(fromend), da.Length())
 	}
-
-	return &SqlRange{rows, da}, endindex - int64(da.Length()), nil
+	curindex := endindex - int64(da.Length())
+	return &SqlRange{rows, da, curindex}, curindex, nil
 }

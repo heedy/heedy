@@ -43,7 +43,7 @@ class Stream(ConnectorObject):
         return self.data["schema"]
 
     def __len__(self):
-        return int(self.db.urlget(self.metaname+"/length").text)
+        return int(self.db.urlget(self.metaname+"/data?q=length").text)
 
     def insertMany(self,o,restamp=False):
         #attempt to use websocket if websocket inserts are enabled, but fall back on update if fail
@@ -51,9 +51,9 @@ class Stream(ConnectorObject):
             if self.db.ws.insert(self.metaname,o):
                 return
         if restamp:
-            self.db.urlpatch(self.metaname,o)
+            self.db.urlput(self.metaname+"/data",o)
         else:
-            self.db.urlupdate(self.metaname,o)
+            self.db.urlpost(self.metaname+"/data",o)
 
     def insert(self,o):
         self.insertMany([{"d":o}],restamp=True)

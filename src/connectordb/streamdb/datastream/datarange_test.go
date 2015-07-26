@@ -7,13 +7,15 @@ import (
 )
 
 func TestDatapointArrayRange(t *testing.T) {
-	da := NewDatapointArrayRange(dpa7)
+	da := NewDatapointArrayRange(dpa7, 2)
 	defer da.Close()
 
+	require.EqualValues(t, da.Index(), 2)
 	d, err := da.Next()
 	require.NoError(t, err)
 	require.NotNil(t, d)
 	require.Equal(t, 1.0, d.Timestamp)
+	require.EqualValues(t, da.Index(), 3)
 	d, err = da.Next()
 	require.NoError(t, err)
 	require.NotNil(t, d)
@@ -34,11 +36,15 @@ func TestDatapointArrayRange(t *testing.T) {
 }
 
 func TestTimeRange(t *testing.T) {
-	da := NewDatapointArrayRange(dpa7)
+	da := NewDatapointArrayRange(dpa7, 1)
 
-	tr := NewTimeRange(da, 3, 6)
+	tr, err := NewTimeRange(da, 3, 6)
+	require.NoError(t, err)
+
+	require.EqualValues(t, tr.Index(), 4)
 
 	dp, err := tr.Next()
+	require.EqualValues(t, tr.Index(), 5)
 	require.NoError(t, err)
 	require.NotNil(t, dp)
 	require.Equal(t, 4., dp.Timestamp)
@@ -63,7 +69,8 @@ func TestTimeRange(t *testing.T) {
 	require.Nil(t, dp)
 	tr.Close()
 
-	tr = NewTimeRange(da, 3, 6)
+	tr, err = NewTimeRange(da, 3, 6)
+	require.NoError(t, err)
 	dpa, err := tr.NextArray()
 	require.NoError(t, err)
 	require.NotNil(t, dpa)
@@ -77,11 +84,14 @@ func TestTimeRange(t *testing.T) {
 }
 
 func TestNumRange(t *testing.T) {
-	da := NewDatapointArrayRange(dpa7)
+	da := NewDatapointArrayRange(dpa7, 1)
 
 	tr := NewNumRange(da, 5)
 
+	require.EqualValues(t, tr.Index(), 1)
+
 	dp, err := tr.Next()
+	require.EqualValues(t, tr.Index(), 2)
 	require.NoError(t, err)
 	require.NotNil(t, dp)
 	require.Equal(t, 1., dp.Timestamp)
@@ -130,7 +140,7 @@ func TestNumRange(t *testing.T) {
 //This is just to increase test coverage...
 func TestEmptyRange(t *testing.T) {
 	er := EmptyRange{}
-
+	require.EqualValues(t, er.Index(), 0)
 	dp, err := er.Next()
 	require.NoError(t, err)
 	require.Nil(t, dp)

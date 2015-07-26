@@ -21,7 +21,7 @@ API_URL = "https://connectordb.com"
 
 class ConnectorDB(Device):
     #Connect to ConnectorDB given an user/device name and password/apikey long with an optional url to the server.
-    def __init__(self,user,password,url=API_URL):
+    def __init__(self,user,password=None,url=API_URL):
 
         if not url.startswith("http"):
             url = "http://"+url
@@ -30,6 +30,11 @@ class ConnectorDB(Device):
             url = url +"/"
 
         self.url = urljoin(url,"/api/v1/")
+
+        #Allows login using api key alone
+        if password==None:
+            password = user
+            user = ""
 
         auth = HTTPBasicAuth(user,password)
         self.r = Session()  #A Session allows us to reuse connections
@@ -40,11 +45,11 @@ class ConnectorDB(Device):
         self.ws = WebsocketHandler(self.url,auth)
         self.__wsinsert = False
 
-        Device.__init__(self,self,self.urlget("?q=this").text)
+        Device.__init__(self,self,self.urlget("?q=this","").text)
 
     def ping(self):
         """Makes sure the connection is open, and auth is working"""
-        self.urlget("?q=this")
+        self.urlget("?q=this","")
 
     def handleresult(self,r):
         """Handles HTTP error codes for a given request result
@@ -57,25 +62,20 @@ class ConnectorDB(Device):
             r -- The request result
         """
         if r.status_code in [401, 403]:
-            raise AuthenticationError(r.json()["msg"])
+            raise AuthenticationError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
         elif r.status_code !=200:
-            raise ServerError(r.json()["msg"])
+            raise ServerError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
-    def urlget(self,location,cmd="d/"):
+    def urlget(self,location,cmd="crud/"):
         return self.handleresult(self.r.get(urljoin(self.url+cmd,location)))
-    def urldelete(self,location,cmd="d/"):
+    def urldelete(self,location,cmd="crud/"):
         return self.handleresult(self.r.delete(urljoin(self.url+cmd,location)))
-    def urlpost(self,location,data={},cmd="d/"):
+    def urlpost(self,location,data={},cmd="crud/"):
         return self.handleresult(self.r.post(urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlput(self,location,data,cmd="d/"):
+    def urlput(self,location,data,cmd="crud/"):
         return self.handleresult(self.r.put(urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlupdate(self,location,data,cmd="d/"):
-        return self.handleresult(self.r.request("UPDATE",urljoin(self.url+cmd,location),data=json.dumps(data)))
-    def urlpatch(self,location,data,cmd="d/"):
-        return self.handleresult(self.r.request("PATCH",urljoin(self.url+cmd,location),data=json.dumps(data)))
-
     def getuser(self,usrname):
         return User(self,usrname)
 
@@ -127,5 +127,13 @@ class ConnectorDB(Device):
         while True:
             time.sleep(100)
 
+    def close(self):
+        #Closes the connection
+        self.wsdisconnect()
+        self.r.close()
+
     def __repr__(self):
         return "[ConnectorDB:%s]"%(self.metaname,)
+
+    def __del__(self):
+        self.close()
