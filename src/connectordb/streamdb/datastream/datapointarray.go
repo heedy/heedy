@@ -3,6 +3,7 @@ package datastream
 import (
 	"bytes"
 	"compress/gzip"
+	"connectordb/streamdb/util"
 	"errors"
 	"time"
 
@@ -31,7 +32,8 @@ type DatapointArray []Datapoint
 
 //DatapointArrayFromBytes reads a DatapointArray from its corresponding bytes
 func DatapointArrayFromBytes(data []byte) (dpa DatapointArray, err error) {
-	err = msgpack.Unmarshal(data, &dpa)
+	//We use our custom unmarshaller
+	err = util.MsgPackUnmarshal(data, &dpa)
 	return dpa, err
 }
 
@@ -100,7 +102,7 @@ func DatapointArrayFromCompressedBytes(cdata []byte) (dpa DatapointArray, err er
 	}()
 
 	r, _ := gzip.NewReader(bytes.NewBuffer(cdata))
-	dec := msgpack.NewDecoder(r)
+	dec := util.NewMsgPackDecoder(r)
 	err = dec.Decode(&dpa)
 	return dpa, err
 }
@@ -250,6 +252,15 @@ func (dpa DatapointArray) TStart(timestamp float64) DatapointArray {
 		return nil
 	}
 	return dpa[i:]
+}
+
+//TEnd returns a DatapointArray which has the given ending bound (like DatapointTRange, but without upperbound)
+func (dpa DatapointArray) TEnd(timestamp float64) DatapointArray {
+	i := dpa.FindTimeIndex(timestamp)
+	if i == -1 || timestamp <= 0.0 {
+		return dpa
+	}
+	return dpa[:i]
 }
 
 //TRange returns the DatapointArray of datapoints which fit within the time range:

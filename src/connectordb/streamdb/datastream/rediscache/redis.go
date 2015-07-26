@@ -164,8 +164,8 @@ const (
 		local i2 = tonumber(ARGV[3])
 
 		if (redislength==nil or streamlength==nil) then
-			-- The stream doesn't exist. If i1=0 and i2 > 0, then return 0,0
-			if (i1==0 and i2 > 0) then
+			-- The stream doesn't exist. return 0,0 if a end-relative range
+			if (i1<=0) then
 				return {0,0}
 			end
 			-- otherwise, it is an invalid range
@@ -175,6 +175,10 @@ const (
 		-- If the indices are from the end, set their values
 		if (i1<0) then
 			i1 = streamlength + i1
+			-- Negative indices further than bound should read from beginning of stream instead
+			if (i1<0) then
+				i1 = 0
+			end
 		end
 		if (i2<=0) then
 			i2 = streamlength + i2
@@ -185,7 +189,7 @@ const (
 			i2 = streamlength
 		end
 
-		if (i2 < i1 or i1 < 0) then
+		if (i2 < i1) then
 			return {["err"]="Invalid index range."}
 		end
 

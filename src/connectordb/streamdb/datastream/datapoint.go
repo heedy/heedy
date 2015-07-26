@@ -1,6 +1,7 @@
 package datastream
 
 import (
+	"connectordb/streamdb/util"
 	"fmt"
 	"reflect"
 	"time"
@@ -21,7 +22,9 @@ type Datapoint struct {
 
 //DatapointFromBytes reads a datapoint from its byte representation
 func DatapointFromBytes(data []byte) (d Datapoint, err error) {
-	err = msgpack.Unmarshal(data, &d)
+	//We need msgpack to be unmarshalled with string maps, rather than interface maps.
+	err = util.MsgPackUnmarshal(data, &d)
+
 	return d, err
 }
 

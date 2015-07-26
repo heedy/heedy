@@ -9,8 +9,8 @@ import (
 	"connectordb/config"
 	"connectordb/plugins"
 	"connectordb/plugins/webclient"
-	"connectordb/security"
 	"connectordb/streamdb"
+
 	"fmt"
 	"net/http"
 
@@ -33,12 +33,10 @@ func exec(db *streamdb.Database, args []string) error {
 	s := r.PathPrefix("/api/v1").Subrouter()
 	Router(db, s)
 
-	// Do this so Daniel's scripts don't break
-	Router(db, nil)
-
-	// all else goes to the webserver
-	http.Handle("/", security.SecurityHeaderHandler(r))
-
+	/*
+		// all else goes to the webserver
+		http.Handle("/", security.SecurityHeaderHandler(r))
+	*/
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.GetConfiguration().WebPort), nil)
 
 }

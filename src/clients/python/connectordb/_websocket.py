@@ -43,10 +43,13 @@ class WebsocketHandler(object):
         self.pingtimer = None
 
     def __del__(self):
-        self.disconnect()
-        #A weird error was showing up if the program exited without stopping the ping - the timer ran once the time module was unloaded
-        if self.pingtimer is not None:
-            self.pingtimer.cancel()
+        try:
+            self.disconnect()
+            #A weird error was showing up if the program exited without stopping the ping - the timer ran once the time module was unloaded
+            if self.pingtimer is not None:
+                self.pingtimer.cancel()
+        except:
+            pass    #Interpreter shutdown causes all sorts of annoyances...
 
     def getWebsocketURI(self,url):
         """Given a URL to the REST API, get the websocket uri"""
@@ -74,6 +77,7 @@ class WebsocketHandler(object):
 
         if self.pingtimer is not None:
             self.pingtimer.cancel()
+            self.pingtimer = None
 
         try:
             self.ws_openlock.release()
@@ -267,7 +271,10 @@ class WebsocketHandler(object):
         self.wantsconnection = False
         #Closes the connection if it exists
         if self.ws is not None:
-            self.ws.close()
+            try:
+                self.ws.close()
+            except:
+                pass #We have some GC problems where things are shut down at the wrong time. This is a workaround
 
 
         with self.subscription_lock:

@@ -4,8 +4,9 @@ import "database/sql"
 
 //SqlRange is a range object that conforms to the range interface
 type SqlRange struct {
-	r  *sql.Rows
-	da *DatapointArray
+	r     *sql.Rows
+	da    *DatapointArray
+	index int64
 }
 
 //Close clears all resources used by the sqlRange
@@ -16,11 +17,17 @@ func (s *SqlRange) Close() {
 	}
 }
 
+//Index returns the current index of the values in the sql range
+func (s *SqlRange) Index() int64 {
+	return s.index
+}
+
 //NextArray returns the next DatapointArray chunk from the database
 func (s *SqlRange) NextArray() (da *DatapointArray, err error) {
 	//Is there is a current array, return that
 	if s.da != nil && s.da.Length() > 0 {
 		tmp := s.da
+		s.index += int64(s.da.Length())
 		s.da = nil
 		return tmp, nil
 	}
@@ -58,6 +65,7 @@ func (s *SqlRange) Next() (d *Datapoint, err error) {
 	if s.da != nil && s.da.Length() > 0 {
 		tmp := (*s.da)[0]
 		s.da = s.da.IRange(1, s.da.Length())
+		s.index++
 		return &tmp, nil
 	}
 
@@ -68,6 +76,9 @@ func (s *SqlRange) Next() (d *Datapoint, err error) {
 	if s.da == nil {
 		return nil, nil
 	}
+
+	//We need to correct the index because we didn't actually give the array out
+	s.index -= int64(s.da.Length())
 
 	return s.Next()
 }
