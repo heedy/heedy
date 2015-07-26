@@ -26,7 +26,7 @@ func StreamLength(o operator.Operator, writer http.ResponseWriter, request *http
 
 	l, err := o.LengthStream(streampath)
 
-	return restcore.JSONWriter(writer, l, logger, err)
+	return restcore.IntWriter(writer, l, logger, err)
 }
 
 //WriteStream writes the given stream

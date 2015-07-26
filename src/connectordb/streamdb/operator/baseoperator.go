@@ -86,4 +86,9 @@ type BaseOperatorInterface interface {
 	SubscribeDeviceByID(deviceID int64, chn chan Message) (*nats.Subscription, error)
 	// TODO also change this substream to the enum
 	SubscribeStreamByID(streamID int64, substream string, chn chan Message) (*nats.Subscription, error)
+
+	//CountAll* counts the total number of users/devices/streams in the entire database
+	CountAllUsers() (int64, error)
+	CountAllDevices() (int64, error)
+	CountAllStreams() (int64, error)
 }

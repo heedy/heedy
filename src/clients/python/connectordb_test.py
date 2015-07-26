@@ -36,6 +36,42 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual(db.name,"test/user")
         self.assertEqual(db.username,"test")
         self.assertEqual(db.devicename,"user")
+    def test_counting(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        self.assertGreaterEqual(db.countUsers(),1)
+        self.assertGreaterEqual(db.countDevices(),1)
+        self.assertGreaterEqual(db.countStreams(),1)
+
+        curusers = db.countUsers()
+
+        usr = db.getuser("python_test")
+        self.assertFalse(usr.exists())
+
+        usr.create("py@email","mypass")
+        curusers +=1
+        self.assertEqual(curusers, db.countUsers())
+
+        usrdb = connectordb.ConnectorDB("python_test","mypass",url="http://localhost:8000")
+        self.assertRaises(AuthenticationError,usrdb.countStreams)
+        self.assertRaises(AuthenticationError,usrdb.countDevices)
+        self.assertRaises(AuthenticationError,usrdb.countUsers)
+        
+        curdevices = db.countDevices()
+        curstreams = db.countStreams()
+        usrdb["mystream"].create({"type": "string"})
+        curstreams+=1
+
+        self.assertEqual(curusers, db.countUsers())
+        self.assertEqual(curdevices, db.countDevices())
+        self.assertEqual(curstreams, db.countStreams())
+
+        usrdb.user["superdevice"].create()
+        curdevices+=1
+
+        self.assertEqual(curusers, db.countUsers())
+        self.assertEqual(curdevices, db.countDevices())
+        self.assertEqual(curstreams, db.countStreams())
+
 
     def test_adminusercrud(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")

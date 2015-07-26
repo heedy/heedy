@@ -25,4 +25,16 @@ func TestDataBaseOperatorInterfaceBasics(t *testing.T) {
 
 	require.Equal(t, AdminName, db.Name())
 
+	i, err := db.CountAllUsers()
+	require.NoError(t, err)
+	require.EqualValues(t, 0, i)
+
+	i, err = db.CountAllDevices()
+	require.NoError(t, err)
+	require.EqualValues(t, 0, i)
+
+	i, err = db.CountAllStreams()
+	require.NoError(t, err)
+	require.EqualValues(t, 0, i)
+
 }

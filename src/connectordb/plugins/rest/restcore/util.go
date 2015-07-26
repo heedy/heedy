@@ -53,6 +53,20 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry,
 	return nil
 }
 
+//IntWriter writes an integer
+func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error) error {
+	if err != nil {
+		WriteError(writer, logger, http.StatusForbidden, err, false)
+		return err
+	}
+
+	res := []byte(strconv.FormatInt(i, 10))
+	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
+	writer.WriteHeader(http.StatusOK)
+	writer.Write(res)
+	return nil
+}
+
 //UnmarshalRequest unmarshals the input data to the given interface
 func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	defer request.Body.Close()
@@ -109,6 +123,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	if err2 != nil {
 		logger.WithField("ref", "OSHIT").Errorln("Failed to generate error UUID: " + err2.Error())
 		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
+		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to generate error UUID", "ref": "OSHIT"}`))
 		return
 	}
@@ -123,7 +138,9 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	if err2 != nil {
 		logger.WithField("ref", uu).Errorln("Failed to marshal error struct: " + err2.Error())
 		logger.WithField("ref", uu).Warningln("Original Error: " + err.Error())
+		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to write error message","ref":"` + uu + `"}`))
+		return
 	}
 
 	//Now that we have the error message, we log it and send the messages

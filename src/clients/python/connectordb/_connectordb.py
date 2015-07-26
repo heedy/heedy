@@ -137,3 +137,13 @@ class ConnectorDB(Device):
 
     def __del__(self):
         self.close()
+
+    def countUsers(self):
+        """Gets the total number of users of ConnectorDB"""
+        return int(self.db.urlget("?q=countusers","").text)
+    def countDevices(self):
+        """Gets the total number of devices of ConnectorDB"""
+        return int(self.db.urlget("?q=countdevices","").text)
+    def countStreams(self):
+        """Gets the total number of streams of ConnectorDB"""
+        return int(self.db.urlget("?q=countstreams","").text)
