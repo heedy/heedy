@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"net/http"
+	"strconv"
 	"sync/atomic"
 	"syscall"
 
@@ -65,9 +66,29 @@ func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
 func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	res := []byte(o.Name())
+	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(o.Name()))
+	writer.Write(res)
 	return nil
+}
+
+//CountAllUsers gets all of the users in the entire database
+func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	l, err := o.CountAllUsers()
+	return restcore.IntWriter(writer, l, logger, err)
+}
+
+//CountAllDevices gets all of the devices in the entire database
+func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	l, err := o.CountAllDevices()
+	return restcore.IntWriter(writer, l, logger, err)
+}
+
+//CountAllStreams gets all of the streams in the entire database
+func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+	l, err := o.CountAllStreams()
+	return restcore.IntWriter(writer, l, logger, err)
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
@@ -87,7 +108,11 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	// The websocket is run straight from here
 	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
+
 	prefix.HandleFunc("/", restcore.Authenticator(GetThis, db)).Queries("q", "this").Methods("GET")
+	prefix.HandleFunc("/", restcore.Authenticator(CountAllUsers, db)).Queries("q", "countusers").Methods("GET")
+	prefix.HandleFunc("/", restcore.Authenticator(CountAllDevices, db)).Queries("q", "countdevices").Methods("GET")
+	prefix.HandleFunc("/", restcore.Authenticator(CountAllStreams, db)).Queries("q", "countstreams").Methods("GET")
 
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())

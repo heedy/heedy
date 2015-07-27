@@ -229,3 +229,21 @@ func (db *Database) User() (usr *users.User, err error) {
 func (db *Database) Device() (*users.Device, error) {
 	return nil, ErrAdmin
 }
+
+//CountAllUsers returns the total number of users contatined in the database
+func (db *Database) CountAllUsers() (int64, error) {
+	i, err := db.Userdb.CountUsers()
+	return int64(i), err
+}
+
+//CountAllDevices returns the total number of devices contatined in the database
+func (db *Database) CountAllDevices() (int64, error) {
+	i, err := db.Userdb.CountDevices()
+	return int64(i), err
+}
+
+//CountAllStreams returns the total number of streams contatined in the database
+func (db *Database) CountAllStreams() (int64, error) {
+	i, err := db.Userdb.CountStreams()
+	return int64(i), err
+}
