@@ -14,6 +14,14 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+//Log levels supported by apifunc
+const (
+	DEBUG   = iota
+	INFO    = iota
+	WARNING = iota
+	ERROR   = iota
+)
+
 var (
 	//UnsuccessfulLoginWait is the amount of time to wait between each unsuccessful login attempt
 	UnsuccessfulLoginWait = 300 * time.Millisecond
@@ -45,7 +53,7 @@ func WriteAccessControlHeaders(writer http.ResponseWriter) {
 }
 
 //APIHandler is a function that handles some part of the REST API given a specific operator on the database.
-type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error
+type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string)
 
 //Authenticator is a wrapper function that sets up authentication and database for each request
 func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
@@ -110,11 +118,27 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		l := logger.WithField("dev", o.Name())
 
 		//If we got here, o is a valid operator
-		apifunc(o, writer, request, l)
+		loglevel, txt := apifunc(o, writer, request, l)
 
 		//Write the time that this query took
 		tdiff := time.Since(tstart)
 		qtimer.Add(tdiff)
-		l.Debugln(tdiff)
+
+		//Set up how the log message is printed for this query
+		if txt == "" {
+			txt = tdiff.String()
+		} else {
+			txt += " - " + tdiff.String()
+		}
+		switch loglevel {
+		case DEBUG:
+			l.Debugln(txt)
+		case INFO:
+			l.Infoln(txt)
+		case WARNING:
+			l.Warningln(txt)
+		case ERROR:
+			l.Errorln(txt)
+		}
 	})
 }

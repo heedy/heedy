@@ -13,9 +13,8 @@ import (
 )
 
 //GenerateDataset allows to generate a dataset of multiple streams at once to simplify analysis of data
-func GenerateDataset(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
-	restcore.WriteError(writer, logger, http.StatusNotImplemented, errors.New("This function is under construction"), false)
-	return nil
+func GenerateDataset(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	return restcore.WriteError(writer, logger, http.StatusNotImplemented, errors.New("This function is under construction"), false)
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
