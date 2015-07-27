@@ -11,7 +11,7 @@ All Rights Reserved
 **/
 
 import (
-	"connectordb/streamdb/operator/plainoperator"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/users"
 	"errors"
 )
@@ -21,11 +21,11 @@ var (
 )
 
 type AdminOperator struct {
-	plainoperator.PlainOperator
+	interfaces.Operator
 }
 
 // UpdateDevice updates the device at devicepath to the modifed device passed in
-func (o *AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
+func (o AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
 	dev, err := o.ReadDeviceByID(modifieddevice.DeviceId)
 	if err != nil {
 		return err
@@ -34,11 +34,11 @@ func (o *AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
 		return ErrNotChangeable
 	}
 
-	return o.PlainOperator.UpdateDevice(modifieddevice)
+	return o.Operator.UpdateDevice(modifieddevice)
 }
 
 //UpdateUser performs the given modifications
-func (o *AdminOperator) UpdateUser(modifieduser *users.User) error {
+func (o AdminOperator) UpdateUser(modifieduser *users.User) error {
 	user, err := o.ReadUserByID(modifieduser.UserId)
 	if err != nil {
 		return err //Workaround for issue #81
@@ -47,12 +47,12 @@ func (o *AdminOperator) UpdateUser(modifieduser *users.User) error {
 		return ErrNotChangeable
 	}
 
-	return o.PlainOperator.UpdateUser(modifieduser)
+	return o.Operator.UpdateUser(modifieduser)
 }
 
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
-func (o *AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
+func (o AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
 	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
 	if err != nil {
 		return err
@@ -62,5 +62,5 @@ func (o *AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
 		return ErrNotChangeable
 	}
 
-	return o.PlainOperator.UpdateStream(modifiedstream)
+	return o.Operator.UpdateStream(modifiedstream)
 }

@@ -9,18 +9,16 @@ import (
 
 //SubscribeUserByID subscribes to everything a user creates
 func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan messenger.Message) (*nats.Subscription, error) {
-	usr, err := o.Db.ReadUserByID(userID)
+	usr, err := o.Operator.ReadUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := o.Device()
-	if err != nil {
+
+	if _, err := o.permissionsGteUser(usr, users.USER); err != nil {
 		return nil, err
 	}
-	if dev.RelationToUser(usr).Gte(users.USER) {
-		return o.Db.SubscribeUserByID(userID, chn)
-	}
-	return nil, ErrPermissions
+
+	return o.Operator.SubscribeUserByID(userID, chn)
 }
 
 //SubscribeDeviceByID subscribes to all streams of the given device
@@ -29,14 +27,12 @@ func (o *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan messenger.Me
 	if err != nil {
 		return nil, err
 	}
-	dev, err := o.Device()
-	if err != nil {
+
+	if _, err := o.permissionsGteDev(readdev, users.DEVICE); err != nil {
 		return nil, err
 	}
-	if dev.RelationToDevice(readdev).Gte(users.DEVICE) {
-		return o.Db.SubscribeDeviceByID(deviceID, chn)
-	}
-	return nil, ErrPermissions
+
+	return o.Operator.SubscribeDeviceByID(deviceID, chn)
 }
 
 //SubscribeStreamByID subscribes to the given stream by ID
@@ -55,7 +51,7 @@ func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn
 	}
 
 	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
-		return o.Db.SubscribeStreamByID(streamID, substream, chn)
+		return o.Operator.SubscribeStreamByID(streamID, substream, chn)
 	}
 	return nil, ErrPermissions
 }

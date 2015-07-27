@@ -5,7 +5,7 @@ import "connectordb/streamdb/users"
 //ReadAllUsers reads all the users
 func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.ReadAllUsers()
+		return o.Operator.ReadAllUsers()
 	}
 	//If not admin, then we only know about our own user
 	u, err := o.User()
@@ -18,7 +18,7 @@ func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
 //CreateUser makes a new user
 func (o *AuthOperator) CreateUser(username, email, password string) error {
 	if o.Permissions(users.ROOT) {
-		err := o.Db.CreateUser(username, email, password)
+		err := o.Operator.CreateUser(username, email, password)
 		if err == nil {
 			o.UserLog("CreateUser", username)
 		}
@@ -30,7 +30,7 @@ func (o *AuthOperator) CreateUser(username, email, password string) error {
 //ReadUser reads a user - or rather reads any user that this device has permissions to read
 func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.ReadUser(username)
+		return o.Operator.ReadUser(username)
 	}
 	//Not an admin. See if it is asking about the current user
 	if u, err := o.User(); err == nil && u.Name == username {
@@ -42,7 +42,7 @@ func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
 //ReadUserByID reads the user given the ID
 func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.ReadUserByID(userID)
+		return o.Operator.ReadUserByID(userID)
 	}
 	if usr, err := o.User(); err == nil && usr.UserId == userID {
 		return usr, nil
@@ -66,7 +66,7 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 		return ErrPermissions
 	}
 	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
-	err = o.Db.UpdateUser(modifieduser)
+	err = o.Operator.UpdateUser(modifieduser)
 	if err == nil {
 		o.UserLog("UpdateUser", modifieduser.Name)
 	}
@@ -78,7 +78,7 @@ func (o *AuthOperator) DeleteUserByID(userID int64) error {
 	if o.Permissions(users.ROOT) {
 		usr, err1 := o.ReadUserByID(userID)
 
-		err := o.Db.DeleteUserByID(userID)
+		err := o.Operator.DeleteUserByID(userID)
 		if err == nil && err1 == nil {
 			o.UserLog("DeleteUser", usr.Name)
 		}

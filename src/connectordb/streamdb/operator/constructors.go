@@ -14,32 +14,53 @@ type Database interface {
 	GetMessenger() *messenger.Messenger
 }
 
-func newPlainOperator(db *Database) PlainOperator {
+func newPlainOperator(db Database) plainoperator.PlainOperator {
 	return plainoperator.NewPlainOperator(db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger())
 
 }
 
-func NewPlainOperator(db *Database) Operator {
-	return newPlainOperator(db)
+func newAdminOperator(db Database) adminoperator.AdminOperator {
+	op := newPlainOperator(db)
+	return adminoperator.AdminOperator{&op}
 }
 
-func newAdminOperator(db *Database) AdminOperator {
-	return adminoperator.AdminOperator{NewPlainOperator(udb, ds, msg)}
+func NewAdminOperator(db Database) Operator {
+	op := newAdminOperator(db)
+	return &op
 }
 
-func NewAdminOperator(db *Database) Operator {
-	return newAdminOperator(db)
+/**
+//NewAuthOperator creates a new authenticated operator,
+func NewAuthOperator(db Operator, deviceID int64) (Operator, error) {
+	dev, err := db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return interfaces.ErrOperator{}, err
+	}
+	usr, err := db.ReadUserByID(dev.UserId)
+	if err != nil {
+		return interfaces.ErrOperator{}, err
+	}
+
+	userlogID, err := getUserLogStream(db, usr.UserId)
+	if err != nil {
+		return interfaces.ErrOperator{}, err
+	}
+
+	return &AuthOperator{db, usr.Name + "/" + dev.Name, dev.DeviceId, userlogID}, nil
 }
 
-func DeviceLoginOperator(db *Database, username, password string) (Operator, error) {
-	baseOperator = newPlainOperator(db)
+func DeviceLoginOperator(db Database, devicepath, apikey string) (*Operator, error) {
+
+	operator := newPlainOperator(db)
 	dev, err := operator.ReadDevice(devicepath)
 
 	if err != nil || dev.ApiKey != apikey {
-		return operator.Operator{}, authoperator.ErrPermissions // Don't leak whether the device exists
+		return nil, authoperator.ErrPermissions // Don't leak whether the device exists
 	}
+	op := authoperator.NewAuthOperator(db, dev.DeviceId)
 	return authoperator.NewAuthOperator(db, dev.DeviceId)
 }
+**/
 
 /**
 //DeviceLoginOperator returns the operator associated with the given API key

@@ -35,7 +35,7 @@ func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream,
 		return nil, err
 	}
 	if odev.RelationToDevice(dev).Gte(users.FAMILY) {
-		return o.Db.ReadAllStreamsByDeviceID(deviceID)
+		return o.Operator.ReadAllStreamsByDeviceID(deviceID)
 	}
 	return nil, err
 }
@@ -51,7 +51,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 		return err
 	}
 	if odev.RelationToDevice(dev).Gte(users.DEVICE) {
-		err = o.Db.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+		err = o.Operator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
 		if err == nil {
 			devpath, err2 := o.getDevicePath(deviceID)
 			if err2 == nil {
@@ -65,115 +65,116 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 
 //ReadStream reads the given stream
 func (o *AuthOperator) ReadStream(streampath string) (*users.Stream, error) {
-	dev, err := o.Device()
-	if err != nil {
-		return nil, err
-	}
-	strm, err := o.Db.ReadStream(streampath)
-	if err != nil {
-		return nil, err
-	}
-	sdevice, err := o.ReadDeviceByID(strm.DeviceId)
+	stream, err := o.Operator.ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
 
-	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
-		return strm, nil
+	if _, err := o.devPermissionsGteStream(stream, users.DEVICE); err != nil {
+		return nil, err
 	}
-	return nil, ErrPermissions
+
+	return stream, nil
 }
 
 //ReadStreamByID reads the given stream using its ID
 func (o *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
-	dev, err := o.Device()
-	if err != nil {
-		return nil, err
-	}
-	strm, err := o.Db.ReadStreamByID(streamID)
-	if err != nil {
-		return nil, err
-	}
-	sdevice, err := o.ReadDeviceByID(strm.DeviceId)
+	stream, err := o.Operator.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
 
-	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
-		return strm, nil
+	if _, err := o.devPermissionsGteStream(stream, users.DEVICE); err != nil {
+		return nil, err
 	}
-	return nil, ErrPermissions
+
+	return stream, nil
 }
 
 //ReadStreamByDeviceID reads the stream given a device ID and the stream name
 func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
-	dev, err := o.Device()
-	if err != nil {
-		return nil, err
-	}
-	strm, err := o.Db.ReadStreamByDeviceID(deviceID, streamname)
-	if err != nil {
-		return nil, err
-	}
-	sdevice, err := o.ReadDeviceByID(strm.DeviceId)
+	stream, err := o.Operator.ReadStreamByDeviceID(deviceID, streamname)
 	if err != nil {
 		return nil, err
 	}
 
-	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
-		return strm, nil
+	if _, err := o.devPermissionsGteStream(stream, users.DEVICE); err != nil {
+		return nil, err
 	}
-	return nil, ErrPermissions
+
+	return stream, nil
 }
 
 //UpdateStream updates the stream
 func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
-	odev, err := o.Device()
+	originalStream, err := o.ReadStreamByID(modifiedstream.StreamId)
 	if err != nil {
 		return err
 	}
-	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
+
+	permission, err := o.devPermissionsGteStream(originalStream, users.NOBODY)
 	if err != nil {
 		return err
 	}
-	dev, err := o.ReadDeviceByID(strm.DeviceId)
-	if err != nil {
-		return err
-	}
-	permission := odev.RelationToStream(strm, dev)
-	if modifiedstream.RevertUneditableFields(*strm, permission) > 0 {
+
+	if modifiedstream.RevertUneditableFields(*originalStream, permission) > 0 {
 		return ErrPermissions
 	}
-	err = o.Db.UpdateStream(modifiedstream)
+
+	err = o.Operator.UpdateStream(modifiedstream)
 	if err == nil {
-		o.UserLogStreamID(strm.StreamId, "UpdateStream")
+		o.UserLogStreamID(originalStream.StreamId, "UpdateStream")
 	}
 	return err
 }
 
+/**
+devPermissionsGteStream checks if this device's permissions are greater than or
+equal to the level relative to the given stream.
+
+Returns:
+
+    PermissionLevel - the relation of the other user's device to this one,
+					  nobody on error
+	error - ErrPermissoins if the permission level is not set, or other errors
+	        if a database issue occurred. nil if the relation permissionlevel
+			is >= the requested one
+**/
+func (o *AuthOperator) devPermissionsGteStream(streamToCheck *users.Stream, permissionToCheck users.PermissionLevel) (users.PermissionLevel, error) {
+	myDevice, err := o.Device()
+	if err != nil {
+		return users.NOBODY, err
+	}
+
+	streamsDevice, err := o.ReadDeviceByID(streamToCheck.DeviceId)
+	if err != nil {
+		return users.NOBODY, err
+	}
+
+	permission := myDevice.RelationToStream(streamToCheck, streamsDevice)
+	if permission.Gte(permissionToCheck) {
+		return permission, nil
+	}
+
+	return users.NOBODY, ErrPermissions
+}
+
 //DeleteStreamByID Delete the stream using ID... This doesn't actually use the ID internally
 func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error {
-	odev, err := o.Device()
+	stream, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return err
 	}
-	strm, err := o.ReadStreamByID(streamID)
-	if err != nil {
-		return err
-	}
-	dev, err := o.ReadDeviceByID(strm.DeviceId)
-	if err != nil {
-		return err
-	}
-	if odev.RelationToStream(strm, dev).Gte(users.DEVICE) {
 
-		spath, err2 := o.getStreamPath(streamID)
-
-		err = o.Db.DeleteStreamByID(streamID, substream)
-		if err == nil && err2 == nil {
-			o.UserLog("DeleteStream", spath)
-		}
+	if _, err := o.devPermissionsGteStream(stream, users.DEVICE); err != nil {
 		return err
 	}
-	return ErrPermissions
+
+	spath, err2 := o.getStreamPath(streamID)
+
+	err = o.Operator.DeleteStreamByID(streamID, substream)
+	if err == nil && err2 == nil {
+		o.UserLog("DeleteStream", spath)
+	}
+	return err
 }

@@ -2,7 +2,7 @@ package authoperator
 
 import (
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/operator/plainoperator"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/users"
 	"errors"
 
@@ -27,7 +27,7 @@ var (
 //AuthOperator is the database proxy for a particular device.
 //TODO: Operator does not auto-expire after time period
 type AuthOperator struct {
-	Db plainoperator.PlainOperator //The operator which is used to interact with the database
+	interfaces.Operator //The operator which is used to interact with the database
 
 	operatorPath string //The operator path is the string name of the operator
 	devID        int64  //the id of the device - operatorPath is not enough, since name changes can happen in other threads
@@ -42,16 +42,16 @@ func (o *AuthOperator) Name() string {
 
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
-	dev, err := o.Db.ReadDeviceByID(o.devID)
+	dev, err := o.Operator.ReadDeviceByID(o.devID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Db.ReadUserByID(dev.UserId)
+	return o.Operator.ReadUserByID(dev.UserId)
 }
 
 //Device returns the current device
 func (o *AuthOperator) Device() (*users.Device, error) {
-	return o.Db.ReadDeviceByID(o.devID)
+	return o.Operator.ReadDeviceByID(o.devID)
 }
 
 //Permissions returns whether the operator has permissions given by the string
@@ -72,7 +72,7 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 	dp := datastream.NewDatapoint()
 	dp.Data = data
 	dp.Sender = o.Name()
-	err := o.Db.InsertStreamByID(o.userlogID, "", datastream.DatapointArray{dp}, true)
+	err := o.Operator.InsertStreamByID(o.userlogID, "", datastream.DatapointArray{dp}, true)
 	if err != nil {
 		log.WithFields(log.Fields{"cmd": cmd, "arg": arg, "o": o.Name()}).Error("Userlog insert failed: ", err)
 	}
