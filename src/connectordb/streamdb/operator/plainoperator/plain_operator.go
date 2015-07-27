@@ -72,6 +72,11 @@ func (o *PlainOperator) ReadUserByID(userID int64) (*users.User, error) {
 func (o *PlainOperator) UpdateUser(modifieduser *users.User) error {
 	return o.Userdb.UpdateUser(modifieduser)
 }
+
+func (o *PlainOperator) Login(username, password string) (*users.User, *users.Device, error) {
+	return o.Userdb.Login(username, password)
+}
+
 func (o *PlainOperator) DeleteUserByID(userID int64) error {
 	// Users are going to be GC'd from redis in the future - but we currently don't have that implemented,
 	// so manually delete all the devices from redis if user delete succeeds

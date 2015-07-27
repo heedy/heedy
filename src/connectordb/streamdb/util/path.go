@@ -24,6 +24,26 @@ type Path struct {
 	PathLen int
 }
 
+// IsUser returns true if and only if the path only refers to a user.
+func (p *Path) IsUser() bool {
+	return p.PathLen == 1
+}
+
+// IsDevice returns true if and only if the path only refers to a device.
+func (p *Path) IsDevice() bool {
+	return p.PathLen == 2
+}
+
+// IsStream returns true if and only if the path refers to a stream.
+func (p *Path) IsStream() bool {
+	return p.PathLen == 3
+}
+
+// IsSubstream returns true if and only if the path refers to a substream
+func (p *Path) IsSubstream() bool {
+	return p.PathLen == 4
+}
+
 // Gets the path to the device this Path represents
 func (p *Path) GetDevicePath() string {
 	return p.User + "/" + p.Device

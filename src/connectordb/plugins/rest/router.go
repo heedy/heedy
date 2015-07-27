@@ -2,8 +2,8 @@ package rest
 
 import (
 	"connectordb/streamdb"
-	"connectordb/streamdb/operator/authoperator"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/authoperator"
 	"encoding/json"
 	"errors"
 	"time"
@@ -119,7 +119,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		}()
 
-		o, err := db.LoginOperator(authUser, authPass)
+		o, err := operator.NewUserLoginOperator(db, authUser, authPass)
 
 		if err != nil {
 			logger.WithFields(log.Fields{"dev": authUser, "op": "AUTH"}).Warningln(err.Error())

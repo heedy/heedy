@@ -3,6 +3,7 @@ package rest
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"io"
 	"net/http"
 	"sync/atomic"

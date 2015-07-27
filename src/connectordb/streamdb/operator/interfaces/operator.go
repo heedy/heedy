@@ -34,6 +34,12 @@ type Operator interface {
 	UpdateUser(modifieduser *users.User) error
 	DeleteUserByID(userID int64) error
 
+	// Login checks the credentials of the user and returns the user and their
+	// device if the credentials match otherwise an error. This function should
+	// be used instead of any manual checks because it upgrades password
+	// security as it processes.
+	Login(username, password string) (*users.User, *users.Device, error)
+
 	//The device operations are exactly the same as user operations. You pass in device paths
 	//in the form "username/devicename"
 	ReadAllDevicesByUserID(userID int64) ([]users.Device, error)

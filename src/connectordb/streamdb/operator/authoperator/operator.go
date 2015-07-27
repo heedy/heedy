@@ -12,6 +12,7 @@ import (
 var (
 	//ErrPermissions is thrown when an operator tries to do stuff it is not allowed to do
 	ErrPermissions = errors.New("Access Denied")
+	ErrBadPath     = errors.New("not a valid path")
 
 	//UserlogSchema is the schema that is used for the userlog
 	UserlogSchema = `{

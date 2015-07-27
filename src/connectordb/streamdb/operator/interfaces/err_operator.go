@@ -51,6 +51,11 @@ func (eo ErrOperator) UpdateUser(modifieduser *users.User) error {
 func (eo ErrOperator) DeleteUserByID(userID int64) error {
 	return BadOperatorErr
 }
+
+func (o ErrOperator) Login(username, password string) (*users.User, *users.Device, error) {
+	return nil, nil, BadOperatorErr
+}
+
 func (eo ErrOperator) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) {
 	return nil, BadOperatorErr
 }

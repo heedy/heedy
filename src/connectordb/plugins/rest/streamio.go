@@ -3,6 +3,7 @@ package rest
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/datapoint"
 	"errors"
 	"io"
 	"net/http"
@@ -63,7 +64,7 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 		return err
 	}
 
-	jreader, err := operator.NewJsonReader(dr)
+	jreader, err := datapoint.NewJsonReader(dr)
 	if err != nil {
 		if err == io.EOF {
 			writer.Header().Set("Content-Type", "application/json; charset=utf-8")

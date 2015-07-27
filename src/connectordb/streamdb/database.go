@@ -39,6 +39,18 @@ type Database struct {
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
 
+// These are here for Operator to be able to construct properly, they cannot
+// have pointer receivers.
+func (db Database) GetUserDatabase() users.UserDatabase {
+	return db.Userdb
+}
+func (db Database) GetDatastream() *datastream.DataStream {
+	return db.ds
+}
+func (db Database) GetMessenger() *messenger.Messenger {
+	return db.msg
+}
+
 /**
 Open StreamDB given an Options object, which holds the information necessary to connect to the database
 

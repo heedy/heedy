@@ -137,7 +137,7 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
-	s.operator = sdb.Operator
+	s.operator = operator.NewOperator(sdb)
 	s.operatorName = "ConnectorDB"
 	s.pwd = ""
 	return &s
