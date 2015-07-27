@@ -62,7 +62,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
 	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {
-		return 1, ""
+		return restcore.INFO, ""
 	}
 	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
 	f := Feed{
@@ -109,5 +109,5 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(xmlheader)
 	writer.Write(result)
-	return 0, ""
+	return restcore.DEBUG, ""
 }

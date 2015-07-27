@@ -70,7 +70,7 @@ func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return 0, ""
+	return restcore.DEBUG, ""
 }
 
 //CountAllUsers gets all of the users in the entire database

@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -24,6 +25,7 @@ const Mb = 1024 * 1024
 var (
 	ErrInvalidName = errors.New("The given name did not pass sanitation.")
 	ErrBadQ        = errors.New("Unrecognized query command.")
+	ErrCantParse   = errors.New("The given query cannot be parsed, since the values could not be extracted")
 )
 
 //OK is a simplifying function that returns success
@@ -49,7 +51,7 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry,
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return 0, ""
+	return DEBUG, ""
 }
 
 //IntWriter writes an integer
@@ -62,7 +64,7 @@ func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return 0, ""
+	return DEBUG, ""
 }
 
 //UnmarshalRequest unmarshals the input data to the given interface
@@ -123,7 +125,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to generate error UUID", "ref": "OSHIT"}`))
-		return 1, ""
+		return INFO, ""
 	}
 	uu := u.String()
 
@@ -138,7 +140,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", uu).Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to write error message","ref":"` + uu + `"}`))
-		return 1, ""
+		return INFO, ""
 	}
 
 	//Now that we have the error message, we log it and send the messages
@@ -151,7 +153,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(errorCode)
 	writer.Write(res)
-	return 1, ""
+	return INFO, ""
 }
 
 //GetStreamPath returns the relevant parts of a stream path
@@ -161,4 +163,50 @@ func GetStreamPath(request *http.Request) (username string, devicename string, s
 	streamname = mux.Vars(request)["stream"]
 	streampath = username + "/" + devicename + "/" + streamname
 	return username, devicename, streamname, streampath
+}
+
+//ParseIRange attempts to parse a request as an index range
+func ParseIRange(q url.Values) (int64, int64, error) {
+	i1s := q.Get("i1")
+	i2s := q.Get("i2")
+	if len(i1s) == 0 && len(i2s) == 0 {
+		return 0, 0, ErrCantParse
+	}
+	i1, err := strconv.ParseInt(i1s, 0, 64)
+	if i1s != "" && err != nil {
+		return 0, 0, errors.New("Could not parse i1 parameter")
+	}
+
+	i2, err := strconv.ParseInt(i2s, 0, 64)
+	if i2s != "" && err != nil {
+		return 0, 0, errors.New("Could not parse i2 parameter")
+	}
+
+	return i1, i2, nil
+}
+
+//ParseTRange attempts to parse a request parameters as time range
+func ParseTRange(q url.Values) (float64, float64, int64, error) {
+	t1s := q.Get("t1")
+	t2s := q.Get("t2")
+	if len(t1s) == 0 && len(t2s) == 0 {
+		return 0, 0, 0, ErrCantParse
+	}
+	t1, err := strconv.ParseFloat(t1s, 64)
+	if t1s != "" && err != nil {
+		return 0, 0, 0, errors.New("Could not parse t1 parameter")
+	}
+
+	t2, err := strconv.ParseFloat(t2s, 64)
+	if t2s != "" && err != nil {
+		return 0, 0, 0, errors.New("Could not parse t2 parameter")
+	}
+
+	lims := q.Get("limit")
+	lim, err := strconv.ParseUint(lims, 0, 64)
+	if lims != "" && err != nil {
+		return 0, 0, 0, errors.New("Could not parse limit parameter.")
+	}
+
+	return t1, t2, int64(lim), nil
 }

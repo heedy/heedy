@@ -83,5 +83,5 @@ func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 	restcore.OK(writer)
-	return 0, ""
+	return restcore.DEBUG, ""
 }

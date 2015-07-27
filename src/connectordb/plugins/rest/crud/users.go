@@ -43,7 +43,7 @@ func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 
 	}
 	ReadUser(o, writer, request, logger)
-	return 1, ""
+	return restcore.INFO, ""
 }
 
 //ReadUser reads the given user
@@ -97,5 +97,5 @@ func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 	restcore.OK(writer)
-	return 1, ""
+	return restcore.INFO, ""
 }

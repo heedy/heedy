@@ -14,6 +14,14 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+//Log levels supported by apifunc
+const (
+	DEBUG   = iota
+	INFO    = iota
+	WARNING = iota
+	ERROR   = iota
+)
+
 var (
 	//UnsuccessfulLoginWait is the amount of time to wait between each unsuccessful login attempt
 	UnsuccessfulLoginWait = 300 * time.Millisecond
@@ -123,13 +131,13 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			txt += " - " + tdiff.String()
 		}
 		switch loglevel {
-		case 0:
+		case DEBUG:
 			l.Debugln(txt)
-		case 1:
+		case INFO:
 			l.Infoln(txt)
-		case 2:
+		case WARNING:
 			l.Warningln(txt)
-		case 3:
+		case ERROR:
 			l.Errorln(txt)
 		}
 	})
