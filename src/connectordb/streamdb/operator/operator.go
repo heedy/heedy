@@ -1,5 +1,9 @@
 package operator
 
+import "connectordb/streamdb/operator/interfaces"
+
+type Operator interfaces.Operator
+
 /**
 //Operator defines extension functions which work with any BaseOperatorInterface, adding extra functionality.
 //In particular, Operator makes querying stuff by name easier
