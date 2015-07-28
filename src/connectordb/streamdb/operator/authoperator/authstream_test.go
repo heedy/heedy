@@ -54,19 +54,19 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "mystream", s.Name)
 
-	// TODO check me out
+	// We cannot edit because we're not admin
 	s.Name = "stream2"
-	require.NoError(t, o.UpdateStream(s))
+	require.Error(t, o.UpdateStream(s))
 
-	_, err = o.ReadStream("tst/testdevice/mystream")
-	require.Error(t, err)
-
-	s, err = baseOperator.ReadStream("tst/testdevice/stream2")
+	s, err = o.ReadStream("tst/testdevice/mystream")
 	require.NoError(t, err)
-	require.Equal(t, "stream2", s.Name)
+
+	s, err = baseOperator.ReadStream("tst/testdevice/mystream")
+	require.NoError(t, err)
+	require.Equal(t, "mystream", s.Name)
 
 	require.Error(t, o.DeleteStream("tst/testdevice2/teststream"))
-	require.NoError(t, o.DeleteStream("tst/testdevice/stream2"))
+	require.NoError(t, o.DeleteStream("tst/testdevice/mystream"))
 
 	_, err = baseOperator.ReadStream("tst/testdevice/mystream")
 	require.Error(t, err)

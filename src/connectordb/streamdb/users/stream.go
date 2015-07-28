@@ -44,6 +44,11 @@ type Stream struct {
 	Downlink  bool   `modifiable:"device" json:"downlink,omitempty"`
 }
 
+func (s *Stream) String() string {
+	return fmt.Sprintf("[users.Stream | Id: %v, Name: %v, Nick: %v, Device: %v, Ephem: %v, Downlink: %v, Type: %v]",
+		s.StreamId, s.Name, s.Nickname, s.DeviceId, s.Ephemeral, s.Downlink, s.Type)
+}
+
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
 

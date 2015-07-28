@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 
 	"github.com/nu7hatch/gouuid"
@@ -22,6 +23,32 @@ type Device struct {
 	CanActAsUser     bool   `modifiable:"user" json:"user,omitempty"`             // Can this device operate as a user? (inactive right now)
 	IsVisible        bool   `modifiable:"root" json:"visible"`
 	UserEditable     bool   `modifiable:"root" json:"-"`
+}
+
+func (s *Device) String() string {
+	return fmt.Sprintf(`[users.Device |
+	Id: %v,
+	Name: %v,
+	Nick: %v,
+	Api: %v,
+	Enabled: %v,
+	Admin: %v,
+	Write: %v,
+	Write anywhere: %v,
+	User Write: %v,
+	Vizible: %v,
+	UserEdit: %v]`,
+		s.DeviceId,
+		s.Name,
+		s.Nickname,
+		s.ApiKey,
+		s.Enabled,
+		s.IsAdmin,
+		s.CanWrite,
+		s.CanWriteAnywhere,
+		s.CanActAsUser,
+		s.IsVisible,
+		s.UserEditable)
 }
 
 func (d *Device) ValidityCheck() error {
