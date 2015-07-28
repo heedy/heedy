@@ -14,10 +14,10 @@ func TestAuthOperatorBasics(t *testing.T) {
 
 	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	_, err = NewUserLoginOperator(&baseOperator, "streamdb_test", "wrongpass")
+	_, err = NewUserLoginOperator(baseOperator, "streamdb_test", "wrongpass")
 	require.Error(t, err)
 
-	o, err := NewUserLoginOperator(&baseOperator, "streamdb_test", "mypass")
+	o, err := NewUserLoginOperator(baseOperator, "streamdb_test", "mypass")
 	require.NoError(t, err)
 
 	require.Equal(t, "streamdb_test/user", o.Name())

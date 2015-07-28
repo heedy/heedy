@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func OpenDb(t *testing.T) (*streamdb.Database, interfaces.FullOperator, error) {
+func OpenDb(t *testing.T) (*streamdb.Database, interfaces.Operator, error) {
 	db, err := streamdb.Open(config.DefaultOptions)
 	require.NoError(t, err)
 	db.Clear(t)
 	po := plainoperator.NewPlainOperator(db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger())
-	op := interfaces.PathOperator{&po}
+	op := interfaces.PathOperatorMixin{&po}
 	return db, &op, err
 }
 
@@ -32,8 +32,9 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	testdevice, err := baseOperator.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 
-	o, err := NewUserAuthOperator(baseOperator, "streamdb_test")
+	po, err := NewUserAuthOperator(baseOperator, "streamdb_test")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{po}
 
 	devs, err := o.ReadAllDevices("streamdb_test")
 	require.NoError(t, err)
@@ -42,7 +43,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	dev, err := o.Device()
 	require.NoError(t, err)
 
-	o2, err := NewDeviceIdOperator(&baseOperator, dev.DeviceId)
+	o2, err := NewDeviceIdOperator(baseOperator, dev.DeviceId)
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test/user", o2.Name())
 
@@ -92,7 +93,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
 
-	_, err = NewDeviceLoginOperator(&baseOperator, "streamdb_test/testdevice", dev.ApiKey)
+	_, err = NewDeviceLoginOperator(baseOperator, "streamdb_test/testdevice", dev.ApiKey)
 	require.NoError(t, err)
 
 	oldkey := dev.ApiKey
@@ -104,7 +105,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, key, dev.ApiKey)
 
-	_, err = NewDeviceLoginOperator(&baseOperator, "streamdb_test/testdevice", oldkey)
+	_, err = NewDeviceLoginOperator(baseOperator, "streamdb_test/testdevice", oldkey)
 	require.Error(t, err)
 
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
@@ -126,8 +127,9 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	require.NoError(t, baseOperator.CreateDevice("tstusr/testdevice"))
 	require.NoError(t, baseOperator.CreateDevice("tstusr/test"))
 
-	o, err := NewDeviceAuthOperator(&baseOperator, "tstusr/test")
+	ao, err := NewDeviceAuthOperator(baseOperator, "tstusr/test")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{ao}
 
 	//This device should not be able to CRUD other devices
 	_, err = o.ReadDevice("tstusr/testdevice")

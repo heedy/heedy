@@ -1,6 +1,7 @@
 package authoperator
 
 import (
+	"connectordb/streamdb/operator/interfaces"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,8 +19,9 @@ func TestAuthUserCrud(t *testing.T) {
 	require.NoError(t, baseOperator.CreateUser("streamdb_test2", "root@localhost2", "mypass"))
 	require.NoError(t, baseOperator.CreateUser("streamdb_test3", "root@localhost3", "mypass"))
 
-	o, err := NewUserAuthOperator(&baseOperator, "streamdb_test")
+	ao, err := NewUserAuthOperator(baseOperator, "streamdb_test")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{ao}
 
 	// Try to create a user not as an admin
 	require.Error(t, o.CreateUser("notanadmin", "lol@you", "fail"))
@@ -48,7 +50,7 @@ func TestAuthUserCrud(t *testing.T) {
 
 	require.NoError(t, o.ChangeUserPassword("streamdb_test", "pass2"))
 
-	_, err = NewUserLoginOperator(&baseOperator, "streamdb_test", "pass2")
+	_, err = NewUserLoginOperator(baseOperator, "streamdb_test", "pass2")
 	require.NoError(t, err)
 
 	u, err = o.User()
@@ -74,11 +76,12 @@ func TestAuthUserCrud(t *testing.T) {
 
 	require.NoError(t, o.DeleteUser("streamdb_test2"))
 
-	_, err = NewUserAuthOperator(&baseOperator, "streamdb_test2")
+	_, err = NewUserAuthOperator(baseOperator, "streamdb_test2")
 	require.Error(t, err)
 
-	o, err = NewUserAuthOperator(&baseOperator, "streamdb_test3")
+	ao, err = NewUserAuthOperator(baseOperator, "streamdb_test3")
 	require.NoError(t, err)
+	o = interfaces.PathOperatorMixin{ao}
 
 	u, err = o.User()
 	require.NoError(t, err)

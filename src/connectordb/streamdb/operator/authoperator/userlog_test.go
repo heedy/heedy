@@ -2,6 +2,7 @@ package authoperator
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/operator/messenger"
 	"testing"
 	"time"
@@ -27,8 +28,9 @@ func TestUserlog(t *testing.T) {
 
 	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	o, err := NewUserAuthOperator(&baseOperator, "streamdb_test")
+	ao, err := NewUserAuthOperator(baseOperator, "streamdb_test")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{ao}
 
 	//Now subscribe to the userlog
 	recvchan := make(chan messenger.Message, 2)

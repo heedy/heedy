@@ -2,6 +2,7 @@ package plainoperator
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/operator/messenger"
 	"testing"
 	"time"
@@ -11,10 +12,12 @@ import (
 
 func TestSubscribe(t *testing.T) {
 
-	database, db, err := OpenDb(t)
+	database, ao, err := OpenDb(t)
 	require.NoError(t, err)
 	defer database.Close()
 	database.Clear(t)
+
+	db := interfaces.PathOperatorMixin{&ao}
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
@@ -42,7 +45,7 @@ func TestSubscribe(t *testing.T) {
 	require.NoError(t, err)
 	_, err = db.Subscribe("tst/tst/tst/downlink", recvchan4)
 	require.NoError(t, err)
-	db.msg.Flush() //Just to avoid problems
+	database.GetMessenger().Flush() //Just to avoid problems
 
 	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
@@ -67,7 +70,7 @@ func TestSubscribe(t *testing.T) {
 	}}
 
 	require.NoError(t, db.InsertStream("tst/tst/tst/downlink", data, false))
-	db.msg.Flush()
+	database.GetMessenger().Flush()
 	m = <-recvchan4
 	require.Equal(t, m.Stream, "tst/tst/tst/downlink")
 	require.Equal(t, m.Data[0].Data, "2")

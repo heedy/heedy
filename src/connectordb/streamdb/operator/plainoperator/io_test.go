@@ -4,6 +4,7 @@ import (
 	"connectordb/config"
 	"connectordb/streamdb"
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,10 +19,12 @@ func OpenDb(t *testing.T) (*streamdb.Database, PlainOperator, error) {
 
 func TestStreamIO(t *testing.T) {
 
-	database, db, err := OpenDb(t)
+	database, ao, err := OpenDb(t)
 	require.NoError(t, err)
 	defer database.Close()
 	database.Clear(t)
+
+	db := interfaces.PathOperatorMixin{&ao}
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))

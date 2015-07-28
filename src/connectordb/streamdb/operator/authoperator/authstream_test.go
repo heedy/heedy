@@ -1,6 +1,7 @@
 package authoperator
 
 import (
+	"connectordb/streamdb/operator/interfaces"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,9 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, baseOperator.CreateDevice("tst/testdevice2"))
 	require.NoError(t, baseOperator.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
 
-	o, err := NewDeviceAuthOperator(&baseOperator, "tst/testdevice")
+	ao, err := NewDeviceAuthOperator(baseOperator, "tst/testdevice")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{ao}
 
 	dev, err := baseOperator.ReadDevice("tst/testdevice2")
 	require.NoError(t, err)
@@ -52,6 +54,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "mystream", s.Name)
 
+	// TODO check me out
 	s.Name = "stream2"
 	require.NoError(t, o.UpdateStream(s))
 
