@@ -2,12 +2,14 @@ package authoperator
 
 import (
 	"connectordb/streamdb/operator/interfaces"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamCrud(t *testing.T) {
+	fmt.Println("test authstream crud")
 
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
@@ -54,21 +56,20 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "mystream", s.Name)
 
-	// We cannot edit because we're not admin
 	s.Name = "stream2"
-	require.Error(t, o.UpdateStream(s))
+	require.NoError(t, o.UpdateStream(s))
 
 	s, err = o.ReadStream("tst/testdevice/mystream")
-	require.NoError(t, err)
+	require.Error(t, err)
 
-	s, err = baseOperator.ReadStream("tst/testdevice/mystream")
+	s, err = baseOperator.ReadStream("tst/testdevice/stream2")
 	require.NoError(t, err)
-	require.Equal(t, "mystream", s.Name)
+	require.Equal(t, "stream2", s.Name)
 
 	require.Error(t, o.DeleteStream("tst/testdevice2/teststream"))
-	require.NoError(t, o.DeleteStream("tst/testdevice/mystream"))
+	require.NoError(t, o.DeleteStream("tst/testdevice/stream2"))
 
-	_, err = baseOperator.ReadStream("tst/testdevice/mystream")
+	_, err = baseOperator.ReadStream("tst/testdevice/stream2")
 	require.Error(t, err)
 
 	dev, err = o.ReadDevice("tst/testdevice")

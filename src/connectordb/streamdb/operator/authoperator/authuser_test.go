@@ -2,12 +2,14 @@ package authoperator
 
 import (
 	"connectordb/streamdb/operator/interfaces"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthUserCrud(t *testing.T) {
+	fmt.Println("test authuser crud")
 
 	// Open and connect to all services.
 	database, baseOperator, err := OpenDb(t)

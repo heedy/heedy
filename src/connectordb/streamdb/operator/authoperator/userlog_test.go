@@ -4,6 +4,7 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/operator/messenger"
+	"fmt"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ func ensureUserlog(t *testing.T, m messenger.Message, cmd, arg string) {
 }
 
 func TestUserlog(t *testing.T) {
+	fmt.Println("test userlog")
 
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
@@ -37,11 +39,9 @@ func TestUserlog(t *testing.T) {
 	_, err = o.Subscribe("streamdb_test/user/log", recvchan)
 	require.NoError(t, err)
 
-	database.GetMessenger().Flush()
-
 	//The message timeout
 	go func() {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
 	}()
 
@@ -57,11 +57,14 @@ func TestUserlog(t *testing.T) {
 	o.CreateStream("streamdb_test/mydevice/mystream", "{\"type\": \"string\"}")
 	ensureUserlog(t, <-recvchan, "CreateStream", "streamdb_test/mydevice/mystream")
 
-	s, err := o.ReadStream("streamdb_test/mydevice/mystream")
-	require.NoError(t, err)
-	s.Nickname = "hiah"
-	o.UpdateStream(s)
-	ensureUserlog(t, <-recvchan, "UpdateStream", "streamdb_test/mydevice/mystream")
+	{
+		s, err := o.ReadStream("streamdb_test/mydevice/mystream")
+		require.NoError(t, err)
+		s.Nickname = "hiah"
+		err = o.UpdateStream(s)
+		require.NoError(t, err)
+		ensureUserlog(t, <-recvchan, "UpdateStream", "streamdb_test/mydevice/mystream")
+	}
 
 	o.DeleteStream("streamdb_test/mydevice/mystream")
 	ensureUserlog(t, <-recvchan, "DeleteStream", "streamdb_test/mydevice/mystream")

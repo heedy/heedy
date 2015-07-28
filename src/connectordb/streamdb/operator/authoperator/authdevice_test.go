@@ -1,6 +1,7 @@
 package authoperator
 
 import (
+	"fmt"
 	"testing"
 
 	"connectordb/config"
@@ -17,11 +18,13 @@ func OpenDb(t *testing.T) (*streamdb.Database, interfaces.Operator, error) {
 	db.Clear(t)
 	po := plainoperator.NewPlainOperator(db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger())
 	op := interfaces.PathOperatorMixin{&po}
+	db.GetMessenger().Flush()
+
 	return db, &op, err
 }
 
 func TestAuthDeviceUserCrud(t *testing.T) {
-
+	fmt.Println("test auth device user crud")
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
 	defer database.Close()
@@ -118,6 +121,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 }
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
+	fmt.Println("test auth device crud")
 
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)

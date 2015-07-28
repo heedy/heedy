@@ -48,7 +48,7 @@ func (o *PathOperatorMixin) ReadDevice(devicepath string) (*users.Device, error)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := o.ReadDeviceByUserID(u.UserId, devname)
+	dev, err := o.BaseOperator.ReadDeviceByUserID(u.UserId, devname)
 	return dev, err
 }
 
@@ -200,7 +200,7 @@ func (o *PathOperatorMixin) InsertStream(streampath string, data datastream.Data
 	if err != nil {
 		return err
 	}
-	return o.InsertStreamByID(strm.StreamId, substream, data, restamp)
+	return o.BaseOperator.InsertStreamByID(strm.StreamId, substream, data, restamp)
 }
 
 //GetStreamTimeRange Reads the given stream by time range
@@ -272,5 +272,5 @@ func (o *PathOperatorMixin) ReadStream(streampath string) (*users.Stream, error)
 	if err != nil {
 		return nil, err
 	}
-	return o.ReadStreamByDeviceID(dev.DeviceId, streamname)
+	return o.BaseOperator.ReadStreamByDeviceID(dev.DeviceId, streamname)
 }

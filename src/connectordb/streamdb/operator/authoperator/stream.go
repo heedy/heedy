@@ -1,6 +1,9 @@
 package authoperator
 
-import "connectordb/streamdb/users"
+import (
+	"connectordb/streamdb/users"
+	"fmt"
+)
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device
 func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
@@ -87,17 +90,26 @@ func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 
 //UpdateStream updates the stream
 func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
-	originalStream, err := o.ReadStreamByID(modifiedstream.StreamId)
+	originalStream, err := o.BaseOperator.ReadStreamByID(modifiedstream.StreamId)
+	if err != nil {
+		fmt.Println("first")
+		return err
+	}
+
+	streamsDevice, err := o.BaseOperator.ReadDeviceByID(originalStream.DeviceId)
 	if err != nil {
 		return err
 	}
 
-	permission, err := o.devPermissionsGteStream(originalStream, users.NOBODY)
+	myDevice, err := o.Device()
 	if err != nil {
 		return err
 	}
+
+	permission := myDevice.RelationToStream(originalStream, streamsDevice)
 
 	if modifiedstream.RevertUneditableFields(*originalStream, permission) > 0 {
+		fmt.Println("third")
 		return ErrPermissions
 	}
 
@@ -105,6 +117,8 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 	if err == nil {
 		o.UserLogStreamID(originalStream.StreamId, "UpdateStream")
 	}
+
+	fmt.Println("fourth")
 	return err
 }
 
@@ -126,7 +140,7 @@ func (o *AuthOperator) devPermissionsGteStream(streamToCheck *users.Stream, perm
 		return users.NOBODY, err
 	}
 
-	streamsDevice, err := o.ReadDeviceByID(streamToCheck.DeviceId)
+	streamsDevice, err := o.BaseOperator.ReadDeviceByID(streamToCheck.DeviceId)
 	if err != nil {
 		return users.NOBODY, err
 	}

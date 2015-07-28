@@ -1,12 +1,14 @@
 package authoperator
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthOperatorBasics(t *testing.T) {
+	fmt.Println("test authoperator basics")
 
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)

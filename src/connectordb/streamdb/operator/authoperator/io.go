@@ -41,5 +41,5 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 			data[i].Sender = ""
 		}
 	}
-	return o.InsertStreamByID(streamID, substream, data, restamp)
+	return o.BaseOperator.InsertStreamByID(streamID, substream, data, restamp)
 }

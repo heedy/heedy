@@ -3,13 +3,14 @@ package authoperator
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/interfaces"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamIO(t *testing.T) {
-
+	fmt.Printf("test auth stream io\n")
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
 	defer database.Close()
@@ -24,71 +25,82 @@ func TestAuthStreamIO(t *testing.T) {
 
 	require.NoError(t, o.CreateStream("tst/tst/tst", `{"type": "integer"}`))
 
-	//Now make sure that length is 0
-	l, err := o.LengthStream("tst/tst/tst")
-	require.NoError(t, err)
-	require.Equal(t, int64(0), l)
+	{
+		fmt.Println("Testing lengths")
+		//Now make sure that length is 0
+		l, err := o.LengthStream("tst/tst/tst")
+		require.NoError(t, err)
+		require.Equal(t, int64(0), l)
 
-	strm, err := o.ReadStream("tst/tst/tst")
-	require.NoError(t, err)
-	l, err = o.LengthStreamByID(strm.StreamId, "")
+		strm, err := o.ReadStream("tst/tst/tst")
+		require.NoError(t, err)
+		l, err = o.LengthStreamByID(strm.StreamId, "")
 
-	data := []datastream.Datapoint{datastream.Datapoint{
-		Timestamp: 1.0,
-		Data:      1336,
-	}}
-	require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
+		data := []datastream.Datapoint{datastream.Datapoint{
+			Timestamp: 1.0,
+			Data:      1336,
+		}}
+		require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
 
-	l, err = o.LengthStream("tst/tst/tst")
-	require.NoError(t, err)
-	require.Equal(t, int64(1), l)
+		l, err = o.LengthStream("tst/tst/tst")
+		require.NoError(t, err)
+		require.Equal(t, int64(1), l)
+	}
+	{
+		fmt.Println("Test reading time range")
+		dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0)
+		require.NoError(t, err)
 
-	dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0)
-	require.NoError(t, err)
+		dp, err := dr.Next()
+		require.NoError(t, err)
+		require.NotNil(t, dp)
+		require.Equal(t, int64(1336), dp.Data.(int64))
+		require.Equal(t, 1.0, dp.Timestamp)
+		require.Equal(t, "", dp.Sender)
 
-	dp, err := dr.Next()
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, int64(1336), dp.Data.(int64))
-	require.Equal(t, 1.0, dp.Timestamp)
-	require.Equal(t, "", dp.Sender)
+		dp, err = dr.Next()
+		require.NoError(t, err)
+		require.Nil(t, dp)
 
-	dp, err = dr.Next()
-	require.NoError(t, err)
-	require.Nil(t, dp)
+		dr.Close()
+	}
+	{
+		fmt.Println("Test reading index range")
+		dr, err := o.GetStreamIndexRange("tst/tst/tst", 0, 1)
+		require.NoError(t, err)
 
-	dr.Close()
+		dp, err := dr.Next()
+		require.NoError(t, err)
+		require.NotNil(t, dp)
+		require.Equal(t, int64(1336), dp.Data.(int64))
+		require.Equal(t, 1.0, dp.Timestamp)
+		require.Equal(t, "", dp.Sender)
 
-	dr, err = o.GetStreamIndexRange("tst/tst/tst", 0, 1)
-	require.NoError(t, err)
+		dp, err = dr.Next()
+		require.NoError(t, err)
+		require.Nil(t, dp)
 
-	dp, err = dr.Next()
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, int64(1336), dp.Data.(int64))
-	require.Equal(t, 1.0, dp.Timestamp)
-	require.Equal(t, "", dp.Sender)
-
-	dp, err = dr.Next()
-	require.NoError(t, err)
-	require.Nil(t, dp)
-
-	dr.Close()
-
-	i, err := baseOperator.TimeToIndexStream("tst/tst/tst", 0.3)
-	require.NoError(t, err)
-	require.Equal(t, int64(0), i)
-
-	//Now let's make sure that stuff is deleted correctly
-	require.NoError(t, o.DeleteStream("tst/tst/tst"))
-	require.NoError(t, baseOperator.CreateStream("tst/tst/tst", `{"type": "string"}`))
-	l, err = baseOperator.LengthStream("tst/tst/tst")
-	require.NoError(t, err)
-	require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
+		dr.Close()
+	}
+	{
+		fmt.Println("Testing time to index stream")
+		i, err := baseOperator.TimeToIndexStream("tst/tst/tst", 0.3)
+		require.NoError(t, err)
+		require.Equal(t, int64(0), i)
+	}
+	{
+		fmt.Println("Testing delete")
+		//Now let's make sure that stuff is deleted correctly
+		require.NoError(t, o.DeleteStream("tst/tst/tst"))
+		require.NoError(t, baseOperator.CreateStream("tst/tst/tst", `{"type": "string"}`))
+		l, err := baseOperator.LengthStream("tst/tst/tst")
+		require.NoError(t, err)
+		require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
+	}
 }
 
-/**
 func TestAuthSubstream(t *testing.T) {
+	fmt.Println("test auth substream")
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
 	defer database.Close()
@@ -136,4 +148,3 @@ func TestAuthSubstream(t *testing.T) {
 	dr.Close()
 
 }
-**/

@@ -1,7 +1,19 @@
 package authoperator
 
-/**
+import (
+	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
+	"connectordb/streamdb/operator/messenger"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
 func TestAuthSubscribe(t *testing.T) {
+	fmt.Println("test auth subscribe")
 
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
@@ -13,59 +25,92 @@ func TestAuthSubscribe(t *testing.T) {
 	require.NoError(t, baseOperator.CreateDevice("tst/tst2"))
 	require.NoError(t, baseOperator.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
-	recvchan := make(chan messenger.Message, 2)
-	recvchan2 := make(chan messenger.Message, 2)
-	recvchan3 := make(chan messenger.Message, 2)
+	// Make sure we can't subscribe to streams we have no access to
+	{
+		ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst2")
+		require.NoError(t, err)
+		o := interfaces.PathOperatorMixin{ao}
+		recvchan := make(chan messenger.Message, 2)
 
-	ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst2")
-	require.NoError(t, err)
-	o := interfaces.PathOperatorMixin{ao}
+		_, err = o.Subscribe("tst", recvchan)
+		require.Error(t, err)
+		_, err = o.Subscribe("tst/tst", recvchan)
+		require.Error(t, err)
+		_, err = o.Subscribe("tst/tst/tst", recvchan)
+		require.Error(t, err)
+	}
 
-	_, err = o.Subscribe("tst", recvchan)
-	require.Error(t, err)
-	_, err = o.Subscribe("tst/tst", recvchan)
-	require.Error(t, err)
-	_, err = o.Subscribe("tst/tst/tst", recvchan)
-	require.Error(t, err)
+	// Make sure we can subscribe to streams we do have access to
+	{
+		ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst")
+		require.NoError(t, err)
+		o := interfaces.PathOperatorMixin{ao}
+		recvchan := make(chan messenger.Message, 2)
+		recvchan2 := make(chan messenger.Message, 2)
+		recvchan3 := make(chan messenger.Message, 2)
 
-	ao, err = NewDeviceAuthOperator(baseOperator, "tst/tst")
-	require.NoError(t, err)
-	o = interfaces.PathOperatorMixin{ao}
+		_, err = o.Subscribe("tst", recvchan)
+		require.Error(t, err)
 
-	_, err = o.Subscribe("tst", recvchan)
-	require.Error(t, err)
+		_, err = o.Subscribe("tst/tst", recvchan2)
+		require.NoError(t, err)
 
-	_, err = o.Subscribe("tst/tst", recvchan2)
-	require.NoError(t, err)
-	_, err = o.Subscribe("tst/tst/tst", recvchan3)
-	require.NoError(t, err)
+		_, err = o.Subscribe("tst/tst/tst", recvchan3)
+		require.NoError(t, err)
+	}
 
-	baseOperator.SetAdmin("tst/tst", true) //TODO: Subscriptions should be dumped on a permissions change, and that does not happen
-	_, err = o.Subscribe("tst", recvchan)
-	require.NoError(t, err)
+	//
+	{
+		baseOperator.SetAdmin("tst/tst", true) //TODO: Subscriptions should be dumped on a permissions change, and that does not happen
 
-	database.GetMessenger().Flush()
+		ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst")
+		require.NoError(t, err)
+		o := interfaces.PathOperatorMixin{ao}
 
-	data := []datastream.Datapoint{datastream.Datapoint{
-		Timestamp: 1.0,
-		Data:      "Hello World!",
-	}}
-	require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
-	//We bind a timeout to the channel, since we want the test to fail if no messages come through
-	go func() {
-		time.Sleep(2 * time.Second)
-		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan2 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan3 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-	}()
+		database.GetMessenger().Flush()
 
-	m := <-recvchan
-	require.Equal(t, m.Stream, "tst/tst/tst")
-	require.Equal(t, m.Data[0].Data, "Hello World!")
-	m = <-recvchan2
-	require.Equal(t, m.Stream, "tst/tst/tst")
-	require.Equal(t, m.Data[0].Data, "Hello World!")
-	m = <-recvchan3
-	require.Equal(t, m.Stream, "tst/tst/tst")
-	require.Equal(t, m.Data[0].Data, "Hello World!")
-}**/
+		recvuser := make(chan messenger.Message, 2)
+		_, err = o.Subscribe("tst", recvuser)
+		require.NoError(t, err)
+
+		recvdevice := make(chan messenger.Message, 2)
+		_, err = o.Subscribe("tst/tst", recvdevice)
+		require.NoError(t, err)
+
+		recvstream := make(chan messenger.Message, 2)
+		_, err = o.Subscribe("tst/tst/tst", recvstream)
+		require.NoError(t, err)
+
+		data := []datastream.Datapoint{datastream.Datapoint{
+			Timestamp: 1.0,
+			Data:      "Hello World!",
+		}}
+		require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
+		//We bind a timeout to the channel, since we want the test to fail if no messages come through
+
+		go func() {
+			time.Sleep(5 * time.Second)
+
+			// We send a stream with one blank point so we can do
+			// easy assert tests rather than require.
+			data := []datastream.Datapoint{datastream.Datapoint{}}
+
+			recvuser <- messenger.Message{"TIMEOUT", data}
+			recvdevice <- messenger.Message{"TIMEOUT", data}
+			recvstream <- messenger.Message{"TIMEOUT", data}
+		}()
+
+		m := <-recvuser
+		assert.Equal(t, "tst/tst/tst", m.Stream)
+		assert.Equal(t, "Hello World!", m.Data[0].Data)
+
+		m = <-recvdevice
+		assert.Equal(t, "tst/tst/tst", m.Stream)
+		assert.Equal(t, "Hello World!", m.Data[0].Data)
+
+		m = <-recvstream
+		assert.Equal(t, "tst/tst/tst", m.Stream)
+		assert.Equal(t, "Hello World!", m.Data[0].Data)
+
+	}
+}
