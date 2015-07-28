@@ -1,6 +1,13 @@
 package authoperator
 
-/**
+import (
+	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
 func TestAuthStreamIO(t *testing.T) {
 
 	database, baseOperator, err := OpenDb(t)
@@ -80,6 +87,7 @@ func TestAuthStreamIO(t *testing.T) {
 	require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
 }
 
+/**
 func TestAuthSubstream(t *testing.T) {
 	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)

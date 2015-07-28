@@ -7,6 +7,7 @@ import (
 	"connectordb/streamdb/dbutil"
 	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
+	"connectordb/streamdb/util"
 	"database/sql"
 	"errors"
 	"testing"
@@ -95,72 +96,12 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 		return nil, err
 	}
 
-	// Magic: Allows using the Database object as an operator.
-	//	db.Operator = operator.Operator{&db}
+	// Close the database when the system exits just in case it isn't.
+	util.CloseOnExit(&db)
 
 	return &db, nil
 
 }
-
-/**
-//DeviceLoginOperator returns the operator associated with the given API key
-func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Operator, error) {
-	dev, err := db.ReadDevice(devicepath)
-	if err != nil || dev.ApiKey != apikey {
-		return operator.Operator{}, authoperator.ErrPermissions //Don't leak whether the device exists
-	}
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-// UserLoginOperator returns the operator associated with the given username/password combination
-func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
-	usr, err := db.ReadUser(username)
-	if err != nil || !usr.ValidatePassword(password) {
-		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
-	}
-
-	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
-	if err != nil {
-		return operator.Operator{}, authoperator.ErrPermissions
-	}
-
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-// LoginOperator logs in as a user or device, depending on which is passed in
-func (db *Database) LoginOperator(path, password string) (operator.Operator, error) {
-	switch strings.Count(path, "/") {
-	default:
-		return operator.Operator{}, operator.ErrBadPath
-	case 1:
-		return db.DeviceLoginOperator(path, password)
-	case 0:
-		return db.UserLoginOperator(path, password)
-	}
-}
-
-//Operator gets the operator by usr or device name
-func (db *Database) GetOperator(path string) (operator.Operator, error) {
-	switch strings.Count(path, "/") {
-	default:
-		return operator.Operator{}, operator.ErrBadPath
-	case 0:
-		path += "/user"
-	case 1:
-		//Do nothing for this case
-	}
-	dev, err := db.ReadDevice(path)
-	if err != nil {
-		return operator.Operator{}, err //We use dev.Name, so must return error earlier
-	}
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-//DeviceOperator returns the operator for the given device ID
-func (db *Database) DeviceOperator(deviceID int64) (operator.Operator, error) {
-	return authoperator.NewAuthOperator(db, deviceID)
-}
-**/
 
 //Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
