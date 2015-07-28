@@ -4,6 +4,7 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/adminoperator"
 	"connectordb/streamdb/operator/authoperator"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/operator/plainoperator"
 	"connectordb/streamdb/users"
@@ -19,12 +20,15 @@ type Database interface {
 permissions.
 **/
 func NewOperator(db Database) Operator {
-	return newAdminOperator(db)
+	ao := newAdminOperator(db)
+	po := interfaces.PathOperatorMixin{&ao}
+	return &po
 }
 
 func newAdminOperator(db Database) adminoperator.AdminOperator {
 	op := newPlainOperator(db)
-	return adminoperator.AdminOperator{&op}
+	ao := adminoperator.AdminOperator{&op}
+	return ao
 }
 
 func newPlainOperator(db Database) plainoperator.PlainOperator {
@@ -37,7 +41,9 @@ if the username does not exist.
 **/
 func NewUserOperator(db Database, username string) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	return authoperator.NewUserAuthOperator(bootstrapOperator, username)
+	op, err := authoperator.NewUserAuthOperator(bootstrapOperator, username)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
 }
 
 /*
@@ -46,7 +52,9 @@ device at the given path.
 */
 func NewDeviceOperator(db Database, devicepath string) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	return authoperator.NewDeviceAuthOperator(bootstrapOperator, devicepath)
+	op, err := authoperator.NewDeviceAuthOperator(bootstrapOperator, devicepath)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
 }
 
 /*
@@ -56,7 +64,9 @@ apikey does not match the one for the specified device.
 */
 func NewDeviceApiOperator(db Database, devicepath, apikey string) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	return authoperator.DeviceLoginOperator(bootstrapOperator, devicepath, apikey)
+	op, err := authoperator.NewDeviceLoginOperator(bootstrapOperator, devicepath, apikey)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
 
 }
 
@@ -66,7 +76,9 @@ scope of the device with the given id.
 */
 func NewDeviceIdOperator(db Database, deviceID int64) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	return authoperator.NewDeviceIdOperator(bootstrapOperator, deviceID)
+	op, err := authoperator.NewDeviceIdOperator(bootstrapOperator, deviceID)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
 }
 
 /*
@@ -75,5 +87,8 @@ scope of the user with the given username and password.
 */
 func NewUserLoginOperator(db Database, username, password string) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	return authoperator.NewUserLoginOperator(bootstrapOperator, username, password)
+	op, err := authoperator.NewUserLoginOperator(bootstrapOperator, username, password)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
+
 }

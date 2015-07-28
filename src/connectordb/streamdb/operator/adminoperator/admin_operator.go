@@ -21,7 +21,7 @@ var (
 )
 
 type AdminOperator struct {
-	interfaces.Operator
+	interfaces.BaseOperator
 }
 
 // UpdateDevice updates the device at devicepath to the modifed device passed in
@@ -34,7 +34,7 @@ func (o AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
 		return ErrNotChangeable
 	}
 
-	return o.Operator.UpdateDevice(modifieddevice)
+	return o.BaseOperator.UpdateDevice(modifieddevice)
 }
 
 //UpdateUser performs the given modifications
@@ -47,7 +47,7 @@ func (o AdminOperator) UpdateUser(modifieduser *users.User) error {
 		return ErrNotChangeable
 	}
 
-	return o.Operator.UpdateUser(modifieduser)
+	return o.BaseOperator.UpdateUser(modifieduser)
 }
 
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
@@ -62,5 +62,5 @@ func (o AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
 		return ErrNotChangeable
 	}
 
-	return o.Operator.UpdateStream(modifiedstream)
+	return o.BaseOperator.UpdateStream(modifiedstream)
 }

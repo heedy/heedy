@@ -1,9 +1,8 @@
 package plainoperator
 
 import (
-	"connectordb/config"
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"testing"
 	"time"
 
@@ -12,10 +11,10 @@ import (
 
 func TestSubscribe(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, db, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
+	database.Clear(t)
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))

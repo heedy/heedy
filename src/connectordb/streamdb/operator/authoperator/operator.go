@@ -28,7 +28,7 @@ var (
 //AuthOperator is the database proxy for a particular device.
 //TODO: Operator does not auto-expire after time period
 type AuthOperator struct {
-	interfaces.Operator //The operator which is used to interact with the database
+	interfaces.BaseOperator //The operator which is used to interact with the database
 
 	operatorPath string //The operator path is the string name of the operator
 	devID        int64  //the id of the device - operatorPath is not enough, since name changes can happen in other threads
@@ -43,16 +43,16 @@ func (o *AuthOperator) Name() string {
 
 //User returns the current user
 func (o *AuthOperator) User() (usr *users.User, err error) {
-	dev, err := o.Operator.ReadDeviceByID(o.devID)
+	dev, err := o.BaseOperator.ReadDeviceByID(o.devID)
 	if err != nil {
 		return nil, err
 	}
-	return o.Operator.ReadUserByID(dev.UserId)
+	return o.BaseOperator.ReadUserByID(dev.UserId)
 }
 
 //Device returns the current device
 func (o *AuthOperator) Device() (*users.Device, error) {
-	return o.Operator.ReadDeviceByID(o.devID)
+	return o.BaseOperator.ReadDeviceByID(o.devID)
 }
 
 //Permissions returns whether the operator has permissions given by the string
@@ -73,7 +73,7 @@ func (o *AuthOperator) UserLog(cmd string, arg string) error {
 	dp := datastream.NewDatapoint()
 	dp.Data = data
 	dp.Sender = o.Name()
-	err := o.Operator.InsertStreamByID(o.userlogID, "", datastream.DatapointArray{dp}, true)
+	err := o.BaseOperator.InsertStreamByID(o.userlogID, "", datastream.DatapointArray{dp}, true)
 	if err != nil {
 		log.WithFields(log.Fields{"cmd": cmd, "arg": arg, "o": o.Name()}).Error("Userlog insert failed: ", err)
 	}

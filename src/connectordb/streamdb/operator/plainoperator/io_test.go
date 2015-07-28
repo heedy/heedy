@@ -2,18 +2,26 @@ package plainoperator
 
 import (
 	"connectordb/config"
+	"connectordb/streamdb"
 	"connectordb/streamdb/datastream"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
+func OpenDb(t *testing.T) (*streamdb.Database, PlainOperator, error) {
+	db, err := streamdb.Open(config.DefaultOptions)
+	require.NoError(t, err)
+	db.Clear(t)
+	return db, PlainOperator{db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger()}, err
+}
+
 func TestStreamIO(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, db, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
+	database.Clear(t)
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))

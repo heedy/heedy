@@ -3,24 +3,21 @@ package authoperator
 import (
 	"testing"
 
-	"connectordb/config"
-
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthOperatorBasics(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	_, err = db.UserLoginOperator("streamdb_test", "wrongpass")
+	_, err = NewUserLoginOperator(&baseOperator, "streamdb_test", "wrongpass")
 	require.Error(t, err)
 
-	o, err := db.UserLoginOperator("streamdb_test", "mypass")
+	o, err := NewUserLoginOperator(&baseOperator, "streamdb_test", "mypass")
 	require.NoError(t, err)
 
 	require.Equal(t, "streamdb_test/user", o.Name())

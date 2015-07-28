@@ -1,9 +1,8 @@
-package streamdb
+package authoperator
 
 import (
-	"connectordb/config"
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"testing"
 	"time"
 
@@ -22,14 +21,13 @@ func ensureUserlog(t *testing.T, m messenger.Message, cmd, arg string) {
 
 func TestUserlog(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	o, err := db.GetOperator("streamdb_test")
+	o, err := NewUserAuthOperator(&baseOperator, "streamdb_test")
 	require.NoError(t, err)
 
 	//Now subscribe to the userlog
@@ -37,7 +35,7 @@ func TestUserlog(t *testing.T) {
 	_, err = o.Subscribe("streamdb_test/user/log", recvchan)
 	require.NoError(t, err)
 
-	db.msg.Flush()
+	database.GetMessenger().Flush()
 
 	//The message timeout
 	go func() {
@@ -75,7 +73,7 @@ func TestUserlog(t *testing.T) {
 	o.UpdateUser(usr)
 	ensureUserlog(t, <-recvchan, "UpdateUser", "streamdb_test")
 
-	db.SetAdmin("streamdb_test", true)
+	baseOperator.SetAdmin("streamdb_test", true)
 
 	o.CreateUser("starry_eyed_userlog", "rofl@localhost", "mypass")
 	ensureUserlog(t, <-recvchan, "CreateUser", "starry_eyed_userlog")

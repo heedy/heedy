@@ -3,7 +3,6 @@ package authoperator
 import (
 	"testing"
 
-	"connectordb/config"
 	"connectordb/streamdb/datastream"
 
 	"github.com/stretchr/testify/require"
@@ -11,16 +10,15 @@ import (
 
 func TestAuthStreamIO(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateDevice("tst/tst"))
 
-	o, err := db.GetOperator("tst/tst")
+	o, err := NewDeviceAuthOperator(&baseOperator, "tst/tst")
 	require.NoError(t, err)
 
 	require.NoError(t, o.CreateStream("tst/tst/tst", `{"type": "integer"}`))
@@ -76,37 +74,36 @@ func TestAuthStreamIO(t *testing.T) {
 
 	dr.Close()
 
-	i, err := db.TimeToIndexStream("tst/tst/tst", 0.3)
+	i, err := baseOperator.TimeToIndexStream("tst/tst/tst", 0.3)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), i)
 
 	//Now let's make sure that stuff is deleted correctly
 	require.NoError(t, o.DeleteStream("tst/tst/tst"))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
-	l, err = db.LengthStream("tst/tst/tst")
+	require.NoError(t, baseOperator.CreateStream("tst/tst/tst", `{"type": "string"}`))
+	l, err = baseOperator.LengthStream("tst/tst/tst")
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
 }
 
 func TestAuthSubstream(t *testing.T) {
-
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, db.CreateDevice("tst/tst"))
-	require.NoError(t, db.CreateDevice("tst/tst2"))
-	require.NoError(t, db.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
-	s, err := db.ReadStream("tst/tst2/tst")
+	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateDevice("tst/tst"))
+	require.NoError(t, baseOperator.CreateDevice("tst/tst2"))
+	require.NoError(t, baseOperator.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
+	s, err := baseOperator.ReadStream("tst/tst2/tst")
 	require.NoError(t, err)
 	s.Downlink = true
-	require.NoError(t, db.UpdateStream(s))
+	require.NoError(t, baseOperator.UpdateStream(s))
 
-	require.NoError(t, db.SetAdmin("tst/tst", true))
-	o, err := db.GetOperator("tst/tst")
+	require.NoError(t, baseOperator.SetAdmin("tst/tst", true))
+
+	o, err := NewDeviceAuthOperator(&baseOperator, "tst/tst")
 	require.NoError(t, err)
 
 	data := []datastream.Datapoint{datastream.Datapoint{

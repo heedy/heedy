@@ -65,7 +65,7 @@ func initDB(dbName string) SqlUserDatabase {
 
 func CreateTestStream(testdb SqlUserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
-	err := testdb.CreateStream(name, "", dev.DeviceId)
+	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceId)
 	if err != nil {
 		return nil, err
 	}

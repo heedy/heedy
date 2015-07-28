@@ -4,25 +4,35 @@ import (
 	"testing"
 
 	"connectordb/config"
+	"connectordb/streamdb"
+	"connectordb/streamdb/operator/interfaces"
+	"connectordb/streamdb/operator/plainoperator"
 
 	"github.com/stretchr/testify/require"
 )
 
+func OpenDb(t *testing.T) (*streamdb.Database, interfaces.FullOperator, error) {
+	db, err := streamdb.Open(config.DefaultOptions)
+	require.NoError(t, err)
+	db.Clear(t)
+	po := plainoperator.NewPlainOperator(db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger())
+	op := interfaces.PathOperator{&po}
+	return db, &op, err
+}
+
 func TestAuthDeviceUserCrud(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
-	//go db.RunWriter()
+	defer database.Close()
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
-	require.NoError(t, db.CreateUser("otheruser", "root@localhost2", "mypass"))
-	require.NoError(t, db.CreateDevice("otheruser/testdevice"))
-	testdevice, err := db.ReadDevice("otheruser/testdevice")
+	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateUser("otheruser", "root@localhost2", "mypass"))
+	require.NoError(t, baseOperator.CreateDevice("otheruser/testdevice"))
+	testdevice, err := baseOperator.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 
-	o, err := db.GetOperator("streamdb_test")
+	o, err := NewUserAuthOperator(baseOperator, "streamdb_test")
 	require.NoError(t, err)
 
 	devs, err := o.ReadAllDevices("streamdb_test")
@@ -32,7 +42,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	dev, err := o.Device()
 	require.NoError(t, err)
 
-	o2, err := db.DeviceOperator(dev.DeviceId)
+	o2, err := NewDeviceIdOperator(&baseOperator, dev.DeviceId)
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test/user", o2.Name())
 
@@ -40,20 +50,21 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //the user device
 
-	//This user should not be able to CRUD devices of another user
+	// This user should not be able to CRUD devices of another user
 	devs, err = o.ReadAllDevices("otheruser")
 	require.Error(t, err)
-	devs, err = o.ReadAllDevicesByUserID(5436)
+
+	devs, err = o.ReadAllDevicesByUserID(-1)
 	require.Error(t, err)
 
 	_, err = o.ReadDevice("otheruser/testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("otheruser/testdevice"))
 	require.Error(t, o.CreateDevice("otheruser/testdevice2"))
-	_, err = db.ReadDevice("otheruser/testdevice2")
+	_, err = baseOperator.ReadDevice("otheruser/testdevice2")
 	require.Error(t, err)
 
-	dev, err = db.ReadDevice("otheruser/testdevice")
+	dev, err = baseOperator.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 	_, err = o.ReadDeviceByID(dev.DeviceId)
 	require.Error(t, err)
@@ -81,8 +92,9 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
 
-	_, err = db.LoginOperator("streamdb_test/testdevice", dev.ApiKey)
+	_, err = NewDeviceLoginOperator(&baseOperator, "streamdb_test/testdevice", dev.ApiKey)
 	require.NoError(t, err)
+
 	oldkey := dev.ApiKey
 
 	key, err := o.ChangeDeviceAPIKey("streamdb_test/testdevice")
@@ -92,7 +104,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, key, dev.ApiKey)
 
-	_, err = db.LoginOperator("streamdb_test/testdevice", oldkey)
+	_, err = NewDeviceLoginOperator(&baseOperator, "streamdb_test/testdevice", oldkey)
 	require.Error(t, err)
 
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
@@ -106,17 +118,15 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
-	//go db.RunWriter()
+	defer database.Close()
 
-	require.NoError(t, db.CreateUser("tstusr", "root@localhost", "mypass"))
-	require.NoError(t, db.CreateDevice("tstusr/testdevice"))
-	require.NoError(t, db.CreateDevice("tstusr/test"))
+	require.NoError(t, baseOperator.CreateUser("tstusr", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateDevice("tstusr/testdevice"))
+	require.NoError(t, baseOperator.CreateDevice("tstusr/test"))
 
-	o, err := db.GetOperator("tstusr/test")
+	o, err := NewDeviceAuthOperator(&baseOperator, "tstusr/test")
 	require.NoError(t, err)
 
 	//This device should not be able to CRUD other devices
@@ -124,10 +134,10 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("tstusr/testdevice"))
 	require.Error(t, o.CreateDevice("tstusr/testdevice2"))
-	_, err = db.ReadDevice("tstusr/testdevice2")
+	_, err = baseOperator.ReadDevice("tstusr/testdevice2")
 	require.Error(t, err)
 
-	testdevice, err := db.ReadDevice("tstusr/testdevice")
+	testdevice, err := baseOperator.ReadDevice("tstusr/testdevice")
 	require.NoError(t, err)
 	testdevice.Nickname = "test"
 	require.Error(t, o.UpdateDevice(testdevice))
@@ -169,14 +179,14 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, key, dev.ApiKey)
 
-	devs, err := db.ReadAllDevices("tstusr")
+	devs, err := baseOperator.ReadAllDevices("tstusr")
 	require.NoError(t, err)
 	require.Equal(t, 3, len(devs)) //All devices
 	devs, err = o.ReadAllDevices("tstusr")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //Only this device
 
-	usr, err := db.ReadUser("tstusr")
+	usr, err := baseOperator.ReadUser("tstusr")
 	require.NoError(t, err)
 	devs, err = o.ReadAllDevicesByUserID(usr.UserId)
 	require.NoError(t, err)
@@ -185,7 +195,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	require.Error(t, o.DeleteDevice("tstusr/test"))
 
 	//Now make it an admin device
-	require.NoError(t, db.SetAdmin("tstusr/test", true))
+	require.NoError(t, baseOperator.SetAdmin("tstusr/test", true))
 	require.NoError(t, o.SetAdmin("tstusr/testdevice", true))
 
 	require.NoError(t, o.DeleteDevice("tstusr/testdevice"))

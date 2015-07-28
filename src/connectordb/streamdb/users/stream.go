@@ -13,6 +13,7 @@ import (
 	"connectordb/streamdb/schema"
 	"database/sql"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/josephlewis42/multicache"
@@ -66,11 +67,12 @@ func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel)
 func (s *Stream) Validate(data datastream.DatapointArray) bool {
 	schema, err := s.GetSchema()
 	if err != nil {
+		fmt.Printf("Error: %v\n", err.Error())
 		return false
 	}
 
 	for _, datum := range data {
-		if !schema.IsValid(datum) {
+		if !schema.IsValid(datum.Data) {
 			return false
 		}
 	}

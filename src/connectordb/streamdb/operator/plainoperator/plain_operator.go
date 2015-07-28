@@ -2,6 +2,7 @@ package plainoperator
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/operator/interfaces"
 	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
 	"errors"
@@ -28,6 +29,10 @@ All Rights Reserved
 
 func NewPlainOperator(udb users.UserDatabase, ds *datastream.DataStream, msg *messenger.Messenger) PlainOperator {
 	return PlainOperator{udb, ds, msg}
+}
+
+func NewWrappedPlainOperator(udb users.UserDatabase, ds *datastream.DataStream, msg *messenger.Messenger) interfaces.Operator {
+	return &interfaces.PathOperatorMixin{&PlainOperator{udb, ds, msg}}
 }
 
 // This operator is very insecure but very fast, good for embedded environments

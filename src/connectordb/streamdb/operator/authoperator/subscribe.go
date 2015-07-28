@@ -9,7 +9,7 @@ import (
 
 //SubscribeUserByID subscribes to everything a user creates
 func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan messenger.Message) (*nats.Subscription, error) {
-	usr, err := o.Operator.ReadUserByID(userID)
+	usr, err := o.BaseOperator.ReadUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -18,7 +18,7 @@ func (o *AuthOperator) SubscribeUserByID(userID int64, chn chan messenger.Messag
 		return nil, err
 	}
 
-	return o.Operator.SubscribeUserByID(userID, chn)
+	return o.BaseOperator.SubscribeUserByID(userID, chn)
 }
 
 //SubscribeDeviceByID subscribes to all streams of the given device
@@ -32,7 +32,7 @@ func (o *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan messenger.Me
 		return nil, err
 	}
 
-	return o.Operator.SubscribeDeviceByID(deviceID, chn)
+	return o.BaseOperator.SubscribeDeviceByID(deviceID, chn)
 }
 
 //SubscribeStreamByID subscribes to the given stream by ID
@@ -51,7 +51,7 @@ func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn
 	}
 
 	if dev.RelationToStream(strm, sdevice).Gte(users.DEVICE) {
-		return o.Operator.SubscribeStreamByID(streamID, substream, chn)
+		return o.BaseOperator.SubscribeStreamByID(streamID, substream, chn)
 	}
 	return nil, ErrPermissions
 }

@@ -3,31 +3,28 @@ package authoperator
 import (
 	"testing"
 
-	"connectordb/config"
-
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamCrud(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
-	_, err = db.ReadAllStreams("bad/badder")
+	_, err = baseOperator.ReadAllStreams("bad/badder")
 	require.Error(t, err)
 
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, db.CreateDevice("tst/testdevice"))
+	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateDevice("tst/testdevice"))
 
-	require.NoError(t, db.CreateDevice("tst/testdevice2"))
-	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
+	require.NoError(t, baseOperator.CreateDevice("tst/testdevice2"))
+	require.NoError(t, baseOperator.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
 
-	o, err := db.GetOperator("tst/testdevice")
+	o, err := NewDeviceAuthOperator(&baseOperator, "tst/testdevice")
 	require.NoError(t, err)
 
-	dev, err := db.ReadDevice("tst/testdevice2")
+	dev, err := baseOperator.ReadDevice("tst/testdevice2")
 	require.NoError(t, err)
 	_, err = o.ReadAllStreamsByDeviceID(dev.DeviceId)
 	require.Error(t, err)
@@ -61,14 +58,14 @@ func TestAuthStreamCrud(t *testing.T) {
 	_, err = o.ReadStream("tst/testdevice/mystream")
 	require.Error(t, err)
 
-	s, err = db.ReadStream("tst/testdevice/stream2")
+	s, err = baseOperator.ReadStream("tst/testdevice/stream2")
 	require.NoError(t, err)
 	require.Equal(t, "stream2", s.Name)
 
 	require.Error(t, o.DeleteStream("tst/testdevice2/teststream"))
 	require.NoError(t, o.DeleteStream("tst/testdevice/stream2"))
 
-	_, err = db.ReadStream("tst/testdevice/mystream")
+	_, err = baseOperator.ReadStream("tst/testdevice/mystream")
 	require.Error(t, err)
 
 	dev, err = o.ReadDevice("tst/testdevice")

@@ -69,7 +69,7 @@ func (o *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]users.Device, err
 	}
 
 	if permission.Gte(users.USER) {
-		return o.Operator.ReadAllDevicesByUserID(userID)
+		return o.BaseOperator.ReadAllDevicesByUserID(userID)
 	}
 
 	dev, err := o.Device()
@@ -83,7 +83,7 @@ func (o *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]users.Device, err
 
 //CreateDeviceByUserID creates a new device for the given user
 func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
-	user, err := o.Operator.ReadUserByID(userID)
+	user, err := o.BaseOperator.ReadUserByID(userID)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 		return err
 	}
 
-	err = o.Operator.CreateDeviceByUserID(userID, devicename)
+	err = o.BaseOperator.CreateDeviceByUserID(userID, devicename)
 	if err == nil {
 		o.UserLog("CreateDevice", user.Name+"/"+devicename)
 	}
@@ -100,23 +100,9 @@ func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 	return err
 }
 
-//ReadDevice reads the given device
-func (o *AuthOperator) ReadDevice(devicepath string) (*users.Device, error) {
-	dev, err := o.Operator.ReadDevice(devicepath)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := o.permissionsGteDev(dev, users.DEVICE); err != nil {
-		return nil, err
-	}
-
-	return dev, nil
-}
-
 // ReadDeviceByID reads the device using its ID
 func (o *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
-	dev, err := o.Operator.ReadDeviceByID(deviceID)
+	dev, err := o.BaseOperator.ReadDeviceByID(deviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +116,7 @@ func (o *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
 
 // ReadDeviceByUserID reads the device using the user's ID and device name
 func (o *AuthOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
-	dev, err := o.Operator.ReadDeviceByUserID(userID, devicename)
+	dev, err := o.BaseOperator.ReadDeviceByUserID(userID, devicename)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +144,7 @@ func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
 		return ErrPermissions
 	}
 
-	err = o.Operator.UpdateDevice(updateddevice)
+	err = o.BaseOperator.UpdateDevice(updateddevice)
 	if err == nil {
 		o.UserLogDeviceID(dev.DeviceId, "UpdateDevice")
 	}
@@ -178,7 +164,7 @@ func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
 	}
 
 	devpath, err2 := o.getDevicePath(deviceID)
-	err = o.Operator.DeleteDeviceByID(deviceID)
+	err = o.BaseOperator.DeleteDeviceByID(deviceID)
 	if err == nil && err2 == nil {
 		o.UserLog("DeleteDevice", devpath)
 	}

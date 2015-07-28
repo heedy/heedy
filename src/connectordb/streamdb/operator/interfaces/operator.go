@@ -12,7 +12,7 @@ import (
 //BaseOperatorInterface are the functions which must be implemented in order to use Operator.
 //If these functions are implemented, then the operator is complete, and all functionality
 //of the database is available
-type Operator interface {
+type BaseOperator interface {
 
 	//Returns an identifier for the device this operator is acting as.
 	//AuthOperator has this as the path to the device the operator is acting as
@@ -44,7 +44,6 @@ type Operator interface {
 	//in the form "username/devicename"
 	ReadAllDevicesByUserID(userID int64) ([]users.Device, error)
 	CreateDeviceByUserID(userID int64, devicename string) error
-	ReadDevice(devicepath string) (*users.Device, error)
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
 	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
 	UpdateDevice(modifieddevice *users.Device) error
@@ -54,7 +53,6 @@ type Operator interface {
 	//in the form "username/devicename/streamname"
 	ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error)
 	CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error
-	ReadStream(streampath string) (*users.Stream, error)
 	ReadStreamByID(streamID int64) (*users.Stream, error)
 	ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error)
 	UpdateStream(modifiedstream *users.Stream) error
@@ -99,7 +97,9 @@ type Operator interface {
 	// CountDevices returns the number of existing devices in the database at the
 	// time of calling or an error if the database could not be reached.
 	CountDevices() (uint64, error)
+}
 
+type PathOperator interface {
 	// Changes the given device's api key to a new random UUID4. Returns the new
 	// key
 	ChangeDeviceAPIKey(devicepath string) (apikey string, err error)
@@ -129,6 +129,9 @@ type Operator interface {
 	// Reads all streams for the device at the given path
 	ReadAllStreams(devicepath string) ([]users.Stream, error)
 
+	ReadDevice(devicepath string) (*users.Device, error)
+	ReadStream(streampath string) (*users.Stream, error)
+
 	// Sets/removes a user or device from being admin
 	SetAdmin(path string, isadmin bool) error
 
@@ -141,4 +144,9 @@ type Operator interface {
 	SubscribeStream(streampath string, chn chan messenger.Message) (*nats.Subscription, error)
 	SubscribeUser(username string, chn chan messenger.Message) (*nats.Subscription, error)
 	TimeToIndexStream(streampath string, time float64) (int64, error)
+}
+
+type Operator interface {
+	BaseOperator
+	PathOperator
 }

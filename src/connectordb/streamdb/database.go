@@ -9,6 +9,7 @@ import (
 	"connectordb/streamdb/users"
 	"database/sql"
 	"errors"
+	"testing"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -197,12 +198,15 @@ func (db *Database) RunWriter() {
 	db.ds.RunWriter()
 }
 
-/**
-//Clear clears the database (to be used for debugging purposes - NEVER in production)
-func (db *Database) Clear() {
+// Clear clears the database (to be used for debugging purposes - NEVER in production)
+// the reason it's in this file!
+func (db *Database) Clear(t *testing.T) {
+	if t == nil {
+		return
+	}
+
 	db.ds.Clear()
 	db.sqldb.Exec("DELETE FROM Users;")
 	db.sqldb.Exec("DELETE FROM Devices;")
 	db.sqldb.Exec("DELETE FROM Streams;")
 }
-**/

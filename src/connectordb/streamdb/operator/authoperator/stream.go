@@ -1,28 +1,6 @@
 package authoperator
 
-import (
-	"connectordb/streamdb/users"
-	"connectordb/streamdb/util"
-)
-
-//ReadStreamDevice gets the device associated with the given stream path
-func (o *AuthOperator) ReadStreamDevice(streampath string) (d *users.Device, err error) {
-	_, devicepath, _, _, _, err := util.SplitStreamPath(streampath)
-	if err != nil {
-		return nil, err
-	}
-	return o.ReadDevice(devicepath)
-}
-
-//ReadStreamAndDevice reads both stream and device
-func (o *AuthOperator) ReadStreamAndDevice(streampath string) (d *users.Device, s *users.Stream, err error) {
-	strm, err := o.ReadStream(streampath)
-	if err != nil {
-		return nil, nil, err
-	}
-	dev, err := o.ReadDeviceByID(strm.DeviceId)
-	return dev, strm, err
-}
+import "connectordb/streamdb/users"
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device
 func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
@@ -35,7 +13,7 @@ func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream,
 		return nil, err
 	}
 	if odev.RelationToDevice(dev).Gte(users.FAMILY) {
-		return o.Operator.ReadAllStreamsByDeviceID(deviceID)
+		return o.BaseOperator.ReadAllStreamsByDeviceID(deviceID)
 	}
 	return nil, err
 }
@@ -51,7 +29,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 		return err
 	}
 	if odev.RelationToDevice(dev).Gte(users.DEVICE) {
-		err = o.Operator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+		err = o.BaseOperator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
 		if err == nil {
 			devpath, err2 := o.getDevicePath(deviceID)
 			if err2 == nil {
@@ -63,6 +41,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 	return ErrPermissions
 }
 
+/**
 //ReadStream reads the given stream
 func (o *AuthOperator) ReadStream(streampath string) (*users.Stream, error) {
 	stream, err := o.Operator.ReadStream(streampath)
@@ -76,10 +55,11 @@ func (o *AuthOperator) ReadStream(streampath string) (*users.Stream, error) {
 
 	return stream, nil
 }
+**/
 
 //ReadStreamByID reads the given stream using its ID
 func (o *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
-	stream, err := o.Operator.ReadStreamByID(streamID)
+	stream, err := o.BaseOperator.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +73,7 @@ func (o *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
 
 //ReadStreamByDeviceID reads the stream given a device ID and the stream name
 func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
-	stream, err := o.Operator.ReadStreamByDeviceID(deviceID, streamname)
+	stream, err := o.BaseOperator.ReadStreamByDeviceID(deviceID, streamname)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +101,7 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 		return ErrPermissions
 	}
 
-	err = o.Operator.UpdateStream(modifiedstream)
+	err = o.BaseOperator.UpdateStream(modifiedstream)
 	if err == nil {
 		o.UserLogStreamID(originalStream.StreamId, "UpdateStream")
 	}
@@ -172,7 +152,7 @@ func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error 
 
 	spath, err2 := o.getStreamPath(streamID)
 
-	err = o.Operator.DeleteStreamByID(streamID, substream)
+	err = o.BaseOperator.DeleteStreamByID(streamID, substream)
 	if err == nil && err2 == nil {
 		o.UserLog("DeleteStream", spath)
 	}
