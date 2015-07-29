@@ -8,6 +8,12 @@ import (
 	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/operator/plainoperator"
 	"connectordb/streamdb/users"
+	"errors"
+	"strings"
+)
+
+var (
+	ErrBadPath = errors.New("Invalid path")
 )
 
 type Database interface {
@@ -58,16 +64,28 @@ func NewDeviceOperator(db Database, devicepath string) (Operator, error) {
 }
 
 /*
+NewDeviceAPILoginOperator creates an operator that keeps permissions contained to the
+device with the given api key.
+*/
+func NewDeviceAPILoginOperator(db Database, apikey string) (Operator, error) {
+	bootstrapOperator := NewOperator(db)
+	op, err := authoperator.NewAPILoginOperator(bootstrapOperator, apikey)
+	po := interfaces.PathOperatorMixin{op}
+	return &po, err
+}
+
+/*
 NewDeviceApiOperator creates an operator that keeps permissions contained to the
 device at the given path. Additionally, it fails to be created if the given
 apikey does not match the one for the specified device.
+
+If devicepath is blank, it will only look up by apikey and do no validation.
 */
 func NewDeviceApiOperator(db Database, devicepath, apikey string) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
 	op, err := authoperator.NewDeviceLoginOperator(bootstrapOperator, devicepath, apikey)
 	po := interfaces.PathOperatorMixin{op}
 	return &po, err
-
 }
 
 /*
@@ -91,4 +109,22 @@ func NewUserLoginOperator(db Database, username, password string) (Operator, err
 	po := interfaces.PathOperatorMixin{op}
 	return &po, err
 
+}
+
+/*
+NewPathLoginOperator logs in a user or device, depending on which is passed in.
+*/
+func NewPathLoginOperator(db Database, path, password string) (Operator, error) {
+	if len(path) == 0 {
+		return NewDeviceAPILoginOperator(db, password)
+	}
+
+	switch strings.Count(path, "/") {
+	default:
+		return interfaces.ErrOperator{}, ErrBadPath
+	case 1:
+		return NewDeviceApiOperator(db, path, password)
+	case 0:
+		return NewUserLoginOperator(db, path, password)
+	}
 }

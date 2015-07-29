@@ -116,6 +116,10 @@ func (o *PlainOperator) ReadDeviceByUserID(userID int64, devicename string) (*us
 	return o.Userdb.ReadDeviceForUserByName(userID, devicename)
 }
 
+func (o *PlainOperator) ReadDeviceByAPIKey(apikey string) (*users.Device, error) {
+	return o.Userdb.ReadDeviceByApiKey(apikey)
+}
+
 func (o *PlainOperator) UpdateDevice(modifieddevice *users.Device) error {
 	return o.Userdb.UpdateDevice(modifieddevice)
 }

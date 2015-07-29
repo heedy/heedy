@@ -100,20 +100,20 @@ start
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
-go test -p=1 -v -cover connectordb/...
-#go test -p=1 -cover connectordb/...
-#go test -p=1 -bench . connectordb/...
-test_status=$?
-stop
-check_pids
+#go test --timeout 15s -p=1 -v -cover connectordb/...
+#go test --timeout 15s -p=1 -cover connectordb/...
+#go test --timeout 15s -p=1 -bench . connectordb/...
+#test_status=$?
+#stop
+#check_pids
 
-if [ $1 == "coveronly" ]; then
-    exit 0
-fi
+#if [ $1 == "coveronly" ]; then
+#    exit 0
+#fi
 
 
-create
-start
+#create
+#start
 #Now test the python stuff, while rebuilding the db to make sure that
 #the go tests didn't invalidate the db
 echo "==================================================="

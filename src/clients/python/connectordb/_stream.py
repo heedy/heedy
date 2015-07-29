@@ -1,5 +1,6 @@
 from jsonschema import validate, Draft4Validator
 import time
+import json
 from _cobject import ConnectorObject
 
 class Stream(ConnectorObject):
@@ -11,7 +12,7 @@ class Stream(ConnectorObject):
     @property
     def nickname(self):
         return self.data["nickname"]
-        
+
     @nickname.setter
     def nickname(self,value):
         self.set({"nickname": value})
@@ -22,7 +23,7 @@ class Stream(ConnectorObject):
         if v is None:
             return False
         return v
-        
+
     @downlink.setter
     def downlink(self,value):
         self.set({"downlink": value})
@@ -33,14 +34,14 @@ class Stream(ConnectorObject):
         if v is None:
             return False
         return v
-        
+
     @ephemeral.setter
     def ephemeral(self,value):
         self.set({"ephemeral": value})
 
     @property
     def schema(self):
-        return self.data["schema"]
+        return json.loads(self.data["type"])
 
     def __len__(self):
         return int(self.db.urlget(self.metaname+"/length").text)
@@ -79,12 +80,12 @@ class Stream(ConnectorObject):
         '''Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
         so we subscribe according to that
         '''
-        
+
         sname = self.metaname
         if downlink:
             sname += "/downlink"
         self.db.ws.subscribe(sname,callback)
-        
+
     def unsubscribe(self,downlink=False):
         sname = self.metaname
         if downlink:

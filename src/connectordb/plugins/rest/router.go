@@ -119,7 +119,7 @@ func authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		}()
 
-		o, err := operator.NewUserLoginOperator(db, authUser, authPass)
+		o, err := operator.NewPathLoginOperator(db, authUser, authPass)
 
 		if err != nil {
 			logger.WithFields(log.Fields{"dev": authUser, "op": "AUTH"}).Warningln(err.Error())

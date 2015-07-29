@@ -46,6 +46,7 @@ type BaseOperator interface {
 	CreateDeviceByUserID(userID int64, devicename string) error
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
 	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
+	ReadDeviceByAPIKey(apikey string) (*users.Device, error)
 	UpdateDevice(modifieddevice *users.Device) error
 	DeleteDeviceByID(deviceID int64) error
 

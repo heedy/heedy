@@ -29,6 +29,15 @@ func NewDeviceAuthOperator(baseOperator interfaces.Operator, devicepath string) 
 	return &AuthOperator{baseOperator, devicepath, device.DeviceId, userLogStream.StreamId}, nil
 }
 
+func NewAPILoginOperator(baseOperator interfaces.Operator, apikey string) (interfaces.BaseOperator, error) {
+	device, err := baseOperator.ReadDeviceByAPIKey(apikey)
+	if err != nil {
+		return interfaces.ErrOperator{}, err
+	}
+
+	return NewDeviceIdOperator(baseOperator, device.DeviceId)
+}
+
 func NewDeviceLoginOperator(baseOperator interfaces.Operator, devicepath, apikey string) (interfaces.BaseOperator, error) {
 	operator, err := NewDeviceAuthOperator(baseOperator, devicepath)
 

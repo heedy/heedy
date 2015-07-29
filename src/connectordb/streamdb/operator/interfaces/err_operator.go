@@ -71,6 +71,9 @@ func (eo ErrOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
 func (eo ErrOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
 	return nil, BadOperatorErr
 }
+func (eo ErrOperator) ReadDeviceByAPIKey(apikey string) (*users.Device, error) {
+	return nil, BadOperatorErr
+}
 func (eo ErrOperator) UpdateDevice(modifieddevice *users.Device) error {
 	return BadOperatorErr
 }

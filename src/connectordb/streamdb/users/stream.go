@@ -38,7 +38,7 @@ type Stream struct {
 	StreamId  int64  `modifiable:"nobody" json:"-"`
 	Name      string `modifiable:"device" json:"name"`
 	Nickname  string `modifiable:"device" json:"nickname,omitempty"`
-	Type      string `modifiable:"root" json:"-"`
+	Type      string `modifiable:"root" json:"type"`
 	DeviceId  int64  `modifiable:"nobody" json:"-"`
 	Ephemeral bool   `modifiable:"device" json:"ephemeral,omitempty"`
 	Downlink  bool   `modifiable:"device" json:"downlink,omitempty"`
