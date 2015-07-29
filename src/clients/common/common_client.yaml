@@ -26,7 +26,7 @@ produces:
   - application/json
 
 paths:
-  /d/{username}:
+  /crud/{username}:
     get:
       security:
       - standard : []
@@ -118,7 +118,7 @@ paths:
             $ref: '#/definitions/Error'
 
 
-  '/d/{username}/{devicename}':
+  '/crud/{username}/{devicename}':
     get:
       security:
         - standard : []
@@ -224,7 +224,7 @@ paths:
 
 
 
-  '/d/{username}/{devicename}/{streamname}':
+  '/crud/{username}/{devicename}/{streamname}':
     get:
       security:
         - standard : []
@@ -341,7 +341,8 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-    patch:
+'/crud/{username}/{devicename}/{streamname}/data':
+    put:
         security:
             - standard : []
         summary: Appends data to the stream. If timestamps are out of range, then they are corrected.

@@ -87,7 +87,7 @@ func TestSchema(t *testing.T) {
 		t.Errorf("unmarshal failed")
 		return
 	}
-	if v, ok := xo.(map[interface{}]interface{}); !ok || v["lat"].(float64) != 88.32 || v["msg"].(string) != "hi" {
+	if v, ok := xo.(map[string]interface{}); !ok || v["lat"].(float64) != 88.32 || v["msg"].(string) != "hi" {
 		t.Errorf("Crap: %v, %v", ok, v)
 		return
 	}

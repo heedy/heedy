@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/operator/messenger"
@@ -17,7 +18,7 @@ import (
 
 const (
 	//The max size of a websocket message
-	messageSizeLimit = 1 * Mb
+	messageSizeLimit = 1 * restcore.Mb
 
 	//The time allowed to write a message
 	writeWait = 2 * time.Second
@@ -59,7 +60,6 @@ type WebsocketConnection struct {
 
 //NewWebsocketConnection creates a new websocket connection based on the operators and stuff
 func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*WebsocketConnection, error) {
-	logger = logger.WithField("op", "ws")
 
 	ws, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
@@ -94,7 +94,7 @@ func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 		//TODO: Notify user of insert failure
 		logger.Warn(err.Error())
 	} else {
-		atomic.AddUint32(&StatsInserts, uint32(len(ws.D)))
+		atomic.AddUint32(&restcore.StatsInserts, uint32(len(ws.D)))
 	}
 }
 
@@ -242,13 +242,16 @@ func (c *WebsocketConnection) Run() error {
 }
 
 //RunWebsocket runs the websocket handler
-func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	conn, err := NewWebsocketConnection(o, writer, request, logger)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		return err
+		return 3, err.Error()
 	}
 	defer conn.Close()
-
-	return conn.Run()
+	err = conn.Run()
+	if err != nil {
+		return 2, err.Error()
+	}
+	return 0, ""
 }

@@ -35,9 +35,8 @@ func (mpe MsgPackEncoder) Encode(subject string, v interface{}) ([]byte, error) 
 
 //Decode is to fit the interface
 func (mpe MsgPackEncoder) Decode(subject string, data []byte, vPtr interface{}) (err error) {
-	dec := msgpack.NewDecoder(bytes.NewBuffer(data))
-	err = dec.Decode(vPtr)
-	return
+	//We need to use a special unmarshaller to be able to have map[string]
+	return util.MsgPackUnmarshal(data, vPtr)
 }
 
 //Register the msgpack encoder
