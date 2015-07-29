@@ -91,3 +91,48 @@ func TestDataStream(t *testing.T) {
 	sqldb.Close()
 	rc.BatchSize = 250
 }
+
+func TestTimePlusIndexRange(t *testing.T) {
+	rc.BatchSize = 2
+	sqldb, err := sql.Open("postgres", "sslmode=disable dbname=connectordb port=52592")
+	require.NoError(t, err)
+
+	ds, err := datastream.OpenDataStream(RedisCache{rc}, sqldb, 2)
+	require.NoError(t, err)
+
+	ds.Clear()
+
+	i, err := ds.Insert(0, 1, "", dpa7, false)
+	require.NoError(t, err)
+	require.EqualValues(t, 9, i)
+	dr, err := ds.TRange(0, 1, "", 5., 0.0)
+	require.NoError(t, err)
+	dp, err := dr.Next()
+	require.NoError(t, err)
+	require.EqualValues(t, dp.String(), dpa7[5].String())
+	dr.Close()
+
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., -1)
+	require.NoError(t, err)
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.EqualValues(t, dp.String(), dpa7[4].String())
+	dr.Close()
+
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., -50)
+	require.NoError(t, err)
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.EqualValues(t, dp.String(), dpa7[0].String())
+	dr.Close()
+
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 2)
+	require.NoError(t, err)
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.EqualValues(t, dp.String(), dpa7[7].String())
+	dr.Close()
+
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 50)
+	require.Error(t, err)
+}

@@ -171,3 +171,41 @@ func (ds *DataStream) GetTimeIndex(device int64, stream int64, substream string,
 	}
 	return dr.Index(), nil
 }
+
+//TimePlusIndexRange returns a range starting at the given time, offset by the given index (+ or -),
+//	The range is to the end of the entire stream (ie, just close it when you don't need further data)
+//TODO: This function can be made much more efficient with a bit of cleverness regarding the underlying
+//	DataRanges
+func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream string, t float64, i int64) (DataRange, error) {
+	//First off, we get the TRange
+	dr, err := ds.TRange(device, stream, substream, t, 0.0)
+	if err != nil {
+		return nil, err
+	}
+	if i < 0 || i > int64(ds.ChunkSize*2) {
+		//In this case, we will need to query the database again - this time by index
+		curindex := dr.Index()
+		dr.Close()
+
+		i = curindex + i
+		if i < 0 {
+			//While this could return an error, most use cases just want to start from the beginning of data
+			//	in particular the dataset interpolators
+			i = 0
+		}
+		return ds.IRange(device, stream, substream, i, 0)
+	}
+
+	//No need to query again, extract the new datarange from current one
+
+	//Currently, the only possibility is if i is >=0 and small, so we jsut iterate through
+	for j := int64(0); j < i; j++ {
+		_, err := dr.Next()
+		if err != nil {
+			dr.Close()
+			return nil, err
+		}
+	}
+
+	return dr, nil
+}
