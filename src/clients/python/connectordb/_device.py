@@ -10,6 +10,8 @@ class Device(ConnectorObject):
         #Returns the list of streams belonging to the device
         strms = []
         result = self.db.urlget(self.metaname+"/?q=ls")
+        if result == None or result.json() == None:
+            return []
         for s in result.json():
             tmps = _stream.Stream(self.db,self.metaname+"/"+s["name"])
             tmps.metadata = s
