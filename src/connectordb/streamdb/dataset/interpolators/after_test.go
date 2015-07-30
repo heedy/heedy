@@ -9,6 +9,7 @@ import (
 func TestAfterInterpolator(t *testing.T) {
 	ai, err := NewAfterInterpolator(ds, 0, 0, "", 1.)
 	require.NoError(t, err)
+	defer ai.Close()
 
 	//Make sure it started at right time
 	dp, err := ai.Next(0.5)
