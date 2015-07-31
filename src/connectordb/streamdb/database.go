@@ -141,7 +141,7 @@ func (db *Database) RunWriter() {
 
 // Clear clears the database (to be used for debugging purposes - NEVER in production)
 // the reason it's in this file!
-func (db *Database) Clear(t *testing.T) {
+func (db *Database) Clear(t testing.TB) {
 	if t == nil {
 		return
 	}
