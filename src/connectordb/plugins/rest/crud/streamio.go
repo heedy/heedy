@@ -4,6 +4,7 @@ import (
 	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/datapoint"
 	"errors"
 	"fmt"
 	"io"
@@ -61,7 +62,7 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 
-	jreader, err := operator.NewJsonReader(dr)
+	jreader, err := datapoint.NewJsonReader(dr)
 	if err != nil {
 		if err == io.EOF {
 			writer.Header().Set("Content-Type", "application/json; charset=utf-8")

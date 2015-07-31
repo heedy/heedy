@@ -119,9 +119,12 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
 	s.commands = []ShellCommand{
+		AddDev{},
+		AddStream{},
 		AddUser{},
 		Cat{},
 		Clear{},
+		Dbinfo{},
 		Help{},
 		Exit{},
 		GrantAdmin{},

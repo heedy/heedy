@@ -137,11 +137,11 @@ func (o *PlainOperator) CountUsers() (uint64, error) {
 }
 
 func (o *PlainOperator) CountDevices() (uint64, error) {
-	return o.Userdb.CountUsers()
+	return o.Userdb.CountDevices()
 }
 
 func (o *PlainOperator) CountStreams() (uint64, error) {
-	return o.Userdb.CountUsers()
+	return o.Userdb.CountStreams()
 }
 
 func (o *PlainOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {

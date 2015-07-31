@@ -1,6 +1,7 @@
 package authoperator
 
 import (
+	"connectordb/streamdb/operator/interfaces"
 	"fmt"
 	"testing"
 
@@ -32,39 +33,40 @@ func TestAuthOperatorBasics(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "user", d.Name)
 
-	o, err = db.APILoginOperator(d.ApiKey)
+	apiOp, err := NewAPILoginOperator(baseOperator, d.ApiKey)
 	require.NoError(t, err)
-	require.Equal(t, "streamdb_test/user", o.Name())
+	require.Equal(t, "streamdb_test/user", apiOp.Name())
 
 }
 
 func TestCountAll(t *testing.T) {
-	db, err := Open(config.DefaultOptions)
+
+	database, baseOperator, err := OpenDb(t)
 	require.NoError(t, err)
-	defer db.Close()
-	db.Clear()
+	defer database.Close()
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass"))
+	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
 
-	o, err := db.UserLoginOperator("streamdb_test", "mypass")
+	userLoginOperator, err := NewUserLoginOperator(baseOperator, "streamdb_test", "mypass")
 	require.NoError(t, err)
+	o := interfaces.PathOperatorMixin{userLoginOperator}
 
-	_, err = o.CountAllUsers()
+	_, err = o.CountUsers()
 	require.Error(t, err)
-	_, err = o.CountAllDevices()
+	_, err = o.CountDevices()
 	require.Error(t, err)
-	_, err = o.CountAllStreams()
+	_, err = o.CountStreams()
 	require.Error(t, err)
 
-	db.SetAdmin("streamdb_test", true)
+	baseOperator.SetAdmin("streamdb_test", true)
 
-	i, err := o.CountAllUsers()
+	i, err := o.CountUsers()
 	require.NoError(t, err)
 	require.EqualValues(t, i, 1)
-	i, err = o.CountAllDevices()
+	i, err = o.CountDevices()
 	require.NoError(t, err)
 	require.True(t, i >= 1)
-	i, err = o.CountAllStreams()
+	i, err = o.CountStreams()
 	require.NoError(t, err)
 	require.True(t, i >= 1)
 }

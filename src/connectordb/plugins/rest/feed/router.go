@@ -5,6 +5,7 @@ import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/users"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -18,7 +19,7 @@ var (
 )
 
 //Get the last week's data
-func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*operator.Stream, datastream.DataRange, error) {
+func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*users.Stream, datastream.DataRange, error) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	s, err := o.ReadStream(streampath)

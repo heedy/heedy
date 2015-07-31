@@ -75,20 +75,20 @@ func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 
 //CountAllUsers gets all of the users in the entire database
 func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllUsers()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountUsers()
+	return restcore.UintWriter(writer, l, logger, err)
 }
 
 //CountAllDevices gets all of the devices in the entire database
 func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllDevices()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountDevices()
+	return restcore.UintWriter(writer, l, logger, err)
 }
 
 //CountAllStreams gets all of the streams in the entire database
 func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllStreams()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountStreams()
+	return restcore.UintWriter(writer, l, logger, err)
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix

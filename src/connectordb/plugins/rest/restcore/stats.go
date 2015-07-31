@@ -1,7 +1,7 @@
 package restcore
 
 import (
-	"connectordb/streamdb/authoperator"
+	"connectordb/streamdb/operator/authoperator"
 	"fmt"
 	"math"
 	"sync"

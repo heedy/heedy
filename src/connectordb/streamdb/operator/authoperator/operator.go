@@ -122,25 +122,25 @@ func (o *AuthOperator) UserLogStreamID(streamID int64, cmd string) error {
 }
 
 //CountAllUsers returns the total number of users contatined in the database
-func (o *AuthOperator) CountAllUsers() (int64, error) {
+func (o *AuthOperator) CountUsers() (uint64, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.CountAllUsers()
+		return o.BaseOperator.CountUsers()
 	}
 	return 0, ErrPermissions
 }
 
 //CountAllDevices returns the total number of devices contatined in the database
-func (o *AuthOperator) CountAllDevices() (int64, error) {
+func (o *AuthOperator) CountDevices() (uint64, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.CountAllDevices()
+		return o.BaseOperator.CountDevices()
 	}
 	return 0, ErrPermissions
 }
 
 //CountAllStreams returns the total number of streams contatined in the database
-func (o *AuthOperator) CountAllStreams() (int64, error) {
+func (o *AuthOperator) CountStreams() (uint64, error) {
 	if o.Permissions(users.ROOT) {
-		return o.Db.CountAllStreams()
+		return o.BaseOperator.CountStreams()
 	}
 	return 0, ErrPermissions
 }

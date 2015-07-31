@@ -61,10 +61,25 @@ func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error
 	}
 
 	res := []byte(strconv.FormatInt(i, 10))
-	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
-	writer.WriteHeader(http.StatusOK)
-	writer.Write(res)
+	byteWriter(writer, res)
 	return DEBUG, ""
+}
+
+//UintWriter writes an unsigned integer
+func UintWriter(writer http.ResponseWriter, i uint64, logger *log.Entry, err error) (int, string) {
+	if err != nil {
+		return WriteError(writer, logger, http.StatusForbidden, err, false)
+	}
+
+	res := []byte(strconv.FormatUint(i, 10))
+	byteWriter(writer, res)
+	return DEBUG, ""
+}
+
+func byteWriter(writer http.ResponseWriter, b []byte) {
+	writer.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	writer.WriteHeader(http.StatusOK)
+	writer.Write(b)
 }
 
 //UnmarshalRequest unmarshals the input data to the given interface

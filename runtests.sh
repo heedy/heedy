@@ -69,10 +69,11 @@ stop () {
 }
 
 force_stop () {
-	killall postgres
-	killall redis-server
-	killall gnatsd
-	killall connectordb
+	killall postgres redis-server gnatsd connectordb
+
+    sleep 1
+    
+	killall -9 postgres redis-server gnatsd connectordb
 }
 
 start () {

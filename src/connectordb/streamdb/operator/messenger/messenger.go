@@ -7,6 +7,7 @@ as well as the messaging system that allows real-time low-latency data analysis.
 
 import (
 	"bytes"
+	"connectordb/streamdb/util"
 	"strings"
 
 	"github.com/nats-io/nats"
