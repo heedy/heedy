@@ -2,15 +2,15 @@ package streamdb
 
 import (
 	"connectordb/config"
-	"connectordb/streamdb/authoperator"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/datastream/rediscache"
 	"connectordb/streamdb/dbutil"
-	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
+	"connectordb/streamdb/util"
 	"database/sql"
 	"errors"
-	"strings"
+	"testing"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -33,14 +33,24 @@ var (
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
-	operator.Operator //We need to do some magic so that the functions in Operator catch
-
 	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
 	ds  *datastream.DataStream //datastream holds methods for inserting datapoints into streams
-	msg *Messenger             //messenger is a connection to the messaging client
+	msg *messenger.Messenger   //messenger is a connection to the messaging client
 
 	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+}
+
+// These are here for Operator to be able to construct properly, they cannot
+// have pointer receivers.
+func (db Database) GetUserDatabase() users.UserDatabase {
+	return db.Userdb
+}
+func (db Database) GetDatastream() *datastream.DataStream {
+	return db.ds
+}
+func (db Database) GetMessenger() *messenger.Messenger {
+	return db.msg
 }
 
 /**
@@ -65,7 +75,7 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	db.Userdb = users.NewUserDatabase(db.sqldb, opt.SqlConnectionType, EnableCaching)
 
 	log.Debugln("Opening messenger")
-	db.msg, err = ConnectMessenger(&opt.NatsOptions, err)
+	db.msg, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
 	if err != nil {
 		return nil, err
 	}
@@ -86,81 +96,11 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 		return nil, err
 	}
 
-	// Magic: Allows using the Database object as an operator.
-	db.Operator = operator.Operator{&db}
+	// Close the database when the system exits just in case it isn't.
+	util.CloseOnExit(&db)
 
 	return &db, nil
 
-}
-
-//DeviceLoginOperator returns the operator associated with the given device+API key combo
-func (db *Database) DeviceLoginOperator(devicepath, apikey string) (operator.Operator, error) {
-	dev, err := db.ReadDevice(devicepath)
-	if err != nil || dev.ApiKey != apikey {
-		return operator.Operator{}, authoperator.ErrPermissions //Don't leak whether the device exists
-	}
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-//APILoginOperator returns the operator associated with the given API key
-func (db *Database) APILoginOperator(apikey string) (operator.Operator, error) {
-	dev, err := db.Userdb.ReadDeviceByApiKey(apikey)
-	if err != nil {
-		return operator.Operator{}, err
-	}
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-// UserLoginOperator returns the operator associated with the given username/password combination
-func (db *Database) UserLoginOperator(username, password string) (operator.Operator, error) {
-	usr, err := db.ReadUser(username)
-	if err != nil || !usr.ValidatePassword(password) {
-		return operator.Operator{}, authoperator.ErrPermissions //We don't want to leak if a user exists or not
-	}
-
-	dev, err := db.ReadDeviceByUserID(usr.UserId, "user")
-	if err != nil {
-		return operator.Operator{}, authoperator.ErrPermissions
-	}
-
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-// LoginOperator logs in as a user or device, depending on which is passed in
-func (db *Database) LoginOperator(path, password string) (operator.Operator, error) {
-	if len(path) == 0 {
-		return db.APILoginOperator(password)
-	}
-	switch strings.Count(path, "/") {
-	default:
-		return operator.Operator{}, operator.ErrBadPath
-	case 1:
-		return db.DeviceLoginOperator(path, password)
-	case 0:
-		return db.UserLoginOperator(path, password)
-	}
-}
-
-//Operator gets the operator by usr or device name
-func (db *Database) GetOperator(path string) (operator.Operator, error) {
-	switch strings.Count(path, "/") {
-	default:
-		return operator.Operator{}, operator.ErrBadPath
-	case 0:
-		path += "/user"
-	case 1:
-		//Do nothing for this case
-	}
-	dev, err := db.ReadDevice(path)
-	if err != nil {
-		return operator.Operator{}, err //We use dev.Name, so must return error earlier
-	}
-	return authoperator.NewAuthOperator(db, dev.DeviceId)
-}
-
-//DeviceOperator returns the operator for the given device ID
-func (db *Database) DeviceOperator(deviceID int64) (operator.Operator, error) {
-	return authoperator.NewAuthOperator(db, deviceID)
 }
 
 //Close closes all database connections and releases all resources.
@@ -199,51 +139,15 @@ func (db *Database) RunWriter() {
 	db.ds.RunWriter()
 }
 
-//Clear clears the database (to be used for debugging purposes - NEVER in production)
-func (db *Database) Clear() {
+// Clear clears the database (to be used for debugging purposes - NEVER in production)
+// the reason it's in this file!
+func (db *Database) Clear(t testing.TB) {
+	if t == nil {
+		return
+	}
+
 	db.ds.Clear()
 	db.sqldb.Exec("DELETE FROM Users;")
 	db.sqldb.Exec("DELETE FROM Devices;")
 	db.sqldb.Exec("DELETE FROM Streams;")
-}
-
-//These functions allow the Database object to conform to the BaseOperatorInterface
-
-//Name here is a special one meaning that it is the database administration operator
-// It is not a valid username
-func (db *Database) Name() string {
-	return AdminName
-}
-
-//Reload for a full database purges the entire cache
-func (db *Database) Reload() error {
-	return nil
-}
-
-//User returns the current user
-func (db *Database) User() (usr *users.User, err error) {
-	return nil, ErrAdmin
-}
-
-//Device returns the current device
-func (db *Database) Device() (*users.Device, error) {
-	return nil, ErrAdmin
-}
-
-//CountAllUsers returns the total number of users contatined in the database
-func (db *Database) CountAllUsers() (int64, error) {
-	i, err := db.Userdb.CountUsers()
-	return int64(i), err
-}
-
-//CountAllDevices returns the total number of devices contatined in the database
-func (db *Database) CountAllDevices() (int64, error) {
-	i, err := db.Userdb.CountDevices()
-	return int64(i), err
-}
-
-//CountAllStreams returns the total number of streams contatined in the database
-func (db *Database) CountAllStreams() (int64, error) {
-	i, err := db.Userdb.CountStreams()
-	return int64(i), err
 }

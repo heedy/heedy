@@ -119,9 +119,12 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
 	s.commands = []ShellCommand{
+		AddDev{},
+		AddStream{},
 		AddUser{},
 		Cat{},
 		Clear{},
+		Dbinfo{},
 		Help{},
 		Exit{},
 		GrantAdmin{},
@@ -137,7 +140,7 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
-	s.operator = sdb.Operator
+	s.operator = operator.NewOperator(sdb)
 	s.operatorName = "ConnectorDB"
 	s.pwd = ""
 	return &s
@@ -214,7 +217,7 @@ func (s *Shell) PrintError(err error) bool {
 }
 
 // Reads the user, device and stream at a path
-func (s *Shell) ReadPath(path string) (usr *users.User, dev *users.Device, stream *operator.Stream) {
+func (s *Shell) ReadPath(path string) (usr *users.User, dev *users.Device, stream *users.Stream) {
 	usr, _ = s.operator.ReadUser(path)
 	dev, _ = s.operator.ReadDevice(path)
 	stream, _ = s.operator.ReadStream(path)

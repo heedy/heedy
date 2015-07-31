@@ -17,6 +17,8 @@ _obj
 _test
 bin/
 database_test/
+src/clients/python/build/
+src/clients/python/dist/
 
 # Architecture specific extensions/prefixes
 *.[568vq]

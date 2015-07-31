@@ -104,7 +104,7 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 			}
 		}()
 
-		o, err := db.LoginOperator(authUser, authPass)
+		o, err := operator.NewPathLoginOperator(db, authUser, authPass)
 
 		if err != nil {
 			//So there was an unsuccessful attempt at login, huh?

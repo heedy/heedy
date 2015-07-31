@@ -9,12 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	streamtestType = "{\"type\":\"string\"}"
+)
+
 func TestCreateStream(t *testing.T) {
 	for _, testdb := range testdatabases {
 		_, dev, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateStream(stream.Name, "{}", dev.DeviceId)
+		err = testdb.CreateStream(stream.Name, streamtestType, dev.DeviceId)
 		assert.NotNil(t, err, "Created stream with duplicate name")
 	}
 }
@@ -26,7 +30,7 @@ func TestUpdateStream(t *testing.T) {
 		require.Nil(t, err)
 
 		stream.Nickname = "true"
-		stream.Type = "{a:'string'}"
+		stream.Type = streamtestType
 
 		err = testdb.UpdateStream(stream)
 		assert.Nil(t, err, "Could not update stream %v", err)
@@ -63,7 +67,7 @@ func TestReadStreamByDevice(t *testing.T) {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		testdb.CreateStream("TestReadStreamByDevice2", "{}", dev.DeviceId)
+		testdb.CreateStream("TestReadStreamByDevice2", streamtestType, dev.DeviceId)
 
 		streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
 		require.Nil(t, err)

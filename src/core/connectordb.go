@@ -128,6 +128,7 @@ func main() {
 	// Make sure we don't go OOB
 	if len(flag.Args()) < 2 {
 		PrintUsage()
+		util.SendCloseSignal()
 		return
 	}
 
@@ -167,6 +168,8 @@ func main() {
 	if err != nil {
 		log.Errorf("A problem occured during %v:\n\n%v\n", commandName, err)
 	}
+
+	util.SendCloseSignal()
 }
 
 // processes the flags and makes sure they're valid, exiting if needed.

@@ -4,6 +4,7 @@ import (
 	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/messenger"
 	"io"
 	"net/http"
 	"sync/atomic"
@@ -51,7 +52,7 @@ type WebsocketConnection struct {
 
 	subscriptions map[string]*nats.Subscription
 
-	c chan operator.Message
+	c chan messenger.Message
 
 	logger *log.Entry //logrus uses a mutex internally
 	o      operator.Operator
@@ -68,7 +69,7 @@ func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, req
 
 	ws.SetReadLimit(messageSizeLimit)
 
-	return &WebsocketConnection{ws, make(map[string]*nats.Subscription), make(chan operator.Message, messageBuffer), logger, o}, nil
+	return &WebsocketConnection{ws, make(map[string]*nats.Subscription), make(chan messenger.Message, messageBuffer), logger, o}, nil
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {

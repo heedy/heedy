@@ -28,7 +28,7 @@ var (
 	loginPageTemplate  *template.Template
 
 	firstrun    bool
-	webOperator *operator.Operator
+	webOperator operator.Operator
 )
 
 func init() {
@@ -126,7 +126,7 @@ func postLogin(writer http.ResponseWriter, request *http.Request) {
 	userstr := request.PostFormValue("username")
 	passstr := request.PostFormValue("password")
 
-	usroperator, err := userdb.LoginOperator(userstr, passstr)
+	usroperator, err := operator.NewUserLoginOperator(userdb, userstr, passstr)
 	if err != nil {
 		logger.WithFields(log.Fields{"op": "AUTH", "usr": userstr}).Warn(err.Error())
 		http.Redirect(writer, request, "/login/?failed=true", http.StatusTemporaryRedirect)

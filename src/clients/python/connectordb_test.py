@@ -55,7 +55,7 @@ class TestConnectorDB(unittest.TestCase):
         self.assertRaises(AuthenticationError,usrdb.countStreams)
         self.assertRaises(AuthenticationError,usrdb.countDevices)
         self.assertRaises(AuthenticationError,usrdb.countUsers)
-        
+
         curdevices = db.countDevices()
         curstreams = db.countStreams()
         usrdb["mystream"].create({"type": "string"})
@@ -272,7 +272,7 @@ class TestConnectorDB(unittest.TestCase):
         db.close()
 
 
-    
+
     def test_subscribe(self):
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
         usr = db.getuser("python_test")
@@ -285,7 +285,7 @@ class TestConnectorDB(unittest.TestCase):
 
         s = db["teststream"]
         s.create({"type": "string"})
-        
+
         class tmpO():
             def __init__(self):
                 self.gotmessage = False
@@ -302,7 +302,7 @@ class TestConnectorDB(unittest.TestCase):
 
         time.sleep(0.1)
         self.assertTrue(tmp.gotmessage)
-    
+
         tmp.gotmessage=False
 
         s.ephemeral = True
@@ -335,8 +335,8 @@ class TestConnectorDB(unittest.TestCase):
         s2 = db["teststream"]
         s2.create({"type": "string"})
 
-        
-        
+
+
         class tmpO():
             def __init__(self):
                 self.gotmessage = False

@@ -73,6 +73,6 @@ func NewSessionEnvironment(rw http.ResponseWriter, req *http.Request) (se Sessio
 	d := dev.(users.Device)
 	se.Device = &d
 
-	se.Operator, err = userdb.DeviceOperator(se.Device.DeviceId)
+	se.Operator, err = operator.NewDeviceIdOperator(userdb, se.Device.DeviceId)
 	return se, err
 }
