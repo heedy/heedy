@@ -3,6 +3,7 @@ package rest
 import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/util"
 	"errors"
 
 	"net/http"
@@ -75,20 +76,29 @@ func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 
 //CountAllUsers gets all of the users in the entire database
 func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllUsers()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountUsers()
+	return restcore.UintWriter(writer, l, logger, err)
 }
 
 //CountAllDevices gets all of the devices in the entire database
 func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllDevices()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountDevices()
+	return restcore.UintWriter(writer, l, logger, err)
 }
 
 //CountAllStreams gets all of the streams in the entire database
 func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	l, err := o.CountAllStreams()
-	return restcore.IntWriter(writer, l, logger, err)
+	l, err := o.CountStreams()
+	return restcore.UintWriter(writer, l, logger, err)
+}
+
+//Allows to fit the Closer interface
+type restcloser struct{}
+
+//CLose shuts down the rest server, and makes sure all websockets have exited
+func (r restcloser) Close() {
+	restcore.Shutdown()
+	websocketWaitGroup.Wait()
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
@@ -120,6 +130,9 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	go restcore.RunStats()
 	go restcore.RunQueryTimers()
+
+	//Now that things are running, we want the ability to do a clean shutdown of REST
+	util.CloseOnExit(restcloser{})
 
 	return prefix
 }

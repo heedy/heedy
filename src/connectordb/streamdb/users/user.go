@@ -4,6 +4,7 @@ package users
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -33,6 +34,11 @@ type User struct {
 	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
 
 	Nickname string `modifiable:"user"` // The nickname of the user
+}
+
+func (s *User) String() string {
+	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v, Admin: %v, Downlink: %v, Type: %v]",
+		s.UserId, s.Name, s.Email, s.Nickname, s.Password, s.PasswordSalt, s.PasswordHashScheme, s.Admin)
 }
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.

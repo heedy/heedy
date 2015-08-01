@@ -1,7 +1,7 @@
 package restcore
 
 import (
-	"connectordb/streamdb/authoperator"
+	"connectordb/streamdb/operator/authoperator"
 	"fmt"
 	"math"
 	"sync"
@@ -18,6 +18,7 @@ var (
 	StatsInserts   = uint32(0)
 	StatsErrors    = uint32(0)
 	StatsPanics    = uint32(0)
+	StatsActive    = int32(0)
 
 	StatsTimePeriod = 1.0 * time.Minute
 
@@ -113,6 +114,7 @@ func StatsAddFail(err error) {
 //RunStats periodically displays query amounts and relevant data. It does not display anything
 //if there was no action within a time period.
 func RunStats() {
+	oldact := int32(0)
 	for {
 		time.Sleep(StatsTimePeriod)
 		q := atomic.SwapUint32(&StatsQueries, 0)
@@ -120,10 +122,11 @@ func RunStats() {
 		i := atomic.SwapUint32(&StatsInserts, 0)
 		e := atomic.SwapUint32(&StatsErrors, 0)
 		p := atomic.LoadUint32(&StatsPanics)
+		act := atomic.LoadInt32(&StatsActive)
 
 		//Only display stat view if there was something going on
-		if q > 0 {
-			logger := log.WithFields(log.Fields{"queries": q, "authfails": a, "inserts": i, "errors": e, "panics": p})
+		if q > 0 || act != oldact {
+			logger := log.WithFields(log.Fields{"queries": q, "authfails": a, "inserts": i, "errors": e, "panics": p, "active": act})
 			if p > 0 {
 				logger.Warnf("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
 			} else {
@@ -131,5 +134,6 @@ func RunStats() {
 			}
 		}
 
+		oldact = act
 	}
 }

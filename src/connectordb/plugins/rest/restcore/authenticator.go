@@ -70,10 +70,16 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	}
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if !IsActive {
+			writer.WriteHeader(http.StatusServiceUnavailable)
+			writer.Write([]byte(`{"code": 503, "msg": "REST API is currently disabled", "ref": "DISABLED"}`))
+			return
+		}
 		tstart := time.Now()
 
 		//Increment the queries handled
 		atomic.AddUint32(&StatsQueries, 1)
+		atomic.AddInt32(&StatsActive, 1)
 
 		//Set up the logger for this connection
 		logger := GetRequestLogger(request, funcname)
@@ -92,6 +98,7 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 				writer.Header().Set("WWW-Authenticate", "Basic")
 				WriteError(writer, logger, http.StatusUnauthorized, errors.New("Login attempted without authentication"), false)
 				atomic.AddUint32(&StatsAuthFails, 1)
+				atomic.AddInt32(&StatsActive, -1)
 				return
 			}
 		}
@@ -99,12 +106,13 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		//Handle a panic without crashing the whole rest interface
 		defer func() {
 			if r := recover(); r != nil {
+				atomic.AddInt32(&StatsActive, -1)
 				atomic.AddUint32(&StatsPanics, 1)
 				logger.WithField("dev", authUser).Errorln("PANIC: " + r.(error).Error())
 			}
 		}()
 
-		o, err := db.LoginOperator(authUser, authPass)
+		o, err := operator.NewPathLoginOperator(db, authUser, authPass)
 
 		if err != nil {
 			//So there was an unsuccessful attempt at login, huh?
@@ -112,7 +120,7 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 
 			WriteError(writer, logger, http.StatusUnauthorized, err, false)
 			atomic.AddUint32(&StatsAuthFails, 1)
-
+			atomic.AddInt32(&StatsActive, -1)
 			return
 		}
 		l := logger.WithField("dev", o.Name())
@@ -140,5 +148,6 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 		case ERROR:
 			l.Errorln(txt)
 		}
+		atomic.AddInt32(&StatsActive, -1)
 	})
 }

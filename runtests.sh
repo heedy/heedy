@@ -69,10 +69,11 @@ stop () {
 }
 
 force_stop () {
-	killall postgres
-	killall redis-server
-	killall gnatsd
-	killall connectordb
+	killall postgres redis-server gnatsd connectordb
+
+    sleep 1
+    
+	killall -9 postgres redis-server gnatsd connectordb
 }
 
 start () {
@@ -100,9 +101,9 @@ start
 echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
-#go test -p=1 -v -cover connectordb/...
-go test -p=1 -cover connectordb/...
-#go test -p=1 -bench . connectordb/...
+#go test --timeout 15s -p=1 -v -cover connectordb/...
+go test --timeout 15s -p=1 -cover connectordb/...
+#go test --timeout 15s -p=1 -bench . connectordb/...
 test_status=$?
 stop
 check_pids

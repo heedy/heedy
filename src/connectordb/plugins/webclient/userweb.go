@@ -12,7 +12,7 @@ func getUserPage(se *SessionEnvironment, logger *log.Entry) {
 
 	pageData := make(map[string]interface{})
 
-	devices, err := userdb.ReadAllDevicesByUserID(se.User.UserId)
+	devices, err := webOperator.ReadAllDevicesByUserID(se.User.UserId)
 	pageData["devices"] = devices
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()
@@ -35,7 +35,7 @@ func editUserPage(se *SessionEnvironment, logger *log.Entry) {
 	logger.Debugln()
 	pageData := make(map[string]interface{})
 
-	devices, err := userdb.ReadAllDevicesByUserID(se.User.UserId)
+	devices, err := webOperator.ReadAllDevicesByUserID(se.User.UserId)
 	pageData["devices"] = devices
 	pageData["user"] = se.User
 	pageData["flashes"] = se.Session.Flashes()

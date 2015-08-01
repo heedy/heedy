@@ -12,6 +12,7 @@ All Rights Reserved
 **/
 
 import (
+	"connectordb/streamdb/operator"
 	"fmt"
 )
 
@@ -35,7 +36,7 @@ func (h Su) Execute(shell *Shell, args []string) {
 
 	username := args[1]
 
-	suOperator, err := shell.sdb.GetOperator(username)
+	suOperator, err := operator.NewUserOperator(shell.sdb, username)
 	if shell.PrintError(err) {
 		return
 	}
