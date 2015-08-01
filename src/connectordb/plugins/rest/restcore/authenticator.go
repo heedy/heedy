@@ -72,6 +72,7 @@ func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if !IsActive {
 			writer.WriteHeader(http.StatusServiceUnavailable)
+			writer.Write([]byte(`{"code": 503, "msg": "REST API is currently disabled", "ref": "DISABLED"}`))
 			return
 		}
 		tstart := time.Now()
