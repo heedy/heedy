@@ -3,6 +3,7 @@ package rest
 import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/util"
 	"errors"
 
 	"net/http"
@@ -91,6 +92,15 @@ func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *h
 	return restcore.UintWriter(writer, l, logger, err)
 }
 
+//Allows to fit the Closer interface
+type restcloser struct{}
+
+//CLose shuts down the rest server, and makes sure all websockets have exited
+func (r restcloser) Close() {
+	restcore.Shutdown()
+	websocketWaitGroup.Wait()
+}
+
 //Router returns a fully formed Gorilla router given an optional prefix
 func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	SetFileLimit()
@@ -120,6 +130,9 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 
 	go restcore.RunStats()
 	go restcore.RunQueryTimers()
+
+	//Now that things are running, we want the ability to do a clean shutdown of REST
+	util.CloseOnExit(restcloser{})
 
 	return prefix
 }
