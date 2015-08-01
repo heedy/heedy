@@ -26,7 +26,34 @@ var (
 	ErrInvalidName = errors.New("The given name did not pass sanitation.")
 	ErrBadQ        = errors.New("Unrecognized query command.")
 	ErrCantParse   = errors.New("The given query cannot be parsed, since the values could not be extracted")
+
+	//ShutdownChannel is a shared channel which is used when a shutdown is signalled.
+	//Each goroutine that uses the ShutdownChannel is to IMMEDIATELY refire the channel before doing anything else,
+	//so that the signal continues throughout the system
+	ShutdownChannel = make(chan bool, 1)
+
+	//IsActive - no need for sync, really. It specifies if the REST interface should be accepting connections
+	IsActive = true
 )
+
+//SetEnabled allows to enable and disable acceptance of connections in a simple way
+func SetEnabled(v bool) {
+	IsActive = v
+	if v {
+		log.Warn("REST server enabled")
+	} else {
+		log.Warn("REST server disabled (503)")
+	}
+}
+
+//Shutdown shutd down the server
+func Shutdown() {
+	//Set to inactive so that new connections are not accepted during shutdown
+	//no need to log the fact that rest is inactive, since this only happens on shutdown
+	IsActive = false
+	//Fire the shutdown channel
+	ShutdownChannel <- true
+}
 
 //OK is a simplifying function that returns success
 func OK(writer http.ResponseWriter) error {

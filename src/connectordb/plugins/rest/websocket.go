@@ -7,6 +7,7 @@ import (
 	"connectordb/streamdb/operator/messenger"
 	"io"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -42,6 +43,9 @@ var (
 		// Allow from all origins
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
+
+	//websocketWaitGroup is the WaitGroup of websockets that are currently open
+	websocketWaitGroup = sync.WaitGroup{}
 )
 
 //WebsocketConnection is the general connection with a websocket that is run.
@@ -215,6 +219,11 @@ loop:
 			}
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			c.ws.WriteMessage(websocket.TextMessage, []byte(msg))
+		case <-restcore.ShutdownChannel:
+			restcore.ShutdownChannel <- true
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+			break loop
 		}
 	}
 	exitchan <- true
@@ -223,6 +232,7 @@ loop:
 //Run the websocket operations
 func (c *WebsocketConnection) Run() error {
 	c.logger.Debugln("Running websocket...")
+	websocketWaitGroup.Add(1)
 
 	//The reader can communicate with the writer through the channel
 	msgchn := make(chan string, 1)
@@ -238,6 +248,7 @@ func (c *WebsocketConnection) Run() error {
 	if !<-exitchan {
 		c.logger.Error("writer exit timeout")
 	}
+	websocketWaitGroup.Done()
 	return nil
 }
 
