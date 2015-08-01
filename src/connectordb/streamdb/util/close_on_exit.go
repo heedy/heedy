@@ -23,17 +23,20 @@ type Closeable interface {
 
 // CloseOnExit closes a resource when the program is exiting.
 func CloseOnExit(closeable Closeable) {
-	log.Debug("ADDEXIT")
 	atomic.AddInt32(&closeNumber, 1)
 	closeExiter.Do(func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
 		go func() {
+			<-c
+			log.Warn("Exiting...")
 			cnum := atomic.LoadInt32(&closeNumber)
 			for cnum > 0 {
 				<-closeCounter
-				log.Debug("Got an exit")
 				cnum = atomic.LoadInt32(&closeNumber)
 			}
-			log.Warn("Exiting...")
+			log.Debug("bye!")
 			os.Exit(0)
 		}()
 	})
@@ -53,7 +56,6 @@ func CloseOnExit(closeable Closeable) {
 			}
 		}()
 		<-c
-		log.Debug("EXIT")
 		closeable.Close()
 		atomic.AddInt32(&closeNumber, -1)
 		closeCounter <- true
