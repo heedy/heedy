@@ -73,7 +73,6 @@ type Shell struct {
 	VersionString   string
 	CopyrightString string
 	running         bool
-	commands        []ShellCommand
 	host            string
 	reader          *bufio.Reader
 	sdb             *streamdb.Database
@@ -98,19 +97,20 @@ func (s *Shell) RunCommand(cmdstring string) {
 	s.execCommand(command...)
 }
 
-func (s *Shell) execCommand(command ...string) {
+func (s *Shell) execCommand(command ...string) uint8 {
 	if len(command) == 0 {
-		return
+		return 1
 	}
 
-	for _, cmd := range s.commands {
-		if cmd.Name() == command[0] {
-			cmd.Execute(s, command)
-			return
+	for _, cmd := range allCommands {
+		if cmd.name == command[0] {
+
+			return cmd.main(s, command)
 		}
 	}
 
 	fmt.Printf("Command '%v' not found, use 'help' to list available commands\n", command[0])
+	return 1
 }
 
 func CreateShell(sdb *streamdb.Database) *Shell {
@@ -118,25 +118,6 @@ func CreateShell(sdb *streamdb.Database) *Shell {
 	s.VersionString = "ConnectorDB Shell v" + streamdb.Version
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
-	s.commands = []ShellCommand{
-		AddDev{},
-		AddStream{},
-		AddUser{},
-		Cat{},
-		Clear{},
-		Dbinfo{},
-		Help{},
-		Exit{},
-		GrantAdmin{},
-		Passwd{},
-		Rm{},
-		RevokeAdmin{},
-		Ls{},
-		LsCxn{},
-		ListUsers{},
-		ListDevices{},
-		Sql{},
-		Su{}}
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
@@ -172,6 +153,12 @@ func (s *Shell) Motd() {
 	fmt.Println()
 	fmt.Printf("%v\n", s.VersionString)
 	fmt.Printf("%v\n\n", s.CopyrightString)
+}
+
+// Prints a question then returns ther user's answer
+func (s *Shell) ReadAnswer(question string) string {
+	fmt.Print(question)
+	return s.ReadLine()
 }
 
 // Reads a line of input from the shell
@@ -210,7 +197,7 @@ func (s *Shell) ReadRepeatPassword() string {
 // Prints an error if it exists. Returns true if printed, false if not
 func (s *Shell) PrintError(err error) bool {
 	if err != nil {
-		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
+		s.PrintErrorText("Error: %v", err.Error())
 	}
 
 	return err != nil
@@ -230,64 +217,13 @@ func (s *Shell) ResolvePath(path string) string {
 	return s.pwd + path
 }
 
-// The ShellCommand is an internal command within our internal shell.
-type ShellCommand interface {
-	// Returns the help string associated with this command.
-	Help() string
-
-	// Returns the help for a specific command
-	Usage() string
-
-	// Execute the command with the given arguments
-	Execute(shell *Shell, args []string)
-
-	// Returns the name of this shell command, should be all lower case
-	Name() string
+// Prints something in title text
+func (s *Shell) PrintTitle(title string) {
+	fmt.Printf(Bold + title + Reset + "\n\n")
 }
 
-// The help command
-type Help struct {
-}
-
-func (h Help) Help() string {
-	return "Prints this dialog"
-}
-
-func (h Help) Usage() string {
-	return `Displays help information about the built in commands.
-
-	Usage: help [commandname]
-
-	The optional command name will show more detailed information about a given
-	command.
-`
-}
-
-func (h Help) Execute(shell *Shell, args []string) {
-	if len(args) == 2 {
-		for _, cmd := range shell.commands {
-			if cmd.Name() == args[1] {
-				fmt.Println(Bold)
-				fmt.Printf("%s Help\n"+Reset, args[1])
-				fmt.Println("")
-				fmt.Printf(cmd.Usage())
-				return
-			}
-		}
-		fmt.Printf(Red+"%s not found, listing known commands:\n"+Reset, args[1])
-	}
-
-	fmt.Println(Bold)
-	fmt.Printf("ConnectorDB Shell Help\n" + Reset)
+// Prints something in title text
+func (s *Shell) PrintErrorText(format string, args ...interface{}) {
+	fmt.Printf(Red+format+Reset, args...)
 	fmt.Println("")
-
-	for _, cmd := range shell.commands {
-		fmt.Printf("%v\t- %v\n", cmd.Name(), cmd.Help())
-	}
-	fmt.Println("")
-	fmt.Println("Use 'help [commandname]' to show help for a specific command.")
-}
-
-func (h Help) Name() string {
-	return "help"
 }

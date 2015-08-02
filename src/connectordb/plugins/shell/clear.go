@@ -1,24 +1,23 @@
 package shell
 
+/* Clears the screen
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import "fmt"
 
-// The clear command
-type Clear struct {
-}
+func init() {
+	help := "Clears the screen"
+	usage := `Usage: clear`
+	name := "clear"
 
-func (h Clear) Help() string {
-	return "Clears the screen"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		fmt.Println(Reset)
+		shell.Cls()
+		return 0
+	}
 
-func (h Clear) Usage() string {
-	return ""
-}
-
-func (h Clear) Execute(shell *Shell, args []string) {
-	fmt.Println(Reset)
-	shell.Cls()
-}
-
-func (h Clear) Name() string {
-	return "clear"
+	registerShellCommand(help, usage, name, main)
 }
