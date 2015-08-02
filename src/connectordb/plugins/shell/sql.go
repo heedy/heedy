@@ -1,15 +1,10 @@
 package shell
 
-/**
+/* Provides the ability to open the sql database locally.
 
-Provides the ability to open the sql database locally.
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
-
-**/
+*/
 
 import (
 	"connectordb/config"
@@ -17,27 +12,19 @@ import (
 	"os/exec"
 )
 
-// The clear command
-type Sql struct {
-}
+func init() {
+	help := "Runs an interactive database shell"
+	usage := `Usage: sql`
+	name := "sql"
 
-func (h Sql) Help() string {
-	return "Runs an interactive database shell"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		cmd := exec.Command("psql", config.GetDatabaseConnectionString())
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Run()
+		return 0
+	}
 
-func (h Sql) Usage() string {
-	return "sql"
-}
-
-func (h Sql) Execute(shell *Shell, args []string) {
-
-	cmd := exec.Command("psql", config.GetDatabaseConnectionString())
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Run()
-}
-
-func (h Sql) Name() string {
-	return "sql"
+	registerShellCommand(help, usage, name, main)
 }

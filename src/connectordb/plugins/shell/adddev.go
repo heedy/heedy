@@ -1,37 +1,36 @@
 package shell
 
+/* Provides the ability to create devices
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import (
 	"fmt"
 )
 
-// The command to add a device
-type AddDev struct {
-}
+func init() {
+	help := "Creates a new Device"
+	usage := "adddev user/dev"
+	name := "adddev"
 
-func (h AddDev) Help() string {
-	return "Creates a new Device"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		if len(args) != 2 {
+			fmt.Printf(Red + "Error: Wrong number of args\n" + Reset)
+			return 1
+		}
 
-func (h AddDev) Usage() string {
-	return "adddev user/dev"
-}
+		path := args[1]
+		err := shell.operator.CreateDevice(path)
 
-func (h AddDev) Execute(shell *Shell, args []string) {
-	if len(args) != 2 {
-		fmt.Printf(Red + "Error: Wrong number of args\n" + Reset)
+		if shell.PrintError(err) {
+			return 1
+		}
+
+		fmt.Printf("Device created: %v\n", path)
+		return 0
 	}
 
-	path := args[1]
-
-	fmt.Printf("Creating Device %v\n", path)
-
-	err := shell.operator.CreateDevice(path)
-
-	if err != nil {
-		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
-	}
-}
-
-func (h AddDev) Name() string {
-	return "adddev"
+	registerShellCommand(help, usage, name, main)
 }

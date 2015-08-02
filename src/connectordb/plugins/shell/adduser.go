@@ -1,59 +1,47 @@
 package shell
 
+/* Provides the ability to create users
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import (
 	"fmt"
 )
 
-// The command to add a user
-type AddUser struct {
-}
+func init() {
+	help := "An interactive session to create a new user"
+	usage := "adduser"
+	name := "adduser"
 
-func (h AddUser) Help() string {
-	return "Creates a new user"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		name := shell.ReadAnswer("Enter the name for the new user: ")
+		email := shell.ReadAnswer("Enter the email for the new user: ")
 
-func (h AddUser) Usage() string {
-	return ""
-}
+		// Do the password check
+		password := ""
+		for password == "" {
+			password = shell.ReadRepeatPassword()
 
-func (h AddUser) Execute(shell *Shell, args []string) {
-	// TODO grant admin
-	fmt.Print("Enter the name for the new user: ")
-	name := shell.ReadLine()
+			if password == "" {
+				decision := shell.ReadAnswer("Passwords did not match, type 'yes' to try again")
 
-	fmt.Print("Enter the email for the new user: ")
-	email := shell.ReadLine()
-
-	// Do the password check
-	passdiff := true
-	pass1 := ""
-	for passdiff {
-		fmt.Println("Enter password for new user:")
-		fmt.Print(Password)
-		pass1 = shell.ReadLine()
-		fmt.Println(Reset + "Re-enter password:" + Black)
-		pass2 := shell.ReadLine()
-		fmt.Print(Reset)
-
-		if pass1 == pass2 {
-			passdiff = false
-		} else {
-			fmt.Println("Passwords did not match, type 'yes' to try again")
-			decision := shell.ReadLine()
-			if decision != "yes" {
-				return
+				if decision != "yes" {
+					return 1
+				}
 			}
 		}
+
+		fmt.Printf("Creating User %v at %v\n", name, email)
+
+		err := shell.operator.CreateUser(name, email, password)
+		if shell.PrintError(err) {
+			return 1
+		}
+
+		return 0
 	}
 
-	fmt.Printf("Creating User %v at %v\n", name, email)
-
-	err := shell.operator.CreateUser(name, email, pass1)
-	if err != nil {
-		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
-	}
-}
-
-func (h AddUser) Name() string {
-	return "adduser"
+	registerShellCommand(help, usage, name, main)
 }

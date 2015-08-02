@@ -1,47 +1,35 @@
 package shell
 
-/**
+/* Gives information about the state of the database
 
-Gives information about the state of the database
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
-
-**/
+*/
 
 import (
 	"connectordb/config"
 	"fmt"
 )
 
-// The clear command
-type Dbinfo struct {
-}
+func init() {
+	help := "Prints information about the database to the console"
+	usage := `Usage: dbinfo`
+	name := "dbinfo"
 
-func (h Dbinfo) Help() string {
-	return "Prints information about the database to the console"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		dbcxn := config.GetDatabaseConnectionString()
+		fmt.Printf("Database: %v\n", dbcxn)
 
-func (h Dbinfo) Usage() string {
-	return `Usage: dbinfo`
-}
+		users, _ := shell.operator.CountUsers()
+		fmt.Printf("UserCount: %v\n", users)
 
-func (h Dbinfo) Execute(shell *Shell, args []string) {
-	dbcxn := config.GetDatabaseConnectionString()
-	fmt.Printf("Database: %v\n", dbcxn)
+		devices, _ := shell.operator.CountDevices()
+		fmt.Printf("DeviceCount: %v\n", devices)
 
-	users, _ := shell.operator.CountUsers()
-	fmt.Printf("UserCount: %v\n", users)
+		streams, _ := shell.operator.CountStreams()
+		fmt.Printf("StreamCount: %v\n", streams)
+		return 0
+	}
 
-	devices, _ := shell.operator.CountDevices()
-	fmt.Printf("DeviceCount: %v\n", devices)
-
-	streams, _ := shell.operator.CountStreams()
-	fmt.Printf("StreamCount: %v\n", streams)
-}
-
-func (h Dbinfo) Name() string {
-	return "dbinfo"
+	registerShellCommand(help, usage, name, main)
 }
