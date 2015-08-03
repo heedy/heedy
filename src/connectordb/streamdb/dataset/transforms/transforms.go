@@ -23,18 +23,27 @@ type DatapointTransform interface {
 type TransformGenerator func(args []string) (DatapointTransform, error)
 
 //Transforms is the map of all registered transforms
-var Transforms = map[string]TransformGenerator{
-	"lt":    Lt,
-	"gt":    Gt,
-	"lte":   Lte,
-	"gte":   Gte,
-	"eq":    Eq,
-	"iflt":  IfLt,
-	"ifgt":  IfGt,
-	"iflte": IfLte,
-	"ifgte": IfGte,
-	"ifeq":  IfEq,
-	"get":   Get,
-	"has":   Has,
-	"ifhas": IfHas,
+var Transforms map[string]TransformGenerator
+
+func init() {
+	Transforms = map[string]TransformGenerator{
+		//comparisons
+		"lt":  Lt,
+		"gt":  Gt,
+		"lte": Lte,
+		"gte": Gte,
+		"eq":  Eq,
+		//ifcomparisons
+		"iflt":  IfLt,
+		"ifgt":  IfGt,
+		"iflte": IfLte,
+		"ifgte": IfGte,
+		"ifeq":  IfEq,
+		"or":    Or,
+		"if":    If,
+		//object
+		"get":   Get,
+		"has":   Has,
+		"ifhas": IfHas,
+	}
 }

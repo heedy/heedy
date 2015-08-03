@@ -19,6 +19,7 @@ func TestPipeline(t *testing.T) {
 		{"lt(5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"has('test'):lt(1)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"ifhas('test'):lt(1)", false, false, &Datapoint{Data: 4}, nil},
+		{"if(`has('test')`):lt(1)", false, false, &Datapoint{Data: 4}, nil},
 		{"ifhas('test'):get('test'):lt(1)", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, &Datapoint{Data: false}},
 		{"ifhas('tst'):get('test'):lt(1)", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, nil},
 		{"ifhas('test'):get('test'):gt(1)", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, &Datapoint{Data: true}},

@@ -25,3 +25,12 @@ func TestFilterTransform(t *testing.T) {
 		{[]string{"20.0", "hi", "hi2"}, "iflt", true, false, Datapoint{Data: 15}, &Datapoint{Data: 15}},
 	})
 }
+
+func TestIfOr(t *testing.T) {
+	statelessTransformTester(t, []statelesstestcase{
+		{[]string{"lt(20.0)"}, "if", false, false, Datapoint{Data: 15}, &Datapoint{Data: 15}},
+		{[]string{"lt(20.0)"}, "if", false, false, Datapoint{Data: 25}, nil},
+		{[]string{"lt(20.0)", "gte(25.0)"}, "if", false, false, Datapoint{Data: 25}, &Datapoint{Data: 25}},
+		{[]string{"lt(20.0)", "gte(26.0)"}, "if", false, false, Datapoint{Data: 25}, nil},
+	})
+}
