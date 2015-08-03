@@ -24,10 +24,12 @@ func statelessTransformTester(t *testing.T, testcases []statelesstestcase) {
 		if c.Haserror {
 			require.Error(t, err, duck.JSONString(c))
 		} else {
+			require.NoError(t, err, duck.JSONString(c))
 			dp, err := tr.Transform(&c.Input)
 			if c.Haserror2 {
 				require.Error(t, err, duck.JSONString(c))
 			} else {
+				require.NoError(t, err, duck.JSONString(c))
 				if c.Output != nil {
 					require.Equal(t, c.Output.String(), dp.String(), duck.JSONString(c))
 				} else {

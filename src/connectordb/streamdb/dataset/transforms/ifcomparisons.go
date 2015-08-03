@@ -1,7 +1,7 @@
 package transforms
 
 import (
-	. "connectordb/streamdb/datastream"
+	"connectordb/streamdb/datastream"
 	"errors"
 )
 
@@ -11,7 +11,7 @@ type BooleanFilterTransform struct {
 	booltransform DatapointTransform
 }
 
-func (t BooleanFilterTransform) Transform(dp *Datapoint) (tdp *Datapoint, err error) {
+func (t BooleanFilterTransform) Transform(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 	if dp == nil {
 		return nil, nil
 	}

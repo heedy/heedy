@@ -1,7 +1,7 @@
 package transforms
 
 import (
-	. "connectordb/streamdb/datastream"
+	"connectordb/streamdb/datastream"
 	"errors"
 
 	"github.com/connectordb/duck"
@@ -14,7 +14,7 @@ type ComparisonTransform struct {
 	comparison int
 }
 
-func (t *ComparisonTransform) Transform(dp *Datapoint) (*Datapoint, error) {
+func (t *ComparisonTransform) Transform(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
 
 	if dp == nil {
 		return nil, nil
@@ -32,7 +32,7 @@ func (t *ComparisonTransform) Transform(dp *Datapoint) (*Datapoint, error) {
 
 	dnum, ok := duck.Float(result.Data)
 	if !ok {
-		return nil, errors.New("comparison: Could not convert datapoint to number (" + duck.JSONString(result) + ")")
+		return nil, errors.New("comparison: Could not convert Datapoint to number (" + duck.JSONString(result) + ")")
 	}
 
 	switch t.comparison {
@@ -88,7 +88,7 @@ type EqualTransform struct {
 	subobject string
 }
 
-func (t *EqualTransform) Transform(dp *Datapoint) (*Datapoint, error) {
+func (t *EqualTransform) Transform(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
 	var ok bool
 	if dp == nil {
 		return nil, nil
