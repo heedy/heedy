@@ -24,9 +24,14 @@ type TransformGenerator func(args []string) (DatapointTransform, error)
 
 //Transforms is the map of all registered transforms
 var Transforms = map[string]TransformGenerator{
-	"lt":  Lt,
-	"gt":  Gt,
-	"lte": Lte,
-	"gte": Gte,
-	"eq":  Eq,
+	"lt":    Lt,
+	"gt":    Gt,
+	"lte":   Lte,
+	"gte":   Gte,
+	"eq":    Eq,
+	"iflt":  IfLt,
+	"ifgt":  IfGt,
+	"iflte": IfLte,
+	"ifgte": IfGte,
+	"ifeq":  IfEq,
 }

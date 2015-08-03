@@ -1,4 +1,4 @@
-package dataset
+package pipeline
 
 import (
 	"errors"
