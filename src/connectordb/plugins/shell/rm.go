@@ -1,65 +1,50 @@
 package shell
 
-/**
+/* Facilitates removal of users/devices/streams
 
-Provides the ability to remove users/devices/streams
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
+*/
 
-**/
+import "fmt"
 
-import (
-	"fmt"
-)
+func init() {
+	help := "Removes a user/device/stream: 'rm path'"
+	usage := `Usage: rm path`
+	name := "rm"
 
-// The clear command
-type Rm struct {
-}
+	main := func(shell *Shell, args []string) uint8 {
+		if len(args) < 2 {
+			fmt.Println(Red + "Must supply a user/dev/stream path" + Reset)
+			return 1
+		}
 
-func (h Rm) Help() string {
-	return "Removes a user/device/stream: 'rm path'"
-}
+		path := shell.ResolvePath(args[1])
+		usr, dev, stream := shell.ReadPath(path)
 
-func (h Rm) Usage() string {
-	return "rm usr[/dev[/stream]]"
-}
+		var err error
+		var removedName string
 
-func (h Rm) Execute(shell *Shell, args []string) {
-	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a user/dev/stream path" + Reset)
-		return
+		switch {
+		case stream != nil:
+			err = shell.operator.DeleteStreamByID(stream.StreamId, "")
+			removedName = stream.Name
+		case dev != nil:
+			err = shell.operator.DeleteDeviceByID(dev.DeviceId)
+			removedName = dev.Name
+		case usr != nil:
+			err = shell.operator.DeleteUserByID(usr.UserId)
+			removedName = usr.Name
+
+		}
+
+		if shell.PrintError(err) {
+			return 1
+		}
+
+		fmt.Println(Green + "Removed: " + removedName + Reset)
+		return 0
 	}
 
-	path := shell.ResolvePath(args[1])
-	usr, dev, stream := shell.ReadPath(path)
-
-	var err error
-	var removedName string
-
-	switch {
-	case stream != nil:
-		err = shell.operator.DeleteStreamByID(stream.StreamId, "")
-		removedName = stream.Name
-	case dev != nil:
-		err = shell.operator.DeleteDeviceByID(dev.DeviceId)
-		removedName = dev.Name
-	case usr != nil:
-		err = shell.operator.DeleteUserByID(usr.UserId)
-		removedName = usr.Name
-
-	}
-
-	if err != nil {
-		fmt.Println(Red + err.Error() + Reset)
-		return
-	}
-
-	fmt.Println(Green + "Removed: " + removedName + Reset)
-}
-
-func (h Rm) Name() string {
-	return "rm"
+	registerShellCommand(help, usage, name, main)
 }

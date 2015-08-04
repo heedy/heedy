@@ -112,27 +112,27 @@ func TestTimePlusIndexRange(t *testing.T) {
 	require.EqualValues(t, dp.String(), dpa7[5].String())
 	dr.Close()
 
-	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., -1)
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 0, -1)
 	require.NoError(t, err)
 	dp, err = dr.Next()
 	require.NoError(t, err)
 	require.EqualValues(t, dp.String(), dpa7[4].String())
 	dr.Close()
 
-	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., -50)
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 0, -50)
 	require.NoError(t, err)
 	dp, err = dr.Next()
 	require.NoError(t, err)
 	require.EqualValues(t, dp.String(), dpa7[0].String())
 	dr.Close()
 
-	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 2)
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 0, 2)
 	require.NoError(t, err)
 	dp, err = dr.Next()
 	require.NoError(t, err)
 	require.EqualValues(t, dp.String(), dpa7[7].String())
 	dr.Close()
 
-	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 50)
+	dr, err = ds.TimePlusIndexRange(0, 1, "", 5., 0, 50)
 	require.Error(t, err)
 }

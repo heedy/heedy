@@ -251,7 +251,7 @@ func BenchmarkRead1000(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		dr, err := db.GetStreamIndexRange("streamdb_test/user/mystream", 0, 0)
+		dr, err := db.GetStreamIndexRange("streamdb_test/user/mystream", 0, 0, "")
 		require.NoError(b, err)
 		v, err := dr.Next()
 		require.NoError(b, err)
@@ -298,7 +298,7 @@ func BenchmarkReadLast10(b *testing.B) {
 		//fmt.Println("Starting")
 
 		//fmt.Println("T=", time.Since(t))
-		dr, err := db.GetStreamIndexRange("streamdb_test/user/mystream", -10, 0)
+		dr, err := db.GetStreamIndexRange("streamdb_test/user/mystream", -10, 0, "")
 		require.NoError(b, err)
 		//fmt.Println("T=", time.Since(t))
 		v, err := dr.Next()

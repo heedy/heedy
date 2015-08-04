@@ -1,6 +1,9 @@
 package interpolators
 
-import . "connectordb/streamdb/datastream"
+import (
+	"connectordb/streamdb/datastream"
+	"errors"
+)
 
 //AfterInterpolator interpolates a datarange by timestamp - getting the first
 //datapoint AFTER the given time.
@@ -10,13 +13,13 @@ import . "connectordb/streamdb/datastream"
 //	meaning that this interpolator would iterate through ALL 1 million to get to the 2 that it cares
 //	about, certainly not the best way to go about things)
 type AfterInterpolator struct {
-	prevDatapoint *Datapoint
+	prevDatapoint *datastream.Datapoint
 
-	currentRange DataRange
+	currentRange datastream.DataRange
 }
 
-//Next gets the datapoint corresponding to the interpolation timestamp
-func (i *AfterInterpolator) Next(ts float64) (dp *Datapoint, err error) {
+//Interpolate gets the datapoint corresponding to the interpolation timestamp
+func (i *AfterInterpolator) Interpolate(ts float64) (dp *datastream.Datapoint, err error) {
 	if i.prevDatapoint != nil && i.prevDatapoint.Timestamp > ts {
 		return i.prevDatapoint, nil
 	}
@@ -36,8 +39,10 @@ func (i *AfterInterpolator) Close() {
 	i.currentRange.Close()
 }
 
-//NewAfterInterpolator returns the AfterInterpolator for the given stream and starting time
-func NewAfterInterpolator(ds *DataStream, device, stream int64, substream string, starttime float64) (*AfterInterpolator, error) {
-	dr, err := ds.TRange(device, stream, substream, starttime, 0)
-	return &AfterInterpolator{nil, dr}, err
+//NewAfterInterpolator returns the AfterInterpolator for the given DataRange
+func NewAfterInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
+	if len(args) > 0 {
+		return nil, errors.New("after interpolator does not accept arguments")
+	}
+	return &AfterInterpolator{nil, dr}, nil
 }

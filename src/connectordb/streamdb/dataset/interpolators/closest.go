@@ -1,20 +1,21 @@
 package interpolators
 
 import (
-	. "connectordb/streamdb/datastream"
+	"connectordb/streamdb/datastream"
+	"errors"
 	"math"
 )
 
 //ClosestInterpolator interpolates a datarange by timestamp - getting the datapoint with the closest timestamp
 type ClosestInterpolator struct {
-	prevDatapoint *Datapoint
-	curDatapoint  *Datapoint
+	prevDatapoint *datastream.Datapoint
+	curDatapoint  *datastream.Datapoint
 
-	currentRange DataRange
+	currentRange datastream.DataRange
 }
 
 //Next gets the datapoint corresponding to the interpolation timestamp
-func (i *ClosestInterpolator) Next(ts float64) (dp *Datapoint, err error) {
+func (i *ClosestInterpolator) Interpolate(ts float64) (dp *datastream.Datapoint, err error) {
 
 	for i.curDatapoint != nil && i.curDatapoint.Timestamp <= ts {
 		i.prevDatapoint = i.curDatapoint
@@ -42,11 +43,11 @@ func (i *ClosestInterpolator) Close() {
 }
 
 //NewClosestInterpolator returns the ClosestInterpolator for the given stream and starting time
-func NewClosestInterpolator(ds *DataStream, device, stream int64, substream string, starttime float64) (*ClosestInterpolator, error) {
-	dr, err := ds.TimePlusIndexRange(device, stream, substream, starttime, -1)
-	if err != nil {
-		return nil, err
+func NewClosestInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
+	if len(args) > 0 {
+		return nil, errors.New("before interpolator does not accept arguments")
 	}
+
 	pd, err := dr.Next()
 	if err != nil {
 		return nil, err

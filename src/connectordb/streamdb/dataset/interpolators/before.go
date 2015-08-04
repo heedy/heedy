@@ -1,6 +1,9 @@
 package interpolators
 
-import . "connectordb/streamdb/datastream"
+import (
+	"connectordb/streamdb/datastream"
+	"errors"
+)
 
 //BeforeInterpolator interpolates a datarange by timestamp - getting the first
 //datapoint BEFORE the given time.
@@ -10,14 +13,14 @@ import . "connectordb/streamdb/datastream"
 //	meaning that this interpolator would iterate through ALL 1 million to get to the 2 that it cares
 //	about, certainly not the best way to go about things)
 type BeforeInterpolator struct {
-	prevDatapoint *Datapoint
-	curDatapoint  *Datapoint
+	prevDatapoint *datastream.Datapoint
+	curDatapoint  *datastream.Datapoint
 
-	currentRange DataRange
+	currentRange datastream.DataRange
 }
 
-//Next gets the datapoint corresponding to the interpolation timestamp
-func (i *BeforeInterpolator) Next(ts float64) (dp *Datapoint, err error) {
+//Interpolate gets the datapoint corresponding to the interpolation timestamp
+func (i *BeforeInterpolator) Interpolate(ts float64) (dp *datastream.Datapoint, err error) {
 
 	for i.curDatapoint != nil && i.curDatapoint.Timestamp <= ts {
 		i.prevDatapoint = i.curDatapoint
@@ -38,10 +41,9 @@ func (i *BeforeInterpolator) Close() {
 }
 
 //NewBeforeInterpolator returns the BeforeInterpolator for the given stream and starting time
-func NewBeforeInterpolator(ds *DataStream, device, stream int64, substream string, starttime float64) (*BeforeInterpolator, error) {
-	dr, err := ds.TimePlusIndexRange(device, stream, substream, starttime, -1)
-	if err != nil {
-		return nil, err
+func NewBeforeInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
+	if len(args) > 0 {
+		return nil, errors.New("before interpolator does not accept arguments")
 	}
 	pd, err := dr.Next()
 	if err != nil {

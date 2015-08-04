@@ -1,46 +1,34 @@
 package shell
 
-/**
+/* Grants admin to a user
 
-Provides the ability to list users
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
-
-**/
+*/
 
 import "fmt"
 
-// The clear command
-type GrantAdmin struct {
-}
+func init() {
+	help := "Grants admin to a user: 'grantadmin username'"
+	usage := `Usage: grantadmin username`
+	name := "mkadmin"
 
-func (h GrantAdmin) Help() string {
-	return "Grants admin to a user: 'grantadmin username'"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		if len(args) < 2 {
+			fmt.Println(Red + "Must supply a name" + Reset)
+			return 1
+		}
 
-func (h GrantAdmin) Usage() string {
-	return ""
-}
+		operator := shell.operator
 
-func (h GrantAdmin) Execute(shell *Shell, args []string) {
-	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a name" + Reset)
-		return
+		err := operator.SetAdmin(args[1], true)
+		if shell.PrintError(err) {
+			return 1
+		}
+
+		fmt.Println(Green + "Granted admin to: " + args[1] + Reset)
+		return 0
 	}
 
-	operator := shell.operator
-
-	err := operator.SetAdmin(args[1], true)
-	if shell.PrintError(err) {
-		return
-	}
-
-	fmt.Println(Green + "Granted admin to: " + args[1] + Reset)
-}
-
-func (h GrantAdmin) Name() string {
-	return "mkadmin"
+	registerShellCommand(help, usage, name, main)
 }

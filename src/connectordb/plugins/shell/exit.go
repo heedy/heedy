@@ -1,24 +1,23 @@
 package shell
 
+/* Quits the shell
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import "fmt"
 
-// The Exit command
-type Exit struct {
-}
+func init() {
+	help := "Quits the running interactive session."
+	usage := `Usage: exit`
+	name := "exit"
 
-func (h Exit) Help() string {
-	return "Quits the interactive shell"
-}
+	main := func(shell *Shell, args []string) uint8 {
+		fmt.Printf("exit\n")
+		shell.running = false
+		return 0
+	}
 
-func (h Exit) Usage() string {
-	return h.Help()
-}
-
-func (h Exit) Execute(shell *Shell, args []string) {
-	fmt.Printf("exit\n")
-	shell.running = false
-}
-
-func (h Exit) Name() string {
-	return "exit"
+	registerShellCommand(help, usage, name, main)
 }

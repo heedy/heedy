@@ -11,6 +11,7 @@ All Rights Reserved
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/schema"
+	"connectordb/streamdb/util"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -110,6 +111,12 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) e
 
 	// Validate that the schema is correct
 	if _, err := schema.NewSchema(Type); err != nil {
+		return ErrInvalidSchema
+	}
+
+	// Validate no object subtypes (they are valid, but not in this database
+	// due to ml considerations)
+	if util.SchemaContainsObjectFields(Type) {
 		return ErrInvalidSchema
 	}
 
