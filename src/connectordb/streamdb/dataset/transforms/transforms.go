@@ -19,6 +19,15 @@ type DatapointTransform interface {
 	Transform(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
 }
 
+// A straightforward wrapper for functions that adhere to DatapointTransform
+type DatapointTransformWrapper struct {
+	Transformer func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
+}
+
+func (d DatapointTransformWrapper) Transform(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
+	return d.Transformer(dp)
+}
+
 //TransformGenerator is the signature of a function that generates a transform
 type TransformGenerator func(args []string) (DatapointTransform, error)
 
