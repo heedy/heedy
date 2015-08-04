@@ -1,53 +1,19 @@
 package interpolators
 
 import (
+	"connectordb/streamdb/datastream"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestBeforeInterpolator(t *testing.T) {
-	ai, err := NewBeforeInterpolator(ds, 0, 0, "", 2.5)
-	require.NoError(t, err)
-	defer ai.Close()
-
-	//Make sure it started at right time
-	dp, err := ai.Next(0.5)
-	require.NoError(t, err)
-	require.Nil(t, dp)
-
-	//Make sure that it moves back at least one index
-	dp, err = ai.Next(2.5)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[1].String())
-
-	//Make sure it can iterate through many
-	dp, err = ai.Next(5.0)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[4].String())
-
-	//Make sure it shows second of 2
-	dp, err = ai.Next(6.0)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[6].String())
-
-	//Make sure it ends by keeping oldest datapoint
-	dp, err = ai.Next(8.0)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[8].String())
-
-	dp, err = ai.Next(20.0)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[8].String())
-
-	dp, err = ai.Next(30.0)
-	require.NoError(t, err)
-	require.NotNil(t, dp)
-	require.Equal(t, dp.String(), dpa[8].String())
-
+	interpolatorTester(t, "before", datastream.NewDatapointArrayRange(dpa, 0), []string{"hi"}, true, nil)
+	interpolatorTester(t, "before", datastream.NewDatapointArrayRange(dpa, 0), []string{}, false, []testcase{
+		testcase{0.5, false, nil},
+		testcase{2.5, false, &dpa[1]},
+		testcase{5.0, false, &dpa[4]},
+		testcase{6.0, false, &dpa[6]},
+		testcase{8.0, false, &dpa[8]},
+		testcase{20.0, false, &dpa[8]},
+		testcase{30.0, false, &dpa[8]},
+	})
 }
