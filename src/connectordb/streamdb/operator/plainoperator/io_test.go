@@ -148,6 +148,20 @@ func TestStreamIO(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, dp)
 
+	dr, err = db.GetShiftedStreamTimeRange("tst/tst/tst", 0.0, 2.5, 1, 1, "")
+	require.NoError(t, err)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.NotNil(t, dp)
+	require.Equal(t, "2", dp.Data)
+	require.Equal(t, 2.0, dp.Timestamp)
+	require.Equal(t, "", dp.Sender)
+
+	dp, err = dr.Next()
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
 	dr.Close()
 
 	dr, err = db.GetStreamIndexRange("tst/tst/tst", 0, 2, "")

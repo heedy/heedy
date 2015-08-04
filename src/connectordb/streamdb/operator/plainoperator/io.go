@@ -100,6 +100,34 @@ func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string,
 	return dr, err
 }
 
+//GetShiftedStreamTimeRangeByID reads time range by ID with an index shift
+func (o *PlainOperator) GetShiftedStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, shift, limit int64, transform string) (datastream.DataRange, error) {
+	strm, err := o.ReadStreamByID(streamID)
+	if err != nil {
+		return nil, err
+	}
+
+	dr, err := o.ds.TimePlusIndexRange(strm.DeviceId, strm.StreamId, substream, t1, t2, shift)
+	if err != nil {
+		return nil, err
+	}
+
+	if limit > 0 {
+		dr = datastream.NewNumRange(dr, limit)
+	}
+	//Add a transform to the resulting data range if one is wanted
+	if transform != "" {
+		tr, err := dataset.NewTransformRange(dr, transform)
+		if err != nil {
+			dr.Close()
+			return nil, err
+		}
+		dr = tr
+	}
+
+	return dr, err
+}
+
 //GetStreamIndexRangeByID reads index range by ID
 func (o *PlainOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	strm, err := o.ReadStreamByID(streamID)

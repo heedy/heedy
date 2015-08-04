@@ -71,9 +71,16 @@ type BaseOperator interface {
 	substream - What substream of the stream to use, use empty string.
 	transform - the transformation pipeline to apply to the stream before returning it. Use "" if no transform.
 
-	TODO push the substream to an enumerator (Downlink|Null)
+	TODO push the substream to an enumerator (Downlink|Null) - | (dkumor) - not sure about this atm, since will
+	want substreams to generate "index streams" in the future - so i'd leave it as is
 	**/
 	GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error)
+
+	/**GetShiftedStreamTimeRangeByID functions exactly as GetStreamTimeRange. The only
+		difference is the extra "shift" argument, which shifts the returned data range by the given
+		number of datapoints, either forwards or backwards in time
+	**/
+	GetShiftedStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, shift, limit int64, transform string) (datastream.DataRange, error)
 
 	/**GetStreamIndexRangeByID Reads all datapoints in the given index range (i1, i2]
 
@@ -140,6 +147,7 @@ type PathOperator interface {
 
 	GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error)
 	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error)
+	GetShiftedStreamTimeRange(streampath string, t1 float64, t2 float64, ishift, limit int64, transform string) (datastream.DataRange, error)
 	InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error
 	LengthStream(streampath string) (int64, error)
 	Subscribe(path string, chn chan messenger.Message) (*nats.Subscription, error)

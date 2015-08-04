@@ -216,6 +216,19 @@ func (o *PathOperatorMixin) GetStreamTimeRange(streampath string, t1 float64, t2
 	return o.GetStreamTimeRangeByID(strm.StreamId, substream, t1, t2, limit, transform)
 }
 
+//GetShiftedStreamTimeRange Reads the given stream by time range with an index shift
+func (o *PathOperatorMixin) GetShiftedStreamTimeRange(streampath string, t1 float64, t2 float64, shift, limit int64, transform string) (datastream.DataRange, error) {
+	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)
+	if err != nil {
+		return nil, err
+	}
+	strm, err := o.ReadStream(streampath)
+	if err != nil {
+		return nil, err
+	}
+	return o.GetShiftedStreamTimeRangeByID(strm.StreamId, substream, t1, t2, shift, limit, transform)
+}
+
 //GetStreamIndexRange Reads the given stream by index range
 func (o *PathOperatorMixin) GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	_, _, streampath, _, substream, err := util.SplitStreamPath(streampath)

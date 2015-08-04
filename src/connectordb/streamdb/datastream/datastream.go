@@ -176,9 +176,9 @@ func (ds *DataStream) GetTimeIndex(device int64, stream int64, substream string,
 //	The range is to the end of the entire stream (ie, just close it when you don't need further data)
 //TODO: This function can be made much more efficient with a bit of cleverness regarding the underlying
 //	DataRanges
-func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream string, t float64, i int64) (DataRange, error) {
+func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream string, t1, t2 float64, i int64) (DataRange, error) {
 	//First off, we get the TRange
-	dr, err := ds.TRange(device, stream, substream, t, 0.0)
+	dr, err := ds.TRange(device, stream, substream, t1, t2)
 	if err != nil {
 		return nil, err
 	}
@@ -193,12 +193,16 @@ func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream s
 			//	in particular the dataset interpolators
 			i = 0
 		}
-		return ds.IRange(device, stream, substream, i, 0)
+		irng, err := ds.IRange(device, stream, substream, i, 0)
+		if err != nil {
+			return irng, err
+		}
+		return NewTimeRange(irng, -999999, t2)
 	}
 
 	//No need to query again, extract the new datarange from current one
 
-	//Currently, the only possibility is if i is >=0 and small, so we jsut iterate through
+	//Currently, the only possibility is if i is >=0 and small, so we just iterate through
 	for j := int64(0); j < i; j++ {
 		_, err := dr.Next()
 		if err != nil {
