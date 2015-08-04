@@ -30,15 +30,15 @@ func (p *TransformPipeline) Transform(dp *Datapoint) (rdp *Datapoint, err error)
 		//through the full transform, or the full array is cleared
 
 		for dp == nil && len(p.transforms) > 0 {
-
 			//get rid of starting nils
-			for i := 0; i < len(p.transforms); i++ {
-				dp, err = p.transforms[i].Transform(dp)
+			for dp == nil && len(p.transforms) > 0 {
+				dp, err = p.transforms[0].Transform(dp)
 				if err != nil {
 					return dp, err
 				}
-				if dp != nil {
-					p.transforms = p.transforms[i:]
+				if dp == nil {
+					p.transforms = p.transforms[1:]
+					break
 				}
 			}
 
