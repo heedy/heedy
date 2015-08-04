@@ -28,7 +28,7 @@ func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.
 		return nil, nil, err
 	}
 
-	dr, err := o.GetStreamIndexRange(streampath, -EntryLimit, 0)
+	dr, err := o.GetStreamIndexRange(streampath, -EntryLimit, 0, "")
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return nil, nil, err

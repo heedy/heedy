@@ -1,6 +1,7 @@
 package plainoperator
 
 import (
+	"connectordb/streamdb/dataset"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/messenger"
 	"connectordb/streamdb/users"
@@ -76,7 +77,7 @@ func (o *PlainOperator) InsertStreamByID(streamID int64, substream string, data 
 }
 
 //GetStreamTimeRangeByID reads time range by ID
-func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
+func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
@@ -86,15 +87,39 @@ func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string,
 	if limit > 0 {
 		dr = datastream.NewNumRange(dr, limit)
 	}
+	//Add a transform to the resulting data range if one is wanted
+	if transform != "" {
+		tr, err := dataset.NewTransformRange(dr, transform)
+		if err != nil {
+			dr.Close()
+			return nil, err
+		}
+		dr = tr
+	}
+
 	return dr, err
 }
 
 //GetStreamIndexRangeByID reads index range by ID
-func (o *PlainOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error) {
+func (o *PlainOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	strm, err := o.ReadStreamByID(streamID)
 	if err != nil {
 		return nil, err
 	}
 
-	return o.ds.IRange(strm.DeviceId, strm.StreamId, substream, i1, i2)
+	dr, err := o.ds.IRange(strm.DeviceId, strm.StreamId, substream, i1, i2)
+	if err != nil {
+		return nil, err
+	}
+
+	//Add a transform to the resulting data range if one is wanted
+	if transform != "" {
+		tr, err := dataset.NewTransformRange(dr, transform)
+		if err != nil {
+			dr.Close()
+			return nil, err
+		}
+		dr = tr
+	}
+	return dr, err
 }

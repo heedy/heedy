@@ -69,18 +69,20 @@ type BaseOperator interface {
 	t1,t2 - Unix time in seconds with up to ns resolution
 	limit - The maximum number of datapoints to return, 0 returns everything
 	substream - What substream of the stream to use, use empty string.
+	transform - the transformation pipeline to apply to the stream before returning it. Use "" if no transform.
 
 	TODO push the substream to an enumerator (Downlink|Null)
 	**/
-	GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error)
+	GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error)
 
 	/**GetStreamIndexRangeByID Reads all datapoints in the given index range (i1, i2]
 
 	i1,i2 - Index range, supports "fancy" indexing. i2 = 0 means end of stream,
 	        negative indices are from the end.
 	substream - What substream of the stream to use, use empty string.
+	transform - the transformation pipeline to apply to the stream before returning it. Use "" if no transform.
 	**/
-	GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error)
+	GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64, transform string) (datastream.DataRange, error)
 
 	SubscribeUserByID(userID int64, chn chan messenger.Message) (*nats.Subscription, error)
 	SubscribeDeviceByID(deviceID int64, chn chan messenger.Message) (*nats.Subscription, error)
@@ -136,8 +138,8 @@ type PathOperator interface {
 	// Sets/removes a user or device from being admin
 	SetAdmin(path string, isadmin bool) error
 
-	GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error)
-	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error)
+	GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error)
+	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error)
 	InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error
 	LengthStream(streampath string) (int64, error)
 	Subscribe(path string, chn chan messenger.Message) (*nats.Subscription, error)
