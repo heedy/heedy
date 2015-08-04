@@ -406,3 +406,26 @@ class TestConnectorDB(unittest.TestCase):
         db = connectordb.ConnectorDB(ak,url="http://localhost:8000")
 
         self.assertEqual(db.name,"test/user")
+
+
+    def test_transform(self):
+        db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
+        usr = db.getuser("python_test")
+        usr.create("py@email","mypass")
+        dev = usr["mydevice"]
+        dev.create()
+        s = db["teststream"]
+        s.create({"type": "number"})
+
+        s.insert(3)
+        s.insert(10)
+        s.insert(4)
+        s.insert(35)
+        s.insert(9)
+
+        dp = s(transform="ifgt(5):lt(20)")
+        self.assertEqual(3,len(dp))
+        self.assertEqual(True,dp[0]["d"])
+        self.assertEqual(False,dp[1]["d"])
+        self.assertEqual(True,dp[2]["d"])
+

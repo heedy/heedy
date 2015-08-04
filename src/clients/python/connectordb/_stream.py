@@ -68,13 +68,35 @@ class Stream(ConnectorObject):
             stop = obj.stop
             if stop is None:
                 stop = 0
-            return self.db.urlget(self.metaname+"/data?i1="+str(start)+"&i2="+str(stop)).json()
+            return self.db.urlget(self.metaname+"/data",{"i1": str(start),"i2": str(stop)}).json()
         else:
-            return self.db.urlget(self.metaname+"/data?i1="+str(obj)+"&i2="+str(obj+1)).json()[0]
+            return self.db.urlget(self.metaname+"/data",{"i1":str(obj),"i2":str(obj+1)}).json()[0]
 
-    def __call__(self,t1,t2=0,limit=0):
-        #Allows to get the datapoints in a stream between two times or with a limit
-        return self.db.urlget(self.metaname+"/data?t1="+str(t1)+"&t2="+str(t2)+"&limit="+str(limit)).json()
+    def __call__(self,t1=None,t2=None,limit=None,transform=None,i1=None,i2=None):
+        """call allows to get the data range of the stream by any means, and allowing a transform"""
+        params = {}
+        if not t1 is None:
+            params["t1"] = str(t1)
+        if not t2 is None:
+            params["t2"] = str(t2)
+        if not limit is None:
+            params["limit"] = str(limit)
+        if not i1 is None or not i2 is None:
+            if len(params) > 0:
+                raise AssertionError("Can't get stream both by index and by timestamp")
+
+            if not i1 is None:
+                params["i1"] = str(i1)
+            if not t2 is None:
+                params["i2"] = str(i2)
+        #ConnectorDB doesn't accept null queries
+        if len(params)==0:
+            params["i1"]="0"
+
+        if not transform is None:
+            params["transform"] = transform
+
+        return self.db.urlget(self.metaname+"/data",params).json()
 
     def subscribe(self,callback,downlink=False):
         '''Stream subscription is a bit more comples, since a stream can be a downlink and can have substreams
