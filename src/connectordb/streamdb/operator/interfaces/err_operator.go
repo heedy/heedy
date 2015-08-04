@@ -110,10 +110,13 @@ func (eo ErrOperator) TimeToIndexStreamByID(streamID int64, substream string, ti
 func (eo ErrOperator) InsertStreamByID(streamID int64, substream string, data datastream.DatapointArray, restamp bool) error {
 	return BadOperatorErr
 }
-func (eo ErrOperator) GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
+func (eo ErrOperator) GetStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error) {
 	return nil, BadOperatorErr
 }
-func (eo ErrOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64) (datastream.DataRange, error) {
+func (eo ErrOperator) GetShiftedStreamTimeRangeByID(streamID int64, substream string, t1 float64, t2 float64, shift int64, limit int64, transform string) (datastream.DataRange, error) {
+	return nil, BadOperatorErr
+}
+func (eo ErrOperator) GetStreamIndexRangeByID(streamID int64, substream string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	return nil, BadOperatorErr
 }
 
@@ -168,13 +171,16 @@ func (eo ErrOperator) ReadAllStreams(devicepath string) ([]users.Stream, error) 
 func (eo ErrOperator) SetAdmin(path string, isadmin bool) error {
 	return BadOperatorErr
 }
-func (eo ErrOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64) (datastream.DataRange, error) {
+func (eo ErrOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	return nil, BadOperatorErr
 }
 func (eo ErrOperator) InsertStream(streampath string, data datastream.DatapointArray, restamp bool) error {
 	return BadOperatorErr
 }
-func (eo ErrOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64) (datastream.DataRange, error) {
+func (eo ErrOperator) GetShiftedStreamTimeRange(streampath string, t1 float64, t2 float64, shift, limit int64, transform string) (datastream.DataRange, error) {
+	return nil, BadOperatorErr
+}
+func (eo ErrOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error) {
 	return nil, BadOperatorErr
 }
 func (eo ErrOperator) LengthStream(streampath string) (int64, error) {

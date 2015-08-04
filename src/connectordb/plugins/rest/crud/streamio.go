@@ -89,11 +89,12 @@ func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 	q := request.URL.Query()
+	transform := q.Get("transform")
 
 	i1, i2, err := restcore.ParseIRange(q)
 	if err == nil {
 		querylog := fmt.Sprintf("irange [%d,%d)", i1, i2)
-		dr, err := o.GetStreamIndexRange(streampath, i1, i2)
+		dr, err := o.GetStreamIndexRange(streampath, i1, i2, transform)
 		lvl, _ := writeJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	} else if err != restcore.ErrCantParse {
@@ -105,7 +106,7 @@ func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.
 	t1, t2, lim, err := restcore.ParseTRange(q)
 	if err == nil {
 		querylog := fmt.Sprintf("trange [%.1f,%.1f) limit=%d", t1, t2, lim)
-		dr, err := o.GetStreamTimeRange(streampath, t1, t2, lim)
+		dr, err := o.GetStreamTimeRange(streampath, t1, t2, lim, transform)
 		lvl, _ := writeJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	}

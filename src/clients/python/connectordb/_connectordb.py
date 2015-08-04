@@ -45,11 +45,11 @@ class ConnectorDB(Device):
         self.ws = WebsocketHandler(self.url,auth)
         self.__wsinsert = False
 
-        Device.__init__(self,self,self.urlget("?q=this","").text)
+        Device.__init__(self,self,self.urlget("",{"q":"this"},"").text)
 
     def ping(self):
         """Makes sure the connection is open, and auth is working"""
-        self.urlget("?q=this","")
+        self.urlget("",{"q": "this"},"")
 
     def handleresult(self,r):
         """Handles HTTP error codes for a given request result
@@ -64,12 +64,17 @@ class ConnectorDB(Device):
         if r.status_code in [401, 403]:
             raise AuthenticationError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
         elif r.status_code !=200:
-            raise ServerError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
+            err=None
+            try:
+                err = ServerError(str(r.json()["code"])+": "+r.json()["msg"]+" ("+r.json()["ref"]+")")
+            except:
+                raise ServerError("Server gave unparseable response!")
+            raise err
         return r
 
     #Direct CRUD requests with the given location and optionally data, which handles authentication and error management
-    def urlget(self,location,cmd="crud/"):
-        return self.handleresult(self.r.get(urljoin(self.url+cmd,location)))
+    def urlget(self,location,params=None,cmd="crud/"):
+        return self.handleresult(self.r.get(urljoin(self.url+cmd,location),params=params))
     def urldelete(self,location,cmd="crud/"):
         return self.handleresult(self.r.delete(urljoin(self.url+cmd,location)))
     def urlpost(self,location,data={},cmd="crud/"):
@@ -82,7 +87,7 @@ class ConnectorDB(Device):
     def users(self):
         """Returns the list of users accessible to this operator"""
         usrs = []
-        for u in self.urlget("?q=ls").json():
+        for u in self.urlget("",{"q":"ls"}).json():
             tmpu = self.getuser(u["name"])
             tmpu.metadata = u
             usrs.append(tmpu)
@@ -140,10 +145,10 @@ class ConnectorDB(Device):
 
     def countUsers(self):
         """Gets the total number of users of ConnectorDB"""
-        return int(self.db.urlget("?q=countusers","").text)
+        return int(self.db.urlget("",{"q":"countusers"},"").text)
     def countDevices(self):
         """Gets the total number of devices of ConnectorDB"""
-        return int(self.db.urlget("?q=countdevices","").text)
+        return int(self.db.urlget("",{"q":"countdevices"},"").text)
     def countStreams(self):
         """Gets the total number of streams of ConnectorDB"""
-        return int(self.db.urlget("?q=countstreams","").text)
+        return int(self.db.urlget("",{"q":"countstreams"},"").text)
