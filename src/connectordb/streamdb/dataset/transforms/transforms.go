@@ -28,4 +28,11 @@ func (d DatapointTransformWrapper) Transform(dp *datastream.Datapoint) (tdp *dat
 	return d.Transformer(dp)
 }
 
+// Creates a new transform pipeline from the given pipeline definition
+func NewTransformPipeline(pipeline string) (DatapointTransform, error) {
+	transformer, err := ParseTransform(pipeline)
+
+	return DatapointTransformWrapper{transformer}, err
+}
+
 //go:generate go tool yacc -o transform_generator_y.go -p Transform pipeline_generator.y

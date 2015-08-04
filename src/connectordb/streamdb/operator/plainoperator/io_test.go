@@ -42,7 +42,7 @@ func TestStreamTransform(t *testing.T) {
 		datastream.Datapoint{Timestamp: 3.0, Data: true},
 	}
 	badtransform := "lt('"
-	transform := "if('gt(20)','lt(10)'):gt(300)"
+	transform := "if get() > 20 and get() < 10:get() > 300"
 
 	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 

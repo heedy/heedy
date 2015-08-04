@@ -28,7 +28,7 @@ func TestTransformRange(t *testing.T) {
 
 	dr := datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err := NewTransformRange(dr, "iflt(5):gte(3)")
+	tr, err := NewTransformRange(dr, "if get() < 5:get() >= 3")
 	require.NoError(t, err)
 
 	for i := 0; i < len(dpa2); i++ {
@@ -44,7 +44,7 @@ func TestTransformRange(t *testing.T) {
 
 	dr = datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err = NewTransformRange(dr, "iflt(5):gte(3)")
+	tr, err = NewTransformRange(dr, "if get() < 5:get() >= 3")
 	require.NoError(t, err)
 
 	da, err := tr.NextArray()

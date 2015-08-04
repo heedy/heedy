@@ -30,6 +30,9 @@ func DatapointFromBytes(data []byte) (d Datapoint, err error) {
 
 //String prints out a pretty string representation of the datapoint
 func (d *Datapoint) String() string {
+	if d == nil {
+		return "nil"
+	}
 	s := fmt.Sprintf("[T=%.3f D=%v", d.Timestamp, d.Data)
 	if d.Sender != "" {
 		s += " S=" + d.Sender

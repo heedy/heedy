@@ -1,13 +1,40 @@
 package interpolators
 
 import (
-	"connectordb/streamdb/dataset/pipeline"
 	"connectordb/streamdb/datastream"
 	"errors"
+	"regexp"
+	"strings"
 )
 
 //DefaultInterpolator is the one used when no interpolator is specified
 var DefaultInterpolator = "closest"
+
+var wordRegex *regexp.Regexp
+
+func init() {
+	re, err := regexp.Compile("\".+?\"|\\w+")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	wordRegex = re
+}
+
+// Converts an input into an array of tokens; strings will have quotes stripped
+func tokenize(input string) []string {
+	tokens := wordRegex.FindAllString(input, -1)
+
+	// strip quotes
+	for i, token := range tokens {
+		if strings.HasSuffix(token, "\"") && strings.HasPrefix(token, "\"") && len(token) >= 2 {
+			tokens[i] = token[1 : len(tokens)-1]
+		}
+	}
+
+	return tokens
+}
 
 //Interpolator is an interface which given a timestamp, returns the appropriate
 //datapoint. Interpolator is guaranteed to be called with increasing or equal timestamps
@@ -34,17 +61,24 @@ func GetInterpolator(dr datastream.DataRange, interp string) (Interpolator, erro
 	if interp == "" {
 		interp = DefaultInterpolator
 	}
-	p, err := pipeline.ParsePipeline(interp)
-	if err != nil {
-		return nil, err
+
+	tokens := tokenize(interp)
+	if len(tokens) == 0 {
+		return nil, errors.New("no interpolater found")
 	}
-	if len(p) != 1 {
-		return nil, errors.New("There must be exactly one interpolator defined")
-	}
-	ifunc, ok := Interpolators[p[0].Symbol]
+
+	interpolatorName := tokens[0]
+
+	ifunc, ok := Interpolators[interpolatorName]
 	if !ok {
-		return nil, errors.New("Could not find '" + p[0].Symbol + "' interpolator.")
+		return nil, errors.New("Could not find '" + interpolatorName + "' interpolator.")
 	}
-	return ifunc(dr, p[0].Args)
+
+	args := []string{}
+	if len(tokens) > 1 {
+		args = tokens[1:]
+	}
+
+	return ifunc(dr, args)
 
 }

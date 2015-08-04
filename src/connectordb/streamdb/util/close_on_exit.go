@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -34,14 +35,20 @@ func CloseOnExit(closeable Closeable) {
 		}()
 	})
 
-	if closeable == nil {
-		return
-	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("close error for %v\n", closeable)
+			}
+		}()
+
+		if closeable == nil {
+			return
+		}
+
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
 		<-c
 		closeable.Close()
 		closeWaiter.Done()
