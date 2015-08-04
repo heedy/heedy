@@ -49,3 +49,18 @@ func interpolatorTester(t *testing.T, iname string, dr datastream.DataRange, arg
 	}
 	i.Close()
 }
+
+func TestGetInterpolator(t *testing.T) {
+	_, err := GetInterpolator(nil, "doesnotexisti")
+	require.Error(t, err)
+	_, err = GetInterpolator(nil, "multiple:interpolators")
+	require.Error(t, err)
+
+	_, err = GetInterpolator(datastream.NewDatapointArrayRange(dpa, 0), "closest(arg1)")
+	require.Error(t, err)
+
+	i, err := GetInterpolator(datastream.NewDatapointArrayRange(dpa, 0), "")
+	require.NoError(t, err)
+	_, ok := i.(*ClosestInterpolator)
+	require.True(t, ok)
+}
