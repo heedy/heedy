@@ -1,44 +1,32 @@
 package shell
 
-/**
+/* Revokes admin from a user
 
-Provides the ability to list users
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
+*/
 
-**/
+import "fmt"
 
-import (
-	"fmt"
-)
+func init() {
+	help := "Revokes admin from a user: 'rmadmin username'"
+	usage := `Usage: rmadmin username`
+	name := "rmadmin"
 
-// The clear command
-type RevokeAdmin struct {
-}
+	main := func(shell *Shell, args []string) uint8 {
+		if len(args) < 2 {
+			fmt.Println(Red + "Must supply a name" + Reset)
+			return 1
+		}
 
-func (h RevokeAdmin) Help() string {
-	return "Revokes admin from a user: 'rmadmin username'"
-}
+		err := shell.operator.SetAdmin(args[1], false)
+		if shell.PrintError(err) {
+			return 1
+		}
 
-func (h RevokeAdmin) Usage() string {
-	return h.Help()
-}
-
-func (h RevokeAdmin) Execute(shell *Shell, args []string) {
-	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a name" + Reset)
-		return
+		fmt.Println(Green + "Revoked admin from: " + args[1] + Reset)
+		return 0
 	}
-	err := shell.operator.SetAdmin(args[1], false)
-	if shell.PrintError(err) {
-		return
-	}
-	fmt.Println(Green + "Revoked admin from: " + args[1] + Reset)
-}
 
-func (h RevokeAdmin) Name() string {
-	return "rmadmin"
+	registerShellCommand(help, usage, name, main)
 }

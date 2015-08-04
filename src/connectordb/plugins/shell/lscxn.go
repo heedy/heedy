@@ -1,36 +1,35 @@
 package shell
 
+/* Lists connection info for redis, gnats and sql
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import (
 	"connectordb/config"
 	"fmt"
 )
 
-// The Exit command
-type LsCxn struct {
-}
+func init() {
+	help := "Lists the connection addresses to the components of the system."
+	usage := `Usage: lscxn`
+	name := "lscxn"
 
-func (h LsCxn) Help() string {
-	return "Lists the connection addresses to the components of the system."
-}
+	main := func(shell *Shell, args []string) uint8 {
+		dbcxn := config.GetDatabaseConnectionString()
+		fmt.Printf("Database: %v\n", dbcxn)
 
-func (h LsCxn) Usage() string {
-	return h.Help()
-}
+		streamdb, _ := config.GetStreamdbDirectory()
+		fmt.Printf("Streamdb: %v\n", streamdb)
 
-func (h LsCxn) Execute(shell *Shell, args []string) {
-	dbcxn := config.GetDatabaseConnectionString()
-	fmt.Printf("Database: %v\n", dbcxn)
+		redis := config.GetConfiguration().GetRedisUri()
+		fmt.Printf("Redis: %v\n", redis)
 
-	streamdb, _ := config.GetStreamdbDirectory()
-	fmt.Printf("Streamdb: %v\n", streamdb)
+		gnatsd := config.GetConfiguration().GetGnatsdUri()
+		fmt.Printf("Gnatsd: %v\n", gnatsd)
+		return 0
+	}
 
-	redis := config.GetConfiguration().GetRedisUri()
-	fmt.Printf("Redis: %v\n", redis)
-
-	gnatsd := config.GetConfiguration().GetGnatsdUri()
-	fmt.Printf("Gnatsd: %v\n", gnatsd)
-}
-
-func (h LsCxn) Name() string {
-	return "lscxn"
+	registerShellCommand(help, usage, name, main)
 }

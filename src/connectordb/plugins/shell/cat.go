@@ -1,15 +1,10 @@
 package shell
 
-/**
+/* Provides the ability to list users/devices/streams in JSON
 
-Provides the ability to list users
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
-
-**/
+*/
 
 import (
 	"fmt"
@@ -17,52 +12,45 @@ import (
 	"github.com/connectordb/njson"
 )
 
-// The clear command
-type Cat struct {
-}
-
-func (h Cat) Help() string {
-	return "Prints information about a user/stream/device to the console"
-}
-
-func (h Cat) Usage() string {
-	return `Usage: cat username
+func init() {
+	help := "Prints information about a user/stream/device to the console"
+	usage := `Usage: cat path
 
 	Prints information about the user to the standard output in a JSON format.
 	`
-}
+	name := "cat"
 
-func (h Cat) Execute(shell *Shell, args []string) {
-	var err error
-	var toPrint interface{}
+	main := func(shell *Shell, args []string) uint8 {
+		var err error
+		var toPrint interface{}
 
-	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a path" + Reset)
-		return
+		if len(args) < 2 {
+			fmt.Println(Red + "Must supply a path" + Reset)
+			return 1
+		}
+
+		path := shell.ResolvePath(args[1])
+		usr, dev, stream := shell.ReadPath(path)
+
+		switch {
+		default:
+			toPrint = ""
+		case stream != nil:
+			toPrint = stream
+		case dev != nil:
+			toPrint = dev
+		case usr != nil:
+			toPrint = usr
+		}
+
+		bytes, err := njson.MarshalIndentWithTag(toPrint, "", "  ", "")
+		if shell.PrintError(err) {
+			return 1
+		}
+
+		fmt.Println(string(bytes))
+		return 0
 	}
 
-	path := shell.ResolvePath(args[1])
-	usr, dev, stream := shell.ReadPath(path)
-
-	switch {
-	default:
-		toPrint = ""
-	case stream != nil:
-		toPrint = stream
-	case dev != nil:
-		toPrint = dev
-	case usr != nil:
-		toPrint = usr
-	}
-
-	bytes, err := njson.MarshalIndentWithTag(toPrint, "", "  ", "")
-	if shell.PrintError(err) {
-		return
-	}
-
-	fmt.Println(string(bytes))
-}
-
-func (h Cat) Name() string {
-	return "cat"
+	registerShellCommand(help, usage, name, main)
 }

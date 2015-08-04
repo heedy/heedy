@@ -1,46 +1,46 @@
 package shell
 
+/* Provides the ability to create streams
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import (
 	"fmt"
 )
 
-// The command to add a device
-type AddStream struct {
-}
+func init() {
+	help := "Creates a new Stream at the given path, default is numerical."
+	usage := "addstream path [type]"
+	name := "addstream"
 
-func (h AddStream) Help() string {
-	return "Creates a new Stream at the given path, default is numerical."
-}
+	main := func(shell *Shell, args []string) uint8 {
+		path := ""
+		streamType := `{"type":"number"}`
 
-func (h AddStream) Usage() string {
-	return "addstream path [type]"
-}
+		switch len(args) {
+		default:
+			fmt.Printf(Red + "Error: Wrong number of args\n" + Reset)
+			return 1
+		case 2:
+			path = args[1]
+		case 3:
+			path = args[1]
+			streamType = args[2]
+		}
 
-func (h AddStream) Execute(shell *Shell, args []string) {
-	path := ""
-	streamType := `{"type":"number"}`
+		path = shell.ResolvePath(path)
 
-	switch len(args) {
-	default:
-		fmt.Printf(Red + "Error: Wrong number of args\n" + Reset)
-	case 2:
-		path = args[1]
-	case 3:
-		path = args[1]
-		streamType = args[2]
+		fmt.Printf("Creating Stream %v\n", path)
+		err := shell.operator.CreateStream(path, streamType)
+
+		if shell.PrintError(err) {
+			return 2
+		}
+
+		return 0
 	}
 
-	path = shell.ResolvePath(path)
-
-	fmt.Printf("Creating Stream %v\n", path)
-
-	err := shell.operator.CreateStream(path, streamType)
-
-	if err != nil {
-		fmt.Printf(Red+"Error: %v\n"+Reset, err.Error())
-	}
-}
-
-func (h AddStream) Name() string {
-	return "addstream"
+	registerShellCommand(help, usage, name, main)
 }

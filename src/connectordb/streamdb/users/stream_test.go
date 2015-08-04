@@ -20,6 +20,21 @@ func TestCreateStream(t *testing.T) {
 
 		err = testdb.CreateStream(stream.Name, streamtestType, dev.DeviceId)
 		assert.NotNil(t, err, "Created stream with duplicate name")
+
+		// Test with invalid schema
+		err = testdb.CreateStream("tcs_001", "{", dev.DeviceId)
+		assert.NotNil(t, err, "Created stream with invalid schema")
+
+		// Test with embedded objects
+		err = testdb.CreateStream("tcs_002", `{
+		"type":"object",
+		"properties":{
+				"foo":{
+					"type":"object"
+				}
+			}
+		}`, dev.DeviceId)
+		assert.NotNil(t, err, "Created stream with obje3ct schema")
 	}
 }
 

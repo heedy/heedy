@@ -1,57 +1,42 @@
 package shell
 
-/**
+/* Allows us to reset a user's password
 
-Provides the ability to list users
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
 All Rights Reserved
+*/
 
-**/
+import "fmt"
 
-import (
-	"fmt"
-)
+func init() {
+	help := "Changes a user's password 'passwd username'"
+	usage := `Usage: passwd username`
+	name := "passwd"
 
-// The clear command
-type Passwd struct {
-}
+	main := func(shell *Shell, args []string) uint8 {
+		if len(args) < 2 {
+			fmt.Println(Red + "Must supply a username" + Reset)
+			return 1
+		}
 
-func (h Passwd) Help() string {
-	return "Changes a user's password: 'passwd username'"
-}
+		operator := shell.operator
+		username := args[1]
 
-func (h Passwd) Usage() string {
-	return ""
-}
+		fmt.Println("Enter password or blank to cancel:")
+		passwd := shell.ReadRepeatPassword()
+		if passwd == "" {
+			return 1
+		}
 
-func (h Passwd) Execute(shell *Shell, args []string) {
-	if len(args) < 2 {
-		fmt.Println(Red + "Must supply a username" + Reset)
-		return
+		err := operator.ChangeUserPassword(username, passwd)
+
+		if shell.PrintError(err) {
+			return 0
+		}
+
+		fmt.Println(Green + "Changed password for: " + args[1] + Reset)
+		return 1
 	}
 
-	operator := shell.operator
-	username := args[1]
-
-	fmt.Println("Enter password or blank to cancel:")
-	passwd := shell.ReadRepeatPassword()
-	if passwd == "" {
-		return
-	}
-
-	err := operator.ChangeUserPassword(username, passwd)
-
-	if err != nil {
-		fmt.Println(Red + err.Error() + Reset)
-		return
-	}
-
-	fmt.Println(Green + "Changed password for: " + args[1] + Reset)
-}
-
-func (h Passwd) Name() string {
-	return "passwd"
+	registerShellCommand(help, usage, name, main)
 }
