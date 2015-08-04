@@ -25,6 +25,18 @@ func handleResultError(prefix string, dp *datastream.Datapoint, err error, coers
 	return nil
 }
 
+// Calls transform and tries to read a bool, fails on no bool or error
+func readBool(prefix string, dp *datastream.Datapoint, transform TransformFunc) (bool, error) {
+	tdp, err := transform(dp)
+	filter, ok := tdp.Data.(bool)
+
+	if err := handleResultError(prefix, tdp, err, ok); err != nil {
+		return false, err
+	}
+
+	return filter, nil
+}
+
 // Does a logical or on the pipeline
 func pipelineGeneratorOr(left TransformFunc, right TransformFunc) TransformFunc {
 
@@ -122,7 +134,7 @@ func pipelineGeneratorCompare(left, right TransformFunc, operator string) Transf
 			return nil, err
 		}
 
-		rightResult, err := left(dp)
+		rightResult, err := right(dp)
 		if err := handleResultError("compare", rightResult, err, true); err != nil {
 			return nil, err
 		}
@@ -150,7 +162,7 @@ func pipelineGeneratorCompare(left, right TransformFunc, operator string) Transf
 		}
 
 		if ok != true {
-			return result, errors.New("comparison: invalid comparison types")
+			return nil, errors.New("comparison: invalid comparison types")
 		}
 
 		return result, nil
@@ -199,5 +211,54 @@ func pipelineGeneratorHas(propertyName string) TransformFunc {
 		_, result.Data = duck.Get(dp.Data, propertyName)
 		return result, nil
 
+	}
+}
+
+func pipelineGeneratorIf(child TransformFunc) TransformFunc {
+	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
+		if dp == nil {
+			return nil, nil
+		}
+
+		/**
+
+		tdp, err := child(dp)
+		passOn, ok := tdp.Data.(bool)
+
+		if err := handleResultError("if", tdp, err, ok); err != nil {
+			return nil, err
+		}**/
+
+		passOn, err := readBool("if", dp, child)
+		if err != nil {
+			return nil, err
+		}
+
+		if passOn == true {
+			return dp, nil
+		}
+
+		return nil, nil
+	}
+}
+
+func pipelineGeneratorTransform(left, right TransformFunc) TransformFunc {
+	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
+		if dp == nil {
+			return nil, nil
+		}
+
+		leftResult, err := left(dp)
+		if err != nil || leftResult == nil {
+			return nil, err
+		}
+
+		// pass the data through the pipeline to do a transform
+		rightResult, err := right(leftResult)
+		if err != nil || rightResult == nil {
+			return nil, err
+		}
+
+		return rightResult, nil
 	}
 }
