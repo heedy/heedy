@@ -29,6 +29,3 @@ func (d DatapointTransformWrapper) Transform(dp *datastream.Datapoint) (tdp *dat
 }
 
 //go:generate go tool yacc -o transform_generator_y.go -p Transform pipeline_generator.y
-
-//TransformGenerator is the signature of a function that generates a transform
-type TransformGenerator func(args []string) (DatapointTransform, error)
