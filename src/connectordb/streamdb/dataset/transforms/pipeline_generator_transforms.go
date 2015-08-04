@@ -49,10 +49,8 @@ func pipelineGeneratorOr(left TransformFunc, right TransformFunc) TransformFunc 
 
 		for _, transform := range []TransformFunc{left, right} {
 
-			tdp, err = transform(dp)
-			filter, ok := tdp.Data.(bool)
-
-			if err := handleResultError("or", tdp, err, ok); err != nil {
+			filter, err := readBool("or", dp, transform)
+			if err != nil {
 				return nil, err
 			}
 
@@ -77,18 +75,14 @@ func pipelineGeneratorAnd(left TransformFunc, right TransformFunc) TransformFunc
 		}
 
 		// Process the left data
-		tdp, err = left(dp)
-		leftRes, ok := tdp.Data.(bool)
-
-		if err := handleResultError("and", tdp, err, ok); err != nil {
+		leftRes, err := readBool("and", dp, left)
+		if err != nil {
 			return nil, err
 		}
 
 		// Process the right data
-		tdp, err = right(dp)
-		rightRes, ok := tdp.Data.(bool)
-
-		if err := handleResultError("and", tdp, err, ok); err != nil {
+		rightRes, err := readBool("and", dp, right)
+		if err != nil {
 			return nil, err
 		}
 
@@ -100,23 +94,20 @@ func pipelineGeneratorAnd(left TransformFunc, right TransformFunc) TransformFunc
 }
 
 // Does a logical or on the pipeline
-func pipelineGeneratorNot(right TransformFunc) TransformFunc {
+func pipelineGeneratorNot(transform TransformFunc) TransformFunc {
 
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		if dp == nil {
 			return nil, nil
 		}
 
-		// Process the right data
-		tdp, err = right(dp)
-		rightRes, ok := tdp.Data.(bool)
-
-		if err := handleResultError("not", tdp, err, ok); err != nil {
+		notResult, err := readBool("not", dp, transform)
+		if err != nil {
 			return nil, err
 		}
 
 		result := CopyDatapoint(dp)
-		result.Data = !rightRes
+		result.Data = !notResult
 		return result, nil
 	}
 
@@ -219,15 +210,6 @@ func pipelineGeneratorIf(child TransformFunc) TransformFunc {
 		if dp == nil {
 			return nil, nil
 		}
-
-		/**
-
-		tdp, err := child(dp)
-		passOn, ok := tdp.Data.(bool)
-
-		if err := handleResultError("if", tdp, err, ok); err != nil {
-			return nil, err
-		}**/
 
 		passOn, err := readBool("if", dp, child)
 		if err != nil {

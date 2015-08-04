@@ -20,6 +20,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"false", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
 		{"45.555", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 45.555}},
 		{"\"string\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string"}},
+		{"\"❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €"}},
 		{"get()", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
 		{"4 < 5", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"get() < 5", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
@@ -54,8 +55,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"if has(\"test\"):get(\"test\") > 1", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, &Datapoint{Data: true}},
 		{"if has(\"test\"", true, false, nil, nil},
 		{"get(\"test\")", false, true, &Datapoint{Data: 4}, nil},
-
-		//{"get() < 5", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+		{"get():false:42", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
 	}
 
 	for _, c := range testcases {
