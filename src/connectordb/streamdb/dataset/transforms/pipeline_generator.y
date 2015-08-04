@@ -1,6 +1,6 @@
 // A general lexer/parser for transforms.
 // Generate using:
-// go tool yacc -o pipeline_generator.go -p Transform pipeline_generator.y
+// go tool yacc -o pipeline_generator.go -p Transform transform_parser.y
 
 %{
 package transforms

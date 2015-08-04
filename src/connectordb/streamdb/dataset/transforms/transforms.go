@@ -32,29 +32,3 @@ func (d DatapointTransformWrapper) Transform(dp *datastream.Datapoint) (tdp *dat
 
 //TransformGenerator is the signature of a function that generates a transform
 type TransformGenerator func(args []string) (DatapointTransform, error)
-
-//Transforms is the map of all registered transforms
-var Transforms map[string]TransformGenerator
-
-func init() {
-	Transforms = map[string]TransformGenerator{
-		//comparisons
-		"lt":  Lt,
-		"gt":  Gt,
-		"lte": Lte,
-		"gte": Gte,
-		"eq":  Eq,
-		//ifcomparisons
-		"iflt":  IfLt,
-		"ifgt":  IfGt,
-		"iflte": IfLte,
-		"ifgte": IfGte,
-		"ifeq":  IfEq,
-		"or":    Or,
-		"if":    If,
-		//object
-		"get":   Get,
-		"has":   Has,
-		"ifhas": IfHas,
-	}
-}

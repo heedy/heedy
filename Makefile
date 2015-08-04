@@ -19,6 +19,7 @@ resources: bin
 
 # Rule to go from source go file to binary
 bin/%: src/core/%.go bin go-dependencies
+	go generate $<
 	go build -o $@ $<
 
 clean:
