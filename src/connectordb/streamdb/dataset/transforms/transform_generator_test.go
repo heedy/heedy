@@ -91,9 +91,11 @@ func TestPipelineGenerator(t *testing.T) {
 		{"identity()", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
 		{"passthrough($ > 5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
 		{"passthrough($ > 5 | eq(false))", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"passthrough($ > 5 | eq(false), $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"fortyTwo()", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
 		{"doesnotexist()", true, false, &Datapoint{Data: 4}, nil},
+
+		// wrong number of args on generation
+		{"passthrough($ > 5 | eq(false), $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 	}
 
 	// function that should nilt out
