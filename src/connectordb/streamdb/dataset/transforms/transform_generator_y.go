@@ -5,7 +5,7 @@ import __yyfmt__ "fmt"
 
 //line pipeline_generator.y:6
 import (
-	//v"fmt"
+	//"fmt"
 	"errors"
 	"regexp"
 	"strconv"
@@ -45,6 +45,7 @@ const NE = 57366
 const IDENTIFIER = 57367
 const HAS = 57368
 const IF = 57369
+const SET = 57370
 
 var TransformToknames = []string{
 	"NUMBER",
@@ -71,6 +72,7 @@ var TransformToknames = []string{
 	"IDENTIFIER",
 	"HAS",
 	"IF",
+	"SET",
 }
 var TransformStatenames = []string{}
 
@@ -78,7 +80,7 @@ const TransformEofCode = 1
 const TransformErrCode = 2
 const TransformMaxDepth = 200
 
-//line pipeline_generator.y:197
+//line pipeline_generator.y:216
 
 /* Start of lexer, hopefully go will let us do this automatically in the future */
 
@@ -86,12 +88,12 @@ const (
 	eof         = 0
 	errorString = "<ERROR>"
 	eofString   = "<EOF>"
-	builtins    = `has|if|gte|lte|gt|lt|eq|ne`
+	builtins    = `has|if|gte|lte|gt|lt|eq|ne|set`
 	logicals    = `true|false|and|or|not`
 	numbers     = `(-)?[0-9]+(\.[0-9]+)?`
 	compops     = `<=|>=|<|>|==|!=`
 	stringr     = `\".+?\"`
-	pipes       = `:|\|`
+	pipes       = `:|\||,`
 	syms        = `\$|\[|\]|\(|\)`
 	idents      = `([a-zA-Z_][a-zA-Z_0-9]*)`
 )
@@ -240,6 +242,8 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 		return EQ
 	case "ne":
 		return NE
+	case "set":
+		return SET
 	default:
 		switch {
 		case numberRegex.MatchString(token):
@@ -266,77 +270,86 @@ var TransformExca = []int{
 	-2, 0,
 }
 
-const TransformNprod = 33
+const TransformNprod = 37
 const TransformPrivate = 57344
 
 var TransformTokenNames []string
 var TransformStates []string
 
-const TransformLast = 118
+const TransformLast = 144
 
 var TransformAct = []int{
 
-	1, 14, 15, 16, 6, 17, 2, 5, 8, 49,
-	13, 9, 33, 30, 32, 58, 20, 21, 22, 23,
-	24, 25, 19, 18, 4, 60, 67, 66, 59, 26,
-	26, 61, 26, 42, 44, 43, 51, 52, 53, 54,
-	55, 56, 57, 45, 65, 29, 41, 26, 14, 15,
-	16, 64, 17, 63, 26, 8, 26, 13, 62, 27,
-	40, 26, 68, 20, 21, 22, 23, 24, 25, 19,
-	18, 4, 14, 15, 16, 46, 17, 39, 26, 8,
-	38, 13, 37, 36, 35, 34, 31, 20, 21, 22,
-	23, 24, 25, 19, 18, 14, 15, 16, 48, 17,
-	47, 3, 50, 12, 13, 11, 28, 10, 7, 0,
-	20, 21, 22, 23, 24, 25, 19, 18,
+	1, 3, 49, 14, 15, 16, 29, 17, 2, 73,
+	8, 59, 13, 9, 33, 74, 5, 34, 20, 21,
+	22, 23, 24, 25, 26, 19, 4, 18, 6, 79,
+	81, 63, 64, 65, 27, 43, 44, 31, 53, 54,
+	55, 56, 57, 58, 61, 45, 47, 62, 80, 63,
+	72, 27, 71, 27, 70, 27, 42, 27, 69, 46,
+	68, 27, 67, 27, 41, 27, 77, 76, 40, 14,
+	15, 16, 39, 17, 48, 78, 8, 27, 13, 28,
+	38, 37, 83, 82, 20, 21, 22, 23, 24, 25,
+	26, 19, 4, 18, 14, 15, 16, 36, 17, 35,
+	66, 8, 30, 13, 28, 51, 32, 50, 75, 20,
+	21, 22, 23, 24, 25, 26, 19, 52, 18, 14,
+	15, 16, 60, 17, 12, 11, 10, 7, 13, 0,
+	0, 0, 0, 0, 20, 21, 22, 23, 24, 25,
+	26, 19, 0, 18,
 }
 var TransformPact = []int{
 
-	44, 17, -1000, 50, 68, 35, -1000, -1000, 68, 79,
-	-1000, -1000, -1000, 44, -1000, -1000, -1000, -5, 72, 71,
-	70, 69, 67, 64, 47, 33, 44, 68, 50, 68,
-	-1000, 91, 63, 94, 92, -3, 44, 44, 44, 44,
-	44, 44, -1000, 35, -1000, -1000, -1000, -1, 16, -1000,
-	13, 17, 46, 41, 39, 32, 15, 14, -1000, -1000,
-	-1000, 44, -1000, -1000, -1000, -1000, -1000, -1000, 17,
+	65, 19, -1000, 95, 90, 92, -1000, -1000, 90, 99,
+	-1000, -1000, -1000, 65, -1000, -1000, -1000, 0, 86, 84,
+	68, 67, 59, 55, 51, 43, 22, 65, 90, 95,
+	90, -1000, 115, 62, 101, 97, 111, 65, 65, 65,
+	65, 65, 65, -1, -1000, 92, -1000, -1000, -1000, 31,
+	-1000, 15, 88, 50, 48, 46, 42, 40, 38, -1000,
+	-3, 19, -1000, 102, 101, 65, -1000, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, 65, -1000, 13, 36, 19, 12,
+	-1000, 90, 70, -1000,
 }
 var TransformPgo = []int{
 
-	0, 101, 7, 4, 108, 11, 6, 0, 107, 105,
-	103, 102,
+	0, 1, 16, 28, 127, 13, 8, 0, 126, 125,
+	124, 122, 2,
 }
 var TransformR1 = []int{
 
 	0, 7, 7, 6, 6, 1, 1, 2, 2, 3,
 	3, 4, 4, 5, 5, 5, 5, 8, 8, 8,
-	9, 9, 9, 10, 10, 10, 10, 10, 10, 10,
-	10, 11, 11,
+	9, 9, 10, 10, 10, 10, 10, 10, 10, 10,
+	10, 10, 10, 12, 12, 11, 11,
 }
 var TransformR2 = []int{
 
 	0, 1, 3, 1, 2, 1, 3, 1, 3, 1,
 	2, 1, 3, 1, 1, 1, 3, 1, 1, 1,
-	4, 1, 4, 3, 4, 4, 4, 4, 4, 4,
-	4, 1, 3,
+	4, 1, 9, 6, 4, 4, 4, 4, 4, 4,
+	4, 3, 4, 1, 3, 1, 3,
 }
 var TransformChk = []int{
 
 	-1000, -7, -6, -1, 27, -2, -3, -4, 11, -5,
-	-8, -9, -10, 13, 4, 5, 6, 8, 26, 25,
-	19, 20, 21, 22, 23, 24, 15, 9, -1, 10,
-	-3, 7, -7, 17, 13, 13, 13, 13, 13, 13,
-	13, 13, -6, -2, -3, -5, 12, 6, 6, 12,
-	-11, -7, -7, -7, -7, -7, -7, -7, 16, 12,
-	12, 18, 12, 12, 12, 12, 12, 12, -7,
+	-8, -9, -10, 13, 4, 5, 6, 8, 28, 26,
+	19, 20, 21, 22, 23, 24, 25, 15, 9, -1,
+	10, -3, 7, -7, 17, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, -6, -2, -3, -5, 12, -12,
+	6, 8, 6, -7, -7, -7, -7, -7, -7, 12,
+	-11, -7, 16, 18, 17, 18, 12, 12, 12, 12,
+	12, 12, 12, 12, 18, 6, -12, -7, -7, 16,
+	12, 18, -1, 12,
 }
 var TransformDef = []int{
 
 	0, -2, 1, 3, 0, 5, 7, 9, 0, 11,
 	13, 14, 15, 0, 17, 18, 19, 21, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 4, 0,
-	10, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 2, 6, 8, 12, 16, 0, 0, 23,
-	0, 31, 0, 0, 0, 0, 0, 0, 20, 22,
-	24, 0, 25, 26, 27, 28, 29, 30, 32,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
+	0, 10, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 2, 6, 8, 12, 16, 0,
+	33, 0, 0, 0, 0, 0, 0, 0, 0, 31,
+	0, 35, 20, 0, 0, 0, 24, 25, 26, 27,
+	28, 29, 30, 32, 0, 34, 0, 0, 36, 0,
+	23, 0, 0, 22,
 }
 var TransformTok1 = []int{
 
@@ -346,7 +359,7 @@ var TransformTok2 = []int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-	22, 23, 24, 25, 26, 27,
+	22, 23, 24, 25, 26, 27, 28,
 }
 var TransformTok3 = []int{
 	0,
@@ -578,13 +591,13 @@ Transformdefault:
 	switch Transformnt {
 
 	case 1:
-		//line pipeline_generator.y:38
+		//line pipeline_generator.y:39
 		{
 			Transformlex.(*TransformLex).output = TransformS[Transformpt-0].val
 			TransformVAL.val = TransformS[Transformpt-0].val
 		}
 	case 2:
-		//line pipeline_generator.y:43
+		//line pipeline_generator.y:44
 		{
 			TransformVAL.val = pipelineGeneratorTransform(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
 			Transformlex.(*TransformLex).output = TransformVAL.val
@@ -592,35 +605,35 @@ Transformdefault:
 	case 3:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 4:
-		//line pipeline_generator.y:52
+		//line pipeline_generator.y:53
 		{
 			TransformVAL.val = pipelineGeneratorIf(TransformS[Transformpt-0].val)
 		}
 	case 5:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 6:
-		//line pipeline_generator.y:61
+		//line pipeline_generator.y:62
 		{
 			TransformVAL.val = pipelineGeneratorOr(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
 		}
 	case 7:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 8:
-		//line pipeline_generator.y:69
+		//line pipeline_generator.y:70
 		{
 			TransformVAL.val = pipelineGeneratorAnd(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
 		}
 	case 9:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 10:
-		//line pipeline_generator.y:77
+		//line pipeline_generator.y:78
 		{
 			TransformVAL.val = pipelineGeneratorNot(TransformS[Transformpt-0].val)
 		}
 	case 11:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 12:
-		//line pipeline_generator.y:85
+		//line pipeline_generator.y:86
 		{
 			TransformVAL.val = pipelineGeneratorCompare(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val, TransformS[Transformpt-1].strVal)
 		}
@@ -631,44 +644,90 @@ Transformdefault:
 	case 15:
 		TransformVAL.val = TransformS[Transformpt-0].val
 	case 16:
-		//line pipeline_generator.y:95
+		//line pipeline_generator.y:96
 		{
 			TransformVAL.val = TransformS[Transformpt-1].val
 		}
 	case 17:
-		//line pipeline_generator.y:102
+		//line pipeline_generator.y:103
 		{
 			num, err := strconv.ParseFloat(TransformS[Transformpt-0].strVal, 64)
 			TransformVAL.val = pipelineGeneratorConstant(num, err)
 		}
 	case 18:
-		//line pipeline_generator.y:107
+		//line pipeline_generator.y:108
 		{
 			val, err := strconv.ParseBool(TransformS[Transformpt-0].strVal)
 			TransformVAL.val = pipelineGeneratorConstant(val, err)
 		}
 	case 19:
-		//line pipeline_generator.y:112
+		//line pipeline_generator.y:113
 		{
 			TransformVAL.val = pipelineGeneratorConstant(TransformS[Transformpt-0].strVal, nil)
 		}
 	case 20:
-		//line pipeline_generator.y:119
+		//line pipeline_generator.y:120
 		{
-			TransformVAL.val = pipelineGeneratorGet(TransformS[Transformpt-1].strVal)
+			TransformVAL.val = pipelineGeneratorGet(TransformS[Transformpt-1].stringList)
 		}
 	case 21:
-		//line pipeline_generator.y:123
+		//line pipeline_generator.y:124
 		{
 			TransformVAL.val = pipelineGeneratorIdentity()
 		}
 	case 22:
-		//line pipeline_generator.y:127
+		//line pipeline_generator.y:131
+		{
+			TransformVAL.val = pipelineGeneratorSet(TransformS[Transformpt-4].stringList, TransformS[Transformpt-1].val)
+		}
+	case 23:
+		//line pipeline_generator.y:135
+		{
+			TransformVAL.val = pipelineGeneratorSet([]string{}, TransformS[Transformpt-1].val)
+		}
+	case 24:
+		//line pipeline_generator.y:139
 		{
 			TransformVAL.val = pipelineGeneratorHas(TransformS[Transformpt-1].strVal)
 		}
-	case 23:
-		//line pipeline_generator.y:134
+	case 25:
+		//line pipeline_generator.y:143
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, ">=")
+		}
+	case 26:
+		//line pipeline_generator.y:148
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "<=")
+		}
+	case 27:
+		//line pipeline_generator.y:153
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, ">")
+		}
+	case 28:
+		//line pipeline_generator.y:158
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "<")
+		}
+	case 29:
+		//line pipeline_generator.y:163
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "==")
+		}
+	case 30:
+		//line pipeline_generator.y:168
+		{
+			identity := pipelineGeneratorIdentity()
+			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "!=")
+		}
+	case 31:
+		//line pipeline_generator.y:173
 		{
 			fun, err := getCustomFunction(TransformS[Transformpt-2].strVal)
 
@@ -678,8 +737,8 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 24:
-		//line pipeline_generator.y:144
+	case 32:
+		//line pipeline_generator.y:183
 		{
 			fun, err := getCustomFunction(TransformS[Transformpt-3].strVal, TransformS[Transformpt-1].funcList...)
 
@@ -689,49 +748,23 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 25:
-		//line pipeline_generator.y:154
+	case 33:
+		//line pipeline_generator.y:196
 		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, ">=")
+			TransformVAL.stringList = []string{TransformS[Transformpt-0].strVal}
 		}
-	case 26:
-		//line pipeline_generator.y:159
+	case 34:
+		//line pipeline_generator.y:200
 		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "<=")
+			TransformVAL.stringList = append([]string{TransformS[Transformpt-0].strVal}, TransformS[Transformpt-2].stringList...)
 		}
-	case 27:
-		//line pipeline_generator.y:164
-		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, ">")
-		}
-	case 28:
-		//line pipeline_generator.y:169
-		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "<")
-		}
-	case 29:
-		//line pipeline_generator.y:174
-		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "==")
-		}
-	case 30:
-		//line pipeline_generator.y:179
-		{
-			identity := pipelineGeneratorIdentity()
-			TransformVAL.val = pipelineGeneratorCompare(identity, TransformS[Transformpt-1].val, "!=")
-		}
-	case 31:
-		//line pipeline_generator.y:187
+	case 35:
+		//line pipeline_generator.y:207
 		{
 			TransformVAL.funcList = []TransformFunc{TransformS[Transformpt-0].val}
 		}
-	case 32:
-		//line pipeline_generator.y:191
+	case 36:
+		//line pipeline_generator.y:211
 		{
 			TransformVAL.funcList = append([]TransformFunc{TransformS[Transformpt-0].val}, TransformS[Transformpt-2].funcList...)
 		}

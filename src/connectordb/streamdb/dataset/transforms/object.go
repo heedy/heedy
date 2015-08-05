@@ -3,6 +3,7 @@ package transforms
 import (
 	"connectordb/streamdb/datastream"
 	"errors"
+	"strings"
 
 	"github.com/connectordb/duck"
 )
@@ -22,21 +23,49 @@ func pipelineGeneratorIdentity() TransformFunc {
 	}
 }
 
-func pipelineGeneratorGet(propertyName string) TransformFunc {
+func pipelineGeneratorGet(propertyNames []string) TransformFunc {
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		if dp == nil {
 			return nil, nil
 		}
 
+		interfaceProps := make([]interface{}, len(propertyNames))
+		for i, v := range propertyNames {
+			interfaceProps[i] = v
+		}
+
 		var ok bool
 		result := CopyDatapoint(dp)
-		result.Data, ok = duck.Get(dp.Data, propertyName)
+		result.Data, ok = duck.Get(dp.Data, interfaceProps...)
 
 		if !ok {
-			return nil, errors.New("Could not find element '" + propertyName + "' in " + duck.JSONString(dp))
+			errStr := strings.Join(propertyNames, ", ")
+			return nil, errors.New("Could not find element [" + errStr + "] in " + duck.JSONString(dp))
 		}
 
 		return result, nil
+	}
+}
+
+func pipelineGeneratorSet(propertyNames []string, value TransformFunc) TransformFunc {
+	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
+		if dp == nil {
+			return nil, nil
+		}
+
+		rightHandSide, err := value(dp)
+		if err != nil {
+			return nil, err
+		}
+
+		result := CopyDatapoint(dp)
+
+		if len(propertyNames) == 0 {
+			result.Data = rightHandSide.Data
+			return result, nil
+		}
+
+		return nil, errors.New("Don't know how to set children yet!")
 	}
 }
 

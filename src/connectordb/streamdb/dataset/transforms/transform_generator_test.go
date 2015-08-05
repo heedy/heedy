@@ -96,6 +96,12 @@ func TestPipelineGenerator(t *testing.T) {
 
 		// wrong number of args on generation
 		{"passthrough($ > 5 | eq(false), $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+
+		// setting values
+		{"set($, 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
+		{"set($, true)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+		{"set($, \"foo\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
+		{"set($[\"bar\"], \"foo\")", false, true, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 	}
 
 	// function that should nilt out
