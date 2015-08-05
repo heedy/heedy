@@ -5,6 +5,7 @@ import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/interfaces"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -34,15 +35,14 @@ func TestStreamTransform(t *testing.T) {
 		datastream.Datapoint{Timestamp: 1.0, Data: 1336},
 		datastream.Datapoint{Timestamp: 2.0, Data: 3.0},
 		datastream.Datapoint{Timestamp: 3.0, Data: 12},
-		datastream.Datapoint{Timestamp: 3.0, Data: 1000.0},
-	}
+		datastream.Datapoint{Timestamp: 4.0, Data: 1000.0}}
 	tdata := datastream.DatapointArray{
 		datastream.Datapoint{Timestamp: 1.0, Data: true},
 		datastream.Datapoint{Timestamp: 2.0, Data: false},
-		datastream.Datapoint{Timestamp: 3.0, Data: true},
-	}
+		datastream.Datapoint{Timestamp: 4.0, Data: true}}
 	badtransform := "lt('"
-	transform := "if get() > 20 and get() < 10:get() > 300"
+	transform := "if ($ > 20 and $ < 10) | $ > 300"
+	transform = "if $ > 20 or $ < 10 | $ > 300"
 
 	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 
@@ -55,7 +55,9 @@ func TestStreamTransform(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < len(tdata); i++ {
+		fmt.Println(i)
 		dp, err := tr.Next()
+		require.NotNil(t, dp, dp.String())
 		require.NoError(t, err)
 		require.Equal(t, tdata[i].String(), dp.String())
 	}

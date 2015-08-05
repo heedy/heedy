@@ -3,6 +3,7 @@ package transforms
 import (
 	"connectordb/streamdb/datastream"
 	"errors"
+	"fmt"
 )
 
 type TransformFunc func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
@@ -37,4 +38,24 @@ func readBool(prefix string, dp *datastream.Datapoint, transform TransformFunc) 
 	}
 
 	return filter, nil
+}
+
+func logTransform(child TransformFunc) TransformFunc {
+	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
+		if dp == nil {
+			fmt.Printf("Nil datapoint input")
+			return nil, nil
+		}
+
+		fmt.Printf("processing: %v\n", dp.String())
+		res, err := child(dp)
+
+		if res != nil {
+			fmt.Printf("result: %v err: %v\n", res.String(), err)
+		} else {
+			fmt.Printf("nil result err: %v\n", err)
+		}
+
+		return res, err
+	}
 }

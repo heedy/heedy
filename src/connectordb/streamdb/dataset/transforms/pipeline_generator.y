@@ -6,10 +6,11 @@
 package transforms
 
 import (
-	//"fmt"
+	//v"fmt"
 	"regexp"
 	"strconv"
 	"errors"
+	"strings"
 )
 %}
 
@@ -19,13 +20,16 @@ import (
 %union{
 	val TransformFunc
 	strVal string
+	stringList []string
+	funcList   []TransformFunc
 }
 
 // All transforms return a TransformFunc
-%type <val> or_test and_test not_test comparison terminal if_transform transform_list
+%type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function
+%type <funcList> function_params
 
 // All tokens and terminals are strings
-%token <strVal> NUMBER BOOL STRING COMPOP GET OR AND NOT RB LB HAS EOF IF PIPE
+%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF
 
 %%
 
@@ -33,6 +37,7 @@ transform_list
 	: if_transform
 		{
 			Transformlex.(*TransformLex).output = $1
+			$$ = $1
 		}
 	| transform_list PIPE if_transform
 		{
@@ -82,8 +87,18 @@ comparison:
 		}
     ;
 
-terminal:
-    NUMBER
+terminal
+	: constant
+	| variable
+	| function
+	| LB transform_list RB
+		{
+			$$ = $2
+		}
+	;
+
+constant
+	: NUMBER
 		{
 			num, err := strconv.ParseFloat($1, 64)
 			$$ = pipelineGeneratorConstant(num, err)
@@ -93,27 +108,91 @@ terminal:
 			val, err := strconv.ParseBool($1)
 			$$ = pipelineGeneratorConstant(val, err)
 		}
-    | GET RB
-		{
-			$$ = pipelineGeneratorIdentity()
-		}
-    | GET STRING RB
-		{
-			$$ = pipelineGeneratorGet($2)
-		}
-    | HAS STRING RB
-		{
-			$$ = pipelineGeneratorHas($2)
-		}
-	| STRING
+    | STRING
 		{
 			$$ = pipelineGeneratorConstant($1, nil)
 		}
-	| LB or_test RB
-		{
-			$$ = $2
-		}
     ;
+
+variable
+	: THIS LSQUARE STRING RSQUARE
+		{
+			$$ = pipelineGeneratorGet($3)
+		}
+	| THIS
+		{
+			$$ = pipelineGeneratorIdentity()
+		}
+    | HAS LB STRING RB
+		{
+			$$ = pipelineGeneratorHas($3)
+		}
+	;
+
+function
+	: IDENTIFIER LB RB
+	{
+		fun, err := getCustomFunction($1)
+
+		if err != nil {
+			Transformlex.Error(err.Error())
+		}
+
+		$$ = fun
+	}
+	| IDENTIFIER LB function_params RB
+		{
+			fun, err := getCustomFunction($1, $3...)
+
+			if err != nil {
+				Transformlex.Error(err.Error())
+			}
+
+			$$ = fun
+		}
+	| GTE LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, ">=")
+		}
+	| LTE LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, "<=")
+		}
+	| GT  LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, ">")
+		}
+	| LT  LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, "<")
+		}
+	| EQ  LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, "==")
+		}
+	| NE  LB transform_list RB
+		{
+			identity := pipelineGeneratorIdentity()
+			$$ = pipelineGeneratorCompare(identity, $3, "!=")
+		}
+	;
+
+function_params
+	: transform_list
+		{
+			$$ = []TransformFunc{$1}
+		}
+	| function_params COMMA transform_list
+		{
+			$$ = append([]TransformFunc{$3}, $1...)
+		}
+	;
+
 
 %%  /* Start of lexer, hopefully go will let us do this automatically in the future */
 
@@ -122,16 +201,53 @@ const (
 	eof = 0
 	errorString = "<ERROR>"
 	eofString = "<EOF>"
+	builtins = `has|if|gte|lte|gt|lt|eq|ne`
+	logicals  = `true|false|and|or|not`
+	numbers   = `(-)?[0-9]+(\.[0-9]+)?`
+	compops   = `<=|>=|<|>|==|!=`
+	stringr   = `\".+?\"`
+	pipes     = `:|\|`
+	syms      = `\$|\[|\]|\(|\)`
+	idents    = `([a-zA-Z_][a-zA-Z_0-9]*)`
 )
 
-var tokenizer *regexp.Regexp
+var (
+	tokenizer   *regexp.Regexp
+	numberRegex *regexp.Regexp
+	stringRegex *regexp.Regexp
+	identRegex  *regexp.Regexp
+)
 
 func init() {
-	tk, err := regexp.Compile(`^((get|has)\(|(-)?[0-9]+(.[0-9]+)?|\".+?\"|\)|\(|true|false|and|or|not|(<=|>=|<|>|==|!=)|:|if)`)
+
+	var err error
+	{
+		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents} ,"|")
+
+		regexStr := `^(` + re + `)`
+		tokenizer, err = regexp.Compile(regexStr)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	// these regexes are needed later on while testing.
+	numberRegex, err = regexp.Compile("^" + numbers + "$")
 	if err != nil {
 		panic(err.Error())
 	}
-	tokenizer = tk
+
+	// string regex (needed later on)
+	stringRegex, err = regexp.Compile("^" + stringr + "$")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// ident regex
+	identRegex, err = regexp.Compile("^" + idents + "$")
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 
@@ -208,9 +324,13 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 		return RB
 	case "(":
 		return LB
-	case "get(":
-		return GET
-	case "has(":
+	case "[":
+		return LSQUARE
+	case "]":
+		return RSQUARE
+	case "$":
+		return THIS
+	case "has":
 		return HAS
 	case "and":
 		return AND
@@ -222,18 +342,34 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 		return COMPOP
 	case "if":
 		return IF
-	case ":":
+	case "|", ":":
 		return PIPE
+	case ",":
+		return COMMA
+	case "gte":
+		return GTE
+	case "lte":
+		return LTE
+	case "lt":
+		return LT
+	case "gt":
+		return GT
+	case "eq":
+	 	return EQ
+	case "ne":
+		return NE
 	default:
-		if token[0] == '"' || token[0] == '\'' {
+		switch {
+			case numberRegex.MatchString(token):
+				return NUMBER
+			case stringRegex.MatchString(token):
+				// unquote token
+				lval.strVal = token[1: len(token) - 1]
 
-			// unquote token
-			lval.strVal = token[1: len(token) - 1]
-
-			return STRING
+				return STRING
+			default:
+				return IDENTIFIER
 		}
-
-		return NUMBER
 	}
 }
 
