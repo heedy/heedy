@@ -119,3 +119,22 @@ func subtractTransformGenerator(left TransformFunc, right TransformFunc) Transfo
 		return result, nil
 	}
 }
+
+// Subtracts the left and right hand side
+func inverseTransformGenerator(transform TransformFunc) TransformFunc {
+	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
+		if dp == nil {
+			return nil, nil
+		}
+
+		right, err := getTransformFloat(dp, transform)
+		if err != nil {
+			return nil, err
+		}
+
+		result := CopyDatapoint(dp)
+		result.Data = -right
+
+		return result, nil
+	}
+}

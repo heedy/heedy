@@ -111,6 +111,8 @@ func TestPipelineGenerator(t *testing.T) {
 		{"$ / 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 2}},
 		{"1 + 2 * 3 + 4", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 11}},
 		{"1 + 2 * (3 + 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 15}},
+		{"-1 + 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 1}},
+		{"-(1 + 2)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: -3}},
 	}
 
 	// function that should nilt out

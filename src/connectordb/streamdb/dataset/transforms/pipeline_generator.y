@@ -32,6 +32,9 @@ import (
 // All tokens and terminals are strings
 %token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF SET PLUS MINUS MULTIPLY DIVIDE
 
+%left UMINUS      /*  supplies  precedence  for  unary  minus  */
+
+
 %%
 
 transform_list
@@ -109,6 +112,10 @@ term
 	| term DIVIDE terminal
 		{
 			$$ = divideTransformGenerator($1, $3)
+		}
+	| MINUS terminal %prec  UMINUS
+		{
+			$$ = inverseTransformGenerator($2)
 		}
 	;
 
