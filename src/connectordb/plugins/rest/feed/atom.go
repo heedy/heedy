@@ -5,7 +5,6 @@ package feed
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
-	"encoding/json"
 	"encoding/xml"
 	"net/http"
 	"strconv"
@@ -14,6 +13,7 @@ import (
 	"connectordb/plugins/rest/restcore"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/connectordb/duck"
 )
 
 func AtomTime(t time.Time) string {
@@ -75,8 +75,8 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	}
 	i := dr.Index()
 	for dp, err := dr.Next(); err == nil && dp != nil; dp, err = dr.Next() {
-		v, err := json.Marshal(dp.Data)
-		if err != nil {
+		v := duck.JSONString(dp.Data)
+		if v == "" {
 			return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		}
 		authr := dp.Sender
@@ -92,7 +92,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			Link:    Link{Href: feeduri},
 			ID:      feeduri,
 			Author:  &Person{authr},
-			Content: &Text{Body: string(v)},
+			Content: &Text{Body: v},
 		})
 		i = dr.Index()
 

@@ -48,7 +48,7 @@ func TestAuthStreamIO(t *testing.T) {
 	}
 	{
 		fmt.Println("Test reading time range")
-		dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0)
+		dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0, "")
 		require.NoError(t, err)
 
 		dp, err := dr.Next()
@@ -66,7 +66,7 @@ func TestAuthStreamIO(t *testing.T) {
 	}
 	{
 		fmt.Println("Test reading index range")
-		dr, err := o.GetStreamIndexRange("tst/tst/tst", 0, 1)
+		dr, err := o.GetStreamIndexRange("tst/tst/tst", 0, 1, "")
 		require.NoError(t, err)
 
 		dp, err := dr.Next()
@@ -131,7 +131,7 @@ func TestAuthSubstream(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l)
 
-	dr, err := o.GetStreamTimeRange("tst/tst2/tst/downlink", 0.0, 2.5, 0)
+	dr, err := o.GetStreamTimeRange("tst/tst2/tst/downlink", 0.0, 2.5, 0, "")
 	require.NoError(t, err)
 
 	dp, err := dr.Next()
