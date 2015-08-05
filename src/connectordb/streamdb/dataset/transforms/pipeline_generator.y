@@ -25,12 +25,12 @@ import (
 }
 
 // All transforms return a TransformFunc
-%type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function
+%type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function term expression
 %type <funcList> function_params
 %type <stringList> string_list
 
 // All tokens and terminals are strings
-%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF SET
+%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF SET PLUS MINUS MULTIPLY DIVIDE
 
 %%
 
@@ -80,13 +80,37 @@ not_test
 		}
     ;
 
-comparison:
-	terminal
-	| terminal COMPOP terminal
+comparison
+	: expression
+	| expression COMPOP expression
 		{
 			$$ = pipelineGeneratorCompare($1, $3, $2)
 		}
     ;
+
+expression
+	: term
+	| expression PLUS term
+		{
+			$$ = addTransformGenerator($1, $3)
+		}
+	| expression MINUS term
+		{
+			$$ = subtractTransformGenerator($1, $3)
+		}
+	;
+
+term
+	: terminal
+	| term MULTIPLY terminal
+		{
+			$$ = multiplyTransformGenerator($1, $3)
+		}
+	| term DIVIDE terminal
+		{
+			$$ = divideTransformGenerator($1, $3)
+		}
+	;
 
 terminal
 	: constant
@@ -228,6 +252,7 @@ const (
 	pipes     = `:|\||,`
 	syms      = `\$|\[|\]|\(|\)`
 	idents    = `([a-zA-Z_][a-zA-Z_0-9]*)`
+	maths     = `\-|\*|/|\+`
 )
 
 var (
@@ -241,7 +266,7 @@ func init() {
 
 	var err error
 	{
-		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents} ,"|")
+		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents, maths} ,"|")
 
 		regexStr := `^(` + re + `)`
 		tokenizer, err = regexp.Compile(regexStr)
@@ -379,6 +404,14 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 		return NE
 	case "set":
 		return SET
+	case "-":
+		return MINUS
+	case "+":
+		return PLUS
+	case "/":
+		return DIVIDE
+	case "*":
+		return MULTIPLY
 	default:
 		switch {
 			case numberRegex.MatchString(token):
