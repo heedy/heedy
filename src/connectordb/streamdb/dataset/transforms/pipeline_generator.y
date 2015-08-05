@@ -6,7 +6,7 @@
 package transforms
 
 import (
-	//v"fmt"
+	//"fmt"
 	"regexp"
 	"strconv"
 	"errors"
@@ -25,11 +25,15 @@ import (
 }
 
 // All transforms return a TransformFunc
-%type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function
+%type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function term expression
 %type <funcList> function_params
+%type <stringList> string_list
 
 // All tokens and terminals are strings
-%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF
+%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF SET PLUS MINUS MULTIPLY DIVIDE
+
+%left UMINUS      /*  supplies  precedence  for  unary  minus  */
+
 
 %%
 
@@ -79,13 +83,41 @@ not_test
 		}
     ;
 
-comparison:
-	terminal
-	| terminal COMPOP terminal
+comparison
+	: expression
+	| expression COMPOP expression
 		{
 			$$ = pipelineGeneratorCompare($1, $3, $2)
 		}
     ;
+
+expression
+	: term
+	| expression PLUS term
+		{
+			$$ = addTransformGenerator($1, $3)
+		}
+	| expression MINUS term
+		{
+			$$ = subtractTransformGenerator($1, $3)
+		}
+	;
+
+term
+	: terminal
+	| term MULTIPLY terminal
+		{
+			$$ = multiplyTransformGenerator($1, $3)
+		}
+	| term DIVIDE terminal
+		{
+			$$ = divideTransformGenerator($1, $3)
+		}
+	| MINUS terminal %prec  UMINUS
+		{
+			$$ = inverseTransformGenerator($2)
+		}
+	;
 
 terminal
 	: constant
@@ -115,7 +147,7 @@ constant
     ;
 
 variable
-	: THIS LSQUARE STRING RSQUARE
+	: THIS LSQUARE string_list RSQUARE
 		{
 			$$ = pipelineGeneratorGet($3)
 		}
@@ -123,32 +155,20 @@ variable
 		{
 			$$ = pipelineGeneratorIdentity()
 		}
-    | HAS LB STRING RB
-		{
-			$$ = pipelineGeneratorHas($3)
-		}
 	;
 
 function
-	: IDENTIFIER LB RB
-	{
-		fun, err := getCustomFunction($1)
-
-		if err != nil {
-			Transformlex.Error(err.Error())
-		}
-
-		$$ = fun
-	}
-	| IDENTIFIER LB function_params RB
+	: SET LB THIS LSQUARE string_list RSQUARE COMMA or_test RB
 		{
-			fun, err := getCustomFunction($1, $3...)
-
-			if err != nil {
-				Transformlex.Error(err.Error())
-			}
-
-			$$ = fun
+			$$ = pipelineGeneratorSet($5, $8)
+		}
+	| SET LB THIS COMMA transform_list RB
+		{
+			$$ = pipelineGeneratorSet([]string{}, $5)
+		}
+	| HAS LB STRING RB
+		{
+			$$ = pipelineGeneratorHas($3)
 		}
 	| GTE LB transform_list RB
 		{
@@ -180,6 +200,37 @@ function
 			identity := pipelineGeneratorIdentity()
 			$$ = pipelineGeneratorCompare(identity, $3, "!=")
 		}
+	| IDENTIFIER LB RB
+		{
+			fun, err := getCustomFunction($1)
+
+			if err != nil {
+				Transformlex.Error(err.Error())
+			}
+
+			$$ = fun
+		}
+	| IDENTIFIER LB function_params RB
+		{
+			fun, err := getCustomFunction($1, $3...)
+
+			if err != nil {
+				Transformlex.Error(err.Error())
+			}
+
+			$$ = fun
+		}
+	;
+
+string_list
+	: STRING
+		{
+			$$ = []string{$1}
+		}
+	| string_list COMMA STRING
+		{
+			$$ = append([]string{$3}, $1...)
+		}
 	;
 
 function_params
@@ -193,7 +244,6 @@ function_params
 		}
 	;
 
-
 %%  /* Start of lexer, hopefully go will let us do this automatically in the future */
 
 
@@ -201,14 +251,15 @@ const (
 	eof = 0
 	errorString = "<ERROR>"
 	eofString = "<EOF>"
-	builtins = `has|if|gte|lte|gt|lt|eq|ne`
+	builtins = `has|if|gte|lte|gt|lt|eq|ne|set`
 	logicals  = `true|false|and|or|not`
 	numbers   = `(-)?[0-9]+(\.[0-9]+)?`
 	compops   = `<=|>=|<|>|==|!=`
 	stringr   = `\".+?\"`
-	pipes     = `:|\|`
+	pipes     = `:|\||,`
 	syms      = `\$|\[|\]|\(|\)`
 	idents    = `([a-zA-Z_][a-zA-Z_0-9]*)`
+	maths     = `\-|\*|/|\+`
 )
 
 var (
@@ -222,7 +273,7 @@ func init() {
 
 	var err error
 	{
-		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents} ,"|")
+		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents, maths} ,"|")
 
 		regexStr := `^(` + re + `)`
 		tokenizer, err = regexp.Compile(regexStr)
@@ -358,6 +409,16 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 	 	return EQ
 	case "ne":
 		return NE
+	case "set":
+		return SET
+	case "-":
+		return MINUS
+	case "+":
+		return PLUS
+	case "/":
+		return DIVIDE
+	case "*":
+		return MULTIPLY
 	default:
 		switch {
 			case numberRegex.MatchString(token):

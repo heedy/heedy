@@ -96,6 +96,23 @@ func TestPipelineGenerator(t *testing.T) {
 
 		// wrong number of args on generation
 		{"passthrough($ > 5 | eq(false), $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+
+		// setting values
+		{"set($, 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
+		{"set($, true)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+		{"set($, \"foo\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
+		{"set($[\"bar\"], \"foo\")", false, true, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
+
+		// maths
+		{"1 + 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 2}},
+		{"$ + 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 5}},
+		{"$ + \"4\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 8}},
+		{"$ * 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 8}},
+		{"$ / 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 2}},
+		{"1 + 2 * 3 + 4", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 11}},
+		{"1 + 2 * (3 + 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 15}},
+		{"-1 + 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 1}},
+		{"-(1 + 2)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: -3}},
 	}
 
 	// function that should nilt out
