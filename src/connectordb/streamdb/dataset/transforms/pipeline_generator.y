@@ -30,7 +30,7 @@ import (
 %type <stringList> string_list
 
 // All tokens and terminals are strings
-%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA GTE LTE GT LT EQ NE IDENTIFIER HAS IF SET PLUS MINUS MULTIPLY DIVIDE
+%token <strVal> NUMBER BOOL STRING COMPOP THIS OR AND NOT RB LB EOF PIPE RSQUARE LSQUARE COMMA IDENTIFIER HAS IF SET PLUS MINUS MULTIPLY DIVIDE
 
 %left UMINUS      /*  supplies  precedence  for  unary  minus  */
 
@@ -170,36 +170,6 @@ function
 		{
 			$$ = pipelineGeneratorHas($3)
 		}
-	| GTE LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, ">=")
-		}
-	| LTE LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, "<=")
-		}
-	| GT  LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, ">")
-		}
-	| LT  LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, "<")
-		}
-	| EQ  LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, "==")
-		}
-	| NE  LB transform_list RB
-		{
-			identity := pipelineGeneratorIdentity()
-			$$ = pipelineGeneratorCompare(identity, $3, "!=")
-		}
 	| IDENTIFIER LB RB
 		{
 			fun, err := getCustomFunction($1)
@@ -251,11 +221,11 @@ const (
 	eof = 0
 	errorString = "<ERROR>"
 	eofString = "<EOF>"
-	builtins = `has|if|gte|lte|gt|lt|eq|ne|set`
+	builtins = `has|if|set`
 	logicals  = `true|false|and|or|not`
 	numbers   = `(-)?[0-9]+(\.[0-9]+)?`
 	compops   = `<=|>=|<|>|==|!=`
-	stringr   = `\".+?\"`
+	stringr   = `\"(\[\\"nrt\\]|.)*?\"|'(\\['nrt\\]|.)*?'`
 	pipes     = `:|\||,`
 	syms      = `\$|\[|\]|\(|\)`
 	idents    = `([a-zA-Z_][a-zA-Z_0-9]*)`
@@ -397,18 +367,6 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 		return PIPE
 	case ",":
 		return COMMA
-	case "gte":
-		return GTE
-	case "lte":
-		return LTE
-	case "lt":
-		return LT
-	case "gt":
-		return GT
-	case "eq":
-	 	return EQ
-	case "ne":
-		return NE
 	case "set":
 		return SET
 	case "-":
@@ -425,8 +383,15 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 				return NUMBER
 			case stringRegex.MatchString(token):
 				// unquote token
-				lval.strVal = token[1: len(token) - 1]
+				strval = token[1: len(token) - 1]
 
+				// replace escape characters
+				strval = strings.Replace(strval, "\\n", "\n", -1)
+				strval = strings.Replace(strval, "\\r", "\r", -1)
+				strval = strings.Replace(strval, "\\t", "\t", -1)
+				strval = strings.Replace(strval, "\\\\", "\\", -1)
+
+				lval.strVal = strval
 				return STRING
 			default:
 				return IDENTIFIER
