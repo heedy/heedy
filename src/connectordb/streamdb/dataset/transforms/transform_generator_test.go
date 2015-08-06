@@ -113,6 +113,14 @@ func TestPipelineGenerator(t *testing.T) {
 		{"set($, \"foo\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 		{"set($[\"bar\"], \"foo\")", false, true, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 
+		// single call identifiers
+		{"fortyTwo", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
+		{"fortyTwo | identity", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
+		{"passthrough(fortyTwo)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
+		{"passthrough(fortyTwo | identity)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
+		{"fortyTwo + fortyTwo", true, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
+		{"(fortyTwo) + (fortyTwo)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 84}},
+
 		// maths
 		{"1 + 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 2}},
 		{"$ + 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 5}},

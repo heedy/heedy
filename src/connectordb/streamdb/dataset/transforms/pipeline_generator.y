@@ -56,6 +56,16 @@ if_transform
 		{
 			$$ = pipelineGeneratorIf($2)
 		}
+	| IDENTIFIER
+		{
+			fun, err := getCustomFunction($1)
+
+			if err != nil {
+				Transformlex.Error(err.Error())
+			}
+
+			$$ = fun
+		}
 	;
 
 
