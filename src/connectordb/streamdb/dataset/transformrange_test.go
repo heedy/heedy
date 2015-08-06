@@ -52,3 +52,32 @@ func TestTransformRange(t *testing.T) {
 	require.NotNil(t, da)
 	require.Equal(t, dpa2.String(), da.String())
 }
+
+func TestTransformRangeObject(t *testing.T) {
+	dpa := datastream.DatapointArray{
+		datastream.Datapoint{Data: map[string]interface{}{"arg": "hi"}},
+		datastream.Datapoint{Data: map[string]interface{}{"arg": "hello"}},
+		datastream.Datapoint{Data: map[string]interface{}{"arg": "hi"}},
+		datastream.Datapoint{Data: map[string]interface{}{"arg": "hi"}},
+	}
+
+	dpa2 := datastream.DatapointArray{
+		datastream.Datapoint{Data: map[string]interface{}{"arg": "hello"}},
+	}
+
+	dr := datastream.NewDatapointArrayRange(dpa, 0)
+
+	tr, err := NewTransformRange(dr, "if $[\"arg\"] == \"hello\"")
+	require.NoError(t, err)
+
+	for i := 0; i < len(dpa2); i++ {
+		dp, err := tr.Next()
+		require.NoError(t, err)
+		require.Equal(t, dpa2[i].String(), dp.String())
+	}
+	dp, err := tr.Next()
+	require.NoError(t, err)
+	require.Nil(t, dp)
+
+	tr.Close()
+}
