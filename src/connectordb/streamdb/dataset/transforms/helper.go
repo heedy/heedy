@@ -26,11 +26,18 @@ func handleResultError(prefix string, dp *datastream.Datapoint, err error, coers
 
 // Calls transform and tries to read a bool, fails on no bool or error
 func readBool(prefix string, dp *datastream.Datapoint, transform TransformFunc) (bool, error) {
-	if dp == nil {
+	if dp == nil || dp.Data == nil {
 		return false, errors.New(prefix + " received nil value")
 	}
 
 	tdp, err := transform(dp)
+	if err != nil {
+		return false, err
+	}
+	if tdp.Data == nil {
+		return false, errors.New(prefix + " received nil value after transform")
+	}
+
 	filter, ok := tdp.Data.(bool)
 
 	if err := handleResultError(prefix, tdp, err, ok); err != nil {

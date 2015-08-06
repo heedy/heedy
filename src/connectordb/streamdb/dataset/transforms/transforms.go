@@ -3,11 +3,7 @@ package transforms
 import "connectordb/streamdb/datastream"
 
 func CopyDatapoint(dp *datastream.Datapoint) *datastream.Datapoint {
-	var result datastream.Datapoint
-	result.Timestamp = dp.Timestamp
-	result.Data = dp.Data //Note: most likely this is not a deep copy
-	result.Sender = dp.Sender
-	return &result
+	return dp.Copy()
 }
 
 //DatapointTransform is an interface that transforms one Datapoint at a time. It is guaranteed

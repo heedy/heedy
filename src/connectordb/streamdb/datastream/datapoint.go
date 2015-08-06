@@ -56,6 +56,15 @@ func (d *Datapoint) HasSchema(schema *gojsonschema.Schema) bool {
 	return err == nil && res.Valid()
 }
 
+// Copy creates a shallow copy of the datapoint
+func (dp *Datapoint) Copy() *Datapoint {
+	var result Datapoint
+	result.Timestamp = dp.Timestamp
+	result.Data = dp.Data //Note: most likely this is not a deep copy
+	result.Sender = dp.Sender
+	return &result
+}
+
 //NewDatapoint returns a datapoint with the current timestamp
 func NewDatapoint() Datapoint {
 	var dp Datapoint
