@@ -21,7 +21,16 @@ func TestPipelineGenerator(t *testing.T) {
 		{"true", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"false", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
 		{"45.555", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 45.555}},
+
+		// String testing -- escaping, unicode and pipes
 		{"\"string\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string"}},
+		{"'string'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string"}},
+		{"'string\\n'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\n"}},
+		{"'string\\t'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\t"}},
+		{"'string\\\\'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\\"}},
+		{"'string\\r'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\r"}},
+		{"'string\"'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\""}},
+		{"'|'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "|"}},
 		{"\"❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €"}},
 
 		// Literal identity
