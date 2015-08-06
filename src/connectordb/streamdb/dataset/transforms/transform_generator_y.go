@@ -90,7 +90,7 @@ const (
 	logicals    = `true|false|and|or|not`
 	numbers     = `(-)?[0-9]+(\.[0-9]+)?`
 	compops     = `<=|>=|<|>|==|!=`
-	stringr     = `\"(\\[\\"nrt\\]|.)*?\"|'(\\['nrt\\]|.)*?'`
+	stringr     = `\"(\\["nrt\\]|.)*?\"|'(\\['nrt\\]|.)*?'`
 	pipes       = `:|\||,`
 	syms        = `\$|\[|\]|\(|\)`
 	idents      = `([a-zA-Z_][a-zA-Z_0-9]*)`
@@ -252,6 +252,8 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 			strval = strings.Replace(strval, "\\r", "\r", -1)
 			strval = strings.Replace(strval, "\\t", "\t", -1)
 			strval = strings.Replace(strval, "\\\\", "\\", -1)
+			strval = strings.Replace(strval, "\\\"", "\"", -1)
+			strval = strings.Replace(strval, "\\'", "'", -1)
 
 			lval.strVal = strval
 			return STRING

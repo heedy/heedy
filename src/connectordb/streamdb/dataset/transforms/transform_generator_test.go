@@ -30,6 +30,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"'string\\\\'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\\"}},
 		{"'string\\r'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\r"}},
 		{"'string\"'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string\""}},
+		{"'string\\''", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "string'"}},
 		{"'|'", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "|"}},
 		{"\"❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €\"", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ €"}},
 
