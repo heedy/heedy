@@ -200,6 +200,7 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 	case eofString:
 		return 0
 	case errorString:
+		lexer.Error("Error, unknown token")
 		return 0
 	case "true", "false":
 		return BOOL
@@ -711,7 +712,7 @@ Transformdefault:
 	case 29:
 		//line pipeline_generator.y:165
 		{
-			TransformVAL.val = pipelineGeneratorIdentity()
+			TransformVAL.val = PipelineGeneratorIdentity()
 		}
 	case 30:
 		//line pipeline_generator.y:172

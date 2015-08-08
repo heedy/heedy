@@ -163,7 +163,7 @@ variable
 		}
 	| THIS
 		{
-			$$ = pipelineGeneratorIdentity()
+			$$ = PipelineGeneratorIdentity()
 		}
 	;
 
@@ -348,6 +348,7 @@ func (lexer *TransformLex) Lex(lval *TransformSymType) int {
 	case eofString:
 		return 0
 	case errorString:
+		lexer.Error("Error, unknown token")
 		return 0
 	case "true", "false":
 		return BOOL

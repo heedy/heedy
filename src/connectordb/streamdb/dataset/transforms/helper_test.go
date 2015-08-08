@@ -28,13 +28,13 @@ func TestReadBool(t *testing.T) {
 	dp := datastream.Datapoint{Data: true}
 
 	{
-		result, err := readBool("", &dp, pipelineGeneratorIdentity())
+		result, err := readBool("", &dp, PipelineGeneratorIdentity())
 		assert.Nil(t, err)
 		assert.True(t, result)
 	}
 
 	{
-		_, err := readBool("", nil, pipelineGeneratorIdentity())
+		_, err := readBool("", nil, PipelineGeneratorIdentity())
 		assert.Error(t, err)
 	}
 }

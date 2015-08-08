@@ -22,14 +22,14 @@ func init() {
 func implicitComparisonTransform(name string, children ...TransformFunc) (TransformFunc, error) {
 	// We need one child transform.
 	if len(children) != 1 {
-		return pipelineGeneratorIdentity(), errors.New("gte() Exactly one child required.")
+		return PipelineGeneratorIdentity(), errors.New("gte() Exactly one child required.")
 	}
 
 	// This is the thing we're testing gte from.
 	child := children[0]
 
 	// The identity function gets the existing value
-	identity := pipelineGeneratorIdentity()
+	identity := PipelineGeneratorIdentity()
 
 	switch name {
 	case "gte":
@@ -54,11 +54,11 @@ func SumTransform(name string, children ...TransformFunc) (TransformFunc, error)
 
 	// We need one child transform.
 	if len(children) != 0 {
-		return pipelineGeneratorIdentity(), errors.New("sum() required: no children.")
+		return PipelineGeneratorIdentity(), errors.New("sum() required: no children.")
 	}
 
 	total := 0.0
-	identity := pipelineGeneratorIdentity()
+	identity := PipelineGeneratorIdentity()
 
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		if dp == nil {

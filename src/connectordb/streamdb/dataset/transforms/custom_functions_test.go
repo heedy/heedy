@@ -31,9 +31,9 @@ func TestRegisterCustomFunction(t *testing.T) {
 
 	childRequired := func(name string, children ...TransformFunc) (TransformFunc, error) {
 		if len(children) != 1 {
-			return pipelineGeneratorIdentity(), errors.New("requires exactly one child")
+			return PipelineGeneratorIdentity(), errors.New("requires exactly one child")
 		}
-		return pipelineGeneratorIdentity(), nil
+		return PipelineGeneratorIdentity(), nil
 	}
 	RegisterCustomFunction("childRequired", childRequired)
 
@@ -63,7 +63,7 @@ func TestRegisterCustomFunction(t *testing.T) {
 		_, err := getCustomFunction("childRequired")
 		require.NotNil(t, err)
 
-		rightNumber, err := getCustomFunction("childRequired", pipelineGeneratorIdentity())
+		rightNumber, err := getCustomFunction("childRequired", PipelineGeneratorIdentity())
 		require.Nil(t, err)
 
 		result, err := rightNumber(&testDatapoint)

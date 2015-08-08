@@ -112,6 +112,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"set($, true)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"set($, \"foo\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 		{"set($[\"bar\"], \"foo\")", false, true, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
+		{"$['blah'] = $['arg']", true, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 
 		// single call identifiers
 		{"fortyTwo", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
@@ -144,7 +145,7 @@ func TestPipelineGenerator(t *testing.T) {
 	// passthrough
 	passthroughFunc := func(name string, children ...TransformFunc) (TransformFunc, error) {
 		if len(children) != 1 {
-			return pipelineGeneratorIdentity(), errors.New("passthrough error")
+			return PipelineGeneratorIdentity(), errors.New("passthrough error")
 		}
 		return func(dp *Datapoint) (tdp *Datapoint, err error) {
 			return children[0](dp)
