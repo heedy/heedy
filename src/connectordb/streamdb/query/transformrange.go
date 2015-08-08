@@ -1,8 +1,8 @@
-package dataset
+package query
 
 import (
-	"connectordb/streamdb/dataset/transforms"
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 )
 
 //TransformArray transforms the given array. Note: Since it assumes that the transform is happening

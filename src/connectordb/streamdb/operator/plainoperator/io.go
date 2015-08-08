@@ -1,9 +1,9 @@
 package plainoperator
 
 import (
-	"connectordb/streamdb/dataset"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator/messenger"
+	"connectordb/streamdb/query"
 	"connectordb/streamdb/users"
 	"errors"
 )
@@ -89,7 +89,7 @@ func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string,
 	}
 	//Add a transform to the resulting data range if one is wanted
 	if transform != "" {
-		tr, err := dataset.NewTransformRange(dr, transform)
+		tr, err := query.NewTransformRange(dr, transform)
 		if err != nil {
 			dr.Close()
 			return nil, err
@@ -117,7 +117,7 @@ func (o *PlainOperator) GetShiftedStreamTimeRangeByID(streamID int64, substream 
 	}
 	//Add a transform to the resulting data range if one is wanted
 	if transform != "" {
-		tr, err := dataset.NewTransformRange(dr, transform)
+		tr, err := query.NewTransformRange(dr, transform)
 		if err != nil {
 			dr.Close()
 			return nil, err
@@ -142,7 +142,7 @@ func (o *PlainOperator) GetStreamIndexRangeByID(streamID int64, substream string
 
 	//Add a transform to the resulting data range if one is wanted
 	if transform != "" {
-		tr, err := dataset.NewTransformRange(dr, transform)
+		tr, err := query.NewTransformRange(dr, transform)
 		if err != nil {
 			dr.Close()
 			return nil, err
