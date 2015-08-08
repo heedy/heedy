@@ -31,13 +31,13 @@ func getCustomFunction(identifier string, children ...TransformFunc) (TransformF
 	function, ok := customFunctionMap[identifier]
 
 	if !ok {
-		return pipelineGeneratorIdentity(), errors.New("Undefined Function:" + identifier)
+		return PipelineGeneratorIdentity(), errors.New("Undefined Function:" + identifier)
 	}
 
 	transformFunction, err := function(identifier, children...)
 
 	if err != nil {
-		return pipelineGeneratorIdentity(), errors.New("Undefined Function:" + identifier)
+		return PipelineGeneratorIdentity(), errors.New("Undefined Function:" + identifier)
 	}
 
 	return transformFunction, nil

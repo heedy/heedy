@@ -17,7 +17,7 @@ func pipelineGeneratorConstant(value interface{}, inputError error) TransformFun
 	}
 }
 
-func pipelineGeneratorIdentity() TransformFunc {
+func PipelineGeneratorIdentity() TransformFunc {
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		return dp, nil
 	}
