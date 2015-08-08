@@ -19,7 +19,7 @@ type StreamQuery struct {
 	Stream    string  `json:"stream"`              //The stream name in form usr/dev/stream
 	Transform string  `json:"transform,omitempty"` //The transform to perform on the stream
 	I1        int64   `json:"i1,omitempty"`        //The first index to get
-	I2        int64   `json:"i1,omitempty"`        //The end index of the range to get
+	I2        int64   `json:"i2,omitempty"`        //The end index of the range to get
 	T1        float64 `json:"t1,omitempty"`        //The start time of the range to get
 	T2        float64 `json:"t2,omitempty"`        //The end time of the range to get
 	Limit     int64   `json:"limit,omitempty"`     //The limit of number of datapoints to allow

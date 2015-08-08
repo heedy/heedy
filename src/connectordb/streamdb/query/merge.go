@@ -1,6 +1,13 @@
 package query
 
-import "connectordb/streamdb/datastream"
+import (
+	"connectordb/streamdb/datastream"
+	"errors"
+	"fmt"
+)
+
+//MaxMergeNumber represents the maximum number of streams to merge. Any number greater than this will result in an error
+var MaxMergeNumber = 10
 
 //MergeRange is a DataRange that merges several DataRanges together. It is used to implement the Merge command
 type MergeRange struct {
@@ -65,6 +72,10 @@ func NewMergeRange(dr []datastream.DataRange) (*MergeRange, error) {
 
 //Merge returns a MergeRange which merges the given streams into one large stream
 func Merge(qo QueryOperator, sq []*StreamQuery) (*MergeRange, error) {
+	if len(sq) > MaxMergeNumber {
+		return nil, errors.New(fmt.Sprintf("Merging more than %d streams is disabled.", MaxMergeNumber))
+	}
+
 	dr := make([]datastream.DataRange, 0, len(sq))
 	for i := range sq {
 		d, err := sq[i].Run(qo)

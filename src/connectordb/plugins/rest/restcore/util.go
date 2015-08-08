@@ -1,7 +1,9 @@
 package restcore
 
 import (
+	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
+	"connectordb/streamdb/operator/datapoint"
 	"encoding/json"
 	"errors"
 	"io"
@@ -251,4 +253,33 @@ func ParseTRange(q url.Values) (float64, float64, int64, error) {
 	}
 
 	return t1, t2, int64(lim), nil
+}
+
+//WriteJSONResult writes a DataRange as a response
+func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger *log.Entry, err error) (int, string) {
+	if err != nil {
+		return WriteError(writer, logger, http.StatusForbidden, err, false)
+	}
+
+	jreader, err := datapoint.NewJsonReader(dr)
+	if err != nil {
+		if err == io.EOF {
+			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+			writer.Header().Set("Content-Length", "2")
+			writer.WriteHeader(http.StatusOK)
+			writer.Write([]byte("[]")) //If there are no datapoints, just return empty
+			return DEBUG, ""
+		}
+		return WriteError(writer, logger, http.StatusInternalServerError, err, true)
+	}
+
+	defer jreader.Close()
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	writer.WriteHeader(http.StatusOK)
+	_, err = io.Copy(writer, jreader)
+	if err != nil {
+		logger.Errorln(err)
+		return 3, err.Error()
+	}
+	return DEBUG, ""
 }
