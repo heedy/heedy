@@ -414,7 +414,13 @@ class TestConnectorDB(unittest.TestCase):
         usr.create("py@email","mypass")
         dev = usr["mydevice"]
         dev.create()
+
+        db = connectordb.ConnectorDB(dev.apikey,url="http://localhost:8000")
+
         s = db["teststream"]
+
+
+
         s.create({"type": "number"})
 
         s.insert(3)
