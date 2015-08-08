@@ -64,6 +64,11 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		return restcore.INFO, ""
 	}
+	sdr, ok := dr.(datastream.StreamDataRange)
+	if !ok {
+		sdr = nil
+	}
+
 	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
 	f := Feed{
 		Title:   streampath,
@@ -73,7 +78,10 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 		Link:    Link{Href: streamuri, Rel: "self"}, //I dislike links. Especially hard-coded ones
 		Entry:   make([]*Entry, 0, EntryLimit),
 	}
-	i := dr.Index()
+	i := int64(0)
+	if sdr != nil {
+		i = sdr.Index()
+	}
 	for dp, err := dr.Next(); err == nil && dp != nil; dp, err = dr.Next() {
 		v := duck.JSONString(dp.Data)
 		if v == "" {
@@ -94,7 +102,11 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			Author:  &Person{authr},
 			Content: &Text{Body: v},
 		})
-		i = dr.Index()
+		if sdr != nil {
+			i = sdr.Index()
+		} else {
+			i++
+		}
 
 	}
 

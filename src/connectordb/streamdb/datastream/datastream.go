@@ -30,7 +30,7 @@ func OpenDataStream(c Cache, sd *sql.DB, chunksize int) (ds *DataStream, err err
 	return &DataStream{c, sqls, chunksize}, nil
 }
 
-//Close releases all resources held by the DataStream. It does NOT close open DataRanges
+//Close releases all resources held by the DataStream. It does NOT close open StreamDataRanges
 func (ds *DataStream) Close() {
 	ds.cache.Close()
 	ds.sqls.Close()
@@ -117,10 +117,10 @@ func (ds *DataStream) RunWriter() error {
 	return err
 }
 
-//IRange returns a DataRange of datapoints which are in the given range of indices.
+//IRange returns a StreamDataRange of datapoints which are in the given range of indices.
 //Indices can be python-like, meaning i1 and i2 negative mean "from the end", and i2=0
 //means to the end.
-func (ds *DataStream) IRange(device int64, stream int64, substream string, i1 int64, i2 int64) (dr DataRange, err error) {
+func (ds *DataStream) IRange(device int64, stream int64, substream string, i1 int64, i2 int64) (dr StreamDataRange, err error) {
 	dpa, i1, i2, err := ds.cache.ReadRange(device, stream, substream, i1, i2)
 	if err != nil || i1 == i2 {
 		return EmptyRange{}, err
@@ -144,8 +144,8 @@ func (ds *DataStream) IRange(device int64, stream int64, substream string, i1 in
 	}, i2-i1), err
 }
 
-//TRange returns a DataRange of datapoints which are in the given range of timestamp.
-func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t2 float64) (dr DataRange, err error) {
+//TRange returns a StreamDataRange of datapoints which are in the given range of timestamp.
+func (ds *DataStream) TRange(device int64, stream int64, substream string, t1, t2 float64) (dr StreamDataRange, err error) {
 	//TRange works a bit differently from IRange, since time ranges go straight to postgres
 	sqlr, startindex, err := ds.sqls.GetByTime(stream, substream, t1)
 
@@ -175,8 +175,8 @@ func (ds *DataStream) GetTimeIndex(device int64, stream int64, substream string,
 //TimePlusIndexRange returns a range starting at the given time, offset by the given index (+ or -),
 //	The range is to the end of the entire stream (ie, just close it when you don't need further data)
 //TODO: This function can be made much more efficient with a bit of cleverness regarding the underlying
-//	DataRanges
-func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream string, t1, t2 float64, i int64) (DataRange, error) {
+//	StreamDataRanges
+func (ds *DataStream) TimePlusIndexRange(device int64, stream int64, substream string, t1, t2 float64, i int64) (StreamDataRange, error) {
 	//First off, we get the TRange
 	dr, err := ds.TRange(device, stream, substream, t1, t2)
 	if err != nil {
