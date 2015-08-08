@@ -1,8 +1,8 @@
-package dataset
+package query
 
 import (
-	"connectordb/streamdb/dataset/transforms"
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 )
 
 //TransformArray transforms the given array. Note: Since it assumes that the transform is happening
@@ -35,17 +35,17 @@ func TransformArray(t transforms.DatapointTransform, dpa *datastream.DatapointAr
 }
 
 type TransformRange struct {
-	Data      datastream.DataRange
+	Data      datastream.StreamDataRange
 	Transform transforms.DatapointTransform
 }
 
-//Index returns the index of the next datapoint in the underlying DataRange - it does not guarantee that the datapoint won't be filtered by the
+//Index returns the index of the next datapoint in the underlying StreamDataRange - it does not guarantee that the datapoint won't be filtered by the
 //underlying transforms
 func (t *TransformRange) Index() int64 {
 	return t.Data.Index()
 }
 
-//Close closes the underlying DataRange
+//Close closes the underlying StreamDataRange
 func (t *TransformRange) Close() {
 	t.Data.Close()
 }
@@ -68,7 +68,7 @@ func (t *TransformRange) Next() (dp *datastream.Datapoint, err error) {
 	}
 }
 
-//NextArray is here to fit into the DataRange interface - given a batch of data from the underlying
+//NextArray is here to fit into the StreamDataRange interface - given a batch of data from the underlying
 //data store, returns the DatapointArray of transformed data
 func (t *TransformRange) NextArray() (da *datastream.DatapointArray, err error) {
 	for {
@@ -88,7 +88,7 @@ func (t *TransformRange) NextArray() (da *datastream.DatapointArray, err error) 
 }
 
 //NewTransformRange generates a transform range from a transfrom pipeline
-func NewTransformRange(dr datastream.DataRange, transformpipeline string) (*TransformRange, error) {
+func NewTransformRange(dr datastream.StreamDataRange, transformpipeline string) (*TransformRange, error) {
 	t, err := transforms.NewTransformPipeline(transformpipeline)
 	if err != nil {
 		return nil, err

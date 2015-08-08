@@ -4,10 +4,8 @@ import (
 	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
-	"connectordb/streamdb/operator/datapoint"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"sync/atomic"
@@ -57,34 +55,6 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 	return restcore.DEBUG, querylog
 }
 
-func writeJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger *log.Entry, err error) (int, string) {
-	if err != nil {
-		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-	}
-
-	jreader, err := datapoint.NewJsonReader(dr)
-	if err != nil {
-		if err == io.EOF {
-			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-			writer.Header().Set("Content-Length", "2")
-			writer.WriteHeader(http.StatusOK)
-			writer.Write([]byte("[]")) //If there are no datapoints, just return empty
-			return restcore.DEBUG, ""
-		}
-		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
-	}
-
-	defer jreader.Close()
-	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
-	_, err = io.Copy(writer, jreader)
-	if err != nil {
-		logger.Errorln(err)
-		return 3, err.Error()
-	}
-	return restcore.DEBUG, ""
-}
-
 //StreamRange gets a range of data from a stream
 func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
@@ -95,7 +65,7 @@ func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.
 	if err == nil {
 		querylog := fmt.Sprintf("irange [%d,%d)", i1, i2)
 		dr, err := o.GetStreamIndexRange(streampath, i1, i2, transform)
-		lvl, _ := writeJSONResult(writer, dr, logger, err)
+		lvl, _ := restcore.WriteJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	} else if err != restcore.ErrCantParse {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
@@ -107,7 +77,7 @@ func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.
 	if err == nil {
 		querylog := fmt.Sprintf("trange [%.1f,%.1f) limit=%d", t1, t2, lim)
 		dr, err := o.GetStreamTimeRange(streampath, t1, t2, lim, transform)
-		lvl, _ := writeJSONResult(writer, dr, logger, err)
+		lvl, _ := restcore.WriteJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	}
 

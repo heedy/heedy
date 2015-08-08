@@ -14,8 +14,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"connectordb/plugins/rest/crud"
-	"connectordb/plugins/rest/dataset"
 	"connectordb/plugins/rest/feed"
+	"connectordb/plugins/rest/query"
 	"connectordb/plugins/rest/restcore"
 
 	log "github.com/Sirupsen/logrus"
@@ -125,7 +125,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllStreams, db)).Queries("q", "countstreams").Methods("GET")
 
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
-	dataset.Router(db, prefix.PathPrefix("/dataset").Subrouter())
+	query.Router(db, prefix.PathPrefix("/query").Subrouter())
 	feed.Router(db, prefix.PathPrefix("/feed").Subrouter())
 
 	go restcore.RunStats()

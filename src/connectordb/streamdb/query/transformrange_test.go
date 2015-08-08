@@ -1,4 +1,4 @@
-package dataset
+package query
 
 import (
 	"connectordb/streamdb/datastream"

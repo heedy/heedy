@@ -1,16 +1,23 @@
 package datastream
 
-//The DataRange interface - this is the object that is returned from different caches/stores - it represents
+//The StreamDataRange interface - this is the object that is returned from different caches/stores - it represents
 //a range of data values stored in a certain way, and Next() gets the next datapoint in the range.
-type DataRange interface {
-	Index() int64                        //Returns the index of the DataRange's next datapoint
-	NextArray() (*DatapointArray, error) //Returns the next chunk of datapoints from the DataRange
+type StreamDataRange interface {
+	Index() int64                        //Returns the index of the StreamDataRange's next datapoint
+	NextArray() (*DatapointArray, error) //Returns the next chunk of datapoints from the StreamDataRange
 	Next() (*Datapoint, error)           //Returns the next datapoint in the sequence
 	Close()
 }
 
+//DataRange is StreamDataRange's little brother - while StreamDataRange contains the NextArray and Index methods for more powerful
+//manipulation, a DataRange is just a basic iterator. Note that all StreamDataRange fit the  DataRange interface
+type DataRange interface {
+	Next() (*Datapoint, error)
+	Close()
+}
+
 //The EmptyRange is a range that always returns nil - as if there were no datapoints left.
-//It is the DataRange equivalent of nil
+//It is the StreamDataRange equivalent of nil
 type EmptyRange struct{}
 
 //Index just returns 0
@@ -32,15 +39,15 @@ func (r EmptyRange) Next() (*Datapoint, error) {
 }
 
 //A TimeRange is a Datarange which is time-bounded from both sides. That is, the datapoints allowed are only
-//within the given time range. So if given a DataRange with range [a,b], and the timerange is (c,d], the
+//within the given time range. So if given a StreamDataRange with range [a,b], and the timerange is (c,d], the
 //TimeRange will return all datapoints within the Datarange which are within (c,d].
 type TimeRange struct {
-	dr      DataRange       //The DataRange to wrap
+	dr      StreamDataRange //The StreamDataRange to wrap
 	endtime float64         //The time at which to stop returning datapoints
 	dpap    *DatapointArray //The current array that is being read
 }
 
-//Index returns the underlying DataRange's index.
+//Index returns the underlying StreamDataRange's index.
 func (r *TimeRange) Index() int64 {
 	if r.dpap != nil {
 		return r.dr.Index() - int64(r.dpap.Length())
@@ -48,12 +55,12 @@ func (r *TimeRange) Index() int64 {
 	return r.dr.Index()
 }
 
-//Close closes the internal DataRange
+//Close closes the internal StreamDataRange
 func (r *TimeRange) Close() {
 	r.dr.Close()
 }
 
-//NextArray returns the next datapoint array in sequence from the underlying DataRange, so long as it is within the
+//NextArray returns the next datapoint array in sequence from the underlying StreamDataRange, so long as it is within the
 //correct timestamp bounds
 func (r *TimeRange) NextArray() (dpap *DatapointArray, err error) {
 	if r.dpap == nil {
@@ -76,7 +83,7 @@ func (r *TimeRange) NextArray() (dpap *DatapointArray, err error) {
 	return nil, nil
 }
 
-//Next returns the next datapoint in sequence from the underlying DataRange, so long as it is within the
+//Next returns the next datapoint in sequence from the underlying StreamDataRange, so long as it is within the
 //correct timestamp bounds
 func (r *TimeRange) Next() (dp *Datapoint, err error) {
 	if r.dpap != nil && r.dpap.Length() > 0 {
@@ -100,9 +107,9 @@ func (r *TimeRange) Next() (dp *Datapoint, err error) {
 }
 
 //NewTimeRange creates a time range given the time range of valid datapoints
-func NewTimeRange(dr DataRange, starttime float64, endtime float64) (DataRange, error) {
+func NewTimeRange(dr StreamDataRange, starttime float64, endtime float64) (StreamDataRange, error) {
 
-	//We have a DataRange - but we don't know what time it starts at. We want to skip the
+	//We have a StreamDataRange - but we don't know what time it starts at. We want to skip the
 	// datapoints before starttime
 	dpap, err := dr.NextArray()
 	for dpap != nil && err == nil {
@@ -115,23 +122,23 @@ func NewTimeRange(dr DataRange, starttime float64, endtime float64) (DataRange, 
 	return EmptyRange{}, err
 }
 
-//NumRange returns only the first given number of datapoints (with an optional skip param) from a DataRange
+//NumRange returns only the first given number of datapoints (with an optional skip param) from a StreamDataRange
 type NumRange struct {
-	dr      DataRange
+	dr      StreamDataRange
 	numleft int64 //The number of datapoints left to return
 }
 
-//Close closes the internal DataRange
+//Close closes the internal StreamDataRange
 func (r *NumRange) Close() {
 	r.dr.Close()
 }
 
-//Index returns the underlying DataRange's index value
+//Index returns the underlying StreamDataRange's index value
 func (r *NumRange) Index() int64 {
 	return r.dr.Index()
 }
 
-//NextArray returns the next datapoint from the underlying DataRange so long as the datapoint array is within the
+//NextArray returns the next datapoint from the underlying StreamDataRange so long as the datapoint array is within the
 //amount of datapoints to return.
 func (r *NumRange) NextArray() (*DatapointArray, error) {
 	if r.numleft == 0 {
@@ -152,7 +159,7 @@ func (r *NumRange) NextArray() (*DatapointArray, error) {
 	return dpa, nil
 }
 
-//Next returns the next datapoint from the underlying DataRange so long as the datapoint is within the
+//Next returns the next datapoint from the underlying StreamDataRange so long as the datapoint is within the
 //amonut of datapoints to return.
 func (r *NumRange) Next() (*Datapoint, error) {
 	if r.numleft == 0 {
@@ -174,7 +181,7 @@ func (r *NumRange) Skip(num int) error {
 }
 
 //NewNumRange initializes a new NumRange which will return up to the given amount of datapoints.
-func NewNumRange(dr DataRange, datapoints int64) *NumRange {
+func NewNumRange(dr StreamDataRange, datapoints int64) *NumRange {
 	return &NumRange{dr, datapoints}
 }
 
