@@ -1,9 +1,6 @@
 package authoperator
 
-import (
-	"connectordb/streamdb/users"
-	"fmt"
-)
+import "connectordb/streamdb/users"
 
 //ReadAllStreamsByDeviceID reads all streams associated with the device
 func (o *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
@@ -92,7 +89,6 @@ func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 	originalStream, err := o.BaseOperator.ReadStreamByID(modifiedstream.StreamId)
 	if err != nil {
-		fmt.Println("first")
 		return err
 	}
 
@@ -109,7 +105,6 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 	permission := myDevice.RelationToStream(originalStream, streamsDevice)
 
 	if modifiedstream.RevertUneditableFields(*originalStream, permission) > 0 {
-		fmt.Println("third")
 		return ErrPermissions
 	}
 
@@ -118,7 +113,6 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 		o.UserLogStreamID(originalStream.StreamId, "UpdateStream")
 	}
 
-	fmt.Println("fourth")
 	return err
 }
 

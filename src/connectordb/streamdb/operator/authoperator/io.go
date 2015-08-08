@@ -32,9 +32,17 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 		}
 
 		//Since the writer is not the owner, if the stream is a downlink, write to the downlink substream
-		if substream == "" && strm.Downlink {
+		if strm.Downlink {
 			substream = "downlink"
+		} else {
+			//It isn't a downlink stream - check if current device is an admin
+			if !dev.IsAdmin {
+				//The device can't write the stream - this is to stop potential errors when users unknowingly
+				//write to one of their devices' streams without understanding what that means
+				return ErrPermissions
+			}
 		}
+
 	} else {
 		//The writer is reader. Ensure the sender field is empty
 		for i := range data {
