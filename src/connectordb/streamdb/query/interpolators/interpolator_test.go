@@ -26,7 +26,7 @@ type testcase struct {
 	Result    *datastream.Datapoint
 }
 
-func interpolatorTester(t *testing.T, iname string, dr datastream.StreamDataRange, args []string, haserr bool, testcases []testcase) {
+func interpolatorTester(t *testing.T, iname string, dr datastream.DataRange, args []string, haserr bool, testcases []testcase) {
 	i, err := Interpolators[iname](dr, args)
 	if haserr {
 		require.Error(t, err, fmt.Sprintf("%s: %v", iname, args))

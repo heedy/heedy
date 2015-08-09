@@ -15,7 +15,7 @@ import (
 type AfterInterpolator struct {
 	prevDatapoint *datastream.Datapoint
 
-	currentRange datastream.StreamDataRange
+	currentRange datastream.DataRange
 }
 
 //Interpolate gets the datapoint corresponding to the interpolation timestamp
@@ -39,8 +39,8 @@ func (i *AfterInterpolator) Close() {
 	i.currentRange.Close()
 }
 
-//NewAfterInterpolator returns the AfterInterpolator for the given StreamDataRange
-func NewAfterInterpolator(dr datastream.StreamDataRange, args []string) (Interpolator, error) {
+//NewAfterInterpolator returns the AfterInterpolator for the given DataRange
+func NewAfterInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
 	if len(args) > 0 {
 		return nil, errors.New("after interpolator does not accept arguments")
 	}

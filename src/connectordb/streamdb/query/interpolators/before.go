@@ -16,7 +16,7 @@ type BeforeInterpolator struct {
 	prevDatapoint *datastream.Datapoint
 	curDatapoint  *datastream.Datapoint
 
-	currentRange datastream.StreamDataRange
+	currentRange datastream.DataRange
 }
 
 //Interpolate gets the datapoint corresponding to the interpolation timestamp
@@ -41,7 +41,7 @@ func (i *BeforeInterpolator) Close() {
 }
 
 //NewBeforeInterpolator returns the BeforeInterpolator for the given stream and starting time
-func NewBeforeInterpolator(dr datastream.StreamDataRange, args []string) (Interpolator, error) {
+func NewBeforeInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
 	if len(args) > 0 {
 		return nil, errors.New("before interpolator does not accept arguments")
 	}

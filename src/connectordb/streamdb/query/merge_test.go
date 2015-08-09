@@ -44,7 +44,7 @@ func TestMerge(t *testing.T) {
 		datastream.Datapoint{Timestamp: 5.1},
 		datastream.Datapoint{Timestamp: 5.2},
 	}
-	mq := NewMockQueryOperator(map[string]datastream.DatapointArray{"u/d/s1": dpa1, "u/d/s2": dpa2})
+	mq := NewMockOperator(map[string]datastream.DatapointArray{"u/d/s1": dpa1, "u/d/s2": dpa2})
 
 	dr, err := Merge(mq, []*StreamQuery{
 		&StreamQuery{Stream: "u/d/s1", T1: 0.5},

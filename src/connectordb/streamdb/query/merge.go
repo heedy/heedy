@@ -71,7 +71,7 @@ func NewMergeRange(dr []datastream.DataRange) (*MergeRange, error) {
 }
 
 //Merge returns a MergeRange which merges the given streams into one large stream
-func Merge(qo QueryOperator, sq []*StreamQuery) (*MergeRange, error) {
+func Merge(qo Operator, sq []*StreamQuery) (*MergeRange, error) {
 	if len(sq) > MaxMergeNumber {
 		return nil, errors.New(fmt.Sprintf("Merging more than %d streams is disabled.", MaxMergeNumber))
 	}
