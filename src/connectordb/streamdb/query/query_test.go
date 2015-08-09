@@ -12,19 +12,21 @@ func CompareRange(t *testing.T, dr datastream.DataRange, dpa datastream.Datapoin
 	for i := range dpa {
 		dp, err := dr.Next()
 		require.NoError(t, err, dpa[i].String())
-		require.Equal(t, dp.String(), dpa[i].String())
+		if !dp.IsEqual(dpa[i]) {
+			require.Equal(t, dp.String(), dpa[i].String())
+		}
 	}
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.Nil(t, dp)
 }
 
-//MockQueryOperator is used to test queries
-type MockQueryOperator struct {
+//MockOperator is used to test queries
+type MockOperator struct {
 	Data map[string]datastream.DatapointArray
 }
 
-func (m *MockQueryOperator) get(streampath string) (datastream.DataRange, error) {
+func (m *MockOperator) get(streampath string) (datastream.DataRange, error) {
 	md, ok := m.Data[streampath]
 	if !ok {
 		return nil, errors.New("Could not find stream " + streampath)
@@ -32,15 +34,18 @@ func (m *MockQueryOperator) get(streampath string) (datastream.DataRange, error)
 	return datastream.NewDatapointArrayRange(md, 0), nil
 }
 
-func (m *MockQueryOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
+func (m *MockOperator) GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error) {
 	return m.get(streampath)
 }
-func (m *MockQueryOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error) {
+func (m *MockOperator) GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error) {
+	return m.get(streampath)
+}
+func (m *MockOperator) GetShiftedStreamTimeRange(streampath string, t1 float64, t2 float64, ishift, limit int64, transform string) (datastream.DataRange, error) {
 	return m.get(streampath)
 }
 
-func NewMockQueryOperator(d map[string]datastream.DatapointArray) *MockQueryOperator {
-	return &MockQueryOperator{Data: d}
+func NewMockOperator(d map[string]datastream.DatapointArray) *MockOperator {
+	return &MockOperator{Data: d}
 }
 
 func TestStreamQueryBasics(t *testing.T) {
@@ -67,7 +72,7 @@ func TestStreamQueryRun(t *testing.T) {
 		datastream.Datapoint{Data: 3.14},
 	}
 
-	mq := NewMockQueryOperator(map[string]datastream.DatapointArray{"u/d/s": dpa})
+	mq := NewMockOperator(map[string]datastream.DatapointArray{"u/d/s": dpa})
 
 	s := StreamQuery{}
 	s.Stream = "u/d/s"

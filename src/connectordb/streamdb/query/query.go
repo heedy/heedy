@@ -5,11 +5,12 @@ import (
 	"errors"
 )
 
-//QueryOperator is an interface describing the functions that are needed for query. The standard operator implements these,
+//Operator is an interface describing the functions that are needed for query. The standard operator implements these,
 //	but for import sake and for simplified mocking, only the necessary interface is shown here
-type QueryOperator interface {
+type Operator interface {
 	GetStreamIndexRange(streampath string, i1 int64, i2 int64, transform string) (datastream.DataRange, error)
 	GetStreamTimeRange(streampath string, t1 float64, t2 float64, limit int64, transform string) (datastream.DataRange, error)
+	GetShiftedStreamTimeRange(streampath string, t1 float64, t2 float64, ishift, limit int64, transform string) (datastream.DataRange, error)
 }
 
 //StreamQuery contains all the necessary information to perform a query on the given stream. It is the structure used
@@ -23,6 +24,8 @@ type StreamQuery struct {
 	T1        float64 `json:"t1,omitempty"`        //The start time of the range to get
 	T2        float64 `json:"t2,omitempty"`        //The end time of the range to get
 	Limit     int64   `json:"limit,omitempty"`     //The limit of number of datapoints to allow
+
+	indexbacktrack int64 //The number of elements to backtrack before a starting time (used for time queries)
 }
 
 //IsValid checks if the StreamQuery encodes a valid query. It does not check whether
@@ -38,7 +41,7 @@ func (s *StreamQuery) HasRange() bool {
 }
 
 //Run runs the query that the struct encodes on the given operator
-func (s *StreamQuery) Run(qm QueryOperator) (datastream.DataRange, error) {
+func (s *StreamQuery) Run(qm Operator) (datastream.DataRange, error) {
 
 	if s.T1 != 0 || s.T2 != 0 || s.Limit != 0 {
 		//First check that only one method of querying is active
@@ -48,6 +51,9 @@ func (s *StreamQuery) Run(qm QueryOperator) (datastream.DataRange, error) {
 		}
 
 		//Alright, query by time
+		if s.indexbacktrack > 0 {
+			return qm.GetShiftedStreamTimeRange(s.Stream, s.T1, s.T2, -s.indexbacktrack, s.Limit, s.Transform)
+		}
 		return qm.GetStreamTimeRange(s.Stream, s.T1, s.T2, s.Limit, s.Transform)
 	}
 

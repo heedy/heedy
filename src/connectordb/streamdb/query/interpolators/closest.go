@@ -11,7 +11,7 @@ type ClosestInterpolator struct {
 	prevDatapoint *datastream.Datapoint
 	curDatapoint  *datastream.Datapoint
 
-	currentRange datastream.StreamDataRange
+	currentRange datastream.DataRange
 }
 
 //Next gets the datapoint corresponding to the interpolation timestamp
@@ -43,7 +43,7 @@ func (i *ClosestInterpolator) Close() {
 }
 
 //NewClosestInterpolator returns the ClosestInterpolator for the given stream and starting time
-func NewClosestInterpolator(dr datastream.StreamDataRange, args []string) (Interpolator, error) {
+func NewClosestInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
 	if len(args) > 0 {
 		return nil, errors.New("before interpolator does not accept arguments")
 	}

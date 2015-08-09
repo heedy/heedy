@@ -5,7 +5,6 @@ import (
 	"connectordb/streamdb"
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/query"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -16,7 +15,13 @@ import (
 
 //GenerateDataset allows to generate a dataset of multiple streams at once to simplify analysis of data
 func GenerateDataset(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	return restcore.WriteError(writer, logger, http.StatusNotImplemented, errors.New("This function is under construction"), false)
+	var datasetquery query.DatasetQuery
+	err := restcore.UnmarshalRequest(request, &datasetquery)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
+	dr, err := datasetquery.Run(o)
+	return restcore.WriteJSONResult(writer, dr, logger, err)
 }
 
 //MergeStreams allows to generate a dataset of multiple streams at once to simplify analysis of data

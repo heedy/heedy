@@ -13,11 +13,11 @@ import (
 //Datapoint is the
 type Datapoint struct {
 	// Timestamp is the Unix timestamp as a float
-	Timestamp float64 `json:"t,omitempty" msgpack:"t,omitempty"`
+	Timestamp float64 `json:"t,omitempty" msgpack:"t,omitempty" duck:"t"`
 	// The actual data associated with this point
-	Data interface{} `json:"d,omitempty" msgpack:"d,omitempty"`
+	Data interface{} `json:"d,omitempty" msgpack:"d,omitempty" duck:"d"`
 	// Sender is optional, path to a device.
-	Sender string `json:"o,omitempty" msgpack:"o,omitempty"`
+	Sender string `json:"o,omitempty" msgpack:"o,omitempty" duck:"o"`
 }
 
 //DatapointFromBytes reads a datapoint from its byte representation
