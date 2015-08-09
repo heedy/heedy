@@ -38,10 +38,11 @@ func GetDatasetPoint(timestamp float64, ranges map[string]*DatasetRangeElement) 
 
 //TDatasetRange is a DataRange used for TDatasets
 type TDatasetRange struct {
-	Data    map[string]*DatasetRangeElement
-	Dt      float64
-	CurTime float64
-	EndTime float64
+	Data      map[string]*DatasetRangeElement
+	Dt        float64
+	CurTime   float64
+	EndTime   float64
+	Transform transforms.DatapointTransform
 }
 
 //Close closes the open DataRanges
@@ -58,13 +59,22 @@ func (dr *TDatasetRange) Next() (dp *datastream.Datapoint, err error) {
 	}
 	dp, err = GetDatasetPoint(dr.CurTime, dr.Data)
 	dr.CurTime += dr.Dt
+
+	if err != nil {
+		return nil, err
+	}
+
+	if dr.Transform != nil {
+		dp, err = dr.Transform.Transform(dp)
+	}
 	return dp, err
 }
 
 type YDatasetRange struct {
-	Data   map[string]*DatasetRangeElement
-	YRange datastream.DataRange
-	Ydp    *datastream.Datapoint
+	Data      map[string]*DatasetRangeElement
+	YRange    datastream.DataRange
+	Ydp       *datastream.Datapoint
+	Transform transforms.DatapointTransform
 }
 
 //Close closes the open DataRanges
@@ -88,5 +98,12 @@ func (dr *YDatasetRange) Next() (dp *datastream.Datapoint, err error) {
 	dp.Data.(map[string]*datastream.Datapoint)["y"] = dr.Ydp
 
 	dr.Ydp, err = dr.YRange.Next()
+	if err != nil {
+		return nil, err
+	}
+	if dr.Transform != nil {
+		dp, err = dr.Transform.Transform(dp)
+	}
+
 	return dp, err
 }

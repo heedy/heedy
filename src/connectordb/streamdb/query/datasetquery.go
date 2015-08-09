@@ -36,8 +36,8 @@ func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRan
 	var dr datastream.DataRange
 	var tr transforms.DatapointTransform
 
-	if dqe.Transform != "" {
-		tr, err = transforms.NewTransformPipeline(dqe.Transform)
+	if dqe.PostTransform != "" {
+		tr, err = transforms.NewTransformPipeline(dqe.PostTransform)
 		if err != nil {
 			return nil, err
 		}
@@ -87,10 +87,11 @@ func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRan
 
 //DatasetQuery represents the full dataset generation query, used both for Ydatasets and Tdatasets
 type DatasetQuery struct {
-	StreamQuery                                 //This is used for Ydatasets - setting the Stream variable will make it a Ydataset - it also holds the range
-	Merge       []*StreamQuery                  `json:"merge,omitempty"` //optional merge for Ydatasets
-	Dt          float64                         `json:"dt,omitempty"`    //Used for TDatasets - setting this variable makes it a time based query
-	Dataset     map[string]*DatasetQueryElement `json:"dataset"`         //The dataset to generate
+	StreamQuery                                   //This is used for Ydatasets - setting the Stream variable will make it a Ydataset - it also holds the range
+	Merge         []*StreamQuery                  `json:"merge,omitempty"`      //optional merge for Ydatasets
+	Dt            float64                         `json:"dt,omitempty"`         //Used for TDatasets - setting this variable makes it a time based query
+	Dataset       map[string]*DatasetQueryElement `json:"dataset"`              //The dataset to generate
+	PostTransform string                          `json:"itransform,omitempty"` //The transform to run on the full datapoint after the dataset element is created
 }
 
 //GetDatasetElements returns the DatasetRangeElement map which is used to generate the dataset
@@ -129,7 +130,16 @@ func (d *DatasetQuery) GetYRange(o Operator) (dr datastream.DataRange, err error
 }
 
 //Run executes the query to get the dataset
-func (d DatasetQuery) Run(o Operator) (datastream.DataRange, error) {
+func (d DatasetQuery) Run(o Operator) (dr datastream.DataRange, err error) {
+	var posttransform transforms.DatapointTransform
+
+	if d.PostTransform != "" {
+		posttransform, err = transforms.NewTransformPipeline(d.PostTransform)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	//first find out if we are doing a Tdataset or a ydataset
 	if !d.IsValid() && len(d.Merge) == 0 {
 		//It is a Tdataset - make sure that no funnybusiness is going on
@@ -137,15 +147,22 @@ func (d DatasetQuery) Run(o Operator) (datastream.DataRange, error) {
 			return nil, errors.New("Tdataset range invalid")
 		}
 		if d.Dt < TDatasetMinDt || (d.T2-d.T1)/d.Dt > float64(TDatasetMaxSize) {
-			return nil, errors.New(fmt.Sprintf("To avoid abuse, Tdataset is limited to a max of %d datapoints with min dt %f", TDatasetMaxSize, TDatasetMinDt))
+			return nil, fmt.Errorf("To avoid abuse, Tdataset is limited to a max of %d datapoints with min dt %f", TDatasetMaxSize, TDatasetMinDt)
 		}
 		dsetrange, err := d.GetDatasetElements(o, d.T1)
-		return &TDatasetRange{
+		dr = &TDatasetRange{
 			Data:    dsetrange,
 			Dt:      d.Dt,
 			CurTime: d.T1,
 			EndTime: d.T2,
-		}, err
+		}
+		if posttransform != nil {
+			dr = &TransformRange{
+				Data:      dr,
+				Transform: posttransform,
+			}
+		}
+		return dr, err
 	}
 
 	//It is a ydataset!
@@ -158,7 +175,7 @@ func (d DatasetQuery) Run(o Operator) (datastream.DataRange, error) {
 		return nil, errors.New("The 'y' label is reserved for the query stream in Ydatasets")
 	}
 
-	dr, err := d.GetYRange(o)
+	dr, err = d.GetYRange(o)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +196,17 @@ func (d DatasetQuery) Run(o Operator) (datastream.DataRange, error) {
 		dr.Close()
 		return nil, err
 	}
-	return &YDatasetRange{
+	dr = &YDatasetRange{
 		Data:   dsetrange,
 		YRange: dr,
 		Ydp:    dp,
-	}, nil
+	}
+	if posttransform != nil {
+		dr = &TransformRange{
+			Data:      dr,
+			Transform: posttransform,
+		}
+	}
+	return dr, nil
 
 }
