@@ -3,8 +3,6 @@ package transforms
 import (
 	. "connectordb/streamdb/datastream"
 
-	"connectordb/streamdb/query/transforms/functions"
-
 	"encoding/json"
 	"errors"
 	"testing"
@@ -135,9 +133,9 @@ func TestPipelineGenerator(t *testing.T) {
 
 	// function that should nilt out
 
-	functions.Transform{
+	Transform{
 		Name: "identity",
-		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
 			return func(dp *Datapoint) (tdp *Datapoint, err error) {
 				return dp, nil
 			}, nil
@@ -145,11 +143,11 @@ func TestPipelineGenerator(t *testing.T) {
 	}.Register()
 
 	// passthrough
-	functions.Transform{
+	Transform{
 		Name: "passthrough",
-		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
 			if len(children) != 1 {
-				return functions.TransformFunc(PipelineGeneratorIdentity()), errors.New("passthrough error")
+				return TransformFunc(PipelineGeneratorIdentity()), errors.New("passthrough error")
 			}
 			return func(dp *Datapoint) (tdp *Datapoint, err error) {
 				return children[0](dp)
@@ -157,9 +155,9 @@ func TestPipelineGenerator(t *testing.T) {
 		},
 	}.Register()
 
-	functions.Transform{
+	Transform{
 		Name: "fortyTwo",
-		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
 			return func(dp *Datapoint) (tdp *Datapoint, err error) {
 				dp.Data = 42
 				return dp, nil

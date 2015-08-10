@@ -2,6 +2,7 @@ package functions
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 	"fmt"
 	"testing"
 
@@ -17,21 +18,21 @@ type TestCaseElement struct {
 
 type TestCase struct {
 	Name        string
-	Args        []TransformFunc
+	Args        []transforms.TransformFunc
 	HasError    bool
 	Description string
 
 	Tests []TestCaseElement
 }
 
-func ConstTransform(c interface{}) TransformFunc {
+func ConstTransform(c interface{}) transforms.TransformFunc {
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		return &datastream.Datapoint{Data: c}, nil
 	}
 }
 
 func (tc TestCase) Run(t *testing.T) {
-	tf, err := Get(tc.Name, tc.Args...)
+	tf, err := transforms.Get(tc.Name, tc.Args...)
 	if tc.HasError {
 		require.Error(t, err, fmt.Sprintf("%v", tc))
 		return

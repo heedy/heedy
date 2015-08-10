@@ -2,20 +2,21 @@ package functions
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 	"errors"
 
 	"github.com/connectordb/duck"
 )
 
-var sum = Transform{
+var sum = transforms.Transform{
 	Name:         "sum",
 	Description:  "Returns the running sum of the values in the datapoints seen",
 	InputSchema:  `{"type":"number"}`,
 	OutputSchema: `{"type":"number"}`,
 
-	Generator: func(name string, args ...TransformFunc) (TransformFunc, error) {
+	Generator: func(name string, args ...transforms.TransformFunc) (transforms.TransformFunc, error) {
 		if len(args) != 0 {
-			return Err("sum does not accept arguments")
+			return transforms.Err("sum does not accept arguments")
 		}
 
 		total := float64(0)

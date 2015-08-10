@@ -2,26 +2,27 @@ package functions
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 	"container/list"
 	"errors"
 
 	"github.com/connectordb/duck"
 )
 
-var smooth = Transform{
-	Name:         "smooth",
-	Description:  "Given a datapoint number to smooth over, returns the average of the last number of datapoints",
+var average = transforms.Transform{
+	Name:         "average",
+	Description:  "Given a datapoint number to average over, returns the average of the last number of datapoints",
 	InputSchema:  `{"type":"number"}`,
 	OutputSchema: `{"type":"number"}`,
-	Args: []TransformArg{
-		TransformArg{
-			Description: "The number of datapoints backwards from the current datapoint to smooth over.",
+	Args: []transforms.TransformArg{
+		transforms.TransformArg{
+			Description: "The number of datapoints backwards from the current datapoint to average over.",
 			Constant:    true,
 		},
 	},
-	Generator: func(name string, args ...TransformFunc) (TransformFunc, error) {
+	Generator: func(name string, args ...transforms.TransformFunc) (transforms.TransformFunc, error) {
 		if len(args) != 1 {
-			return Err("smooth must have one argument")
+			return transforms.Err("average must have one argument")
 		}
 
 		//Set up a linked list of the datapoints within the wanted time period
@@ -29,14 +30,14 @@ var smooth = Transform{
 		//it in now with a nil arg
 		argval, err := args[0](nil)
 		if err != nil || argval == nil {
-			return Err("smooth requires a constant argument.")
+			return transforms.Err("average requires a constant argument.")
 		}
 		num, ok := duck.Int(argval.Data)
 		if !ok {
-			return Err("The argument to smooth must be an integer")
+			return transforms.Err("The argument to average must be an integer")
 		}
 		if num <= 1 || num > 1000 {
-			return Err("Smooth must be called with 1000 >= arg > 1")
+			return transforms.Err("average must be called with 1000 >= arg > 1")
 		}
 
 		cursum := float64(0)
@@ -51,7 +52,7 @@ var smooth = Transform{
 
 			val, ok := duck.Float(dp.Data)
 			if !ok {
-				return nil, errors.New("smooth could not convert datapoint to number")
+				return nil, errors.New("average could not convert datapoint to number")
 			}
 
 			cursum += val

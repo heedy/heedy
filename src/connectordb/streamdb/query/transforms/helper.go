@@ -2,12 +2,9 @@ package transforms
 
 import (
 	"connectordb/streamdb/datastream"
-	"connectordb/streamdb/query/transforms/functions"
 	"errors"
 	"fmt"
 )
-
-type TransformFunc func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
 
 func handleResultError(prefix string, dp *datastream.Datapoint, err error, coersionOk bool) error {
 	if err != nil {
@@ -69,10 +66,5 @@ func logTransform(child TransformFunc) TransformFunc {
 }
 
 func getCustomFunction(identifier string, children ...TransformFunc) (TransformFunc, error) {
-	args := make([]functions.TransformFunc, len(children))
-	for i := range children {
-		args[i] = functions.TransformFunc(children[i])
-	}
-	tf, err := functions.Get(identifier, args...)
-	return TransformFunc(tf), err
+	return Get(identifier, children...)
 }

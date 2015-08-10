@@ -2,13 +2,14 @@ package functions
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 	"testing"
 )
 
 func TestSmooth(t *testing.T) {
 	TestCase{
-		Name:     "smooth",
-		Args:     []TransformFunc{ConstTransform(2)},
+		Name:     "average",
+		Args:     []transforms.TransformFunc{ConstTransform(2)},
 		HasError: false,
 		Tests: []TestCaseElement{
 			TestCaseElement{&datastream.Datapoint{Data: 3}, &datastream.Datapoint{Data: 3}, false, "first datapoint is copy"},
