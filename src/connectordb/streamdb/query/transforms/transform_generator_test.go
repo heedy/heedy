@@ -4,6 +4,8 @@ import (
 	. "connectordb/streamdb/datastream"
 
 	"connectordb/streamdb/query/transforms/functions"
+
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -12,6 +14,9 @@ import (
 )
 
 func TestPipelineGenerator(t *testing.T) {
+	var nestedData interface{}
+	json.Unmarshal([]byte(`{"out":{"in": 3}}`), &nestedData)
+
 	testcases := []struct {
 		Pipeline       string
 		HasSyntaxError bool
@@ -102,7 +107,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"set($, true)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"set($, \"foo\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
 		{"set($[\"bar\"], \"foo\")", false, true, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
-		{"$['blah'] = $['arg']", true, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}},
+		{"$['blah'] = $['arg']", true, false, &Datapoint{Data: 4}, &Datapoint{Data: "foo"}}, // illegal set
 
 		// single call identifiers
 		{"fortyTwo", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
@@ -122,6 +127,10 @@ func TestPipelineGenerator(t *testing.T) {
 		{"1 + 2 * (3 + 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 15}},
 		{"-1 + 2", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 1}},
 		{"-(1 + 2)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: -3}},
+
+		// multi-value accessors
+		{"$['out', 'in']", false, false, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
+		{"$['in', 'out']", false, true, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
 	}
 
 	// function that should nilt out

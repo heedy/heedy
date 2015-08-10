@@ -209,7 +209,7 @@ string_list
 		}
 	| string_list COMMA STRING
 		{
-			$$ = append([]string{$3}, $1...)
+			$$ = append($1, $3)
 		}
 	;
 
