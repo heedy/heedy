@@ -34,24 +34,24 @@ func TransformArray(t transforms.DatapointTransform, dpa *datastream.DatapointAr
 	return &resultarray, nil
 }
 
-type StreamTransformRange struct {
-	Data      datastream.StreamDataRange
+type ExtendedTransformRange struct {
+	Data      datastream.ExtendedDataRange
 	Transform transforms.DatapointTransform
 }
 
-//Index returns the index of the next datapoint in the underlying StreamDataRange - it does not guarantee that the datapoint won't be filtered by the
+//Index returns the index of the next datapoint in the underlying ExtendedDataRange - it does not guarantee that the datapoint won't be filtered by the
 //underlying transforms
-func (t *StreamTransformRange) Index() int64 {
+func (t *ExtendedTransformRange) Index() int64 {
 	return t.Data.Index()
 }
 
-//Close closes the underlying StreamDataRange
-func (t *StreamTransformRange) Close() {
+//Close closes the underlying ExtendedDataRange
+func (t *ExtendedTransformRange) Close() {
 	t.Data.Close()
 }
 
 //Next iterates through a datarange until a datapoint is returned by the transform
-func (t *StreamTransformRange) Next() (dp *datastream.Datapoint, err error) {
+func (t *ExtendedTransformRange) Next() (dp *datastream.Datapoint, err error) {
 	for {
 
 		dp1, err := t.Data.Next()
@@ -68,9 +68,9 @@ func (t *StreamTransformRange) Next() (dp *datastream.Datapoint, err error) {
 	}
 }
 
-//NextArray is here to fit into the StreamDataRange interface - given a batch of data from the underlying
+//NextArray is here to fit into the ExtendedDataRange interface - given a batch of data from the underlying
 //data store, returns the DatapointArray of transformed data
-func (t *StreamTransformRange) NextArray() (da *datastream.DatapointArray, err error) {
+func (t *ExtendedTransformRange) NextArray() (da *datastream.DatapointArray, err error) {
 	for {
 
 		da1, err := t.Data.NextArray()
@@ -87,25 +87,25 @@ func (t *StreamTransformRange) NextArray() (da *datastream.DatapointArray, err e
 	}
 }
 
-//NewStreamTransformRange generates a transform range from a transfrom pipeline
-func NewStreamTransformRange(dr datastream.StreamDataRange, transformpipeline string) (*StreamTransformRange, error) {
+//NewExtendedTransformRange generates a transform range from a transfrom pipeline
+func NewExtendedTransformRange(dr datastream.ExtendedDataRange, transformpipeline string) (*ExtendedTransformRange, error) {
 	t, err := transforms.NewTransformPipeline(transformpipeline)
 	if err != nil {
 		return nil, err
 	}
-	return &StreamTransformRange{
+	return &ExtendedTransformRange{
 		Data:      dr,
 		Transform: t,
 	}, nil
 }
 
-//TransformRange is StreamTransformRange's little brother - it works on DataRanges
+//TransformRange is ExtendedTransformRange's little brother - it works on DataRanges
 type TransformRange struct {
 	Data      datastream.DataRange
 	Transform transforms.DatapointTransform
 }
 
-//Close closes the underlying StreamDataRange
+//Close closes the underlying ExtendedDataRange
 func (t *TransformRange) Close() {
 	t.Data.Close()
 }
@@ -129,7 +129,7 @@ func (t *TransformRange) Next() (dp *datastream.Datapoint, err error) {
 }
 
 //NewTransformRange generates a transform range from a transfrom pipeline
-func NewTransformRange(dr datastream.StreamDataRange, transformpipeline string) (*TransformRange, error) {
+func NewTransformRange(dr datastream.ExtendedDataRange, transformpipeline string) (*TransformRange, error) {
 	t, err := transforms.NewTransformPipeline(transformpipeline)
 	if err != nil {
 		return nil, err

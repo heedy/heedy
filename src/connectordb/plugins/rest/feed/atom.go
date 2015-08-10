@@ -6,6 +6,7 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"encoding/xml"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -64,9 +65,9 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		return restcore.INFO, ""
 	}
-	sdr, ok := dr.(datastream.StreamDataRange)
+	sdr, ok := dr.(datastream.ExtendedDataRange)
 	if !ok {
-		sdr = nil
+		return restcore.WriteError(writer, logger, http.StatusInternalServerError, errors.New("Internal server error: Unable to convert DataRange to ExtendedDataRange"), true)
 	}
 
 	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
@@ -78,10 +79,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 		Link:    Link{Href: streamuri, Rel: "self"}, //I dislike links. Especially hard-coded ones
 		Entry:   make([]*Entry, 0, EntryLimit),
 	}
-	i := int64(0)
-	if sdr != nil {
-		i = sdr.Index()
-	}
+	i := sdr.Index()
 	for dp, err := dr.Next(); err == nil && dp != nil; dp, err = dr.Next() {
 		v := duck.JSONString(dp.Data)
 		if v == "" {
@@ -102,12 +100,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			Author:  &Person{authr},
 			Content: &Text{Body: v},
 		})
-		if sdr != nil {
-			i = sdr.Index()
-		} else {
-			i++
-		}
-
+		i = sdr.Index()
 	}
 
 	result, err := xml.Marshal(f)

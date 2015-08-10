@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStreamTransformRange(t *testing.T) {
+func TestExtendedTransformRange(t *testing.T) {
 	dpa := datastream.DatapointArray{
 		datastream.Datapoint{Data: 1},
 		datastream.Datapoint{Data: 10},
@@ -28,7 +28,7 @@ func TestStreamTransformRange(t *testing.T) {
 
 	dr := datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err := NewStreamTransformRange(dr, "if $ < 5: $ >= 3")
+	tr, err := NewExtendedTransformRange(dr, "if $ < 5: $ >= 3")
 	require.NoError(t, err)
 
 	for i := 0; i < len(dpa2); i++ {
@@ -44,7 +44,7 @@ func TestStreamTransformRange(t *testing.T) {
 
 	dr = datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err = NewStreamTransformRange(dr, "if $ < 5 | $ >= 3")
+	tr, err = NewExtendedTransformRange(dr, "if $ < 5 | $ >= 3")
 	require.NoError(t, err)
 
 	da, err := tr.NextArray()
@@ -53,7 +53,7 @@ func TestStreamTransformRange(t *testing.T) {
 	require.Equal(t, dpa2.String(), da.String())
 }
 
-func TestStreamTransformRangeObject(t *testing.T) {
+func TestExtendedTransformRangeObject(t *testing.T) {
 	dpa := datastream.DatapointArray{
 		datastream.Datapoint{Data: map[string]interface{}{"arg": "hi"}},
 		datastream.Datapoint{Data: map[string]interface{}{"arg": "hello"}},
@@ -67,7 +67,7 @@ func TestStreamTransformRangeObject(t *testing.T) {
 
 	dr := datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err := NewStreamTransformRange(dr, "if $[\"arg\"] == \"hello\"")
+	tr, err := NewExtendedTransformRange(dr, "if $[\"arg\"] == \"hello\"")
 	require.NoError(t, err)
 
 	for i := 0; i < len(dpa2); i++ {
