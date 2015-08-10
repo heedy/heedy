@@ -2,6 +2,8 @@ package transforms
 
 import (
 	. "connectordb/streamdb/datastream"
+
+	"connectordb/streamdb/query/transforms/functions"
 	"errors"
 	"testing"
 
@@ -85,27 +87,15 @@ func TestPipelineGenerator(t *testing.T) {
 		// Multiple stage pipeline
 		{"$ | false | 42", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
 
-		// implicit logicals
-		{"gt(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
-		{"gt(3)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"gte(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"lt(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
-		{"lt(5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"lte(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"ne(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
-		{"ne(5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"eq(4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
-		{"eq(5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
-
 		// Test custom functions
 		{"identity()", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
 		{"passthrough($ > 5)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
-		{"passthrough($ > 5 | eq(false))", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+		{"passthrough($ > 5 | $==false)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"fortyTwo()", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 42}},
 		{"doesnotexist()", true, false, &Datapoint{Data: 4}, nil},
 
 		// wrong number of args on generation
-		{"passthrough($ > 5 | eq(false), $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
+		{"passthrough($ > 5 | $==false, $)", true, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 
 		// setting values
 		{"set($, 4)", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
@@ -135,31 +125,38 @@ func TestPipelineGenerator(t *testing.T) {
 	}
 
 	// function that should nilt out
-	identityFunc := func(name string, children ...TransformFunc) (TransformFunc, error) {
-		return func(dp *Datapoint) (tdp *Datapoint, err error) {
-			return dp, nil
-		}, nil
-	}
-	RegisterCustomFunction("identity", identityFunc)
+
+	functions.Transform{
+		Name: "identity",
+		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+			return func(dp *Datapoint) (tdp *Datapoint, err error) {
+				return dp, nil
+			}, nil
+		},
+	}.Register()
 
 	// passthrough
-	passthroughFunc := func(name string, children ...TransformFunc) (TransformFunc, error) {
-		if len(children) != 1 {
-			return PipelineGeneratorIdentity(), errors.New("passthrough error")
-		}
-		return func(dp *Datapoint) (tdp *Datapoint, err error) {
-			return children[0](dp)
-		}, nil
-	}
-	RegisterCustomFunction("passthrough", passthroughFunc)
+	functions.Transform{
+		Name: "passthrough",
+		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+			if len(children) != 1 {
+				return functions.TransformFunc(PipelineGeneratorIdentity()), errors.New("passthrough error")
+			}
+			return func(dp *Datapoint) (tdp *Datapoint, err error) {
+				return children[0](dp)
+			}, nil
+		},
+	}.Register()
 
-	fortyTwo := func(name string, children ...TransformFunc) (TransformFunc, error) {
-		return func(dp *Datapoint) (tdp *Datapoint, err error) {
-			dp.Data = 42
-			return dp, nil
-		}, nil
-	}
-	RegisterCustomFunction("fortyTwo", fortyTwo)
+	functions.Transform{
+		Name: "fortyTwo",
+		Generator: func(name string, children ...functions.TransformFunc) (functions.TransformFunc, error) {
+			return func(dp *Datapoint) (tdp *Datapoint, err error) {
+				dp.Data = 42
+				return dp, nil
+			}, nil
+		},
+	}.Register()
 
 	for _, c := range testcases {
 
