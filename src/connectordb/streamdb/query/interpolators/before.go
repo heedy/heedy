@@ -40,16 +40,20 @@ func (i *BeforeInterpolator) Close() {
 	i.currentRange.Close()
 }
 
-//NewBeforeInterpolator returns the BeforeInterpolator for the given stream and starting time
-func NewBeforeInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
-	if len(args) > 0 {
-		return nil, errors.New("before interpolator does not accept arguments")
-	}
-	pd, err := dr.Next()
-	if err != nil {
-		return nil, err
-	}
-	cd, err := dr.Next()
+var before = InterpolatorDescription{
+	Name:        "before",
+	Description: "Returns the closest datapoint with a timestamp smaller than the dataset reference",
 
-	return &BeforeInterpolator{pd, cd, dr}, err
+	Generator: func(dr datastream.DataRange, args []string) (Interpolator, error) {
+		if len(args) > 0 {
+			return nil, errors.New("before interpolator does not accept arguments")
+		}
+		pd, err := dr.Next()
+		if err != nil {
+			return nil, err
+		}
+		cd, err := dr.Next()
+
+		return &BeforeInterpolator{pd, cd, dr}, err
+	},
 }

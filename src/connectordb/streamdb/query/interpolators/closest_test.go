@@ -6,8 +6,8 @@ import (
 )
 
 func TestClosestInterpolator(t *testing.T) {
-	interpolatorTester(t, "closest", datastream.NewDatapointArrayRange(dpa, 0), []string{"hi"}, true, nil)
-	interpolatorTester(t, "closest", datastream.NewDatapointArrayRange(dpa, 0), []string{}, false, []testcase{
+	interpolatorTester(t, "closest('hi')", datastream.NewDatapointArrayRange(dpa, 0), true, nil)
+	interpolatorTester(t, "closest", datastream.NewDatapointArrayRange(dpa, 0), false, []testcase{
 		testcase{0.5, false, &dpa[0]},
 		testcase{2.1, false, &dpa[1]}, //Make sure it gives closest value less
 		testcase{2.5, false, &dpa[1]}, //Make sure that it gives smaller if equal dist

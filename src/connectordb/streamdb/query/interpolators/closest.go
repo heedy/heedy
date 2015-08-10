@@ -42,17 +42,21 @@ func (i *ClosestInterpolator) Close() {
 	i.currentRange.Close()
 }
 
-//NewClosestInterpolator returns the ClosestInterpolator for the given stream and starting time
-func NewClosestInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
-	if len(args) > 0 {
-		return nil, errors.New("before interpolator does not accept arguments")
-	}
+var closest = InterpolatorDescription{
+	Name:        "closest",
+	Description: "Returns the closest datapoint with a timestamp closest to the dataset reference",
 
-	pd, err := dr.Next()
-	if err != nil {
-		return nil, err
-	}
-	cd, err := dr.Next()
+	Generator: func(dr datastream.DataRange, args []string) (Interpolator, error) {
+		if len(args) > 0 {
+			return nil, errors.New("before interpolator does not accept arguments")
+		}
 
-	return &ClosestInterpolator{pd, cd, dr}, err
+		pd, err := dr.Next()
+		if err != nil {
+			return nil, err
+		}
+		cd, err := dr.Next()
+
+		return &ClosestInterpolator{pd, cd, dr}, err
+	},
 }

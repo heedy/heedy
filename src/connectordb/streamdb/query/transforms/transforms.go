@@ -8,7 +8,7 @@ func CopyDatapoint(dp *datastream.Datapoint) *datastream.Datapoint {
 
 //DatapointTransform is an interface that transforms one Datapoint at a time. It is guaranteed
 //to be called ordered by Datapoints in the stream, so state is allowed to be kept.
-//To allow more complicated states, once the StreamDataRange runs out of data, a nil is passed through
+//To allow more complicated states, once the ExtendedDataRange runs out of data, a nil is passed through
 //the transform until the transform returns nil, to allow internally queued Datapoints to be returned.
 //To filter datapoins, returning a null Datapoint without error means the daatpoint was filtered (or internally cached)
 type DatapointTransform interface {

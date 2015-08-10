@@ -21,6 +21,7 @@ var (
 //Get the last week's data
 func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*users.Stream, datastream.DataRange, error) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
+	transform := request.URL.Query().Get("transform")
 
 	s, err := o.ReadStream(streampath)
 	if err != nil {
@@ -28,7 +29,7 @@ func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.
 		return nil, nil, err
 	}
 
-	dr, err := o.GetStreamIndexRange(streampath, -EntryLimit, 0, "")
+	dr, err := o.GetStreamIndexRange(streampath, -EntryLimit, 0, transform)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 		return nil, nil, err

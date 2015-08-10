@@ -26,13 +26,13 @@ type testcase struct {
 	Result    *datastream.Datapoint
 }
 
-func interpolatorTester(t *testing.T, iname string, dr datastream.DataRange, args []string, haserr bool, testcases []testcase) {
-	i, err := Interpolators[iname](dr, args)
+func interpolatorTester(t *testing.T, iname string, dr datastream.DataRange, haserr bool, testcases []testcase) {
+	i, err := Get(dr, iname)
 	if haserr {
-		require.Error(t, err, fmt.Sprintf("%s: %v", iname, args))
+		require.Error(t, err, iname)
 		return
 	}
-	require.NoError(t, err, fmt.Sprintf("%s: %v", iname, args))
+	require.NoError(t, err, iname)
 	for _, c := range testcases {
 		dp, err := i.Interpolate(c.Timestamp)
 		if c.Haserror {
@@ -50,16 +50,16 @@ func interpolatorTester(t *testing.T, iname string, dr datastream.DataRange, arg
 	i.Close()
 }
 
-func TestGetInterpolator(t *testing.T) {
-	_, err := GetInterpolator(nil, "doesnotexisti")
+func TestGet(t *testing.T) {
+	_, err := Get(nil, "doesnotexisti")
 	require.Error(t, err)
-	_, err = GetInterpolator(nil, "multiple:interpolators")
-	require.Error(t, err)
-
-	_, err = GetInterpolator(datastream.NewDatapointArrayRange(dpa, 0), "closest(arg1)")
+	_, err = Get(nil, "multiple:interpolators")
 	require.Error(t, err)
 
-	i, err := GetInterpolator(datastream.NewDatapointArrayRange(dpa, 0), "")
+	_, err = Get(datastream.NewDatapointArrayRange(dpa, 0), "closest(arg1)")
+	require.Error(t, err)
+
+	i, err := Get(datastream.NewDatapointArrayRange(dpa, 0), "")
 	require.NoError(t, err)
 	_, ok := i.(*ClosestInterpolator)
 	require.True(t, ok)

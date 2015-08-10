@@ -2,6 +2,7 @@ package transforms
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms/functions"
 	"errors"
 	"fmt"
 )
@@ -65,4 +66,13 @@ func logTransform(child TransformFunc) TransformFunc {
 
 		return res, err
 	}
+}
+
+func getCustomFunction(identifier string, children ...TransformFunc) (TransformFunc, error) {
+	args := make([]functions.TransformFunc, len(children))
+	for i := range children {
+		args[i] = functions.TransformFunc(children[i])
+	}
+	tf, err := functions.Get(identifier, args...)
+	return TransformFunc(tf), err
 }

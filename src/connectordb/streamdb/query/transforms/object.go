@@ -10,10 +10,11 @@ import (
 
 // The identity function, returns whatever was passed in.
 func pipelineGeneratorConstant(value interface{}, inputError error) TransformFunc {
+	dpp := &datastream.Datapoint{
+		Data: value,
+	}
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		result := CopyDatapoint(dp)
-		result.Data = value
-		return result, inputError
+		return dpp, inputError
 	}
 }
 

@@ -429,7 +429,7 @@ class TestConnectorDB(unittest.TestCase):
         s.insert(35)
         s.insert(9)
 
-        dp = s(transform="ifgt(5):lt(20)")
+        dp = s(transform="if $>5 | $<20")
         self.assertEqual(3,len(dp))
         self.assertEqual(True,dp[0]["d"])
         self.assertEqual(False,dp[1]["d"])

@@ -185,8 +185,8 @@ func (s *SqlStore) DeleteSubstream(streamID int64, substream string) error {
 	return err
 }
 
-//GetByTime returns a StreamDataRange of datapoints starting at the starttime
-func (s *SqlStore) GetByTime(streamID int64, substream string, starttime float64) (dr StreamDataRange, startindex int64, err error) {
+//GetByTime returns a ExtendedDataRange of datapoints starting at the starttime
+func (s *SqlStore) GetByTime(streamID int64, substream string, starttime float64) (dr ExtendedDataRange, startindex int64, err error) {
 	rows, err := s.timequery.Query(streamID, substream, starttime)
 	if err != nil {
 		return nil, 0, err
@@ -224,8 +224,8 @@ func (s *SqlStore) GetByTime(streamID int64, substream string, starttime float64
 	return &SqlRange{rows, da, curindex}, curindex, nil
 }
 
-//GetByIndex returns a StreamDataRange of datapoints starting at the nearest dataindex to the given startindex
-func (s *SqlStore) GetByIndex(streamID int64, substream string, startindex int64) (dr StreamDataRange, dataindex int64, err error) {
+//GetByIndex returns a ExtendedDataRange of datapoints starting at the nearest dataindex to the given startindex
+func (s *SqlStore) GetByIndex(streamID int64, substream string, startindex int64) (dr ExtendedDataRange, dataindex int64, err error) {
 	rows, err := s.indexquery.Query(streamID, substream, startindex)
 	if err != nil {
 		return nil, 0, err

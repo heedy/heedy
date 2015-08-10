@@ -1,9 +1,9 @@
 package datastream
 
-//StreamRange is a StreamDataRange that combines the redis and sql data into one coherent stream
+//StreamRange is a ExtendedDataRange that combines the redis and sql data into one coherent stream
 type StreamRange struct {
 	ds *DataStream
-	dr StreamDataRange
+	dr ExtendedDataRange
 
 	index     int64
 	deviceID  int64
@@ -23,13 +23,13 @@ func (d *StreamRange) Index() int64 {
 	return d.index
 }
 
-func (d *StreamRange) getNextStreamDataRange() (err error) {
+func (d *StreamRange) getNextExtendedDataRange() (err error) {
 	//If the program got here it means the datarange is empty.
 	//This means we can sorta cheat. If the datarange is empty, it means that the sqlstore
 	//ran out of data. This is because all of the data is in redis... UNLESS the batch
 	//was just written right now.
 	//If there was no batch written, IRange will return the datarange straight from redis.
-	//If there WAS a batch written, IRange will return a StreamRange - which is also a StreamDataRange.
+	//If there WAS a batch written, IRange will return a StreamRange - which is also a ExtendedDataRange.
 	//Since writing batches in-between queries is something that rarely happens,
 	//for simplicity's sake, we just stack the StreamRanges each time that happens.
 	d.dr, err = d.ds.IRange(d.deviceID, d.streamID, d.substream, d.index, 0)
@@ -44,7 +44,7 @@ func (d *StreamRange) NextArray() (*DatapointArray, error) {
 		return dpa, err
 	}
 
-	if err = d.getNextStreamDataRange(); err != nil {
+	if err = d.getNextExtendedDataRange(); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (d *StreamRange) Next() (*Datapoint, error) {
 		return dp, err
 	}
 
-	if err = d.getNextStreamDataRange(); err != nil {
+	if err = d.getNextExtendedDataRange(); err != nil {
 		return nil, err
 	}
 
