@@ -15,6 +15,7 @@ import (
 
 	"connectordb/plugins/rest/crud"
 	"connectordb/plugins/rest/feed"
+	"connectordb/plugins/rest/meta"
 	"connectordb/plugins/rest/query"
 	"connectordb/plugins/rest/restcore"
 
@@ -127,6 +128,7 @@ func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	query.Router(db, prefix.PathPrefix("/query").Subrouter())
 	feed.Router(db, prefix.PathPrefix("/feed").Subrouter())
+	meta.Router(db, prefix.PathPrefix("/meta").Subrouter())
 
 	go restcore.RunStats()
 	go restcore.RunQueryTimers()
