@@ -5,7 +5,6 @@ import (
 	"connectordb/streamdb/query/transforms"
 	"container/list"
 	"errors"
-	"math"
 
 	"github.com/connectordb/duck"
 )
@@ -20,7 +19,6 @@ var average = transforms.Transform{
 			Description: "The number of datapoints backwards from the current datapoint to average over.",
 			Constant:    true,
 			Optional:    true,
-			Default:     math.Inf(1),
 		},
 	},
 	Generator: func(name string, args ...transforms.TransformFunc) (transforms.TransformFunc, error) {
