@@ -6,8 +6,8 @@ import (
 )
 
 func TestAfterInterpolator(t *testing.T) {
-	interpolatorTester(t, "after", datastream.NewDatapointArrayRange(dpa, 0), []string{"hi"}, true, nil)
-	interpolatorTester(t, "after", datastream.NewDatapointArrayRange(dpa, 0), []string{}, false, []testcase{
+	interpolatorTester(t, "after('hi')", datastream.NewDatapointArrayRange(dpa, 0), true, nil)
+	interpolatorTester(t, "after", datastream.NewDatapointArrayRange(dpa, 0), false, []testcase{
 		testcase{0.5, false, &dpa[0]},
 		testcase{0.7, false, &dpa[0]},
 		testcase{2.0, false, &dpa[2]}, //Make sure it does not see = as after

@@ -72,7 +72,7 @@ func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRan
 
 	//The element's datarange is ready - set up the interpolator
 
-	intpltr, err := interpolators.GetInterpolator(dr, dqe.Interpolator)
+	intpltr, err := interpolators.Get(dr, dqe.Interpolator)
 	if err != nil {
 		dr.Close()
 		return nil, err

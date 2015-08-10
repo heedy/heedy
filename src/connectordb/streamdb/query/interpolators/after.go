@@ -39,10 +39,14 @@ func (i *AfterInterpolator) Close() {
 	i.currentRange.Close()
 }
 
-//NewAfterInterpolator returns the AfterInterpolator for the given DataRange
-func NewAfterInterpolator(dr datastream.DataRange, args []string) (Interpolator, error) {
-	if len(args) > 0 {
-		return nil, errors.New("after interpolator does not accept arguments")
-	}
-	return &AfterInterpolator{nil, dr}, nil
+var after = InterpolatorDescription{
+	Name:        "after",
+	Description: "Returns the closest datapoint with a timestamp greater than the dataset reference",
+
+	Generator: func(dr datastream.DataRange, args []string) (Interpolator, error) {
+		if len(args) > 0 {
+			return nil, errors.New("after interpolator does not accept arguments")
+		}
+		return &AfterInterpolator{nil, dr}, nil
+	},
 }
