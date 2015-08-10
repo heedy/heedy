@@ -16,10 +16,10 @@ type TransformGenerator func(FunctionName string, Children ...TransformFunc) (Tr
 
 //TransformArg represents an argument passed into the transform function
 type TransformArg struct {
-	Description string `json:"description"`       //A description of what the arg represents
-	Optional    bool   `json:"optional"`          //Whether the arg is optional
-	Default     string `json:"default,omitempty"` //If the arg is optional, what is its default value
-	Constant    bool   `json:"constant"`          //If the argument must be a constant (ie, not part of a transform)
+	Description string      `json:"description"`       //A description of what the arg represents
+	Optional    bool        `json:"optional"`          //Whether the arg is optional
+	Default     interface{} `json:"default,omitempty"` //If the arg is optional, what is its default value
+	Constant    bool        `json:"constant"`          //If the argument must be a constant (ie, not part of a transform)
 }
 
 //Transform is the struct which holds the name, docstring, and generator for a transform function
