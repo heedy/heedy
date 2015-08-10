@@ -759,7 +759,7 @@ Transformdefault:
 	case 36:
 		//line pipeline_generator.y:211
 		{
-			TransformVAL.stringList = append([]string{TransformS[Transformpt-0].strVal}, TransformS[Transformpt-2].stringList...)
+			TransformVAL.stringList = append(TransformS[Transformpt-2].stringList, TransformS[Transformpt-0].strVal)
 		}
 	case 37:
 		//line pipeline_generator.y:218
