@@ -1,0 +1,69 @@
+<dom-module id="x-cdb-menuitem">
+
+	<link rel="import" href="../../bower_components/polymer/polymer.html">
+	<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+	<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+	<link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
+	<link rel="import" href="../../bower_components/iron-iconset-svg/iron-iconset-svg.html">
+	<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+	<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+
+	<style>
+
+
+	.link {
+		text-decoration: none;
+		color:inherit;
+		padding-top:.5em;
+		padding-bottom:.5em;
+	}
+
+    .big {
+        width:1.8em;
+        height:1.8em;
+		margin-right:.5em;
+    }
+
+	paper-item {
+		padding-top:.5em;
+		padding-bottom:.5em;
+	}
+
+	.second {
+		font-size: .8em;
+    	color: grey;
+	    line-height: .8em;
+	}
+
+	.first {
+		margin-bottom:.1em;
+	}
+	paper-item:hover {
+		background-color:lightgrey;
+	}
+	</style>
+
+	<template>
+		<a href="{{href}}" class="link">
+			<paper-item role="listitem">
+				<iron-icon icon="{{icon}}" class="big content-icon"></iron-icon>
+				<paper-item-body two-line>
+					<div class="first">{{title}}</div>
+					<div class="second" secondary>{{secondary}}</div>
+				</paper-item-body>
+			</paper-item>
+		</a>
+	</template>
+
+	<script>
+	Polymer({
+		is: 'x-cdb-menuitem',
+		properties: {
+			title: String,
+			href: String,
+			secondary: String,
+			icon:String
+		},
+	});
+	</script>
+</dom-module>
