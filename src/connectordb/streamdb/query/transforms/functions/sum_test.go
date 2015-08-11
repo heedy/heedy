@@ -2,10 +2,26 @@ package functions
 
 import (
 	"connectordb/streamdb/datastream"
+	"connectordb/streamdb/query/transforms"
 	"testing"
 )
 
 func TestSum(t *testing.T) {
+	TestCase{
+		Name:     "sum",
+		Args:     []transforms.TransformFunc{ConstTransform(2)},
+		HasError: false,
+		Tests: []TestCaseElement{
+			TestCaseElement{&datastream.Datapoint{Data: 3}, &datastream.Datapoint{Data: 3}, false, "first datapoint is copy"},
+			TestCaseElement{&datastream.Datapoint{Data: 5}, &datastream.Datapoint{Data: 8}, false, "second is asum"},
+			TestCaseElement{&datastream.Datapoint{Data: 7}, &datastream.Datapoint{Data: 12}, false, "sum of 2"},
+			TestCaseElement{nil, nil, false, "nil passthru"},
+			TestCaseElement{&datastream.Datapoint{Data: 1}, &datastream.Datapoint{Data: 8}, false, "sum of 2 after nil"},
+		},
+	}.Run(t)
+}
+
+func TestFullSum(t *testing.T) {
 	TestCase{
 		Name:     "sum",
 		HasError: false,

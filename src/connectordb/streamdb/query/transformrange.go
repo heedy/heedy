@@ -3,6 +3,8 @@ package query
 import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/query/transforms"
+
+	_ "connectordb/streamdb/query/transforms/functions" //Make sure that the default transform functions are all registered
 )
 
 //TransformArray transforms the given array. Note: Since it assumes that the transform is happening
@@ -34,6 +36,7 @@ func TransformArray(t transforms.DatapointTransform, dpa *datastream.DatapointAr
 	return &resultarray, nil
 }
 
+//ExtendedTransformRange is an ExtendedDataRange which passes data through a transform.
 type ExtendedTransformRange struct {
 	Data      datastream.ExtendedDataRange
 	Transform transforms.DatapointTransform

@@ -4,7 +4,7 @@ import (
 	"connectordb/plugins/rest/restcore"
 	"connectordb/streamdb"
 	"connectordb/streamdb/query/interpolators"
-	"connectordb/streamdb/query/transforms/functions"
+	"connectordb/streamdb/query/transforms"
 	"net/http"
 	"strconv"
 
@@ -16,7 +16,7 @@ func TransformList(writer http.ResponseWriter, request *http.Request) {
 	l := restcore.GetRequestLogger(request, "TransformList")
 
 	restcore.WriteAccessControlHeaders(writer)
-	restcore.JSONWriter(writer, functions.TransformRegistry, l, nil)
+	restcore.JSONWriter(writer, transforms.Registry, l, nil)
 
 }
 
@@ -25,7 +25,7 @@ func InterpolatorList(writer http.ResponseWriter, request *http.Request) {
 	l := restcore.GetRequestLogger(request, "InterpolatorList")
 
 	restcore.WriteAccessControlHeaders(writer)
-	restcore.JSONWriter(writer, interpolators.InterpolatorRegistry, l, nil)
+	restcore.JSONWriter(writer, interpolators.Registry, l, nil)
 
 }
 

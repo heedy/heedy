@@ -1,4 +1,4 @@
-package functions
+package transforms
 
 import (
 	"connectordb/streamdb/datastream"
@@ -11,15 +11,15 @@ import (
 //TransformFunc is the function which transforms a given datapoint
 type TransformFunc func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
 
-//TransformGenerator is a functino which "generates" the TransformFunc for the given transform
+//TransformGenerator is a function which "generates" the TransformFunc for the given transform
 type TransformGenerator func(FunctionName string, Children ...TransformFunc) (TransformFunc, error)
 
 //TransformArg represents an argument passed into the transform function
 type TransformArg struct {
-	Description string `json:"description"`       //A description of what the arg represents
-	Optional    bool   `json:"optional"`          //Whether the arg is optional
-	Default     string `json:"default,omitempty"` //If the arg is optional, what is its default value
-	Constant    bool   `json:"constant"`          //If the argument must be a constant (ie, not part of a transform)
+	Description string      `json:"description"`       //A description of what the arg represents
+	Optional    bool        `json:"optional"`          //Whether the arg is optional
+	Default     interface{} `json:"default,omitempty"` //If the arg is optional, what is its default value
+	Constant    bool        `json:"constant"`          //If the argument must be a constant (ie, not part of a transform)
 }
 
 //Transform is the struct which holds the name, docstring, and generator for a transform function
@@ -34,38 +34,31 @@ type Transform struct {
 }
 
 var (
-	//TransformRegistry is the map of all the transforms that are currently registered
-	TransformRegistry = make(map[string]Transform)
+	//Registry is the map of all the transforms that are currently registered
+	Registry = make(map[string]Transform)
 )
 
-//Register registers the given transform with the system
-func Register(t ...Transform) error {
-	for i := range t {
-		if t[i].Name == "" || t[i].Generator == nil {
-			err := fmt.Errorf("Attempted to register invalid transform: '%s'", t[i].Name)
-			log.Error(err)
-		}
-		_, ok := TransformRegistry[t[i].Name]
-		if ok {
-			err := fmt.Errorf("A transform with the name '%s' already exists.", t[i].Name)
-			log.Error("Transform registration failed: ", err)
-			return err
-		}
-	}
-	for i := range t {
-		TransformRegistry[t[i].Name] = t[i]
-	}
-	return nil
-}
-
-//Register registers the transform
+//Register registers the transform with the system
 func (t Transform) Register() error {
-	return Register(t)
+	if t.Name == "" || t.Generator == nil {
+		err := fmt.Errorf("Attempted to register invalid transform: '%s'", t.Name)
+		log.Error(err)
+	}
+	_, ok := Registry[t.Name]
+	if ok {
+		err := fmt.Errorf("A transform with the name '%s' already exists.", t.Name)
+		log.Error("Transform registration failed: ", err)
+		return err
+	}
+
+	Registry[t.Name] = t
+
+	return nil
 }
 
 //Get returns the TransformFunc for the given name
 func Get(name string, args ...TransformFunc) (TransformFunc, error) {
-	t, ok := TransformRegistry[name]
+	t, ok := Registry[name]
 	if !ok {
 		return Err(fmt.Sprintf("Transform '%s' not found", name))
 	}
@@ -79,11 +72,4 @@ func Err(errstring string) (TransformFunc, error) {
 	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
 		return nil, err
 	}, err
-}
-
-//init does the necessary registration of all the builtin functions
-func init() {
-	smooth.Register()
-	sum.Register()
-	changed.Register()
 }

@@ -61,21 +61,21 @@ type InterpolatorDescription struct {
 }
 
 //Interpolators is the map of all registered interpolations
-var InterpolatorRegistry = make(map[string]InterpolatorDescription)
+var Registry = make(map[string]InterpolatorDescription)
 
 func (i InterpolatorDescription) Register() error {
 	if i.Name == "" || i.Generator == nil {
 		err := fmt.Errorf("Attempted to register invalid interpolator: '%s'", i.Name)
 		log.Error(err)
 	}
-	_, ok := InterpolatorRegistry[i.Name]
+	_, ok := Registry[i.Name]
 	if ok {
 		err := fmt.Errorf("An interpolator with the name '%s' already exists.", i.Name)
 		log.Error("Interpolator registration failed: ", err)
 		return err
 	}
 
-	InterpolatorRegistry[i.Name] = i
+	Registry[i.Name] = i
 
 	return nil
 }
@@ -94,7 +94,7 @@ func Get(dr datastream.DataRange, interp string) (Interpolator, error) {
 
 	interpolatorName := tokens[0]
 
-	idesc, ok := InterpolatorRegistry[interpolatorName]
+	idesc, ok := Registry[interpolatorName]
 	if !ok {
 		return nil, errors.New("Could not find '" + interpolatorName + "' interpolator.")
 	}
