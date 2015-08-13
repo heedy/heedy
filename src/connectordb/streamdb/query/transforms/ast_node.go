@@ -1,5 +1,6 @@
 package transforms
 
+/*
 type binaryTransformGen func(left, right TransformFunc) TransformFunc
 
 type binaryTransformOper func(left, right interface{}) (value interface{}, errorString string)
@@ -22,3 +23,4 @@ func subtractTransformGenerator(left TransformFunc, right TransformFunc) Transfo
 	}
 
 }
+*/

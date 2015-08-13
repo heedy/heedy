@@ -73,3 +73,8 @@ func NewTransformPipeline(pipeline string, values []datastream.Datapoint) (*Tran
 
 	return newTransformer(pipeline, ch)
 }
+
+// Creates a new transform pipeline from the given pipeline definition and a channel of inputs
+func NewChanTransformPipeline(pipeline string, values <-chan *datastream.Datapoint) (*Transformer, error) {
+	return newTransformer(pipeline, values)
+}
