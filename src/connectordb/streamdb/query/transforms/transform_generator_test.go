@@ -136,8 +136,8 @@ func TestPipelineGenerator(t *testing.T) {
 	Transform{
 		Name: "identity",
 		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				return dp, nil
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return te
 			}, nil
 		},
 	}.Register()
@@ -149,8 +149,8 @@ func TestPipelineGenerator(t *testing.T) {
 			if len(children) != 1 {
 				return TransformFunc(PipelineGeneratorIdentity()), errors.New("passthrough error")
 			}
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				return children[0](dp)
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return children[0](te)
 			}, nil
 		},
 	}.Register()
@@ -158,15 +158,13 @@ func TestPipelineGenerator(t *testing.T) {
 	Transform{
 		Name: "fortyTwo",
 		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				dp.Data = 42
-				return dp, nil
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return te.SetData(42)
 			}, nil
 		},
 	}.Register()
 
 	for _, c := range testcases {
-
 		result, err := ParseTransform(c.Pipeline)
 
 		if c.HasSyntaxError {
@@ -175,8 +173,12 @@ func TestPipelineGenerator(t *testing.T) {
 		}
 
 		require.NoError(t, err, duck.JSONString(c))
+		te := NewTransformEnvironment(c.Input)
+		out := result(te)
 
-		dp, err := result(c.Input)
+		dp := out.Datapoint
+		err = out.Error
+
 		if c.Haserror2 {
 			require.Error(t, err, duck.JSONString(c))
 		} else {

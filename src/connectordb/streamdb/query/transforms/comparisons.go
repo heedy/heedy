@@ -1,55 +1,51 @@
 package transforms
 
-import (
-	"connectordb/streamdb/datastream"
-	"errors"
-
-	"github.com/connectordb/duck"
-)
+import "github.com/connectordb/duck"
 
 func pipelineGeneratorCompare(left, right TransformFunc, operator string) TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		leftResult, err := left(dp)
-		if err := handleResultError("compare", leftResult, err, true); err != nil {
-			return nil, err
+		leftResult := left(te.Copy())
+		if !leftResult.CanProcess() {
+			return leftResult
 		}
 
-		rightResult, err := right(dp)
-		if err := handleResultError("compare", rightResult, err, true); err != nil {
-			return nil, err
+		rightResult := right(te.Copy())
+		if !rightResult.CanProcess() {
+			return rightResult
 		}
 
 		var ok bool
-		result := CopyDatapoint(dp)
+
+		leftData := leftResult.Datapoint.Data
+		rightData := rightResult.Datapoint.Data
 
 		switch operator {
 		case ">":
-			result.Data, ok = duck.Gt(leftResult.Data, rightResult.Data)
+			te.Datapoint.Data, ok = duck.Gt(leftData, rightData)
 		case ">=":
-			result.Data, ok = duck.Gte(leftResult.Data, rightResult.Data)
+			te.Datapoint.Data, ok = duck.Gte(leftData, rightData)
 		case "<":
-			result.Data, ok = duck.Lt(leftResult.Data, rightResult.Data)
+			te.Datapoint.Data, ok = duck.Lt(leftData, rightData)
 		case "<=":
-			result.Data, ok = duck.Lte(leftResult.Data, rightResult.Data)
+			te.Datapoint.Data, ok = duck.Lte(leftData, rightData)
 		case "!=":
 			var eq bool
-			eq, ok = duck.Eq(leftResult.Data, rightResult.Data)
-			result.Data = !eq
+			eq, ok = duck.Eq(leftData, rightData)
+			te.Datapoint.Data = !eq
 		case "==":
-			result.Data, ok = duck.Eq(leftResult.Data, rightResult.Data)
+			te.Datapoint.Data, ok = duck.Eq(leftData, rightData)
 		default:
-			return nil, errors.New("comparison: incorrectly initialized! (internal error)")
+			return te.SetErrorString("comparison: incorrectly initialized! (internal error)")
 		}
 
 		if ok != true {
-			return nil, errors.New("comparison: invalid comparison types")
+			return te.SetErrorString("comparison: invalid comparison types")
 		}
 
-		return result, nil
+		return te
 	}
 }

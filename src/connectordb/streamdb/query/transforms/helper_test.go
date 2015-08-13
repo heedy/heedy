@@ -23,18 +23,3 @@ func TestHandleResultError(t *testing.T) {
 	// ok
 	assert.Nil(t, handleResultError("prefix", &dp, nil, true))
 }
-
-func TestReadBool(t *testing.T) {
-	dp := datastream.Datapoint{Data: true}
-
-	{
-		result, err := readBool("", &dp, PipelineGeneratorIdentity())
-		assert.Nil(t, err)
-		assert.True(t, result)
-	}
-
-	{
-		_, err := readBool("", nil, PipelineGeneratorIdentity())
-		assert.Error(t, err)
-	}
-}

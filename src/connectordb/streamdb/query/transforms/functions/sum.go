@@ -1,13 +1,30 @@
 package functions
 
 import (
-	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/query/transforms"
 	"container/list"
-	"errors"
 
 	"github.com/connectordb/duck"
 )
+
+func singleSumGenerator() (transforms.TransformFunc, error) {
+	total := float64(0)
+	return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
+		if !te.CanProcess() {
+			return te
+		}
+
+		val, ok := te.GetFloat()
+		if !ok {
+			return te.SetErrorString("sum cannot convert datapoint to number")
+		}
+
+		total += val
+
+		return te.Copy().SetData(total)
+
+	}, nil
+}
 
 var sum = transforms.Transform{
 	Name:         "sum",
@@ -28,50 +45,35 @@ var sum = transforms.Transform{
 		}
 
 		if len(args) == 0 {
-			total := float64(0)
-			return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-				if dp == nil {
-					return nil, nil
-				}
-				val, ok := duck.Float(dp.Data)
-				if !ok {
-					return nil, errors.New("sum cannot convert datapoint to number")
-				}
-
-				total += val
-
-				returnvalue := dp.Copy()
-				returnvalue.Data = total
-				return returnvalue, nil
-
-			}, nil
+			return singleSumGenerator()
 		}
 
-		//Set up a linked list of the datapoints within the wanted number
-		argval, err := args[0](nil)
-		if err != nil || argval == nil {
+		argval, ok := args[0].PrimitiveValue()
+		if !ok || argval == nil {
 			return transforms.Err("sum requires a constant argument.")
 		}
-		num, ok := duck.Int(argval.Data)
+
+		num, ok := duck.Int(argval)
 		if !ok {
 			return transforms.Err("The argument to sum must be an integer")
 		}
+
 		if num <= 1 || num > 1000 {
-			return transforms.Err("average must be called with 1000 >= arg > 1")
+			return transforms.Err("sum must be called with 1000 >= arg > 1")
 		}
 
 		cursum := float64(0)
 		//The linked list of the last num datapoints
 		dplist := list.New()
 
-		return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-			if dp == nil {
-				return nil, nil
+		return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
+			if !te.CanProcess() {
+				return te
 			}
 
-			val, ok := duck.Float(dp.Data)
+			val, ok := te.GetFloat()
 			if !ok {
-				return nil, errors.New("sum could not convert datapoint to number")
+				return te.SetErrorString("sum could not convert datapoint to number")
 			}
 
 			cursum += val
@@ -83,9 +85,7 @@ var sum = transforms.Transform{
 				dplist.Remove(elem)
 			}
 
-			returnval := dp.Copy()
-			returnval.Data = cursum
-			return returnval, nil
+			return te.Copy().SetData(cursum)
 		}, nil
 	},
 }

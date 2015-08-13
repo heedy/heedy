@@ -1,140 +1,100 @@
 package transforms
 
-import (
-	"connectordb/streamdb/datastream"
-	"errors"
+import "errors"
 
-	"github.com/connectordb/duck"
-)
+func getTransformLeftRight(te *TransformEnvironment, left, right TransformFunc) (leftVal float64, rightVal float64, err error) {
+	leftVal, lok := te.Copy().Apply(left).GetFloat()
+	rightVal, rok := te.Copy().Apply(right).GetFloat()
 
-func getTransformFloat(dp *datastream.Datapoint, function TransformFunc) (float64, error) {
-	if dp == nil {
-		return 0, errors.New("Nil datapoint")
+	if lok == false || rok == false {
+		return 0, 0, errors.New("Illegal conversion")
 	}
 
-	transformed, err := function(dp)
-	if err != nil {
-		return 0, err
-	}
-
-	result, ok := duck.Float(transformed.Data)
-
-	if !ok {
-		return result, errors.New("not a number")
-	}
-
-	return result, nil
-}
-
-func getTransformLeftRight(dp *datastream.Datapoint, left, right TransformFunc) (leftVal float64, rightVal float64, err error) {
-	leftVal, err = getTransformFloat(dp, left)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	rightVal, err = getTransformFloat(dp, right)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return leftVal, rightVal, err
+	return leftVal, rightVal, nil
 }
 
 // Adds the left and right hand side
 func addTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		left, right, err := getTransformLeftRight(dp, left, right)
+		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
 		if err != nil {
-			return nil, err
+			return te.SetError(err)
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = left + right
-
-		return result, nil
+		return te.SetData(leftVal + rightVal)
 	}
 }
 
 // Multiplies the left and right hand side
 func multiplyTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		left, right, err := getTransformLeftRight(dp, left, right)
+		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
 		if err != nil {
-			return nil, err
+			return te.SetError(err)
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = left * right
-
-		return result, nil
+		return te.SetData(leftVal * rightVal)
 	}
 }
 
 // Divides the left and right hand side
 func divideTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		left, right, err := getTransformLeftRight(dp, left, right)
+		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
 		if err != nil {
-			return nil, err
+			return te.SetError(err)
 		}
 
-		if right == 0.0 {
-			return nil, errors.New("zero division error")
+		if rightVal == 0.0 {
+			return te.SetErrorString("Zero division error")
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = left / right
-
-		return result, nil
+		return te.SetData(leftVal / rightVal)
 	}
 }
 
 // Subtracts the left and right hand side
 func subtractTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		left, right, err := getTransformLeftRight(dp, left, right)
+		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
 		if err != nil {
-			return nil, err
+			return te.SetError(err)
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = left - right
-
-		return result, nil
+		return te.SetData(leftVal - rightVal)
 	}
+
 }
 
 // Subtracts the left and right hand side
 func inverseTransformGenerator(transform TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		right, err := getTransformFloat(dp, transform)
-		if err != nil {
-			return nil, err
+		val, ok := te.Copy().Apply(transform).GetFloat()
+		if ok == false {
+			return te.SetError(ErrNotFloat)
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = -right
-
-		return result, nil
+		return te.SetData(-val)
 	}
 }

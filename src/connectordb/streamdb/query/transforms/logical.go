@@ -1,32 +1,26 @@
 package transforms
 
-import "connectordb/streamdb/datastream"
-
 // Does a logical or on the pipeline
 func pipelineGeneratorOr(left TransformFunc, right TransformFunc) TransformFunc {
 
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
-
-		result := CopyDatapoint(dp)
 
 		for _, transform := range []TransformFunc{left, right} {
 
-			filter, err := readBool("or", dp, transform)
-			if err != nil {
-				return nil, err
+			filter, ok := te.Copy().Apply(transform).GetBool()
+			if !ok {
+				return te.SetErrorString("or value not a boolean")
 			}
 
 			if filter {
-				result.Data = true
-				return result, nil
+				return te.SetData(true)
 			}
 		}
 
-		result.Data = false
-		return result, nil
+		return te.SetData(false)
 	}
 
 }
@@ -34,26 +28,24 @@ func pipelineGeneratorOr(left TransformFunc, right TransformFunc) TransformFunc 
 // Does a logical or on the pipeline
 func pipelineGeneratorAnd(left TransformFunc, right TransformFunc) TransformFunc {
 
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
 		// Process the left data
-		leftRes, err := readBool("and", dp, left)
-		if err != nil {
-			return nil, err
+		leftRes, ok := te.Copy().Apply(left).GetBool()
+		if !ok {
+			return te.SetErrorString("and value not a boolean")
 		}
 
 		// Process the right data
-		rightRes, err := readBool("and", dp, right)
-		if err != nil {
-			return nil, err
+		rightRes, ok := te.Copy().Apply(right).GetBool()
+		if !ok {
+			return te.SetErrorString("and value not a boolean")
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = leftRes && rightRes
-		return result, nil
+		return te.SetData(leftRes && rightRes)
 	}
 
 }
@@ -61,19 +53,17 @@ func pipelineGeneratorAnd(left TransformFunc, right TransformFunc) TransformFunc
 // Does a logical or on the pipeline
 func pipelineGeneratorNot(transform TransformFunc) TransformFunc {
 
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		notResult, err := readBool("not", dp, transform)
-		if err != nil {
-			return nil, err
+		// Process the left data
+		notResult, ok := te.Copy().Apply(transform).GetBool()
+		if !ok {
+			return te.SetErrorString("not value not a boolean")
 		}
 
-		result := CopyDatapoint(dp)
-		result.Data = !notResult
-		return result, nil
+		return te.SetData(!notResult)
 	}
-
 }

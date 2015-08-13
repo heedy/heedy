@@ -1,43 +1,31 @@
 package transforms
 
-import "connectordb/streamdb/datastream"
-
 func pipelineGeneratorTransform(left, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		leftResult, err := left(dp)
-		if err != nil || leftResult == nil {
-			return nil, err
-		}
-
-		// pass the data through the pipeline to do a transform
-		rightResult, err := right(leftResult)
-		if err != nil || rightResult == nil {
-			return nil, err
-		}
-
-		return rightResult, nil
+		return te.Apply(left).Apply(right)
 	}
 }
 
 func pipelineGeneratorIf(child TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		passOn, err := readBool("if", dp, child)
-		if err != nil {
-			return nil, err
+		passOn, ok := te.Copy().Apply(child).GetBool()
+		if !ok {
+			return te.SetErrorString("If value not a boolean")
 		}
 
-		if passOn == true {
-			return dp, nil
+		if passOn {
+			return te
 		}
 
-		return nil, nil
+		te.Datapoint = nil
+		return te
 	}
 }

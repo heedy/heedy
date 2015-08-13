@@ -1,8 +1,6 @@
 package transforms
 
 import (
-	"connectordb/streamdb/datastream"
-	"errors"
 	"strings"
 
 	"github.com/connectordb/duck"
@@ -10,74 +8,69 @@ import (
 
 // The identity function, returns whatever was passed in.
 func pipelineGeneratorConstant(value interface{}, inputError error) TransformFunc {
-	dpp := &datastream.Datapoint{
-		Data: value,
-	}
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		return dpp, inputError
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if te.Flag == constantCheck {
+			te.Flag = constantCheckTrue
+		}
+
+		return te.SetError(inputError).SetData(value)
 	}
 }
 
 func PipelineGeneratorIdentity() TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		return dp, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		return te
 	}
 }
 
 func pipelineGeneratorGet(propertyNames []string) TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	interfaceProps := make([]interface{}, len(propertyNames))
+	for i, v := range propertyNames {
+		interfaceProps[i] = v
+	}
+
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		interfaceProps := make([]interface{}, len(propertyNames))
-		for i, v := range propertyNames {
-			interfaceProps[i] = v
-		}
-
-		var ok bool
-		result := CopyDatapoint(dp)
-		result.Data, ok = duck.Get(dp.Data, interfaceProps...)
+		data, ok := duck.Get(te.Datapoint.Data, interfaceProps...)
 
 		if !ok {
 			errStr := strings.Join(propertyNames, ", ")
-			return nil, errors.New("Could not find element [" + errStr + "] in " + duck.JSONString(dp))
+			return te.Copy().SetErrorString("Could not find element [" + errStr + "] in " + duck.JSONString(te.Datapoint))
 		}
 
-		return result, nil
+		return te.SetData(data)
 	}
 }
 
 func pipelineGeneratorSet(propertyNames []string, value TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		rightHandSide, err := value(dp)
-		if err != nil {
-			return nil, err
+		valueSide := te.Copy().Apply(value)
+		if !valueSide.CanProcess() {
+			return valueSide
 		}
-
-		result := CopyDatapoint(dp)
 
 		if len(propertyNames) == 0 {
-			result.Data = rightHandSide.Data
-			return result, nil
+			return te.SetData(valueSide.Datapoint.Data)
 		}
 
-		return nil, errors.New("Don't know how to set children yet!")
+		return te.SetErrorString("Don't know how to set children yet!")
 	}
 }
 
 func pipelineGeneratorHas(propertyName string) TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
-		result := CopyDatapoint(dp)
-		_, result.Data = duck.Get(dp.Data, propertyName)
-		return result, nil
 
+		_, ok := duck.Get(te.Datapoint.Data, propertyName)
+		return te.SetData(ok)
 	}
 }
