@@ -213,6 +213,7 @@ CREATE TABLE StreamKeyValues (
 CREATE FUNCTION AddUserdev20150328Func() RETURNS TRIGGER AS $_$
 BEGIN
 	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE, NEW.Admin);
+	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('meta', NEW.UserId, '', TRUE, FALSE, FALSE);
     RETURN NEW;
 END $_$ LANGUAGE 'plpgsql';
 
