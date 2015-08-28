@@ -95,7 +95,7 @@ var sqrt = transforms.Transform{
 	Generator: mathTransformGenerator(math.Sin)}
 
 var ln = transforms.Transform{
-	Name:         "math.ln",
+	Name:         "math.log2",
 	Description:  "Returns the log base 2 of the given argument. If no argument given, returns the log base 2 of the data passed through.",
 	InputSchema:  `{"type":"number"}`,
 	OutputSchema: `{"type":"number"}`,
