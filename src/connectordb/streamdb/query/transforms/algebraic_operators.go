@@ -2,88 +2,39 @@ package transforms
 
 import "errors"
 
-func getTransformLeftRight(te *TransformEnvironment, left, right TransformFunc) (leftVal float64, rightVal float64, err error) {
-	leftVal, lok := te.Copy().Apply(left).GetFloat()
-	rightVal, rok := te.Copy().Apply(right).GetFloat()
-
-	if lok == false || rok == false {
-		return 0, 0, errors.New("Illegal conversion")
-	}
-
-	return leftVal, rightVal, nil
-}
-
 // Adds the left and right hand side
 func addTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-
-	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
-		}
-
-		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
-		if err != nil {
-			return te.SetError(err)
-		}
-
-		return te.SetData(leftVal + rightVal)
-	}
+	return binaryOperatorValueWrapper("+", left, right, func(leftVal, rightVal float64) (float64, error) {
+		return leftVal + rightVal, nil
+	})
 }
 
 // Multiplies the left and right hand side
 func multiplyTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
-		}
-
-		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
-		if err != nil {
-			return te.SetError(err)
-		}
-
-		return te.SetData(leftVal * rightVal)
-	}
+	return binaryOperatorValueWrapper("*", left, right, func(leftVal, rightVal float64) (float64, error) {
+		return leftVal * rightVal, nil
+	})
 }
 
 // Divides the left and right hand side
 func divideTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
+	return binaryOperatorValueWrapper("*", left, right, func(leftVal, rightVal float64) (float64, error) {
+		if rightVal == 0.0 || rightVal == -0.0 {
+			return 0, errors.New("Cannot divide by zero")
 		}
 
-		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
-		if err != nil {
-			return te.SetError(err)
-		}
-
-		if rightVal == 0.0 {
-			return te.SetErrorString("Zero division error")
-		}
-
-		return te.SetData(leftVal / rightVal)
-	}
+		return leftVal / rightVal, nil
+	})
 }
 
 // Subtracts the left and right hand side
 func subtractTransformGenerator(left TransformFunc, right TransformFunc) TransformFunc {
-	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
-		}
-
-		leftVal, rightVal, err := getTransformLeftRight(te, left, right)
-		if err != nil {
-			return te.SetError(err)
-		}
-
-		return te.SetData(leftVal - rightVal)
-	}
-
+	return binaryOperatorValueWrapper("-", left, right, func(leftVal, rightVal float64) (float64, error) {
+		return leftVal - rightVal, nil
+	})
 }
 
-// Subtracts the left and right hand side
+// Performs a unary minus
 func inverseTransformGenerator(transform TransformFunc) TransformFunc {
 	return func(te *TransformEnvironment) *TransformEnvironment {
 		if !te.CanProcess() {
