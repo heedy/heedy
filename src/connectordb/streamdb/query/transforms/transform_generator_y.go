@@ -46,7 +46,10 @@ const MULTIPLY = 57367
 const DIVIDE = 57368
 const UMINUS = 57369
 
-var TransformToknames = []string{
+var TransformToknames = [...]string{
+	"$end",
+	"error",
+	"$unk",
 	"NUMBER",
 	"BOOL",
 	"STRING",
@@ -72,7 +75,7 @@ var TransformToknames = []string{
 	"DIVIDE",
 	"UMINUS",
 }
-var TransformStatenames = []string{}
+var TransformStatenames = [...]string{}
 
 const TransformEofCode = 1
 const TransformErrCode = 2
@@ -269,7 +272,7 @@ func (l *TransformLex) Error(s string) {
 }
 
 //line yacctab:1
-var TransformExca = []int{
+var TransformExca = [...]int{
 	-1, 1,
 	1, -1,
 	-2, 0,
@@ -283,7 +286,7 @@ var TransformStates []string
 
 const TransformLast = 115
 
-var TransformAct = []int{
+var TransformAct = [...]int{
 
 	3, 1, 12, 53, 2, 26, 18, 19, 20, 11,
 	21, 31, 10, 9, 43, 17, 36, 34, 35, 37,
@@ -298,7 +301,7 @@ var TransformAct = []int{
 	21, 55, 72, 54, 65, 17, 56, 44, 16, 15,
 	14, 27, 23, 8, 22,
 }
-var TransformPact = []int{
+var TransformPact = [...]int{
 
 	28, 30, -1000, 85, 50, 53, 75, -1000, -1000, 50,
 	4, -8, -1000, 92, -1000, -1000, -1000, 28, -1000, -1000,
@@ -309,26 +312,26 @@ var TransformPact = []int{
 	98, 97, 28, -1000, 30, -1000, 35, 47, 17, -1000,
 	50, 90, -1000,
 }
-var TransformPgo = []int{
+var TransformPgo = [...]int{
 
 	0, 0, 20, 57, 113, 2, 4, 1, 110, 109,
 	108, 9, 12, 107, 3,
 }
-var TransformR1 = []int{
+var TransformR1 = [...]int{
 
 	0, 7, 7, 6, 6, 6, 1, 1, 2, 2,
 	3, 3, 4, 4, 12, 12, 12, 11, 11, 11,
 	11, 5, 5, 5, 5, 8, 8, 8, 9, 9,
 	10, 10, 10, 10, 10, 14, 14, 13, 13,
 }
-var TransformR2 = []int{
+var TransformR2 = [...]int{
 
 	0, 1, 3, 1, 2, 1, 1, 3, 1, 3,
 	1, 2, 1, 3, 1, 3, 3, 1, 3, 3,
 	2, 1, 1, 1, 3, 1, 1, 1, 4, 1,
 	9, 6, 4, 3, 4, 1, 3, 1, 3,
 }
-var TransformChk = []int{
+var TransformChk = [...]int{
 
 	-1000, -7, -6, -1, 21, 19, -2, -3, -4, 11,
 	-12, -11, -5, 24, -8, -9, -10, 13, 4, 5,
@@ -339,7 +342,7 @@ var TransformChk = []int{
 	18, 17, 18, 12, -7, 6, -14, -7, 16, 12,
 	18, -1, 12,
 }
-var TransformDef = []int{
+var TransformDef = [...]int{
 
 	0, -2, 1, 3, 0, 5, 6, 8, 10, 0,
 	12, 14, 17, 0, 21, 22, 23, 0, 25, 26,
@@ -350,38 +353,66 @@ var TransformDef = []int{
 	0, 0, 0, 32, 38, 36, 0, 0, 0, 31,
 	0, 0, 30,
 }
-var TransformTok1 = []int{
+var TransformTok1 = [...]int{
 
 	1,
 }
-var TransformTok2 = []int{
+var TransformTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 	22, 23, 24, 25, 26, 27,
 }
-var TransformTok3 = []int{
+var TransformTok3 = [...]int{
 	0,
 }
+
+var TransformErrorMessages = [...]struct {
+	state int
+	token int
+	msg   string
+}{}
 
 //line yaccpar:1
 
 /*	parser for yacc output	*/
 
-var TransformDebug = 0
+var (
+	TransformDebug        = 0
+	TransformErrorVerbose = false
+)
 
 type TransformLexer interface {
 	Lex(lval *TransformSymType) int
 	Error(s string)
 }
 
+type TransformParser interface {
+	Parse(TransformLexer) int
+	Lookahead() int
+}
+
+type TransformParserImpl struct {
+	lookahead func() int
+}
+
+func (p *TransformParserImpl) Lookahead() int {
+	return p.lookahead()
+}
+
+func TransformNewParser() TransformParser {
+	p := &TransformParserImpl{
+		lookahead: func() int { return -1 },
+	}
+	return p
+}
+
 const TransformFlag = -1000
 
 func TransformTokname(c int) string {
-	// 4 is TOKSTART above
-	if c >= 4 && c-4 < len(TransformToknames) {
-		if TransformToknames[c-4] != "" {
-			return TransformToknames[c-4]
+	if c >= 1 && c-1 < len(TransformToknames) {
+		if TransformToknames[c-1] != "" {
+			return TransformToknames[c-1]
 		}
 	}
 	return __yyfmt__.Sprintf("tok-%v", c)
@@ -396,51 +427,129 @@ func TransformStatname(s int) string {
 	return __yyfmt__.Sprintf("state-%v", s)
 }
 
-func Transformlex1(lex TransformLexer, lval *TransformSymType) int {
-	c := 0
-	char := lex.Lex(lval)
+func TransformErrorMessage(state, lookAhead int) string {
+	const TOKSTART = 4
+
+	if !TransformErrorVerbose {
+		return "syntax error"
+	}
+
+	for _, e := range TransformErrorMessages {
+		if e.state == state && e.token == lookAhead {
+			return "syntax error: " + e.msg
+		}
+	}
+
+	res := "syntax error: unexpected " + TransformTokname(lookAhead)
+
+	// To match Bison, suggest at most four expected tokens.
+	expected := make([]int, 0, 4)
+
+	// Look for shiftable tokens.
+	base := TransformPact[state]
+	for tok := TOKSTART; tok-1 < len(TransformToknames); tok++ {
+		if n := base + tok; n >= 0 && n < TransformLast && TransformChk[TransformAct[n]] == tok {
+			if len(expected) == cap(expected) {
+				return res
+			}
+			expected = append(expected, tok)
+		}
+	}
+
+	if TransformDef[state] == -2 {
+		i := 0
+		for TransformExca[i] != -1 || TransformExca[i+1] != state {
+			i += 2
+		}
+
+		// Look for tokens that we accept or reduce.
+		for i += 2; TransformExca[i] >= 0; i += 2 {
+			tok := TransformExca[i]
+			if tok < TOKSTART || TransformExca[i+1] == 0 {
+				continue
+			}
+			if len(expected) == cap(expected) {
+				return res
+			}
+			expected = append(expected, tok)
+		}
+
+		// If the default action is to accept or reduce, give up.
+		if TransformExca[i+1] != 0 {
+			return res
+		}
+	}
+
+	for i, tok := range expected {
+		if i == 0 {
+			res += ", expecting "
+		} else {
+			res += " or "
+		}
+		res += TransformTokname(tok)
+	}
+	return res
+}
+
+func Transformlex1(lex TransformLexer, lval *TransformSymType) (char, token int) {
+	token = 0
+	char = lex.Lex(lval)
 	if char <= 0 {
-		c = TransformTok1[0]
+		token = TransformTok1[0]
 		goto out
 	}
 	if char < len(TransformTok1) {
-		c = TransformTok1[char]
+		token = TransformTok1[char]
 		goto out
 	}
 	if char >= TransformPrivate {
 		if char < TransformPrivate+len(TransformTok2) {
-			c = TransformTok2[char-TransformPrivate]
+			token = TransformTok2[char-TransformPrivate]
 			goto out
 		}
 	}
 	for i := 0; i < len(TransformTok3); i += 2 {
-		c = TransformTok3[i+0]
-		if c == char {
-			c = TransformTok3[i+1]
+		token = TransformTok3[i+0]
+		if token == char {
+			token = TransformTok3[i+1]
 			goto out
 		}
 	}
 
 out:
-	if c == 0 {
-		c = TransformTok2[1] /* unknown char */
+	if token == 0 {
+		token = TransformTok2[1] /* unknown char */
 	}
 	if TransformDebug >= 3 {
-		__yyfmt__.Printf("lex %s(%d)\n", TransformTokname(c), uint(char))
+		__yyfmt__.Printf("lex %s(%d)\n", TransformTokname(token), uint(char))
 	}
-	return c
+	return char, token
 }
 
 func TransformParse(Transformlex TransformLexer) int {
+	return TransformNewParser().Parse(Transformlex)
+}
+
+func (Transformrcvr *TransformParserImpl) Parse(Transformlex TransformLexer) int {
 	var Transformn int
 	var Transformlval TransformSymType
 	var TransformVAL TransformSymType
+	var TransformDollar []TransformSymType
+	_ = TransformDollar // silence set and not used
 	TransformS := make([]TransformSymType, TransformMaxDepth)
 
 	Nerrs := 0   /* number of errors */
 	Errflag := 0 /* error recovery flag */
 	Transformstate := 0
 	Transformchar := -1
+	Transformtoken := -1 // Transformchar translated into internal numbering
+	Transformrcvr.lookahead = func() int { return Transformchar }
+	defer func() {
+		// Make sure we report no lookahead when not parsing.
+		Transformstate = -1
+		Transformchar = -1
+		Transformtoken = -1
+	}()
 	Transformp := -1
 	goto Transformstack
 
@@ -453,7 +562,7 @@ ret1:
 Transformstack:
 	/* put a state and value onto the stack */
 	if TransformDebug >= 4 {
-		__yyfmt__.Printf("char %v in %v\n", TransformTokname(Transformchar), TransformStatname(Transformstate))
+		__yyfmt__.Printf("char %v in %v\n", TransformTokname(Transformtoken), TransformStatname(Transformstate))
 	}
 
 	Transformp++
@@ -471,15 +580,16 @@ Transformnewstate:
 		goto Transformdefault /* simple state */
 	}
 	if Transformchar < 0 {
-		Transformchar = Transformlex1(Transformlex, &Transformlval)
+		Transformchar, Transformtoken = Transformlex1(Transformlex, &Transformlval)
 	}
-	Transformn += Transformchar
+	Transformn += Transformtoken
 	if Transformn < 0 || Transformn >= TransformLast {
 		goto Transformdefault
 	}
 	Transformn = TransformAct[Transformn]
-	if TransformChk[Transformn] == Transformchar { /* valid shift */
+	if TransformChk[Transformn] == Transformtoken { /* valid shift */
 		Transformchar = -1
+		Transformtoken = -1
 		TransformVAL = Transformlval
 		Transformstate = Transformn
 		if Errflag > 0 {
@@ -493,7 +603,7 @@ Transformdefault:
 	Transformn = TransformDef[Transformstate]
 	if Transformn == -2 {
 		if Transformchar < 0 {
-			Transformchar = Transformlex1(Transformlex, &Transformlval)
+			Transformchar, Transformtoken = Transformlex1(Transformlex, &Transformlval)
 		}
 
 		/* look through exception table */
@@ -506,7 +616,7 @@ Transformdefault:
 		}
 		for xi += 2; ; xi += 2 {
 			Transformn = TransformExca[xi+0]
-			if Transformn < 0 || Transformn == Transformchar {
+			if Transformn < 0 || Transformn == Transformtoken {
 				break
 			}
 		}
@@ -519,11 +629,11 @@ Transformdefault:
 		/* error ... attempt to resume parsing */
 		switch Errflag {
 		case 0: /* brand new error */
-			Transformlex.Error("syntax error")
+			Transformlex.Error(TransformErrorMessage(Transformstate, Transformtoken))
 			Nerrs++
 			if TransformDebug >= 1 {
 				__yyfmt__.Printf("%s", TransformStatname(Transformstate))
-				__yyfmt__.Printf(" saw %s\n", TransformTokname(Transformchar))
+				__yyfmt__.Printf(" saw %s\n", TransformTokname(Transformtoken))
 			}
 			fallthrough
 
@@ -551,12 +661,13 @@ Transformdefault:
 
 		case 3: /* no shift yet; clobber input char */
 			if TransformDebug >= 2 {
-				__yyfmt__.Printf("error recovery discards %s\n", TransformTokname(Transformchar))
+				__yyfmt__.Printf("error recovery discards %s\n", TransformTokname(Transformtoken))
 			}
-			if Transformchar == TransformEofCode {
+			if Transformtoken == TransformEofCode {
 				goto ret1
 			}
 			Transformchar = -1
+			Transformtoken = -1
 			goto Transformnewstate /* try again in the same state */
 		}
 	}
@@ -571,6 +682,13 @@ Transformdefault:
 	_ = Transformpt // guard against "declared and not used"
 
 	Transformp -= TransformR2[Transformn]
+	// Transformp is now the index of $0. Perform the default action. Iff the
+	// reduced production is ε, $1 is possibly out of range.
+	if Transformp+1 >= len(TransformS) {
+		nyys := make([]TransformSymType, len(TransformS)*2)
+		copy(nyys, TransformS)
+		TransformS = nyys
+	}
 	TransformVAL = TransformS[Transformp+1]
 
 	/* consult goto table to find next state */
@@ -590,28 +708,30 @@ Transformdefault:
 	switch Transformnt {
 
 	case 1:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:42
 		{
-			Transformlex.(*TransformLex).output = TransformS[Transformpt-0].val
-			TransformVAL.val = TransformS[Transformpt-0].val
+			Transformlex.(*TransformLex).output = TransformDollar[1].val
+			TransformVAL.val = TransformDollar[1].val
 		}
 	case 2:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:47
 		{
-			TransformVAL.val = pipelineGeneratorTransform(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = pipelineGeneratorTransform(TransformDollar[1].val, TransformDollar[3].val)
 			Transformlex.(*TransformLex).output = TransformVAL.val
 		}
-	case 3:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 4:
+		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
 		//line pipeline_generator.y:56
 		{
-			TransformVAL.val = pipelineGeneratorIf(TransformS[Transformpt-0].val)
+			TransformVAL.val = pipelineGeneratorIf(TransformDollar[2].val)
 		}
 	case 5:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:60
 		{
-			fun, err := getCustomFunction(TransformS[Transformpt-0].strVal)
+			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -619,120 +739,121 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 6:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 7:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:75
 		{
-			TransformVAL.val = pipelineGeneratorOr(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = pipelineGeneratorOr(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 8:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 9:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:83
 		{
-			TransformVAL.val = pipelineGeneratorAnd(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = pipelineGeneratorAnd(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 10:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 11:
+		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
 		//line pipeline_generator.y:91
 		{
-			TransformVAL.val = pipelineGeneratorNot(TransformS[Transformpt-0].val)
+			TransformVAL.val = pipelineGeneratorNot(TransformDollar[2].val)
 		}
-	case 12:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 13:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:99
 		{
-			TransformVAL.val = pipelineGeneratorCompare(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val, TransformS[Transformpt-1].strVal)
+			TransformVAL.val = pipelineGeneratorCompare(TransformDollar[1].val, TransformDollar[3].val, TransformDollar[2].strVal)
 		}
-	case 14:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 15:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:107
 		{
-			TransformVAL.val = addTransformGenerator(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = addTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
 	case 16:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:111
 		{
-			TransformVAL.val = subtractTransformGenerator(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = subtractTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 17:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 18:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:119
 		{
-			TransformVAL.val = multiplyTransformGenerator(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = multiplyTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
 	case 19:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:123
 		{
-			TransformVAL.val = divideTransformGenerator(TransformS[Transformpt-2].val, TransformS[Transformpt-0].val)
+			TransformVAL.val = divideTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
 	case 20:
+		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
 		//line pipeline_generator.y:127
 		{
-			TransformVAL.val = inverseTransformGenerator(TransformS[Transformpt-0].val)
+			TransformVAL.val = inverseTransformGenerator(TransformDollar[2].val)
 		}
-	case 21:
-		TransformVAL.val = TransformS[Transformpt-0].val
-	case 22:
-		TransformVAL.val = TransformS[Transformpt-0].val
-	case 23:
-		TransformVAL.val = TransformS[Transformpt-0].val
 	case 24:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:137
 		{
-			TransformVAL.val = TransformS[Transformpt-1].val
+			TransformVAL.val = TransformDollar[2].val
 		}
 	case 25:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:144
 		{
-			num, err := strconv.ParseFloat(TransformS[Transformpt-0].strVal, 64)
+			num, err := strconv.ParseFloat(TransformDollar[1].strVal, 64)
 			TransformVAL.val = pipelineGeneratorConstant(num, err)
 		}
 	case 26:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:149
 		{
-			val, err := strconv.ParseBool(TransformS[Transformpt-0].strVal)
+			val, err := strconv.ParseBool(TransformDollar[1].strVal)
 			TransformVAL.val = pipelineGeneratorConstant(val, err)
 		}
 	case 27:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:154
 		{
-			TransformVAL.val = pipelineGeneratorConstant(TransformS[Transformpt-0].strVal, nil)
+			TransformVAL.val = pipelineGeneratorConstant(TransformDollar[1].strVal, nil)
 		}
 	case 28:
+		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
 		//line pipeline_generator.y:161
 		{
-			TransformVAL.val = pipelineGeneratorGet(TransformS[Transformpt-1].stringList)
+			TransformVAL.val = pipelineGeneratorGet(TransformDollar[3].stringList)
 		}
 	case 29:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:165
 		{
 			TransformVAL.val = PipelineGeneratorIdentity()
 		}
 	case 30:
+		TransformDollar = TransformS[Transformpt-9 : Transformpt+1]
 		//line pipeline_generator.y:172
 		{
-			TransformVAL.val = pipelineGeneratorSet(TransformS[Transformpt-4].stringList, TransformS[Transformpt-1].val)
+			TransformVAL.val = pipelineGeneratorSet(TransformDollar[5].stringList, TransformDollar[8].val)
 		}
 	case 31:
+		TransformDollar = TransformS[Transformpt-6 : Transformpt+1]
 		//line pipeline_generator.y:176
 		{
-			TransformVAL.val = pipelineGeneratorSet([]string{}, TransformS[Transformpt-1].val)
+			TransformVAL.val = pipelineGeneratorSet([]string{}, TransformDollar[5].val)
 		}
 	case 32:
+		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
 		//line pipeline_generator.y:180
 		{
-			TransformVAL.val = pipelineGeneratorHas(TransformS[Transformpt-1].strVal)
+			TransformVAL.val = pipelineGeneratorHas(TransformDollar[3].strVal)
 		}
 	case 33:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:184
 		{
-			fun, err := getCustomFunction(TransformS[Transformpt-2].strVal)
+			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -741,9 +862,10 @@ Transformdefault:
 			TransformVAL.val = fun
 		}
 	case 34:
+		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
 		//line pipeline_generator.y:194
 		{
-			fun, err := getCustomFunction(TransformS[Transformpt-3].strVal, TransformS[Transformpt-1].funcList...)
+			fun, err := getRegisteredFunction(TransformDollar[1].strVal, TransformDollar[3].funcList...)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -752,24 +874,28 @@ Transformdefault:
 			TransformVAL.val = fun
 		}
 	case 35:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:207
 		{
-			TransformVAL.stringList = []string{TransformS[Transformpt-0].strVal}
+			TransformVAL.stringList = []string{TransformDollar[1].strVal}
 		}
 	case 36:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:211
 		{
-			TransformVAL.stringList = append(TransformS[Transformpt-2].stringList, TransformS[Transformpt-0].strVal)
+			TransformVAL.stringList = append(TransformDollar[1].stringList, TransformDollar[3].strVal)
 		}
 	case 37:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:218
 		{
-			TransformVAL.funcList = []TransformFunc{TransformS[Transformpt-0].val}
+			TransformVAL.funcList = []TransformFunc{TransformDollar[1].val}
 		}
 	case 38:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:222
 		{
-			TransformVAL.funcList = append([]TransformFunc{TransformS[Transformpt-0].val}, TransformS[Transformpt-2].funcList...)
+			TransformVAL.funcList = append([]TransformFunc{TransformDollar[3].val}, TransformDollar[1].funcList...)
 		}
 	}
 	goto Transformstack /* stack new state and value */

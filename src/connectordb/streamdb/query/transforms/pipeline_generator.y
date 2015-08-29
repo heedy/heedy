@@ -58,7 +58,7 @@ if_transform
 		}
 	| IDENTIFIER
 		{
-			fun, err := getCustomFunction($1)
+			fun, err := getRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -182,7 +182,7 @@ function
 		}
 	| IDENTIFIER LB RB
 		{
-			fun, err := getCustomFunction($1)
+			fun, err := getRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -192,7 +192,7 @@ function
 		}
 	| IDENTIFIER LB function_params RB
 		{
-			fun, err := getCustomFunction($1, $3...)
+			fun, err := getRegisteredFunction($1, $3...)
 
 			if err != nil {
 				Transformlex.Error(err.Error())

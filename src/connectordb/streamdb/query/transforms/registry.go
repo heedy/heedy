@@ -71,7 +71,7 @@ func (t Transform) Register() error {
 }
 
 //Get returns the TransformFunc for the given name
-func Get(name string, args ...TransformFunc) (TransformFunc, error) {
+func getRegisteredFunction(name string, args ...TransformFunc) (TransformFunc, error) {
 	t, ok := Registry[name]
 	if !ok {
 		return Err(fmt.Sprintf("Transform '%s' not found", name))
