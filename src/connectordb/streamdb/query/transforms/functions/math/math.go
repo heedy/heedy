@@ -9,35 +9,6 @@ import (
 package.
 */
 
-type mathOperation func(float64) float64
-
-func mathTransformGenerator(mathFunc mathOperation) transforms.TransformGenerator {
-
-	return func(name string, args ...transforms.TransformFunc) (transforms.TransformFunc, error) {
-		if len(args) != 1 {
-			return transforms.Err(name + " requires one argument.")
-		}
-
-		return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
-			if !te.CanProcess() {
-				return te
-			}
-
-			te = args[0](te)
-
-			val, ok := te.GetFloat()
-			if !ok {
-				return te.SetErrorString(name + " could not convert datapoint to number")
-			}
-
-			result := mathFunc(val)
-
-			return te.Copy().SetData(result)
-		}, nil
-
-	}
-}
-
 var floor = transforms.Transform{
 	Name:         "math.floor",
 	Description:  "Returns the floor of the given argument. If no argument given, returns the floor of the data passed through.",
@@ -50,7 +21,9 @@ var floor = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Floor)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Floor(value), nil
+	})}
 
 var abs = transforms.Transform{
 	Name:         "math.abs",
@@ -64,7 +37,9 @@ var abs = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Abs)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Abs(value), nil
+	})}
 
 var ceil = transforms.Transform{
 	Name:         "math.ceil",
@@ -78,7 +53,9 @@ var ceil = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Ceil)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Ceil(value), nil
+	})}
 
 var sqrt = transforms.Transform{
 	Name:         "math.sqrt",
@@ -92,7 +69,9 @@ var sqrt = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Sin)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Sqrt(value), nil
+	})}
 
 var ln = transforms.Transform{
 	Name:         "math.log2",
@@ -106,7 +85,9 @@ var ln = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Log2)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Log2(value), nil
+	})}
 
 func init() {
 	ln.Register()

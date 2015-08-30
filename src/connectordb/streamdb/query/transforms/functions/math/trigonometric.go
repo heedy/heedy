@@ -19,7 +19,9 @@ var sin = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Sin)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Sin(value), nil
+	})}
 
 var cos = transforms.Transform{
 	Name:         "math.cos",
@@ -33,7 +35,9 @@ var cos = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Cos)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Cos(value), nil
+	})}
 
 var tan = transforms.Transform{
 	Name:         "math.tan",
@@ -47,7 +51,9 @@ var tan = transforms.Transform{
 			Optional:    false,
 		},
 	},
-	Generator: mathTransformGenerator(math.Tan)}
+	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
+		return math.Tan(value), nil
+	})}
 
 func init() {
 	sin.Register()

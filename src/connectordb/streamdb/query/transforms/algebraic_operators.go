@@ -36,16 +36,7 @@ func subtractTransformGenerator(left TransformFunc, right TransformFunc) Transfo
 
 // Performs a unary minus
 func inverseTransformGenerator(transform TransformFunc) TransformFunc {
-	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
-		}
-
-		val, ok := te.Copy().Apply(transform).GetFloat()
-		if ok == false {
-			return te.SetError(ErrNotFloat)
-		}
-
-		return te.SetData(-val)
-	}
+	return unaryOperatorValueWrapper("negate (-)", transform, func(value float64) (float64, error) {
+		return -value, nil
+	})
 }
