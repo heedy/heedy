@@ -98,45 +98,18 @@ const (
 	syms        = `\$|\[|\]|\(|\)`
 	idents      = `([a-zA-Z_][a-zA-Z_0-9]*)`
 	maths       = `\-|\*|/|\+`
+	allregex    = builtins + "|" + logicals + "|" + numbers + "|" + compops + "|" + stringr + "|" + pipes + "|" + syms + "|" + idents + "|" + maths
 )
 
 var (
-	tokenizer   *regexp.Regexp
-	numberRegex *regexp.Regexp
-	stringRegex *regexp.Regexp
-	identRegex  *regexp.Regexp
+	tokenizer   = regexp.MustCompile(`^(` + allregex + `)`)
+	numberRegex = regexp.MustCompile("^" + numbers + "$")
+	stringRegex = regexp.MustCompile("^" + stringr + "$")
+	identRegex  = regexp.MustCompile("^" + idents + "$")
 )
 
 func init() {
 
-	var err error
-	{
-		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents, maths}, "|")
-
-		regexStr := `^(` + re + `)`
-		tokenizer, err = regexp.Compile(regexStr)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
-
-	// these regexes are needed later on while testing.
-	numberRegex, err = regexp.Compile("^" + numbers + "$")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// string regex (needed later on)
-	stringRegex, err = regexp.Compile("^" + stringr + "$")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// ident regex
-	identRegex, err = regexp.Compile("^" + idents + "$")
-	if err != nil {
-		panic(err.Error())
-	}
 }
 
 // ParseTransform takes a transform input and returns a function to do the
