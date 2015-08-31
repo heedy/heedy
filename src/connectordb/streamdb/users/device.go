@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -209,6 +210,10 @@ func (userdb *SqlUserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 // nil if an error was encountered and error will be set.
 func (userdb *SqlUserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
 	var dev Device
+
+	if Key == "" {
+		return nil, errors.New("Must have non-empty api key")
+	}
 
 	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE ApiKey = ? LIMIT 1;", Key)
 

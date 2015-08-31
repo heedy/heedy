@@ -41,7 +41,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 	devs, err := o.ReadAllDevices("streamdb_test")
 	require.NoError(t, err)
-	require.Equal(t, 1, len(devs)) //the user device
+	require.Equal(t, 2, len(devs)) //the user and meta devices
 
 	dev, err := o.Device()
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 	devs, err = o.ReadAllDevicesByUserID(dev.UserId)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(devs)) //the user device
+	require.Equal(t, 2, len(devs)) //the user and meta device
 
 	// This user should not be able to CRUD devices of another user
 	devs, err = o.ReadAllDevices("otheruser")
@@ -187,7 +187,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 
 	devs, err := baseOperator.ReadAllDevices("tstusr")
 	require.NoError(t, err)
-	require.Equal(t, 3, len(devs)) //All devices
+	require.Equal(t, 4, len(devs)) //All devices
 	devs, err = o.ReadAllDevices("tstusr")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs)) //Only this device

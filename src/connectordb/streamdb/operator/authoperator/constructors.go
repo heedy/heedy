@@ -21,12 +21,12 @@ func NewDeviceAuthOperator(baseOperator interfaces.Operator, devicepath string) 
 		return interfaces.ErrOperator{}, err
 	}
 
-	userLogStream, err := baseOperator.ReadStream(path.User + "/user/log")
+	metaLogStream, err := baseOperator.ReadStream(path.User + "/meta/log")
 	if err != nil {
 		return interfaces.ErrOperator{}, err
 	}
 
-	return &AuthOperator{baseOperator, devicepath, device.DeviceId, userLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, device.DeviceId, metaLogStream.StreamId}, nil
 }
 
 func NewAPILoginOperator(baseOperator interfaces.Operator, apikey string) (interfaces.BaseOperator, error) {
@@ -39,6 +39,9 @@ func NewAPILoginOperator(baseOperator interfaces.Operator, apikey string) (inter
 }
 
 func NewDeviceLoginOperator(baseOperator interfaces.Operator, devicepath, apikey string) (interfaces.BaseOperator, error) {
+	if apikey == "" {
+		return interfaces.ErrOperator{}, ErrPermissions
+	}
 	operator, err := NewDeviceAuthOperator(baseOperator, devicepath)
 
 	device, err := baseOperator.ReadDevice(devicepath)
@@ -64,14 +67,14 @@ func NewDeviceIdOperator(baseOperator interfaces.Operator, deviceID int64) (inte
 		return interfaces.ErrOperator{}, err
 	}
 
-	userLogStream, err := baseOperator.ReadStream(user.Name + "/user/log")
+	metaLogStream, err := baseOperator.ReadStream(user.Name + "/meta/log")
 	if err != nil {
 		return interfaces.ErrOperator{}, err
 	}
 
 	devicepath := user.Name + "/" + device.Name
 
-	return &AuthOperator{baseOperator, devicepath, deviceID, userLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, deviceID, metaLogStream.StreamId}, nil
 }
 
 func NewUserLoginOperator(baseOperator interfaces.Operator, username, password string) (interfaces.BaseOperator, error) {
@@ -81,12 +84,12 @@ func NewUserLoginOperator(baseOperator interfaces.Operator, username, password s
 		return interfaces.ErrOperator{}, err
 	}
 
-	userLogStream, err := baseOperator.ReadStream(user.Name + "/user/log")
+	metaLogStream, err := baseOperator.ReadStream(user.Name + "/meta/log")
 	if err != nil {
 		return interfaces.ErrOperator{}, err
 	}
 
 	devicepath := user.Name + "/" + device.Name
 
-	return &AuthOperator{baseOperator, devicepath, device.DeviceId, userLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, device.DeviceId, metaLogStream.StreamId}, nil
 }

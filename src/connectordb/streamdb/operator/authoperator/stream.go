@@ -33,7 +33,7 @@ func (o *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 		if err == nil {
 			devpath, err2 := o.getDevicePath(deviceID)
 			if err2 == nil {
-				o.UserLog("CreateStream", devpath+"/"+streamname)
+				o.MetaLog("CreateStream", devpath+"/"+streamname)
 			}
 		}
 		return err
@@ -110,7 +110,7 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 
 	err = o.BaseOperator.UpdateStream(modifiedstream)
 	if err == nil {
-		o.UserLogStreamID(originalStream.StreamId, "UpdateStream")
+		o.MetaLogStreamID(originalStream.StreamId, "UpdateStream")
 	}
 
 	return err
@@ -162,7 +162,7 @@ func (o *AuthOperator) DeleteStreamByID(streamID int64, substream string) error 
 
 	err = o.BaseOperator.DeleteStreamByID(streamID, substream)
 	if err == nil && err2 == nil {
-		o.UserLog("DeleteStream", spath)
+		o.MetaLog("DeleteStream", spath)
 	}
 	return err
 }
