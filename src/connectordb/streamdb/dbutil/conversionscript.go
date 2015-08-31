@@ -20,14 +20,14 @@ const dbconversion = `
 
 
 -- This table won't exist for the first one.
-CREATE TABLE IF NOT EXISTS StreamdbMeta (
+CREATE TABLE StreamdbMeta (
      Key VARCHAR UNIQUE NOT NULL,
      Value VARCHAR NOT NULL);
 
 CREATE INDEX sdb_meta ON StreamdbMeta (Key);
 
 
-CREATE TABLE IF NOT EXISTS Users (
+CREATE TABLE Users (
     UserId {{.pkey_exp}},
 	Name VARCHAR UNIQUE NOT NULL,
 	Nickname VARCHAR DEFAULT '',
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS Users (
 
 CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
-CREATE TABLE IF NOT EXISTS Devices (
+CREATE TABLE Devices (
     DeviceId {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR DEFAULT '',
@@ -67,7 +67,7 @@ CREATE INDEX DeviceNameIndex ON Devices (Name);
 CREATE UNIQUE INDEX DeviceAPIIndex ON Devices (ApiKey) WHERE ApiKey!='';
 CREATE INDEX DeviceUserIndex ON Devices (UserId);
 
-CREATE TABLE IF NOT EXISTS Streams (
+CREATE TABLE Streams (
     StreamId {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
@@ -83,7 +83,7 @@ CREATE INDEX StreamNameIndex ON Streams (Name);
 CREATE INDEX StreamDeviceIndex ON Streams (DeviceId);
 
 
-CREATE TABLE IF NOT EXISTS datastream (
+CREATE TABLE datastream (
 	StreamId BIGINT NOT NULL,
 	Substream VARCHAR,
 	EndTime DOUBLE PRECISION,
