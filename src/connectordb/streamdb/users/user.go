@@ -18,9 +18,10 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId int64  `modifiable:"nobody" json:"-"`   // The primary key
-	Name   string `modifiable:"root" json:"name"`  // The public username of the user
-	Email  string `modifiable:"user" json:"email"` // The user's email address
+	UserId   int64  `modifiable:"nobody" json:"-"`                // The primary key
+	Name     string `modifiable:"root" json:"name"`               // The public username of the user
+	Nickname string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
+	Email    string `modifiable:"user" json:"email"`              // The user's email address
 
 	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
 	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
@@ -32,8 +33,6 @@ type User struct {
 	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
 	ProcessingLimit_S int `modifiable:"root" json:"-"` // processing limit in seconds/day
 	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
-
-	Nickname string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
 }
 
 func (s *User) String() string {

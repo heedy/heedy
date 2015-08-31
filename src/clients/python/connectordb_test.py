@@ -141,14 +141,14 @@ class TestConnectorDB(unittest.TestCase):
         db = connectordb.ConnectorDB("python_test","mypass",url="http://localhost:8000")
 
         self.assertTrue(db.exists())
-        self.assertEqual(1,len(db.user.devices()))
+        self.assertEqual(2,len(db.user.devices()))
 
         self.assertFalse(db.user["mydevice"].exists())
         db.user["mydevice"].create()
 
         self.assertTrue(db.user["mydevice"].exists())
 
-        self.assertEqual(2,len(db.user.devices()))
+        self.assertEqual(3,len(db.user.devices()))
 
         db = connectordb.ConnectorDB("python_test/mydevice",db.user["mydevice"].apikey,url="http://localhost:8000")
 
@@ -244,6 +244,7 @@ class TestConnectorDB(unittest.TestCase):
         self.assertEqual(2,len(s[1:]))
         self.assertEqual(3,len(s[:]))
 
+    """
     def test_iostruct(self):
         #This test is specifically to make sure that structs are correctly returned
         db = connectordb.ConnectorDB("test","test",url="http://localhost:8000")
@@ -270,7 +271,7 @@ class TestConnectorDB(unittest.TestCase):
         self.assertTrue(tmp.gotmessage)
 
         db.close()
-
+    """
 
 
     def test_subscribe(self):
