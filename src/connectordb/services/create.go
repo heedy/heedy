@@ -51,6 +51,7 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 	log.Debugf("Creating sql database")
 
 	if err := postgresInstance.Setup(); err != nil {
+		postgresInstance.Stop()
 		return err
 	}
 
@@ -60,6 +61,7 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 	spath := configuration.GetDatabaseConnectionString()
 	db, driver, err := dbutil.OpenSqlDatabase(spath)
 	if err != nil {
+		postgresInstance.Stop()
 		return err
 	}
 	defer db.Close()
@@ -67,14 +69,20 @@ func createSqlDatabase(configuration *config.Configuration, username, password, 
 	udb := users.NewUserDatabase(db, driver, false)
 	err = udb.CreateUser(username, email, password)
 	if err != nil {
+		postgresInstance.Stop()
 		return err
 	}
 
 	usr, err := udb.ReadUserByName(username)
 	if err != nil {
+		postgresInstance.Stop()
 		return err
 	}
 
 	usr.Admin = true
-	return udb.UpdateUser(usr)
+	err = udb.UpdateUser(usr)
+	if err != nil {
+		postgresInstance.Stop()
+	}
+	return err
 }

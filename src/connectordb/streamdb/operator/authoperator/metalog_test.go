@@ -12,7 +12,7 @@ import (
 )
 
 func ensureUserlog(t *testing.T, m messenger.Message, cmd, arg string) {
-	require.Equal(t, "streamdb_test/user/log", m.Stream)
+	require.Equal(t, "streamdb_test/meta/log", m.Stream)
 	require.Equal(t, "streamdb_test/user", m.Data[0].Sender)
 
 	d, ok := m.Data[0].Data.(map[string]interface{})
@@ -36,7 +36,7 @@ func TestUserlog(t *testing.T) {
 
 	//Now subscribe to the userlog
 	recvchan := make(chan messenger.Message, 2)
-	_, err = o.Subscribe("streamdb_test/user/log", recvchan)
+	_, err = o.Subscribe("streamdb_test/meta/log", recvchan)
 	require.NoError(t, err)
 
 	//The message timeout
