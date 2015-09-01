@@ -38,3 +38,6 @@ _testmain.go
 
 # testing directories
 TESTING_*
+
+# The python client
+connectordb_python/
