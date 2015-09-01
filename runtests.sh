@@ -72,7 +72,7 @@ force_stop () {
 	killall postgres redis-server gnatsd connectordb
 
     sleep 1
-    
+
 	killall -9 postgres redis-server gnatsd connectordb
 }
 
@@ -108,7 +108,7 @@ test_status=$?
 stop
 check_pids
 
-if [ $1 == "coveronly" ]; then
+if [[ $1 == "coveronly" ]]; then
     exit 0
 fi
 
@@ -126,7 +126,7 @@ cdb_server=$!
 echo "==================================================="
 echo "Starting API Tests"
 echo "==================================================="
-nosetests --with-coverage --cover-package=connectordb src/clients/python/connectordb_test.py
+nosetests --with-coverage --cover-package=connectordb connectordb_python/connectordb_test.py
 test_status=$?
 
 kill $cdb_server
