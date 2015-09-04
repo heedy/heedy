@@ -42,7 +42,7 @@ func TestUserlog(t *testing.T) {
 	//The message timeout
 	go func() {
 		time.Sleep(5 * time.Second)
-		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
 	}()
 
 	o.CreateDevice("streamdb_test/mydevice")

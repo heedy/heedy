@@ -95,9 +95,9 @@ func TestAuthSubscribe(t *testing.T) {
 			// easy assert tests rather than require.
 			data := []datastream.Datapoint{datastream.Datapoint{}}
 
-			recvuser <- messenger.Message{"TIMEOUT", data}
-			recvdevice <- messenger.Message{"TIMEOUT", data}
-			recvstream <- messenger.Message{"TIMEOUT", data}
+			recvuser <- messenger.Message{"TIMEOUT", "", data}
+			recvdevice <- messenger.Message{"TIMEOUT", "", data}
+			recvstream <- messenger.Message{"TIMEOUT", "", data}
 		}()
 
 		m := <-recvuser

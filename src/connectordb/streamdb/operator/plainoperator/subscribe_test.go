@@ -31,10 +31,10 @@ func TestSubscribe(t *testing.T) {
 	//We bind a timeout to the channel, since we want the test to fail if no messages come through
 	go func() {
 		time.Sleep(2 * time.Second)
-		recvchan <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan2 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan3 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
-		recvchan4 <- messenger.Message{"TIMEOUT", []datastream.Datapoint{}}
+		recvchan <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
+		recvchan2 <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
+		recvchan3 <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
+		recvchan4 <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
 	}()
 
 	_, err = db.Subscribe("tst", recvchan)
@@ -76,9 +76,9 @@ func TestSubscribe(t *testing.T) {
 	require.Equal(t, m.Data[0].Data, "2")
 
 	time.Sleep(100 * time.Millisecond)
-	recvchan <- messenger.Message{"GOOD", []datastream.Datapoint{}}
-	recvchan2 <- messenger.Message{"GOOD", []datastream.Datapoint{}}
-	recvchan3 <- messenger.Message{"GOOD", []datastream.Datapoint{}}
+	recvchan <- messenger.Message{"GOOD", "", []datastream.Datapoint{}}
+	recvchan2 <- messenger.Message{"GOOD", "", []datastream.Datapoint{}}
+	recvchan3 <- messenger.Message{"GOOD", "", []datastream.Datapoint{}}
 
 	m = <-recvchan
 	require.Equal(t, m.Stream, "GOOD", "A downlink should not be triggered")
