@@ -5,6 +5,9 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/operator/messenger"
+	"connectordb/streamdb/query"
+	"connectordb/streamdb/query/transforms"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -48,13 +51,72 @@ var (
 	websocketWaitGroup = sync.WaitGroup{}
 )
 
+type Subscription struct {
+	sync.Mutex //The transform mutex
+
+	nats *nats.Subscription //The nats subscription
+
+	transform map[string]transforms.DatapointTransform //the transforms associated with the subscription - this allows us to run transforms on the data!
+}
+
+func NewSubscription(subs *nats.Subscription) *Subscription {
+	return &Subscription{
+		nats:      subs,
+		transform: make(map[string]transforms.DatapointTransform),
+	}
+}
+
+//Close shuts down the subscription
+func (s *Subscription) Close() {
+	s.Lock()
+	defer s.Unlock()
+	s.nats.Unsubscribe()
+}
+
+//Size is the number of subscriptions to the stream (using different transforms)
+func (s *Subscription) Size() int {
+	s.Lock()
+	defer s.Unlock()
+	return len(s.transform)
+}
+
+//Add a transform subscription to the string
+func (s *Subscription) AddTransform(transform string) (err error) {
+	if _, ok := s.transform[transform]; ok {
+		return errors.New("Subscription to the transform already exists")
+	}
+
+	//First, attempt to generate the transform
+	var t transforms.DatapointTransform
+	if transform != "" {
+		t, err = transforms.NewTransformPipeline(transform)
+		if err != nil {
+			return err
+		}
+	}
+
+	s.Lock()
+	s.transform[transform] = t
+	s.Unlock()
+
+	return nil
+}
+
+//RemTransform deletes a transform from the subscriptions
+func (s *Subscription) RemTransform(transform string) (err error) {
+	s.Lock()
+	delete(s.transform, transform)
+	s.Unlock()
+	return nil
+}
+
 //WebsocketConnection is the general connection with a websocket that is run.
 //Loosely based on github.com/gorilla/websocket/blob/master/examples/chat/conn.go
 //No need for mutex because only reader reads and implements commands
 type WebsocketConnection struct {
 	ws *websocket.Conn
 
-	subscriptions map[string]*nats.Subscription
+	subscriptions map[string]*Subscription
 
 	c chan messenger.Message
 
@@ -73,7 +135,7 @@ func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, req
 
 	ws.SetReadLimit(messageSizeLimit)
 
-	return &WebsocketConnection{ws, make(map[string]*nats.Subscription), make(chan messenger.Message, messageBuffer), logger, o}, nil
+	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, messageBuffer), logger, o}, nil
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {
@@ -103,28 +165,40 @@ func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 }
 
 //Subscribe to the given data stream
-func (c *WebsocketConnection) Subscribe(s string) {
+func (c *WebsocketConnection) Subscribe(s, transform string) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "subscribe", "arg": s})
+
+	//Next check if nats is subscribed
 	if _, ok := c.subscriptions[s]; !ok {
 		subs, err := c.o.Subscribe(s, c.c)
 		if err != nil {
 			logger.Warningln(err)
 		} else {
-			logger.Debugln()
-			c.subscriptions[s] = subs
+
+			logger.Debugln("Initializing subscription")
+			c.subscriptions[s] = NewSubscription(subs)
 		}
-	} else {
-		logger.Warningln("Already subscribed")
+	}
+
+	err := c.subscriptions[s].AddTransform(transform)
+	if err != nil {
+		logger.Warningln(err)
 	}
 }
 
 //Unsubscribe from the given data stream
-func (c *WebsocketConnection) Unsubscribe(s string) {
+func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "unsubscribe", "arg": s})
 	if val, ok := c.subscriptions[s]; ok {
-		logger.Debugln()
-		val.Unsubscribe()
-		delete(c.subscriptions, s)
+		val.RemTransform(transform)
+		if val.Size() == 0 {
+			logger.Debugln("Full unsubscribe")
+			val.Close()
+			delete(c.subscriptions, s)
+		} else {
+			logger.Debugln("transform subscription removed")
+		}
+
 	} else {
 		logger.Warningln("subscription DNE")
 	}
@@ -134,16 +208,18 @@ func (c *WebsocketConnection) Unsubscribe(s string) {
 func (c *WebsocketConnection) UnsubscribeAll() {
 	c.logger.WithField("cmd", "unsubscribeALL").Debugln()
 	for _, val := range c.subscriptions {
-		val.Unsubscribe()
+		val.Close()
 	}
-	c.subscriptions = make(map[string]*nats.Subscription)
+	c.subscriptions = make(map[string]*Subscription)
 }
 
 //A command is a cmd and the arg operation
 type websocketCommand struct {
-	Cmd string
-	Arg string
-	D   []datastream.Datapoint //If the command is "insert", it needs an additional datapoint
+	Cmd       string
+	Arg       string
+	Transform string //Allows subscribing with a transform
+
+	D []datastream.Datapoint //If the command is "insert", it needs an additional datapoint
 }
 
 //RunReader runs the reading routine. It also maps the commands to actual subscriptions
@@ -175,9 +251,9 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 		case "insert":
 			c.Insert(&cmd)
 		case "subscribe":
-			c.Subscribe(cmd.Arg)
+			c.Subscribe(cmd.Arg, cmd.Transform)
 		case "unsubscribe":
-			c.Unsubscribe(cmd.Arg)
+			c.Unsubscribe(cmd.Arg, cmd.Transform)
 		case "unsubscribe_all":
 			c.UnsubscribeAll()
 		}
@@ -200,6 +276,34 @@ loop:
 				break loop
 			}
 			c.logger.WithFields(log.Fields{"cmd": "MSG", "arg": dp.Stream}).Debugln()
+
+			//Now loop through all transforms for the datapoint array
+			subs, ok := c.subscriptions[dp.Stream]
+			if ok {
+				subs.Lock()
+				for transform, tf := range subs.transform {
+					if transform == "" {
+						log.Debugf("wrote (no transform)")
+						if err := c.write(dp); err != nil {
+							break loop
+						}
+					} else {
+						dpa, err := query.TransformArray(tf, &dp.Data)
+						log.Debugf("Wrote: %s", transform)
+						if err == nil && dpa.Length() > 0 {
+							if err := c.write(messenger.Message{
+								Stream:    dp.Stream,
+								Transform: transform,
+								Data:      *dpa,
+							}); err != nil {
+								break loop
+							}
+						}
+					}
+
+				}
+				subs.Unlock()
+			}
 			if err := c.write(dp); err != nil {
 				break loop
 			}

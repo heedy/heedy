@@ -73,7 +73,7 @@ func (o *PlainOperator) InsertStreamByID(streamID int64, substream string, data 
 		}
 	}
 
-	return o.msg.Publish(streampath, messenger.Message{streampath, data})
+	return o.msg.Publish(streampath, messenger.Message{streampath, "", data})
 }
 
 //GetStreamTimeRangeByID reads time range by ID
