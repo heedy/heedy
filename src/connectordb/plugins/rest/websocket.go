@@ -154,7 +154,7 @@ func (c *WebsocketConnection) Close() {
 //Insert a datapoint using the websocket
 func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
-	logger.Debugln("Inserting", len(ws.D), "dp")
+	logger.Debugln("-> insert ", len(ws.D), "dp")
 	err := c.o.InsertStream(ws.Arg, ws.D, true)
 	if err != nil {
 		//TODO: Notify user of insert failure
@@ -192,11 +192,11 @@ func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 	if val, ok := c.subscriptions[s]; ok {
 		val.RemTransform(transform)
 		if val.Size() == 0 {
-			logger.Debugln("Full unsubscribe")
+			logger.Debugln("stop subscription")
 			val.Close()
 			delete(c.subscriptions, s)
 		} else {
-			logger.Debugln("transform subscription removed")
+			logger.Debugln()
 		}
 
 	} else {
@@ -206,8 +206,8 @@ func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 
 //UnsubscribeAll from all streams of data
 func (c *WebsocketConnection) UnsubscribeAll() {
-	c.logger.WithField("cmd", "unsubscribeALL").Debugln()
-	for _, val := range c.subscriptions {
+	for key, val := range c.subscriptions {
+		c.logger.Debugf("Unsubscribe: %s", key)
 		val.Close()
 	}
 	c.subscriptions = make(map[string]*Subscription)
@@ -275,7 +275,7 @@ loop:
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				break loop
 			}
-			c.logger.WithFields(log.Fields{"cmd": "MSG", "arg": dp.Stream}).Debugln()
+			logger := c.logger.WithFields(log.Fields{"stream": dp.Stream})
 
 			//Now loop through all transforms for the datapoint array
 			subs, ok := c.subscriptions[dp.Stream]
@@ -283,13 +283,13 @@ loop:
 				subs.Lock()
 				for transform, tf := range subs.transform {
 					if transform == "" {
-						log.Debugf("wrote (no transform)")
+						logger.Debugln("<- send")
 						if err := c.write(dp); err != nil {
 							break loop
 						}
 					} else {
 						dpa, err := query.TransformArray(tf, &dp.Data)
-						log.Debugf("Wrote: %s", transform)
+						logger.Debugf("<- send %s", transform)
 						if err == nil && dpa.Length() > 0 {
 							if err := c.write(messenger.Message{
 								Stream:    dp.Stream,
@@ -368,5 +368,5 @@ func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http
 	if err != nil {
 		return 2, err.Error()
 	}
-	return 0, ""
+	return 0, "Websocket closed"
 }
