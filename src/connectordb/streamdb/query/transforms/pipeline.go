@@ -15,12 +15,13 @@ func pipeline(functionPipeline []TransformFunc) TransformFunc {
 	//inputValues := make([]*TransformEnvironment, len(functionPipeline)+1)
 
 	return func(te *TransformEnvironment) *TransformEnvironment {
-		if !te.CanProcess() {
-			return te
-		}
 
 		for _, item := range functionPipeline {
-			te = te.Apply(item)
+			if !te.CanProcess() {
+				break
+			}
+
+			te = te.Copy().Apply(item)
 		}
 
 		return te

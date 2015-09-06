@@ -706,7 +706,7 @@ Transformdefault:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:68
 		{
-			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
+			fun, err := InstantiateRegisteredFunction(TransformDollar[1].strVal)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -779,20 +779,20 @@ Transformdefault:
 		//line pipeline_generator.y:152
 		{
 			num, err := strconv.ParseFloat(TransformDollar[1].strVal, 64)
-			TransformVAL.val = pipelineGeneratorConstant(num, err)
+			TransformVAL.val = ConstantValueGenerator(num, err)
 		}
 	case 27:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:157
 		{
 			val, err := strconv.ParseBool(TransformDollar[1].strVal)
-			TransformVAL.val = pipelineGeneratorConstant(val, err)
+			TransformVAL.val = ConstantValueGenerator(val, err)
 		}
 	case 28:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:162
 		{
-			TransformVAL.val = pipelineGeneratorConstant(TransformDollar[1].strVal, nil)
+			TransformVAL.val = ConstantValueGenerator(TransformDollar[1].strVal, nil)
 		}
 	case 29:
 		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
@@ -828,7 +828,7 @@ Transformdefault:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:192
 		{
-			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
+			fun, err := InstantiateRegisteredFunction(TransformDollar[1].strVal)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -840,7 +840,7 @@ Transformdefault:
 		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
 		//line pipeline_generator.y:202
 		{
-			fun, err := getRegisteredFunction(TransformDollar[1].strVal, TransformDollar[3].funcList...)
+			fun, err := InstantiateRegisteredFunction(TransformDollar[1].strVal, TransformDollar[3].funcList...)
 
 			if err != nil {
 				Transformlex.Error(err.Error())

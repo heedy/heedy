@@ -7,7 +7,7 @@ import (
 )
 
 // The identity function, returns whatever was passed in.
-func pipelineGeneratorConstant(value interface{}, inputError error) TransformFunc {
+func ConstantValueGenerator(value interface{}, inputError error) TransformFunc {
 	return func(te *TransformEnvironment) *TransformEnvironment {
 		if te.Flag == constantCheck {
 			te.Flag = constantCheckTrue

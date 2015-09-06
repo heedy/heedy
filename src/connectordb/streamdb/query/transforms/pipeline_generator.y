@@ -66,7 +66,7 @@ if_transform
 		}
 	| IDENTIFIER
 		{
-			fun, err := getRegisteredFunction($1)
+			fun, err := InstantiateRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -151,16 +151,16 @@ constant
 	: NUMBER
 		{
 			num, err := strconv.ParseFloat($1, 64)
-			$$ = pipelineGeneratorConstant(num, err)
+			$$ = ConstantValueGenerator(num, err)
 		}
     | BOOL
 		{
 			val, err := strconv.ParseBool($1)
-			$$ = pipelineGeneratorConstant(val, err)
+			$$ = ConstantValueGenerator(val, err)
 		}
     | STRING
 		{
-			$$ = pipelineGeneratorConstant($1, nil)
+			$$ = ConstantValueGenerator($1, nil)
 		}
     ;
 
@@ -190,7 +190,7 @@ function
 		}
 	| IDENTIFIER LB RB
 		{
-			fun, err := getRegisteredFunction($1)
+			fun, err := InstantiateRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -200,7 +200,7 @@ function
 		}
 	| IDENTIFIER LB function_params RB
 		{
-			fun, err := getRegisteredFunction($1, $3...)
+			fun, err := InstantiateRegisteredFunction($1, $3...)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
