@@ -77,6 +77,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"if $ < 5 | if $ > 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
 		{"if $ < 5 | if $ > 33", false, false, &Datapoint{Data: 4}, nil},
 		{"if $ < 5 | $ > 33", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
+		{"has(\"test\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
 		{"has(\"test\") | $ < 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"if has(\"test\")| $ < 1", false, false, &Datapoint{Data: 4}, nil},
 		{"if has(\"test\")| $[\"test\"] < 1", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, &Datapoint{Data: false}},
@@ -129,6 +130,9 @@ func TestPipelineGenerator(t *testing.T) {
 		// multi-value accessors
 		{"$['out', 'in']", false, false, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
 		{"$['in', 'out']", false, true, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
+
+		// long pipeline
+		{"1 | 2 | 3 | 4 | false == true", false, false, &Datapoint{Data: 0}, &Datapoint{Data: false}},
 	}
 
 	// function that should nilt out

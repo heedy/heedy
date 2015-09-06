@@ -19,6 +19,8 @@ const (
 	constantCheck StatusFlag = iota
 	// this flag is set as a reply if the "constantCheck" passes
 	constantCheckTrue StatusFlag = iota
+	// Flag sent through to indicate the "last" datapoint was dropped
+	lastDatapointDropped = iota
 )
 
 var (
@@ -46,6 +48,10 @@ type TransformEnvironment struct {
 
 // Produces a non-deep copy of this environment
 func (t *TransformEnvironment) Copy() *TransformEnvironment {
+	if t == nil {
+		return &TransformEnvironment{Datapoint: nil}
+	}
+
 	n := TransformEnvironment{t.Flag, t.Datapoint.Copy(), t.Error}
 	return &n
 }
@@ -138,5 +144,15 @@ func (t *TransformEnvironment) SetData(value interface{}) *TransformEnvironment 
 	}
 
 	t.Datapoint.Data = value
+	return t
+}
+
+// Sets the data for the datpaoint
+func (t *TransformEnvironment) SetFlag(value StatusFlag) *TransformEnvironment {
+	if t == nil {
+		return &TransformEnvironment{Flag: value}
+	}
+
+	t.Flag = value
 	return t
 }

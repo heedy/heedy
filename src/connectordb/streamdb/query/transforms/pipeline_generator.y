@@ -26,7 +26,7 @@ import (
 
 // All transforms return a TransformFunc
 %type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function term expression
-%type <funcList> function_params
+%type <funcList> function_params transform_list_params
 %type <stringList> string_list
 
 // All tokens and terminals are strings
@@ -38,17 +38,25 @@ import (
 %%
 
 transform_list
-	: if_transform
-		{
-			Transformlex.(*TransformLex).output = $1
-			$$ = $1
-		}
-	| transform_list PIPE if_transform
-		{
-			$$ = pipelineGeneratorTransform($1, $3)
+    : transform_list_params
+	    {
+			$$ = pipeline($1)
 			Transformlex.(*TransformLex).output = $$
 		}
 	;
+
+transform_list_params
+	: if_transform
+		{
+			$$ = []TransformFunc{$1}
+		}
+	| transform_list_params PIPE if_transform
+		{
+			//$$ = append([]TransformFunc{$3}, $1...)
+			$$ = append($1, $3)
+		}
+	;
+
 
 if_transform
 	: or_test

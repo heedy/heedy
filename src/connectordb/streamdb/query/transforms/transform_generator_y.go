@@ -81,7 +81,7 @@ const TransformEofCode = 1
 const TransformErrCode = 2
 const TransformMaxDepth = 200
 
-//line pipeline_generator.y:227
+//line pipeline_generator.y:235
 
 /* Start of lexer, hopefully go will let us do this automatically in the future */
 
@@ -107,10 +107,6 @@ var (
 	stringRegex = regexp.MustCompile("^" + stringr + "$")
 	identRegex  = regexp.MustCompile("^" + idents + "$")
 )
-
-func init() {
-
-}
 
 // ParseTransform takes a transform input and returns a function to do the
 // transforms.
@@ -251,80 +247,80 @@ var TransformExca = [...]int{
 	-2, 0,
 }
 
-const TransformNprod = 39
+const TransformNprod = 40
 const TransformPrivate = 57344
 
 var TransformTokenNames []string
 var TransformStates []string
 
-const TransformLast = 115
+const TransformLast = 114
 
 var TransformAct = [...]int{
 
-	3, 1, 12, 53, 2, 26, 18, 19, 20, 11,
-	21, 31, 10, 9, 43, 17, 36, 34, 35, 37,
-	6, 5, 23, 4, 22, 57, 13, 32, 33, 41,
-	45, 58, 18, 19, 20, 70, 21, 50, 51, 9,
-	38, 17, 48, 49, 47, 24, 42, 5, 23, 4,
-	22, 68, 13, 60, 18, 19, 20, 7, 21, 69,
-	64, 9, 24, 17, 67, 66, 28, 30, 40, 27,
-	23, 71, 22, 39, 13, 18, 19, 20, 63, 21,
-	32, 33, 61, 62, 17, 29, 59, 46, 60, 52,
-	27, 23, 24, 22, 25, 13, 18, 19, 20, 25,
-	21, 55, 72, 54, 65, 17, 56, 44, 16, 15,
-	14, 27, 23, 8, 22,
+	4, 1, 13, 54, 35, 36, 27, 12, 71, 19,
+	20, 21, 39, 22, 11, 33, 34, 37, 18, 69,
+	38, 61, 7, 25, 28, 24, 3, 23, 19, 20,
+	21, 46, 22, 29, 32, 10, 44, 18, 51, 52,
+	70, 49, 50, 6, 24, 5, 23, 48, 14, 43,
+	33, 34, 42, 19, 20, 21, 8, 22, 62, 63,
+	10, 65, 18, 41, 40, 68, 67, 31, 6, 24,
+	5, 23, 72, 14, 19, 20, 21, 60, 22, 61,
+	64, 10, 30, 18, 19, 20, 21, 47, 22, 28,
+	24, 58, 23, 18, 14, 26, 53, 59, 73, 28,
+	24, 26, 23, 56, 14, 55, 66, 57, 2, 45,
+	17, 16, 15, 9,
 }
 var TransformPact = [...]int{
 
-	28, 30, -1000, 85, 50, 53, 75, -1000, -1000, 50,
-	4, -8, -1000, 92, -1000, -1000, -1000, 28, -1000, -1000,
-	-1000, 23, 60, 55, 28, 50, 85, 53, 2, 50,
-	-1000, 71, 71, 71, 92, 92, -1000, 77, 97, 93,
-	100, -1000, 75, -1000, 13, 30, -1000, 57, -8, -8,
-	-1000, -1000, -1000, 70, -1000, 65, 66, -1000, 28, -1000,
-	98, 97, 28, -1000, 30, -1000, 35, 47, 17, -1000,
-	50, 90, -1000,
+	49, -1000, 8, -1000, 92, 70, 20, 72, -1000, -1000,
+	70, 27, -21, -1000, 5, -1000, -1000, -1000, 49, -1000,
+	-1000, -1000, -5, 51, 50, 49, 70, 92, 20, 24,
+	70, -1000, 80, 80, 80, 5, 5, -1000, 84, 99,
+	95, 101, -1000, 72, -1000, 79, -1000, -1000, -8, -21,
+	-21, -1000, -1000, -1000, 61, -1000, 41, 68, -1000, 49,
+	-1000, 100, 99, 49, -1000, -1000, -1000, 3, 28, -10,
+	-1000, 70, 86, -1000,
 }
 var TransformPgo = [...]int{
 
-	0, 0, 20, 57, 113, 2, 4, 1, 110, 109,
-	108, 9, 12, 107, 3,
+	0, 0, 22, 56, 113, 2, 26, 1, 112, 111,
+	110, 7, 14, 109, 108, 3,
 }
 var TransformR1 = [...]int{
 
-	0, 7, 7, 6, 6, 6, 1, 1, 2, 2,
-	3, 3, 4, 4, 12, 12, 12, 11, 11, 11,
-	11, 5, 5, 5, 5, 8, 8, 8, 9, 9,
-	10, 10, 10, 10, 10, 14, 14, 13, 13,
+	0, 7, 14, 14, 6, 6, 6, 1, 1, 2,
+	2, 3, 3, 4, 4, 12, 12, 12, 11, 11,
+	11, 11, 5, 5, 5, 5, 8, 8, 8, 9,
+	9, 10, 10, 10, 10, 10, 15, 15, 13, 13,
 }
 var TransformR2 = [...]int{
 
-	0, 1, 3, 1, 2, 1, 1, 3, 1, 3,
-	1, 2, 1, 3, 1, 3, 3, 1, 3, 3,
-	2, 1, 1, 1, 3, 1, 1, 1, 4, 1,
-	9, 6, 4, 3, 4, 1, 3, 1, 3,
+	0, 1, 1, 3, 1, 2, 1, 1, 3, 1,
+	3, 1, 2, 1, 3, 1, 3, 3, 1, 3,
+	3, 2, 1, 1, 1, 3, 1, 1, 1, 4,
+	1, 9, 6, 4, 3, 4, 1, 3, 1, 3,
 }
 var TransformChk = [...]int{
 
-	-1000, -7, -6, -1, 21, 19, -2, -3, -4, 11,
-	-12, -11, -5, 24, -8, -9, -10, 13, 4, 5,
-	6, 8, 22, 20, 15, 9, -1, 19, 13, 10,
-	-3, 7, 23, 24, 25, 26, -5, -7, 17, 13,
-	13, -6, -2, 12, -13, -7, -3, -12, -11, -11,
-	-5, -5, 12, -14, 6, 8, 6, 12, 18, 16,
-	18, 17, 18, 12, -7, 6, -14, -7, 16, 12,
-	18, -1, 12,
+	-1000, -7, -14, -6, -1, 21, 19, -2, -3, -4,
+	11, -12, -11, -5, 24, -8, -9, -10, 13, 4,
+	5, 6, 8, 22, 20, 15, 9, -1, 19, 13,
+	10, -3, 7, 23, 24, 25, 26, -5, -7, 17,
+	13, 13, -6, -2, 12, -13, -7, -3, -12, -11,
+	-11, -5, -5, 12, -15, 6, 8, 6, 12, 18,
+	16, 18, 17, 18, 12, -7, 6, -15, -7, 16,
+	12, 18, -1, 12,
 }
 var TransformDef = [...]int{
 
-	0, -2, 1, 3, 0, 5, 6, 8, 10, 0,
-	12, 14, 17, 0, 21, 22, 23, 0, 25, 26,
-	27, 29, 0, 0, 0, 0, 4, 0, 0, 0,
-	11, 0, 0, 0, 0, 0, 20, 0, 0, 0,
-	0, 2, 7, 33, 0, 37, 9, 13, 15, 16,
-	18, 19, 24, 0, 35, 0, 0, 34, 0, 28,
-	0, 0, 0, 32, 38, 36, 0, 0, 0, 31,
-	0, 0, 30,
+	0, -2, 1, 2, 4, 0, 6, 7, 9, 11,
+	0, 13, 15, 18, 0, 22, 23, 24, 0, 26,
+	27, 28, 30, 0, 0, 0, 0, 5, 0, 0,
+	0, 12, 0, 0, 0, 0, 0, 21, 0, 0,
+	0, 0, 3, 8, 34, 0, 38, 10, 14, 16,
+	17, 19, 20, 25, 0, 36, 0, 0, 35, 0,
+	29, 0, 0, 0, 33, 39, 37, 0, 0, 0,
+	32, 0, 0, 31,
 }
 var TransformTok1 = [...]int{
 
@@ -684,25 +680,31 @@ Transformdefault:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
 		//line pipeline_generator.y:42
 		{
-			Transformlex.(*TransformLex).output = TransformDollar[1].val
-			TransformVAL.val = TransformDollar[1].val
-		}
-	case 2:
-		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:47
-		{
-			TransformVAL.val = pipelineGeneratorTransform(TransformDollar[1].val, TransformDollar[3].val)
+			TransformVAL.val = pipeline(TransformDollar[1].funcList)
 			Transformlex.(*TransformLex).output = TransformVAL.val
 		}
-	case 4:
+	case 2:
+		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
+		//line pipeline_generator.y:50
+		{
+			TransformVAL.funcList = []TransformFunc{TransformDollar[1].val}
+		}
+	case 3:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
+		//line pipeline_generator.y:54
+		{
+			//$$ = append([]TransformFunc{$3}, $1...)
+			TransformVAL.funcList = append(TransformDollar[1].funcList, TransformDollar[3].val)
+		}
+	case 5:
 		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
-		//line pipeline_generator.y:56
+		//line pipeline_generator.y:64
 		{
 			TransformVAL.val = pipelineGeneratorIf(TransformDollar[2].val)
 		}
-	case 5:
+	case 6:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:60
+		//line pipeline_generator.y:68
 		{
 			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
 
@@ -712,119 +714,119 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 7:
-		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:75
-		{
-			TransformVAL.val = pipelineGeneratorOr(TransformDollar[1].val, TransformDollar[3].val)
-		}
-	case 9:
+	case 8:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:83
 		{
+			TransformVAL.val = pipelineGeneratorOr(TransformDollar[1].val, TransformDollar[3].val)
+		}
+	case 10:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
+		//line pipeline_generator.y:91
+		{
 			TransformVAL.val = pipelineGeneratorAnd(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 11:
+	case 12:
 		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
-		//line pipeline_generator.y:91
+		//line pipeline_generator.y:99
 		{
 			TransformVAL.val = pipelineGeneratorNot(TransformDollar[2].val)
 		}
-	case 13:
-		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:99
-		{
-			TransformVAL.val = pipelineGeneratorCompare(TransformDollar[1].val, TransformDollar[3].val, TransformDollar[2].strVal)
-		}
-	case 15:
+	case 14:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:107
 		{
-			TransformVAL.val = addTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
+			TransformVAL.val = pipelineGeneratorCompare(TransformDollar[1].val, TransformDollar[3].val, TransformDollar[2].strVal)
 		}
 	case 16:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:111
+		//line pipeline_generator.y:115
 		{
-			TransformVAL.val = subtractTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
+			TransformVAL.val = addTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 18:
+	case 17:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
 		//line pipeline_generator.y:119
 		{
-			TransformVAL.val = multiplyTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
+			TransformVAL.val = subtractTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
 	case 19:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:123
+		//line pipeline_generator.y:127
+		{
+			TransformVAL.val = multiplyTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
+		}
+	case 20:
+		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
+		//line pipeline_generator.y:131
 		{
 			TransformVAL.val = divideTransformGenerator(TransformDollar[1].val, TransformDollar[3].val)
 		}
-	case 20:
+	case 21:
 		TransformDollar = TransformS[Transformpt-2 : Transformpt+1]
-		//line pipeline_generator.y:127
+		//line pipeline_generator.y:135
 		{
 			TransformVAL.val = inverseTransformGenerator(TransformDollar[2].val)
 		}
-	case 24:
+	case 25:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:137
+		//line pipeline_generator.y:145
 		{
 			TransformVAL.val = TransformDollar[2].val
 		}
-	case 25:
+	case 26:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:144
+		//line pipeline_generator.y:152
 		{
 			num, err := strconv.ParseFloat(TransformDollar[1].strVal, 64)
 			TransformVAL.val = pipelineGeneratorConstant(num, err)
 		}
-	case 26:
+	case 27:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:149
+		//line pipeline_generator.y:157
 		{
 			val, err := strconv.ParseBool(TransformDollar[1].strVal)
 			TransformVAL.val = pipelineGeneratorConstant(val, err)
 		}
-	case 27:
+	case 28:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:154
+		//line pipeline_generator.y:162
 		{
 			TransformVAL.val = pipelineGeneratorConstant(TransformDollar[1].strVal, nil)
 		}
-	case 28:
+	case 29:
 		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
-		//line pipeline_generator.y:161
+		//line pipeline_generator.y:169
 		{
 			TransformVAL.val = pipelineGeneratorGet(TransformDollar[3].stringList)
 		}
-	case 29:
+	case 30:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:165
+		//line pipeline_generator.y:173
 		{
 			TransformVAL.val = PipelineGeneratorIdentity()
 		}
-	case 30:
+	case 31:
 		TransformDollar = TransformS[Transformpt-9 : Transformpt+1]
-		//line pipeline_generator.y:172
+		//line pipeline_generator.y:180
 		{
 			TransformVAL.val = pipelineGeneratorSet(TransformDollar[5].stringList, TransformDollar[8].val)
 		}
-	case 31:
+	case 32:
 		TransformDollar = TransformS[Transformpt-6 : Transformpt+1]
-		//line pipeline_generator.y:176
+		//line pipeline_generator.y:184
 		{
 			TransformVAL.val = pipelineGeneratorSet([]string{}, TransformDollar[5].val)
 		}
-	case 32:
+	case 33:
 		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
-		//line pipeline_generator.y:180
+		//line pipeline_generator.y:188
 		{
 			TransformVAL.val = pipelineGeneratorHas(TransformDollar[3].strVal)
 		}
-	case 33:
+	case 34:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:184
+		//line pipeline_generator.y:192
 		{
 			fun, err := getRegisteredFunction(TransformDollar[1].strVal)
 
@@ -834,9 +836,9 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 34:
+	case 35:
 		TransformDollar = TransformS[Transformpt-4 : Transformpt+1]
-		//line pipeline_generator.y:194
+		//line pipeline_generator.y:202
 		{
 			fun, err := getRegisteredFunction(TransformDollar[1].strVal, TransformDollar[3].funcList...)
 
@@ -846,27 +848,27 @@ Transformdefault:
 
 			TransformVAL.val = fun
 		}
-	case 35:
+	case 36:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:207
+		//line pipeline_generator.y:215
 		{
 			TransformVAL.stringList = []string{TransformDollar[1].strVal}
 		}
-	case 36:
+	case 37:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:211
+		//line pipeline_generator.y:219
 		{
 			TransformVAL.stringList = append(TransformDollar[1].stringList, TransformDollar[3].strVal)
 		}
-	case 37:
+	case 38:
 		TransformDollar = TransformS[Transformpt-1 : Transformpt+1]
-		//line pipeline_generator.y:218
+		//line pipeline_generator.y:226
 		{
 			TransformVAL.funcList = []TransformFunc{TransformDollar[1].val}
 		}
-	case 38:
+	case 39:
 		TransformDollar = TransformS[Transformpt-3 : Transformpt+1]
-		//line pipeline_generator.y:222
+		//line pipeline_generator.y:230
 		{
 			TransformVAL.funcList = append([]TransformFunc{TransformDollar[3].val}, TransformDollar[1].funcList...)
 		}

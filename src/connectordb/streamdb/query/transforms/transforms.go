@@ -34,7 +34,9 @@ func (t *Transformer) Next() <-chan *datastream.Datapoint {
 				return
 			}
 
-			ch <- val.Datapoint
+			if val.Datapoint != nil {
+				ch <- val.Datapoint
+			}
 
 			current = next
 			next = <-t.input
