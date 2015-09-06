@@ -275,78 +275,101 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 	readmessenger <- webSocketClosedNonClean
 }
 
+func (c *WebsocketConnection) updateDeadline(messageCode int, message string) error {
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	return c.ws.WriteMessage(messageCode, []byte(message))
+}
+
+// returns false if we failed, we should quit
+func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) error {
+
+	logger := c.logger.WithFields(log.Fields{"stream": datapoint.Stream})
+
+	//Now loop through all transforms for the datapoint array
+	subs, ok := c.subscriptions[datapoint.Stream]
+	if !ok {
+		return c.write(datapoint)
+	}
+
+	subs.Lock()
+	defer subs.Unlock()
+
+	for transform, tf := range subs.transform {
+		if transform == "" {
+			logger.Debugln("<- send")
+			if err := c.write(datapoint); err != nil {
+				return err
+			}
+			continue
+		}
+
+		datapointArray, err := query.TransformArray(tf, &datapoint.Data)
+		logger.Debugf("<- send %s", transform)
+		if err != nil || datapointArray.Length() <= 0 {
+			continue
+		}
+
+		message := messenger.Message{
+			datapoint.Stream,
+			transform,
+			*datapointArray,
+		}
+
+		if err := c.write(message); err != nil {
+			return err
+		}
+	}
+
+	return c.write(datapoint)
+}
+
 //RunWriter writes the subscription data as well as the heartbeat pings.
 func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan bool) {
 	ticker := time.NewTicker(pingPeriod)
-	defer ticker.Stop()
-loop:
+	defer func() {
+		ticker.Stop()
+		exitchan <- true
+
+	}()
+
 	for {
 		select {
-		case dp, ok := <-c.c:
+		case datapoint, ok := <-c.c:
 			if !ok {
-				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				break loop
+				c.updateDeadline(websocket.CloseMessage, "")
+				return
 			}
-			logger := c.logger.WithFields(log.Fields{"stream": dp.Stream})
 
-			//Now loop through all transforms for the datapoint array
-			subs, ok := c.subscriptions[dp.Stream]
-			if ok {
-				subs.Lock()
-				for transform, tf := range subs.transform {
-					if transform == "" {
-						logger.Debugln("<- send")
-						if err := c.write(dp); err != nil {
-							break loop
-						}
-					} else {
-						dpa, err := query.TransformArray(tf, &dp.Data)
-						logger.Debugf("<- send %s", transform)
-						if err == nil && dpa.Length() > 0 {
-							if err := c.write(messenger.Message{
-								Stream:    dp.Stream,
-								Transform: transform,
-								Data:      *dpa,
-							}); err != nil {
-								break loop
-							}
-						}
-					}
+			if c.processDatapoint(datapoint) != nil {
+				return
+			}
 
-				}
-				subs.Unlock()
-			}
-			if err := c.write(dp); err != nil {
-				break loop
-			}
 		case <-ticker.C:
 			//This is the ping timer - ping messages are sent here
-			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				break loop
+			if c.updateDeadline(websocket.PingMessage, "") != nil {
+				return
 			}
 
 			//Now, let's make sure that the active subscriptions are still valid
 			c.CheckSubscriptions()
+
 		case msg := <-readmessenger:
-			if msg == webSocketClosed {
-				break loop
-			} else if msg == webSocketClosedNonClean {
-				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				break loop
+			switch msg {
+			case webSocketClosed:
+				return
+			case webSocketClosedNonClean:
+				c.updateDeadline(websocket.CloseMessage, "")
+				return
+			default:
+				c.updateDeadline(websocket.TextMessage, msg)
 			}
-			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-			c.ws.WriteMessage(websocket.TextMessage, []byte(msg))
+
 		case <-restcore.ShutdownChannel:
 			restcore.ShutdownChannel <- true
-			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-			break loop
+			c.updateDeadline(websocket.CloseMessage, "")
+			return
 		}
 	}
-	exitchan <- true
 }
 
 //Run the websocket operations
