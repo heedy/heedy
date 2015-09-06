@@ -94,7 +94,7 @@ func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 
 	err = o.BaseOperator.CreateDeviceByUserID(userID, devicename)
 	if err == nil {
-		o.UserLog("CreateDevice", user.Name+"/"+devicename)
+		o.MetaLog("CreateDevice", user.Name+"/"+devicename)
 	}
 
 	return err
@@ -146,7 +146,7 @@ func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
 
 	err = o.BaseOperator.UpdateDevice(updateddevice)
 	if err == nil {
-		o.UserLogDeviceID(dev.DeviceId, "UpdateDevice")
+		o.MetaLogDeviceID(dev.DeviceId, "UpdateDevice")
 	}
 
 	return err
@@ -166,7 +166,7 @@ func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
 	devpath, err2 := o.getDevicePath(deviceID)
 	err = o.BaseOperator.DeleteDeviceByID(deviceID)
 	if err == nil && err2 == nil {
-		o.UserLog("DeleteDevice", devpath)
+		o.MetaLog("DeleteDevice", devpath)
 	}
 	return err
 }

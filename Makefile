@@ -62,6 +62,9 @@ host-packages:
 	sudo apt-get update -qq
 	sudo apt-get install -qq redis-server postgresql
 
+connectordb_python:
+	git clone https://github.com/connectordb/connectordb_python
+
 # run tests
-test:
+test: connectordb_python
 	./runtests.sh

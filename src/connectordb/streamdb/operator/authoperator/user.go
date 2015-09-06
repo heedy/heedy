@@ -20,7 +20,7 @@ func (o *AuthOperator) CreateUser(username, email, password string) error {
 	if o.Permissions(users.ROOT) {
 		err := o.BaseOperator.CreateUser(username, email, password)
 		if err == nil {
-			o.UserLog("CreateUser", username)
+			o.MetaLog("CreateUser", username)
 		}
 		return err
 	}
@@ -68,7 +68,7 @@ func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
 	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
 	err = o.BaseOperator.UpdateUser(modifieduser)
 	if err == nil {
-		o.UserLog("UpdateUser", modifieduser.Name)
+		o.MetaLog("UpdateUser", modifieduser.Name)
 	}
 	return err
 }
@@ -80,7 +80,7 @@ func (o *AuthOperator) DeleteUserByID(userID int64) error {
 
 		err := o.BaseOperator.DeleteUserByID(userID)
 		if err == nil && err1 == nil {
-			o.UserLog("DeleteUser", usr.Name)
+			o.MetaLog("DeleteUser", usr.Name)
 		}
 		return err
 	}
