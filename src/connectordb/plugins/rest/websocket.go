@@ -151,6 +151,19 @@ func (c *WebsocketConnection) Close() {
 	c.logger.WithField("cmd", "close").Debugln()
 }
 
+//CheckSubscriptions checks the current subscriptions, making sure that there are no issues (such as lost permissions or deleted streams)
+//which trigger unsubscribes
+func (c *WebsocketConnection) CheckSubscriptions() error {
+	for stream, val := range c.subscriptions {
+		if _, err := c.o.ReadStream(stream); err != nil {
+			c.logger.Warnf("Invalidated: %s", stream)
+			val.Close()
+			delete(c.subscriptions, stream)
+		}
+	}
+	return nil
+}
+
 //Insert a datapoint using the websocket
 func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "insert", "arg": ws.Arg})
@@ -308,11 +321,14 @@ loop:
 				break loop
 			}
 		case <-ticker.C:
-			//c.logger.WithField("cmd", "PING").Debugln()
+			//This is the ping timer - ping messages are sent here
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				break loop
 			}
+
+			//Now, let's make sure that the active subscriptions are still valid
+			c.CheckSubscriptions()
 		case msg := <-readmessenger:
 			if msg == webSocketClosed {
 				break loop
