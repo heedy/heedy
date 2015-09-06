@@ -25,7 +25,7 @@ func TransformArray(t transforms.DatapointTransform, dpa *datastream.DatapointAr
 	}
 	resultarray := make(datastream.DatapointArray, 0, dpa.Length())
 	for i := 0; i < dpa.Length(); i++ {
-		dp, err := t.Transform(&((*dpa)[i]))
+		dp, err := t.Transform((*dpa)[i].Copy())
 		if err != nil {
 			return nil, err
 		}
