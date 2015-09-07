@@ -1,5 +1,12 @@
 package webclient
 
+/* Provides a single object for all things request related so we don't forget
+anything when opening/closing and modifying what's passed around is easy.
+
+Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors.
+All Rights Reserved
+*/
+
 import (
 	"connectordb/streamdb/operator"
 	"connectordb/streamdb/users"

@@ -1,12 +1,10 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"path/filepath"
 )
 
@@ -77,26 +75,6 @@ func GetDatabaseConnectionString() string {
 // Returns the database connection string for the current database
 func (config *Configuration) GetDatabaseConnectionString() string {
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", configuration.PostgresHost, configuration.PostgresPort)
-}
-
-// Checks if a database needs to be started locally
-func IsDatabaseLocal() bool {
-	ips, err := net.LookupIP(configuration.PostgresHost)
-
-	if err != nil {
-		return true // another db will catch if there's a problem
-	}
-
-	localV4 := net.ParseIP(LocalhostIpV4)
-	localV6 := net.ParseIP(LocalhostIpV6)
-
-	for _, ip := range ips {
-		if bytes.Compare(ip, localV4) == 0 || bytes.Compare(ip, localV6) == 0 {
-			return true
-		}
-	}
-
-	return false
 }
 
 // Returns the redis "uri", no prefix appneded

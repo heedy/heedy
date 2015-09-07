@@ -14,8 +14,9 @@ bin:
 	cp -r src/connectordb/services/config bin/config
 
 resources: bin
-	cp -r src/connectordb/plugins/webclient/static/ bin/
 	cp -r src/connectordb/plugins/webclient/templates/ bin/
+	cp -r src/connectordb/plugins/webclient/site/ bin/
+	cp -r src/connectordb/plugins/webclient/spa/ bin/
 
 # Rule to go from source go file to binary
 bin/%: src/core/%.go bin go-dependencies
