@@ -19,18 +19,15 @@ var changed = transforms.Transform{
 
 		var previous *datastream.Datapoint
 
-		return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-			if dp == nil {
-				return nil, nil
+		return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
+			if !te.CanProcess() {
+				return te
 			}
 
-			iseq := reflect.DeepEqual(dp, previous)
-			previous = dp
+			iseq := reflect.DeepEqual(te.Datapoint, previous)
+			previous = te.Datapoint
 
-			returnvalue := dp.Copy()
-			returnvalue.Data = !iseq
-			return returnvalue, nil
-
+			return te.Copy().SetData(!iseq)
 		}, nil
 	},
 }

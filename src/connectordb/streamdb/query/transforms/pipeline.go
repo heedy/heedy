@@ -1,43 +1,49 @@
 package transforms
 
-import "connectordb/streamdb/datastream"
+// This is the key pipeline structure.
+func pipeline(functionPipeline []TransformFunc) TransformFunc {
 
-func pipelineGeneratorTransform(left, right TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	// Pass on items of length 1
+	if len(functionPipeline) == 1 {
+		return functionPipeline[0]
+	}
+
+	//var archievedErr *TransformEnvironment
+
+	// The inputs to the ith function. The +1 is for the pipe output
+	// imagine a pipeline like (p0) f0 (p1) f1 (p2) <end>
+	//inputValues := make([]*TransformEnvironment, len(functionPipeline)+1)
+
+	return func(te *TransformEnvironment) *TransformEnvironment {
+
+		for _, item := range functionPipeline {
+			if !te.CanProcess() {
+				break
+			}
+
+			te = te.Copy().Apply(item)
 		}
 
-		leftResult, err := left(dp)
-		if err != nil || leftResult == nil {
-			return nil, err
-		}
-
-		// pass the data through the pipeline to do a transform
-		rightResult, err := right(leftResult)
-		if err != nil || rightResult == nil {
-			return nil, err
-		}
-
-		return rightResult, nil
+		return te
 	}
 }
 
 func pipelineGeneratorIf(child TransformFunc) TransformFunc {
-	return func(dp *datastream.Datapoint) (*datastream.Datapoint, error) {
-		if dp == nil {
-			return nil, nil
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		if !te.CanProcess() {
+			return te
 		}
 
-		passOn, err := readBool("if", dp, child)
-		if err != nil {
-			return nil, err
+		passOn, ok := te.Copy().Apply(child).GetBool()
+		if !ok {
+			return te.SetErrorString("If value not a boolean")
 		}
 
-		if passOn == true {
-			return dp, nil
+		if passOn {
+			return te
 		}
 
-		return nil, nil
+		te.Datapoint = nil
+		return te
 	}
 }

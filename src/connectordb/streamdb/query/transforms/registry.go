@@ -9,7 +9,21 @@ import (
 )
 
 //TransformFunc is the function which transforms a given datapoint
-type TransformFunc func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error)
+type TransformFunc func(in *TransformEnvironment) (out *TransformEnvironment)
+
+// If this function is primitive, returns its value
+func (t TransformFunc) PrimitiveValue() (value interface{}, ok bool) {
+	te := NewTransformEnvironment(&datastream.Datapoint{})
+	te.Flag = constantCheck
+
+	out := t(te)
+
+	if out == nil {
+		return nil, false
+	}
+
+	return out.Datapoint.Data, out.Flag == constantCheckTrue
+}
 
 //TransformGenerator is a function which "generates" the TransformFunc for the given transform
 type TransformGenerator func(FunctionName string, Children ...TransformFunc) (TransformFunc, error)
@@ -57,7 +71,7 @@ func (t Transform) Register() error {
 }
 
 //Get returns the TransformFunc for the given name
-func Get(name string, args ...TransformFunc) (TransformFunc, error) {
+func InstantiateRegisteredFunction(name string, args ...TransformFunc) (TransformFunc, error) {
 	t, ok := Registry[name]
 	if !ok {
 		return Err(fmt.Sprintf("Transform '%s' not found", name))
@@ -66,10 +80,12 @@ func Get(name string, args ...TransformFunc) (TransformFunc, error) {
 	return t.Generator(name, args...)
 }
 
-//Err is the Error transform - a transform function that does nothing. It is a helper for when a transform func is to throw an error
+/*Err is the Error transform - a transform function that does nothing.
+It is a helper for when a transform func is to throw an error
+*/
 func Err(errstring string) (TransformFunc, error) {
 	err := errors.New(errstring)
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		return nil, err
+	return func(te *TransformEnvironment) *TransformEnvironment {
+		return te.SetError(err)
 	}, err
 }

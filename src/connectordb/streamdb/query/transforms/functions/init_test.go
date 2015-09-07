@@ -25,14 +25,8 @@ type TestCase struct {
 	Tests []TestCaseElement
 }
 
-func ConstTransform(c interface{}) transforms.TransformFunc {
-	return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-		return &datastream.Datapoint{Data: c}, nil
-	}
-}
-
 func (tc TestCase) Run(t *testing.T) {
-	tf, err := transforms.Get(tc.Name, tc.Args...)
+	tf, err := transforms.InstantiateRegisteredFunction(tc.Name, tc.Args...)
 	if tc.HasError {
 		require.Error(t, err, fmt.Sprintf("%v", tc))
 		return
@@ -40,7 +34,11 @@ func (tc TestCase) Run(t *testing.T) {
 	require.NoError(t, err, fmt.Sprintf("%v", tc))
 
 	for _, test := range tc.Tests {
-		out, err := tf(test.Input)
+		environment := transforms.NewTransformEnvironment(test.Input)
+		tmp := tf(environment)
+		out := tmp.Datapoint
+		err := tmp.Error
+
 		if test.HasError {
 			require.Error(t, err, fmt.Sprintf("%v", test))
 			return

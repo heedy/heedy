@@ -4,7 +4,8 @@ import (
 	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/query/transforms"
 
-	_ "connectordb/streamdb/query/transforms/functions" //Make sure that the default transform functions are all registered
+	_ "connectordb/streamdb/query/transforms/functions"      //Make sure that the default transform functions are all registered
+	_ "connectordb/streamdb/query/transforms/functions/math" //Make sure that the default transform functions are all registered
 )
 
 //TransformArray transforms the given array. Note: Since it assumes that the transform is happening
