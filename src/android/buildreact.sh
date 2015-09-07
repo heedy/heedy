@@ -1,1 +1,0 @@
-jsx --watch DataConnect/app/src/main/assets/www/src DataConnect/app/src/main/assets/www/js
