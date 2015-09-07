@@ -77,6 +77,7 @@ func TestPipelineGenerator(t *testing.T) {
 		{"if $ < 5 | if $ > 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: 4}},
 		{"if $ < 5 | if $ > 33", false, false, &Datapoint{Data: 4}, nil},
 		{"if $ < 5 | $ > 33", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
+		{"has(\"test\")", false, false, &Datapoint{Data: 4}, &Datapoint{Data: false}},
 		{"has(\"test\") | $ < 1", false, false, &Datapoint{Data: 4}, &Datapoint{Data: true}},
 		{"if has(\"test\")| $ < 1", false, false, &Datapoint{Data: 4}, nil},
 		{"if has(\"test\")| $[\"test\"] < 1", false, false, &Datapoint{Data: map[string]interface{}{"test": 25}}, &Datapoint{Data: false}},
@@ -129,6 +130,9 @@ func TestPipelineGenerator(t *testing.T) {
 		// multi-value accessors
 		{"$['out', 'in']", false, false, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
 		{"$['in', 'out']", false, true, &Datapoint{Data: nestedData}, &Datapoint{Data: 3}},
+
+		// long pipeline
+		{"1 | 2 | 3 | 4 | false == true", false, false, &Datapoint{Data: 0}, &Datapoint{Data: false}},
 	}
 
 	// function that should nilt out
@@ -136,8 +140,8 @@ func TestPipelineGenerator(t *testing.T) {
 	Transform{
 		Name: "identity",
 		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				return dp, nil
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return te
 			}, nil
 		},
 	}.Register()
@@ -149,8 +153,8 @@ func TestPipelineGenerator(t *testing.T) {
 			if len(children) != 1 {
 				return TransformFunc(PipelineGeneratorIdentity()), errors.New("passthrough error")
 			}
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				return children[0](dp)
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return children[0](te)
 			}, nil
 		},
 	}.Register()
@@ -158,15 +162,13 @@ func TestPipelineGenerator(t *testing.T) {
 	Transform{
 		Name: "fortyTwo",
 		Generator: func(name string, children ...TransformFunc) (TransformFunc, error) {
-			return func(dp *Datapoint) (tdp *Datapoint, err error) {
-				dp.Data = 42
-				return dp, nil
+			return func(te *TransformEnvironment) *TransformEnvironment {
+				return te.SetData(42)
 			}, nil
 		},
 	}.Register()
 
 	for _, c := range testcases {
-
 		result, err := ParseTransform(c.Pipeline)
 
 		if c.HasSyntaxError {
@@ -175,8 +177,12 @@ func TestPipelineGenerator(t *testing.T) {
 		}
 
 		require.NoError(t, err, duck.JSONString(c))
+		te := NewTransformEnvironment(c.Input)
+		out := result(te)
 
-		dp, err := result(c.Input)
+		dp := out.Datapoint
+		err = out.Error
+
 		if c.Haserror2 {
 			require.Error(t, err, duck.JSONString(c))
 		} else {

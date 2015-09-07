@@ -9,7 +9,7 @@ import (
 func TestAverage(t *testing.T) {
 	TestCase{
 		Name:     "average",
-		Args:     []transforms.TransformFunc{ConstTransform(2)},
+		Args:     []transforms.TransformFunc{transforms.ConstantValueGenerator(2, nil)},
 		HasError: false,
 		Tests: []TestCaseElement{
 			TestCaseElement{&datastream.Datapoint{Data: 3}, &datastream.Datapoint{Data: 3}, false, "first datapoint is copy"},

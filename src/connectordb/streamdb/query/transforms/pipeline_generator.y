@@ -26,7 +26,7 @@ import (
 
 // All transforms return a TransformFunc
 %type <val> or_test and_test not_test comparison terminal if_transform transform_list constant variable function term expression
-%type <funcList> function_params
+%type <funcList> function_params transform_list_params
 %type <stringList> string_list
 
 // All tokens and terminals are strings
@@ -38,17 +38,25 @@ import (
 %%
 
 transform_list
-	: if_transform
-		{
-			Transformlex.(*TransformLex).output = $1
-			$$ = $1
-		}
-	| transform_list PIPE if_transform
-		{
-			$$ = pipelineGeneratorTransform($1, $3)
+    : transform_list_params
+	    {
+			$$ = pipeline($1)
 			Transformlex.(*TransformLex).output = $$
 		}
 	;
+
+transform_list_params
+	: if_transform
+		{
+			$$ = []TransformFunc{$1}
+		}
+	| transform_list_params PIPE if_transform
+		{
+			//$$ = append([]TransformFunc{$3}, $1...)
+			$$ = append($1, $3)
+		}
+	;
+
 
 if_transform
 	: or_test
@@ -58,7 +66,7 @@ if_transform
 		}
 	| IDENTIFIER
 		{
-			fun, err := getCustomFunction($1)
+			fun, err := InstantiateRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -143,16 +151,16 @@ constant
 	: NUMBER
 		{
 			num, err := strconv.ParseFloat($1, 64)
-			$$ = pipelineGeneratorConstant(num, err)
+			$$ = ConstantValueGenerator(num, err)
 		}
     | BOOL
 		{
 			val, err := strconv.ParseBool($1)
-			$$ = pipelineGeneratorConstant(val, err)
+			$$ = ConstantValueGenerator(val, err)
 		}
     | STRING
 		{
-			$$ = pipelineGeneratorConstant($1, nil)
+			$$ = ConstantValueGenerator($1, nil)
 		}
     ;
 
@@ -182,7 +190,7 @@ function
 		}
 	| IDENTIFIER LB RB
 		{
-			fun, err := getCustomFunction($1)
+			fun, err := InstantiateRegisteredFunction($1)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -192,7 +200,7 @@ function
 		}
 	| IDENTIFIER LB function_params RB
 		{
-			fun, err := getCustomFunction($1, $3...)
+			fun, err := InstantiateRegisteredFunction($1, $3...)
 
 			if err != nil {
 				Transformlex.Error(err.Error())
@@ -240,47 +248,16 @@ const (
 	syms      = `\$|\[|\]|\(|\)`
 	idents    = `([a-zA-Z_][a-zA-Z_0-9]*)`
 	maths     = `\-|\*|/|\+`
+	allregex = builtins  + "|" + logicals  + "|" + numbers  + "|" + compops + "|" + stringr + "|" + pipes  + "|" + syms  + "|" + idents + "|" + maths
+
 )
 
 var (
-	tokenizer   *regexp.Regexp
-	numberRegex *regexp.Regexp
-	stringRegex *regexp.Regexp
-	identRegex  *regexp.Regexp
+	tokenizer   = regexp.MustCompile(`^(` + allregex + `)`)
+	numberRegex = regexp.MustCompile("^" + numbers + "$")
+	stringRegex = regexp.MustCompile("^" + stringr + "$")
+	identRegex  = regexp.MustCompile("^" + idents + "$")
 )
-
-func init() {
-
-	var err error
-	{
-		re := strings.Join([]string{builtins, logicals, numbers, compops, stringr, pipes, syms, idents, maths} ,"|")
-
-		regexStr := `^(` + re + `)`
-		tokenizer, err = regexp.Compile(regexStr)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
-
-	// these regexes are needed later on while testing.
-	numberRegex, err = regexp.Compile("^" + numbers + "$")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// string regex (needed later on)
-	stringRegex, err = regexp.Compile("^" + stringr + "$")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// ident regex
-	identRegex, err = regexp.Compile("^" + idents + "$")
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 
 // ParseTransform takes a transform input and returns a function to do the
 // transforms.

@@ -1,13 +1,31 @@
 package functions
 
 import (
-	"connectordb/streamdb/datastream"
 	"connectordb/streamdb/query/transforms"
 	"container/list"
-	"errors"
 
 	"github.com/connectordb/duck"
 )
+
+func singleAverageGenerator() (transforms.TransformFunc, error) {
+	dpnum := int64(0)
+	cursum := float64(0)
+	return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
+		if !te.CanProcess() {
+			return te
+		}
+
+		val, ok := te.GetFloat()
+		if !ok {
+			return te.SetErrorString("sum cannot convert datapoint to number")
+		}
+
+		dpnum++
+		cursum += val
+
+		return te.SetData(cursum / float64(dpnum))
+	}, nil
+}
 
 var average = transforms.Transform{
 	Name:         "average",
@@ -28,53 +46,38 @@ var average = transforms.Transform{
 
 		//If there are no args, we have a simplified world
 		if len(args) == 0 {
-			dpnum := int64(0)
-			cursum := float64(0)
-			return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-				if dp == nil {
-					return nil, nil
-				}
-
-				val, ok := duck.Float(dp.Data)
-				if !ok {
-					return nil, errors.New("average could not convert datapoint to number")
-				}
-
-				dpnum++
-				cursum += val
-				dp.Data = cursum / float64(dpnum)
-				return dp, nil
-			}, nil
+			return singleAverageGenerator()
 		}
 
 		//Set up a linked list of the datapoints within the wanted period
 		//The # datapoints must be a constant - if it is a constant, can pull
 		//it in now with a nil arg
-		argval, err := args[0](nil)
-		if err != nil || argval == nil {
+		argval, ok := args[0].PrimitiveValue()
+		if !ok || argval == nil {
 			return transforms.Err("average requires a constant argument.")
 		}
-		num, ok := duck.Int(argval.Data)
+
+		num, ok := duck.Int(argval)
 		if !ok {
 			return transforms.Err("The argument to average must be an integer")
 		}
+
 		if num <= 1 || num > 1000 {
 			return transforms.Err("average must be called with 1000 >= arg > 1")
 		}
 
 		cursum := float64(0)
-
 		//The linked list of the last num datapoints
 		dplist := list.New()
 
-		return func(dp *datastream.Datapoint) (tdp *datastream.Datapoint, err error) {
-			if dp == nil {
-				return nil, nil
+		return func(te *transforms.TransformEnvironment) *transforms.TransformEnvironment {
+			if !te.CanProcess() {
+				return te
 			}
 
-			val, ok := duck.Float(dp.Data)
+			val, ok := te.GetFloat()
 			if !ok {
-				return nil, errors.New("average could not convert datapoint to number")
+				return te.SetErrorString("sum could not convert datapoint to number")
 			}
 
 			cursum += val
@@ -86,9 +89,7 @@ var average = transforms.Transform{
 				dplist.Remove(elem)
 			}
 
-			returnval := dp.Copy()
-			returnval.Data = cursum / float64(dplist.Len())
-			return returnval, nil
+			return te.Copy().SetData(cursum / float64(dplist.Len()))
 		}, nil
 	},
 }
