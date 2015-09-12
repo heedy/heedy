@@ -120,13 +120,13 @@ start
 echo "==================================================="
 echo "Starting Server"
 echo "==================================================="
-./bin/connectordb run $DBDIR &
+./bin/connectordb -log=DEBUG run $DBDIR &
 cdb_server=$!
 
 echo "==================================================="
 echo "Starting API Tests"
 echo "==================================================="
-nosetests --with-coverage --cover-package=connectordb connectordb_python/connectordb_test.py
+nosetests --with-coverage --cover-package=connectordb -s --nologcapture connectordb_python/connectordb_test.py connectordb_python/query_test.py
 test_status=$?
 
 kill $cdb_server
