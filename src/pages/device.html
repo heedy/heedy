@@ -1,0 +1,29 @@
+<link type="text/css" rel="stylesheet" href="/assets/css/connectordb.css">
+
+<div class="cdb-card">
+	<h1>{{ devicename }}</h1>
+
+	<table>
+		<thead>
+			<tr><th>Log Name</th></tr>
+		</thead>
+		<tbody ng-repeat="stream in streams">
+			<tr><td><a href="#/data/{{device.name}}/{{stream.name}}">{{ stream.name }}</a></td></tr>
+		</tbody>
+	</table>
+
+	<h2>Device Information</h2>
+	<table>
+		<tr><th>Name<th><td>{{device.name}}</td></tr>
+		<tr><th>Nickname<th><td>{{device.nickname == ""?"&lt;not set&gt;":device.nickname}}</td></tr>
+		<tr><th>API Key<th><td>{{device.apikey}}</td></tr>
+	</table>
+
+	<ul>
+		<li>This device {{device.enabled?'can':'can not'}} look at your data.</li>
+		<li>This device {{device.admin?'can':'can not'}} look at everyone's data.</li>
+		<li>This device {{device.canwrite?'can':'can not'}} log new data.</li>
+		<li>This device {{device.user?'can':'can not'}} act as you.</li>
+		<li>This device is {{device.visible?'visible':'invisible'}} to you.</li>
+	</ul>
+</div>

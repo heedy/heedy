@@ -1,0 +1,83 @@
+
+    .card {
+        margin:auto;
+        margin-top:5px;
+        background-color:#FFFFFF;
+        border-radius:2px;
+        color:#000000;
+        border:1px solid #d8d8d8;
+        padding:10px;
+        text-align:left;
+        font-size:10pt;
+        position:relative;
+        max-width:80%;
+        margin-left:auto;
+        margin-right:auto;
+    }
+
+		body {
+			font-family: 'Roboto', 'Noto', sans-serif;
+		    -webkit-font-smoothing: antialiased;
+		    text-rendering: optimizeLegibility;
+		    font-size: 16px;
+		    font-weight: 400;
+		    line-height: 24px;
+		}
+
+		.link {
+			text-decoration: none;
+			color:inherit;
+			padding-top:.5em;
+			padding-bottom:.5em;
+		}
+
+	    .big {
+	        width:1.8em;
+	        height:1.8em;
+			margin-right:.5em;
+	    }
+
+		paper-item {
+			padding-top:.5em;
+			padding-bottom:.5em;
+		}
+
+		.second {
+			font-size: .8em;
+	    	color: grey;
+		    line-height: .8em;
+		}
+
+		.first {
+			margin-bottom:.1em;
+		}
+		paper-item:hover {
+			background-color:lightgrey;
+		}
+
+
+.cdb-card {
+	margin-left:1em;
+	margin-right:1em;
+}
+
+.cdb-card h1 {
+	font-size:2em;
+
+	border-bottom: 1px dotted grey;
+}
+.cdb-card h1 > small {
+	color:grey;
+	font-size:.6em;
+	font-weight:lighter;
+	margin-left:1em;
+	font-style:italic;
+}
+
+
+.cdb-card h2 {
+	font-size:1.5em;
+	font-weight:normal;
+
+	border-bottom: 1px dotted grey;
+}
