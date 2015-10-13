@@ -1,10 +1,10 @@
-package rest
+package restapi
 
 import (
 	"connectordb"
 	"connectordb/operator"
-	"util"
 	"errors"
+	"util"
 
 	"net/http"
 	"strconv"
@@ -13,11 +13,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"plugins/rest/crud"
-	"plugins/rest/feed"
-	"plugins/rest/meta"
-	"plugins/rest/query"
-	"plugins/rest/restcore"
+	"server/restapi/crud"
+	"server/restapi/feed"
+	"server/restapi/meta"
+	"server/restapi/query"
+	"server/restapi/restcore"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -103,7 +103,7 @@ func (r restcloser) Close() {
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
-func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
+func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	SetFileLimit()
 
 	if prefix == nil {

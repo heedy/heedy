@@ -125,7 +125,7 @@ When running a single instance with posgres, you need to call RunWriter once man
 If running as a cluster, then it is probably a good idea to have RunWriter be run as an entirely separate process.
 
 For example:
-  db,_ := streamdb.Open("postgres://...",...)
+  db,_ := connectordb.Open("postgres://...",...)
   go db.RunWriter()   //Run this right after starting StreamDB
   ...
   db.Close()

@@ -1,4 +1,4 @@
-package webclient
+package webapp
 
 /* Provides a single object for all things request related so we don't forget
 anything when opening/closing and modifying what's passed around is easy.

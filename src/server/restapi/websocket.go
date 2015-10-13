@@ -1,7 +1,6 @@
-package rest
+package restapi
 
 import (
-	"plugins/rest/restcore"
 	"connectordb/datastream"
 	"connectordb/operator"
 	"connectordb/operator/messenger"
@@ -10,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"server/restapi/restcore"
 	"sync"
 	"sync/atomic"
 	"time"

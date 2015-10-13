@@ -2,7 +2,7 @@ package shell
 
 import (
 	"bufio"
-	"plugins"
+	"config"
 	"connectordb"
 	"connectordb/operator"
 	"connectordb/users"
@@ -34,12 +34,14 @@ const (
 `
 )
 
-func init() {
-	// do some sweet plugin registration!
-	plugins.Register("shell", usage, startShellExec)
+var cfg = config.NewConfiguration()
+
+//Sets the configuration
+func SetConfiguration(c *config.Configuration) {
+	cfg = c
 }
 
-func startShellExec(sdb *streamdb.Database, args []string) error {
+func startShellExec(sdb *connectordb.Database, args []string) error {
 	if len(args) == 0 {
 		StartShell(sdb)
 	}
@@ -61,7 +63,7 @@ func usage() {
 `)
 }
 
-func StartShell(sdb *streamdb.Database) {
+func StartShell(sdb *connectordb.Database) {
 	s := CreateShell(sdb)
 	s.Cls()
 	s.Motd()
@@ -75,7 +77,7 @@ type Shell struct {
 	running         bool
 	host            string
 	reader          *bufio.Reader
-	sdb             *streamdb.Database
+	sdb             *connectordb.Database
 	operator        operator.Operator
 	operatorName    string // can be changed when we do a su
 	pwd             string // the present working directory of path commands
@@ -113,9 +115,9 @@ func (s *Shell) execCommand(command ...string) uint8 {
 	return 1
 }
 
-func CreateShell(sdb *streamdb.Database) *Shell {
+func CreateShell(sdb *connectordb.Database) *Shell {
 	var s Shell
-	s.VersionString = "ConnectorDB Shell v" + streamdb.Version
+	s.VersionString = "ConnectorDB Shell v" + connectordb.Version
 	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
 	s.running = true
 	s.host, _ = os.Hostname()

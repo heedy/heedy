@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
 
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 )
 
 func getDevicePath(request *http.Request) (username string, devicename string, devicepath string) {

@@ -1,7 +1,7 @@
 package crud
 
 import (
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 	"connectordb/operator"
 
 	"net/http"

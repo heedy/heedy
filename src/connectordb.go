@@ -4,15 +4,41 @@ import (
 	"config"
 	"connectordb"
 	"dbsetup"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"server"
+	"shell"
+	"strconv"
 	"strings"
 	"util"
 
 	"github.com/codegangsta/cli"
 
 	log "github.com/Sirupsen/logrus"
+)
+
+//The flags that are used for shell/run which allow connecting to a database
+var (
+	cfg          = config.NewConfiguration()
+	connectFlags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "redis",
+			Value: fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),
+			Usage: "The redis server to which to connect.",
+		},
+		cli.StringFlag{
+			Name:  "nats",
+			Value: fmt.Sprintf("%s:%d", cfg.GnatsdHost, cfg.GnatsdPort),
+			Usage: "The NATS server to which to connect.",
+		},
+		cli.StringFlag{
+			Name:  "postgres",
+			Value: fmt.Sprintf("%s:%d", cfg.PostgresHost, cfg.PostgresPort),
+			Usage: "The postgres server to which to connect.",
+		},
+	}
 )
 
 func getDatabase(c *cli.Context) string {
@@ -23,9 +49,86 @@ func getDatabase(c *cli.Context) string {
 	return n
 }
 
+func getConfigFromFlags(c *cli.Context) *config.Configuration {
+	var err error
+	cfg := config.NewConfiguration()
+	split := strings.Split(c.String("redis"), ":")
+	if len(split) != 2 {
+		log.Fatalf("Invalid redis address: %s", c.String("redis"))
+	}
+	cfg.RedisHost = split[0]
+	cfg.RedisPort, err = strconv.Atoi(split[1])
+	if err != nil {
+		log.Fatalf("Invalid redis address: %s", c.String("redis"))
+	}
+	split = strings.Split(c.String("nats"), ":")
+	if len(split) != 2 {
+		log.Fatalf("Invalid nats address: %s", c.String("nats"))
+	}
+	cfg.GnatsdHost = split[0]
+	cfg.GnatsdPort, err = strconv.Atoi(split[1])
+	if err != nil {
+		log.Fatalf("Invalid nats address: %s", c.String("nats"))
+	}
+	split = strings.Split(c.String("postgres"), ":")
+	if len(split) != 2 {
+		log.Fatalf("Invalid postgres address: %s", c.String("postgres"))
+	}
+	cfg.PostgresHost = split[0]
+	cfg.PostgresPort, err = strconv.Atoi(split[1])
+	if err != nil {
+		log.Fatalf("Invalid postgres address: %s", c.String("postgres"))
+	}
+
+	return cfg
+}
+
+func getConfiguration(c *cli.Context) *config.Configuration {
+	//There are a few different situations that we handle here:
+	//1) A database folder is given
+	//		In this case we read the internal connectordb.pid file to get the config
+	//2) A config file is given
+	//		We read the file
+	//3) Nothing is given
+	//		We read the servers from the command line
+	var cfg *config.Configuration
+	var err error
+	arg := c.Args().First()
+	if arg == "" {
+		cfg = getConfigFromFlags(c)
+	} else {
+		if util.IsDirectory(arg) {
+			arg = filepath.Join(arg, "connectordb.pid")
+		}
+		cfg, err = config.Load(arg)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+	return cfg
+}
+
+func runConnectorDBCallback(c *cli.Context) {
+	cfg := getConfiguration(c)
+	err := server.RunServer(cfg)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+func runShellCallback(c *cli.Context) {
+	cfg := getConfiguration(c)
+	db, err := connectordb.Open(cfg.Options())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	shell.SetConfiguration(cfg)
+	shell.StartShell(db)
+}
+
 //This is called when the user runs "connectordb create"
 func createDatabaseCallback(c *cli.Context) {
-	cfg := config.NewConfiguration()
+	cfg := getConfigFromFlags(c)
 	cfg.DatabaseDirectory = getDatabase(c)
 
 	//Next we parse the user flags
@@ -74,6 +177,7 @@ func stopDatabaseCallback(c *cli.Context) {
 }
 
 func main() {
+
 	app := cli.NewApp()
 	app.Name = "ConnectorDB"
 	app.Usage = "Run and administer a ConnectorDB database."
@@ -88,7 +192,7 @@ func main() {
 			Aliases: []string{"c"},
 			Usage:   "Create a new ConnectorDB database",
 			Action:  createDatabaseCallback,
-			Flags: []cli.Flag{
+			Flags: append([]cli.Flag{
 				cli.StringFlag{
 					Name:  "user",
 					Value: "",
@@ -99,7 +203,7 @@ func main() {
 					Value: "root@localhost",
 					Usage: "The email to use for the created admin user",
 				},
-			},
+			}, connectFlags...),
 		},
 		{
 			Name:    "start",
@@ -118,6 +222,20 @@ func main() {
 			Aliases: []string{"q"},
 			Usage:   "Stop ConnectorDB's backend databases",
 			Action:  stopDatabaseCallback,
+		},
+		{
+			Name:    "run",
+			Aliases: []string{"r"},
+			Usage:   "Run the ConnectorDB frontend server",
+			Action:  runConnectorDBCallback,
+			Flags:   connectFlags,
+		},
+		{
+			Name:    "shell",
+			Aliases: []string{},
+			Usage:   "Runs an administrative shell on the database",
+			Action:  runShellCallback,
+			Flags:   connectFlags,
 		},
 	}
 

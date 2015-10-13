@@ -6,10 +6,7 @@ Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors
 All Rights Reserved
 */
 
-import (
-	"config"
-	"fmt"
-)
+import "fmt"
 
 func init() {
 	help := "Prints information about the database to the console"
@@ -17,7 +14,7 @@ func init() {
 	name := "dbinfo"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := config.GetDatabaseConnectionString()
+		dbcxn := cfg.GetDatabaseConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
 		users, _ := shell.operator.CountUsers()

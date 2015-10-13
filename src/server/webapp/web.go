@@ -1,4 +1,4 @@
-package webclient
+package webapp
 
 /* Provides a user facing website for CDB. There are three template/site files
 associate with this:
@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	userdb *streamdb.Database
+	userdb *connectordb.Database
 )
 
 // Sets up a static site fetching path
@@ -40,12 +40,12 @@ func setupStaticPath(subroutePath string, subroutePrefix *mux.Router) {
 	subroutePrefix.PathPrefix(httpPath).Handler(http.StripPrefix(httpPath, fileserver))
 }
 
-func Setup(subroutePrefix *mux.Router, udb *streamdb.Database) {
+func Setup(subroutePrefix *mux.Router, udb *connectordb.Database) {
 	userdb = udb
 
-	setupStaticPath("spa", subroutePrefix)
-	setupStaticPath("site", subroutePrefix)
+	setupStaticPath("app", subroutePrefix)
+	setupStaticPath("www", subroutePrefix)
 
 	// Main site comes last
-	subroutePrefix.Handle("/", http.RedirectHandler("/site/", 307))
+	subroutePrefix.Handle("/", http.RedirectHandler("/www/", 307))
 }

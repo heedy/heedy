@@ -72,7 +72,7 @@ func (m *MockCache) Clear() error {
 
 func TestMain(m *testing.M) {
 	mc = &MockCache{}
-	sqldb, err := sql.Open(config.DefaultOptions.SqlConnectionType, config.DefaultOptions.SqlConnectionString)
+	sqldb, err := sql.Open("postgres", config.DefaultOptions.SqlConnectionString)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)

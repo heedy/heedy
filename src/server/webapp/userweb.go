@@ -1,4 +1,4 @@
-package webclient
+package webapp
 
 // NOTE 2015-09-07 - Joseph Lewis
 // this is left here for the future, we may eventually want to entirely disable

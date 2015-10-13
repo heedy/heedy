@@ -1,7 +1,7 @@
 package meta
 
 import (
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 	"connectordb"
 	"connectordb/query/interpolators"
 	"connectordb/query/transforms"
@@ -34,13 +34,13 @@ func Version(writer http.ResponseWriter, request *http.Request) {
 	restcore.GetRequestLogger(request, "Version")
 
 	restcore.WriteAccessControlHeaders(writer)
-	writer.Header().Set("Content-Length", strconv.Itoa(len(streamdb.Version)))
+	writer.Header().Set("Content-Length", strconv.Itoa(len(connectordb.Version)))
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(streamdb.Version))
+	writer.Write([]byte(connectordb.Version))
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
-func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
+func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}

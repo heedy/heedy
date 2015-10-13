@@ -103,6 +103,9 @@ echo "Running coverage tests"
 echo "==================================================="
 #go test --timeout 15s -p=1 -v -cover connectordb/...
 go test --timeout 15s -p=1 -cover connectordb/...
+go test --timeout 15s -p=1 -cover util/...
+go test --timeout 15s -p=1 -cover server/...
+
 #go test --timeout 15s -p=1 -bench . connectordb/...
 test_status=$?
 stop
@@ -120,7 +123,7 @@ start
 echo "==================================================="
 echo "Starting Server"
 echo "==================================================="
-./bin/connectordb -log=DEBUG run $DBDIR &
+./bin/connectordb -lvl=DEBUG run $DBDIR &
 cdb_server=$!
 
 echo "==================================================="

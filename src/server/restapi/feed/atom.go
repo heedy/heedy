@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/connectordb/duck"

@@ -1,14 +1,14 @@
 package crud
 
 import (
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 	"connectordb"
 
 	"github.com/gorilla/mux"
 )
 
 //Router returns a fully formed Gorilla router given an optional prefix
-func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
+func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}

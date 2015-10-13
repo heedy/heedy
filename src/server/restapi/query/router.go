@@ -1,7 +1,7 @@
 package query
 
 import (
-	"plugins/rest/restcore"
+	"server/restapi/restcore"
 	"connectordb"
 	"connectordb/operator"
 	"connectordb/query"
@@ -37,7 +37,7 @@ func MergeStreams(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
-func Router(db *streamdb.Database, prefix *mux.Router) *mux.Router {
+func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}

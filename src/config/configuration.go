@@ -27,7 +27,9 @@ type Configuration struct {
 
 	DatabaseDirectory string `json:"-"`
 
-	WebPort         int      //The port on which to run the server
+	Host string //The host at which to serve
+	Port int    //The port on which to run the server
+
 	DisallowedNames []string //The names that are not permitted
 
 }
@@ -41,7 +43,7 @@ func NewConfiguration() *Configuration {
 		GnatsdHost:   "localhost",
 		PostgresHost: "localhost",
 		PostgresPort: 52592,
-		WebPort:      8000,
+		Port:         8000,
 
 		DisallowedNames: []string{"support", "www", "api"},
 	}
@@ -84,4 +86,14 @@ func (c *Configuration) Options() *Options {
 	opt.SqlConnectionString = c.GetDatabaseConnectionString()
 
 	return opt
+}
+
+// Returns the redis "uri", no prefix appneded
+func (c *Configuration) GetRedisUri() string {
+	return fmt.Sprintf("%s:%d", c.RedisHost, c.RedisPort)
+}
+
+// Get the gnatsd "uri" no prefix appended; it'll be in the format host:port
+func (c *Configuration) GetGnatsdUri() string {
+	return fmt.Sprintf("%s:%d", c.GnatsdHost, c.GnatsdPort)
 }

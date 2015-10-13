@@ -56,7 +56,7 @@ func WriteAccessControlHeaders(writer http.ResponseWriter) {
 type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string)
 
 //Authenticator is a wrapper function that sets up authentication and database for each request
-func Authenticator(apifunc APIHandler, db *streamdb.Database) http.HandlerFunc {
+func Authenticator(apifunc APIHandler, db *connectordb.Database) http.HandlerFunc {
 	funcname := runtime.FuncForPC(reflect.ValueOf(apifunc).Pointer()).Name()
 
 	//funcname is a full path - to simplify logs, we split it into just the function name, assuming that function names are strictly unique

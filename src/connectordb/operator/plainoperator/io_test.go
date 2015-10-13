@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func OpenDb(t *testing.T) (*streamdb.Database, PlainOperator, error) {
-	db, err := streamdb.Open(config.DefaultOptions)
+func OpenDb(t *testing.T) (*connectordb.Database, PlainOperator, error) {
+	db, err := connectordb.Open(config.DefaultOptions)
 	require.NoError(t, err)
 	db.Clear(t)
 	return db, PlainOperator{db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger()}, err

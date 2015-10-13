@@ -6,10 +6,7 @@ Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors
 All Rights Reserved
 */
 
-import (
-	"config"
-	"fmt"
-)
+import "fmt"
 
 func init() {
 	help := "Lists the connection addresses to the components of the system."
@@ -17,16 +14,16 @@ func init() {
 	name := "lscxn"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := config.GetDatabaseConnectionString()
+		dbcxn := cfg.GetDatabaseConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
-		streamdb, _ := config.GetStreamdbDirectory()
+		streamdb := cfg.DatabaseDirectory
 		fmt.Printf("Streamdb: %v\n", streamdb)
 
-		redis := config.GetConfiguration().GetRedisUri()
+		redis := cfg.GetRedisUri()
 		fmt.Printf("Redis: %v\n", redis)
 
-		gnatsd := config.GetConfiguration().GetGnatsdUri()
+		gnatsd := cfg.GetGnatsdUri()
 		fmt.Printf("Gnatsd: %v\n", gnatsd)
 		return 0
 	}
