@@ -123,7 +123,15 @@ func runShellCallback(c *cli.Context) {
 		log.Fatal(err.Error())
 	}
 	shell.SetConfiguration(cfg)
-	shell.StartShell(db)
+
+	scmd := c.String("exec")
+	if scmd == "" {
+		shell.StartShell(db)
+	} else {
+		s := shell.CreateShell(db)
+		s.RunCommand(scmd)
+	}
+
 }
 
 //This is called when the user runs "connectordb create"
@@ -235,7 +243,13 @@ func main() {
 			Aliases: []string{},
 			Usage:   "Runs an administrative shell on the database",
 			Action:  runShellCallback,
-			Flags:   connectFlags,
+			Flags: append([]cli.Flag{
+				cli.StringFlag{
+					Name:  "exec, e",
+					Value: "",
+					Usage: "Instead of running connectordb shell in interactive mode, execute the given commands",
+				},
+			}, connectFlags...),
 		},
 	}
 
