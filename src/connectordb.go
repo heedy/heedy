@@ -110,6 +110,11 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 
 func runConnectorDBCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
+
+	//The run command allows to set the host and port to run server on
+	cfg.Host = c.String("host")
+	cfg.Port = c.Int("port")
+
 	err := server.RunServer(cfg)
 	if err != nil {
 		log.Error(err.Error())
@@ -236,7 +241,18 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run the ConnectorDB frontend server",
 			Action:  runConnectorDBCallback,
-			Flags:   connectFlags,
+			Flags: append([]cli.Flag{
+				cli.StringFlag{
+					Name:  "host",
+					Value: "",
+					Usage: "The interface to which the ConnectorDB server should bind",
+				},
+				cli.IntFlag{
+					Name:  "port, p",
+					Value: 8000,
+					Usage: "The port on which to run the ConnectorDB server",
+				},
+			}, connectFlags...),
 		},
 		{
 			Name:    "shell",
