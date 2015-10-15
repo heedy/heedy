@@ -141,10 +141,10 @@ func (s *SqlStore) GetEndIndex(streamID int64, substream string) (ei int64, err 
 
 //Insert the given DatapointArray into the sql database given the startindex of the array for the key.
 func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da DatapointArray) error {
-	return stmtInsert(s.inserter, streamID, substream, startindex, da)
+	return s.stmtInsert(s.inserter, streamID, substream, startindex, da)
 }
 
-func stmtInsert(stmt *sql.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
+func (s *SqlStore) stmtInsert(stmt *sql.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
 	dbytes, err := da.Encode(s.insertversion)
 	if err != nil {
 		return err
