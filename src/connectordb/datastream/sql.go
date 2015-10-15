@@ -40,6 +40,8 @@ type SqlStore struct {
 	delstream    *sql.Stmt
 	clearall     *sql.Stmt
 
+	db *sql.DB
+
 	insertversion int
 }
 
@@ -66,7 +68,7 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 	delstream, err := prepStatement(db, delstreamStatement, err)
 	clearall, err := prepStatement(db, clearallStatement, err)
 
-	ss := &SqlStore{inserter, timequery, indexquery, endindex, delsubstream, delstream, clearall, 2}
+	ss := &SqlStore{inserter, timequery, indexquery, endindex, delsubstream, delstream, clearall, db, 2}
 
 	if err != nil {
 		ss.Close()
@@ -139,29 +141,46 @@ func (s *SqlStore) GetEndIndex(streamID int64, substream string) (ei int64, err 
 
 //Insert the given DatapointArray into the sql database given the startindex of the array for the key.
 func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da DatapointArray) error {
+	return stmtInsert(s.inserter, streamID, substream, startindex, da)
+}
+
+func stmtInsert(stmt *sql.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
 	dbytes, err := da.Encode(s.insertversion)
 	if err != nil {
 		return err
 	}
-	_, err = s.inserter.Exec(streamID, substream, da[len(da)-1].Timestamp, startindex+int64(len(da)),
+	_, err = stmt.Exec(streamID, substream, da[len(da)-1].Timestamp, startindex+int64(len(da)),
 		s.insertversion, dbytes)
 	return err
 }
 
 //WriteBatches writes the given batch array
 func (s *SqlStore) WriteBatches(b []Batch) error {
+	t, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
 	for i := 0; i < len(b); i++ {
 		log.Debugf("Writing batch %s/%s i=%d #=%d", b[i].Stream, b[i].Substream, b[i].StartIndex, len(b[i].Data))
 		streamID, err := b[i].GetStreamID()
 		if err != nil {
+			t.Rollback()
 			return err
 		}
-		err = s.Insert(streamID, b[i].Substream, b[i].StartIndex, b[i].Data)
+
+		//Now the transaction-specific insert statement
+		err = s.stmtInsert(t.Stmt(s.inserter), streamID, b[i].Substream, b[i].StartIndex, b[i].Data)
 		if err != nil {
+			t.Rollback()
 			return err
 		}
 	}
-	return nil
+	err = t.Commit()
+	if err == nil && len(b) > 1 {
+		log.Debugf("...successfully wrote %d batches", len(b))
+	}
+	return err
 }
 
 //Append the given DatapointArray to the data stream for key

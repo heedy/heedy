@@ -98,8 +98,10 @@ func (ds *DataStream) WriteQueue() error {
 	if err != nil {
 		return err
 	}
-	if err = ds.sqls.WriteBatches(b); err != nil {
-		return err
+	if len(b) > 0 {
+		if err = ds.sqls.WriteBatches(b); err != nil {
+			return err
+		}
 	}
 	return ds.cache.ClearBatches(b)
 }
