@@ -10,7 +10,7 @@ All Rights Reserved
 **/
 
 import (
-	"util/dbutil"
+	"dbsetup/dbutil"
 	"os"
 	"strconv"
 

@@ -10,7 +10,7 @@ import (
 	"errors"
 	"testing"
 	"util"
-	"util/dbutil"
+	"dbsetup/dbutil"
 
 	log "github.com/Sirupsen/logrus"
 )

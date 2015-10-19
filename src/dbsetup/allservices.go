@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"util"
-	"util/dbutil"
+	"dbsetup/dbutil"
 
 	log "github.com/Sirupsen/logrus"
 )

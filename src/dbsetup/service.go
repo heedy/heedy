@@ -84,7 +84,7 @@ func (bs BaseService) Create() error {
 
 //Stop shuts down a service
 func (bs BaseService) Stop() error {
-	log.Infof("Stopping %s server", bs.Name())
+	log.Infof("Stopping %s...", bs.Name())
 
 	p, err := util.GetProcess(bs.ServiceDirectory, bs.ServiceName, nil)
 	if err != nil {

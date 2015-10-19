@@ -2,12 +2,12 @@ package dbsetup
 
 import (
 	"config"
+	"dbsetup/dbutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 	"util"
-	"util/dbutil"
 
 	log "github.com/Sirupsen/logrus"
 )

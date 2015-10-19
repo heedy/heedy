@@ -5,7 +5,7 @@ package users
 // right now we can't risk it without them
 
 import (
-	"util/dbutil"
+	"dbsetup/dbutil"
 	"database/sql"
 	"errors"
 	"strings"
