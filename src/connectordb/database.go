@@ -72,7 +72,7 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb = users.NewUserDatabase(db.sqldb, "postgres", EnableCaching)
+	db.Userdb = users.NewUserDatabase(db.sqldb, config.SqlType, EnableCaching)
 
 	log.Debugln("Opening messenger")
 	db.msg, err = messenger.ConnectMessenger(&opt.NatsOptions, err)

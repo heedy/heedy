@@ -103,6 +103,11 @@ func runShellCallback(c *cli.Context) {
 //This is called when the user runs "connectordb create"
 func createDatabaseCallback(c *cli.Context) {
 	cfg := config.NewConfiguration()
+	if c.Bool("test") {
+		log.Warn("test flag: Using testing configuration!")
+		cfg = &config.TestConfiguration
+	}
+
 	cfg.DatabaseDirectory = getDatabase(c)
 
 	//Next we parse the user flags
@@ -176,6 +181,10 @@ func main() {
 					Name:  "email",
 					Value: "root@localhost",
 					Usage: "The email to use for the created admin user",
+				},
+				cli.BoolFlag{
+					Name:  "test",
+					Usage: "Use the special test configuration for the database",
 				},
 			},
 		},

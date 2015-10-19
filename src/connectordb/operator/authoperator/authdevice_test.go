@@ -13,7 +13,7 @@ import (
 )
 
 func OpenDb(t testing.TB) (*connectordb.Database, interfaces.Operator, error) {
-	db, err := connectordb.Open(config.DefaultOptions)
+	db, err := connectordb.Open(config.TestOptions)
 	require.NoError(t, err)
 	db.Clear(t)
 	po := plainoperator.NewPlainOperator(db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger())

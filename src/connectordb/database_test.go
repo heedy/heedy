@@ -9,7 +9,7 @@ import (
 
 func TestDataBaseOperatorInterfaceBasics(t *testing.T) {
 
-	db, err := Open(config.DefaultOptions)
+	db, err := Open(config.TestConfiguration.Options())
 	require.NoError(t, err)
 
 	defer db.Close()

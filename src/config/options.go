@@ -7,9 +7,6 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-//DefaultOptions are the options that work with all default connection settings
-var DefaultOptions = NewOptions()
-
 //Options are the struct which gives ConnectorDB core the necessary information
 //to connect to the underlying servers.
 type Options struct {

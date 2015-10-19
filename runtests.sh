@@ -88,7 +88,7 @@ create () {
 	echo "Doing Create"
 	echo "==================================================="
 	rm -rf $DBDIR
-	./bin/connectordb create $DBDIR -user=test:test
+	./bin/connectordb create $DBDIR --test
 }
 
 force_stop

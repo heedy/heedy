@@ -3,11 +3,11 @@ package dbsetup
 import (
 	"config"
 	"connectordb/users"
+	"dbsetup/dbutil"
 	"errors"
 	"os"
 	"path/filepath"
 	"util"
-	"dbsetup/dbutil"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -56,7 +56,7 @@ func Create(c *config.Configuration) error {
 	defer p.Stop()
 
 	//Now that the databases are all created (and postgres is running), we check if we are to create a default user
-	if c.Username != "" {
+	if c.InitialUsername != "" {
 		log.Infof("Creating user %s (%s)", c.InitialUsername, c.InitialUserEmail)
 		db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
 		if err != nil {

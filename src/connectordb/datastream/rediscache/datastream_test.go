@@ -1,6 +1,7 @@
 package rediscache
 
 import (
+	"config"
 	"connectordb/datastream"
 	"database/sql"
 	"testing"
@@ -12,7 +13,7 @@ import (
 
 func TestDataStream(t *testing.T) {
 	rc.BatchSize = 2
-	sqldb, err := sql.Open("postgres", "sslmode=disable dbname=connectordb port=52592")
+	sqldb, err := sql.Open(config.SqlType, config.TestConfiguration.GetSqlConnectionString())
 	require.NoError(t, err)
 
 	ds, err := datastream.OpenDataStream(RedisCache{rc}, sqldb, 2)
@@ -94,7 +95,7 @@ func TestDataStream(t *testing.T) {
 
 func TestTimePlusIndexRange(t *testing.T) {
 	rc.BatchSize = 2
-	sqldb, err := sql.Open("postgres", "sslmode=disable dbname=connectordb port=52592")
+	sqldb, err := sql.Open(config.SqlType, "sslmode=disable dbname=connectordb port=52592")
 	require.NoError(t, err)
 
 	ds, err := datastream.OpenDataStream(RedisCache{rc}, sqldb, 2)

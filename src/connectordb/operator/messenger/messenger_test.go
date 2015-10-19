@@ -18,11 +18,11 @@ func TestMessenger(t *testing.T) {
 		return
 	}
 
-	msg, err := ConnectMessenger(&config.DefaultOptions.NatsOptions, nil)
+	msg, err := ConnectMessenger(&config.TestOptions.NatsOptions, nil)
 	require.NoError(t, err)
 	defer msg.Close()
 
-	msg2, err := ConnectMessenger(&config.DefaultOptions.NatsOptions, nil)
+	msg2, err := ConnectMessenger(&config.TestOptions.NatsOptions, nil)
 	require.NoError(t, err)
 	defer msg2.Close()
 

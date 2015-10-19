@@ -10,6 +10,9 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
+//SqlType is the type of sql database used
+const SqlType = "postgres"
+
 //Service represents a single server connection
 type Service struct {
 	Hostname string `json:"hostname"`

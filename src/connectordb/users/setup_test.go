@@ -10,6 +10,7 @@ All Rights Reserved
 **/
 
 import (
+	"config"
 	"dbsetup/dbutil"
 	"os"
 	"strconv"
@@ -38,7 +39,7 @@ func GetNextEmail() string {
 }
 
 func init() {
-	testPostgres := initDB("sslmode=disable dbname=connectordb port=52592")
+	testPostgres := initDB(config.TestOptions.SqlConnectionString)
 	testdatabases = []SqlUserDatabase{testPostgres}
 	testdatabasesNames = []string{"postgres"}
 }
