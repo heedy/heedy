@@ -38,7 +38,7 @@ type Configuration struct {
 	Sql   Service `json:"sql"`
 
 	//BDWriter specifies whether to run the DBWriter on this config when starting
-	DBWriter bool `json:"dbwriter"`
+	//DBWriter bool `json:"dbwriter"`
 
 	DatabaseDirectory string `json:"-"`
 
@@ -49,6 +49,10 @@ type Configuration struct {
 	InitialUsername     string `json:"-"`
 	InitialUserPassword string `json:"-"`
 	InitialUserEmail    string `json:"-"`
+
+	//The size of batches and chunks to use with the database
+	BatchSize int `json:"batchsize"`
+	ChunkSize int `json:"chunksize"`
 }
 
 //NewConfiguration generates a configuration for the database.
@@ -78,7 +82,7 @@ func NewConfiguration() *Configuration {
 			//Password: sqlpassword,
 			Enabled: true,
 		},
-		DBWriter: true,
+		//DBWriter: true,
 
 		//The ConnectorDB frontend server
 		Service: Service{
@@ -88,6 +92,10 @@ func NewConfiguration() *Configuration {
 		},
 
 		DisallowedNames: []string{"support", "www", "api"},
+
+		//The defaults to use for the batch and chunks
+		BatchSize: 250,
+		ChunkSize: 5,
 	}
 }
 
@@ -128,6 +136,9 @@ func (c *Configuration) Options() *Options {
 	opt.NatsOptions.Url = fmt.Sprintf("nats://%s:%s@%s:%d", c.Nats.Username, c.Nats.Password, c.Nats.Hostname, c.Nats.Port)
 
 	opt.SqlConnectionString = c.GetSqlConnectionString()
+
+	opt.BatchSize = c.BatchSize
+	opt.ChunkSize = c.ChunkSize
 
 	return opt
 }

@@ -7,10 +7,10 @@ import (
 	"connectordb/operator/messenger"
 	"connectordb/users"
 	"database/sql"
+	"dbsetup/dbutil"
 	"errors"
 	"testing"
 	"util"
-	"dbsetup/dbutil"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -135,8 +135,8 @@ Are you running StreamDB manually by yourself using postgres, and this is the on
 If you are just connecting to an already-running StreamDB and RunWriter is already running somewhere on
 this database, then NO.
 **/
-func (db *Database) RunWriter() {
-	db.ds.RunWriter()
+func (db *Database) RunWriter() error {
+	return db.ds.RunWriter()
 }
 
 // Clear clears the database (to be used for debugging purposes - NEVER in production)

@@ -4,22 +4,19 @@ import (
 	"config"
 	"connectordb"
 	"dbsetup"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"server"
 	"shell"
+	"strconv"
 	"strings"
 	"util"
 
 	"github.com/codegangsta/cli"
 
 	log "github.com/Sirupsen/logrus"
-)
-
-//The flags that are used for shell/run which allow connecting to a database
-var (
-	cfg = config.NewConfiguration()
 )
 
 func getDatabase(c *cli.Context) string {
@@ -50,6 +47,27 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	return cfg
 }
 
+func rundbwriterCallback(c *cli.Context) {
+	cfg := getConfiguration(c)
+
+	db, err := connectordb.Open(cfg.Options())
+	defer db.Close()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	pidfile := c.String("pidfile")
+	if pidfile != "" {
+		log.Debugf("writing pidfile %s", pidfile)
+		err = ioutil.WriteFile(pidfile, []byte(strconv.Itoa(os.Getpid())), 0644)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	log.Info("Running DBWriter")
+	db.RunWriter()
+}
+
 func runConnectorDBCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
 
@@ -66,6 +84,7 @@ func runConnectorDBCallback(c *cli.Context) {
 func runShellCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
 	db, err := connectordb.Open(cfg.Options())
+	defer db.Close()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -83,6 +102,7 @@ func runShellCallback(c *cli.Context) {
 
 //This is called when the user runs "connectordb create"
 func createDatabaseCallback(c *cli.Context) {
+	cfg := config.NewConfiguration()
 	cfg.DatabaseDirectory = getDatabase(c)
 
 	//Next we parse the user flags
@@ -205,6 +225,19 @@ func main() {
 					Name:  "exec, e",
 					Value: "",
 					Usage: "Instead of running connectordb shell in interactive mode, execute the given commands",
+				},
+			},
+		},
+		{
+			Name:    "dbwriter",
+			Aliases: []string{},
+			Usage:   "Runs the Redis to postgres data transfer process",
+			Action:  rundbwriterCallback,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "pidfile",
+					Value: "",
+					Usage: "The file to write the pid of dbwriter to",
 				},
 			},
 		},
