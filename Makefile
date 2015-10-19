@@ -1,27 +1,21 @@
-SRC:=$(wildcard src/core/*.go)
-TMPO:=$(patsubst src/core/%.go,bin/%,$(SRC)) # Get the list of executables from the file list
-OBJ:=$(TMPO:.go=)
-CC:=gcc
 
 .PHONY: all clean build test
 
-all: resources go-dependencies $(OBJ) bin/dep/gnatsd
+all: resources go-dependencies bin/dep/gnatsd bin/connectordb
 
-build: resources $(OBJ)
+build: resources bin/connectordb
 
 bin:
 	mkdir bin
-	cp -r src/connectordb/services/config bin/config
+	cp -r src/dbsetup/config bin/config
 
 resources: bin
-	cp -r src/connectordb/plugins/webclient/templates/ bin/
-	cp -r src/connectordb/plugins/webclient/site/ bin/
-	cp -r src/connectordb/plugins/webclient/spa/ bin/
+	cp -r src/server/webapp/www/ bin/
+	cp -r src/server/webapp/app/ bin/
 
 # Rule to go from source go file to binary
-bin/%: src/core/%.go bin go-dependencies
-	go generate $<
-	go build -o $@ $<
+bin/connectordb: src/connectordb.go bin go-dependencies
+	go build -o bin/connectordb src/connectordb.go
 
 clean:
 	rm -rf bin
@@ -48,6 +42,7 @@ go-dependencies:
 	go get github.com/Sirupsen/logrus
 	go get github.com/josephlewis42/multicache
 	go get github.com/connectordb/njson
+	go get github.com/codegangsta/cli
 
 	go get github.com/stretchr/testify
 
