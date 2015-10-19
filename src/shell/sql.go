@@ -17,7 +17,7 @@ func init() {
 	name := "sql"
 
 	main := func(shell *Shell, args []string) uint8 {
-		cmd := exec.Command("psql", cfg.GetDatabaseConnectionString())
+		cmd := exec.Command("psql", cfg.GetSqlConnectionString())
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin

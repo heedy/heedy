@@ -1,6 +1,7 @@
 package dbsetup
 
 import (
+	"config"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,18 +19,19 @@ var (
 //PostgresService is a service for running Postgres
 type PostgresService struct {
 	BaseService
-	Host             string
-	Port             int
-	ConnectionString string
 }
 
 //Create prepares Postgres
 func (s *PostgresService) Create() error {
-	log.Infof("Setting up Postgres server")
+	err := s.BaseService.Create()
+	if err != nil {
+		return err
+	}
 	dbDir := filepath.Join(s.ServiceDirectory, postgresDatabaseName)
-
-	err := os.Mkdir(dbDir, FolderPermissions)
-	err = CopyConfig(s.ServiceDirectory, "postgres.conf", err)
+	err = os.Mkdir(dbDir, FolderPermissions)
+	if err != nil {
+		return err
+	}
 
 	//Initialize the database directory
 	err = util.RunCommand(err, dbutil.FindPostgresInit(), "-D", dbDir)
@@ -42,28 +44,21 @@ func (s *PostgresService) Create() error {
 		return err
 	}
 
-	port := strconv.Itoa(s.Port)
-	err = util.RunCommand(err, dbutil.FindPostgresPsql(), "-h", s.Host, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
+	port := strconv.Itoa(int(s.S.Port))
+	err = util.RunCommand(err, dbutil.FindPostgresPsql(), "-h", s.S.Hostname, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
 	if err != nil {
 		return err
 	}
 
-	return dbutil.UpgradeDatabase(s.ConnectionString, true)
+	return dbutil.UpgradeDatabase(s.S.GetSqlConnectionString(), true)
 }
 
 //Start starts the service
 func (s *PostgresService) Start() error {
-	if s.Status() == StatusRunning {
-		return nil
-	}
-	s.Stat = StatusError
-
-	log.Infof("Staring postgres on port %d", s.Port)
 	postgresDir := filepath.Join(s.ServiceDirectory, postgresDatabaseName)
 	postgresSettingsPath := filepath.Join(postgresDir, "postgresql.conf")
 
-	configReplacements := GenerateConfigReplacements(s.ServiceDirectory, "postgres", s.Host, s.Port)
-	configfile, err := SetConfig(s.ServiceDirectory, "postgres.conf", configReplacements, nil)
+	configfile, err := s.start()
 
 	//Postgres is a little bitch about its config file, which needs to be moved to the database dir
 	err = util.CopyFileContents(configfile, postgresSettingsPath, err)
@@ -72,7 +67,7 @@ func (s *PostgresService) Start() error {
 	}
 
 	err = util.RunDaemon(err, dbutil.FindPostgres(), "-D", postgresDir)
-	err = util.WaitPort(s.Host, s.Port, err)
+	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {
 		s.Stat = StatusRunning
@@ -94,6 +89,6 @@ func (s *PostgresService) Stop() error {
 }
 
 //NewPostgresService creates a new service for Postgres
-func NewPostgresService(serviceDirectory, connectionstring, host string, port int) *PostgresService {
-	return &PostgresService{BaseService{serviceDirectory, "postgres", StatusNone}, host, port, connectionstring}
+func NewPostgresService(serviceDirectory string, s *config.Service) *PostgresService {
+	return &PostgresService{BaseService{serviceDirectory, "postgres", StatusNone, s}}
 }

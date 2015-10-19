@@ -1,6 +1,7 @@
 package dbsetup
 
 import (
+	"config"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -26,20 +27,28 @@ var (
 )
 
 //GenerateConfigReplacements generates the replacement variables to use within configuration files
-func GenerateConfigReplacements(serviceDirectory, procname, iface string, port int) map[string]string {
+func GenerateConfigReplacements(serviceDirectory, procname string, s *config.Service) map[string]string {
 	m := make(map[string]string)
 
-	if len(iface) == 0 {
-		iface = "localhost"
+	serviceDirectory2, err := filepath.Abs(serviceDirectory)
+	if err == nil {
+		serviceDirectory = serviceDirectory2
+	}
+
+	if len(s.Hostname) == 0 {
+		s.Hostname = "localhost"
 	}
 
 	m["dbdir"] = serviceDirectory
-	m["port"] = strconv.Itoa(port)
-	m["interface"] = iface
+	m["port"] = strconv.Itoa(int(s.Port))
+	m["interface"] = s.Hostname
 	m["logfilepath"] = filepath.Join(serviceDirectory, procname+".log")
 	m["logfile"] = procname + ".log"
 	m["pidfilepath"] = filepath.Join(serviceDirectory, procname+".pid")
 	m["pidfile"] = procname + ".pid"
+
+	m["username"] = s.Username
+	m["password"] = s.Password
 
 	return m
 }

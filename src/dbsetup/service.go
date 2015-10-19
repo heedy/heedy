@@ -1,6 +1,7 @@
 package dbsetup
 
 import (
+	"config"
 	"syscall"
 	"util"
 
@@ -51,6 +52,7 @@ type BaseService struct {
 	ServiceDirectory string
 	ServiceName      string
 	Stat             Status
+	S                *config.Service
 }
 
 //Name returns the name of the service
@@ -61,6 +63,23 @@ func (bs BaseService) Name() string {
 //Status returns the status of the service
 func (bs BaseService) Status() Status {
 	return bs.Stat
+}
+
+func (bs BaseService) start() (string, error) {
+	if bs.Status() == StatusRunning {
+		return "", ErrAlreadyRunning
+	}
+	log.Infof("Staring %s on port %d", bs.Name(), bs.S.Port)
+
+	configReplacements := GenerateConfigReplacements(bs.ServiceDirectory, bs.Name(), bs.S)
+	return SetConfig(bs.ServiceDirectory, bs.Name()+".conf", configReplacements, nil)
+}
+
+//Create runs the base creation code - it copies the necessary configuration files
+func (bs BaseService) Create() error {
+	log.Infof("Setting up %s server", bs.Name())
+
+	return CopyConfig(bs.ServiceDirectory, bs.Name()+".conf", nil)
 }
 
 //Stop shuts down a service

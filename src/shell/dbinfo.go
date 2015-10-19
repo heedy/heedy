@@ -14,7 +14,7 @@ func init() {
 	name := "dbinfo"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := cfg.GetDatabaseConnectionString()
+		dbcxn := cfg.GetSqlConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
 		users, _ := shell.operator.CountUsers()

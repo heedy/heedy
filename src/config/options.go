@@ -29,9 +29,9 @@ Sql Connection String: %s
 Batch Size: %v
 Chunk Size: %v
 
-Redis Address: %v
+Redis Address: %v (%v)
 Nats Address: %v
-`, o.SqlConnectionString, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.NatsOptions.Url)
+`, o.SqlConnectionString, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.RedisOptions.Password, o.NatsOptions.Url)
 }
 
 //NewOptions returns new options set to default values.

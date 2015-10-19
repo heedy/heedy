@@ -4,13 +4,11 @@ import (
 	"config"
 	"connectordb"
 	"dbsetup"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"server"
 	"shell"
-	"strconv"
 	"strings"
 	"util"
 
@@ -21,24 +19,7 @@ import (
 
 //The flags that are used for shell/run which allow connecting to a database
 var (
-	cfg          = config.NewConfiguration()
-	connectFlags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "redis",
-			Value: fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),
-			Usage: "The redis server to which to connect.",
-		},
-		cli.StringFlag{
-			Name:  "nats",
-			Value: fmt.Sprintf("%s:%d", cfg.GnatsdHost, cfg.GnatsdPort),
-			Usage: "The NATS server to which to connect.",
-		},
-		cli.StringFlag{
-			Name:  "postgres",
-			Value: fmt.Sprintf("%s:%d", cfg.PostgresHost, cfg.PostgresPort),
-			Usage: "The postgres server to which to connect.",
-		},
-	}
+	cfg = config.NewConfiguration()
 )
 
 func getDatabase(c *cli.Context) string {
@@ -49,61 +30,22 @@ func getDatabase(c *cli.Context) string {
 	return n
 }
 
-func getConfigFromFlags(c *cli.Context) *config.Configuration {
-	var err error
-	cfg := config.NewConfiguration()
-	split := strings.Split(c.String("redis"), ":")
-	if len(split) != 2 {
-		log.Fatalf("Invalid redis address: %s", c.String("redis"))
-	}
-	cfg.RedisHost = split[0]
-	cfg.RedisPort, err = strconv.Atoi(split[1])
-	if err != nil {
-		log.Fatalf("Invalid redis address: %s", c.String("redis"))
-	}
-	split = strings.Split(c.String("nats"), ":")
-	if len(split) != 2 {
-		log.Fatalf("Invalid nats address: %s", c.String("nats"))
-	}
-	cfg.GnatsdHost = split[0]
-	cfg.GnatsdPort, err = strconv.Atoi(split[1])
-	if err != nil {
-		log.Fatalf("Invalid nats address: %s", c.String("nats"))
-	}
-	split = strings.Split(c.String("postgres"), ":")
-	if len(split) != 2 {
-		log.Fatalf("Invalid postgres address: %s", c.String("postgres"))
-	}
-	cfg.PostgresHost = split[0]
-	cfg.PostgresPort, err = strconv.Atoi(split[1])
-	if err != nil {
-		log.Fatalf("Invalid postgres address: %s", c.String("postgres"))
-	}
-
-	return cfg
-}
-
 func getConfiguration(c *cli.Context) *config.Configuration {
 	//There are a few different situations that we handle here:
 	//1) A database folder is given
 	//		In this case we read the internal connectordb.pid file to get the config
 	//2) A config file is given
 	//		We read the file
-	//3) Nothing is given
-	//		We read the servers from the command line
 	var cfg *config.Configuration
 	var err error
-	arg := c.Args().First()
-	if arg == "" {
-		cfg = getConfigFromFlags(c)
-	} else {
-		if util.IsDirectory(arg) {
-			arg = filepath.Join(arg, "connectordb.pid")
-		}
-		cfg, err = config.Load(arg)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+	arg := getDatabase(c)
+
+	if util.IsDirectory(arg) {
+		arg = filepath.Join(arg, "connectordb.pid")
+	}
+	cfg, err = config.Load(arg)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 	return cfg
 }
@@ -112,8 +54,8 @@ func runConnectorDBCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
 
 	//The run command allows to set the host and port to run server on
-	cfg.Host = c.String("host")
-	cfg.Port = c.Int("port")
+	cfg.Hostname = c.String("host")
+	cfg.Port = uint16(c.Int("port"))
 
 	err := server.RunServer(cfg)
 	if err != nil {
@@ -141,7 +83,6 @@ func runShellCallback(c *cli.Context) {
 
 //This is called when the user runs "connectordb create"
 func createDatabaseCallback(c *cli.Context) {
-	cfg := getConfigFromFlags(c)
 	cfg.DatabaseDirectory = getDatabase(c)
 
 	//Next we parse the user flags
@@ -151,9 +92,9 @@ func createDatabaseCallback(c *cli.Context) {
 		if len(usrpass) != 2 {
 			log.Fatal("The username flag must be in username:password format")
 		}
-		cfg.Username = usrpass[0]
-		cfg.UserPassword = usrpass[1]
-		cfg.UserEmail = c.String("email")
+		cfg.InitialUsername = usrpass[0]
+		cfg.InitialUserPassword = usrpass[1]
+		cfg.InitialUserEmail = c.String("email")
 	}
 
 	err := dbsetup.Create(cfg)
@@ -205,7 +146,7 @@ func main() {
 			Aliases: []string{"c"},
 			Usage:   "Create a new ConnectorDB database",
 			Action:  createDatabaseCallback,
-			Flags: append([]cli.Flag{
+			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "user",
 					Value: "",
@@ -216,7 +157,7 @@ func main() {
 					Value: "root@localhost",
 					Usage: "The email to use for the created admin user",
 				},
-			}, connectFlags...),
+			},
 		},
 		{
 			Name:    "start",
@@ -241,7 +182,7 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run the ConnectorDB frontend server",
 			Action:  runConnectorDBCallback,
-			Flags: append([]cli.Flag{
+			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "host",
 					Value: "",
@@ -252,20 +193,20 @@ func main() {
 					Value: 8000,
 					Usage: "The port on which to run the ConnectorDB server",
 				},
-			}, connectFlags...),
+			},
 		},
 		{
 			Name:    "shell",
 			Aliases: []string{},
 			Usage:   "Runs an administrative shell on the database",
 			Action:  runShellCallback,
-			Flags: append([]cli.Flag{
+			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "exec, e",
 					Value: "",
 					Usage: "Instead of running connectordb shell in interactive mode, execute the given commands",
 				},
-			}, connectFlags...),
+			},
 		},
 	}
 

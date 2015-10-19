@@ -35,7 +35,7 @@ func setupStaticPath(subroutePath string, subroutePrefix *mux.Router) {
 
 	httpPath := "/" + subroutePath + "/"
 
-	log.Infof("Setting up subroute %v at %v", httpPath, folderPath)
+	log.Debugf("Setting up subroute %v at %v", httpPath, folderPath)
 
 	subroutePrefix.PathPrefix(httpPath).Handler(http.StripPrefix(httpPath, fileserver))
 }

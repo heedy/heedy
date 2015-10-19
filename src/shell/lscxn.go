@@ -14,7 +14,7 @@ func init() {
 	name := "lscxn"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := cfg.GetDatabaseConnectionString()
+		dbcxn := cfg.GetSqlConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
 		streamdb := cfg.DatabaseDirectory
