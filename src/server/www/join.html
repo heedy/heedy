@@ -1,0 +1,144 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Login - ConnectorDB</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+        <!-- Place favicon.ico in the root directory -->
+
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <script src="js/vendor/modernizr-2.8.3.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        <div id="wrap">
+        <div id="main">
+        <form id="msform">
+            <!-- progressbar -->
+        	<img id="connectordb-logo" src="/www/img/title_logo_light_xs.png" alt="ConnectorDB"></img>
+        	<div id="container">
+        	<ul id="progressbar">
+        		<li class="active">Account</li>
+        		<li>Goals</li>
+        		<li>Data</li>
+        	</ul>
+        	</div>
+        	<!-- fieldsets -->
+
+        	<fieldset>
+        		<h2 class="fs-title">Account Setup</h2>
+        		<h3 class="fs-subtitle">Step 1 of becoming a cyborg</h3>
+        		<input type="text" name="fname" placeholder="First Name" />
+        		<input type="text" name="lname" placeholder="Last Name" />
+        		<input type="email" name="email" placeholder="Email" />
+        		<input type="button" name="next" class="next action-button" value="Next" />
+        	</fieldset>
+
+        	<fieldset>
+        		<h2 class="fs-title">Your Goals</h2>
+        		<h3 class="fs-subtitle">Research shows that writing down your goals is the first step to achieving them. ConnectorDB will track your progress towards the goals you write below.</h3>
+        		<input type="text" name="goal1" placeholder="Exercise" />
+        		<input type="text" name="goal2" placeholder="Learn Python programming" />
+        		<input type="text" name="goal3" placeholder="Waste less time on the internet" />
+        		<p class="fs-text">Hint: Try to make your goals something actionable.
+        			"Lose Weight" is not something you can get up and do. "Exercise" is.</p>
+        			<p class="fs-text">Hint 2: Remember that ConnectorDB is an experiement. We might be able to help you achieve goals for which there is a clear TODO list, but we don't think our algorithms can help you cure cancer...</p>
+        		<input type="button" name="previous" class="previous action-button" value="Previous" />
+        		<input type="button" name="next" class="next action-button" value="Next" />
+        	</fieldset>
+
+
+        	<fieldset>
+        		<h2 class="fs-title">Star Rankings</h2>
+        		<h3 class="fs-subtitle">Your devices will gather some data for you,
+        			but ConnectorDB relies on your rankings to see what you think of your life.</h3>
+        		<input type="text" name="rank1" placeholder="Productivity" />
+        		<input type="text" name="rank2" placeholder="Motivation" />
+        		<input type="text" name="rank3" placeholder="Mood" />
+        		<input type="text" name="rank4" placeholder="Social" />
+        		<input type="text" name="rank3" placeholder="Health" />
+        		<p class="fs-text">Each box you fill out will correspond to a 10-star rating that you will be prompted to fill in once a day.</p>
+        		<input type="button" name="previous" class="previous action-button" value="Previous" />
+        		<input type="submit" name="submit" class="submit action-button" value="Submit" />
+        	</fieldset>
+        </form>
+    </div>
+    </div>
+
+        <div id="footer">
+            &copy; 2015 The <a href="https://connectordb.com" >ConnectorDB</a> contributors.<br/>Theme based upon example by <a href="http://codepen.io/atakan/pen/gqbIz">Atakan Goktepe</a>.
+        </div>
+
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.3.min.js"><\/script>')</script>
+        <script src="js/plugins.js"></script>
+        <script src="js/main.js"></script>
+
+
+        <script>
+
+        //jQuery time
+        var current_fs, next_fs, previous_fs; //fieldsets
+        var left, opacity, scale; //fieldset properties which we will animate
+        var animating; //flag to prevent quick multi-click glitches
+
+        function animator(cur,next,fdone) {
+        	cur.fadeOut(200,function() {
+        		next.fadeIn(200,fdone);
+        	})
+        }
+
+        $(".next").click(function(){
+        	if(animating) return false;
+        	animating = true;
+
+        	current_fs = $(this).parent();
+        	next_fs = $(this).parent().next();
+
+        	//activate next step on progressbar using the index of next_fs
+        	$("#progressbar li").eq($("fieldset").index(next_fs)).addClass("active");
+
+        	animator(current_fs,next_fs,function() {animating=false;});
+
+        });
+
+        $(".previous").click(function(){
+        	if(animating) return false;
+        	animating = true;
+
+        	current_fs = $(this).parent();
+        	previous_fs = $(this).parent().prev();
+
+        	//de-activate current step on progressbar
+        	$("#progressbar li").eq($("fieldset").index(current_fs)).removeClass("active");
+
+        	animator(current_fs,previous_fs,function() {animating=false;});
+        });
+
+        $(".submit").click(function(){
+        	return false;
+        })
+
+        </script>
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <!--
+        <script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='https://www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X','auto');ga('send','pageview');
+        </script>
+    -->
+    </body>
+</html>
