@@ -133,7 +133,7 @@ func GetTemplateData(o operator.Operator) (*TemplateData, error) {
 	return &TemplateData{
 		ThisUser:   thisU,
 		ThisDevice: thisD,
-	}, nil
+	}, err
 }
 
 //Index reads the index
