@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"server/webcore"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -23,39 +24,12 @@ import (
 //Mb is nubmer of bytes in a megabyte
 const Mb = 1024 * 1024
 
-//ErrInvalidName is thrown when the name is bad
 var (
+	//ErrInvalidName is thrown when the name is bad
 	ErrInvalidName = errors.New("The given name did not pass sanitation.")
 	ErrBadQ        = errors.New("Unrecognized query command.")
 	ErrCantParse   = errors.New("The given query cannot be parsed, since the values could not be extracted")
-
-	//ShutdownChannel is a shared channel which is used when a shutdown is signalled.
-	//Each goroutine that uses the ShutdownChannel is to IMMEDIATELY refire the channel before doing anything else,
-	//so that the signal continues throughout the system
-	ShutdownChannel = make(chan bool, 1)
-
-	//IsActive - no need for sync, really. It specifies if the REST interface should be accepting connections
-	IsActive = true
 )
-
-//SetEnabled allows to enable and disable acceptance of connections in a simple way
-func SetEnabled(v bool) {
-	IsActive = v
-	if v {
-		log.Warn("REST server enabled")
-	} else {
-		log.Warn("REST server disabled (503)")
-	}
-}
-
-//Shutdown shutd down the server
-func Shutdown() {
-	//Set to inactive so that new connections are not accepted during shutdown
-	//no need to log the fact that rest is inactive, since this only happens on shutdown
-	IsActive = false
-	//Fire the shutdown channel
-	ShutdownChannel <- true
-}
 
 //OK is a simplifying function that returns success
 func OK(writer http.ResponseWriter) error {
@@ -80,7 +54,7 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry,
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
-	return DEBUG, ""
+	return webcore.DEBUG, ""
 }
 
 //IntWriter writes an integer
@@ -91,7 +65,7 @@ func IntWriter(writer http.ResponseWriter, i int64, logger *log.Entry, err error
 
 	res := []byte(strconv.FormatInt(i, 10))
 	byteWriter(writer, res)
-	return DEBUG, ""
+	return webcore.DEBUG, ""
 }
 
 //UintWriter writes an unsigned integer
@@ -102,7 +76,7 @@ func UintWriter(writer http.ResponseWriter, i uint64, logger *log.Entry, err err
 
 	res := []byte(strconv.FormatUint(i, 10))
 	byteWriter(writer, res)
-	return DEBUG, ""
+	return webcore.DEBUG, ""
 }
 
 func byteWriter(writer http.ResponseWriter, b []byte) {
@@ -159,7 +133,7 @@ type ErrorResponse struct {
 //WriteError takes care of gracefully writing errors to the client in a way that allows
 //for fairly easy debugging.
 func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, err error, iserr bool) (int, string) {
-	atomic.AddUint32(&StatsErrors, 1)
+	atomic.AddUint32(&webcore.StatsErrors, 1)
 
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -169,7 +143,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to generate error UUID", "ref": "OSHIT"}`))
-		return INFO, ""
+		return webcore.INFO, ""
 	}
 	uu := u.String()
 
@@ -184,7 +158,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 		logger.WithField("ref", uu).Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 		writer.Write([]byte(`{"code": 520, "msg": "Failed to write error message","ref":"` + uu + `"}`))
-		return INFO, ""
+		return webcore.INFO, ""
 	}
 
 	//Now that we have the error message, we log it and send the messages
@@ -197,16 +171,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(errorCode)
 	writer.Write(res)
-	return INFO, ""
-}
-
-//GetStreamPath returns the relevant parts of a stream path
-func GetStreamPath(request *http.Request) (username string, devicename string, streamname string, streampath string) {
-	username = mux.Vars(request)["user"]
-	devicename = mux.Vars(request)["device"]
-	streamname = mux.Vars(request)["stream"]
-	streampath = username + "/" + devicename + "/" + streamname
-	return username, devicename, streamname, streampath
+	return webcore.INFO, ""
 }
 
 //ParseIRange attempts to parse a request as an index range
@@ -268,7 +233,7 @@ func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 			writer.Header().Set("Content-Length", "2")
 			writer.WriteHeader(http.StatusOK)
 			writer.Write([]byte("[]")) //If there are no datapoints, just return empty
-			return DEBUG, ""
+			return webcore.DEBUG, ""
 		}
 		return WriteError(writer, logger, http.StatusInternalServerError, err, true)
 	}
@@ -281,5 +246,14 @@ func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 		logger.Errorln(err)
 		return 3, err.Error()
 	}
-	return DEBUG, ""
+	return webcore.DEBUG, ""
+}
+
+//GetStreamPath returns the relevant parts of a stream path
+func GetStreamPath(request *http.Request) (username string, devicename string, streamname string, streampath string) {
+	username = mux.Vars(request)["user"]
+	devicename = mux.Vars(request)["device"]
+	streamname = mux.Vars(request)["stream"]
+	streampath = username + "/" + devicename + "/" + streamname
+	return username, devicename, streamname, streampath
 }

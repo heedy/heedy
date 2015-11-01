@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"server/restapi/restcore"
+	"server/webcore"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/connectordb/duck"
@@ -63,7 +64,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
 	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {
-		return restcore.INFO, ""
+		return webcore.INFO, ""
 	}
 	sdr, ok := dr.(datastream.ExtendedDataRange)
 	if !ok {
@@ -114,5 +115,5 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(xmlheader)
 	writer.Write(result)
-	return restcore.DEBUG, ""
+	return webcore.DEBUG, ""
 }

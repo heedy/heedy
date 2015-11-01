@@ -1,11 +1,12 @@
 package meta
 
 import (
-	"server/restapi/restcore"
 	"connectordb"
 	"connectordb/query/interpolators"
 	"connectordb/query/transforms"
 	"net/http"
+	"server/restapi/restcore"
+	"server/webcore"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -13,27 +14,27 @@ import (
 
 //TransformList returns the list of avaliable transforms and their descriptions
 func TransformList(writer http.ResponseWriter, request *http.Request) {
-	l := restcore.GetRequestLogger(request, "TransformList")
+	l := webcore.GetRequestLogger(request, "TransformList")
 
-	restcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer)
 	restcore.JSONWriter(writer, transforms.Registry, l, nil)
 
 }
 
 //InterpolatorList returns the list of avaliable interpolators and their descriptions
 func InterpolatorList(writer http.ResponseWriter, request *http.Request) {
-	l := restcore.GetRequestLogger(request, "InterpolatorList")
+	l := webcore.GetRequestLogger(request, "InterpolatorList")
 
-	restcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer)
 	restcore.JSONWriter(writer, interpolators.Registry, l, nil)
 
 }
 
 //Version returns the ConnectorDB version being run
 func Version(writer http.ResponseWriter, request *http.Request) {
-	restcore.GetRequestLogger(request, "Version")
+	webcore.GetRequestLogger(request, "Version")
 
-	restcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer)
 	writer.Header().Set("Content-Length", strconv.Itoa(len(connectordb.Version)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(connectordb.Version))

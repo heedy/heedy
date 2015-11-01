@@ -10,8 +10,8 @@ bin:
 	cp -r src/dbsetup/config bin/config
 
 resources: bin
-	cp -r src/server/webapp/www/ bin/
-	cp -r src/server/webapp/app/ bin/
+	cp -r src/server/www/ bin/
+	cp -r src/server/app/ bin/
 
 # Rule to go from source go file to binary
 bin/connectordb: src/connectordb.go bin go-dependencies
@@ -35,6 +35,7 @@ go-dependencies:
 	# utilities
 	go get github.com/xeipuuv/gojsonschema
 	go get gopkg.in/vmihailenco/msgpack.v2
+	go get gopkg.in/fsnotify.v1
 	go get github.com/vharitonsky/iniflags
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid

@@ -1,12 +1,14 @@
 package config
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/securecookie"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -26,6 +28,7 @@ type Service struct {
 	Enabled bool `json:"enabled"` //Whether or not to run the service on "start"
 }
 
+// GetSqlConnectionString returns the string used to connect to postgres
 func (s *Service) GetSqlConnectionString() string {
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
 }
@@ -56,12 +59,22 @@ type Configuration struct {
 	//The size of batches and chunks to use with the database
 	BatchSize int `json:"batchsize"`
 	ChunkSize int `json:"chunksize"`
+
+	//The following options are for the ConnectorDB server
+	AllowJoin bool `json:"allow_join"` //Whether or not to permit adding of users through web interface
+
+	SessionAuthKey       string `json:"session_authkey"`       //The key used to sign sessions
+	SessionEncryptionKey string `json:"session_encryptionkey"` //The key used to encrypt sessions in cookies
 }
 
 //NewConfiguration generates a configuration for the database.
 func NewConfiguration() *Configuration {
 	redispassword, _ := uuid.NewV4()
 	natspassword, _ := uuid.NewV4()
+
+	sessionAuthkey := securecookie.GenerateRandomKey(64)
+	sessionEncKey := securecookie.GenerateRandomKey(32)
+
 	//sqlpassword, _ := uuid.NewV4()
 	return &Configuration{
 		Version: 1,
@@ -99,6 +112,9 @@ func NewConfiguration() *Configuration {
 		//The defaults to use for the batch and chunks
 		BatchSize: 250,
 		ChunkSize: 5,
+
+		SessionAuthKey:       base64.StdEncoding.EncodeToString(sessionAuthkey),
+		SessionEncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
 	}
 }
 
@@ -124,6 +140,25 @@ func (c *Configuration) Save(filepath string) error {
 	return ioutil.WriteFile(filepath, b, os.FileMode(0755))
 }
 
+//GetSessionAuthKey returns the bytes associated with the config string
+func (c *Configuration) GetSessionAuthKey() ([]byte, error) {
+	//If no session key is in config, generate one
+	if c.SessionAuthKey == "" {
+		return securecookie.GenerateRandomKey(64), nil
+	}
+
+	return base64.StdEncoding.DecodeString(c.SessionAuthKey)
+}
+
+//GetSessionEncryptionKey returns the bytes associated with the config string
+func (c *Configuration) GetSessionEncryptionKey() ([]byte, error) {
+	//If no session encryption key is in config, generate one
+	if c.SessionEncryptionKey == "" {
+		return securecookie.GenerateRandomKey(32), nil
+	}
+	return base64.StdEncoding.DecodeString(c.SessionEncryptionKey)
+}
+
 //GetSqlConnectionString Returns the database connection string for the current database
 func (c *Configuration) GetSqlConnectionString() string {
 	return c.Sql.GetSqlConnectionString()
@@ -146,12 +181,12 @@ func (c *Configuration) Options() *Options {
 	return opt
 }
 
-// Returns the redis "uri", no prefix appneded
-func (c *Configuration) GetRedisUri() string {
+// GetRedisURI returns the redis "uri", no prefix appended
+func (c *Configuration) GetRedisURI() string {
 	return fmt.Sprintf("%s:%d", c.Redis.Hostname, c.Redis.Port)
 }
 
-// Get the gnatsd "uri" no prefix appended; it'll be in the format host:port
-func (c *Configuration) GetGnatsdUri() string {
+// GetGnatsdURI gets the gnatsd "uri" no prefix appended; it'll be in the format host:port
+func (c *Configuration) GetGnatsdURI() string {
 	return fmt.Sprintf("%s:%d", c.Nats.Hostname, c.Nats.Port)
 }

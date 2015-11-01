@@ -1,12 +1,13 @@
 package crud
 
 import (
-	"server/restapi/restcore"
 	"connectordb/datastream"
 	"connectordb/operator"
 	"errors"
 	"fmt"
 	"net/http"
+	"server/restapi/restcore"
+	"server/webcore"
 	"strconv"
 	"sync/atomic"
 
@@ -50,9 +51,9 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 		lvl, _ := restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return lvl, querylog
 	}
-	atomic.AddUint32(&restcore.StatsInserts, uint32(len(datapoints)))
+	atomic.AddUint32(&webcore.StatsInserts, uint32(len(datapoints)))
 	restcore.OK(writer)
-	return restcore.DEBUG, querylog
+	return webcore.DEBUG, querylog
 }
 
 //StreamRange gets a range of data from a stream

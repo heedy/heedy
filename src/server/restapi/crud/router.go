@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"server/restapi/restcore"
 	"connectordb"
+	"server/restapi/restcore"
 
 	"github.com/gorilla/mux"
 )
