@@ -21,7 +21,7 @@ html {
     background:
         linear-gradient( rgba(155, 89, 182, 0.2),rgba(196, 102, 0, 0.2)),
         url('/www/img/bg.png');
-    
+
     background-attachment: fixed;
 }
 
@@ -121,6 +121,10 @@ textarea {
 
 * {margin: 0; padding: 0;}
 
+
+#msform.has-error input {
+    border: 1px solid red;
+}
 
 #connectordb-logo {
    margin: auto;
