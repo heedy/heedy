@@ -60,6 +60,16 @@ func Authenticate(db *connectordb.Database, request *http.Request) (operator.Ope
 
 //CreateSessionCookie generates the authentication cookie from an authenticated user
 func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter) error {
+	if o == nil {
+		//If the operator is nil, we delete the cookie
+		cookie := &http.Cookie{
+			Name:   "connectordb-session",
+			MaxAge: -1,
+			Path:   "/",
+		}
+		http.SetCookie(writer, cookie)
+		return nil
+	}
 	dev, err := o.Device()
 	if err != nil {
 		return err
@@ -82,5 +92,5 @@ func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter) error 
 // HasSession returns whether there is a session cookie with this request
 func HasSession(request *http.Request) bool {
 	_, err := request.Cookie("connectordb-session")
-	return err != nil
+	return err == nil
 }

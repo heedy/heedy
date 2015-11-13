@@ -16,7 +16,7 @@ import (
 func TransformList(writer http.ResponseWriter, request *http.Request) {
 	l := webcore.GetRequestLogger(request, "TransformList")
 
-	webcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer,request)
 	restcore.JSONWriter(writer, transforms.Registry, l, nil)
 
 }
@@ -25,7 +25,7 @@ func TransformList(writer http.ResponseWriter, request *http.Request) {
 func InterpolatorList(writer http.ResponseWriter, request *http.Request) {
 	l := webcore.GetRequestLogger(request, "InterpolatorList")
 
-	webcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer,request)
 	restcore.JSONWriter(writer, interpolators.Registry, l, nil)
 
 }
@@ -34,7 +34,7 @@ func InterpolatorList(writer http.ResponseWriter, request *http.Request) {
 func Version(writer http.ResponseWriter, request *http.Request) {
 	webcore.GetRequestLogger(request, "Version")
 
-	webcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer,request)
 	writer.Header().Set("Content-Length", strconv.Itoa(len(connectordb.Version)))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(connectordb.Version))

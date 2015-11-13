@@ -47,6 +47,24 @@ func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *h
 	return restcore.UintWriter(writer, l, logger, err)
 }
 
+//Login handles logging in and out of the web interface. In particular, it handles the auth cookies, and
+//the web interface uses them for the rest
+func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	err := webcore.CreateSessionCookie(o, writer)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
+	}
+	restcore.OK(writer)
+	return webcore.DEBUG, ""
+}
+
+//Logout hondles logging out of the web interface. It deletes the auth cookie
+func Logout(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	webcore.CreateSessionCookie(nil, writer) //nil operator deletes the cookie
+	restcore.OK(writer)
+	return webcore.DEBUG, ""
+}
+
 //Allows to fit the Closer interface
 type restcloser struct{}
 
@@ -78,6 +96,10 @@ func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	query.Router(db, prefix.PathPrefix("/query").Subrouter())
 	feed.Router(db, prefix.PathPrefix("/feed").Subrouter())
 	meta.Router(db, prefix.PathPrefix("/meta").Subrouter())
+
+	//login and Logout of the system
+	prefix.HandleFunc("/login", restcore.Authenticator(Login, db)).Methods("GET")
+	prefix.HandleFunc("/logout", restcore.Authenticator(Logout, db)).Methods("GET")
 
 	//Now that things are running, we want the ability to do a clean shutdown of REST
 	util.CloseOnExit(restcloser{})

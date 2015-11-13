@@ -30,7 +30,7 @@ func Authenticator(apifunc webcore.APIHandler, db *connectordb.Database) http.Ha
 		//Handle a panic without crashing the whole rest interface
 		defer webcore.HandlePanic(logger)
 
-		webcore.WriteAccessControlHeaders(writer)
+		webcore.WriteAccessControlHeaders(writer,request)
 
 		o, err := webcore.Authenticate(db, request)
 		if err != nil {

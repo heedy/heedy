@@ -69,7 +69,8 @@ func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectord
 		//Handle a panic without crashing the whole rest interface
 		defer webcore.HandlePanic(logger)
 
-		webcore.WriteAccessControlHeaders(writer)
+		//Access control to the website is blocked
+		//webcore.WriteAccessControlHeaders(writer, request)
 
 		if webcore.HasSession(request) {
 			//There is a session associated with ConnectorDB

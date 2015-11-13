@@ -14,6 +14,11 @@ import (
 )
 
 var (
+	//The name of the site.
+	SiteName string
+	//AllowCrossOrigin: Whether or not cross origin requests are permitted
+	AllowCrossOrigin = false
+
 	//IsActive - no need for sync, really. It specifies if the server should accept connections.
 	IsActive = true
 
@@ -27,10 +32,18 @@ var (
 type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string)
 
 //WriteAccessControlHeaders writes the access control headers for the site
-func WriteAccessControlHeaders(writer http.ResponseWriter) {
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-	writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, UPDATE, PATCH")
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+func WriteAccessControlHeaders(writer http.ResponseWriter, request *http.Request) {
+	if AllowCrossOrigin {
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+	} else {
+		//writer.Header().Set("Access-Control-Allow-Origin", SiteName)
+	}
+	//Only set allow credentials if the origin is the site name
+	originheader := request.Header.Get("Origin")
+	if originheader == "" || originheader == SiteName {
+		//Only permit cookies if we are coming from our own origin
+		writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
 }
 
 //SetEnabled allows to enable and disable acceptance of connections in a simple way

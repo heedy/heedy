@@ -3,9 +3,11 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/securecookie"
@@ -26,6 +28,11 @@ type Service struct {
 	//SSLPort uint16 `json:"sslport"` //The port on which to run Stunnel
 
 	Enabled bool `json:"enabled"` //Whether or not to run the service on "start"
+}
+
+//ConnectionString returns the connection string
+func (s *Service) ConnectionString() string {
+	return fmt.Sprintf("%s:%v", s.Hostname, s.Port)
 }
 
 // GetSqlConnectionString returns the string used to connect to postgres
@@ -65,6 +72,10 @@ type Configuration struct {
 
 	SessionAuthKey       string `json:"session_authkey"`       //The key used to sign sessions
 	SessionEncryptionKey string `json:"session_encryptionkey"` //The key used to encrypt sessions in cookies
+
+	SiteName string `json:"sitename"` //The site to use for requests and stuff
+
+	AllowCrossOrigin bool `json:"allowcrossorigin"` //Whether the site options permit CORS
 }
 
 //NewConfiguration generates a configuration for the database.
@@ -115,6 +126,10 @@ func NewConfiguration() *Configuration {
 
 		SessionAuthKey:       base64.StdEncoding.EncodeToString(sessionAuthkey),
 		SessionEncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
+
+		SiteName: "",
+
+		AllowCrossOrigin: false,
 	}
 }
 
@@ -128,7 +143,30 @@ func Load(filename string) (c *Configuration, err error) {
 
 	c = NewConfiguration()
 	err = json.Unmarshal(file, c)
+	if err != nil {
+		return nil, err
+	}
+	if c.SiteName == "" {
+		//Assume we are testing: set the sitename to localhost
+		if c.Port == 80 {
+			c.SiteName = "http://" + c.Hostname
+		} else {
+			c.SiteName = "http://" + c.ConnectionString()
+		}
+	}
+	if !strings.HasPrefix(c.SiteName, "http") {
+		return nil, errors.New("Site name invalid")
+	}
 	return c, err
+}
+
+//String returns a string representation of the configuration
+func (c *Configuration) String() string {
+	b, err := json.MarshalIndent(c, "", "\t")
+	if err != nil {
+		return "ERROR: " + err.Error()
+	}
+	return string(b)
 }
 
 //Save saves the configuration

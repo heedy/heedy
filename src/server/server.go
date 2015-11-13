@@ -72,7 +72,11 @@ func SecurityHeaderHandler(h http.Handler) http.Handler {
 //OptionsHandler on OPTIONS to allow cross-site XMLHTTPRequest, allow access control origin
 func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 	webcore.GetRequestLogger(request, "OPTIONS").Debug()
-	webcore.WriteAccessControlHeaders(writer)
+	webcore.WriteAccessControlHeaders(writer, request)
+
+	//These headers are only needed for the OPTIONS request
+	writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 	writer.WriteHeader(http.StatusOK)
 }
 

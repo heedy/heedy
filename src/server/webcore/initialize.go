@@ -22,5 +22,9 @@ func Initialize(c *config.Configuration) error {
 	//Now initialize the QueryTimer map
 	QueryTimers = make(map[string]*QueryTimer)
 
+	//Set up the server globals
+	AllowCrossOrigin = c.AllowCrossOrigin
+	SiteName = c.SiteName
+
 	return nil
 }

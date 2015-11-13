@@ -10,8 +10,8 @@ bin:
 	cp -r src/dbsetup/config bin/config
 
 resources: bin
-	cp -r src/server/www/ bin/
-	cp -r src/server/app/ bin/
+	cp -r site/www/ bin/
+	cp -r site/app/ bin/
 
 # Rule to go from source go file to binary
 bin/connectordb: src/connectordb.go bin go-dependencies
