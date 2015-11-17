@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"server/restapi/restcore"
+	"server/webcore"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/connectordb/duck"
@@ -63,14 +64,14 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
 	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {
-		return restcore.INFO, ""
+		return webcore.INFO, ""
 	}
 	sdr, ok := dr.(datastream.ExtendedDataRange)
 	if !ok {
 		return restcore.WriteError(writer, logger, http.StatusInternalServerError, errors.New("Internal server error: Unable to convert DataRange to ExtendedDataRange"), true)
 	}
 
-	streamuri := "https://connectordb.com/api/v1/feed/" + streampath + ".atom"
+	streamuri := webcore.SiteName + "/api/v1/feed/" + streampath + ".atom"
 	f := Feed{
 		Title:   streampath,
 		ID:      streamuri,
@@ -90,7 +91,7 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 			authr = usrname + "/" + devname
 		}
 
-		feeduri := "https://connectordb.com/api/v1/crud/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)
+		feeduri := webcore.SiteName + "/api/v1/crud/" + streampath + "/data?i1=" + strconv.FormatInt(i, 10) + "&i2=" + strconv.FormatInt(i+1, 10)
 
 		f.Entry = append(f.Entry, &Entry{
 			Updated: AtomTime(time.Unix(0, int64(dp.Timestamp*1e9))),
@@ -114,5 +115,5 @@ func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(xmlheader)
 	writer.Write(result)
-	return restcore.DEBUG, ""
+	return webcore.DEBUG, ""
 }

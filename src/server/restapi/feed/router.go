@@ -1,12 +1,12 @@
 package feed
 
 import (
-	"server/restapi/restcore"
 	"connectordb"
 	"connectordb/datastream"
 	"connectordb/operator"
 	"connectordb/users"
 	"net/http"
+	"server/restapi/restcore"
 
 	log "github.com/Sirupsen/logrus"
 

@@ -44,6 +44,10 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	//Print out the configuration as we understand it
+	log.Debug(cfg.String())
+
 	return cfg
 }
 

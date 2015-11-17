@@ -1,4 +1,4 @@
-package restcore
+package webcore
 
 import (
 	"connectordb/operator/authoperator"
@@ -13,12 +13,13 @@ import (
 
 var (
 	//The following globals are atomically incremented/decremnted to give statistics
-	StatsAuthFails = uint32(0)
-	StatsQueries   = uint32(0)
-	StatsInserts   = uint32(0)
-	StatsErrors    = uint32(0)
-	StatsPanics    = uint32(0)
-	StatsActive    = int32(0)
+	StatsAuthFails   = uint32(0)
+	StatsRESTQueries = uint32(0)
+	StatsWebQueries  = uint32(0)
+	StatsInserts     = uint32(0)
+	StatsErrors      = uint32(0)
+	StatsPanics      = uint32(0)
+	StatsActive      = int32(0)
 
 	StatsTimePeriod = 1.0 * time.Minute
 
@@ -91,6 +92,17 @@ func toDuration(t float64) time.Duration {
 	return time.Duration(int64(t * 1e9))
 }
 
+//GetQueryTimer gets a query timer. Simple
+func GetQueryTimer(funcname string) *QueryTimer {
+	//Sets up the query timer for this api call if it doesn't exist yet
+	qtimer, ok := QueryTimers[funcname]
+	if !ok {
+		qtimer = &QueryTimer{}
+		QueryTimers[funcname] = qtimer
+	}
+	return qtimer
+}
+
 //RunQueryTimers periodically gets and prints the query average runtime and variance
 func RunQueryTimers() {
 	for {
@@ -117,7 +129,8 @@ func RunStats() {
 	oldact := int32(0)
 	for {
 		time.Sleep(StatsTimePeriod)
-		q := atomic.SwapUint32(&StatsQueries, 0)
+		q := atomic.SwapUint32(&StatsRESTQueries, 0)
+		w := atomic.SwapUint32(&StatsWebQueries, 0)
 		a := atomic.SwapUint32(&StatsAuthFails, 0)
 		i := atomic.SwapUint32(&StatsInserts, 0)
 		e := atomic.SwapUint32(&StatsErrors, 0)
@@ -126,9 +139,9 @@ func RunStats() {
 
 		//Only display stat view if there was something going on
 		if q > 0 || act != oldact {
-			logger := log.WithFields(log.Fields{"queries": q, "authfails": a, "inserts": i, "errors": e, "panics": p, "active": act})
+			logger := log.WithFields(log.Fields{"rest": q, "web": w, "authfails": a, "inserts": i, "errors": e, "active": act})
 			if p > 0 {
-				logger.Warnf("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
+				logger.Warnf("%.2f queries/s (server had panic)", float64(q)/StatsTimePeriod.Seconds())
 			} else {
 				logger.Infof("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
 			}

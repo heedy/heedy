@@ -5,4 +5,6 @@
 - config contains the definitions and code associated with the core ConnectorDB configuration including methods to read and write the config files.
 - server is the code for the frontend server, it includes the rest api and web app and all their associated resources
 
+- site is the code for the front-facing website. It is to be linked with the connectordb_web repository.
+
 - connectordb is the core database code

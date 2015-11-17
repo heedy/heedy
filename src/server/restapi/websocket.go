@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"server/restapi/restcore"
+	"server/webcore"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -173,7 +174,7 @@ func (c *WebsocketConnection) Insert(ws *websocketCommand) {
 		//TODO: Notify user of insert failure
 		logger.Warn(err.Error())
 	} else {
-		atomic.AddUint32(&restcore.StatsInserts, uint32(len(ws.D)))
+		atomic.AddUint32(&webcore.StatsInserts, uint32(len(ws.D)))
 	}
 }
 
@@ -364,8 +365,8 @@ func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan
 				c.updateDeadline(websocket.TextMessage, msg)
 			}
 
-		case <-restcore.ShutdownChannel:
-			restcore.ShutdownChannel <- true
+		case <-webcore.ShutdownChannel:
+			webcore.ShutdownChannel <- true
 			c.updateDeadline(websocket.CloseMessage, "")
 			return
 		}

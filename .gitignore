@@ -17,6 +17,7 @@ _obj
 _test
 bin/
 database_test/
+test/
 src/clients/python/build/
 src/clients/python/dist/
 

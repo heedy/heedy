@@ -20,10 +20,10 @@ func init() {
 		streamdb := cfg.DatabaseDirectory
 		fmt.Printf("Streamdb: %v\n", streamdb)
 
-		redis := cfg.GetRedisUri()
+		redis := cfg.GetRedisURI()
 		fmt.Printf("Redis: %v\n", redis)
 
-		gnatsd := cfg.GetGnatsdUri()
+		gnatsd := cfg.GetGnatsdURI()
 		fmt.Printf("Gnatsd: %v\n", gnatsd)
 		return 0
 	}

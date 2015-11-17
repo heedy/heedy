@@ -1,8 +1,9 @@
 package crud
 
 import (
-	"server/restapi/restcore"
 	"connectordb/operator"
+	"server/restapi/restcore"
+	"server/webcore"
 
 	"net/http"
 
@@ -43,7 +44,7 @@ func CreateUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 
 	}
 	ReadUser(o, writer, request, logger)
-	return restcore.INFO, ""
+	return webcore.INFO, ""
 }
 
 //ReadUser reads the given user
@@ -97,5 +98,5 @@ func DeleteUser(o operator.Operator, writer http.ResponseWriter, request *http.R
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 	restcore.OK(writer)
-	return restcore.INFO, ""
+	return webcore.INFO, ""
 }
