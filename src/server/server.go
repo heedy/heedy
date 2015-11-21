@@ -132,7 +132,7 @@ func RunServer(c *config.Configuration) error {
 	www := "/" + WWWPrefix + "/"
 	r.PathPrefix(www).Handler(http.StripPrefix(www, http.FileServer(http.Dir(WWWPath))))
 	app := "/" + AppPrefix + "/"
-	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(WWWPath))))
+	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(AppPath))))
 
 	//Handle the favicon
 	r.Handle("/favicon.ico", http.RedirectHandler(www+"favicon.ico", http.StatusOK))
