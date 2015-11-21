@@ -3,13 +3,19 @@
 
 all: resources go-dependencies bin/dep/gnatsd bin/connectordb
 
-build: resources bin/connectordb
+build: app resources bin/connectordb
 
 bin:
 	mkdir bin
 	cp -r src/dbsetup/config bin/config
 
-resources: bin
+app:
+	git submodule init
+	git submodule update
+	cd site/app;bower update
+
+
+resources: bin app
 	cp -r site/www/ bin/
 	cp -r site/app/ bin/
 
