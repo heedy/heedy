@@ -1,9 +1,10 @@
 {
-  "name": "connectordb_web",
-  "version": "0.0.0",
-  "homepage": "https://github.com/josephlewis42/connectordb_web",
+  "name": "connectordb",
+  "version": "0.3.0",
+  "homepage": "https://connectordb.com",
   "authors": [
-    "Joseph <joseph@josephlewis.net>"
+    "Joseph <joseph@josephlewis.net>",
+    "Daniel <daniel@dkumor.com>"
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^1.0.0",

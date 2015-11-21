@@ -11,37 +11,37 @@ connectordbApp.config(function($routeProvider) {
     $routeProvider
 
         .when('/', {
-            templateUrl : 'pages/explore.html',
+            templateUrl : '/app/pages/explore.html',
             controller  : 'exploreController'
         })
 
         .when('/calculate', {
-            templateUrl : 'pages/calculate.html',
+            templateUrl : '/app/pages/calculate.html',
             controller  : 'calculateController'
         })
 
         .when('/data', {
-            templateUrl : 'pages/data.html',
+            templateUrl : '/app/pages/data.html',
             controller  : 'dataController'
         })
 
         .when('/data/:devicename/:streamname', {
-            templateUrl : 'pages/stream.html',
+            templateUrl : '/app/pages/stream.html',
             controller  : 'streamController'
         })
 
         .when('/data/:devicename', {
-            templateUrl : 'pages/device.html',
+            templateUrl : '/app/pages/device.html',
             controller  : 'deviceController'
         })
 
         .when('/settings', {
-            templateUrl : 'pages/settings.html',
+            templateUrl : '/app/pages/settings.html',
             controller  : 'settingsController'
         })
 
         .when('/track', {
-            templateUrl : 'pages/track.html',
+            templateUrl : '/app/pages/track.html',
             controller  : 'trackController'
         });
 });
