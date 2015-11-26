@@ -32,6 +32,8 @@ CREATE TABLE Users (
 	Name VARCHAR UNIQUE NOT NULL,
 	Nickname VARCHAR DEFAULT '',
 	Email VARCHAR UNIQUE NOT NULL,
+    Description VARCHAR(1000) DEFAULT '',
+    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
 
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,
@@ -49,6 +51,9 @@ CREATE TABLE Devices (
     DeviceId {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR DEFAULT '',
+    Description VARCHAR(1000) DEFAULT '',
+    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
+
     UserId INTEGER,
     ApiKey VARCHAR NOT NULL,
     Enabled BOOLEAN DEFAULT TRUE,
@@ -71,6 +76,8 @@ CREATE TABLE Streams (
     StreamId {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
+    Description VARCHAR(1000) DEFAULT '',
+    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
     Type VARCHAR NOT NULL,
     DeviceId INTEGER,
     Ephemeral BOOLEAN DEFAULT FALSE,

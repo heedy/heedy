@@ -15,8 +15,10 @@ type Device struct {
 	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
 	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
 	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
+	Description      string `modifiable:"user" json:"description"`                // A public description
+	Icon             string `modifiable:"user" json:"icon"`                       // A public icon in a data URI format, should be smallish 100x100?
 	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
-	ApiKey           string `modifiable:"device" json:"apikey,omitempty"`         // A uuid used as an api key to verify against
+	ApiKey           string `modifiable:"device" json:"apikey"`                   // A uuid used as an api key to verify against
 	Enabled          bool   `modifiable:"user" json:"enabled"`                    // Whether or not this device can do reading and writing
 	IsAdmin          bool   `modifiable:"root" json:"admin,omitempty"`            // Whether or not this is a "superdevice" which has access to the whole API
 	CanWrite         bool   `modifiable:"user" json:"canwrite,omitempty"`         // Can this device write to streams? (inactive right now)
@@ -238,6 +240,8 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 	_, err := userdb.Exec(`UPDATE Devices SET
 	    Name = ?,
 		Nickname = ?,
+		Description = ?,
+		Icon = ?,
 		UserId = ?,
 		ApiKey = ?,
 		Enabled = ?,
@@ -249,6 +253,8 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		UserEditable = ? WHERE DeviceId = ?;`,
 		device.Name,
 		device.Nickname,
+		device.Description,
+		device.Icon,
 		device.UserId,
 		device.ApiKey,
 		device.Enabled,
