@@ -12,10 +12,9 @@ install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests jsonschema websocket-client coverage
-    - make go-dependencies
+    - make deps
 
 script:
-    - make deps
     - make
     - make test
 
