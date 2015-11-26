@@ -122,6 +122,13 @@ type TemplateData struct {
 	User   *users.User
 	Device *users.Device
 	Stream *users.Stream
+
+	//When given a user or device, the user's Devices and device's Streams
+	// are also exposed. When giving Index,
+	//	both the current user's devices and current user's user device's streams
+	//	are sent
+	Devices []users.Device
+	Streams []users.Stream
 }
 
 //GetTemplateData initializes the template
@@ -144,6 +151,16 @@ func Index(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 
+	td.Devices, err = o.ReadAllDevicesByUserID(td.ThisUser.UserId)
+	if err != nil {
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+	}
+
+	td.Streams, err = o.ReadAllStreamsByDeviceID(td.ThisDevice.DeviceId)
+	if err != nil {
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+	}
+
 	writer.WriteHeader(http.StatusOK)
 	AppIndex.Execute(writer, td)
 	return webcore.DEBUG, ""
@@ -157,6 +174,10 @@ func User(o operator.Operator, writer http.ResponseWriter, request *http.Request
 	}
 
 	td.User, err = o.ReadUser(mux.Vars(request)["user"])
+	if err != nil {
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+	}
+	td.Devices, err = o.ReadAllDevicesByUserID(td.User.UserId)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
@@ -179,6 +200,10 @@ func Device(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 	}
 	dev := usr + "/" + mux.Vars(request)["device"]
 	td.Device, err = o.ReadDevice(dev)
+	if err != nil {
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+	}
+	td.Streams, err = o.ReadAllStreamsByDeviceID(td.Device.DeviceId)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
