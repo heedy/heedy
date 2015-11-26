@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/mail"
 	"reflect"
 )
 
@@ -48,7 +49,8 @@ func (u *User) ValidityCheck() error {
 		return ErrInvalidUsername
 	}
 
-	if u.Email == "" {
+	_, err := mail.ParseAddress(u.Email)
+	if err != nil {
 		return ErrInvalidEmail
 	}
 
