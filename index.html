@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html ng-app="connectordbApp">
+<head >
+    <title>ConnectorDB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+
+    <script src="/app/bower_components/webcomponentsjs/webcomponents.js"></script>
+    <!-- SPELLS -->
+    <!-- load angular and angular route via CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-route.js"></script>
+    <script src="/app/index.js"></script>
+
+    <link rel="import" href="/app/bower_components/paper-styles/paper-styles.html">
+    <link rel="import" href="/app/bower_components/polymer/polymer.html">
+    <link rel="import" href="/app/bower_components/iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="/app/bower_components/paper-drawer-panel/paper-drawer-panel.html">
+    <link rel="import" href="/app/bower_components/paper-header-panel/paper-header-panel.html">
+    <link rel="import" href="/app/bower_components/paper-toolbar/paper-toolbar.html">
+    <link rel="import" href="/app/bower_components/paper-material/paper-material.html">
+    <link rel="import" href="/app/bower_components/iron-selector/iron-selector.html">
+    <link rel="import" href="/app/bower_components/iron-iconset-svg/iron-iconset-svg.html">
+    <link rel="import" href="/app/bower_components/iron-icons/iron-icons.html">
+    <link rel="import" href="/app/bower_components/iron-icon/iron-icon.html">
+    <link rel="import" href="/app/components/menuitem/x-cdb-menuitem.html">
+	<link rel="stylesheet" type="text/css" href="/app/assets/css/connectordb.css">
+    <style is="custom-style">
+
+    #connectordb-logo {
+        width: 200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .link {
+        text-decoration: none;
+        color:inherit;
+    }
+
+    paper-drawer-panel {
+        --paper-drawer-panel-main-container: {
+            background-color:  #F0F0F0;
+        };
+    }
+
+    paper-toolbar {
+        --paper-toolbar: {
+            background-color:#009e42;
+        };
+    }
+
+    </style>
+
+</head>
+<body ng-controller="exploreController" unresolved>
+    <paper-drawer-panel drawerWidth="300px">
+
+        <paper-material drawer elevation="3">
+            <paper-header-panel  class="list" id="drawer-pane" shadow>
+                <paper-toolbar>
+                    <img id="connectordb-logo" src="/app/assets/images/title_logo_light_xs.png" alt="ConnectorDB"></img>
+                </paper-toolbar>
+                <x-cdb-menuitem href="#/data" title="{{.ThisUser.Name}}" secondary="Your data" icon="face"></x-cdb-menuitem>
+                <x-cdb-menuitem href="#/" title="Explore" secondary="Find devices and streams" icon="explore"></x-cdb-menuitem>
+                <!--
+                <x-cdb-menuitem href="#/track" title="Track" secondary="log what you're up to" icon="accessibility"></x-cdb-menuitem>
+                <x-cdb-menuitem href="#/calculate" title="Calculate" secondary="count beans DIY style" icon="assessment"></x-cdb-menuitem>
+                <x-cdb-menuitem href="#/settings" title="Settings" secondary="manage your account" icon="build"></x-cdb-menuitem>-->
+                <x-cdb-menuitem href="/logoff/" title="Log Off" secondary="securely leave your session" icon="power-settings-new"></x-cdb-menuitem>
+            </paper-header-panel>
+        </paper-material>
+
+        <div id="scrim" class="style-scope paper-drawer-panel"></div>
+
+        <paper-header-panel main>
+            <paper-toolbar>
+                <iron-icon icon="menu" paper-drawer-toggle></iron-icon>
+            </paper-toolbar>
+
+            <paper-material id="main" elevation="1" class="card">
+                <section ng-view></section>
+            </paper-material>
+        </paper-header-panel>
+    </paper-drawer-panel>
+</body>
+</html>
