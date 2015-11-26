@@ -1,26 +1,27 @@
 
-.PHONY: all clean build test
+.PHONY: all clean build test submodules resources deps
 
-all: resources go-dependencies bin/dep/gnatsd bin/connectordb
 
-build: app resources bin/connectordb
+all: bin/dep/gnatsd bin/connectordb resources
+deps: go-dependencies submodules all
+build: resources bin/connectordb
 
 bin:
 	mkdir bin
 	cp -r src/dbsetup/config bin/config
 
-app:
+submodules:
 	git submodule init
 	git submodule update
-	cd site/app;bower update
 
 
-resources: bin app
+resources: bin
 	cp -r site/www/ bin/
 	cp -r site/app/ bin/
+	cd bin/app;bower update
 
 # Rule to go from source go file to binary
-bin/connectordb: src/connectordb.go bin go-dependencies
+bin/connectordb: src/connectordb.go bin
 	go build -o bin/connectordb src/connectordb.go
 
 clean:
@@ -54,10 +55,10 @@ go-dependencies:
 	go get github.com/stretchr/testify
 
 
-bin/dep/gnatsd: bin/dep go-dependencies
+bin/dep/gnatsd: bin/dep
 	go build -o bin/dep/gnatsd github.com/nats-io/gnatsd
 
-bin/dep:
+bin/dep: bin
 	mkdir -p bin/dep
 
 # specific packages required by the project to run on a host
