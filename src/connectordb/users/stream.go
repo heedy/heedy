@@ -11,11 +11,11 @@ All Rights Reserved
 import (
 	"connectordb/datastream"
 	"connectordb/schema"
-	"util"
 	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
+	"util"
 
 	"github.com/josephlewis42/multicache"
 )
@@ -36,13 +36,15 @@ func init() {
 }
 
 type Stream struct {
-	StreamId  int64  `modifiable:"nobody" json:"-"`
-	Name      string `modifiable:"device" json:"name"`
-	Nickname  string `modifiable:"device" json:"nickname,omitempty"`
-	Type      string `modifiable:"root" json:"type"`
-	DeviceId  int64  `modifiable:"nobody" json:"-"`
-	Ephemeral bool   `modifiable:"device" json:"ephemeral,omitempty"`
-	Downlink  bool   `modifiable:"device" json:"downlink,omitempty"`
+	StreamId    int64  `modifiable:"nobody" json:"-"`
+	Name        string `modifiable:"device" json:"name"`
+	Nickname    string `modifiable:"device" json:"nickname"`
+	Description string `modifiable:"user" json:"description"` // A public description
+	Icon        string `modifiable:"user" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	Type        string `modifiable:"root" json:"type"`
+	DeviceId    int64  `modifiable:"nobody" json:"-"`
+	Ephemeral   bool   `modifiable:"device" json:"ephemeral"`
+	Downlink    bool   `modifiable:"device" json:"downlink"`
 }
 
 func (s *Stream) String() string {
@@ -198,6 +200,8 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 	_, err := userdb.Exec(`UPDATE Streams SET
 	    Name = ?,
 		Nickname = ?,
+		Description = ?,
+		Icon = ?,
 	    Type = ?,
 	    DeviceId = ?,
 	    Ephemeral = ?,
@@ -205,6 +209,8 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 	    WHERE StreamId = ?;`,
 		stream.Name,
 		stream.Nickname,
+		stream.Description,
+		stream.Icon,
 		stream.Type,
 		stream.DeviceId,
 		stream.Ephemeral,

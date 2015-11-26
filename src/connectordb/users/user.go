@@ -18,10 +18,12 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId   int64  `modifiable:"nobody" json:"-"`                // The primary key
-	Name     string `modifiable:"root" json:"name"`               // The public username of the user
-	Nickname string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
-	Email    string `modifiable:"user" json:"email"`              // The user's email address
+	UserId      int64  `modifiable:"nobody" json:"-"`                // The primary key
+	Name        string `modifiable:"root" json:"name"`               // The public username of the user
+	Nickname    string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
+	Email       string `modifiable:"user" json:"email"`              // The user's email address
+	Description string `modifiable:"user" json:"description"`        // A public description
+	Icon        string `modifiable:"user" json:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
 
 	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
 	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
@@ -231,9 +233,19 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE Users SET
-	                Name=?, Nickname=?, Email=?, Password=?, PasswordSalt=?, PasswordHashScheme=?,
-	                Admin=?, UploadLimit_Items=?,
-	                ProcessingLimit_S=?, StorageLimit_Gb=? WHERE UserId = ?`,
+	                Name=?,
+					Nickname=?,
+					Email=?,
+					Password=?,
+					PasswordSalt=?,
+					PasswordHashScheme=?,
+	                Admin=?,
+					UploadLimit_Items=?,
+	                ProcessingLimit_S=?,
+					StorageLimit_Gb=?,
+					Description=?,
+					Icon=?
+					WHERE UserId = ?`,
 		user.Name,
 		user.Nickname,
 		user.Email,
@@ -244,6 +256,8 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		user.UploadLimit_Items,
 		user.ProcessingLimit_S,
 		user.StorageLimit_Gb,
+		user.Description,
+		user.Icon,
 		user.UserId)
 
 	return err
