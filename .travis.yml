@@ -4,7 +4,6 @@ language:
 go:
     - 1.4
 
-
 virtualenv:
     system_site_packages: true
 
@@ -12,7 +11,8 @@ install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests jsonschema websocket-client coverage
-    - make go-dependencies
+    - npm install -g bower
+    - make deps
 
 script:
     - make
