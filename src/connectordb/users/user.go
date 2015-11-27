@@ -19,12 +19,12 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId      int64  `modifiable:"nobody" json:"-"`                // The primary key
-	Name        string `modifiable:"root" json:"name"`               // The public username of the user
-	Nickname    string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
-	Email       string `modifiable:"user" json:"email"`              // The user's email address
-	Description string `modifiable:"user" json:"description"`        // A public description
-	Icon        string `modifiable:"user" json:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
+	UserId      int64  `modifiable:"nobody" json:"-"`                   // The primary key
+	Name        string `modifiable:"root" json:"name"`                  // The public username of the user
+	Nickname    string `modifiable:"user" json:"nickname,omitempty"`    // The nickname of the user
+	Email       string `modifiable:"user" json:"email"`                 // The user's email address
+	Description string `modifiable:"user" json:"description,omitempty"` // A public description
+	Icon        string `modifiable:"user" json:"icon,omitempty"`        // A public icon in a data URI format, should be smallish 100x100?
 
 	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
 	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password

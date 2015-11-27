@@ -20,6 +20,9 @@ var (
 
 	//CookieMonster is the handler for authentication based on cookies
 	CookieMonster *securecookie.SecureCookie
+
+	//The time in seconds to keep a cookie valid
+	CookieMaxAge = 60 * 60 * 24 * 30 * 4
 )
 
 // Authenticate gets the authenticated device Operator given an http.Request
@@ -59,7 +62,7 @@ func Authenticate(db *connectordb.Database, request *http.Request) (operator.Ope
 }
 
 //CreateSessionCookie generates the authentication cookie from an authenticated user
-func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter) error {
+func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, remember bool) error {
 	if o == nil {
 		//If the operator is nil, we delete the cookie
 		cookie := &http.Cookie{
@@ -84,6 +87,12 @@ func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter) error 
 		Value: encoded,
 		Path:  "/",
 	}
+
+	//Check for a "remember" parameter in cookie
+	if remember {
+		cookie.MaxAge = CookieMaxAge
+	}
+
 	http.SetCookie(writer, cookie)
 
 	return nil

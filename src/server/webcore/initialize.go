@@ -26,5 +26,7 @@ func Initialize(c *config.Configuration) error {
 	AllowCrossOrigin = c.AllowCrossOrigin
 	SiteName = c.SiteName
 
+	CookieMaxAge = c.Session.MaxAge
+
 	return nil
 }

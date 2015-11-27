@@ -153,7 +153,7 @@ func RunServer(c *config.Configuration) error {
 	//Run the dbwriter
 	go db.RunWriter()
 
-	log.Infof("Running ConnectorDB v%s at %s:%d", connectordb.Version, c.Hostname, c.Port)
+	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.SiteName)
 
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", c.Hostname, c.Port), nil)
 }

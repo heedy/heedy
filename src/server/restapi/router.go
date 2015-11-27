@@ -50,17 +50,24 @@ func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *h
 //Login handles logging in and out of the web interface. In particular, it handles the auth cookies, and
 //the web interface uses them for the rest
 func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	err := webcore.CreateSessionCookie(o, writer)
+	val, ok := request.URL.Query()["remember"]
+	rememberme := (ok && val[0] == "true")
+	err := webcore.CreateSessionCookie(o, writer, rememberme)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 	}
 	restcore.OK(writer)
+
+	if rememberme {
+		return webcore.DEBUG, "remember me"
+	}
 	return webcore.DEBUG, ""
+
 }
 
 //Logout hondles logging out of the web interface. It deletes the auth cookie
 func Logout(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	webcore.CreateSessionCookie(nil, writer) //nil operator deletes the cookie
+	webcore.CreateSessionCookie(nil, writer, false) //nil operator deletes the cookie
 	restcore.OK(writer)
 	return webcore.DEBUG, ""
 }

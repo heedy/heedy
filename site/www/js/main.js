@@ -21,7 +21,7 @@ function login() {
 			xhrFields: {
 				withCredentials: true
 			},
-			url: "/api/v1/login",
+			url: "/api/v1/login?remember=true",
 			success: function(data) {
 					location.reload(true);
 			},

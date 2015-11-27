@@ -15,8 +15,8 @@ type Device struct {
 	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
 	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
 	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
-	Description      string `modifiable:"user" json:"description"`                // A public description
-	Icon             string `modifiable:"user" json:"icon"`                       // A public icon in a data URI format, should be smallish 100x100?
+	Description      string `modifiable:"device" json:"description,omitempty"`    // A public description
+	Icon             string `modifiable:"device" json:"icon,omitempty"`           // A public icon in a data URI format, should be smallish 100x100?
 	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
 	ApiKey           string `modifiable:"device" json:"apikey"`                   // A uuid used as an api key to verify against
 	Enabled          bool   `modifiable:"user" json:"enabled"`                    // Whether or not this device can do reading and writing
