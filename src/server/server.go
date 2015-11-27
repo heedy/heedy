@@ -119,6 +119,9 @@ func RunServer(c *config.Configuration) error {
 
 	r := mux.NewRouter()
 
+	//Allow for the application to match /path and /path/ to the same place.
+	r.StrictSlash(true)
+
 	//Setup the 404 handler
 	r.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
 
@@ -129,9 +132,9 @@ func RunServer(c *config.Configuration) error {
 	restapi.Router(db, s)
 
 	//The app and web prefixes are served directly from the correct directories
-	www := "/" + WWWPrefix + "/"
+	www := "/" + WWWPrefix
 	r.PathPrefix(www).Handler(http.StripPrefix(www, http.FileServer(http.Dir(WWWPath))))
-	app := "/" + AppPrefix + "/"
+	app := "/" + AppPrefix
 	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(AppPath))))
 
 	//Handle the favicon
