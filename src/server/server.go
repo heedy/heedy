@@ -138,7 +138,8 @@ func RunServer(c *config.Configuration) error {
 	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(AppPath))))
 
 	//Handle the favicon
-	r.Handle("/favicon.ico", http.RedirectHandler(www+"favicon.ico", http.StatusOK))
+	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusOK))
+	r.Handle("/robots.txt", http.RedirectHandler(www+"/robots.txt", http.StatusOK))
 
 	//Now load the user/device/stream paths
 	r.HandleFunc("/", Authenticator(WWWIndex, Index, db)).Methods("GET")

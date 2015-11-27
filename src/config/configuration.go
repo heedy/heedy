@@ -124,7 +124,7 @@ func NewConfiguration() *Configuration {
 			Enabled:  false,
 		},
 
-		DisallowedNames: []string{"support", "www", "api", "app"},
+		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt"},
 
 		//The defaults to use for the batch and chunks
 		BatchSize: 250,
@@ -197,7 +197,7 @@ func (c *Configuration) InitMissing() error {
 		c.Session.MaxAge = 60 * 60 * 24 * 30 * 4
 	}
 	if len(c.DisallowedNames) == 0 {
-		c.DisallowedNames = []string{"support", "www", "api", "app"}
+		c.DisallowedNames = []string{"support", "www", "api", "app", "favicon.ico", "robots.txt"}
 	}
 
 	return nil
