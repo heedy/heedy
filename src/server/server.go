@@ -9,6 +9,7 @@ import (
 	"server/restapi"
 	"server/restapi/restcore"
 	"server/webcore"
+	"server/website"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -82,31 +83,23 @@ func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
 
 // NotFoundHandler handles 404 errors for the whole server
 func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
-	logger := webcore.GetRequestLogger(request, "404")
-
 	if strings.HasPrefix(request.URL.Path, "/api") {
+		logger := webcore.GetRequestLogger(request, "404")
 		//If this is a REST API call, write a REST-like error
 		atomic.AddUint32(&webcore.StatsRESTQueries, 1)
 		restcore.WriteError(writer, logger, http.StatusNotFound, errors.New("This path is not recognized"), false)
 		return
 	}
 
-	//TODO: Show logged-in 404 page if logged in
+	//Otherwise, we assume that it is the web not found handler
+	website.NotFoundHandler(writer, request)
 
-	//We give the overall 404 page
-	logger.Debug("")
-	writer.WriteHeader(http.StatusNotFound)
-	WWW404.Execute(writer, nil)
 }
 
 //RunServer runs the ConnectorDB frontend server
 func RunServer(c *config.Configuration) error {
 	SetFileLimit()
 	err := webcore.Initialize(c)
-	if err != nil {
-		return err
-	}
-	err = LoadFiles()
 	if err != nil {
 		return err
 	}
@@ -129,23 +122,16 @@ func RunServer(c *config.Configuration) error {
 
 	//The rest api has its own versioned url
 	s := r.PathPrefix("/api/v1").Subrouter()
-	restapi.Router(db, s)
+	_, err = restapi.Router(db, s)
+	if err != nil {
+		return err
+	}
 
-	//The app and web prefixes are served directly from the correct directories
-	www := "/" + WWWPrefix
-	r.PathPrefix(www).Handler(http.StripPrefix(www, http.FileServer(http.Dir(WWWPath))))
-	app := "/" + AppPrefix
-	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(AppPath))))
-
-	//Handle the favicon
-	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusSeeOther))
-	r.Handle("/robots.txt", http.RedirectHandler(www+"/robots.txt", http.StatusSeeOther))
-
-	//Now load the user/device/stream paths
-	r.HandleFunc("/", Authenticator(WWWIndex, Index, db)).Methods("GET")
-	r.HandleFunc("/{user}", Authenticator(WWWLogin, User, db)).Methods("GET")
-	r.HandleFunc("/{user}/{device}", Authenticator(WWWLogin, Device, db)).Methods("GET")
-	r.HandleFunc("/{user}/{device}/{stream}", Authenticator(WWWLogin, Stream, db)).Methods("GET")
+	//The website is initialized at /
+	_, err = website.Router(db, r)
+	if err != nil {
+		return err
+	}
 
 	//Set up the web server
 	http.Handle("/", SecurityHeaderHandler(r))

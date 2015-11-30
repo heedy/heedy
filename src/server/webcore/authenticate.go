@@ -62,7 +62,7 @@ func Authenticate(db *connectordb.Database, request *http.Request) (operator.Ope
 }
 
 //CreateSessionCookie generates the authentication cookie from an authenticated user
-func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, remember bool) error {
+func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
 	if o == nil {
 		//If the operator is nil, we delete the cookie
 		cookie := &http.Cookie{
@@ -88,9 +88,12 @@ func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, rememb
 		Path:  "/",
 	}
 
-	//Check for a "remember" parameter in cookie
-	if remember {
-		cookie.MaxAge = CookieMaxAge
+	//Check a remember me param
+	if request != nil {
+		val, ok := request.URL.Query()["remember"]
+		if ok && val[0] == "true" {
+			cookie.MaxAge = CookieMaxAge
+		}
 	}
 
 	http.SetCookie(writer, cookie)

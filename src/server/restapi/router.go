@@ -50,24 +50,19 @@ func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *h
 //Login handles logging in and out of the web interface. In particular, it handles the auth cookies, and
 //the web interface uses them for the rest
 func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	val, ok := request.URL.Query()["remember"]
-	rememberme := (ok && val[0] == "true")
-	err := webcore.CreateSessionCookie(o, writer, rememberme)
+	err := webcore.CreateSessionCookie(o, writer, request)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
 	}
 	restcore.OK(writer)
 
-	if rememberme {
-		return webcore.DEBUG, "remember me"
-	}
 	return webcore.DEBUG, ""
 
 }
 
 //Logout hondles logging out of the web interface. It deletes the auth cookie
 func Logout(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	webcore.CreateSessionCookie(nil, writer, false) //nil operator deletes the cookie
+	webcore.CreateSessionCookie(nil, writer, request) //nil operator deletes the cookie
 	restcore.OK(writer)
 	return webcore.DEBUG, ""
 }
@@ -83,7 +78,7 @@ func (r restcloser) Close() {
 }
 
 //Router returns a fully formed Gorilla router given an optional prefix
-func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
+func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}
@@ -111,5 +106,5 @@ func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 	//Now that things are running, we want the ability to do a clean shutdown of REST
 	util.CloseOnExit(restcloser{})
 
-	return prefix
+	return prefix, nil
 }
