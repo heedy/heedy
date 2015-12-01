@@ -1,4 +1,4 @@
-package server
+package website
 
 import (
 	"html/template"

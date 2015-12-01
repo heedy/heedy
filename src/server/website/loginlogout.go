@@ -1,0 +1,32 @@
+package website
+
+import (
+	"connectordb/operator"
+	"net/http"
+	"server/webcore"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+)
+
+// Login handles login to the system without the api call (direct web interface)
+func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	webcore.CreateSessionCookie(o, writer, request)
+	http.Redirect(writer, request, "/", http.StatusFound)
+
+	return webcore.DEBUG, ""
+}
+
+// LogoutHandler handles log out of the system without an api call (direct web interface)
+func LogoutHandler(writer http.ResponseWriter, request *http.Request) {
+	tstart := time.Now()
+	logger := webcore.GetRequestLogger(request, "logout")
+
+	//We don't need the "op" here
+	delete(logger.Data, "op")
+
+	webcore.CreateSessionCookie(nil, writer, request) //nil operator deletes the cookie
+	http.Redirect(writer, request, "/", http.StatusFound)
+
+	webcore.LogRequest(logger, webcore.DEBUG, "", time.Since(tstart))
+}

@@ -1,10 +1,12 @@
 
-.PHONY: all clean build test submodules resources deps
-
+.PHONY: all clean build test submodules resources deps phony
 
 all: bin/dep/gnatsd bin/connectordb resources
 deps: go-dependencies submodules all
 build: resources bin/connectordb
+
+#Empty rule for forcing rebuilds
+phony:
 
 bin:
 	mkdir bin
@@ -21,7 +23,7 @@ resources: bin
 	cd bin/app;bower update
 
 # Rule to go from source go file to binary
-bin/connectordb: src/connectordb.go bin
+bin/connectordb: src/connectordb.go bin phony
 	go build -o bin/connectordb src/connectordb.go
 
 clean:

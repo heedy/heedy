@@ -19,18 +19,18 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId      int64  `modifiable:"nobody" json:"-"`                // The primary key
-	Name        string `modifiable:"root" json:"name"`               // The public username of the user
-	Nickname    string `modifiable:"user" json:"nickname,omitempty"` // The nickname of the user
-	Email       string `modifiable:"user" json:"email"`              // The user's email address
-	Description string `modifiable:"user" json:"description"`        // A public description
-	Icon        string `modifiable:"user" json:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
+	UserId      int64  `modifiable:"nobody" json:"-"`         // The primary key
+	Name        string `modifiable:"root" json:"name"`        // The public username of the user
+	Nickname    string `modifiable:"user" json:"nickname"`    // The nickname of the user
+	Email       string `modifiable:"user" json:"email"`       // The user's email address
+	Description string `modifiable:"user" json:"description"` // A public description
+	Icon        string `modifiable:"user" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password
+	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
 	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
 	PasswordHashScheme string `modifiable:"user" json:"-"`                  // A string representing the hashing scheme used
 
-	Admin bool `modifiable:"root" json:"admin,omitempty"` // True/False if this is an administrator
+	Admin bool `modifiable:"root" json:"admin"` // True/False if this is an administrator
 
 	//Since we temporarily don't use limits, I have disabled cluttering results with them on json output
 	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day

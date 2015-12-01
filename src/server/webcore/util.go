@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 
@@ -88,6 +89,6 @@ func HandlePanic(logger *log.Entry) {
 	if r := recover(); r != nil {
 		atomic.AddInt32(&StatsActive, -1)
 		atomic.AddUint32(&StatsPanics, 1)
-		logger.Errorln("PANIC: " + r.(error).Error())
+		logger.Errorf("PANIC: %s\n\n%s\n\n", r.(error).Error(), debug.Stack())
 	}
 }

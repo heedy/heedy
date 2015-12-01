@@ -39,8 +39,8 @@ type Stream struct {
 	StreamId    int64  `modifiable:"nobody" json:"-"`
 	Name        string `modifiable:"device" json:"name"`
 	Nickname    string `modifiable:"device" json:"nickname"`
-	Description string `modifiable:"user" json:"description"` // A public description
-	Icon        string `modifiable:"user" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	Description string `modifiable:"device" json:"description"` // A public description
+	Icon        string `modifiable:"device" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 	Type        string `modifiable:"root" json:"type"`
 	DeviceId    int64  `modifiable:"nobody" json:"-"`
 	Ephemeral   bool   `modifiable:"device" json:"ephemeral"`

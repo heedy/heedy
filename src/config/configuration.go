@@ -40,6 +40,13 @@ func (s *Service) GetSqlConnectionString() string {
 	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
 }
 
+//Session refers to a cookie session
+type Session struct {
+	AuthKey       string `json:"authkey"`       //The key used to sign sessions
+	EncryptionKey string `json:"encryptionkey"` //The key used to encrypt sessions in cookies
+	MaxAge        int    `json:"maxage"`        //The maximum age of a cookie in a session (seconds)
+}
+
 //Configuration corresponds to the overall settings of ConnectorBD
 type Configuration struct {
 	Version int `json:"version"` //The database version that the configuration uses
@@ -70,8 +77,7 @@ type Configuration struct {
 	//The following options are for the ConnectorDB server
 	AllowJoin bool `json:"allow_join"` //Whether or not to permit adding of users through web interface
 
-	SessionAuthKey       string `json:"session_authkey"`       //The key used to sign sessions
-	SessionEncryptionKey string `json:"session_encryptionkey"` //The key used to encrypt sessions in cookies
+	Session Session `json:"session"` //The session cookies to allow in the website
 
 	SiteName string `json:"sitename"` //The site to use for requests and stuff
 
@@ -118,14 +124,17 @@ func NewConfiguration() *Configuration {
 			Enabled:  false,
 		},
 
-		DisallowedNames: []string{"support", "www", "api"},
+		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt"},
 
 		//The defaults to use for the batch and chunks
 		BatchSize: 250,
 		ChunkSize: 5,
 
-		SessionAuthKey:       base64.StdEncoding.EncodeToString(sessionAuthkey),
-		SessionEncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
+		Session: Session{
+			AuthKey:       base64.StdEncoding.EncodeToString(sessionAuthkey),
+			EncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
+			MaxAge:        60 * 60 * 24 * 30 * 4, //About 4 months is the default expiration time of a cookie
+		},
 
 		SiteName: "",
 
@@ -146,6 +155,17 @@ func Load(filename string) (c *Configuration, err error) {
 	if err != nil {
 		return nil, err
 	}
+	err = c.InitMissing()
+
+	return c, err
+}
+
+// InitMissing Sets up missing values with reasonable defaults
+func (c *Configuration) InitMissing() error {
+	if c.Hostname == "" {
+		c.Hostname = "localhost"
+	}
+
 	if c.SiteName == "" {
 		//Assume we are testing: set the sitename to localhost
 		if c.Port == 80 {
@@ -155,9 +175,32 @@ func Load(filename string) (c *Configuration, err error) {
 		}
 	}
 	if !strings.HasPrefix(c.SiteName, "http") {
-		return nil, errors.New("Site name invalid")
+		return errors.New("Site name invalid")
 	}
-	return c, err
+
+	if c.BatchSize <= 0 {
+		c.BatchSize = 250
+	}
+	if c.ChunkSize <= 0 {
+		c.ChunkSize = 5
+	}
+
+	if c.Session.AuthKey == "" {
+		sessionAuthkey := securecookie.GenerateRandomKey(64)
+		c.Session.AuthKey = base64.StdEncoding.EncodeToString(sessionAuthkey)
+	}
+	if c.Session.EncryptionKey == "" {
+		sessionEncKey := securecookie.GenerateRandomKey(32)
+		c.Session.EncryptionKey = base64.StdEncoding.EncodeToString(sessionEncKey)
+	}
+	if c.Session.MaxAge <= 0 {
+		c.Session.MaxAge = 60 * 60 * 24 * 30 * 4
+	}
+	if len(c.DisallowedNames) == 0 {
+		c.DisallowedNames = []string{"support", "www", "api", "app", "favicon.ico", "robots.txt"}
+	}
+
+	return nil
 }
 
 //String returns a string representation of the configuration
@@ -181,20 +224,20 @@ func (c *Configuration) Save(filepath string) error {
 //GetSessionAuthKey returns the bytes associated with the config string
 func (c *Configuration) GetSessionAuthKey() ([]byte, error) {
 	//If no session key is in config, generate one
-	if c.SessionAuthKey == "" {
+	if c.Session.AuthKey == "" {
 		return securecookie.GenerateRandomKey(64), nil
 	}
 
-	return base64.StdEncoding.DecodeString(c.SessionAuthKey)
+	return base64.StdEncoding.DecodeString(c.Session.AuthKey)
 }
 
 //GetSessionEncryptionKey returns the bytes associated with the config string
 func (c *Configuration) GetSessionEncryptionKey() ([]byte, error) {
 	//If no session encryption key is in config, generate one
-	if c.SessionEncryptionKey == "" {
+	if c.Session.EncryptionKey == "" {
 		return securecookie.GenerateRandomKey(32), nil
 	}
-	return base64.StdEncoding.DecodeString(c.SessionEncryptionKey)
+	return base64.StdEncoding.DecodeString(c.Session.EncryptionKey)
 }
 
 //GetSqlConnectionString Returns the database connection string for the current database
