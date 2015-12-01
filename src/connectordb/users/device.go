@@ -12,18 +12,18 @@ import (
 // Devices are general purposed external and internal data users,
 //
 type Device struct {
-	DeviceId         int64  `modifiable:"nobody" json:"-"`                        // The primary key of this device
-	Name             string `modifiable:"user" json:"name"`                       // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname         string `modifiable:"device" json:"nickname"`                 // The human readable name of this device
-	Description      string `modifiable:"device" json:"description,omitempty"`    // A public description
-	Icon             string `modifiable:"device" json:"icon,omitempty"`           // A public icon in a data URI format, should be smallish 100x100?
-	UserId           int64  `modifiable:"root" json:"-"`                          // the user that owns this device
-	ApiKey           string `modifiable:"device" json:"apikey"`                   // A uuid used as an api key to verify against
-	Enabled          bool   `modifiable:"user" json:"enabled"`                    // Whether or not this device can do reading and writing
-	IsAdmin          bool   `modifiable:"root" json:"admin,omitempty"`            // Whether or not this is a "superdevice" which has access to the whole API
-	CanWrite         bool   `modifiable:"user" json:"canwrite,omitempty"`         // Can this device write to streams? (inactive right now)
-	CanWriteAnywhere bool   `modifiable:"user" json:"canwriteanywhere,omitempty"` // Can this device write to others streams? (inactive right now)
-	CanActAsUser     bool   `modifiable:"user" json:"user,omitempty"`             // Can this device operate as a user? (inactive right now)
+	DeviceId         int64  `modifiable:"nobody" json:"-"`           // The primary key of this device
+	Name             string `modifiable:"user" json:"name"`          // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname         string `modifiable:"device" json:"nickname"`    // The human readable name of this device
+	Description      string `modifiable:"device" json:"description"` // A public description
+	Icon             string `modifiable:"device" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	UserId           int64  `modifiable:"root" json:"-"`             // the user that owns this device
+	ApiKey           string `modifiable:"device" json:"apikey"`      // A uuid used as an api key to verify against
+	Enabled          bool   `modifiable:"user" json:"enabled"`       // Whether or not this device can do reading and writing
+	IsAdmin          bool   `modifiable:"root" json:"admin"`         // Whether or not this is a "superdevice" which has access to the whole API
+	CanWrite         bool   `modifiable:"user" json:"-"`             // Can this device write to streams? (inactive right now)
+	CanWriteAnywhere bool   `modifiable:"user" json:"-"`             // Can this device write to others streams? (inactive right now)
+	CanActAsUser     bool   `modifiable:"user" json:"user"`          // Can this device operate as a user? (inactive right now)
 	IsVisible        bool   `modifiable:"root" json:"visible"`
 	UserEditable     bool   `modifiable:"root" json:"-"`
 }
