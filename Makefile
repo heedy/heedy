@@ -2,7 +2,7 @@
 .PHONY: all clean build test submodules resources deps phony
 
 all: bin/dep/gnatsd bin/connectordb resources
-deps: go-dependencies submodules all
+deps: go-dependencies submodules
 build: resources bin/connectordb
 
 #Empty rule for forcing rebuilds
