@@ -1,12 +1,13 @@
 package config
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -52,6 +53,10 @@ type Configuration struct {
 	Version int `json:"version"` //The database version that the configuration uses
 
 	Service //This represents the overall connectordb frontend hostname/port
+
+	//These two options enable https on the server
+	TLSKey  string `json:"tls_key"`
+	TLSCert string `json:"tls_cert"`
 
 	Redis Service `json:"redis"`
 	Nats  Service `json:"nats"`
@@ -155,9 +160,31 @@ func Load(filename string) (c *Configuration, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//Before loading files from the configuration, we must change the cwd to the config directory, and then change it back to the current one
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	err = os.Chdir(filepath.Dir(filename))
+	if err != nil {
+		return nil, err
+	}
+
 	err = c.InitMissing()
 
+	//Now we move back to the current working directory
+	err = os.Chdir(cwd)
+	if err != nil {
+		return nil, err
+	}
+
 	return c, err
+}
+
+// TLSEnabled returns whether the server is to run in https mode
+func (c *Configuration) TLSEnabled() bool {
+	return c.TLSCert != "" && c.TLSKey != ""
 }
 
 // InitMissing Sets up missing values with reasonable defaults
@@ -168,14 +195,20 @@ func (c *Configuration) InitMissing() error {
 
 	if c.SiteName == "" {
 		//Assume we are testing: set the sitename to localhost
-		if c.Port == 80 {
-			c.SiteName = "http://" + c.Hostname
+		if (c.Port == 80 && !c.TLSEnabled()) || (c.Port == 443 && c.TLSEnabled()) {
+			//No need to include port number
+			c.SiteName = c.Hostname
 		} else {
-			c.SiteName = "http://" + c.ConnectionString()
+			c.SiteName = c.ConnectionString()
 		}
 	}
-	if !strings.HasPrefix(c.SiteName, "http") {
-		return errors.New("Site name invalid")
+	if !strings.HasPrefix(c.SiteName, "http://") && !strings.HasPrefix(c.SiteName, "https://") {
+		//Site name does not start with http - so we choose it based upon whether tls is enabled
+		if c.TLSEnabled() {
+			c.SiteName = "https://" + c.SiteName
+		} else {
+			c.SiteName = "http://" + c.SiteName
+		}
 	}
 
 	if c.BatchSize <= 0 {
@@ -198,6 +231,25 @@ func (c *Configuration) InitMissing() error {
 	}
 	if len(c.DisallowedNames) == 0 {
 		c.DisallowedNames = []string{"support", "www", "api", "app", "favicon.ico", "robots.txt"}
+	}
+
+	//Make sure the TLS cert and key are valid
+	if c.TLSCert != "" || c.TLSKey != "" {
+		log.Debug("Checking TLS Keys")
+		_, err := tls.LoadX509KeyPair(c.TLSCert, c.TLSKey)
+		if err != nil {
+			return err
+		}
+
+		//Set the file paths to be full paths
+		c.TLSCert, err = filepath.Abs(c.TLSCert)
+		if err != nil {
+			return err
+		}
+		c.TLSKey, err = filepath.Abs(c.TLSKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
