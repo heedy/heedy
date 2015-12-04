@@ -1,6 +1,7 @@
 package website
 
 import (
+	"connectordb"
 	"connectordb/operator"
 	"net/http"
 	"server/webcore"
@@ -71,7 +72,7 @@ func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
 	//TODO: Make the LoggedIn404 work here
 
 	// And a not-logged-in 404 page
-	WWW404.Execute(writer, nil)
+	WWW404.Execute(writer, map[string]interface{}{"Version": connectordb.Version})
 
 	//We give the overall 404 page
 	logger.Debug("")

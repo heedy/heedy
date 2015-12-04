@@ -144,6 +144,11 @@ func RunServer(c *config.Configuration) error {
 	go db.RunWriter()
 
 	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.SiteName)
+	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", c.Hostname, c.Port), nil)
+	//Run an https server if we are given tls cert and key
+	if c.TLSKey != "" && c.TLSCert != "" {
+		return http.ListenAndServeTLS(listenhost, c.TLSCert, c.TLSKey, nil)
+	}
+	return http.ListenAndServe(listenhost, nil)
 }

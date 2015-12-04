@@ -63,7 +63,7 @@ func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectord
 
 		//If we got here, the user is not logged in. We therefore execute the "www" template given
 		www.Execute(writer, map[string]string{
-			"version": connectordb.Version,
+			"Version": connectordb.Version,
 		})
 
 		webcore.LogRequest(logger, webcore.DEBUG, "", time.Since(tstart))

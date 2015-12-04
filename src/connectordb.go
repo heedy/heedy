@@ -78,6 +78,11 @@ func runConnectorDBCallback(c *cli.Context) {
 	//The run command allows to set the host and port to run server on
 	cfg.Hostname = c.String("host")
 	cfg.Port = uint16(c.Int("port"))
+	if c.Bool("http") {
+		log.Info("Running in http-only mode")
+		cfg.TLSKey = ""
+		cfg.TLSCert = ""
+	}
 
 	err := server.RunServer(cfg)
 	if err != nil {
@@ -225,6 +230,10 @@ func main() {
 					Name:  "port, p",
 					Value: 8000,
 					Usage: "The port on which to run the ConnectorDB server",
+				},
+				cli.BoolFlag{
+					Name:  "http",
+					Usage: "forces server to run in http mode even when TLS cert/key are in conf",
 				},
 			},
 		},
