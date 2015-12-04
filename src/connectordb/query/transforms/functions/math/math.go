@@ -18,7 +18,7 @@ var floor = transforms.Transform{
 		transforms.TransformArg{
 			Description: "The value to take the floor of.",
 			Constant:    false,
-			Optional:    false,
+			Optional:    true,
 		},
 	},
 	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
@@ -34,7 +34,7 @@ var abs = transforms.Transform{
 		transforms.TransformArg{
 			Description: "The value to take the absolute value of.",
 			Constant:    false,
-			Optional:    false,
+			Optional:    true,
 		},
 	},
 	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
@@ -50,7 +50,7 @@ var ceil = transforms.Transform{
 		transforms.TransformArg{
 			Description: "The value to take the ceiling value of.",
 			Constant:    false,
-			Optional:    false,
+			Optional:    true,
 		},
 	},
 	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
@@ -66,7 +66,7 @@ var sqrt = transforms.Transform{
 		transforms.TransformArg{
 			Description: "The value to take the square root of.",
 			Constant:    false,
-			Optional:    false,
+			Optional:    true,
 		},
 	},
 	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
@@ -82,7 +82,7 @@ var ln = transforms.Transform{
 		transforms.TransformArg{
 			Description: "The value to take the log base 2 of.",
 			Constant:    false,
-			Optional:    false,
+			Optional:    true,
 		},
 	},
 	Generator: transforms.UnaryOperatorGenerator(func(value float64) (float64, error) {
