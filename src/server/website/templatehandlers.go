@@ -1,6 +1,7 @@
 package website
 
 import (
+	"connectordb"
 	"connectordb/operator"
 	"connectordb/users"
 	"net/http"
@@ -32,6 +33,9 @@ type TemplateData struct {
 	//And some extra status info
 	Status string
 	Ref    string
+
+	//The Database Version
+	Version string
 }
 
 //GetTemplateData initializes the template
@@ -44,6 +48,7 @@ func GetTemplateData(o operator.Operator) (*TemplateData, error) {
 	return &TemplateData{
 		ThisUser:   thisU,
 		ThisDevice: thisD,
+		Version:    connectordb.Version,
 	}, err
 }
 
