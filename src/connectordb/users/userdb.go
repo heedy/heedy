@@ -1,12 +1,15 @@
-// Package users provides an API for managing user information.
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package users
 
 // BUG(joseph) This should be moved to gorp once they support strong foreign key constraints
 // right now we can't risk it without them
 
 import (
-	"dbsetup/dbutil"
 	"database/sql"
+	"dbsetup/dbutil"
 	"errors"
 	"strings"
 
