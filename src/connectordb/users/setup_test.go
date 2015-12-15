@@ -1,13 +1,11 @@
-package users
-
 /**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+
 This file provides the initialization of the test procedures
 
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
-All Rights Reserved
 **/
+package users
 
 import (
 	"config"

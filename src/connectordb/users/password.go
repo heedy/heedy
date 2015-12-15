@@ -1,11 +1,15 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package users
 
 import (
-	"github.com/nu7hatch/gouuid"
 	"crypto/sha512"
 	"encoding/hex"
-)
 
+	"github.com/nu7hatch/gouuid"
+)
 
 // calcHash calculates the user hash for the given password, salt and hashing
 // scheme
@@ -25,7 +29,7 @@ func calcHash(password, salt, scheme string) string {
 }
 
 // Receives a plaintext password and returns the password, salt and type.
-func UpgradePassword(password string) (string, string, string){
+func UpgradePassword(password string) (string, string, string) {
 	salt, _ := uuid.NewV4()
 	saltstr := salt.String()
 

@@ -1,3 +1,10 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+
+This file contains the functions for "devices". A device is maps to a real-world
+device or service that can read a user's data and write to its streams.
+**/
 package users
 
 import (

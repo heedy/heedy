@@ -1,3 +1,12 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+
+CacheMiddleware provides an in-memory locally safe cache for various
+get commands.
+
+BUG: This should be disabled when using a cluster.
+**/
 package users
 
 import (
@@ -6,9 +15,6 @@ import (
 	"github.com/josephlewis42/multicache"
 )
 
-/** CacheMiddleware provides an in-memory locally safe cache for various
-get commands.
-**/
 type CacheMiddleware struct {
 	UserDatabase // the parent
 

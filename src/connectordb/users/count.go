@@ -1,14 +1,10 @@
-package users
-
 /**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 
 Provides the ability to count the number of users/devices/streams in the database
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-
-All Rights Reserved
-
 **/
+package users
 
 func (userdb *SqlUserDatabase) CountUsers() (uint64, error) {
 	var output uint64

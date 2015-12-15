@@ -1,4 +1,10 @@
-// Package users provides an API for managing user information.
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+
+This file provides the ability to revert fields that cannot be edited for
+a particular user/device/stream by a particular user.
+**/
 package users
 
 import (

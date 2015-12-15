@@ -1,7 +1,10 @@
-package users
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 
-/** This is the a middleware that counts the number of calls to the database.
+This is the a middleware that counts the number of calls to the database.
 **/
+package users
 
 import "sync/atomic"
 

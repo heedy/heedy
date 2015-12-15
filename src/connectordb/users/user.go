@@ -1,4 +1,7 @@
-// Package users provides an API for managing user information.
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package users
 
 import (

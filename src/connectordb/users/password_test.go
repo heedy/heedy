@@ -1,20 +1,14 @@
-package users
-
 /**
-This file provides testing for the password management functions
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
-All Rights Reserved
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 **/
+package users
 
 import (
 	"testing"
 )
 
-
-func TestCalcHash(t *testing.T){
+func TestCalcHash(t *testing.T) {
 	h1 := calcHash("password", "", "")
 	h2 := calcHash("password", "", "SHA512")
 	h3 := calcHash("password", "a", "SHA512")

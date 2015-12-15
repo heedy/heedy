@@ -1,12 +1,8 @@
-package users
-
 /**
-Tests the functions in couint.go
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-
-All Rights Reserved
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 **/
+package users
 
 import (
 	"fmt"
