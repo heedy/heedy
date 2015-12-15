@@ -15,6 +15,11 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
+var (
+	//The last configuration that was loaded, acts as a singleton.
+	lastLoadedConfiguration *Configuration = NewConfiguration()
+)
+
 //SqlType is the type of sql database used
 const SqlType = "postgres"
 
@@ -87,6 +92,8 @@ type Configuration struct {
 	SiteName string `json:"sitename"` //The site to use for requests and stuff
 
 	AllowCrossOrigin bool `json:"allowcrossorigin"` //Whether the site options permit CORS
+
+	AllowedEmailSuffixes []string `json:"allowed_email_suffixes"`
 }
 
 //NewConfiguration generates a configuration for the database.
@@ -172,12 +179,17 @@ func Load(filename string) (c *Configuration, err error) {
 	}
 
 	err = c.InitMissing()
+	if err != nil {
+		return nil, err
+	}
 
 	//Now we move back to the current working directory
 	err = os.Chdir(cwd)
 	if err != nil {
 		return nil, err
 	}
+
+	lastLoadedConfiguration = c
 
 	return c, err
 }
@@ -297,7 +309,7 @@ func (c *Configuration) GetSqlConnectionString() string {
 	return c.Sql.GetSqlConnectionString()
 }
 
-//Options generates the ConnectorDB optinos based upon the given configuration
+//Options generates the ConnectorDB options based upon the given configuration
 func (c *Configuration) Options() *Options {
 	opt := NewOptions()
 
@@ -322,4 +334,26 @@ func (c *Configuration) GetRedisURI() string {
 // GetGnatsdURI gets the gnatsd "uri" no prefix appended; it'll be in the format host:port
 func (c *Configuration) GetGnatsdURI() string {
 	return fmt.Sprintf("%s:%d", c.Nats.Hostname, c.Nats.Port)
+}
+
+// IsAllowedEmail checks in the configuration's AllowedEmailSuffixes to see if
+// the given email address is valid allowed to sign up.
+func (c *Configuration) IsAllowedEmail(emailAddress string) bool {
+	if len(c.AllowedEmailSuffixes) == 0 {
+		return true
+	}
+
+	for _, suffix := range c.AllowedEmailSuffixes {
+		if strings.HasSuffix(emailAddress, suffix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GetSystemConfiguration returns the last loaded configuration or a new one
+// if none has been set.
+func GetSystemConfiguration() *Configuration {
+	return lastLoadedConfiguration
 }

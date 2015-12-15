@@ -2,6 +2,7 @@
 package users
 
 import (
+	"config"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ var (
 	ErrInvalidEmail    = errors.New("Invalid Email Address")
 	ErrEmailExists     = errors.New("A user already exists with this email")
 	ErrUsernameExists  = errors.New("A user already exists with this username")
+	ErrDisallowedEmail = errors.New("The email domain you specified is not valid")
 )
 
 // User is the storage type for rows of the database.
@@ -57,6 +59,9 @@ func (u *User) ValidityCheck() error {
 	if u.PasswordSalt == "" || u.PasswordHashScheme == "" {
 		return ErrInvalidPassword
 	}
+
+	// NOTE: we DO NOT check for allowed email domains here, a user can change
+	// their preferred email address once they're in the system
 
 	return nil
 }
@@ -114,6 +119,8 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 			return ErrUsernameExists
 		case !IsValidName(Name):
 			return ErrInvalidUsername
+		case !config.GetSystemConfiguration().IsAllowedEmail(Email):
+			return ErrDisallowedEmail
 		}
 	}
 

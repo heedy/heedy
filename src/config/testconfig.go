@@ -1,5 +1,7 @@
 package config
 
+import "fmt"
+
 //TestConfiguration is the configuratino used when testing the database
 var TestConfiguration = Configuration{
 	Version: 1,
@@ -46,3 +48,22 @@ var TestConfiguration = Configuration{
 
 //TestOptions is the options of tests
 var TestOptions = TestConfiguration.Options()
+
+func ExampleConfiguration_IsAllowedEmail() {
+	cfg := Configuration{}
+	fmt.Printf("%v\n", cfg.IsAllowedEmail("foo@bar.com"))
+
+	cfg.AllowedEmailSuffixes = []string{"bar.com", "baz.com"}
+
+	fmt.Printf("%v\n", cfg.IsAllowedEmail("foo@foo.com"))
+	fmt.Printf("%v\n", cfg.IsAllowedEmail("foo@bar.com"))
+	fmt.Printf("%v\n", cfg.IsAllowedEmail("foo@baz.com"))
+	fmt.Printf("%v\n", cfg.IsAllowedEmail("foo@subdomain.baz.com"))
+
+	// Output:
+	// true
+	// false
+	// true
+	// true
+	// true
+}
