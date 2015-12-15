@@ -21,12 +21,12 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 	}
 	u, err2 := uuid.NewV4()
 	if err2 != nil {
-		logger.WithField("ref", "OSHIT").Errorln("Failed to generate error UUID: " + err2.Error())
-		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
+		logger.WithField("ref", "WEBERR").Errorln("Failed to generate error UUID: " + err2.Error())
+		logger.WithField("ref", "WEBERR").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 
 		errmap["msg"] = "Failed to generate error UUID"
-		errmap["ref"] = "OSHIT"
+		errmap["ref"] = "WEBERR"
 		return webcore.INFO, ""
 	}
 	errmap["ref"] = u.String()
