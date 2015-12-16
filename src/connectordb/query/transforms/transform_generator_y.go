@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 //line pipeline_generator.y:6
 package transforms
 

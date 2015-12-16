@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datastream
 
 //StreamRange is a ExtendedDataRange that combines the redis and sql data into one coherent stream

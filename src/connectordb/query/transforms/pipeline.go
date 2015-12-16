@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package transforms
 
 // This is the key pipeline structure.

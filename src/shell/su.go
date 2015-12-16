@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package shell
 
 /* Starts a new shell as a given user to contain permissions

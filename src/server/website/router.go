@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package website
 
 //Router returns a fully formed Gorilla router given an optional prefix
