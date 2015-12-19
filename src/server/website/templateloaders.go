@@ -101,14 +101,18 @@ func NewFileTemplate(fpath string, err error) (*FileTemplate, error) {
 
 // Reload loads up the template from the file path
 func (f *FileTemplate) Reload() error {
+	log.Infof("Reloading file: '%s'", f.FilePath)
 	file, err := ioutil.ReadFile(f.FilePath)
 	if err != nil {
+		log.Warn(err.Error())
 		return err
 	}
 
 	tmpl, err := template.New(f.FilePath).Parse(string(file))
 	if err != nil {
-		return fmt.Errorf("Failed to parse '%s': %v", f.FilePath, err.Error())
+		err = fmt.Errorf("Failed to parse '%s': %v", f.FilePath, err.Error())
+		log.Warn(err.Error())
+		return err
 	}
 	f.Lock()
 	f.Template = tmpl
@@ -123,12 +127,7 @@ func (f *FileTemplate) Watch() {
 		select {
 		case event := <-f.Watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				//We reload the file
-				log.Infof("Reloading file: '%s'", f.FilePath)
-				err := f.Reload()
-				if err != nil {
-					log.Warn(err.Error())
-				}
+				f.Reload()
 			} else if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
 				log.Warningf("File '%s' removed. Using cached version.", f.FilePath)
 				f.Watcher.Remove(f.FilePath)
@@ -141,11 +140,9 @@ func (f *FileTemplate) Watch() {
 
 						err = f.Watcher.Add(f.FilePath)
 						if err == nil {
-							log.Infof("Reloading file: '%s'", f.FilePath)
-							err := f.Reload()
+							err = f.Reload()
 							if err == nil {
-								go f.Watch()
-								return
+								break
 							}
 							log.Warn(err.Error())
 						}
