@@ -35,6 +35,7 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	//Handle the favicon
 	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusMovedPermanently))
 	r.Handle("/robots.txt", http.RedirectHandler(www+"/robots.txt", http.StatusMovedPermanently))
+	r.Handle("/sitemap.xml", http.RedirectHandler(www+"/sitemap.xml", http.StatusMovedPermanently))
 
 	// These functions are actually fairly standard for login/logout across different apps
 	// so we make them work the same way here
