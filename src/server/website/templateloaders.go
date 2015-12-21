@@ -5,11 +5,14 @@ Licensed under the MIT license.
 package website
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
+	"os"
 	"path"
 	"sync"
+	"time"
 
 	"github.com/kardianos/osext"
 	"gopkg.in/fsnotify.v1"
@@ -96,30 +99,60 @@ func NewFileTemplate(fpath string, err error) (*FileTemplate, error) {
 	return ft, nil
 }
 
+// Reload loads up the template from the file path
+func (f *FileTemplate) Reload() error {
+	log.Infof("Reloading file: '%s'", f.FilePath)
+	file, err := ioutil.ReadFile(f.FilePath)
+	if err != nil {
+		log.Warn(err.Error())
+		return err
+	}
+
+	tmpl, err := template.New(f.FilePath).Parse(string(file))
+	if err != nil {
+		err = fmt.Errorf("Failed to parse '%s': %v", f.FilePath, err.Error())
+		log.Warn(err.Error())
+		return err
+	}
+	f.Lock()
+	f.Template = tmpl
+	f.Unlock()
+
+	return nil
+}
+
 //Watch is run in the background to watch for changes in the template files
 func (f *FileTemplate) Watch() {
 	for {
 		select {
 		case event := <-f.Watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				//We reload the file
-				log.Infof("Reloading file: '%s'", f.FilePath)
-				file, err := ioutil.ReadFile(f.FilePath)
-				if err != nil {
-					log.Errorf("Could not read '%s'", f.FilePath)
-				} else {
-					tmpl, err := template.New(f.FilePath).Parse(string(file))
-					if err != nil {
-						log.Errorf("Failed to parse '%s'", f.FilePath)
-					} else {
-						f.Lock()
-						f.Template = tmpl
-						f.Unlock()
+				f.Reload()
+			} else if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
+				log.Warningf("File '%s' removed. Using cached version.", f.FilePath)
+				f.Watcher.Remove(f.FilePath)
+
+				// Keep trying to see if the file exists until it is found again
+				for {
+					time.Sleep(2 * time.Second)
+					v, err := os.Stat(f.FilePath)
+					if err == nil && !v.IsDir() {
+
+						err = f.Watcher.Add(f.FilePath)
+						if err == nil {
+							err = f.Reload()
+							if err == nil {
+								break
+							}
+							log.Warn(err.Error())
+						}
+
 					}
 				}
+
 			}
 		case err := <-f.Watcher.Errors:
-			log.Printf("Watcher for '%s' failed: %s", f.FilePath, err.Error())
+			log.Errorf("Watcher for '%s' failed: %s", f.FilePath, err.Error())
 			return
 		case <-f.done:
 			return
@@ -138,6 +171,7 @@ func (f *FileTemplate) Execute(w io.Writer, data interface{}) error {
 // Close shuts down the file template
 func (f *FileTemplate) Close() {
 	f.Watcher.Close()
+	f.done <- true
 }
 
 //LoadFiles sets up all the necessary files
