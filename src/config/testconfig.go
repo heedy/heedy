@@ -37,3 +37,6 @@ var TestConfiguration = func() Configuration {
 
 	return *c
 }()
+
+//TestOptions is the options of tests
+var TestOptions = TestConfiguration.Options()
