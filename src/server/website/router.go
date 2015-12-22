@@ -12,11 +12,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Screw it, let's just use a global database
+var Database *connectordb.Database
+
 // Router handles the website
 func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	if r == nil {
 		r = mux.NewRouter()
 	}
+
+	Database = db
 
 	err := LoadFiles()
 	if err != nil {
@@ -42,7 +47,9 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	r.Handle("/logout", http.HandlerFunc(LogoutHandler)).Methods("GET")
 	r.Handle("/login", Authenticator(WWWLogin, Login, db)).Methods("GET")
 
-	r.Handle("/join", http.HandlerFunc(JoinHandler)).Methods("GET")
+	// Handle creation of new users
+	r.Handle("/join", http.HandlerFunc(JoinHandleGET)).Methods("GET")
+	r.Handle("/join", http.HandlerFunc(JoinHandlePOST)).Methods("POST")
 
 	//Now load the user/device/stream paths
 	r.HandleFunc("/", Authenticator(WWWIndex, Index, db)).Methods("GET")

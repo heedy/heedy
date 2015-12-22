@@ -23,3 +23,15 @@ func (userdb *SqlUserDatabase) CountDevices() (uint64, error) {
 	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices;")
 	return output, err
 }
+
+func (userdb *SqlUserDatabase) CountStreamsForDevice(DeviceID int64) (uint64, error) {
+	var output uint64
+	err := userdb.Get(&output, "SELECT COUNT(StreamId) FROM Streams WHERE DeviceId = ?;", DeviceID)
+	return output, err
+}
+
+func (userdb *SqlUserDatabase) CountDevicesForUser(UserID int64) (uint64, error) {
+	var output uint64
+	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices WHERE UserId = ?;", UserID)
+	return output, err
+}

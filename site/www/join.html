@@ -23,6 +23,7 @@
         <form id="msform">
             <!-- progressbar -->
         	<img id="connectordb-logo" src="/www/img/title_logo_light_xs.png" alt="ConnectorDB"></img>
+            {{if .Join}}
         	<div id="container">
         	<ul id="progressbar">
         		<li class="active">Account</li>
@@ -68,13 +69,18 @@
         		<input type="button" name="previous" class="previous action-button" value="Previous" />
         		<input type="submit" name="submit" class="submit action-button" value="Submit" />
         	</fieldset>
+            {{else}}
+            <h2 style="color: white; text-align: center; width: 400px; height: 300px; position:absolute; top: 50%; left: 50%; margin-left: -200px;margin-top:-150px;">{{ .ErrMsg }}</h2>
+    {{end}}
         </form>
+        
     </div>
+    
     </div>
 
         <div id="footer">
             ConnectorDB {{ .Version }}<br/>
-            &copy; 2015 The <a href="http://connectordb.org" >ConnectorDB</a> contributors.<br/>Login theme based upon example by <a href="http://codepen.io/atakan/pen/gqbIz">Atakan Goktepe</a>.
+            &copy; 2015 The <a href="http://connectordb.org" >ConnectorDB</a> contributors.<br/>Theme based upon example by <a href="http://codepen.io/atakan/pen/gqbIz">Atakan Goktepe</a>.
         </div>
 
 

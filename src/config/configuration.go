@@ -49,6 +49,13 @@ type Configuration struct {
 	// The email suffixes that are permitted during user creation
 	AllowedEmailSuffixes []string `json:"allowed_email_suffixes"`
 
+	// The maximum number of users to allow. 0 means don't allow any new users, and -1 means unlimited
+	// number of users
+	MaxUsers int `json:"max_users"`
+
+	// The specific permissions granted to different user types
+	Permissions map[string]Permissions `json:"permissions"`
+
 	// The following are exported fields that are used internally, and are not available to json.
 	// This is honestly just lazy programming on my part - I am using the config struct as a temporary variable
 	// placeholder when creating/starting a database... So technically it is part of the configuration, but it is
@@ -106,6 +113,21 @@ func NewConfiguration() *Configuration {
 
 		// Disallowed names are names that would conflict with the ConnectorDB frontend
 		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login"},
+
+		// Allow an arbitrary number of users by default
+		MaxUsers: -1,
+
+		Permissions: map[string]Permissions{
+			"nobody": {
+				Join: false,
+			},
+			"user": {
+				Join: false,
+			},
+			"admin": {
+				Join: true,
+			},
+		},
 	}
 }
 

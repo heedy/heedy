@@ -14,6 +14,11 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
+// Validate ensures that the given permissions have all correct values
+func (p Permissions) Validate() error {
+	return nil
+}
+
 // Validate takes a session and makes sure that all of the keys and fields are set up correctly
 func (s *Session) Validate() error {
 	if s.AuthKey == "" {
@@ -91,10 +96,31 @@ func (c *Configuration) Validate() error {
 		return errors.New("Chunk size must be >=0")
 	}
 
+	// Make sure the permissions are all valid
+	hadNobody := false
+	hadUser := false
+	hadAdmin := false
+	for key := range c.Permissions {
+		if key == "admin" {
+			hadAdmin = true
+		}
+		if key == "user" {
+			hadUser = true
+		}
+		if key == "nobody" {
+			hadNobody = true
+		}
+		if err := c.Permissions[key].Validate(); err != nil {
+			return err
+		}
+	}
+	if !(hadNobody && hadUser && hadAdmin) {
+		return errors.New("There must be at least user, admin, and nobody permissions set.")
+	}
+
 	// Now let's validate the frontend
 	if err := c.Frontend.Validate(); err != nil {
 		return err
 	}
-
 	return nil
 }
