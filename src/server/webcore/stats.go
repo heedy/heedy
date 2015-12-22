@@ -27,7 +27,7 @@ var (
 
 	StatsTimePeriod = 1.0 * time.Minute
 
-	QueryTimers     = map[string]*QueryTimer{}
+	QueryTimers     = make(map[string]*QueryTimer)
 	QueryTimePeriod = 24 * time.Hour
 )
 

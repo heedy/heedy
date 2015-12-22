@@ -122,7 +122,9 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 			return ErrUsernameExists
 		case !IsValidName(Name):
 			return ErrInvalidUsername
-		case !config.GetSystemConfiguration().IsAllowedEmail(Email):
+		case !config.Get().IsAllowedUsername(Name):
+			return ErrInvalidUsername
+		case !config.Get().IsAllowedEmail(Email):
 			return ErrDisallowedEmail
 		}
 	}

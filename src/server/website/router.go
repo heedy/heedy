@@ -42,6 +42,8 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	r.Handle("/logout", http.HandlerFunc(LogoutHandler)).Methods("GET")
 	r.Handle("/login", Authenticator(WWWLogin, Login, db)).Methods("GET")
 
+	r.Handle("/join", http.HandlerFunc(JoinHandler)).Methods("GET")
+
 	//Now load the user/device/stream paths
 	r.HandleFunc("/", Authenticator(WWWIndex, Index, db)).Methods("GET")
 	r.HandleFunc("/{user}", Authenticator(WWWLogin, User, db)).Methods("GET")

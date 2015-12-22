@@ -6,7 +6,6 @@ package shell
 
 import (
 	"bufio"
-	"config"
 	"connectordb"
 	"connectordb/operator"
 	"connectordb/users"
@@ -37,13 +36,6 @@ const (
   \___\___/_||_|_||_\___\__|\__\___/_| |___/|___/ |___/_||_\___|_|_|
 `
 )
-
-var cfg = config.NewConfiguration()
-
-//Sets the configuration
-func SetConfiguration(c *config.Configuration) {
-	cfg = c
-}
 
 func startShellExec(sdb *connectordb.Database, args []string) error {
 	if len(args) == 0 {

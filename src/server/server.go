@@ -101,12 +101,18 @@ func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 //RunServer runs the ConnectorDB frontend server
-func RunServer(c *config.Configuration) error {
+func RunServer() error {
 	SetFileLimit()
+
+	// Gets the global server configuration
+	c := config.Get()
+
 	err := webcore.Initialize(c)
 	if err != nil {
 		return err
 	}
+	// Reload webcore settings on config change
+	config.OnChangeCallback(webcore.Initialize)
 
 	//Connect using the configuration
 	db, err := connectordb.Open(c.Options())
@@ -147,7 +153,7 @@ func RunServer(c *config.Configuration) error {
 	//Run the dbwriter
 	go db.RunWriter()
 
-	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.SiteName)
+	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.SiteURL())
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
