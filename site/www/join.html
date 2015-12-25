@@ -13,6 +13,9 @@
         <link rel="stylesheet" href="/www/css/normalize.css">
         <link rel="stylesheet" href="/www/css/main.css">
         <script src="/www/js/vendor/modernizr-2.8.3.min.js"></script>
+        {{if .Captcha}}
+        <script src='https://www.google.com/recaptcha/api.js'></script>
+        {{end}}
     </head>
     <body>
         <!--[if lt IE 8]>
@@ -36,18 +39,21 @@
         	<fieldset>
         		<h2 class="fs-title">Account Setup</h2>
         		<h3 class="fs-subtitle">Step 1 of becoming a cyborg</h3>
-        		<input type="text" name="fname" placeholder="First Name" />
-        		<input type="text" name="lname" placeholder="Last Name" />
-        		<input type="email" name="email" placeholder="Email" />
+        		<input type="text" name="fname" id="fname" placeholder="First Name" />
+        		<input type="text" name="lname" id="lname" placeholder="Last Name" />
+        		<input type="email" name="email" id="email" placeholder="Email" />
+                {{ if .Captcha }}
+                <div class="g-recaptcha" data-sitekey="{{.SiteKey}}"></div>
+                {{end}}
         		<input type="button" name="next" class="next action-button" value="Next" />
         	</fieldset>
 
         	<fieldset>
         		<h2 class="fs-title">Your Goals</h2>
         		<h3 class="fs-subtitle">Research shows that writing down your goals is the first step to achieving them. ConnectorDB will track your progress towards the goals you write below.</h3>
-        		<input type="text" name="goal1" placeholder="Exercise" />
-        		<input type="text" name="goal2" placeholder="Learn Python programming" />
-        		<input type="text" name="goal3" placeholder="Waste less time on the internet" />
+        		<input type="text" name="goal1" id="goal1" placeholder="Exercise" />
+        		<input type="text" name="goal2" id="goal2" placeholder="Learn Python programming" />
+        		<input type="text" name="goal3" id="goal3" placeholder="Waste less time on the internet" />
         		<p class="fs-text">Hint: Try to make your goals something actionable.
         			"Lose Weight" is not something you can get up and do. "Exercise" is.</p>
         			<p class="fs-text">Hint 2: Remember that ConnectorDB is an experiement. We might be able to help you achieve goals for which there is a clear TODO list, but we don't think our algorithms can help you cure cancer...</p>
@@ -60,18 +66,19 @@
         		<h2 class="fs-title">Star Rankings</h2>
         		<h3 class="fs-subtitle">Your devices will gather some data for you,
         			but ConnectorDB relies on your rankings to see what you think of your life.</h3>
-        		<input type="text" name="rank1" placeholder="Productivity" />
-        		<input type="text" name="rank2" placeholder="Motivation" />
-        		<input type="text" name="rank3" placeholder="Mood" />
-        		<input type="text" name="rank4" placeholder="Social" />
-        		<input type="text" name="rank3" placeholder="Health" />
+        		<input type="text" name="rank1" id="rank1" placeholder="Productivity" />
+        		<input type="text" name="rank2" id="rank2" placeholder="Motivation" />
+        		<input type="text" name="rank3" id="rank3" placeholder="Mood" />
+        		<input type="text" name="rank4" id="rank4" placeholder="Social" />
+        		<input type="text" name="rank5" id="rank5" placeholder="Health" />
         		<p class="fs-text">Each box you fill out will correspond to a 10-star rating that you will be prompted to fill in once a day.</p>
         		<input type="button" name="previous" class="previous action-button" value="Previous" />
         		<input type="submit" name="submit" class="submit action-button" value="Submit" />
         	</fieldset>
             {{else}}
+            <!-- If there was an error or if join is disabled for some reason -->
             <h2 style="color: white; text-align: center; width: 400px; height: 300px; position:absolute; top: 50%; left: 50%; margin-left: -200px;margin-top:-150px;">{{ .ErrMsg }}</h2>
-    {{end}}
+            {{end}}
         </form>
         
     </div>
@@ -131,7 +138,33 @@
         });
 
         $(".submit").click(function(){
-        	return false;
+            // Set up the structure that will be sent to create the new user
+            
+            var dat = {
+                    {{ if .Captcha }}
+                    captcha: grecaptcha.getResponse(),
+                    {{ end}}
+                    name: $("#fname").val(),
+                };
+            console.log(dat);
+            $.ajax({
+                url: '/join',
+                type: "POST",
+                xhrFields: {
+                    withCredentials: true
+                },
+                data: JSON.stringify(dat),
+                success: function(msg) {
+                    location.href="/";
+                },
+                error: function(xhr, textStatus, errorThrown){
+                   var response = JSON.parse(xhr.responseText);
+                   console.log(response);
+                   alert("Could not add user: "+response.msg);
+                }
+                
+            });
+        	return false
         })
 
         </script>

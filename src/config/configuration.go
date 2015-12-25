@@ -105,6 +105,11 @@ func NewConfiguration() *Configuration {
 				EncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
 				MaxAge:        60 * 60 * 24 * 30 * 4, //About 4 months is the default expiration time of a cookie
 			},
+
+			// By default, captcha is disabled
+			Captcha: Captcha{
+				Enabled: false,
+			},
 		},
 
 		//The defaults to use for the batch and chunks

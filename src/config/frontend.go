@@ -11,6 +11,13 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
+// Captcha allows using reCaptcha to ensure logins are real users
+type Captcha struct {
+	Enabled    bool   `json:"enabled"`
+	SiteKey    string `json:"site_key"`
+	SiteSecret string `json:"site_secret"`
+}
+
 // Session refers to a cookie session
 type Session struct {
 	AuthKey       string `json:"authkey"`       //The key used to sign sessions
@@ -63,6 +70,8 @@ type Frontend struct {
 	// for TLS to be enabled
 	TLSKey  string `json:"tls_key"`
 	TLSCert string `json:"tls_cert"`
+
+	Captcha Captcha `json:"captcha"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
