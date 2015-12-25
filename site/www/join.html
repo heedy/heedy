@@ -40,9 +40,14 @@
         		<h2 class="fs-title">Account Setup</h2>
         		<h3 class="fs-subtitle">Step 1 of becoming a cyborg</h3>
         		<input type="text" name="fname" id="fname" placeholder="First Name" />
-        		<input type="text" name="lname" id="lname" placeholder="Last Name" />
+        		<input type="text" name="lname" id="lname" placeholder="Last Name" onchange="updateName();" />
         		<input type="email" name="email" id="email" placeholder="Email" />
+                <hr />
+                <input type="text" name="username" id="username" placeholder="Username" onchange="disableUpdateName();"/>
+                <input type="password" name="password" id="password" placeholder="Password" />
+                <input type="password" name="password2" id="password2" placeholder="Retype Password" onchange="checkPasswordMatch();" />
                 {{ if .Captcha }}
+                <hr />
                 <div class="g-recaptcha" data-sitekey="{{.SiteKey}}"></div>
                 {{end}}
         		<input type="button" name="next" class="next action-button" value="Next" />
@@ -56,22 +61,23 @@
         		<input type="text" name="goal3" id="goal3" placeholder="Waste less time on the internet" />
         		<p class="fs-text">Hint: Try to make your goals something actionable.
         			"Lose Weight" is not something you can get up and do. "Exercise" is.</p>
-        			<p class="fs-text">Hint 2: Remember that ConnectorDB is an experiement. We might be able to help you achieve goals for which there is a clear TODO list, but we don't think our algorithms can help you cure cancer...</p>
+        			<p class="fs-text">Remember that ConnectorDB is an experiment.
+                    We don't yet know how much we can improve people's lives (if at all).</p>
         		<input type="button" name="previous" class="previous action-button" value="Previous" />
         		<input type="button" name="next" class="next action-button" value="Next" />
         	</fieldset>
 
 
         	<fieldset>
-        		<h2 class="fs-title">Star Rankings</h2>
+        		<h2 class="fs-title">Star Ratings</h2>
         		<h3 class="fs-subtitle">Your devices will gather some data for you,
-        			but ConnectorDB relies on your rankings to see what you think of your life.</h3>
+        			but ConnectorDB relies on your ratings to see what you think of your life.</h3>
         		<input type="text" name="rank1" id="rank1" placeholder="Productivity" />
         		<input type="text" name="rank2" id="rank2" placeholder="Motivation" />
         		<input type="text" name="rank3" id="rank3" placeholder="Mood" />
         		<input type="text" name="rank4" id="rank4" placeholder="Social" />
         		<input type="text" name="rank5" id="rank5" placeholder="Health" />
-        		<p class="fs-text">Each box you fill out will correspond to a 10-star rating that you will be prompted to fill in once a day.</p>
+        		<p class="fs-text">Each box you fill out will correspond to a 5-star rating that you will be prompted to fill in once a day.</p>
         		<input type="button" name="previous" class="previous action-button" value="Previous" />
         		<input type="submit" name="submit" class="submit action-button" value="Submit" />
         	</fieldset>
@@ -98,7 +104,28 @@
 
 
         <script>
-
+        
+        var isvalidchange = true;
+        // On change text
+        function updateName() {
+            if (isvalidchange) {
+                var firstname = $("#fname").val();
+                if (firstname.length > 0) {
+                    firstname = firstname[0]
+                }
+                $("#username").val((firstname + $("#lname").val()).toLowerCase());
+            }
+        }
+        function disableUpdateName() {
+            isvalidchange = false;
+        }
+        function checkPasswordMatch() {
+            if ($("#password").val()!=$("#password2").val()) {
+                alert("Passwords do not match");
+            }
+        }
+        
+        
         //jQuery time
         var current_fs, next_fs, previous_fs; //fieldsets
         var left, opacity, scale; //fieldset properties which we will animate
@@ -109,8 +136,8 @@
         		next.fadeIn(200,fdone);
         	})
         }
-
-        $(".next").click(function(){
+        
+        function showNext(){
         	if(animating) return false;
         	animating = true;
 
@@ -122,7 +149,9 @@
 
         	animator(current_fs,next_fs,function() {animating=false;});
 
-        });
+        }
+
+        $(".next").click(showNext);
 
         $(".previous").click(function(){
         	if(animating) return false;
@@ -139,14 +168,65 @@
 
         $(".submit").click(function(){
             // Set up the structure that will be sent to create the new user
-            
             var dat = {
                     {{ if .Captcha }}
                     captcha: grecaptcha.getResponse(),
-                    {{ end}}
-                    name: $("#fname").val(),
+                    {{ end }}
+                    name: $("#username").val(),
+                    nickname: $("#fname").val(),
+                    email: $("#email").val(),
+                    password: $("#password").val(),
+                    streams: [],
                 };
-            console.log(dat);
+                
+            //Validate the data
+            
+            // Make sure that the name,nickname,email and password are set up correctly.
+            if (dat.name=="" || dat.nickname=="" || dat.email=="" || dat.password=="" || dat.password!=$("#password2").val()) {
+                alert("Please fill in all of the fields under ACCOUNT");
+                return false;
+            }
+            
+            // Now set up the streams
+            var hadrating = false;
+            for (i=1;i<= 5;i++) {
+                val = $("#rank"+i).val()
+                if (val.replace(/\s+/g, '').toLowerCase()!="") {
+                hadrating = true;
+                    dat.streams.push({
+                        name: "rating_"+ val.replace(/\s+/g, '').toLowerCase(),
+                        nickname: val,
+                        description: val + " 5 star rating",
+                        schema: {type: "integer",minimum: 0, maximum: 5},
+                    });
+                }
+            }
+            if (!hadrating) {
+                alert("Come on, fill in at least one rating!");
+                return false;
+            }
+            hadrating=false;
+            for (i=1;i<= 3;i++) {
+                val = $("#goal"+i).val()
+                if (val.replace(/\s+/g, '').toLowerCase()!="") {
+                    hadrating = true;
+                    dat.streams.push({
+                        name: "goal_"+ val.replace(/\s+/g, '').toLowerCase(),
+                        nickname: val,
+                        description: "A life goal",
+                        schema: {type: "object",  properties: { 
+                            hours: {type: "number",minimum: 0},
+                            summary: {type: "string"}}},
+                    });
+                }
+            }
+            if (!hadrating) {
+                alert("Really? No goals in life? Maybe ConnectorDB isn't for you...");
+                return false;
+            }
+            
+            
+            console.log(JSON.stringify(dat));
             $.ajax({
                 url: '/join',
                 type: "POST",
@@ -164,7 +244,7 @@
                 }
                 
             });
-        	return false
+        	return false;
         })
 
         </script>

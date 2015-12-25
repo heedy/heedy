@@ -7,13 +7,17 @@ package website
 import (
 	"config"
 	"connectordb"
+	"connectordb/operator"
+	"connectordb/users"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"server/restapi/restcore"
 	"server/webcore"
+	"time"
 )
 
 type recaptchaResponse struct {
@@ -84,6 +88,7 @@ func checkIfJoinAllowed(request *http.Request) error {
 
 // JoinHandleGET handles joining ConnectorDB - the frontend of joining (ie GET)
 func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
+	tstart := time.Now()
 	logger := webcore.GetRequestLogger(request, "join")
 	err := checkIfJoinAllowed(request)
 	msg := ""
@@ -91,8 +96,6 @@ func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 		msg = err.Error()
 	}
 	cfg := config.Get()
-
-	logger.Debug(msg)
 
 	writer.WriteHeader(http.StatusOK)
 	WWWJoin.Execute(writer, map[string]interface{}{
@@ -102,33 +105,38 @@ func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 		"Captcha": cfg.Captcha.Enabled,
 		"SiteKey": cfg.Captcha.SiteKey,
 	})
+	webcore.LogRequest(logger, webcore.DEBUG, msg, time.Since(tstart))
 }
 
 type JoinStream struct {
-	Name        string
-	Nickname    string
-	Description string
-	Icon        string
-	Schema      string
-}
-
-type JoinDevice struct {
-}
-
-type JoinUser struct {
-	Name     string
-	Password string
-	Nickname string
+	Name        string      `json:"name"`
+	Nickname    string      `json:"nickname"`
+	Description string      `json:"description"`
+	Icon        string      `json:"icon"`
+	Schema      interface{} `json:"schema"`
 }
 
 type Joiner struct {
-	Captcha string `json:"captcha"`
-	Name    string `json:"name"`
+	Captcha  string       `json:"captcha"`
+	Name     string       `json:"name"`
+	Nickname string       `json:"nickname"`
+	Email    string       `json:"email"`
+	Password string       `json:"password"`
+	Icon     string       `json:"icon"`
+	Streams  []JoinStream `json:"streams"`
 }
 
 // JoinHandlePOST handles the actual user creation based upon the given structure
 func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
+
+	tstart := time.Now()
+
 	var j Joiner
+	var schema []byte
+	var usr *users.User
+	var dev *users.Device
+	var strm *users.Stream
+	var uo operator.Operator
 	logger := webcore.GetRequestLogger(request, "JOIN")
 
 	// First check if join is allowed at all
@@ -157,6 +165,73 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	}
-	logger.Info("Join Succeeded")
+	db := operator.NewOperator(Database)
+	// OK - now set up the user
+	err = db.CreateUser(j.Name, j.Email, j.Password)
+	if err != nil {
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+		return
+	}
+
+	// Now update the user with nickname/icon
+
+	usr, err = db.ReadUser(j.Name)
+	if err != nil {
+		goto errfail
+	}
+	usr.Nickname = j.Nickname
+	usr.Icon = j.Icon
+	err = db.UpdateUser(usr)
+	if err != nil {
+		db.DeleteUser(j.Name)
+		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+		return
+	}
+
+	// Now create the streams using the user's operator
+	uo, err = operator.NewUserOperator(Database, j.Name)
+
+	// Now create the streams
+	dev, err = uo.ReadDeviceByUserID(usr.UserId, "user")
+	if err != nil {
+		goto errfail
+	}
+	for i := range j.Streams {
+		schema, err = json.Marshal(j.Streams[i].Schema)
+		if err != nil {
+			goto errfail
+		}
+
+		err = uo.CreateStreamByDeviceID(dev.DeviceId, j.Streams[i].Name, string(schema))
+		if err != nil {
+			goto errfail
+		}
+
+		// Now update the stream with the extra values
+		strm, err = uo.ReadStreamByDeviceID(dev.DeviceId, j.Streams[i].Name)
+		if err != nil {
+			goto errfail
+		}
+
+		strm.Nickname = j.Streams[i].Nickname
+		strm.Icon = j.Streams[i].Icon
+		strm.Description = j.Streams[i].Description
+
+		err = uo.UpdateStream(strm)
+		if err != nil {
+			goto errfail
+		}
+	}
+
+	// Great success! The user was created successfully. We now write the cookie for the user
+	webcore.CreateSessionCookie(uo, writer, request)
+	webcore.LogRequest(logger, webcore.INFO, fmt.Sprintf("User '%s' Joined", j.Name), time.Since(tstart))
 	restcore.OK(writer)
+	return
+
+errfail:
+	db.DeleteUser(j.Name)
+	restcore.WriteError(writer, logger, http.StatusInternalServerError, err, false)
+	webcore.LogRequest(logger, webcore.WARNING, "", time.Since(tstart))
+	return
 }
