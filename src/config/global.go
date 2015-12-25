@@ -21,6 +21,10 @@ var (
 
 // Get returns the global configuration of the system
 func Get() *Configuration {
+	if GlobalConfiguration == nil {
+		log.Warn("Global configuration not set - using default")
+		return NewConfiguration()
+	}
 	return GlobalConfiguration.Get()
 }
 
