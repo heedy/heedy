@@ -43,7 +43,7 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	if util.IsDirectory(arg) {
 		arg = filepath.Join(arg, "connectordb.pid")
 	}
-	err = config.Set(arg)
+	err = config.SetPath(arg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

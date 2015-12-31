@@ -13,38 +13,38 @@ import (
 )
 
 var (
-	// GlobalConfiguration is the configuration used throughout the system.
+	// globalConfiguration is the configuration used throughout the system.
 	// While the configuration can be reloaded during runtime, only certain properties are actually modifiable during runtime
 	// and others fail to update silently. Just a warning.
-	GlobalConfiguration *ConfigurationLoader
+	globalConfiguration *ConfigurationLoader
 )
 
 // Get returns the global configuration of the system
 func Get() *Configuration {
-	if GlobalConfiguration == nil {
+	if globalConfiguration == nil {
 		log.Warn("Global configuration not set - using default")
 		return NewConfiguration()
 	}
-	return GlobalConfiguration.Get()
+	return globalConfiguration.Get()
 }
 
-// Set sets the global system configuration to the given file name, which will be watched for changes
-func Set(filename string) error {
+// SetPath sets the global system configuration to the given file name, which will be watched for changes
+func SetPath(filename string) error {
 	cfg, err := NewConfigurationLoader(filename)
 	if err != nil {
 		return err
 	}
-	if GlobalConfiguration != nil {
-		GlobalConfiguration.Close()
+	if globalConfiguration != nil {
+		globalConfiguration.Close()
 	}
-	GlobalConfiguration = cfg
+	globalConfiguration = cfg
 
 	return nil
 }
 
 // OnChangeCallback adds a calback for modified configuration file
 func OnChangeCallback(c ChangeCallback) {
-	GlobalConfiguration.OnChangeCallback(c)
+	globalConfiguration.OnChangeCallback(c)
 }
 
 // ChangeCallback is a function that takes configuration, and returns an error

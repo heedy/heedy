@@ -46,8 +46,8 @@ func Create(c *config.Configuration) error {
 		return err
 	}
 
-	// Set that conf file as the GlobalConfiguration
-	config.Set(dbconf)
+	// Set that conf file as the globalConfiguration
+	config.SetPath(dbconf)
 
 	if err = NewRedisService(c.DatabaseDirectory, &c.Redis).Create(); err != nil {
 		return err
