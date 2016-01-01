@@ -37,22 +37,21 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	//		In this case we read the internal connectordb.pid file to get the config
 	//2) A config file is given
 	//		We read the file
-	var cfg *config.Configuration
 	var err error
 	arg := getDatabase(c)
 
 	if util.IsDirectory(arg) {
 		arg = filepath.Join(arg, "connectordb.pid")
 	}
-	cfg, err = config.Load(arg)
+	err = config.SetPath(arg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	//Print out the configuration as we understand it
-	log.Debug(cfg.String())
+	log.Debug(config.Get().String())
 
-	return cfg
+	return config.Get()
 }
 
 func rundbwriterCallback(c *cli.Context) {
@@ -76,6 +75,19 @@ func rundbwriterCallback(c *cli.Context) {
 	db.RunWriter()
 }
 
+func runconfigCallback(c *cli.Context) {
+	n := c.Args().First()
+	if n == "" {
+		log.Fatal("You must specify the file to write config to")
+	}
+
+	cfg := config.NewConfiguration()
+	err := cfg.Save(n)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
 func runConnectorDBCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
 
@@ -88,7 +100,7 @@ func runConnectorDBCallback(c *cli.Context) {
 		cfg.TLSCert = ""
 	}
 
-	err := server.RunServer(cfg)
+	err := server.RunServer()
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -101,7 +113,6 @@ func runShellCallback(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	shell.SetConfiguration(cfg)
 
 	scmd := c.String("exec")
 	if scmd == "" {
@@ -253,6 +264,11 @@ func main() {
 					Usage: "Instead of running connectordb shell in interactive mode, execute the given commands",
 				},
 			},
+		},
+		{
+			Name:   "config",
+			Usage:  "Creates a new configuration file with defaults at the given path.",
+			Action: runconfigCallback,
 		},
 		{
 			Name:    "dbwriter",

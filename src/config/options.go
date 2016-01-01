@@ -11,46 +11,46 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-//Options are the struct which gives ConnectorDB core the necessary information
-//to connect to the underlying servers.
+// Options are the struct which gives ConnectorDB core the necessary information
+// to connect to the underlying servers.
 type Options struct {
 	RedisOptions redis.Options
 	NatsOptions  nats.Options
 
 	SqlConnectionString string
 
-	BatchSize int //BatchSize is the number of datapoints per batch of data in a stream
-	ChunkSize int //ChunkSize is the number of batches to queue up before writing to storage
+	BatchSize int // BatchSize is the number of datapoints per batch of data in a stream
+	ChunkSize int // ChunkSize is the number of batches to queue up before writing to storage
 }
 
 func (o *Options) String() string {
-	return fmt.Sprintf(`ConnectorDB Options
-Sql Connection String: %s
-
+	return fmt.Sprintf(`ConnectorDB:
 Batch Size: %v
 Chunk Size: %v
 
-Redis Address: %v (%v)
-Nats Address: %v
-`, o.SqlConnectionString, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.RedisOptions.Password, o.NatsOptions.Url)
+Redis: %v (%v)
+Nats:  %v
+Sql:   %v
+`, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.RedisOptions.Password, o.NatsOptions.Url, o.SqlConnectionString)
 }
 
-//NewOptions returns new options set to default values.
-func NewOptions() *Options {
+//Options generates the ConnectorDB options based upon the given configuration
+func (c *Configuration) Options() *Options {
 	var opt Options
+
 	opt.NatsOptions = nats.DefaultOptions
-	opt.NatsOptions.Url = nats.DefaultURL
+	opt.NatsOptions.Url = c.Nats.GetNatsConnectionString()
 
 	opt.RedisOptions = redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     c.Redis.GetRedisConnectionString(),
+		Password: c.Redis.Password,
+		DB:       0,
 	}
 
-	opt.SqlConnectionString = "sslmode=disable dbname=connectordb port=52592"
+	opt.SqlConnectionString = c.GetSqlConnectionString()
 
-	opt.BatchSize = 250
-	opt.ChunkSize = 1
+	opt.BatchSize = c.BatchSize
+	opt.ChunkSize = c.ChunkSize
 
 	return &opt
 }

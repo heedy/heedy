@@ -11,6 +11,7 @@ All Rights Reserved
 */
 
 import (
+	"config"
 	"os"
 	"os/exec"
 )
@@ -21,7 +22,7 @@ func init() {
 	name := "sql"
 
 	main := func(shell *Shell, args []string) uint8 {
-		cmd := exec.Command("psql", cfg.GetSqlConnectionString())
+		cmd := exec.Command("psql", config.Get().GetSqlConnectionString())
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
