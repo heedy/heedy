@@ -22,7 +22,7 @@ import (
 
 type recaptchaResponse struct {
 	Success    bool     `json:"success"`
-	ErrorCodes []string `json:error-codes`
+	ErrorCodes []string `json:"error-codes"`
 }
 
 // VerifyCaptcha checks if the captcha was solved successfully
@@ -67,11 +67,11 @@ func checkIfJoinAllowed(request *http.Request) error {
 		}
 
 	}
-	if !config.Get().Permissions[joinpermissions].Join {
-		return errors.New("Joining is currently disabled.")
+	cfg := config.Get()
+	if !cfg.Permissions[joinpermissions].Join {
+		return errors.New(cfg.Permissions[joinpermissions].JoinDisabledMessage)
 	}
 
-	cfg := config.Get()
 	if cfg.MaxUsers >= 0 {
 		unum, err := Database.Userdb.CountUsers()
 		if err != nil {

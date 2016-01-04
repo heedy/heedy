@@ -124,13 +124,16 @@ func NewConfiguration() *Configuration {
 
 		Permissions: map[string]Permissions{
 			"nobody": {
-				Join: false,
+				Join:                false,
+				JoinDisabledMessage: "You must be logged in as admin to add users",
 			},
 			"user": {
-				Join: false,
+				Join:                false,
+				JoinDisabledMessage: "You must be logged in as admin to add users",
 			},
 			"admin": {
-				Join: true,
+				Join:                true,
+				JoinDisabledMessage: "Join is disabled",
 			},
 		},
 	}
