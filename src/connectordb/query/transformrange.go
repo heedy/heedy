@@ -7,7 +7,6 @@ package query
 import (
 	"config"
 	"connectordb/datastream"
-	"errors"
 
 	"github.com/connectordb/pipescript"
 
@@ -16,20 +15,13 @@ import (
 
 //TransformArray transforms the given array.
 func TransformArray(t *pipescript.Script, dpa *datastream.DatapointArray) (*datastream.DatapointArray, error) {
-	dp, err := t.Next()
-	if err != nil {
-		return nil, err
-	}
-	if dp != nil {
-		return nil, errors.New("The transform script was not cleared! This is a server error!")
-	}
-
+	// ASSUMING THAT THE SCRIPT IS CLEARED OR UNINITIALIZED
 	// Create an array range from the datapoint array, convert it to pipescript iterator, and set as script input
 	t.SetInput(&DatapointIterator{datastream.NewDatapointArrayRange(*dpa, 0)})
 
 	resultarray := make(datastream.DatapointArray, 0, dpa.Length())
 	for {
-		dp, err = t.Next()
+		dp, err := t.Next()
 		if err != nil {
 			return nil, err
 		}

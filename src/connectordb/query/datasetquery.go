@@ -95,10 +95,10 @@ func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRan
 //DatasetQuery represents the full dataset generation query, used both for Ydatasets and Tdatasets
 type DatasetQuery struct {
 	StreamQuery                                   //This is used for Ydatasets - setting the Stream variable will make it a Ydataset - it also holds the range
-	Merge         []*StreamQuery                  `json:"merge,omitempty"`      //optional merge for Ydatasets
-	Dt            float64                         `json:"dt,omitempty"`         //Used for TDatasets - setting this variable makes it a time based query
-	Dataset       map[string]*DatasetQueryElement `json:"dataset"`              //The dataset to generate
-	PostTransform string                          `json:"itransform,omitempty"` //The transform to run on the full datapoint after the dataset element is created
+	Merge         []*StreamQuery                  `json:"merge,omitempty"`         //optional merge for Ydatasets
+	Dt            float64                         `json:"dt,omitempty"`            //Used for TDatasets - setting this variable makes it a time based query
+	Dataset       map[string]*DatasetQueryElement `json:"dataset"`                 //The dataset to generate
+	PostTransform string                          `json:"posttransform,omitempty"` //The transform to run on the full datapoint after the dataset element is created
 }
 
 //GetDatasetElements returns the range element map used for generating the datasets
