@@ -133,8 +133,9 @@ func TestRedisRestamp(t *testing.T) {
 	restampedDpa1 := make(datastream.DatapointArray, 2)
 	copy(restampedDpa1, dpa1)
 
-	restampedDpa1[0].Timestamp = 5.0
-	restampedDpa1[1].Timestamp = 5.0
+	// This is an artefact of restamping values exactly == int
+	restampedDpa1[0].Timestamp = 5.00001
+	restampedDpa1[1].Timestamp = 5.00001
 
 	dpatest, err := rc.Get("", "mystream", "")
 	require.NoError(t, err)
