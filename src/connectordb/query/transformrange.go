@@ -5,50 +5,50 @@ Licensed under the MIT license.
 package query
 
 import (
+	"config"
 	"connectordb/datastream"
-	"connectordb/query/transforms"
+	"errors"
 
-	_ "connectordb/query/transforms/functions"      //Make sure that the default transform functions are all registered
-	_ "connectordb/query/transforms/functions/math" //Make sure that the default transform functions are all registered
+	"github.com/connectordb/pipescript"
+
+	_ "github.com/connectordb/pipescript/transforms" // Load all available transforms
 )
 
-//TransformArray transforms the given array. Note: Since it assumes that the transform is happening
-//within a stream, it does not pass through nils, as would be needed if the transform got to
-//the end of a stream range.
-func TransformArray(t transforms.DatapointTransform, dpa *datastream.DatapointArray) (*datastream.DatapointArray, error) {
-	if dpa == nil {
-		//If the DatapointArray is nil, return the nil-cache of the DatapointTransform
-
-		resultarray := make(datastream.DatapointArray, 0)
-		dp, err := t.Transform(nil)
-		for err == nil && dp != nil {
-			resultarray = append(resultarray, *dp)
-			dp, err = t.Transform(nil)
-		}
-		return &resultarray, err
-
+//TransformArray transforms the given array.
+func TransformArray(t *pipescript.Script, dpa *datastream.DatapointArray) (*datastream.DatapointArray, error) {
+	dp, err := t.Next()
+	if err != nil {
+		return nil, err
 	}
+	if dp != nil {
+		return nil, errors.New("The transform script was not cleared! This is a server error!")
+	}
+
+	// Create an array range from the datapoint array, convert it to pipescript iterator, and set as script input
+	t.SetInput(&DatapointIterator{datastream.NewDatapointArrayRange(*dpa, 0)})
+
 	resultarray := make(datastream.DatapointArray, 0, dpa.Length())
-	for i := 0; i < dpa.Length(); i++ {
-		dp, err := t.Transform((*dpa)[i].Copy())
+	for {
+		dp, err = t.Next()
 		if err != nil {
 			return nil, err
 		}
-		if dp != nil {
-			resultarray = append(resultarray, *dp)
+		if dp == nil {
+			return &resultarray, nil
 		}
+		resultarray = append(resultarray, datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data})
+
 	}
-	return &resultarray, nil
 }
 
 //ExtendedTransformRange is an ExtendedDataRange which passes data through a transform.
 type ExtendedTransformRange struct {
 	Data      datastream.ExtendedDataRange
-	Transform transforms.DatapointTransform
+	Transform *pipescript.Script
 }
 
 //Index returns the index of the next datapoint in the underlying ExtendedDataRange - it does not guarantee that the datapoint won't be filtered by the
-//underlying transforms
+//underlying transforms. It also does not guarantee that it is the correct datapoint, as transforms are free to peek into the data sequence.
 func (t *ExtendedTransformRange) Index() int64 {
 	return t.Data.Index()
 }
@@ -58,49 +58,47 @@ func (t *ExtendedTransformRange) Close() {
 	t.Data.Close()
 }
 
-//Next iterates through a datarange until a datapoint is returned by the transform
-func (t *ExtendedTransformRange) Next() (dp *datastream.Datapoint, err error) {
-	for {
-
-		dp1, err := t.Data.Next()
-		if err != nil {
-			return nil, err
-		}
-		dp, err = t.Transform.Transform(dp1)
-		if err != nil || dp != nil {
-			return dp, err
-		}
-		if dp1 == nil && dp == nil {
-			return nil, nil
-		}
+//Next gets the next datapoint
+func (t *ExtendedTransformRange) Next() (*datastream.Datapoint, error) {
+	dp, err := t.Transform.Next()
+	if err != nil {
+		return nil, err
 	}
+	if dp == nil {
+		return nil, nil
+	}
+	// Convert pipescript datapoint to datastream datapoint
+	return &datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data}, nil
 }
 
-//NextArray is here to fit into the ExtendedDataRange interface - given a batch of data from the underlying
-//data store, returns the DatapointArray of transformed data
+// NextArray is here to fit into the ExtendedDataRange interface - given a batch of data from the underlying
+//data store, returns the DatapointArray of transformed data. Since transforms can be filters and have no concept of batching (yet),
+// We just get ~250 datapoints the standard way and pretend that's our batch.
+// TODO: Use PipeScript batching when available
 func (t *ExtendedTransformRange) NextArray() (da *datastream.DatapointArray, err error) {
-	for {
-
-		da1, err := t.Data.NextArray()
+	bs := config.Get().BatchSize
+	resultarray := make(datastream.DatapointArray, 0, bs)
+	for i := 0; i < bs; i++ {
+		dp, err := t.Next()
 		if err != nil {
 			return nil, err
 		}
-		da, err = TransformArray(t.Transform, da1)
-		if err != nil || len(*da) > 0 {
-			return da, err
+		if dp == nil {
+			return &resultarray, nil
 		}
-		if da1 == nil && (da == nil || len(*da) == 0) {
-			return nil, nil
-		}
+		resultarray = append(resultarray, *dp)
 	}
+	return &resultarray, nil
 }
 
 //NewExtendedTransformRange generates a transform range from a transfrom pipeline
 func NewExtendedTransformRange(dr datastream.ExtendedDataRange, transformpipeline string) (*ExtendedTransformRange, error) {
-	t, err := transforms.NewTransformPipeline(transformpipeline)
+	t, err := pipescript.Parse(transformpipeline)
 	if err != nil {
 		return nil, err
 	}
+	t.SetInput(&DatapointIterator{dr})
+
 	return &ExtendedTransformRange{
 		Data:      dr,
 		Transform: t,
@@ -110,7 +108,7 @@ func NewExtendedTransformRange(dr datastream.ExtendedDataRange, transformpipelin
 //TransformRange is ExtendedTransformRange's little brother - it works on DataRanges
 type TransformRange struct {
 	Data      datastream.DataRange
-	Transform transforms.DatapointTransform
+	Transform *pipescript.Script
 }
 
 //Close closes the underlying ExtendedDataRange
@@ -119,29 +117,26 @@ func (t *TransformRange) Close() {
 }
 
 //Next iterates through a datarange until a datapoint is returned by the transform
-func (t *TransformRange) Next() (dp *datastream.Datapoint, err error) {
-	for {
-
-		dp1, err := t.Data.Next()
-		if err != nil {
-			return nil, err
-		}
-		dp, err = t.Transform.Transform(dp1)
-		if err != nil || dp != nil {
-			return dp, err
-		}
-		if dp1 == nil && dp == nil {
-			return nil, nil
-		}
+func (t *TransformRange) Next() (*datastream.Datapoint, error) {
+	dp, err := t.Transform.Next()
+	if err != nil {
+		return nil, err
 	}
+	if dp == nil {
+		return nil, nil
+	}
+	// Convert pipescript datapoint to datastream datapoint
+	return &datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data}, nil
 }
 
 //NewTransformRange generates a transform range from a transfrom pipeline
 func NewTransformRange(dr datastream.ExtendedDataRange, transformpipeline string) (*TransformRange, error) {
-	t, err := transforms.NewTransformPipeline(transformpipeline)
+	t, err := pipescript.Parse(transformpipeline)
 	if err != nil {
 		return nil, err
 	}
+	t.SetInput(&DatapointIterator{dr})
+
 	return &TransformRange{
 		Data:      dr,
 		Transform: t,

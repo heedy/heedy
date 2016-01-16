@@ -9,7 +9,6 @@ import (
 	"connectordb/operator"
 	"connectordb/operator/messenger"
 	"connectordb/query"
-	"connectordb/query/transforms"
 	"errors"
 	"io"
 	"net/http"
@@ -19,6 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/connectordb/pipescript"
 	"github.com/gorilla/websocket"
 	"github.com/nats-io/nats"
 
@@ -61,13 +61,13 @@ type Subscription struct {
 
 	nats *nats.Subscription //The nats subscription
 
-	transform map[string]transforms.DatapointTransform //the transforms associated with the subscription - this allows us to run transforms on the data!
+	transform map[string]*pipescript.Script //the transforms associated with the subscription - this allows us to run transforms on the data!
 }
 
 func NewSubscription(subs *nats.Subscription) *Subscription {
 	return &Subscription{
 		nats:      subs,
-		transform: make(map[string]transforms.DatapointTransform),
+		transform: make(map[string]*pipescript.Script),
 	}
 }
 
@@ -92,9 +92,9 @@ func (s *Subscription) AddTransform(transform string) (err error) {
 	}
 
 	//First, attempt to generate the transform
-	var t transforms.DatapointTransform
+	var t *pipescript.Script
 	if transform != "" {
-		t, err = transforms.NewTransformPipeline(transform)
+		t, err = pipescript.Parse(transform)
 		if err != nil {
 			return err
 		}

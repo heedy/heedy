@@ -6,10 +6,11 @@ package query
 
 import (
 	"connectordb/datastream"
-	"connectordb/query/interpolators"
-	"connectordb/query/transforms"
 	"errors"
 	"fmt"
+
+	"github.com/connectordb/pipescript"
+	"github.com/connectordb/pipescript/interpolator"
 )
 
 var (
@@ -26,57 +27,59 @@ var (
 
 //DatasetQueryElement specifies the information necessary to generate a single column of a Dataset
 type DatasetQueryElement struct {
-	Stream        string         `json:"stream,omitempty"`       //The stream name to use in the dataset if merge is off
-	Transform     string         `json:"transform,omitempty"`    //The transform to use on the stream if merge is off
-	Merge         []*StreamQuery `json:"merge,omitempty"`        //The DatasetElement can also be a merge operation - so we allow that too
-	Interpolator  string         `json:"interpolator,omitempty"` //The interpolator to use for the element
-	PostTransform string         `json:"itransform,omitempty"`   //The transform to run on the interpolated data. ifs don't filter but give nils
-	AllowNil      bool           `json:"allownil,omitempty"`     //Whether or not a nil value is accepted, or whether it disqualifies the row
+	StreamQuery                 // Allows to query the stream by its own values
+	Merge        []*StreamQuery `json:"merge,omitempty"`        //The DatasetElement can also be a merge operation - so we allow that too
+	Interpolator string         `json:"interpolator,omitempty"` //The interpolator to use for the element
+	AllowNil     bool           `json:"allownil,omitempty"`     //Whether or not a nil value is accepted, or whether it disqualifies the row
 }
 
-//Get is given the start time for the dataset, and returns the DatasetRangeElement associated
-//with the QueryElement. It internally performs all necessary validation
+// Get is given the start time for the dataset, and returns the DatasetRangeElement
 func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRangeElement, err error) {
 	var dr datastream.DataRange
-	var tr transforms.DatapointTransform
-
-	if dqe.PostTransform != "" {
-		tr, err = transforms.NewTransformPipeline(dqe.PostTransform)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	//First, we create the DataRange from the query - either a merge or straight query
-	if dqe.Stream != "" || dqe.Transform != "" {
+	if dqe.Stream != "" {
 		//The transform is a simple stream - no merge
 		if len(dqe.Merge) > 0 {
-			return nil, errors.New("Dataset element cannot have both a merge and a stream/transform.")
+			return nil, errors.New("Dataset element cannot have both a merge and a stream")
 		}
-		dr, err = o.GetShiftedStreamTimeRange(dqe.Stream, tstart, 0, -DatasetIndexBacktrack, 0, dqe.Transform)
+
+		// First check if the stream has some form of range associated with it
+		if !dqe.HasRange() {
+			dqe.T1 = tstart
+			dqe.indexbacktrack = DatasetIndexBacktrack
+		}
+
+		dr, err = dqe.StreamQuery.Run(o)
+
 	} else {
 		//The dataset is a merge
+		if dqe.Transform != "" {
+			return nil, errors.New("Set transforms within each merge element instead of overall for dataset element")
+		}
 		if len(dqe.Merge) == 0 {
 			return nil, errors.New("No stream(s) were selected for dataset element")
 		}
 
 		//First off, we set the start time of all the merge elements
 		for i := range dqe.Merge {
-			if !dqe.Merge[i].IsValid() || dqe.Merge[i].HasRange() {
-				return nil, errors.New("Dataset merge array element must have only a stream and an optional transform")
+			if !dqe.Merge[i].IsValid() {
+				return nil, errors.New("Dataset merge array element invalid")
 			}
-			dqe.Merge[i].T1 = tstart
-			dqe.Merge[i].indexbacktrack = DatasetIndexBacktrack
+			if !dqe.Merge[i].HasRange() {
+				dqe.Merge[i].T1 = tstart
+				dqe.Merge[i].indexbacktrack = DatasetIndexBacktrack
+			}
 		}
 		dr, err = Merge(o, dqe.Merge)
+
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	//The element's datarange is ready - set up the interpolator
-
-	intpltr, err := interpolators.Get(dr, dqe.Interpolator)
+	intpltr, err := interpolator.Parse(dqe.Interpolator, &DatapointIterator{dr})
 	if err != nil {
 		dr.Close()
 		return nil, err
@@ -84,7 +87,7 @@ func (dqe *DatasetQueryElement) Get(o Operator, tstart float64) (dre *DatasetRan
 
 	return &DatasetRangeElement{
 		Interpolator: intpltr,
-		Transform:    tr,
+		Range:        dr,
 		AllowNil:     dqe.AllowNil,
 	}, nil
 }
@@ -98,7 +101,7 @@ type DatasetQuery struct {
 	PostTransform string                          `json:"itransform,omitempty"` //The transform to run on the full datapoint after the dataset element is created
 }
 
-//GetDatasetElements returns the DatasetRangeElement map which is used to generate the dataset
+//GetDatasetElements returns the range element map used for generating the datasets
 func (d *DatasetQuery) GetDatasetElements(o Operator, tstart float64) (map[string]*DatasetRangeElement, error) {
 	if len(d.Dataset) == 0 {
 		return nil, errors.New("The dataset query must have a dataset!")
@@ -119,8 +122,8 @@ func (d *DatasetQuery) GetDatasetElements(o Operator, tstart float64) (map[strin
 	return res, nil
 }
 
-//GetYRange gets the DataRange of the Y query stream
-func (d *DatasetQuery) GetYRange(o Operator) (dr datastream.DataRange, err error) {
+//GetXRange gets the DataRange of the X query stream
+func (d *DatasetQuery) GetXRange(o Operator) (dr datastream.DataRange, err error) {
 	if d.IsValid() {
 		if len(d.Merge) > 0 {
 			return nil, errors.New("Dataset can't be based both on a stream and on a merge!")
@@ -135,13 +138,23 @@ func (d *DatasetQuery) GetYRange(o Operator) (dr datastream.DataRange, err error
 
 //Run executes the query to get the dataset
 func (d DatasetQuery) Run(o Operator) (dr datastream.DataRange, err error) {
-	var posttransform transforms.DatapointTransform
-
+	var posttransform *pipescript.Script
+	var iiter pipescript.DatapointIterator
 	if d.PostTransform != "" {
-		posttransform, err = transforms.NewTransformPipeline(d.PostTransform)
+		posttransform, err = pipescript.Parse(d.PostTransform)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Get the dataset elements, and prepare the interpolator map
+	dsetrange, err := d.GetDatasetElements(o, d.T1)
+	if err != nil {
+		return nil, err
+	}
+	dsetipltr := make(map[string]interpolator.InterpolatorInstance)
+	for key := range dsetrange {
+		dsetipltr[key] = dsetrange[key].Interpolator
 	}
 
 	//first find out if we are doing a Tdataset or a ydataset
@@ -153,64 +166,29 @@ func (d DatasetQuery) Run(o Operator) (dr datastream.DataRange, err error) {
 		if d.Dt < TDatasetMinDt || (d.T2-d.T1)/d.Dt > float64(TDatasetMaxSize) {
 			return nil, fmt.Errorf("To avoid abuse, Tdataset is limited to a max of %d datapoints with min dt %f", TDatasetMaxSize, TDatasetMinDt)
 		}
-		dsetrange, err := d.GetDatasetElements(o, d.T1)
-		dr = &TDatasetRange{
-			Data:    dsetrange,
-			Dt:      d.Dt,
-			CurTime: d.T1,
-			EndTime: d.T2,
+
+		iiter, err = interpolator.GetTDataset(d.T1, d.T2, d.Dt, dsetipltr)
+	} else {
+		//It is an xdataset!
+		if d.Dt != 0 {
+			return nil, errors.New("Dataset must be either time or stream based. Not both.")
 		}
-		if posttransform != nil {
-			dr = &TransformRange{
-				Data:      dr,
-				Transform: posttransform,
-			}
+
+		dr, err = d.GetXRange(o)
+		if err != nil {
+			return nil, err
 		}
-		return dr, err
-	}
 
-	//It is a ydataset!
-	if d.Dt != 0 {
-		return nil, errors.New("Dataset must be either time or stream based. Not both.")
+		iiter, err = interpolator.GetXDataset(&DatapointIterator{dr}, "x", dsetipltr)
 	}
-
-	_, ok := d.Dataset["y"]
-	if ok {
-		return nil, errors.New("The 'y' label is reserved for the query stream in Ydatasets")
-	}
-
-	dr, err = d.GetYRange(o)
 	if err != nil {
 		return nil, err
 	}
 
-	dp, err := dr.Next()
-	if err != nil {
-		dr.Close()
-		return nil, err
-	}
-	if dp == nil {
-		dr.Close()
-		return nil, errors.New("There are no datapoints in the chosen Y dataset range")
-	}
-
-	//The datapoint is not nil
-	dsetrange, err := d.GetDatasetElements(o, dp.Timestamp)
-	if err != nil {
-		dr.Close()
-		return nil, err
-	}
-	dr = &YDatasetRange{
-		Data:   dsetrange,
-		YRange: dr,
-		Ydp:    dp,
-	}
 	if posttransform != nil {
-		dr = &TransformRange{
-			Data:      dr,
-			Transform: posttransform,
-		}
+		posttransform.SetInput(iiter)
+		iiter = posttransform
 	}
-	return dr, nil
+	return &DatasetRange{dsetrange, iiter}, nil
 
 }
