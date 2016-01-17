@@ -76,11 +76,11 @@ func (ds *DataStream) StreamLength(deviceID, streamID int64, substream string) (
 
 //Insert inserts the given datapoint array into the stream, with the option to restamp the data
 //on insert if it has timestamps below the range of already-inserted data. Restamping allows an insert to always succeed
-func (ds *DataStream) Insert(deviceID, streamID int64, substream string, dpa DatapointArray, restamp bool) (int64, error) {
+func (ds *DataStream) Insert(deviceID, streamID int64, substream string, dpa DatapointArray, restamp bool, maxDeviceSize, maxStreamSize int64) (int64, error) {
 	if !dpa.IsTimestampOrdered() {
 		return 0, ErrTimestampOrder
 	}
-	return ds.cache.Insert(deviceID, streamID, substream, dpa, restamp)
+	return ds.cache.Insert(deviceID, streamID, substream, dpa, restamp, maxDeviceSize, maxStreamSize)
 }
 
 //WriteChunk takes a chunk of batches and writes it to the sql store

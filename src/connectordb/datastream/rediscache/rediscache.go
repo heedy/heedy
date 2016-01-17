@@ -22,14 +22,28 @@ func (r RedisCache) StreamLength(deviceID, streamID int64, substream string) (in
 		substream)
 }
 
+// DeviceSize returns the total size of the device
+func (r RedisCache) DeviceSize(deviceID int64) (int64, error) {
+	return r.RedisConnection.HashSize(strconv.FormatInt(deviceID, 36))
+}
+
+// StreamSize returns the total size of the stream
+func (r RedisCache) StreamSize(deviceID, streamID int64, substream string) (int64, error) {
+	return r.RedisConnection.StreamSize(strconv.FormatInt(deviceID, 36),
+		strconv.FormatInt(streamID, 36),
+		substream)
+}
+
 //Insert datapoints into the redis cache
-func (r RedisCache) Insert(deviceID, streamID int64, substream string, dpa datastream.DatapointArray, restamp bool) (int64, error) {
+func (r RedisCache) Insert(deviceID, streamID int64, substream string, dpa datastream.DatapointArray, restamp bool, maxDeviceSize int64, maxStreamSize int64) (int64, error) {
 	return r.RedisConnection.Insert("BATCHLIST",
 		strconv.FormatInt(deviceID, 36),
 		strconv.FormatInt(streamID, 36),
 		substream,
 		dpa,
-		restamp)
+		restamp,
+		maxDeviceSize,
+		maxStreamSize)
 }
 
 //DeleteDevice removes a device from the redis cache

@@ -35,8 +35,17 @@ func (m *MockCache) StreamLength(deviceID int64, streamID int64, substream strin
 	args := m.Called(deviceID, streamID, substream)
 	return args.Get(0).(int64), args.Error(1)
 }
-func (m *MockCache) Insert(deviceID, streamID int64, substream string, dpa DatapointArray, restamp bool) (int64, error) {
-	args := m.Called(deviceID, streamID, substream, dpa, restamp)
+func (m *MockCache) StreamSize(deviceID int64, streamID int64, substream string) (int64, error) {
+	args := m.Called(deviceID, streamID, substream)
+	return args.Get(0).(int64), args.Error(1)
+}
+func (m *MockCache) DeviceSize(deviceID int64) (int64, error) {
+	args := m.Called(deviceID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockCache) Insert(deviceID, streamID int64, substream string, dpa DatapointArray, restamp bool, maxDeviceSize, maxStreamSize int64) (int64, error) {
+	args := m.Called(deviceID, streamID, substream, dpa, restamp, maxDeviceSize, maxStreamSize)
 	return args.Get(0).(int64), args.Error(1)
 }
 func (m *MockCache) DeleteDevice(deviceID int64) error {
@@ -131,8 +140,8 @@ func TestBasics(t *testing.T) {
 	require.Equal(t, int64(0), i)
 	mc.AssertExpectations(t)
 
-	mc.On("Insert", int64(1), int64(2), "", dpa6, false).Return(int64(5), nil)
-	_, err = ds.Insert(1, 2, "", dpa6, false)
+	mc.On("Insert", int64(1), int64(2), "", dpa6, false, int64(0), int64(0)).Return(int64(5), nil)
+	_, err = ds.Insert(1, 2, "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	mc.AssertExpectations(t)
 

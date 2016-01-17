@@ -18,14 +18,14 @@ import (
 /*
 The structure in Redis is as follows:
 
-Each user has an hset. Each stream has a list. Datapoints are inserted one per list element
+Each device has an hset. Each stream has a list. Datapoints are inserted one per list element
 all marshalled into bytes using messagepack.
 
-Suppose that we have a stream "mystream" belonging to "myuser".
+Suppose that we have a stream "mystream" belonging to "mydevice".
 
-	'{myuser}:mystream:' = [(datapoint),(datapoint),(datapoint)]
+	'{mydevice}:mystream:' = [(datapoint),(datapoint),(datapoint)]
 
-	'{myuser}' = {
+	'{mydevice}' = {
 		'endtime:mystream:' : the most recent timestamp of inserted data
 		'starttime:mystream:' : the first timestamp of data in redis
 		'length:mystream:' : the total number of datapoints in the stream (overall)
@@ -36,26 +36,30 @@ Notice that most elements end in : (or have extra :).
 This is because streams can have substreams. A stream 'mystream' with a downlink substream 'd'
 would look like this:
 
-	'{myuser}:mystream:' = [(datapoint),(datapoint),(datapoint)]
-	'{myuser}:mystream:d' = [(datapoint),(datapoint),(datapoint)]
+	'{mydevice}:mystream:' = [(datapoint),(datapoint),(datapoint)]
+	'{mydevice}:mystream:d' = [(datapoint),(datapoint),(datapoint)]
 
-	'{myuser}' = {
+	'{mydevice}' = {
 		'endtime:mystream:' : the most recent timestamp of inserted data
 		'starttime:mystream:' : the first timestamp of data in redis
 		'length:mystream:' : the total number of datapoints in the stream (overall)
+		'size:mystream': the size of the stream in bytes
 
 		'endtime:mystream:d' : the most recent timestamp of inserted data in 'd'
 		'starttime:mystream:d' : the first timestamp of data in redis for substream
 		'length:mystream:d' : the total number of datapoints in the substream 'd'
+		'size:mystream:d': the size of the substream in bytes
+
+		'size': the total size of all data that mydevice holds in bytes
 	}
 
-Lastly, notice the {} around myuser - this is for redis cluster hashing.
-It allows all keys relevant to a user to be on the same redis instance,
+Lastly, notice the {} around mydevice - this is for redis cluster hashing.
+It allows all keys relevant to a device to be on the same redis instance,
 which is exploited heavily in the scripts.
 
 Lastly, there is the "batch-list" which is a lsit of batches that are waiting to be written to
 the database. These batches are handled by the batch-writer processes, which is a simple writer
-in a single instance, and a more complicated machinery when working on clusters (not implemented atm)
+in a single instance, and a more complicated machinery when working on clusters.
 
 */
 
@@ -64,18 +68,35 @@ const (
 	RedisNilString = "redis: nil"
 
 	//The insert script does the following:
-	//It is given 2 keys:
-	//	stream key - the key where a list of chunks has been inserted
-	//	metadata key - the key where the stream's metadata is stored
-	//	batch writer key - the key to which to write batches
+	//It is given 3 keys:
+	//1	stream key - the key where a list of chunks has been inserted
+	//2	metadata key - the key where the stream's metadata is stored
+	//3	batch writer key - the key to which to write batches. If == stream key, doesn't write batches
 	//Of the arguments, it is given:
-	//	subpath - the name of the stream in "stream:substream" format
-	//	starttime - the start time of the datapoints
-	//	endtime - the end time of the datapoints
-	//	restamp - whether to restamp datapoints if inconsistent timestamps
-	//	batchsize - the number of datapoints which constitute a batch
+	//1	subpath - the name of the stream in "stream:substream" format
+	//2	starttime - the start time of the datapoints
+	//3	endtime - the end time of the datapoints
+	//4	restamp - whether to restamp datapoints if inconsistent timestamps
+	//5	batchsize - the number of datapoints which constitute a batch
+	//6	datasize - the size of the currently inserted array in bytes
+	//7	maxdevicesize - the maximum number of bytes to permit in a device. =0 means unlimited
+	//8	maxstreamsize - the maximum number of bytes to permit in a stream. =0 means unlimited
 	//	... array of the datapoints to be inserted ...
 	insertScript = `
+		-- Check to make sure we don't go over the size limits for device and stream
+		if (ARGV[7] ~= '0') then
+			local device_size = tonumber(redis.call('hget',KEYS[2], 'size')) or 0
+			if (device_size + tonumber(ARGV[6]) > ARGV[7]) then
+				return {["err"]="Insert Failed: Exceeded device size limit"}
+			end
+		end
+		if (ARGV[8] ~= '0') then
+			local stream_size = tonumber(redis.call('hget',KEYS[2], 'size:' .. ARGV[1])) or 0
+			if (stream_size + tonumber(ARGV[6]) > ARGV[8]) then
+				return {["err"]="Insert Failed: Exceeded stream size limit"}
+			end
+		end
+
 		-- Make sure that the timestamps are increasing
 		local stream_endtime = tonumber(redis.call('hget',KEYS[2], 'endtime:' .. ARGV[1])) or 0
 		if (stream_endtime > tonumber(ARGV[2])) then
@@ -92,7 +113,7 @@ const (
 				stream_endtime = stream_endtime + 0.00001
 			end
 
-			for i=#ARGV,6,-1 do
+			for i=#ARGV,9,-1 do
 				local val = cmsgpack.unpack(ARGV[i])
 				if (val['t'] > stream_endtime) then
 					break
@@ -106,14 +127,19 @@ const (
 				ARGV[3] = stream_endtime
 			end
 		end
+
 		-- Set the end time
 		redis.call('hset',KEYS[2], 'endtime:' .. ARGV[1], ARGV[3])
 		-- Set the total stream length
-		redis.call('hincrby',KEYS[2], 'length:' .. ARGV[1], #ARGV - 5)
+		redis.call('hincrby',KEYS[2], 'length:' .. ARGV[1], #ARGV - 8)
+		-- Set the stream size
+		redis.call('hincrby',KEYS[2], 'size:' .. ARGV[1], ARGV[6])
+		-- Set the device total size
+		redis.call('hincrby',KEYS[2], 'size', ARGV[6])
 
 		-- Insert the datapoints into the stream - redis lua has some weird stuff about the maximum
 		-- number of arguments to a function - we avoid this by manually splitting insert into chunks
-		for i=6,#ARGV,5000 do
+		for i=9,#ARGV,5000 do
 			redis.call('rpush',KEYS[1], unpack(ARGV,i,math.min(i+4999,#ARGV)))
 		end
 
@@ -142,8 +168,15 @@ const (
 	//In arguments it is given:
 	//	the substream to delete
 	subdeleteScript = `
+		-- Delete the stream list
 		redis.call('del',KEYS[1])
-		redis.call('hdel',KEYS[2],'endtime:' .. ARGV[1], 'length:' .. ARGV[1], 'starttime:' .. ARGV[1], 'batchindex:' .. ARGV[1])
+
+		-- Subtract the stream size from the full device size
+		local stream_size = tonumber(redis.call('hget',KEYS[2], 'size:' .. ARGV[1])) or 0
+		redis.call('hincrby', KEYS[2], 'size', -stream_size)
+
+		-- Remove metadata
+		redis.call('hdel',KEYS[2],'endtime:' .. ARGV[1], 'length:' .. ARGV[1], 'starttime:' .. ARGV[1], 'batchindex:' .. ARGV[1], 'size:' .. ARGV[1])
 	`
 
 	//The range script returns the data from the given range of datapoints, and the 2 indices,
@@ -328,9 +361,9 @@ func (rc *RedisConnection) Get(hash, stream, substream string) (dpa datastream.D
 }
 
 //Insert datapoint array, writing batches to batchkey
-func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa datastream.DatapointArray, restamp bool) (streamlength int64, err error) {
+func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa datastream.DatapointArray, restamp bool, maxDeviceSize, maxStreamSize int64) (streamlength int64, err error) {
 	//remember the number of args here
-	args := make([]string, 5+len(dpa))
+	args := make([]string, 8+len(dpa))
 
 	args[0] = stream + ":" + substream
 	args[1] = strconv.FormatFloat(dpa[0].Timestamp, 'G', -1, 64)
@@ -341,14 +374,21 @@ func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa 
 		args[3] = "0"
 	}
 	args[4] = strconv.FormatInt(rc.BatchSize, 10)
+	// Arg 5 will be inserted after finding data size
+	args[6] = strconv.FormatInt(maxDeviceSize, 10)
+	args[7] = strconv.FormatInt(maxStreamSize, 10)
 
+	datasize := int64(0)
 	for i := range dpa {
 		b, err := dpa[i].Bytes()
 		if err != nil {
 			return 0, err
 		}
-		args[i+5] = string(b)
+		datasize += int64(len(b))
+		args[i+8] = string(b)
 	}
+
+	args[5] = strconv.FormatInt(datasize, 10)
 
 	r, err := rc.insertScript.Run(rc.Redis, []string{streamKey(hash, stream, substream), "{" + hash + "}", batchkey}, args).Result()
 
@@ -362,6 +402,14 @@ func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa 
 //StreamLength returns the stream's length
 func (rc *RedisConnection) StreamLength(hash, stream, substream string) (int64, error) {
 	sc := rc.Redis.HGet("{"+hash+"}", "length:"+stream+":"+substream)
+
+	i, err := sc.Int64()
+	return i, wrapNil(err)
+}
+
+// StreamSize returns the stream's size in bytes
+func (rc *RedisConnection) StreamSize(hash, stream, substream string) (int64, error) {
+	sc := rc.Redis.HGet("{"+hash+"}", "size:"+stream+":"+substream)
 
 	i, err := sc.Int64()
 	return i, wrapNil(err)
@@ -412,6 +460,14 @@ func (rc *RedisConnection) DeleteHash(hash string) (err error) {
 	}
 
 	return rc.Redis.Del(todelete...).Err()
+}
+
+// HashSize returns the device size in bytes
+func (rc *RedisConnection) HashSize(hash string) (int64, error) {
+	sc := rc.Redis.HGet("{"+hash+"}", "size")
+
+	i, err := sc.Int64()
+	return i, wrapNil(err)
 }
 
 //TrimStream clears all datapoints up to the index from redis, after they are written

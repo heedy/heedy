@@ -21,7 +21,7 @@ func TestRedisCache(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, i)
 
-	i, err = r.Insert(1, 2, "hi", dpa6, false)
+	i, err = r.Insert(1, 2, "hi", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
 
@@ -76,16 +76,16 @@ func TestRedisCacheDelete(t *testing.T) {
 	rc.BatchSize = 2
 
 	r := RedisCache{rc}
-	i, err := r.Insert(1, 2, "hi", dpa6, false)
+	i, err := r.Insert(1, 2, "hi", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
-	i, err = r.Insert(1, 2, "ho", dpa6, false)
+	i, err = r.Insert(1, 2, "ho", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
-	i, err = r.Insert(1, 3, "hi", dpa6, false)
+	i, err = r.Insert(1, 3, "hi", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
-	i, err = r.Insert(2, 3, "hi", dpa6, false)
+	i, err = r.Insert(2, 3, "hi", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
 

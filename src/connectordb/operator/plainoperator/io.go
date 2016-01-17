@@ -71,7 +71,7 @@ func (o *PlainOperator) InsertStreamByID(streamID int64, substream string, data 
 	}
 
 	if !strm.Ephemeral {
-		_, err = o.ds.Insert(strm.DeviceId, strm.StreamId, substream, data, restamp)
+		_, err = o.ds.Insert(strm.DeviceId, strm.StreamId, substream, data, restamp, 0, 0)
 		if err != nil {
 			return err
 		}
