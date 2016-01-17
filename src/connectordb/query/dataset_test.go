@@ -8,6 +8,7 @@ import (
 	"connectordb/datastream"
 	"testing"
 
+	"github.com/connectordb/pipescript"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,8 +51,8 @@ func TestDatasetErrors(t *testing.T) {
 			Stream: "a/b/c",
 		},
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "invalid",
 			},
 		},
@@ -62,8 +63,8 @@ func TestDatasetErrors(t *testing.T) {
 			Stream: "blah/blah/blah",
 		},
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "closest",
 			},
 		},
@@ -74,8 +75,8 @@ func TestDatasetErrors(t *testing.T) {
 			Stream: "a/b/c",
 		},
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "blah/blah/blah",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "blah/blah/blah"},
 				Interpolator: "closest",
 			},
 		},
@@ -83,8 +84,8 @@ func TestDatasetErrors(t *testing.T) {
 	require.Error(t, err)
 	_, err = DatasetQuery{
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "closest",
 			},
 		},
@@ -93,8 +94,8 @@ func TestDatasetErrors(t *testing.T) {
 	_, err = DatasetQuery{
 		Dt: 1.3,
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "closest",
 			},
 		},
@@ -106,8 +107,8 @@ func TestDatasetErrors(t *testing.T) {
 			Stream: "a/b/c",
 		},
 		Dataset: map[string]*DatasetQueryElement{
-			"y": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"x": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "closest",
 			},
 		},
@@ -142,8 +143,8 @@ func TestYDatasetBasics(t *testing.T) {
 			Stream: "a/b/c",
 		},
 		Dataset: map[string]*DatasetQueryElement{
-			"x": &DatasetQueryElement{
-				Stream:       "d/e/f",
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
 				Interpolator: "closest",
 			},
 		},
@@ -152,32 +153,32 @@ func TestYDatasetBasics(t *testing.T) {
 
 	result := datastream.DatapointArray{
 		datastream.Datapoint{Timestamp: 1, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 1.1, Data: 1},
-			"y": &datastream.Datapoint{Timestamp: 1, Data: 1},
+			"y": &datastream.Datapoint{Timestamp: 1.1, Data: 1},
+			"x": &datastream.Datapoint{Timestamp: 1, Data: 1},
 		}},
 		datastream.Datapoint{Timestamp: 2, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 2.1, Data: 2},
-			"y": &datastream.Datapoint{Timestamp: 2, Data: 2},
+			"y": &datastream.Datapoint{Timestamp: 2.1, Data: 2},
+			"x": &datastream.Datapoint{Timestamp: 2, Data: 2},
 		}},
 		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"y": &datastream.Datapoint{Timestamp: 3, Data: 3},
+			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
+			"x": &datastream.Datapoint{Timestamp: 3, Data: 3},
 		}},
 		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"y": &datastream.Datapoint{Timestamp: 3, Data: 4},
+			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
+			"x": &datastream.Datapoint{Timestamp: 3, Data: 4},
 		}},
 		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"y": &datastream.Datapoint{Timestamp: 3, Data: 5},
+			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
+			"x": &datastream.Datapoint{Timestamp: 3, Data: 5},
 		}},
 		datastream.Datapoint{Timestamp: 4, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
-			"y": &datastream.Datapoint{Timestamp: 4, Data: 6},
+			"y": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
+			"x": &datastream.Datapoint{Timestamp: 4, Data: 6},
 		}},
 		datastream.Datapoint{Timestamp: 5, Data: map[string]*datastream.Datapoint{
-			"x": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
-			"y": &datastream.Datapoint{Timestamp: 5, Data: 7},
+			"y": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
+			"x": &datastream.Datapoint{Timestamp: 5, Data: 7},
 		}},
 	}
 	CompareRange(t, dr, result)
@@ -207,11 +208,11 @@ func TestTDatasetBasics(t *testing.T) {
 
 	dr, err := DatasetQuery{
 		StreamQuery: StreamQuery{
-			T2: 4,
+			T2: 5,
 		},
 		Dt: 1.0,
 		Dataset: map[string]*DatasetQueryElement{
-			"y": &DatasetQueryElement{
+			"x": &DatasetQueryElement{
 				Merge: []*StreamQuery{
 					&StreamQuery{
 						Stream: "d/e/f",
@@ -227,20 +228,20 @@ func TestTDatasetBasics(t *testing.T) {
 	require.NoError(t, err)
 
 	result := datastream.DatapointArray{
-		datastream.Datapoint{Timestamp: 0, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 1, Data: 1},
+		datastream.Datapoint{Timestamp: 0, Data: map[string]*pipescript.Datapoint{
+			"x": &pipescript.Datapoint{Timestamp: 1, Data: 1},
 		}},
-		datastream.Datapoint{Timestamp: 1, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 1, Data: 1},
+		datastream.Datapoint{Timestamp: 1, Data: map[string]*pipescript.Datapoint{
+			"x": &pipescript.Datapoint{Timestamp: 1, Data: 1},
 		}},
-		datastream.Datapoint{Timestamp: 2, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 2, Data: 2},
+		datastream.Datapoint{Timestamp: 2, Data: map[string]*pipescript.Datapoint{
+			"x": &pipescript.Datapoint{Timestamp: 2, Data: 2},
 		}},
-		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 3, Data: 5},
+		datastream.Datapoint{Timestamp: 3, Data: map[string]*pipescript.Datapoint{
+			"x": &pipescript.Datapoint{Timestamp: 3, Data: 5},
 		}},
-		datastream.Datapoint{Timestamp: 4, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 4, Data: 6},
+		datastream.Datapoint{Timestamp: 4, Data: map[string]*pipescript.Datapoint{
+			"x": &pipescript.Datapoint{Timestamp: 4, Data: 6},
 		}},
 	}
 	CompareRange(t, dr, result)
