@@ -38,11 +38,6 @@ type Configuration struct {
 	BatchSize int `json:"batchsize"` // BatchSize is the number of datapoints per database entry
 	ChunkSize int `json:"chunksize"` // ChunkSize is number of batches per database insert transaction
 
-	// The prime number to use for scrambling IDs in the database.
-	// WARNING: This must be CONSTANT! It should NEVER change after creating the first user.
-	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
-	IDScramblePrime int64 `json:"id_scramble_prime"`
-
 	// The cache sizes for users/devices/streams
 	UseCache        bool  `json:"cache"`
 	UserCacheSize   int64 `json:"user_cache_size"`
@@ -51,9 +46,14 @@ type Configuration struct {
 
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
-	InitialUsername     string `json:"-"`
-	InitialUserPassword string `json:"-"`
-	InitialUserEmail    string `json:"-"`
+	InitialUsername        string `json:"createuser_username"`
+	InitialUserPassword    string `json:"createuser_password"`
+	InitialUserEmail       string `json:"createuser_email"`
+	InitialUserPermissions string `json:"createuser_permissions"`
+	// The prime number to use for scrambling IDs in the database.
+	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
+	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+	IDScramblePrime int64 `json:"database_id_scramble_prime"`
 
 	// The given usernames are forbidden.
 	DisallowedNames []string `json:"disallow_names"` //The names that are not permitted

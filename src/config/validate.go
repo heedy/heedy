@@ -129,6 +129,13 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
+	// Check that the initial user permissions exist if given
+	if c.InitialUserPermissions != "" {
+		if _, ok := c.Permissions[c.InitialUserPermissions]; !ok {
+			return fmt.Errorf("Could not find permissions of '%s' for the initial creation user", c.InitialUserPermissions)
+		}
+	}
+
 	if c.IDScramblePrime <= 0 {
 		return errors.New("The ID Scramble prime must be a prime > 0.")
 	}

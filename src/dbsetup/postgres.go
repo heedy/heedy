@@ -85,6 +85,9 @@ func (s *PostgresService) Start() error {
 
 //Stop shuts down the Postgres server
 func (s *PostgresService) Stop() error {
+	if s == nil {
+		return nil
+	}
 	log.Print("Stopping Postgres...")
 	pgctl := dbutil.FindPostgresPgctl()
 	postgresDir := filepath.Join(s.ServiceDirectory, postgresDatabaseName)
