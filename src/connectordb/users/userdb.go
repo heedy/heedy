@@ -40,7 +40,7 @@ func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.sqldb = sqldb
 }
 
-func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool) UserDatabase {
+func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
 	basedb := SqlUserDatabase{}
 	basedb.initSqlUserDatabase(sqldb, dbtype)
 
@@ -48,7 +48,8 @@ func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool) UserDatabase {
 		return &basedb
 	}
 
-	cached, _ := NewCacheMiddleware(&basedb, 1000, 10000, 10000)
+	// The cache sizes were already validated
+	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize))
 
 	return cached
 }

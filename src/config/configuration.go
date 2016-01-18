@@ -43,6 +43,12 @@ type Configuration struct {
 	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
 	IDScramblePrime int64 `json:"id_scramble_prime"`
 
+	// The cache sizes for users/devices/streams
+	UseCache        bool  `json:"cache"`
+	UserCacheSize   int64 `json:"user_cache_size"`
+	DeviceCacheSize int64 `json:"device_cache_size"`
+	StreamCacheSize int64 `json:"stream_cache_size"`
+
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
 	InitialUsername     string `json:"-"`
@@ -123,6 +129,11 @@ func NewConfiguration() *Configuration {
 		//The defaults to use for the batch and chunks
 		BatchSize: 250,
 		ChunkSize: 5,
+
+		UseCache:        true,
+		UserCacheSize:   1000,
+		DeviceCacheSize: 10000,
+		StreamCacheSize: 10000,
 
 		// This is the CONSTANT default. The database will explode if this is ever changed.
 		// You have been warned.

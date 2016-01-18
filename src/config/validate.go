@@ -117,6 +117,22 @@ func (c *Configuration) Validate() error {
 		return errors.New("Chunk size must be >=0")
 	}
 
+	if c.UseCache {
+		if c.UserCacheSize < 1 {
+			return errors.New("User cache size must be >=1")
+		}
+		if c.DeviceCacheSize < 1 {
+			return errors.New("Device cache size must be >=1")
+		}
+		if c.StreamCacheSize < 1 {
+			return errors.New("Stream cache size must be >=1")
+		}
+	}
+
+	if c.IDScramblePrime <= 0 {
+		return errors.New("The ID Scramble prime must be a prime > 0.")
+	}
+
 	// Ensure that all the access level keys have valid access levels
 	for key := range c.AccessLevels {
 		if c.AccessLevels[key] == nil {
