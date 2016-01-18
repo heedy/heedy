@@ -56,6 +56,8 @@ type Configuration struct {
 	// The specific permissions granted to different user types
 	Permissions map[string]Permissions `json:"permissions"`
 
+	AccessLevels map[string]AccessLevel `json:"access_levels"`
+
 	// The following are exported fields that are used internally, and are not available to json.
 	// This is honestly just lazy programming on my part - I am using the config struct as a temporary variable
 	// placeholder when creating/starting a database... So technically it is part of the configuration, but it is
@@ -117,7 +119,7 @@ func NewConfiguration() *Configuration {
 		ChunkSize: 5,
 
 		// Disallowed names are names that would conflict with the ConnectorDB frontend
-		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login"},
+		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login", "user", "admin", "nobody", "root"},
 
 		// Allow an arbitrary number of users by default
 		MaxUsers: -1,
@@ -126,17 +128,149 @@ func NewConfiguration() *Configuration {
 			"nobody": {
 				Join:                false,
 				JoinDisabledMessage: "You must be logged in as admin to add users",
+
+				PublicReadAccessLevel:  "none",
+				PrivateReadAccessLevel: "none",
+				SelfReadAccessLevel:    "none",
+
+				PublicWriteAccessLevel:  "none",
+				PrivateWriteAccessLevel: "none",
+				SelfWriteAccessLevel:    "none",
 			},
 			"user": {
 				Join:                false,
 				JoinDisabledMessage: "You must be logged in as admin to add users",
+
+				PublicReadAccessLevel:  "publicread",
+				PrivateReadAccessLevel: "none",
+				SelfReadAccessLevel:    "selfread",
+
+				PublicWriteAccessLevel:  "none",
+				PrivateWriteAccessLevel: "none",
+				SelfWriteAccessLevel:    "selfwrite",
 			},
 			"admin": {
 				Join:                true,
 				JoinDisabledMessage: "Join is disabled",
+
+				PublicReadAccessLevel:  "full",
+				PrivateReadAccessLevel: "full",
+				SelfReadAccessLevel:    "full",
+
+				PublicWriteAccessLevel:  "full",
+				PrivateWriteAccessLevel: "full",
+				SelfWriteAccessLevel:    "full",
+			},
+		},
+
+		AccessLevels: map[string]AccessLevel{
+			"none": AccessLevel{},
+			"full": AccessLevel{true, true, true,
+				true, true, true, true, true, true, true, true,
+				true, true, true, true, true, true, true, true, true, true, true, true, true,
+				true, true, true, true, true, true, true},
+			"publicread": AccessLevel{
+				CanAccessUser:             true,
+				CanAccessDevice:           true,
+				CanAccessStream:           true,
+				UserName:                  true,
+				UserNickname:              true,
+				UserEmail:                 true,
+				UserDescription:           true,
+				UserIcon:                  true,
+				UserPermissions:           false,
+				UserPublic:                true,
+				UserPassword:              false,
+				DeviceName:                true,
+				DeviceNickname:            true,
+				DeviceDescription:         true,
+				DeviceIcon:                true,
+				DeviceApiKey:              false,
+				DeviceEnabled:             true,
+				DeviceIsVisible:           true,
+				DeviceUserEditable:        true,
+				DevicePublic:              true,
+				DeviceCanReadUserStreams:  false,
+				DeviceCanReadAll:          false,
+				DeviceCanWriteUserStreams: false,
+				DeviceHasUserPermissions:  false,
+				StreamName:                true,
+				StreamNickname:            true,
+				StreamDescription:         true,
+				StreamIcon:                true,
+				StreamSchema:              true,
+				StreamEphemeral:           true,
+				StreamDownlink:            true,
+			},
+			"selfwrite": AccessLevel{
+				CanAccessUser:             true,
+				CanAccessDevice:           true,
+				CanAccessStream:           true,
+				UserName:                  false,
+				UserNickname:              true,
+				UserEmail:                 true,
+				UserDescription:           true,
+				UserIcon:                  true,
+				UserPermissions:           false,
+				UserPublic:                true,
+				UserPassword:              true,
+				DeviceName:                false,
+				DeviceNickname:            true,
+				DeviceDescription:         true,
+				DeviceIcon:                true,
+				DeviceApiKey:              true,
+				DeviceEnabled:             true,
+				DeviceIsVisible:           true,
+				DeviceUserEditable:        false,
+				DevicePublic:              true,
+				DeviceCanReadUserStreams:  true,
+				DeviceCanReadAll:          true,
+				DeviceCanWriteUserStreams: true,
+				DeviceHasUserPermissions:  true,
+				StreamName:                false,
+				StreamNickname:            true,
+				StreamDescription:         true,
+				StreamIcon:                true,
+				StreamSchema:              true,
+				StreamEphemeral:           true,
+				StreamDownlink:            true,
+			},
+			"selfread": AccessLevel{
+				CanAccessUser:             true,
+				CanAccessDevice:           true,
+				CanAccessStream:           true,
+				UserName:                  true,
+				UserNickname:              true,
+				UserEmail:                 true,
+				UserDescription:           true,
+				UserIcon:                  true,
+				UserPermissions:           true,
+				UserPublic:                true,
+				UserPassword:              false,
+				DeviceName:                true,
+				DeviceNickname:            true,
+				DeviceDescription:         true,
+				DeviceIcon:                true,
+				DeviceApiKey:              true,
+				DeviceEnabled:             true,
+				DeviceIsVisible:           true,
+				DeviceUserEditable:        true,
+				DevicePublic:              true,
+				DeviceCanReadUserStreams:  true,
+				DeviceCanReadAll:          true,
+				DeviceCanWriteUserStreams: true,
+				DeviceHasUserPermissions:  true,
+				StreamName:                true,
+				StreamNickname:            true,
+				StreamDescription:         true,
+				StreamIcon:                true,
+				StreamSchema:              true,
+				StreamEphemeral:           true,
+				StreamDownlink:            true,
 			},
 		},
 	}
+
 }
 
 // GetSqlConnectionString returns the string used to connect to postgres

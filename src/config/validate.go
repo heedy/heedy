@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -15,7 +16,27 @@ import (
 )
 
 // Validate ensures that the given permissions have all correct values
-func (p Permissions) Validate() error {
+func (p Permissions) Validate(c *Configuration) error {
+
+	if _, ok := c.AccessLevels[p.PrivateReadAccessLevel]; !ok || p.PrivateReadAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.PrivateReadAccessLevel)
+	}
+	if _, ok := c.AccessLevels[p.PublicReadAccessLevel]; !ok || p.PublicReadAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.PublicReadAccessLevel)
+	}
+	if _, ok := c.AccessLevels[p.PrivateWriteAccessLevel]; !ok || p.PrivateWriteAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.PrivateWriteAccessLevel)
+	}
+	if _, ok := c.AccessLevels[p.PublicWriteAccessLevel]; !ok || p.PublicWriteAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.PublicWriteAccessLevel)
+	}
+	if _, ok := c.AccessLevels[p.SelfWriteAccessLevel]; !ok || p.SelfWriteAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.SelfWriteAccessLevel)
+	}
+	if _, ok := c.AccessLevels[p.SelfReadAccessLevel]; !ok || p.SelfReadAccessLevel == "" {
+		return fmt.Errorf("Could not find access level '%s'", p.SelfReadAccessLevel)
+	}
+
 	return nil
 }
 
@@ -110,7 +131,7 @@ func (c *Configuration) Validate() error {
 		if key == "nobody" {
 			hadNobody = true
 		}
-		if err := c.Permissions[key].Validate(); err != nil {
+		if err := c.Permissions[key].Validate(c); err != nil {
 			return err
 		}
 	}

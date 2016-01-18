@@ -22,3 +22,16 @@ func TestEmail(t *testing.T) {
 
 	require.True(t, cfg.IsAllowedEmail("foo@subdomain.baz.com"))
 }
+
+func TestValidate(t *testing.T) {
+	cfg := NewConfiguration()
+	require.NoError(t, cfg.Validate())
+
+	p := cfg.Permissions["user"]
+	p.PublicReadAccessLevel = "lol"
+	cfg.Permissions["user"] = p
+	require.Error(t, cfg.Validate())
+
+	delete(cfg.Permissions, "user")
+	require.Error(t, cfg.Validate())
+}
