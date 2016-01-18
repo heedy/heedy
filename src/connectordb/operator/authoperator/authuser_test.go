@@ -92,10 +92,10 @@ func TestAuthUserCrud(t *testing.T) {
 	u, err = o.User()
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test3", u.Name)
-	require.Error(t, o.DeleteUserByID(u.UserId))
+	require.Error(t, o.DeleteUserByID(u.UserID))
 
 	require.NoError(t, baseOperator.SetAdmin("streamdb_test3", true))
-	require.NoError(t, o.DeleteUserByID(u.UserId))
+	require.NoError(t, o.DeleteUserByID(u.UserID))
 	_, err = o.User()
 	require.Error(t, err)
 }

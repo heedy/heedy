@@ -50,11 +50,11 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	dev, err := o.Device()
 	require.NoError(t, err)
 
-	o2, err := NewDeviceIdOperator(baseOperator, dev.DeviceId)
+	o2, err := NewDeviceIDOperator(baseOperator, dev.DeviceID)
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test/user", o2.Name())
 
-	devs, err = o.ReadAllDevicesByUserID(dev.UserId)
+	devs, err = o.ReadAllDevicesByUserID(dev.UserID)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(devs)) //the user and meta device
 
@@ -74,12 +74,12 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 	dev, err = baseOperator.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
-	_, err = o.ReadDeviceByID(dev.DeviceId)
+	_, err = o.ReadDeviceByID(dev.DeviceID)
 	require.Error(t, err)
-	_, err = o.ReadDeviceByUserID(dev.UserId, "testdevice")
+	_, err = o.ReadDeviceByUserID(dev.UserID, "testdevice")
 	require.Error(t, err)
-	require.Error(t, o.DeleteDeviceByID(dev.DeviceId))
-	require.Error(t, o.CreateDeviceByUserID(dev.UserId, "testdevice2"))
+	require.Error(t, o.DeleteDeviceByID(dev.DeviceID))
+	require.Error(t, o.CreateDeviceByUserID(dev.UserID, "testdevice2"))
 
 	testdevice.Nickname = "test"
 	require.Error(t, o.UpdateDevice(testdevice))
@@ -93,24 +93,24 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
-	dev, err = o.ReadDeviceByID(dev.DeviceId)
+	dev, err = o.ReadDeviceByID(dev.DeviceID)
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
-	dev, err = o.ReadDeviceByUserID(dev.UserId, "testdevice")
+	dev, err = o.ReadDeviceByUserID(dev.UserID, "testdevice")
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
 
-	_, err = NewDeviceLoginOperator(baseOperator, "streamdb_test/testdevice", dev.ApiKey)
+	_, err = NewDeviceLoginOperator(baseOperator, "streamdb_test/testdevice", dev.APIKey)
 	require.NoError(t, err)
 
-	oldkey := dev.ApiKey
+	oldkey := dev.APIKey
 
 	key, err := o.ChangeDeviceAPIKey("streamdb_test/testdevice")
 	require.NoError(t, err)
-	require.NotEqual(t, key, dev.ApiKey)
+	require.NotEqual(t, key, dev.APIKey)
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
-	require.Equal(t, key, dev.ApiKey)
+	require.Equal(t, key, dev.APIKey)
 
 	_, err = NewDeviceLoginOperator(baseOperator, "streamdb_test/testdevice", oldkey)
 	require.Error(t, err)
@@ -118,10 +118,10 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
 
 	usr, err := o.User()
-	require.NoError(t, o.CreateDeviceByUserID(usr.UserId, "testdevice"))
+	require.NoError(t, o.CreateDeviceByUserID(usr.UserID, "testdevice"))
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
-	require.NoError(t, o.DeleteDeviceByID(dev.DeviceId))
+	require.NoError(t, o.DeleteDeviceByID(dev.DeviceID))
 }
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
@@ -184,10 +184,10 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 
 	key, err := o.ChangeDeviceAPIKey("tstusr/test")
 	require.NoError(t, err)
-	require.NotEqual(t, key, dev.ApiKey)
+	require.NotEqual(t, key, dev.APIKey)
 	dev, err = o.ReadDevice("tstusr/test")
 	require.NoError(t, err)
-	require.Equal(t, key, dev.ApiKey)
+	require.Equal(t, key, dev.APIKey)
 
 	devs, err := baseOperator.ReadAllDevices("tstusr")
 	require.NoError(t, err)
@@ -198,7 +198,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 
 	usr, err := baseOperator.ReadUser("tstusr")
 	require.NoError(t, err)
-	devs, err = o.ReadAllDevicesByUserID(usr.UserId)
+	devs, err = o.ReadAllDevicesByUserID(usr.UserID)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(devs))
 

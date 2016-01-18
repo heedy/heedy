@@ -82,7 +82,7 @@ func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, reques
 		return err
 	}
 
-	encoded, err := CookieMonster.Encode("connectordb-session", dev.ApiKey)
+	encoded, err := CookieMonster.Encode("connectordb-session", dev.APIKey)
 	if err != nil {
 		return err
 	}

@@ -87,7 +87,7 @@ func (o *PlainOperator) Login(username, password string) (*users.User, *users.De
 }
 
 func (o *PlainOperator) DeleteUserByID(userID int64) error {
-	// Users are going to be GC'd from redis in the future - but we currently don't have that implemented,
+	// users are going to be GC'd from redis in the future - but we currently don't have that implemented,
 	// so manually delete all the devices from redis if user delete succeeds
 	dev, err := o.ReadAllDevicesByUserID(userID)
 	if err != nil {
@@ -98,14 +98,14 @@ func (o *PlainOperator) DeleteUserByID(userID int64) error {
 
 	if err == nil {
 		for i := 0; i < len(dev); i++ {
-			o.ds.DeleteDevice(dev[i].DeviceId)
+			o.ds.DeleteDevice(dev[i].DeviceID)
 		}
 	}
 	return err
 }
 
 func (o *PlainOperator) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) {
-	return o.Userdb.ReadDevicesForUserId(userID)
+	return o.Userdb.ReadDevicesForUserID(userID)
 }
 
 func (o *PlainOperator) CreateDeviceByUserID(userID int64, deviceName string) error {
@@ -113,7 +113,7 @@ func (o *PlainOperator) CreateDeviceByUserID(userID int64, deviceName string) er
 }
 
 func (o *PlainOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
-	return o.Userdb.ReadDeviceById(deviceID)
+	return o.Userdb.ReadDeviceByID(deviceID)
 }
 
 func (o *PlainOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
@@ -121,7 +121,7 @@ func (o *PlainOperator) ReadDeviceByUserID(userID int64, devicename string) (*us
 }
 
 func (o *PlainOperator) ReadDeviceByAPIKey(apikey string) (*users.Device, error) {
-	return o.Userdb.ReadDeviceByApiKey(apikey)
+	return o.Userdb.ReadDeviceByAPIKey(apikey)
 }
 
 func (o *PlainOperator) UpdateDevice(modifieddevice *users.Device) error {
@@ -136,15 +136,15 @@ func (o *PlainOperator) DeleteDeviceByID(deviceID int64) error {
 	return err
 }
 
-func (o *PlainOperator) CountUsers() (uint64, error) {
+func (o *PlainOperator) CountUsers() (int64, error) {
 	return o.Userdb.CountUsers()
 }
 
-func (o *PlainOperator) CountDevices() (uint64, error) {
+func (o *PlainOperator) CountDevices() (int64, error) {
 	return o.Userdb.CountDevices()
 }
 
-func (o *PlainOperator) CountStreams() (uint64, error) {
+func (o *PlainOperator) CountStreams() (int64, error) {
 	return o.Userdb.CountStreams()
 }
 
@@ -158,18 +158,18 @@ func (o *PlainOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsons
 
 //ReadStreamByID reads a stream using a stream's ID
 func (o *PlainOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
-	return o.Userdb.ReadStreamById(streamID)
+	return o.Userdb.ReadStreamByID(streamID)
 }
 
 //ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
 func (o *PlainOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
-	return o.Userdb.ReadStreamByDeviceIdAndName(deviceID, streamname)
+	return o.Userdb.ReadStreamByDeviceIDAndName(deviceID, streamname)
 }
 
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
 func (o *PlainOperator) UpdateStream(modifiedstream *users.Stream) error {
-	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
+	strm, err := o.ReadStreamByID(modifiedstream.StreamID)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (o *PlainOperator) UpdateStream(modifiedstream *users.Stream) error {
 	if err == nil && strm.Downlink == true && modifiedstream.Downlink == false {
 		//There was a downlink here. Since the downlink was removed, we delete the associated
 		//downlink substream
-		o.DeleteStreamByID(strm.StreamId, "downlink")
+		o.DeleteStreamByID(strm.StreamID, "downlink")
 	}
 
 	return err
@@ -194,11 +194,11 @@ func (o *PlainOperator) DeleteStreamByID(streamID int64, substream string) error
 
 	if substream != "" {
 		//We just delete the substream
-		err = o.ds.DeleteSubstream(strm.DeviceId, strm.StreamId, substream)
+		err = o.ds.DeleteSubstream(strm.DeviceID, strm.StreamID, substream)
 	} else {
 		err = o.Userdb.DeleteStream(streamID)
 		if err == nil {
-			err = o.ds.DeleteStream(strm.DeviceId, strm.StreamId)
+			err = o.ds.DeleteStream(strm.DeviceID, strm.StreamID)
 		}
 	}
 	return err

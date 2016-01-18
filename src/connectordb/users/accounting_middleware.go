@@ -19,19 +19,19 @@ func (userdb *AccountingMiddleware) GetNumberOfCalls() uint64 {
 	return atomic.LoadUint64(&userdb.databaseCalls)
 }
 
-func (userdb *AccountingMiddleware) CreateDevice(Name string, UserId int64) error {
+func (userdb *AccountingMiddleware) CreateDevice(Name string, UserID, devicelimit int64) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateDevice(Name, UserId)
+	return userdb.UserDatabase.CreateDevice(Name, UserID, devicelimit)
 }
 
-func (userdb *AccountingMiddleware) CreateStream(Name, Type string, DeviceId int64) error {
+func (userdb *AccountingMiddleware) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateStream(Name, Type, DeviceId)
+	return userdb.UserDatabase.CreateStream(Name, Type, DeviceID, streamlimit)
 }
 
-func (userdb *AccountingMiddleware) CreateUser(Name, Email, Password string) error {
+func (userdb *AccountingMiddleware) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateUser(Name, Email, Password)
+	return userdb.UserDatabase.CreateUser(Name, Email, Password, Permissions, userlimit)
 }
 
 func (userdb *AccountingMiddleware) DeleteDevice(Id int64) error {
@@ -44,9 +44,9 @@ func (userdb *AccountingMiddleware) DeleteStream(Id int64) error {
 	return userdb.UserDatabase.DeleteStream(Id)
 }
 
-func (userdb *AccountingMiddleware) DeleteUser(UserId int64) error {
+func (userdb *AccountingMiddleware) DeleteUser(UserID int64) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.DeleteUser(UserId)
+	return userdb.UserDatabase.DeleteUser(UserID)
 }
 
 func (userdb *AccountingMiddleware) Login(Username, Password string) (*User, *Device, error) {
@@ -59,14 +59,14 @@ func (userdb *AccountingMiddleware) ReadAllUsers() ([]User, error) {
 	return userdb.UserDatabase.ReadAllUsers()
 }
 
-func (userdb *AccountingMiddleware) ReadDeviceByApiKey(Key string) (*Device, error) {
+func (userdb *AccountingMiddleware) ReadDeviceByAPIKey(Key string) (*Device, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadDeviceByApiKey(Key)
+	return userdb.UserDatabase.ReadDeviceByAPIKey(Key)
 }
 
-func (userdb *AccountingMiddleware) ReadDeviceById(DeviceId int64) (*Device, error) {
+func (userdb *AccountingMiddleware) ReadDeviceByID(DeviceID int64) (*Device, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadDeviceById(DeviceId)
+	return userdb.UserDatabase.ReadDeviceByID(DeviceID)
 }
 
 func (userdb *AccountingMiddleware) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
@@ -74,29 +74,29 @@ func (userdb *AccountingMiddleware) ReadDeviceForUserByName(userid int64, device
 	return userdb.UserDatabase.ReadDeviceForUserByName(userid, devicename)
 }
 
-func (userdb *AccountingMiddleware) ReadDevicesForUserId(UserId int64) ([]Device, error) {
+func (userdb *AccountingMiddleware) ReadDevicesForUserID(UserID int64) ([]Device, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadDevicesForUserId(UserId)
+	return userdb.UserDatabase.ReadDevicesForUserID(UserID)
 }
 
-func (userdb *AccountingMiddleware) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
+func (userdb *AccountingMiddleware) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadStreamByDeviceIdAndName(DeviceId, streamName)
+	return userdb.UserDatabase.ReadStreamByDeviceIDAndName(DeviceID, streamName)
 }
 
-func (userdb *AccountingMiddleware) ReadStreamById(StreamId int64) (*Stream, error) {
+func (userdb *AccountingMiddleware) ReadStreamByID(StreamID int64) (*Stream, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadStreamById(StreamId)
+	return userdb.UserDatabase.ReadStreamByID(StreamID)
 }
 
-func (userdb *AccountingMiddleware) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
+func (userdb *AccountingMiddleware) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadStreamsByDevice(DeviceId)
+	return userdb.UserDatabase.ReadStreamsByDevice(DeviceID)
 }
 
-func (userdb *AccountingMiddleware) ReadUserById(UserId int64) (*User, error) {
+func (userdb *AccountingMiddleware) ReadUserById(UserID int64) (*User, error) {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.ReadUserById(UserId)
+	return userdb.UserDatabase.ReadUserById(UserID)
 }
 
 func (userdb *AccountingMiddleware) ReadUserByName(Name string) (*User, error) {

@@ -50,10 +50,10 @@ func NewCacheMiddleware(parent UserDatabase, userCacheSize, deviceCacheSize, str
 }
 
 // Removes a particular user and its dependents from the cache
-func (userdb *CacheMiddleware) clearCachedUser(UserId int64) {
+func (userdb *CacheMiddleware) clearCachedUser(UserID int64) {
 
 	// Grab the streams we're supposed to remove.
-	streams, err := userdb.ReadStreamsByUser(UserId)
+	streams, err := userdb.ReadStreamsByUser(UserID)
 
 	// Something bad happened, dump everything
 	if err != nil {
@@ -64,41 +64,41 @@ func (userdb *CacheMiddleware) clearCachedUser(UserId int64) {
 	}
 
 	// Perform the removes
-	userdb.userCache.Remove(fmt.Sprintf("id:%d", UserId))
+	userdb.userCache.Remove(fmt.Sprintf("id:%d", UserID))
 
-	// Remove all devices with the proper UserId
+	// Remove all devices with the proper UserID
 	userdb.deviceCache.RemoveManyFunc(func(item interface{}) (shouldRemove bool) {
 		dev := item.(Device)
-		return dev.UserId == UserId
+		return dev.UserID == UserID
 	})
 
 	// Change our streams into a set for O(n) search.
 	streamIds := map[int64]bool{}
 	for _, stream := range streams {
-		streamIds[stream.StreamId] = true
+		streamIds[stream.StreamID] = true
 	}
 
 	userdb.streamCache.RemoveManyFunc(func(item interface{}) bool {
 		stream := item.(Stream)
-		_, ok := streamIds[stream.StreamId]
+		_, ok := streamIds[stream.StreamID]
 		return ok
 	})
 }
 
 // Removes a device from the caches along with all its children streams
-func (userdb *CacheMiddleware) clearCachedDevice(DeviceId int64) {
-	userdb.deviceCache.Remove(fmt.Sprintf("id:%d", DeviceId))
+func (userdb *CacheMiddleware) clearCachedDevice(DeviceID int64) {
+	userdb.deviceCache.Remove(fmt.Sprintf("id:%d", DeviceID))
 
 	// Now remove all streams that are children
 	userdb.streamCache.RemoveManyFunc(func(item interface{}) (shouldRemove bool) {
 		stream := item.(Stream)
-		return stream.DeviceId == DeviceId
+		return stream.DeviceID == DeviceID
 	})
 }
 
 // Removes a stream with the given id from the cache
-func (userdb *CacheMiddleware) clearCachedStream(StreamId int64) {
-	userdb.streamCache.Remove(fmt.Sprintf("id:%d", StreamId))
+func (userdb *CacheMiddleware) clearCachedStream(StreamID int64) {
+	userdb.streamCache.Remove(fmt.Sprintf("id:%d", StreamID))
 }
 
 func (userdb *CacheMiddleware) cacheUser(user *User, err error) {
@@ -109,7 +109,7 @@ func (userdb *CacheMiddleware) cacheUser(user *User, err error) {
 	cacheable := *user
 
 	userdb.userCache.AddMany(cacheable,
-		fmt.Sprintf("id:%d", user.UserId),
+		fmt.Sprintf("id:%d", user.UserID),
 		fmt.Sprintf("name:%s", user.Name))
 }
 
@@ -121,8 +121,8 @@ func (userdb *CacheMiddleware) cacheStream(stream *Stream, err error) {
 	cacheable := *stream
 
 	userdb.streamCache.AddMany(cacheable,
-		fmt.Sprintf("id:%d", stream.StreamId),
-		fmt.Sprintf("dev:%dname:%s", stream.DeviceId, stream.Name))
+		fmt.Sprintf("id:%d", stream.StreamID),
+		fmt.Sprintf("dev:%dname:%s", stream.DeviceID, stream.Name))
 }
 
 func (userdb *CacheMiddleware) cacheDevice(dev *Device, err error) {
@@ -133,9 +133,9 @@ func (userdb *CacheMiddleware) cacheDevice(dev *Device, err error) {
 	cacheable := *dev
 
 	userdb.deviceCache.AddMany(cacheable,
-		fmt.Sprintf("id:%d", dev.DeviceId),
-		fmt.Sprintf("usr:%dname:%s", dev.UserId, dev.Name),
-		fmt.Sprintf("apikey:%s", dev.ApiKey))
+		fmt.Sprintf("id:%d", dev.DeviceID),
+		fmt.Sprintf("usr:%dname:%s", dev.UserID, dev.Name),
+		fmt.Sprintf("apikey:%s", dev.APIKey))
 }
 
 func (userdb *CacheMiddleware) readUser(key string) (user User, ok bool) {
@@ -180,11 +180,11 @@ func (userdb *CacheMiddleware) DeleteStream(Id int64) error {
 	return userdb.UserDatabase.DeleteStream(Id)
 }
 
-func (userdb *CacheMiddleware) DeleteUser(UserId int64) error {
+func (userdb *CacheMiddleware) DeleteUser(UserID int64) error {
 	// Do this first since we need the db in the same state
-	userdb.clearCachedUser(UserId)
+	userdb.clearCachedUser(UserID)
 
-	return userdb.UserDatabase.DeleteUser(UserId)
+	return userdb.UserDatabase.DeleteUser(UserID)
 }
 
 func (userdb *CacheMiddleware) Login(Username, Password string) (*User, *Device, error) {
@@ -200,26 +200,26 @@ func (userdb *CacheMiddleware) ReadAllUsers() ([]User, error) {
 	return userdb.UserDatabase.ReadAllUsers()
 }
 
-func (userdb *CacheMiddleware) ReadDeviceByApiKey(Key string) (*Device, error) {
+func (userdb *CacheMiddleware) ReadDeviceByAPIKey(Key string) (*Device, error) {
 	cacheDev, ok := userdb.readDevice("api:" + Key)
 	if ok {
 		return &cacheDev, nil
 	}
 
-	dev, err := userdb.UserDatabase.ReadDeviceByApiKey(Key)
+	dev, err := userdb.UserDatabase.ReadDeviceByAPIKey(Key)
 
 	userdb.cacheDevice(dev, err)
 
 	return dev, err
 }
 
-func (userdb *CacheMiddleware) ReadDeviceById(DeviceId int64) (*Device, error) {
-	cacheDev, ok := userdb.readDevice(fmt.Sprintf("id:%d", DeviceId))
+func (userdb *CacheMiddleware) ReadDeviceByID(DeviceID int64) (*Device, error) {
+	cacheDev, ok := userdb.readDevice(fmt.Sprintf("id:%d", DeviceID))
 	if ok {
 		return &cacheDev, nil
 	}
 
-	dev, err := userdb.UserDatabase.ReadDeviceById(DeviceId)
+	dev, err := userdb.UserDatabase.ReadDeviceByID(DeviceID)
 
 	userdb.cacheDevice(dev, err)
 
@@ -239,39 +239,39 @@ func (userdb *CacheMiddleware) ReadDeviceForUserByName(userid int64, devicename 
 	return dev, err
 }
 
-func (userdb *CacheMiddleware) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
-	cached, ok := userdb.readStream(fmt.Sprintf("dev:%dname:%s", DeviceId, streamName))
+func (userdb *CacheMiddleware) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
+	cached, ok := userdb.readStream(fmt.Sprintf("dev:%dname:%s", DeviceID, streamName))
 	if ok {
 		return &cached, nil
 	}
 
-	stream, err := userdb.UserDatabase.ReadStreamByDeviceIdAndName(DeviceId, streamName)
+	stream, err := userdb.UserDatabase.ReadStreamByDeviceIDAndName(DeviceID, streamName)
 
 	userdb.cacheStream(stream, err)
 
 	return stream, err
 }
 
-func (userdb *CacheMiddleware) ReadStreamById(StreamId int64) (*Stream, error) {
-	cacheStream, ok := userdb.readStream(fmt.Sprintf("id:%d", StreamId))
+func (userdb *CacheMiddleware) ReadStreamByID(StreamID int64) (*Stream, error) {
+	cacheStream, ok := userdb.readStream(fmt.Sprintf("id:%d", StreamID))
 	if ok {
 		return &cacheStream, nil
 	}
 
-	stream, err := userdb.UserDatabase.ReadStreamById(StreamId)
+	stream, err := userdb.UserDatabase.ReadStreamByID(StreamID)
 
 	userdb.cacheStream(stream, err)
 
 	return stream, err
 }
 
-func (userdb *CacheMiddleware) ReadUserById(UserId int64) (*User, error) {
-	cacheUser, ok := userdb.readUser(fmt.Sprintf("id:%d", UserId))
+func (userdb *CacheMiddleware) ReadUserById(UserID int64) (*User, error) {
+	cacheUser, ok := userdb.readUser(fmt.Sprintf("id:%d", UserID))
 	if ok {
 		return &cacheUser, nil
 	}
 
-	user, err := userdb.UserDatabase.ReadUserById(UserId)
+	user, err := userdb.UserDatabase.ReadUserById(UserID)
 
 	userdb.cacheUser(user, err)
 
@@ -296,7 +296,7 @@ func (userdb *CacheMiddleware) ReadUserOperatingDevice(user *User) (*Device, err
 		return nil, InvalidPointerError
 	}
 
-	cacheDev, ok := userdb.readDevice(fmt.Sprintf("usr:%dname:user", user.UserId))
+	cacheDev, ok := userdb.readDevice(fmt.Sprintf("usr:%dname:user", user.UserID))
 	if ok {
 		return &cacheDev, nil
 	}
@@ -310,7 +310,7 @@ func (userdb *CacheMiddleware) UpdateDevice(device *Device) error {
 	}
 
 	err := userdb.UserDatabase.UpdateDevice(device)
-	userdb.clearCachedDevice(device.DeviceId)
+	userdb.clearCachedDevice(device.DeviceID)
 	return err
 }
 
@@ -320,7 +320,7 @@ func (userdb *CacheMiddleware) UpdateStream(stream *Stream) error {
 	}
 
 	err := userdb.UserDatabase.UpdateStream(stream)
-	userdb.clearCachedStream(stream.StreamId)
+	userdb.clearCachedStream(stream.StreamID)
 	return err
 }
 
@@ -330,10 +330,10 @@ func (userdb *CacheMiddleware) UpdateUser(user *User) error {
 	}
 
 	// Do this first since the db should still be in the same state
-	userdb.clearCachedUser(user.UserId)
+	userdb.clearCachedUser(user.UserID)
 	err := userdb.UserDatabase.UpdateUser(user)
 	// Do this again since permissions can change when updating a user.
-	userdb.clearCachedUser(user.UserId)
+	userdb.clearCachedUser(user.UserID)
 
 	return err
 }

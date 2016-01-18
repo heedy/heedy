@@ -91,12 +91,12 @@ func (o *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 
 //UpdateStream updates the stream
 func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
-	originalStream, err := o.BaseOperator.ReadStreamByID(modifiedstream.StreamId)
+	originalStream, err := o.BaseOperator.ReadStreamByID(modifiedstream.StreamID)
 	if err != nil {
 		return err
 	}
 
-	streamsDevice, err := o.BaseOperator.ReadDeviceByID(originalStream.DeviceId)
+	streamsDevice, err := o.BaseOperator.ReadDeviceByID(originalStream.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (o *AuthOperator) UpdateStream(modifiedstream *users.Stream) error {
 
 	err = o.BaseOperator.UpdateStream(modifiedstream)
 	if err == nil {
-		o.MetaLogStreamID(originalStream.StreamId, "UpdateStream")
+		o.MetaLogStreamID(originalStream.StreamID, "UpdateStream")
 	}
 
 	return err
@@ -138,7 +138,7 @@ func (o *AuthOperator) devPermissionsGteStream(streamToCheck *users.Stream, perm
 		return users.NOBODY, err
 	}
 
-	streamsDevice, err := o.BaseOperator.ReadDeviceByID(streamToCheck.DeviceId)
+	streamsDevice, err := o.BaseOperator.ReadDeviceByID(streamToCheck.DeviceID)
 	if err != nil {
 		return users.NOBODY, err
 	}

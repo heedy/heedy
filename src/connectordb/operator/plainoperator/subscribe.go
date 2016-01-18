@@ -25,7 +25,7 @@ func (o *PlainOperator) SubscribeDeviceByID(deviceID int64, chn chan messenger.M
 	if err != nil {
 		return nil, err
 	}
-	usr, err := o.ReadUserByID(dev.UserId)
+	usr, err := o.ReadUserByID(dev.UserID)
 	if err != nil {
 		return nil, err
 	}

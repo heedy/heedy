@@ -30,7 +30,7 @@ func NewDeviceAuthOperator(baseOperator interfaces.Operator, devicepath string) 
 		return interfaces.ErrOperator{}, err
 	}
 
-	return &AuthOperator{baseOperator, devicepath, device.DeviceId, metaLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, device.DeviceID, metaLogStream.StreamID}, nil
 }
 
 func NewAPILoginOperator(baseOperator interfaces.Operator, apikey string) (interfaces.BaseOperator, error) {
@@ -39,7 +39,7 @@ func NewAPILoginOperator(baseOperator interfaces.Operator, apikey string) (inter
 		return interfaces.ErrOperator{}, err
 	}
 
-	return NewDeviceIdOperator(baseOperator, device.DeviceId)
+	return NewDeviceIDOperator(baseOperator, device.DeviceID)
 }
 
 func NewDeviceLoginOperator(baseOperator interfaces.Operator, devicepath, apikey string) (interfaces.BaseOperator, error) {
@@ -53,20 +53,20 @@ func NewDeviceLoginOperator(baseOperator interfaces.Operator, devicepath, apikey
 		return interfaces.ErrOperator{}, err
 	}
 
-	if device.ApiKey != apikey {
+	if device.APIKey != apikey {
 		return interfaces.ErrOperator{}, ErrPermissions
 	}
 
 	return operator, nil
 }
 
-func NewDeviceIdOperator(baseOperator interfaces.Operator, deviceID int64) (interfaces.BaseOperator, error) {
+func NewDeviceIDOperator(baseOperator interfaces.Operator, deviceID int64) (interfaces.BaseOperator, error) {
 	device, err := baseOperator.ReadDeviceByID(deviceID)
 	if err != nil {
 		return interfaces.ErrOperator{}, err
 	}
 
-	user, err := baseOperator.ReadUserByID(device.UserId)
+	user, err := baseOperator.ReadUserByID(device.UserID)
 	if err != nil {
 		return interfaces.ErrOperator{}, err
 	}
@@ -78,7 +78,7 @@ func NewDeviceIdOperator(baseOperator interfaces.Operator, deviceID int64) (inte
 
 	devicepath := user.Name + "/" + device.Name
 
-	return &AuthOperator{baseOperator, devicepath, deviceID, metaLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, deviceID, metaLogStream.StreamID}, nil
 }
 
 func NewUserLoginOperator(baseOperator interfaces.Operator, username, password string) (interfaces.BaseOperator, error) {
@@ -95,5 +95,5 @@ func NewUserLoginOperator(baseOperator interfaces.Operator, username, password s
 
 	devicepath := user.Name + "/" + device.Name
 
-	return &AuthOperator{baseOperator, devicepath, device.DeviceId, metaLogStream.StreamId}, nil
+	return &AuthOperator{baseOperator, devicepath, device.DeviceID, metaLogStream.StreamID}, nil
 }

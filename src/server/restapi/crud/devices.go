@@ -72,13 +72,13 @@ func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	if d.ApiKey == "" {
+	if d.APIKey == "" {
 		//The user wants to reset the API key
 		newkey, err := uuid.NewV4()
 		if err != nil {
 			return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, false)
 		}
-		d.ApiKey = newkey.String()
+		d.APIKey = newkey.String()
 	}
 
 	if err = o.UpdateDevice(d); err != nil {

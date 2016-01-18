@@ -27,7 +27,7 @@ type TemplateData struct {
 	Device *users.Device
 	Stream *users.Stream
 
-	//When given a user or device, the user's Devices and device's Streams
+	//When given a user or device, the user's devices and device's streams
 	// are also exposed. When giving Index,
 	//	both the current user's devices and current user's user device's streams
 	//	are sent
@@ -63,12 +63,12 @@ func Index(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 
-	td.Devices, err = o.ReadAllDevicesByUserID(td.ThisUser.UserId)
+	td.Devices, err = o.ReadAllDevicesByUserID(td.ThisUser.UserID)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 
-	td.Streams, err = o.ReadAllStreamsByDeviceID(td.ThisDevice.DeviceId)
+	td.Streams, err = o.ReadAllStreamsByDeviceID(td.ThisDevice.DeviceID)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
@@ -89,7 +89,7 @@ func User(o operator.Operator, writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		return LoggedIn404(o, writer, logger, err)
 	}
-	td.Devices, err = o.ReadAllDevicesByUserID(td.User.UserId)
+	td.Devices, err = o.ReadAllDevicesByUserID(td.User.UserID)
 	if err != nil {
 		return LoggedIn404(o, writer, logger, err)
 	}
@@ -115,7 +115,7 @@ func Device(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 	if err != nil {
 		return LoggedIn404(o, writer, logger, err)
 	}
-	td.Streams, err = o.ReadAllStreamsByDeviceID(td.Device.DeviceId)
+	td.Streams, err = o.ReadAllStreamsByDeviceID(td.Device.DeviceID)
 	if err != nil {
 		return LoggedIn404(o, writer, logger, err)
 	}

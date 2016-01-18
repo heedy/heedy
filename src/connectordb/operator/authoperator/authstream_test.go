@@ -34,7 +34,7 @@ func TestAuthStreamCrud(t *testing.T) {
 
 	dev, err := baseOperator.ReadDevice("tst/testdevice2")
 	require.NoError(t, err)
-	_, err = o.ReadAllStreamsByDeviceID(dev.DeviceId)
+	_, err = o.ReadAllStreamsByDeviceID(dev.DeviceID)
 	require.Error(t, err)
 
 	_, err = o.ReadAllStreams("tst/testdevice2")
@@ -42,7 +42,7 @@ func TestAuthStreamCrud(t *testing.T) {
 
 	dev, err = o.Device()
 	require.NoError(t, err)
-	strms, err := o.ReadAllStreamsByDeviceID(dev.DeviceId)
+	strms, err := o.ReadAllStreamsByDeviceID(dev.DeviceID)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(strms))
 
@@ -79,14 +79,14 @@ func TestAuthStreamCrud(t *testing.T) {
 	dev, err = o.ReadDevice("tst/testdevice")
 	require.NoError(t, err)
 
-	require.NoError(t, o.CreateStreamByDeviceID(dev.DeviceId, "testme", `{"type":"string"}`))
+	require.NoError(t, o.CreateStreamByDeviceID(dev.DeviceID, "testme", `{"type":"string"}`))
 
-	s, err = o.ReadStreamByDeviceID(dev.DeviceId, "testme")
+	s, err = o.ReadStreamByDeviceID(dev.DeviceID, "testme")
 	require.NoError(t, err)
 	require.Equal(t, s.Name, "testme")
-	require.NoError(t, o.DeleteStreamByID(s.StreamId, ""))
-	_, err = o.ReadStreamByID(s.StreamId)
+	require.NoError(t, o.DeleteStreamByID(s.StreamID, ""))
+	_, err = o.ReadStreamByID(s.StreamID)
 	require.Error(t, err)
-	_, err = o.ReadStreamByDeviceID(dev.DeviceId, "testme")
+	_, err = o.ReadStreamByDeviceID(dev.DeviceID, "testme")
 	require.Error(t, err)
 }

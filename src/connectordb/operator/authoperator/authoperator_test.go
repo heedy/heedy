@@ -37,7 +37,7 @@ func TestAuthOperatorBasics(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "user", d.Name)
 
-	apiOp, err := NewAPILoginOperator(baseOperator, d.ApiKey)
+	apiOp, err := NewAPILoginOperator(baseOperator, d.APIKey)
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test/user", apiOp.Name())
 

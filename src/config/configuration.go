@@ -7,6 +7,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,6 +38,11 @@ type Configuration struct {
 	BatchSize int `json:"batchsize"` // BatchSize is the number of datapoints per database entry
 	ChunkSize int `json:"chunksize"` // ChunkSize is number of batches per database insert transaction
 
+	// The prime number to use for scrambling IDs in the database.
+	// WARNING: This must be CONSTANT! It should NEVER change after creating the first user.
+	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+	IDScramblePrime int64 `json:"id_scramble_prime"`
+
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
 	InitialUsername     string `json:"-"`
@@ -56,7 +62,7 @@ type Configuration struct {
 	// The specific permissions granted to different user types
 	Permissions map[string]Permissions `json:"permissions"`
 
-	AccessLevels map[string]AccessLevel `json:"access_levels"`
+	AccessLevels map[string]*AccessLevel `json:"access_levels"`
 
 	// The following are exported fields that are used internally, and are not available to json.
 	// This is honestly just lazy programming on my part - I am using the config struct as a temporary variable
@@ -118,6 +124,10 @@ func NewConfiguration() *Configuration {
 		BatchSize: 250,
 		ChunkSize: 5,
 
+		// This is the CONSTANT default. The database will explode if this is ever changed.
+		// You have been warned.
+		IDScramblePrime: 2147483423,
+
 		// Disallowed names are names that would conflict with the ConnectorDB frontend
 		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login", "user", "admin", "nobody", "root"},
 
@@ -163,114 +173,124 @@ func NewConfiguration() *Configuration {
 			},
 		},
 
-		AccessLevels: map[string]AccessLevel{
-			"none": AccessLevel{},
-			"full": AccessLevel{true, true, true,
-				true, true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true},
-			"publicread": AccessLevel{
-				CanAccessUser:             true,
-				CanAccessDevice:           true,
-				CanAccessStream:           true,
-				UserName:                  true,
-				UserNickname:              true,
-				UserEmail:                 true,
-				UserDescription:           true,
-				UserIcon:                  true,
-				UserPermissions:           false,
-				UserPublic:                true,
-				UserPassword:              false,
-				DeviceName:                true,
-				DeviceNickname:            true,
-				DeviceDescription:         true,
-				DeviceIcon:                true,
-				DeviceApiKey:              false,
-				DeviceEnabled:             true,
-				DeviceIsVisible:           true,
-				DeviceUserEditable:        true,
-				DevicePublic:              true,
-				DeviceCanReadUserStreams:  false,
-				DeviceCanReadAll:          false,
-				DeviceCanWriteUserStreams: false,
-				DeviceHasUserPermissions:  false,
-				StreamName:                true,
-				StreamNickname:            true,
-				StreamDescription:         true,
-				StreamIcon:                true,
-				StreamSchema:              true,
-				StreamEphemeral:           true,
-				StreamDownlink:            true,
+		AccessLevels: map[string]*AccessLevel{
+			"publicread": &AccessLevel{
+				CanAccessUser:          true,
+				CanAccessDevice:        true,
+				CanAccessStream:        true,
+				UserName:               true,
+				UserNickname:           true,
+				UserEmail:              true,
+				UserDescription:        true,
+				UserIcon:               true,
+				UserPermissions:        false,
+				UserPublic:             true,
+				UserPassword:           false,
+				DeviceName:             true,
+				DeviceNickname:         true,
+				DeviceDescription:      true,
+				DeviceIcon:             true,
+				DeviceAPIKey:           false,
+				DeviceEnabled:          true,
+				DeviceIsVisible:        true,
+				DeviceUserEditable:     true,
+				DevicePublic:           true,
+				DeviceCanReadUser:      false,
+				DeviceCanReadExternal:  false,
+				DeviceCanWriteUser:     false,
+				DeviceCanWriteExternal: false,
+				StreamName:             true,
+				StreamNickname:         true,
+				StreamDescription:      true,
+				StreamIcon:             true,
+				StreamSchema:           true,
+				StreamEphemeral:        true,
+				StreamDownlink:         true,
 			},
-			"selfwrite": AccessLevel{
-				CanAccessUser:             true,
-				CanAccessDevice:           true,
-				CanAccessStream:           true,
-				UserName:                  false,
-				UserNickname:              true,
-				UserEmail:                 true,
-				UserDescription:           true,
-				UserIcon:                  true,
-				UserPermissions:           false,
-				UserPublic:                true,
-				UserPassword:              true,
-				DeviceName:                false,
-				DeviceNickname:            true,
-				DeviceDescription:         true,
-				DeviceIcon:                true,
-				DeviceApiKey:              true,
-				DeviceEnabled:             true,
-				DeviceIsVisible:           true,
-				DeviceUserEditable:        false,
-				DevicePublic:              true,
-				DeviceCanReadUserStreams:  true,
-				DeviceCanReadAll:          true,
-				DeviceCanWriteUserStreams: true,
-				DeviceHasUserPermissions:  true,
-				StreamName:                false,
-				StreamNickname:            true,
-				StreamDescription:         true,
-				StreamIcon:                true,
-				StreamSchema:              true,
-				StreamEphemeral:           true,
-				StreamDownlink:            true,
+			"selfwrite": &AccessLevel{
+				CanAccessUser:          true,
+				CanAccessDevice:        true,
+				CanAccessStream:        true,
+				UserName:               false,
+				UserNickname:           true,
+				UserEmail:              true,
+				UserDescription:        true,
+				UserIcon:               true,
+				UserPermissions:        false,
+				UserPublic:             true,
+				UserPassword:           true,
+				DeviceName:             false,
+				DeviceNickname:         true,
+				DeviceDescription:      true,
+				DeviceIcon:             true,
+				DeviceAPIKey:           true,
+				DeviceEnabled:          true,
+				DeviceIsVisible:        true,
+				DeviceUserEditable:     false,
+				DevicePublic:           true,
+				DeviceCanReadUser:      true,
+				DeviceCanReadExternal:  true,
+				DeviceCanWriteUser:     true,
+				DeviceCanWriteExternal: true,
+				StreamName:             false,
+				StreamNickname:         true,
+				StreamDescription:      true,
+				StreamIcon:             true,
+				StreamSchema:           true,
+				StreamEphemeral:        true,
+				StreamDownlink:         true,
 			},
-			"selfread": AccessLevel{
-				CanAccessUser:             true,
-				CanAccessDevice:           true,
-				CanAccessStream:           true,
-				UserName:                  true,
-				UserNickname:              true,
-				UserEmail:                 true,
-				UserDescription:           true,
-				UserIcon:                  true,
-				UserPermissions:           true,
-				UserPublic:                true,
-				UserPassword:              false,
-				DeviceName:                true,
-				DeviceNickname:            true,
-				DeviceDescription:         true,
-				DeviceIcon:                true,
-				DeviceApiKey:              true,
-				DeviceEnabled:             true,
-				DeviceIsVisible:           true,
-				DeviceUserEditable:        true,
-				DevicePublic:              true,
-				DeviceCanReadUserStreams:  true,
-				DeviceCanReadAll:          true,
-				DeviceCanWriteUserStreams: true,
-				DeviceHasUserPermissions:  true,
-				StreamName:                true,
-				StreamNickname:            true,
-				StreamDescription:         true,
-				StreamIcon:                true,
-				StreamSchema:              true,
-				StreamEphemeral:           true,
-				StreamDownlink:            true,
+			"selfread": &AccessLevel{
+				CanAccessUser:          true,
+				CanAccessDevice:        true,
+				CanAccessStream:        true,
+				UserName:               true,
+				UserNickname:           true,
+				UserEmail:              true,
+				UserDescription:        true,
+				UserIcon:               true,
+				UserPermissions:        true,
+				UserPublic:             true,
+				UserPassword:           false,
+				DeviceName:             true,
+				DeviceNickname:         true,
+				DeviceDescription:      true,
+				DeviceIcon:             true,
+				DeviceAPIKey:           true,
+				DeviceEnabled:          true,
+				DeviceIsVisible:        true,
+				DeviceUserEditable:     true,
+				DevicePublic:           true,
+				DeviceCanReadUser:      true,
+				DeviceCanReadExternal:  true,
+				DeviceCanWriteUser:     true,
+				DeviceCanWriteExternal: true,
+				StreamName:             true,
+				StreamNickname:         true,
+				StreamDescription:      true,
+				StreamIcon:             true,
+				StreamSchema:           true,
+				StreamEphemeral:        true,
+				StreamDownlink:         true,
 			},
 		},
 	}
 
+}
+
+// GetAccessLevel returns the given access level
+func (c *Configuration) GetAccessLevel(level string) (*AccessLevel, error) {
+	if level == "none" {
+		return &NoneAccessLevel, nil
+	}
+	if level == "full" {
+		return &FullAccessLevel, nil
+	}
+	al, ok := c.AccessLevels[level]
+	if !ok {
+		return nil, fmt.Errorf("Could not find access level '%s'", level)
+	}
+	return al, nil
 }
 
 // GetSqlConnectionString returns the string used to connect to postgres

@@ -53,7 +53,7 @@ func (o PathOperatorMixin) ReadDevice(devicepath string) (*users.Device, error) 
 	if err != nil {
 		return nil, err
 	}
-	dev, err := o.BaseOperator.ReadDeviceByUserID(u.UserId, devname)
+	dev, err := o.BaseOperator.ReadDeviceByUserID(u.UserID, devname)
 	return dev, err
 }
 
@@ -85,7 +85,7 @@ func (o PathOperatorMixin) DeleteUser(username string) error {
 	if err != nil {
 		return err
 	}
-	return o.DeleteUserByID(u.UserId)
+	return o.DeleteUserByID(u.UserID)
 }
 
 //ReadAllDevices for the given user
@@ -94,7 +94,7 @@ func (o PathOperatorMixin) ReadAllDevices(username string) ([]users.Device, erro
 	if err != nil {
 		return nil, err
 	}
-	return o.ReadAllDevicesByUserID(u.UserId)
+	return o.ReadAllDevicesByUserID(u.UserID)
 }
 
 //CreateDevice creates a new device at the given path
@@ -108,7 +108,7 @@ func (o PathOperatorMixin) CreateDevice(devicepath string) error {
 		return err
 	}
 
-	return o.CreateDeviceByUserID(u.UserId, deviceName)
+	return o.CreateDeviceByUserID(u.UserID, deviceName)
 }
 
 //ChangeDeviceAPIKey generates a new api key for the given device, and returns the key
@@ -121,8 +121,8 @@ func (o PathOperatorMixin) ChangeDeviceAPIKey(devicepath string) (apikey string,
 	if err != nil {
 		return "", err
 	}
-	dev.ApiKey = newkey.String()
-	return dev.ApiKey, o.UpdateDevice(dev)
+	dev.APIKey = newkey.String()
+	return dev.APIKey, o.UpdateDevice(dev)
 }
 
 //DeleteDevice deletes an existing device
@@ -131,7 +131,7 @@ func (o PathOperatorMixin) DeleteDevice(devicepath string) error {
 	if err != nil {
 		return err //Workaround for #81
 	}
-	return o.DeleteDeviceByID(dev.DeviceId)
+	return o.DeleteDeviceByID(dev.DeviceID)
 }
 
 //ReadAllStreams reads all the streams for the given device
@@ -140,7 +140,7 @@ func (o PathOperatorMixin) ReadAllStreams(devicepath string) ([]users.Stream, er
 	if err != nil {
 		return nil, err
 	}
-	return o.ReadAllStreamsByDeviceID(dev.DeviceId)
+	return o.ReadAllStreamsByDeviceID(dev.DeviceID)
 }
 
 //CreateStream makes a new stream
@@ -153,7 +153,7 @@ func (o PathOperatorMixin) CreateStream(streampath, jsonschema string) error {
 	if err != nil {
 		return err
 	}
-	return o.CreateStreamByDeviceID(dev.DeviceId, streamname, jsonschema)
+	return o.CreateStreamByDeviceID(dev.DeviceID, streamname, jsonschema)
 }
 
 //DeleteStream deletes the given stream given its path
@@ -166,7 +166,7 @@ func (o PathOperatorMixin) DeleteStream(streampath string) error {
 	if err != nil {
 		return err
 	}
-	return o.DeleteStreamByID(s.StreamId, substream)
+	return o.DeleteStreamByID(s.StreamID, substream)
 }
 
 //LengthStream returns the total number of datapoints in the given stream
@@ -179,7 +179,7 @@ func (o PathOperatorMixin) LengthStream(streampath string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return o.LengthStreamByID(strm.StreamId, substream)
+	return o.LengthStreamByID(strm.StreamID, substream)
 }
 
 //TimeToIndexStream returns the index closest to the given timestamp
@@ -192,7 +192,7 @@ func (o PathOperatorMixin) TimeToIndexStream(streampath string, time float64) (i
 	if err != nil {
 		return 0, err
 	}
-	return o.TimeToIndexStreamByID(strm.StreamId, substream, time)
+	return o.TimeToIndexStreamByID(strm.StreamID, substream, time)
 }
 
 //InsertStream inserts the given array of datapoints into the given stream.
@@ -205,7 +205,7 @@ func (o PathOperatorMixin) InsertStream(streampath string, data datastream.Datap
 	if err != nil {
 		return err
 	}
-	return o.BaseOperator.InsertStreamByID(strm.StreamId, substream, data, restamp)
+	return o.BaseOperator.InsertStreamByID(strm.StreamID, substream, data, restamp)
 }
 
 //GetStreamTimeRange Reads the given stream by time range
@@ -218,7 +218,7 @@ func (o PathOperatorMixin) GetStreamTimeRange(streampath string, t1 float64, t2 
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamTimeRangeByID(strm.StreamId, substream, t1, t2, limit, transform)
+	return o.GetStreamTimeRangeByID(strm.StreamID, substream, t1, t2, limit, transform)
 }
 
 //GetShiftedStreamTimeRange Reads the given stream by time range with an index shift
@@ -231,7 +231,7 @@ func (o PathOperatorMixin) GetShiftedStreamTimeRange(streampath string, t1 float
 	if err != nil {
 		return nil, err
 	}
-	return o.GetShiftedStreamTimeRangeByID(strm.StreamId, substream, t1, t2, shift, limit, transform)
+	return o.GetShiftedStreamTimeRangeByID(strm.StreamID, substream, t1, t2, shift, limit, transform)
 }
 
 //GetStreamIndexRange Reads the given stream by index range
@@ -244,7 +244,7 @@ func (o PathOperatorMixin) GetStreamIndexRange(streampath string, i1 int64, i2 i
 	if err != nil {
 		return nil, err
 	}
-	return o.GetStreamIndexRangeByID(strm.StreamId, substream, i1, i2, transform)
+	return o.GetStreamIndexRangeByID(strm.StreamID, substream, i1, i2, transform)
 }
 
 //SubscribeUser subscribes to everything the user does
@@ -253,7 +253,7 @@ func (o PathOperatorMixin) SubscribeUser(username string, chn chan messenger.Mes
 	if err != nil {
 		return nil, err
 	}
-	return o.SubscribeUserByID(usr.UserId, chn)
+	return o.SubscribeUserByID(usr.UserID, chn)
 }
 
 //SubscribeDevice subscribes to everythnig the device does
@@ -262,7 +262,7 @@ func (o PathOperatorMixin) SubscribeDevice(devpath string, chn chan messenger.Me
 	if err != nil {
 		return nil, err
 	}
-	return o.SubscribeDeviceByID(dev.DeviceId, chn)
+	return o.SubscribeDeviceByID(dev.DeviceID, chn)
 }
 
 //SubscribeStream subscribes to the given stream
@@ -275,7 +275,7 @@ func (o PathOperatorMixin) SubscribeStream(streampath string, chn chan messenger
 	if err != nil {
 		return nil, err
 	}
-	return o.SubscribeStreamByID(strm.StreamId, substream, chn)
+	return o.SubscribeStreamByID(strm.StreamID, substream, chn)
 }
 
 //ReadStream reads the given stream
@@ -290,5 +290,5 @@ func (o PathOperatorMixin) ReadStream(streampath string) (*users.Stream, error) 
 	if err != nil {
 		return nil, err
 	}
-	return o.BaseOperator.ReadStreamByDeviceID(dev.DeviceId, streamname)
+	return o.BaseOperator.ReadStreamByDeviceID(dev.DeviceID, streamname)
 }

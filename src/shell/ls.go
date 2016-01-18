@@ -37,9 +37,9 @@ func init() {
 		case len(args) == 1:
 			toPrint, err = shell.operator.ReadAllUsers()
 		case dev == nil:
-			toPrint, err = shell.operator.ReadAllDevicesByUserID(usr.UserId)
+			toPrint, err = shell.operator.ReadAllDevicesByUserID(usr.UserID)
 		case stream == nil:
-			toPrint, err = shell.operator.ReadAllStreamsByDeviceID(dev.DeviceId)
+			toPrint, err = shell.operator.ReadAllStreamsByDeviceID(dev.DeviceID)
 		default:
 			toPrint = []byte("You specified a full path, try cat instead.")
 		}

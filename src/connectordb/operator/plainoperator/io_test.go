@@ -106,7 +106,7 @@ func TestStreamIO(t *testing.T) {
 
 	strm, err := db.ReadStream("tst/tst/tst")
 	require.NoError(t, err)
-	l, err = db.LengthStreamByID(strm.StreamId, "")
+	l, err = db.LengthStreamByID(strm.StreamID, "")
 
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l)

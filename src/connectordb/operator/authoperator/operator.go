@@ -38,7 +38,7 @@ func (o *AuthOperator) User() (usr *users.User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return o.BaseOperator.ReadUserByID(dev.UserId)
+	return o.BaseOperator.ReadUserByID(dev.UserID)
 }
 
 //Device returns the current device
@@ -61,7 +61,7 @@ func (o *AuthOperator) getDevicePath(deviceID int64) (path string, err error) {
 		return "", err
 	}
 
-	usr, err := o.ReadUserByID(dev.UserId)
+	usr, err := o.ReadUserByID(dev.UserID)
 	if err != nil {
 		return "", err
 	}
@@ -73,12 +73,12 @@ func (o *AuthOperator) getStreamPath(streamID int64) (path string, err error) {
 	if err != nil {
 		return "", err
 	}
-	devpath, err := o.getDevicePath(s.DeviceId)
+	devpath, err := o.getDevicePath(s.DeviceID)
 	return devpath + "/" + s.Name, err
 }
 
 //CountUsers returns the total number of users contatined in the database
-func (o *AuthOperator) CountUsers() (uint64, error) {
+func (o *AuthOperator) CountUsers() (int64, error) {
 	if o.Permissions(users.ROOT) {
 		return o.BaseOperator.CountUsers()
 	}
@@ -86,7 +86,7 @@ func (o *AuthOperator) CountUsers() (uint64, error) {
 }
 
 //CountDevices returns the total number of devices contatined in the database
-func (o *AuthOperator) CountDevices() (uint64, error) {
+func (o *AuthOperator) CountDevices() (int64, error) {
 	if o.Permissions(users.ROOT) {
 		return o.BaseOperator.CountDevices()
 	}
@@ -94,7 +94,7 @@ func (o *AuthOperator) CountDevices() (uint64, error) {
 }
 
 //CountStreams returns the total number of streams contatined in the database
-func (o *AuthOperator) CountStreams() (uint64, error) {
+func (o *AuthOperator) CountStreams() (int64, error) {
 	if o.Permissions(users.ROOT) {
 		return o.BaseOperator.CountStreams()
 	}

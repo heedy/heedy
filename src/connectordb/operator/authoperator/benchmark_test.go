@@ -25,7 +25,7 @@ func BenchmarkDeviceLogin(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = NewAPILoginOperator(db, dev.ApiKey)
+		_, err = NewAPILoginOperator(db, dev.APIKey)
 		if err != nil {
 			b.Errorf("Login Failed: %v", err)
 			return

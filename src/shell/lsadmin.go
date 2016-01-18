@@ -27,7 +27,7 @@ func init() {
 		for _, usr := range users {
 
 			if usr.Admin {
-				fmt.Printf("%s\t%s\t%d\n", usr.Name, usr.Email, usr.UserId)
+				fmt.Printf("%s\t%s\t%d\n", usr.Name, usr.Email, usr.UserID)
 			}
 
 		}

@@ -134,14 +134,14 @@ func (eo ErrOperator) SubscribeStreamByID(streamID int64, substream string, chn 
 	return nil, BadOperatorErr
 }
 
-func (eo ErrOperator) CountUsers() (uint64, error) {
+func (eo ErrOperator) CountUsers() (int64, error) {
 	return 0, BadOperatorErr
 }
 
-func (eo ErrOperator) CountStreams() (uint64, error) {
+func (eo ErrOperator) CountStreams() (int64, error) {
 	return 0, BadOperatorErr
 }
-func (eo ErrOperator) CountDevices() (uint64, error) {
+func (eo ErrOperator) CountDevices() (int64, error) {
 	return 0, BadOperatorErr
 }
 func (eo ErrOperator) ChangeDeviceAPIKey(devicepath string) (apikey string, err error) {

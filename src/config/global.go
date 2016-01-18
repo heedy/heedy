@@ -13,6 +13,7 @@ import (
 )
 
 var (
+
 	// globalConfiguration is the configuration used throughout the system.
 	// While the configuration can be reloaded during runtime, only certain properties are actually modifiable during runtime
 	// and others fail to update silently. Just a warning.

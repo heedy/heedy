@@ -17,11 +17,11 @@ var (
 )
 
 func (o *PlainOperator) getStreamPath(strm *users.Stream) (string, error) {
-	dev, err := o.ReadDeviceByID(strm.DeviceId)
+	dev, err := o.ReadDeviceByID(strm.DeviceID)
 	if err != nil {
 		return "", err
 	}
-	usr, err := o.ReadUserByID(dev.UserId)
+	usr, err := o.ReadUserByID(dev.UserID)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func (o *PlainOperator) LengthStreamByID(streamID int64, substream string) (int6
 	if err != nil {
 		return 0, err
 	}
-	return o.ds.StreamLength(strm.DeviceId, strm.StreamId, substream)
+	return o.ds.StreamLength(strm.DeviceID, strm.StreamID, substream)
 }
 
 //TimeToIndexStreamByID returns the index for the given timestamp
@@ -44,7 +44,7 @@ func (o *PlainOperator) TimeToIndexStreamByID(streamID int64, substream string, 
 		return 0, err
 	}
 
-	return o.ds.GetTimeIndex(strm.DeviceId, streamID, substream, time)
+	return o.ds.GetTimeIndex(strm.DeviceID, streamID, substream, time)
 }
 
 //InsertStreamByID inserts into the stream given by the ID
@@ -71,7 +71,7 @@ func (o *PlainOperator) InsertStreamByID(streamID int64, substream string, data 
 	}
 
 	if !strm.Ephemeral {
-		_, err = o.ds.Insert(strm.DeviceId, strm.StreamId, substream, data, restamp, 0, 0)
+		_, err = o.ds.Insert(strm.DeviceID, strm.StreamID, substream, data, restamp, 0, 0)
 		if err != nil {
 			return err
 		}
@@ -87,7 +87,7 @@ func (o *PlainOperator) GetStreamTimeRangeByID(streamID int64, substream string,
 		return nil, err
 	}
 
-	dr, err := o.ds.TRange(strm.DeviceId, strm.StreamId, substream, t1, t2)
+	dr, err := o.ds.TRange(strm.DeviceID, strm.StreamID, substream, t1, t2)
 	if limit > 0 {
 		dr = datastream.NewNumRange(dr, limit)
 	}
@@ -111,7 +111,7 @@ func (o *PlainOperator) GetShiftedStreamTimeRangeByID(streamID int64, substream 
 		return nil, err
 	}
 
-	dr, err := o.ds.TimePlusIndexRange(strm.DeviceId, strm.StreamId, substream, t1, t2, shift)
+	dr, err := o.ds.TimePlusIndexRange(strm.DeviceID, strm.StreamID, substream, t1, t2, shift)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (o *PlainOperator) GetStreamIndexRangeByID(streamID int64, substream string
 		return nil, err
 	}
 
-	dr, err := o.ds.IRange(strm.DeviceId, strm.StreamId, substream, i1, i2)
+	dr, err := o.ds.IRange(strm.DeviceID, strm.StreamID, substream, i1, i2)
 	if err != nil {
 		return nil, err
 	}

@@ -134,7 +134,7 @@ func (o *AuthOperator) ReadDeviceByUserID(userID int64, devicename string) (*use
 
 // UpdateDevice updates the given device
 func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
-	dev, err := o.ReadDeviceByID(updateddevice.DeviceId)
+	dev, err := o.ReadDeviceByID(updateddevice.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
 
 	err = o.BaseOperator.UpdateDevice(updateddevice)
 	if err == nil {
-		o.MetaLogDeviceID(dev.DeviceId, "UpdateDevice")
+		o.MetaLogDeviceID(dev.DeviceID, "UpdateDevice")
 	}
 
 	return err

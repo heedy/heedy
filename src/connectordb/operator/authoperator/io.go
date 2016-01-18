@@ -15,7 +15,7 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 	if err != nil {
 		return err
 	}
-	sdevice, err := o.ReadDeviceByID(strm.DeviceId)
+	sdevice, err := o.ReadDeviceByID(strm.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func (o *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 		return ErrPermissions
 	}
 
-	if strm.DeviceId != dev.DeviceId {
+	if strm.DeviceID != dev.DeviceID {
 		//The writer is not the owner - we set the datastream.Datapoints' sender field
 		for i := range data {
 			data[i].Sender = o.Name()

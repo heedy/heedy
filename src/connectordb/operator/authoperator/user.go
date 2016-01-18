@@ -48,7 +48,7 @@ func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 	if o.Permissions(users.ROOT) {
 		return o.BaseOperator.ReadUserByID(userID)
 	}
-	if usr, err := o.User(); err == nil && usr.UserId == userID {
+	if usr, err := o.User(); err == nil && usr.UserID == userID {
 		return usr, nil
 	}
 	return nil, ErrPermissions
@@ -56,7 +56,7 @@ func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 
 //UpdateUser performs the given modifications
 func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
-	user, err := o.ReadUserByID(modifieduser.UserId)
+	user, err := o.ReadUserByID(modifieduser.UserID)
 	if err != nil {
 		return err
 	}

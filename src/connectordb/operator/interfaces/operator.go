@@ -102,15 +102,15 @@ type BaseOperator interface {
 
 	// CountUsers returns the number of existing users in the database at the
 	// time of calling or an error if the database could not be reached.
-	CountUsers() (uint64, error)
+	CountUsers() (int64, error)
 
 	// CountStreams returns the number of existing streams in the database at the
 	// time of calling or an error if the database could not be reached.
-	CountStreams() (uint64, error)
+	CountStreams() (int64, error)
 
 	// CountDevices returns the number of existing devices in the database at the
 	// time of calling or an error if the database could not be reached.
-	CountDevices() (uint64, error)
+	CountDevices() (int64, error)
 }
 
 type PathOperator interface {

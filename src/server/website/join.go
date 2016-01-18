@@ -192,7 +192,7 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 	uo, err = operator.NewUserOperator(Database, j.Name)
 
 	// Now create the streams
-	dev, err = uo.ReadDeviceByUserID(usr.UserId, "user")
+	dev, err = uo.ReadDeviceByUserID(usr.UserID, "user")
 	if err != nil {
 		goto errfail
 	}
@@ -202,13 +202,13 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 			goto errfail
 		}
 
-		err = uo.CreateStreamByDeviceID(dev.DeviceId, j.Streams[i].Name, string(schema))
+		err = uo.CreateStreamByDeviceID(dev.DeviceID, j.Streams[i].Name, string(schema))
 		if err != nil {
 			goto errfail
 		}
 
 		// Now update the stream with the extra values
-		strm, err = uo.ReadStreamByDeviceID(dev.DeviceId, j.Streams[i].Name)
+		strm, err = uo.ReadStreamByDeviceID(dev.DeviceID, j.Streams[i].Name)
 		if err != nil {
 			goto errfail
 		}

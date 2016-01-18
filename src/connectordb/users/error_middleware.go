@@ -16,15 +16,15 @@ var (
 type ErrorUserdb struct {
 }
 
-func (userdb *ErrorUserdb) CreateDevice(Name string, UserId int64) error {
+func (userdb *ErrorUserdb) CreateDevice(Name string, UserID, devicelimit int64) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CreateStream(Name, Type string, DeviceId int64) error {
+func (userdb *ErrorUserdb) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CreateUser(Name, Email, Password string) error {
+func (userdb *ErrorUserdb) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
 	return ErrorUserdbError
 }
 
@@ -36,7 +36,7 @@ func (userdb *ErrorUserdb) DeleteStream(Id int64) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) DeleteUser(UserId int64) error {
+func (userdb *ErrorUserdb) DeleteUser(UserID int64) error {
 	return ErrorUserdbError
 }
 
@@ -48,11 +48,11 @@ func (userdb *ErrorUserdb) ReadAllUsers() ([]User, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadDeviceByApiKey(Key string) (*Device, error) {
+func (userdb *ErrorUserdb) ReadDeviceByAPIKey(Key string) (*Device, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadDeviceById(DeviceId int64) (*Device, error) {
+func (userdb *ErrorUserdb) ReadDeviceByID(DeviceID int64) (*Device, error) {
 	return nil, ErrorUserdbError
 }
 
@@ -60,27 +60,27 @@ func (userdb *ErrorUserdb) ReadDeviceForUserByName(userid int64, devicename stri
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadDevicesForUserId(UserId int64) ([]Device, error) {
+func (userdb *ErrorUserdb) ReadDevicesForUserID(UserID int64) ([]Device, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamById(StreamId int64) (*Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamByID(StreamID int64) (*Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamsByUser(UserId int64) ([]Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamsByUser(UserID int64) ([]Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadUserById(UserId int64) (*User, error) {
+func (userdb *ErrorUserdb) ReadUserById(UserID int64) (*User, error) {
 	return nil, ErrorUserdbError
 }
 
@@ -104,14 +104,14 @@ func (userdb *ErrorUserdb) UpdateUser(user *User) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CountUsers() (uint64, error) {
+func (userdb *ErrorUserdb) CountUsers() (int64, error) {
 	return 1, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CountStreams() (uint64, error) {
+func (userdb *ErrorUserdb) CountStreams() (int64, error) {
 	return 1, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CountDevices() (uint64, error) {
+func (userdb *ErrorUserdb) CountDevices() (int64, error) {
 	return 1, ErrorUserdbError
 }

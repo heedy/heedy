@@ -30,7 +30,7 @@ type AdminOperator struct {
 
 // UpdateDevice updates the device at devicepath to the modifed device passed in
 func (o AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
-	dev, err := o.ReadDeviceByID(modifieddevice.DeviceId)
+	dev, err := o.ReadDeviceByID(modifieddevice.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (o AdminOperator) UpdateDevice(modifieddevice *users.Device) error {
 
 //UpdateUser performs the given modifications
 func (o AdminOperator) UpdateUser(modifieduser *users.User) error {
-	user, err := o.ReadUserByID(modifieduser.UserId)
+	user, err := o.ReadUserByID(modifieduser.UserID)
 	if err != nil {
 		return err //Workaround for issue #81
 	}
@@ -57,7 +57,7 @@ func (o AdminOperator) UpdateUser(modifieduser *users.User) error {
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
 func (o AdminOperator) UpdateStream(modifiedstream *users.Stream) error {
-	strm, err := o.ReadStreamByID(modifiedstream.StreamId)
+	strm, err := o.ReadStreamByID(modifiedstream.StreamID)
 	if err != nil {
 		return err
 	}

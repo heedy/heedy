@@ -49,7 +49,7 @@ func (o *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn
 	if err != nil {
 		return nil, err
 	}
-	sdevice, err := o.ReadDeviceByID(strm.DeviceId)
+	sdevice, err := o.ReadDeviceByID(strm.DeviceID)
 	if err != nil {
 		return nil, err
 	}

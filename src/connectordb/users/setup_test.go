@@ -64,12 +64,12 @@ func initDB(dbName string) SqlUserDatabase {
 
 func CreateTestStream(testdb SqlUserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
-	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceId)
+	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceID, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
+	return testdb.ReadStreamByDeviceIDAndName(dev.DeviceID, name)
 }
 
 func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
@@ -78,7 +78,7 @@ func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
 
 	//log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, testPassword)
 
-	err := testdb.CreateUser(name, email, testPassword)
+	err := testdb.CreateUser(name, email, testPassword, "test", 0)
 
 	if err != nil {
 		return nil, err
@@ -89,12 +89,12 @@ func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
 
 func CreateTestDevice(testdb SqlUserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
-	err := testdb.CreateDevice(name, usr.UserId)
+	err := testdb.CreateDevice(name, usr.UserID, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	return testdb.ReadDeviceForUserByName(usr.UserId, name)
+	return testdb.ReadDeviceForUserByName(usr.UserID, name)
 }
 
 // Creates a connected user, device and stream

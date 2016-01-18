@@ -8,7 +8,7 @@ const dbconversion = `
 -- Properties Needed for golang template
 -- DBVersion, string, the current DB version or "00000000" if none
 -- DBType, string, postgres
--- DroppingTables, boolean, should we drop old tables?
+-- Reset, boolean, should we drop old tables?
 
 
 {{/* These variables need to be defined for all databases */}}
@@ -18,119 +18,127 @@ const dbconversion = `
 -- {{.DBType}} specific template features
 -- Primary Key Expression: {{.pkey_exp}}
 
+{{ if eq .Reset "true"}}
+-- Delete the full database
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+DROP SCHEMA v1 CASCADE;
+SET search_path = public;
 
+{{end}}
 
 {{if eq .DBVersion "00000000"}}
 
-
--- This table won't exist for the first one.
-CREATE TABLE StreamdbMeta (
+-- This table won't exist for the first one. It is in the public schema
+CREATE TABLE connectordbmeta (
      Key VARCHAR UNIQUE NOT NULL,
      Value VARCHAR NOT NULL);
 
-CREATE INDEX sdb_meta ON StreamdbMeta (Key);
+-- The index is also in the public schema
+CREATE INDEX cdb_meta ON connectordbmeta (Key);
 
+
+-- All tables/things are created under the v1 schema, so that they can
+-- be manipulated as a unit. This helps upgrading
+CREATE SCHEMA v1;
+
+-- Set the schema search path to our current tables - create new tables in v1
+ALTER DATABASE connectordb SET search_path = v1,public;
+SET search_path = v1,public;
 
 CREATE TABLE Users (
-    UserId {{.pkey_exp}},
+    UserID {{.pkey_exp}},
 	Name VARCHAR UNIQUE NOT NULL,
 	Nickname VARCHAR DEFAULT '',
 	Email VARCHAR UNIQUE NOT NULL,
     Description VARCHAR(1000) DEFAULT '',
     Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
 
+    Public BOOLEAN DEFAULT FALSE,
+    Permissions VARCHAR NOT NULL,
+
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,
-	PasswordHashScheme VARCHAR NOT NULL,
-
-	Admin BOOLEAN DEFAULT FALSE,
-
-	UploadLimit_Items INTEGER DEFAULT 24000,
-	ProcessingLimit_S INTEGER DEFAULT 86400,
-	StorageLimit_Gb INTEGER DEFAULT 4);
+	PasswordHashScheme VARCHAR NOT NULL);
 
 CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
 CREATE TABLE Devices (
-    DeviceId {{.pkey_exp}},
+    DeviceID {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR DEFAULT '',
     Description VARCHAR(1000) DEFAULT '',
     Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
 
-    UserId INTEGER,
-    ApiKey VARCHAR NOT NULL,
+    UserID INTEGER,
+    APIKey VARCHAR NOT NULL,
     Enabled BOOLEAN DEFAULT TRUE,
-    IsAdmin BOOLEAN DEFAULT FALSE,
-    CanWrite BOOLEAN DEFAULT TRUE,
-    CanWriteAnywhere BOOLEAN DEFAULT FALSE,
-    CanActAsUser BOOLEAN DEFAULT FALSE,
+
+    Public BOOLEAN DEFAULT FALSE,
+
+    -- These permissions allow limiting device RW access
+    CanReadUser BOOLEAN DEFAULT FALSE,
+    CanReadExternal BOOLEAN DEFAULT FALSE,
+    CanWriteUser BOOLEAN DEFAULT FALSE,
+    CanWriteExternal BOOLEAN DEFAULT FALSE,
+
     IsVisible BOOLEAN DEFAULT TRUE,
     UserEditable BOOLEAN DEFAULT TRUE,
-    UNIQUE(UserId, Name),
-    FOREIGN KEY(UserId) REFERENCES Users(UserId) ON DELETE CASCADE);
+    UNIQUE(UserID, Name),
+    FOREIGN KEY(UserID) REFERENCES Users(UserID) ON DELETE CASCADE);
 
 
 
 CREATE INDEX DeviceNameIndex ON Devices (Name);
-CREATE UNIQUE INDEX DeviceAPIIndex ON Devices (ApiKey) WHERE ApiKey!='';
-CREATE INDEX DeviceUserIndex ON Devices (UserId);
+CREATE UNIQUE INDEX DeviceAPIIndex ON Devices (APIKey) WHERE APIKey!='';
+CREATE INDEX DeviceUserIndex ON Devices (UserID);
 
 CREATE TABLE Streams (
-    StreamId {{.pkey_exp}},
+    StreamID {{.pkey_exp}},
     Name VARCHAR NOT NULL,
     Nickname VARCHAR NOT NULL DEFAULT '',
     Description VARCHAR(1000) DEFAULT '',
     Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
-    Type VARCHAR NOT NULL,
-    DeviceId INTEGER,
+    Schema VARCHAR NOT NULL,
+    DeviceID INTEGER,
     Ephemeral BOOLEAN DEFAULT FALSE,
     Downlink BOOLEAN DEFAULT FALSE,
-    UNIQUE(Name, DeviceId),
-    FOREIGN KEY(DeviceId) REFERENCES Devices(DeviceId) ON DELETE CASCADE);
+    UNIQUE(Name, DeviceID),
+    FOREIGN KEY(DeviceID) REFERENCES Devices(DeviceID) ON DELETE CASCADE);
 
 
 CREATE INDEX StreamNameIndex ON Streams (Name);
-CREATE INDEX StreamDeviceIndex ON Streams (DeviceId);
+CREATE INDEX StreamDeviceIndex ON Streams (DeviceID);
 
 
-CREATE TABLE datastream (
-	StreamId BIGINT NOT NULL,
+CREATE TABLE Datastream (
+	StreamID BIGINT NOT NULL,
 	Substream VARCHAR,
 	EndTime DOUBLE PRECISION,
 	EndIndex BIGINT,
 	Version INTEGER,
 	Data BYTEA,
-	UNIQUE (StreamId, Substream, EndIndex),
-	PRIMARY KEY (StreamId, Substream, EndIndex)
+	UNIQUE (StreamID, Substream, EndIndex),
+	PRIMARY KEY (StreamID, Substream, EndIndex)
 );
 
-CREATE INDEX datastreamtime ON datastream (StreamId,Substream,EndTime ASC);
-
-CREATE FUNCTION ModifyUserDeviceFunc() RETURNS TRIGGER AS $_$
-BEGIN
-	UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND IsAdmin = TRUE;
-	UPDATE Devices SET IsAdmin = NEW.Admin WHERE UserId = NEW.UserId AND Name = 'user';
-    RETURN NEW;
-END $_$ LANGUAGE 'plpgsql';
+CREATE INDEX datastreamtime ON Datastream (StreamID,Substream,EndTime ASC);
 
 
-CREATE TRIGGER ModifyUserDevice AFTER UPDATE ON Users FOR EACH ROW
-    EXECUTE PROCEDURE ModifyUserDeviceFunc();
-
+-- Create the user and meta Devices for the user when a user is created
 CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
 DECLARE
 	var_deviceid INTEGER;
 BEGIN
-	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin)
-	    VALUES ('user', NEW.UserId, NEW.Name || '-' || NEW.PasswordSalt, TRUE, FALSE, NEW.Admin);
+	INSERT INTO Devices (Name, UserID, APIKey, CanReadUser, CanWriteUser, CanReadExternal, CanWriteExternal)
+	    VALUES ('user', NEW.UserID, NEW.PasswordSalt, TRUE,TRUE,TRUE,TRUE);
 
-	INSERT INTO Devices (Name, UserId, ApiKey, CanActAsUser, UserEditable, IsAdmin) VALUES ('meta', NEW.UserId, '', TRUE, FALSE, FALSE);
+	INSERT INTO Devices (Name, UserID, APIKey, UserEditable, IsVisible) VALUES ('meta', NEW.UserID, '', FALSE, FALSE);
 
-	SELECT DeviceId INTO var_deviceid FROM Devices
-	    WHERE UserId = NEW.UserId AND Name = 'meta';
+	SELECT DeviceID INTO var_deviceid FROM Devices
+	    WHERE UserID = NEW.UserID AND Name = 'meta';
 
-	INSERT INTO Streams (Name, Type, DeviceId)
+	INSERT INTO Streams (Name, Schema, DeviceID)
 		VALUES ('log',
 			'{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}',
 			var_deviceid);
@@ -138,11 +146,16 @@ BEGIN
 	RETURN NEW;
 END $_$ LANGUAGE 'plpgsql';
 
-
 CREATE TRIGGER initialize_user AFTER INSERT ON Users FOR EACH ROW
     EXECUTE PROCEDURE initial_user_setup();
 
 
+-- Set the database version
+INSERT INTO public.connectordbmeta VALUES ('DBVersion', '20160120');
+
+
+-- ID scrambling for use if ids are ever exposed.
+-- Note that
 CREATE FUNCTION permuteQPR(x BIGINT) RETURNS INTEGER AS $$
 DECLARE
 	prime 	INTEGER;
@@ -151,7 +164,7 @@ BEGIN
 	-- see:
 	-- http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
 	-- for more information on these calculations
-	prime = 2147483423; -- congruence to 3 % 4 holds to ensure 1:1 mapping
+	prime = {{ .IDScramblePrime }}; -- congruence to 3 % 4 holds to ensure 1:1 mapping
 
 	IF x >= prime THEN
 		RETURN x; -- last 5 digits map to themselves
@@ -182,7 +195,7 @@ $$ LANGUAGE 'plpgsql';
 CREATE FUNCTION userid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.UserId = id_scramble(NEW.UserId);
+	NEW.UserID = id_scramble(NEW.UserID);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
@@ -195,7 +208,7 @@ CREATE TRIGGER userid_scramble_trigger
 CREATE FUNCTION deviceid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.DeviceId = id_scramble(NEW.DeviceId);
+	NEW.DeviceID = id_scramble(NEW.DeviceID);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
@@ -208,7 +221,7 @@ CREATE TRIGGER deviceid_scramble_trigger
 CREATE FUNCTION streamid_scramble()
 RETURNS trigger AS $$
 BEGIN
-	NEW.StreamId = id_scramble(NEW.StreamId);
+	NEW.StreamID = id_scramble(NEW.StreamID);
 	RETURN NEW;
 END$$ LANGUAGE 'plpgsql';
 
@@ -216,11 +229,11 @@ CREATE TRIGGER streamid_scramble_trigger
 	BEFORE INSERT ON Streams
 	FOR EACH ROW
 	EXECUTE PROCEDURE streamid_scramble();
-
 {{end}}
 
-{{if lt .DBVersion "20150829"}}
--- If we use this format date, we can just test < using lexicographic comparisons
-INSERT INTO StreamdbMeta VALUES ('DBVersion', '20150829');
+{{if lt .DBVersion "20160120"}}
+-- We can perform upgrade operations here
+
+-- UPDATE connectordbmeta SET Version = '20160120' WHERE Key = 'DBVersion';
 {{end}}
 `

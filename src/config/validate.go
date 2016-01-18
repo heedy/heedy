@@ -18,23 +18,23 @@ import (
 // Validate ensures that the given permissions have all correct values
 func (p Permissions) Validate(c *Configuration) error {
 
-	if _, ok := c.AccessLevels[p.PrivateReadAccessLevel]; !ok || p.PrivateReadAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.PrivateReadAccessLevel)
+	if _, err := c.GetAccessLevel(p.PrivateReadAccessLevel); err != nil {
+		return err
 	}
-	if _, ok := c.AccessLevels[p.PublicReadAccessLevel]; !ok || p.PublicReadAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.PublicReadAccessLevel)
+	if _, err := c.GetAccessLevel(p.PublicReadAccessLevel); err != nil {
+		return err
 	}
-	if _, ok := c.AccessLevels[p.PrivateWriteAccessLevel]; !ok || p.PrivateWriteAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.PrivateWriteAccessLevel)
+	if _, err := c.GetAccessLevel(p.PrivateWriteAccessLevel); err != nil {
+		return err
 	}
-	if _, ok := c.AccessLevels[p.PublicWriteAccessLevel]; !ok || p.PublicWriteAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.PublicWriteAccessLevel)
+	if _, err := c.GetAccessLevel(p.PublicWriteAccessLevel); err != nil {
+		return err
 	}
-	if _, ok := c.AccessLevels[p.SelfWriteAccessLevel]; !ok || p.SelfWriteAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.SelfWriteAccessLevel)
+	if _, err := c.GetAccessLevel(p.SelfWriteAccessLevel); err != nil {
+		return err
 	}
-	if _, ok := c.AccessLevels[p.SelfReadAccessLevel]; !ok || p.SelfReadAccessLevel == "" {
-		return fmt.Errorf("Could not find access level '%s'", p.SelfReadAccessLevel)
+	if _, err := c.GetAccessLevel(p.SelfReadAccessLevel); err != nil {
+		return err
 	}
 
 	return nil
@@ -115,6 +115,13 @@ func (c *Configuration) Validate() error {
 	}
 	if c.ChunkSize <= 0 {
 		return errors.New("Chunk size must be >=0")
+	}
+
+	// Ensure that all the access level keys have valid access levels
+	for key := range c.AccessLevels {
+		if c.AccessLevels[key] == nil {
+			return fmt.Errorf("Invalid access level '%s'", key)
+		}
 	}
 
 	// Make sure the permissions are all valid

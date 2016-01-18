@@ -5,12 +5,10 @@ Licensed under the MIT license.
 package users
 
 import (
-	"config"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/mail"
-	"reflect"
 )
 
 var (
@@ -25,28 +23,26 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId      int64  `modifiable:"nobody" json:"-"`         // The primary key
-	Name        string `modifiable:"root" json:"name"`        // The public username of the user
-	Nickname    string `modifiable:"user" json:"nickname"`    // The nickname of the user
-	Email       string `modifiable:"user" json:"email"`       // The user's email address
-	Description string `modifiable:"user" json:"description"` // A public description
-	Icon        string `modifiable:"user" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	UserID int64 `json:"-"` // The primary key
 
-	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
-	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
-	PasswordHashScheme string `modifiable:"user" json:"-"`                  // A string representing the hashing scheme used
+	Name        string `json:"name"`        // The public username of the user
+	Nickname    string `json:"nickname"`    // The nickname of the user
+	Email       string `json:"email"`       // The user's email address
+	Description string `json:"description"` // A public description
+	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Admin bool `modifiable:"root" json:"admin"` // True/False if this is an administrator
+	Permissions string `json:"permissions,omitempty"` // The user type (permissions level)
+	Public      bool   `json:"public"`                // Whether the user is public or not
 
-	//Since we temporarily don't use limits, I have disabled cluttering results with them on json output
-	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
-	ProcessingLimit_S int `modifiable:"root" json:"-"` // processing limit in seconds/day
-	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
+	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
+	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
+	PasswordHashScheme string `json:"-"`                  // A string representing the hashing scheme used
+
 }
 
 func (s *User) String() string {
-	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v, Admin: %v, Downlink: %v, Type: %v]",
-		s.UserId, s.Name, s.Email, s.Nickname, s.Password, s.PasswordSalt, s.PasswordHashScheme, s.Admin)
+	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v ]",
+		s.UserID, s.Name, s.Email, s.Nickname, s.Password, s.PasswordSalt, s.PasswordHashScheme)
 }
 
 // Checks if the fields are valid, e.g. we're not trying to change the name to blank.
@@ -70,10 +66,6 @@ func (u *User) ValidityCheck() error {
 	return nil
 }
 
-func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
-	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
-}
-
 // Sets a new password for an account
 func (u *User) SetNewPassword(newPass string) {
 	hash, salt, scheme := UpgradePassword(newPass)
@@ -81,11 +73,6 @@ func (u *User) SetNewPassword(newPass string) {
 	u.PasswordHashScheme = scheme
 	u.PasswordSalt = salt
 	u.Password = hash
-}
-
-// Checks if the device is enabled and a superdevice
-func (u *User) IsAdmin() bool {
-	return u.Admin
 }
 
 func (u *User) ValidatePassword(password string) bool {
@@ -110,7 +97,7 @@ func (u *User) UpgradePassword(password string) bool {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
+func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
 
 	existing, err := userdb.readByNameOrEmail(Name, Email)
 
@@ -126,21 +113,16 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 		}
 	}
 
-	cfg := config.Get()
-
 	switch {
 	case !IsValidName(Name):
 		return ErrInvalidUsername
-	case !cfg.IsAllowedUsername(Name):
-		return ErrInvalidUsername
-	case !cfg.IsAllowedEmail(Email):
-		return ErrDisallowedEmail
-	case cfg.MaxUsers != -1:
+	case userlimit > 0:
+		// TODO: This check should be done within the SQL transaction to avoid timing attacks
 		num, err := userdb.CountUsers()
 		if err != nil {
 			return err
 		}
-		if num >= uint64(cfg.MaxUsers) {
+		if num >= userlimit {
 			return ErrMaxUsers
 		}
 	}
@@ -153,13 +135,13 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 	    Password,
 	    PasswordSalt,
 	    PasswordHashScheme,
-		Nickname) VALUES (?,?,?,?,?,?);`,
+		Permissions) VALUES (?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
 		hashtype,
-		Name)
+		Permissions)
 
 	return err
 }
@@ -194,7 +176,7 @@ func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device,
 
 // Reads the operating device for the user (the implicity device the user uses)
 func (userdb *SqlUserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
-	return userdb.ReadDeviceForUserByName(user.UserId, "user")
+	return userdb.ReadDeviceForUserByName(user.UserID, "user")
 }
 
 // readByNameOrEmail returns a User instance if a user exists with the given
@@ -228,9 +210,9 @@ func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func (userdb *SqlUserDatabase) ReadUserById(UserId int64) (*User, error) {
+func (userdb *SqlUserDatabase) ReadUserById(UserID int64) (*User, error) {
 	var user User
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserId = ? LIMIT 1;", UserId)
+	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserID = ? LIMIT 1;", UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -262,39 +244,35 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		return err
 	}
 
-	_, err := userdb.Exec(`UPDATE Users SET
+	_, err := userdb.Exec(`UPDATE users SET
 	                Name=?,
 					Nickname=?,
 					Email=?,
 					Password=?,
 					PasswordSalt=?,
 					PasswordHashScheme=?,
-	                Admin=?,
-					UploadLimit_Items=?,
-	                ProcessingLimit_S=?,
-					StorageLimit_Gb=?,
 					Description=?,
-					Icon=?
-					WHERE UserId = ?`,
+					Icon=?,
+					Public=?,
+					Permissions=?
+					WHERE UserID = ?`,
 		user.Name,
 		user.Nickname,
 		user.Email,
 		user.Password,
 		user.PasswordSalt,
 		user.PasswordHashScheme,
-		user.Admin,
-		user.UploadLimit_Items,
-		user.ProcessingLimit_S,
-		user.StorageLimit_Gb,
 		user.Description,
 		user.Icon,
-		user.UserId)
+		user.Public,
+		user.Permissions,
+		user.UserID)
 
 	return err
 }
 
 // DeleteUser removes a user from the database
-func (userdb *SqlUserDatabase) DeleteUser(UserId int64) error {
-	result, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
+func (userdb *SqlUserDatabase) DeleteUser(UserID int64) error {
+	result, err := userdb.Exec(`DELETE FROM Users WHERE UserID = ?;`, UserID)
 	return getDeleteError(result, err)
 }

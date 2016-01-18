@@ -20,6 +20,11 @@ type Permissions struct {
 	CanBePrivate  bool `json:"user_can_be_private"`   // Whether the user can be private
 	CreatePrivate bool `json:"user_creation_private"` // Whether the user is created as a private user
 
+	// Access Levels. These are defined in the AccessLevel map of the config.
+	// There are 2 levels defined by default
+	// full - total permissions (everything true)
+	// none - 0 permissions (everything false)
+
 	PublicReadAccessLevel  string `json:"public_read_access_level"`  // The access level to public users/devices/streams
 	PrivateReadAccessLevel string `json:"private_read_access_level"` // The access level to private users/devices/streams
 	SelfReadAccessLevel    string `json:"self_read_access_level"`    // The access level to read self. Note that with some permissions, might be able to change self type.

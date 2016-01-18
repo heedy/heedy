@@ -38,7 +38,7 @@ func TestAuthStreamIO(t *testing.T) {
 
 		strm, err := o.ReadStream("tst/tst/tst")
 		require.NoError(t, err)
-		l, err = o.LengthStreamByID(strm.StreamId, "")
+		l, err = o.LengthStreamByID(strm.StreamID, "")
 
 		data := []datastream.Datapoint{datastream.Datapoint{
 			Timestamp: 1.0,

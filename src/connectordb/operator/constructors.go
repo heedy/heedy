@@ -93,12 +93,12 @@ func NewDeviceApiOperator(db Database, devicepath, apikey string) (Operator, err
 }
 
 /*
-NewDeviceIdOperator creates an operator that contains what it can do to the
+NewDeviceIDOperator creates an operator that contains what it can do to the
 scope of the device with the given id.
 */
-func NewDeviceIdOperator(db Database, deviceID int64) (Operator, error) {
+func NewDeviceIDOperator(db Database, deviceID int64) (Operator, error) {
 	bootstrapOperator := NewOperator(db)
-	op, err := authoperator.NewDeviceIdOperator(bootstrapOperator, deviceID)
+	op, err := authoperator.NewDeviceIDOperator(bootstrapOperator, deviceID)
 	po := interfaces.PathOperatorMixin{op}
 	return &po, err
 }

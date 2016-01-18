@@ -92,14 +92,14 @@ func TestMain(m *testing.M) {
 	}
 	/*
 		_, err = sqldb.Exec(`CREATE TABLE IF NOT EXISTS datastream (
-		    StreamId BIGINT NOT NULL,
+		    StreamID BIGINT NOT NULL,
 			Substream VARCHAR,
 		    EndTime DOUBLE PRECISION,
 		    EndIndex BIGINT,
 			Version INTEGER,
 		    Data BYTEA,
-		    UNIQUE (StreamId, Substream, EndIndex),
-		    PRIMARY KEY (StreamId, Substream, EndIndex)
+		    UNIQUE (StreamID, Substream, EndIndex),
+		    PRIMARY KEY (StreamID, Substream, EndIndex)
 		    );`)
 
 		if err != nil {
