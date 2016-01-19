@@ -25,10 +25,7 @@ var (
 	StatsPanics      = uint32(0)
 	StatsActive      = int32(0)
 
-	StatsTimePeriod = 1.0 * time.Minute
-
-	QueryTimers     = make(map[string]*QueryTimer)
-	QueryTimePeriod = 24 * time.Hour
+	QueryTimers = make(map[string]*QueryTimer)
 )
 
 //QueryTimer holds timing statistics for a specific query
@@ -110,13 +107,19 @@ func GetQueryTimer(funcname string) *QueryTimer {
 //RunQueryTimers periodically gets and prints the query average runtime and variance
 func RunQueryTimers() {
 	for {
-		time.Sleep(QueryTimePeriod)
-		s := fmt.Sprintf("Statistics for the past %v:\n", QueryTimePeriod)
-		for qname := range QueryTimers {
-			num, mean, variance := QueryTimers[qname].GetClear()
-			s += fmt.Sprintf("- %s: num=%d mean=%v sd=%v\n", qname, num, toDuration(mean), toDuration(math.Sqrt(variance-mean*mean)))
+		qt := config.Get().StatsDisplayTimer
+		if qt != 0 {
+			time.Sleep(qt * time.Second)
+			s := fmt.Sprintf("Statistics for the past %v:\n", QueryTimePeriod)
+			for qname := range QueryTimers {
+				num, mean, variance := QueryTimers[qname].GetClear()
+				s += fmt.Sprintf("- %s: num=%d mean=%v sd=%v\n", qname, num, toDuration(mean), toDuration(math.Sqrt(variance-mean*mean)))
+			}
+			log.Info(s)
+		} else {
+			time.Sleep(1 * time.Minute)
 		}
-		log.Info(s)
+
 	}
 }
 
@@ -131,26 +134,39 @@ func StatsAddFail(err error) {
 //if there was no action within a time period.
 func RunStats() {
 	oldact := int32(0)
-	for {
-		time.Sleep(StatsTimePeriod)
-		q := atomic.SwapUint32(&StatsRESTQueries, 0)
-		w := atomic.SwapUint32(&StatsWebQueries, 0)
-		a := atomic.SwapUint32(&StatsAuthFails, 0)
-		i := atomic.SwapUint32(&StatsInserts, 0)
-		e := atomic.SwapUint32(&StatsErrors, 0)
-		p := atomic.LoadUint32(&StatsPanics)
-		act := atomic.LoadInt32(&StatsActive)
+	tlast := time.Now()
 
-		//Only display stat view if there was something going on
-		if q > 0 || act != oldact {
-			logger := log.WithFields(log.Fields{"rest": q, "web": w, "authfails": a, "inserts": i, "errors": e, "active": act})
-			if p > 0 {
-				logger.Warnf("%.2f queries/s (server had panic)", float64(q)/StatsTimePeriod.Seconds())
-			} else {
-				logger.Infof("%.2f queries/s", float64(q)/StatsTimePeriod.Seconds())
+	for {
+		st := config.Get().QueryDisplayTimer
+
+		if st > 0 {
+			time.Sleep(st * time.Second)
+
+			q := atomic.SwapUint32(&StatsRESTQueries, 0)
+			w := atomic.SwapUint32(&StatsWebQueries, 0)
+			a := atomic.SwapUint32(&StatsAuthFails, 0)
+			i := atomic.SwapUint32(&StatsInserts, 0)
+			e := atomic.SwapUint32(&StatsErrors, 0)
+			p := atomic.LoadUint32(&StatsPanics)
+			act := atomic.LoadInt32(&StatsActive)
+
+			tperiod := time.Since(tlast)
+			tlast = time.Now()
+
+			//Only display stat view if there was something going on
+			if q > 0 || act != oldact {
+				logger := log.WithFields(log.Fields{"rest": q, "web": w, "authfails": a, "inserts": i, "errors": e, "active": act})
+				if p > 0 {
+					logger.Warnf("%.2f queries/s (server had panic)", float64(q)/tperiod.Seconds())
+				} else {
+					logger.Infof("%.2f queries/s", float64(q)/tperiod.Seconds())
+				}
 			}
+
+			oldact = act
+		} else {
+			time.Sleep(10 * time.Minute)
 		}
 
-		oldact = act
 	}
 }

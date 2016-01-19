@@ -114,7 +114,7 @@ func NewConfiguration() *Configuration {
 			Enabled: true,
 
 			// Sets up the session cookie keys that are used
-			Session: Session{
+			CookieSession: CookieSession{
 				AuthKey:       base64.StdEncoding.EncodeToString(sessionAuthKey),
 				EncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
 				MaxAge:        60 * 60 * 24 * 30 * 4, //About 4 months is the default expiration time of a cookie
@@ -124,6 +124,11 @@ func NewConfiguration() *Configuration {
 			Captcha: Captcha{
 				Enabled: false,
 			},
+
+			// By default log query counts once a minute, and display server statistics
+			// once a day
+			QueryDisplayTimer: 60,
+			StatsDisplayTimer: 60 * 60 * 24,
 		},
 
 		//The defaults to use for the batch and chunks

@@ -18,15 +18,15 @@ type Captcha struct {
 	SiteSecret string `json:"site_secret"`
 }
 
-// Session refers to a cookie session
-type Session struct {
+// CookieSession refers to a cookie session
+type CookieSession struct {
 	AuthKey       string `json:"authkey"`       //The key used to sign sessions
 	EncryptionKey string `json:"encryptionkey"` //The key used to encrypt sessions in cookies
 	MaxAge        int    `json:"maxage"`        //The maximum age of a cookie in a session (seconds)
 }
 
 // GetSessionAuthKey returns the bytes associated with the config string
-func (s *Session) GetAuthKey() ([]byte, error) {
+func (s *CookieSession) GetAuthKey() ([]byte, error) {
 	//If no session key is in config, generate one
 	if s.AuthKey == "" {
 		return securecookie.GenerateRandomKey(64), nil
@@ -36,7 +36,7 @@ func (s *Session) GetAuthKey() ([]byte, error) {
 }
 
 // GetSessionEncryptionKey returns the bytes associated with the config string
-func (s *Session) GetEncryptionKey() ([]byte, error) {
+func (s *CookieSession) GetEncryptionKey() ([]byte, error) {
 	//If no session encryption key is in config, generate one
 	if s.EncryptionKey == "" {
 		return securecookie.GenerateRandomKey(32), nil
@@ -64,7 +64,7 @@ type Frontend struct {
 	AllowCrossOrigin bool `json:"allowcrossorigin"`
 
 	// The session cookies to allow in the website
-	Session Session `json:"session"`
+	CookieSession CookieSession `json:"cookie"`
 
 	// These two options enable https on the server. Both files must exist
 	// for TLS to be enabled
@@ -72,6 +72,16 @@ type Frontend struct {
 	TLSCert string `json:"tls_cert"`
 
 	Captcha Captcha `json:"captcha"`
+
+	// The QueryDisplayTimer is how often to display aggregate query numbers (is seconds) in the log
+	// This is a simple one-line summary of how many requests were processed.
+	// Note that the change will not come into effect immediately if modified during runtime, there will be a delay before
+	// the change catches on
+	QueryDisplayTimer int64 `json:"query_display_timer"`
+	// StatsDisplayTimer is how often to display server query statistics (in seconds). These are detailed
+	// timing information for all queries, including how long they take and their standard deviations.
+	// Changing during run time does not come into effect immediately: there is a delay before the change catches on.
+	StatsDisplayTimer int64 `json:"stats_display_timer"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend

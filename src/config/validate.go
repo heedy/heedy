@@ -41,7 +41,7 @@ func (p Permissions) Validate(c *Configuration) error {
 }
 
 // Validate takes a session and makes sure that all of the keys and fields are set up correctly
-func (s *Session) Validate() error {
+func (s *CookieSession) Validate() error {
 	if s.AuthKey == "" {
 		sessionAuthkey := securecookie.GenerateRandomKey(64)
 		s.AuthKey = base64.StdEncoding.EncodeToString(sessionAuthkey)
@@ -81,7 +81,7 @@ func (f *Frontend) Validate() (err error) {
 	}
 
 	// Validate the Session
-	if err = f.Session.Validate(); err != nil {
+	if err = f.CookieSession.Validate(); err != nil {
 		return err
 	}
 
