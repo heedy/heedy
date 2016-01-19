@@ -15,6 +15,8 @@ import (
 
 	"github.com/gorilla/securecookie"
 	"github.com/nu7hatch/gouuid"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/js"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -22,11 +24,38 @@ import (
 //SqlType is the type of sql database used
 const SqlType = "postgres"
 
+// The header that is written to all config files
+var configHeader = `/* ConnectorDB Configuration File
+
+To see an explanation of the configuration options, please see:
+https://github.com/connectordb/connectordb/blob/master/src/config/configuration.go
+	Look at NewConfiguration() which explains defaults.
+
+Particular configuration options:
+frontend options: https://github.com/connectordb/connectordb/blob/master/src/config/frontend.go
+	These are the options that pertain to the ConnectorDB server (REST API, web, request logging)
+permissions: https://github.com/connectordb/connectordb/blob/master/src/config/permissions.go
+	The permissions and access levels for each user type. All user types in the database are required.
+access_levels: https://github.com/connectordb/connectordb/blob/master/src/config/accesslevel.go
+	Specific access levels, which specify detailed read/write permissions
+
+The configuration file supports javascript style comments. Comments are not inserted by default in this version
+of ConnectorDB, because the JSON is generated automatically (it includes several custom values, such as auto-generated keys)
+
+Several options support live reload. Changing them in the configuration file will automatically update the corresponding setting
+in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any message).
+
+When running a local database, the configuration file is in connectordb.pid in the database directory. It will be deleted on shutdown,
+so will not save your changes. Save long-term changes to connectordb.conf in the same directory.
+*/
+`
+
 // Configuration represents the options which are kept in a config file
 type Configuration struct {
 	Version int `json:"version"` // The version of the configuration file
 
 	// Options pertaining to the frontend server.
+	// These are transparent to json, so they appear directly in the main json.
 	Frontend
 
 	// Configuration options for a service
@@ -39,7 +68,7 @@ type Configuration struct {
 	ChunkSize int `json:"chunksize"` // ChunkSize is number of batches per database insert transaction
 
 	// The cache sizes for users/devices/streams
-	UseCache        bool  `json:"cache"`
+	UseCache        bool  `json:"cache"` // Whether or not to enable caching
 	UserCacheSize   int64 `json:"user_cache_size"`
 	DeviceCacheSize int64 `json:"device_cache_size"`
 	StreamCacheSize int64 `json:"stream_cache_size"`
@@ -50,6 +79,7 @@ type Configuration struct {
 	InitialUserPassword    string `json:"createuser_password"`
 	InitialUserEmail       string `json:"createuser_email"`
 	InitialUserPermissions string `json:"createuser_permissions"`
+
 	// The prime number to use for scrambling IDs in the database.
 	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
 	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
@@ -66,6 +96,9 @@ type Configuration struct {
 	MaxUsers int `json:"max_users"`
 
 	// The specific permissions granted to different user types
+	// The required types are nobody and user.
+	// If a user in the database has an unknown type, an error will be printed, and the user will fall back to
+	// 'user' permissions (which are required)
 	Permissions map[string]Permissions `json:"permissions"`
 
 	AccessLevels map[string]*AccessLevel `json:"access_levels"`
@@ -355,13 +388,34 @@ func (c *Configuration) Save(filename string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, b, os.FileMode(0755))
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write([]byte(configHeader))
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	return err
 }
 
 // Load a configuration from the given file, and ensures that it is valid
 func Load(filename string) (*Configuration, error) {
 	log.Debugf("Loading configuration from %s", filename)
+
 	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// To allow comments in the json, we minify the file with js minifer before parsing
+	m := minify.New()
+	m.AddFunc("text/javascript", js.Minify)
+	file, err = m.Bytes("text/javascript", file)
 	if err != nil {
 		return nil, err
 	}

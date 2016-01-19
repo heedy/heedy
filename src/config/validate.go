@@ -150,11 +150,7 @@ func (c *Configuration) Validate() error {
 	// Make sure the permissions are all valid
 	hadNobody := false
 	hadUser := false
-	hadAdmin := false
 	for key := range c.Permissions {
-		if key == "admin" {
-			hadAdmin = true
-		}
 		if key == "user" {
 			hadUser = true
 		}
@@ -165,8 +161,8 @@ func (c *Configuration) Validate() error {
 			return err
 		}
 	}
-	if !(hadNobody && hadUser && hadAdmin) {
-		return errors.New("There must be at least user, admin, and nobody permissions set.")
+	if !(hadNobody && hadUser) {
+		return errors.New("There must be at least user and nobody permissions set.")
 	}
 
 	// Now let's validate the frontend

@@ -53,6 +53,7 @@ go-dependencies:
 	go get github.com/josephlewis42/multicache
 	go get github.com/connectordb/njson
 	go get github.com/codegangsta/cli
+	go get github.com/tdewolff/minify
 
 	go get github.com/stretchr/testify
 
