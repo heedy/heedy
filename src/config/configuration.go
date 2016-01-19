@@ -162,6 +162,9 @@ func NewConfiguration() *Configuration {
 			// once a day
 			QueryDisplayTimer: 60,
 			StatsDisplayTimer: 60 * 60 * 24,
+
+			// Why not minify?
+			Minify: true,
 		},
 
 		//The defaults to use for the batch and chunks

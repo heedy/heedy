@@ -82,6 +82,10 @@ type Frontend struct {
 	// timing information for all queries, including how long they take and their standard deviations.
 	// Changing during run time does not come into effect immediately: there is a delay before the change catches on.
 	StatsDisplayTimer int64 `json:"stats_display_timer"`
+
+	// Minify gives us whether ConnectorDB should minify the templates that are run.
+	// At this point, only the templates hav minify support - static files are not minifed
+	Minify bool `json:"minify"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
