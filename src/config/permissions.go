@@ -33,3 +33,28 @@ type Permissions struct {
 	PrivateWriteAccessLevel string `json:"private_write_access_level"` // The access level to private users/devices/streams
 	SelfWriteAccessLevel    string `json:"self_write_access_level"`    // The access level to read self. Note that with some permissions, might be able to change self type.
 }
+
+// Validate ensures that the given permissions have all correct values
+func (p Permissions) Validate(c *Configuration) error {
+
+	if _, err := c.GetAccessLevel(p.PrivateReadAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.PublicReadAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.PrivateWriteAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.PublicWriteAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.SelfWriteAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.SelfReadAccessLevel); err != nil {
+		return err
+	}
+
+	return nil
+}

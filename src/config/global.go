@@ -40,6 +40,13 @@ func SetPath(filename string) error {
 	}
 	globalConfiguration = cfg
 
+	// PipeScript has its own special configuration updater, which modifies the global
+	// PipeScript configuration
+	Get().PipeScript.Set()
+	OnChangeCallback(func(c *Configuration) error {
+		return c.PipeScript.Set()
+	})
+
 	return nil
 }
 

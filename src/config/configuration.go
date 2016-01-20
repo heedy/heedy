@@ -18,6 +18,8 @@ import (
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 
+	psconfig "github.com/connectordb/pipescript/config"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -95,6 +97,9 @@ type Configuration struct {
 	// number of users
 	MaxUsers int `json:"max_users"`
 
+	// The configuration options for pipescript (https://github.com/connectordb/pipescript)
+	PipeScript *psconfig.Configuration `json:"pipescript"`
+
 	// The specific permissions granted to different user types
 	// The required types are nobody and user.
 	// If a user in the database has an unknown type, an error will be printed, and the user will fall back to
@@ -163,7 +168,7 @@ func NewConfiguration() *Configuration {
 			QueryDisplayTimer: 60,
 			StatsDisplayTimer: 60 * 60 * 24,
 
-			// Why not minify?
+			// Why not minify? Turning it off is useful for debugging - but users outnumber coders by a large margin.
 			Minify: true,
 		},
 
@@ -185,6 +190,10 @@ func NewConfiguration() *Configuration {
 
 		// Allow an arbitrary number of users by default
 		MaxUsers: -1,
+
+		// Use the default settings.
+		// NOTE: Once a configuration is loaded,
+		PipeScript: psconfig.Default(),
 
 		Permissions: map[string]Permissions{
 			"nobody": {
