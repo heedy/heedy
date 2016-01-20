@@ -104,7 +104,7 @@ type Configuration struct {
 	// The required types are nobody and user.
 	// If a user in the database has an unknown type, an error will be printed, and the user will fall back to
 	// 'user' permissions (which are required)
-	Permissions map[string]Permissions `json:"permissions"`
+	Permissions map[string]*Permissions `json:"permissions"`
 
 	AccessLevels map[string]*AccessLevel `json:"access_levels"`
 
@@ -195,8 +195,8 @@ func NewConfiguration() *Configuration {
 		// NOTE: Once a configuration is loaded,
 		PipeScript: psconfig.Default(),
 
-		Permissions: map[string]Permissions{
-			"nobody": {
+		Permissions: map[string]*Permissions{
+			"nobody": &Permissions{
 				Join:                false,
 				JoinDisabledMessage: "You must be logged in as admin to add users",
 
@@ -208,7 +208,7 @@ func NewConfiguration() *Configuration {
 				PrivateWriteAccessLevel: "none",
 				SelfWriteAccessLevel:    "none",
 			},
-			"user": {
+			"user": &Permissions{
 				Join:                false,
 				JoinDisabledMessage: "You must be logged in as admin to add users",
 
@@ -220,7 +220,7 @@ func NewConfiguration() *Configuration {
 				PrivateWriteAccessLevel: "none",
 				SelfWriteAccessLevel:    "selfwrite",
 			},
-			"admin": {
+			"admin": &Permissions{
 				Join:                true,
 				JoinDisabledMessage: "Join is disabled",
 

@@ -4,6 +4,8 @@ Licensed under the MIT license.
 **/
 package config
 
+import "errors"
+
 // Permissions are the rules that are followed for the user type
 type Permissions struct {
 	Join                bool   `json:"join"`                  // Whether the user can use the "join" interface to add new users (which might include captcha, etc)
@@ -35,7 +37,10 @@ type Permissions struct {
 }
 
 // Validate ensures that the given permissions have all correct values
-func (p Permissions) Validate(c *Configuration) error {
+func (p *Permissions) Validate(c *Configuration) error {
+	if p == nil {
+		return errors.New("null permissions are invalid")
+	}
 
 	if _, err := c.GetAccessLevel(p.PrivateReadAccessLevel); err != nil {
 		return err
