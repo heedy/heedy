@@ -22,6 +22,9 @@ func TransformList(writer http.ResponseWriter, request *http.Request) {
 	l := webcore.GetRequestLogger(request, "TransformList")
 
 	webcore.WriteAccessControlHeaders(writer, request)
+
+	pipescript.RegistryLock.RLock()
+	defer pipescript.RegistryLock.RUnlock()
 	restcore.JSONWriter(writer, pipescript.TransformRegistry, l, nil)
 
 }
@@ -31,6 +34,8 @@ func InterpolatorList(writer http.ResponseWriter, request *http.Request) {
 	l := webcore.GetRequestLogger(request, "InterpolatorList")
 
 	webcore.WriteAccessControlHeaders(writer, request)
+	interpolator.RegistryLock.RLock()
+	defer interpolator.RegistryLock.RUnlock()
 	restcore.JSONWriter(writer, interpolator.InterpolatorRegistry, l, nil)
 
 }

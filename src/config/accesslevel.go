@@ -48,7 +48,7 @@ type AccessLevel struct {
 
 	// Access of stream properties
 	StreamName        bool `json:"stream_name"`
-	StreamNickname    bool `json;"stream_nickname"`
+	StreamNickname    bool `json:"stream_nickname"`
 	StreamDescription bool `json:"stream_description"`
 	StreamIcon        bool `json:"stream_icon"`
 	StreamSchema      bool `json:"stream_schema"`
