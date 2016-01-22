@@ -1,4 +1,4 @@
-package config
+package permissions
 
 import (
 	"testing"

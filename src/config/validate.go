@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	"config/permissions"
+
 	psconfig "github.com/connectordb/pipescript/config"
 )
 
@@ -47,40 +49,21 @@ func (c *Configuration) Validate() error {
 		return err
 	}
 
+	// Try loading the permissions
+	p, err := permissions.Load(c.Permissions)
+	if err != nil {
+		return err
+	}
+
 	// Check that the initial user permissions exist if given
-	if c.InitialUserPermissions != "" {
-		if _, ok := c.Permissions[c.InitialUserPermissions]; !ok {
-			return fmt.Errorf("Could not find permissions of '%s' for the initial creation user", c.InitialUserPermissions)
+	if c.InitialUserRole != "" {
+		if _, ok := p.Roles[c.InitialUserRole]; !ok {
+			return fmt.Errorf("Could not find role of '%s' for the initial creation user", c.InitialUserRole)
 		}
 	}
 
 	if c.IDScramblePrime <= 0 {
 		return errors.New("The ID Scramble prime must be a prime > 0.")
-	}
-
-	// Ensure that all the access level keys have valid access levels
-	for key := range c.AccessLevels {
-		if c.AccessLevels[key] == nil {
-			return fmt.Errorf("Invalid access level '%s'", key)
-		}
-	}
-
-	// Make sure the permissions are all valid
-	hadNobody := false
-	hadUser := false
-	for key := range c.Permissions {
-		if key == "user" {
-			hadUser = true
-		}
-		if key == "nobody" {
-			hadNobody = true
-		}
-		if err := c.Permissions[key].Validate(c); err != nil {
-			return err
-		}
-	}
-	if !(hadNobody && hadUser) {
-		return errors.New("There must be at least user and nobody permissions set.")
 	}
 
 	// Now let's validate the frontend

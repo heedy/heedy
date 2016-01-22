@@ -2,12 +2,12 @@
 Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
 Licensed under the MIT license.
 **/
-package config
+package permissions
 
 import "errors"
 
-// Permissions are the rules that are followed for the user type
-type Permissions struct {
+// Role encodes the rules that are followed for the user type
+type Role struct {
 	Join                bool   `json:"join"`                  // Whether the user can use the "join" interface to add new users (which might include captcha, etc)
 	JoinDisabledMessage string `json:"join_disabled_message"` // The error message to write when join is disabled
 
@@ -42,33 +42,33 @@ type Permissions struct {
 }
 
 // Validate ensures that the given permissions have all correct values
-func (p *Permissions) Validate(c *Configuration) error {
-	if p == nil {
-		return errors.New("null permissions are invalid")
+func (r *Role) Validate(p *Permissions) error {
+	if r == nil {
+		return errors.New("null roles are invalid")
 	}
 
-	if _, err := c.GetAccessLevel(p.PrivateReadAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.PrivateReadAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.PublicReadAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.PublicReadAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.PrivateWriteAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.PrivateWriteAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.PublicWriteAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.PublicWriteAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.SelfWriteAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.SelfWriteAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.SelfReadAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.SelfReadAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.OwnerDeviceReadAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.OwnerDeviceReadAccessLevel); err != nil {
 		return err
 	}
-	if _, err := c.GetAccessLevel(p.OwnerDeviceWriteAccessLevel); err != nil {
+	if _, err := p.GetAccessLevel(r.OwnerDeviceWriteAccessLevel); err != nil {
 		return err
 	}
 

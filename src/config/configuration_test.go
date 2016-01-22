@@ -10,29 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEmail(t *testing.T) {
-	cfg := NewConfiguration()
-
-	require.True(t, cfg.IsAllowedEmail("foo@bar.com"))
-	cfg.AllowedEmailSuffixes = []string{"bar.com", "baz.com"}
-
-	require.False(t, cfg.IsAllowedEmail("foo@foo.com"))
-	require.True(t, cfg.IsAllowedEmail("foo@bar.com"))
-	require.True(t, cfg.IsAllowedEmail("foo@baz.com"))
-
-	require.True(t, cfg.IsAllowedEmail("foo@subdomain.baz.com"))
-}
-
 func TestValidate(t *testing.T) {
 	cfg := NewConfiguration()
 	require.NoError(t, cfg.Validate())
 
-	p := cfg.Permissions["user"]
-	p.PublicReadAccessLevel = "lol"
-	cfg.Permissions["user"] = p
-	require.Error(t, cfg.Validate())
-
-	delete(cfg.Permissions, "user")
+	cfg.Permissions = "boo"
 	require.Error(t, cfg.Validate())
 }
 

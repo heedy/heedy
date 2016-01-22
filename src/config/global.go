@@ -5,9 +5,10 @@ Licensed under the MIT license.
 package config
 
 import (
-	"os"
 	"path/filepath"
 	"util"
+
+	"config/permissions"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -35,6 +36,12 @@ func SetPath(filename string) error {
 	if err != nil {
 		return err
 	}
+
+	err = permissions.SetPath(cfg.Get().Permissions)
+	if err != nil {
+		return err
+	}
+
 	if globalConfiguration != nil {
 		globalConfiguration.Close()
 	}
@@ -51,6 +58,8 @@ func SetPath(filename string) error {
 }
 
 // OnChangeCallback adds a calback for modified configuration file
+// BUG(daniel): The OnChangeCallbacks are lost upon configuration file change!
+// This needs to be fixed - although it does not affect normal runtime
 func OnChangeCallback(c ChangeCallback) {
 	globalConfiguration.OnChangeCallback(c)
 }
@@ -85,9 +94,6 @@ func NewConfigurationLoader(filename string) (*ConfigurationLoader, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = c.Validate(); err != nil {
-		return nil, err
-	}
 	cf := &ConfigurationLoader{
 		Config:   c,
 		OnChange: make([]ChangeCallback, 0, 5),
@@ -106,24 +112,6 @@ func (c *ConfigurationLoader) OnChangeCallback(cbk ChangeCallback) {
 func (c *ConfigurationLoader) Reload() error {
 	cfg, err := Load(c.Watcher.FileName)
 	if err != nil {
-		return err
-	}
-
-	// Before doing anything, we need to change the working directory to that of the config file.
-	// We switch back to the current working dir once done validating.
-	// Validation takes any file names and converts them to absolute paths.
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(filepath.Dir(c.Watcher.FileName))
-	if err != nil {
-		return err
-	}
-	// Change the directory back on exit
-	defer os.Chdir(cwd)
-
-	if err = cfg.Validate(); err != nil {
 		return err
 	}
 
