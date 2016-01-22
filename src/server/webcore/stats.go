@@ -108,7 +108,7 @@ func GetQueryTimer(funcname string) *QueryTimer {
 func RunQueryTimers() {
 	for {
 		qt := config.Get().StatsDisplayTimer
-		if qt != 0 {
+		if qt > 0 {
 			time.Sleep(qt * time.Second)
 			s := fmt.Sprintf("Statistics for the past %v:\n", QueryTimePeriod)
 			for qname := range QueryTimers {

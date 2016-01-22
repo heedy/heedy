@@ -4,6 +4,8 @@ Licensed under the MIT license.
 **/
 package config
 
+import "reflect"
+
 var (
 	// The NoneAccessLevel is the permission to give a device when it does not have ANY permissions associated with an action
 	NoneAccessLevel = AccessLevel{}
@@ -11,9 +13,10 @@ var (
 	FullAccessLevel = AccessLevel{true, true, true,
 		true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true, true, true, true, true,
-		true, true, true, true, true, true, true}
+		true, true, true, true, true, true, true, nil}
 )
 
+// AccessLevel is a struct of boolean permissions given for a certain role.
 type AccessLevel struct {
 
 	// General access level options
@@ -27,7 +30,7 @@ type AccessLevel struct {
 	UserEmail       bool `json:"user_email"`
 	UserDescription bool `json:"user_description"`
 	UserIcon        bool `json:"user_icon"`
-	UserPermissions bool `json:"user_permissons"`
+	UserPermissions bool `json:"user_permissions"`
 	UserPublic      bool `json:"user_public"`
 	UserPassword    bool `json:"user_password"`
 
@@ -54,4 +57,37 @@ type AccessLevel struct {
 	StreamSchema      bool `json:"stream_schema"`
 	StreamEphemeral   bool `json:"stream_ephemeral"`
 	StreamDownlink    bool `json:"stream_downlink"`
+
+	// Internal: cached map of access levels (used in reflection)
+	cmap map[string]bool
+}
+
+// LoadMap generates a map of the access levels by their json attribute names.
+// Note that access levels are entirely boolean
+func (a *AccessLevel) LoadMap() error {
+	cmap := make(map[string]bool)
+	atype := reflect.TypeOf(*a)
+	aval := reflect.ValueOf(*a)
+
+	for i := 0; i < aval.NumField(); i++ {
+		t := atype.Field(i)
+		v := aval.Field(i)
+		if v.Kind() == reflect.Bool {
+			cmap[t.Tag.Get("json")] = v.Bool()
+		}
+	}
+	a.cmap = cmap
+	return nil
+}
+
+// GetMap returns the map of json-values with their boolean
+func (a *AccessLevel) GetMap() map[string]bool {
+	if a.cmap == nil {
+		a.LoadMap()
+	}
+	return a.cmap
+}
+
+func (a *AccessLevel) Validate() error {
+	return a.LoadMap()
 }

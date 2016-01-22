@@ -77,10 +77,10 @@ type Configuration struct {
 
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
-	InitialUsername        string `json:"createuser_username"`
-	InitialUserPassword    string `json:"createuser_password"`
-	InitialUserEmail       string `json:"createuser_email"`
-	InitialUserPermissions string `json:"createuser_permissions"`
+	InitialUsername        string `json:"createuser_username,omitempty"`
+	InitialUserPassword    string `json:"createuser_password,omitempty"`
+	InitialUserEmail       string `json:"createuser_email,omitempty"`
+	InitialUserPermissions string `json:"createuser_permissions,omitempty"`
 
 	// The prime number to use for scrambling IDs in the database.
 	// WARNING: This must be CONSTANT! It should NEVER change after creating the database

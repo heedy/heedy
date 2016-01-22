@@ -5,130 +5,91 @@ import (
 	"errors"
 	"fmt"
 
+	log "github.com/Sirupsen/logrus"
+
 	"config"
 )
 
-// ReadUser modifies the toread user taking away forbidden fields. It returns false if the user should not be visible
-// to the reading device
-func ReadUser(cfg *config.Configuration, readingUser *users.User, readingDevice *users.Device, toread *users.User) bool {
+// ReadUserToMap returns a map with all readable fields. If it returns nil, it means that the user should not be accessible at
+// all. The reason we use map[string]interface{} here as the output, is because we only want to include the readable fields.
+// For example, if description: "" marshalled directly, then we don't know if we have permission to read it. To fix this,
+// ReadUserToMap takes in a fill user, and returns a map with only the readable fields available, ready for json marshalling.
+func ReadUserToMap(cfg *config.Configuration, readingUser *users.User, readingDevice *users.Device, toread *users.User) map[string]interface{} {
 	var accessLevel *config.AccessLevel
-
+	var err error
 	if toread.UserID == readingUser.UserID {
-		accessLevel = ReadSelfAccessLevel(cfg, readingUser, readingDevice)
+		accessLevel, err = ReadSelfAccessLevel(cfg, readingUser, readingDevice)
 	} else if toread.Public {
-		accessLevel = ReadPublicAccessLevel(cfg, readingUser, readingDevice)
+		accessLevel, err = ReadPublicAccessLevel(cfg, readingUser, readingDevice)
 	} else {
-		accessLevel = ReadPrivateAccessLevel(cfg, readingUser, readingDevice)
+		accessLevel, err = ReadPrivateAccessLevel(cfg, readingUser, readingDevice)
 	}
-
+	if err != nil {
+		// The access level wasn't found: This is a configuration issue. This should never happen during runtime,
+		// since configuration is validated before it is used. Nevertheless, to make it clear we crash the program here.
+		log.Fatal(err.Error())
+	}
 	if !accessLevel.CanAccessUser {
-		return false
+		return nil
 	}
-
-	if !accessLevel.UserName {
-		toread.Name = ""
-	}
-	if !accessLevel.UserNickname {
-		toread.Nickname = ""
-	}
-	if !accessLevel.UserEmail {
-		toread.Email = ""
-	}
-	if !accessLevel.UserDescription {
-		toread.Description = ""
-	}
-	if !accessLevel.UserIcon {
-		toread.Icon = ""
-	}
-	if !accessLevel.UserPermissions {
-		toread.Permissions = ""
-	}
-	if !accessLevel.UserPublic {
-		toread.Public = false
-	}
-	if !accessLevel.UserPassword {
-		toread.Password = ""
-	}
-
-	return true
+	return ReadObjectToMap("user_", accessLevel, toread)
 }
 
-// WriteUser compares the original and modified user. It returns nil if the device can write the modifications, and an error if it cannot
-// The modified user is to be a totally empty user (ie, not based on the actual user). This allows WriteUser to notice when fields were modified.
-// The original user will have all of the changes integrated on success
-func WriteUser(cfg *config.Configuration, writingUser *users.User, writingDevice *users.Device, original, modified *users.User) error {
+// UpdateUserFromMap updates the "original" user object's fields to reflect the changes made in the modification map (modmap).
+// The reason we can't really use a users.User object as our modification is because as the struct has values, we can't tell when
+// the user attempted modification.
+// This means that there are several "information leak" attacks if we use User objects:
+//
+// If we use an uninitialized user object, we cannot distinguish False booleans and empty strings from modification attempts, size
+// those are the initial values.
+//
+// If we go by a modified user, then there is an information read leak - as an attacker, I can try reasonable values for a property,
+// and keep retrying until I don't get an error. If I don't get an error, it means that the value I tried is the current value.
+//
+// Since I see no way of making modification work with the objects themselves, I chose to change to map[string]interface{} as the "output"
+// type used in ConnectorDB
+func UpdateUserFromMap(cfg *config.Configuration, writingUser *users.User, writingDevice *users.Device, original *users.User, modmap map[string]interface{}) error {
 	// We have to be careful while writing not to leak information about values
 	var accessLevel *config.AccessLevel
+	var err error
 
 	if original.UserID == writingUser.UserID {
-		accessLevel = WriteSelfAccessLevel(cfg, writingUser, writingDevice)
+		accessLevel, err = WriteSelfAccessLevel(cfg, writingUser, writingDevice)
 	} else if original.Public {
-		accessLevel = WritePublicAccessLevel(cfg, writingUser, writingDevice)
+		accessLevel, err = WritePublicAccessLevel(cfg, writingUser, writingDevice)
 	} else {
-		accessLevel = WritePrivateAccessLevel(cfg, writingUser, writingDevice)
+		accessLevel, err = WritePrivateAccessLevel(cfg, writingUser, writingDevice)
+	}
+	if err != nil {
+		// The access level wasn't found: This is a configuration issue. This should never happen during runtime,
+		// since configuration is validated before it is used. Nevertheless, to make it clear we crash the program here.
+		log.Fatal(err.Error())
 	}
 
 	if !accessLevel.CanAccessUser {
 		return ErrNoAccess
 	}
 
-	if "" != modified.Name {
-		if !accessLevel.UserName {
-			return fmt.Errorf("This device does not have permissions necessary to write the name of user '%s'", original.Name)
-		}
+	opassword := original.Password
+	oname := original.Name
+	operm := original.Permissions
+
+	err = WriteObjectFromMap("user_", accessLevel, original, modmap)
+	if err != nil {
+		return err
+	}
+
+	if opassword != original.Password {
+		// The password needs to be set, since it involves multiple fields
+		original.SetNewPassword(original.Password)
+	}
+
+	if oname != original.Name {
 		return errors.New("ConnectorDB does not support modification of user names")
 	}
-	if "" != modified.Nickname {
-		if !accessLevel.UserNickname {
-			return fmt.Errorf("This device does not have permissions necessary to write the nickname of user '%s'", original.Name)
-		}
-		original.Nickname = modified.Nickname
-	}
-	if "" != modified.Email {
-		if !accessLevel.UserEmail {
-			return fmt.Errorf("This device does not have permissions necessary to write the email of user '%s'", original.Name)
-		}
-		original.Email = modified.Email
-	}
-	if "" != modified.Description {
-		if !accessLevel.UserDescription {
-			return fmt.Errorf("This device does not have permissions necessary to write the description of user '%s'", original.Name)
-		}
-		original.Description = modified.Description
-	}
-	if "" != modified.Icon {
-		if !accessLevel.UserIcon {
-			return fmt.Errorf("This device does not have permissions necessary to write the icon of user '%s'", original.Name)
-		}
-		original.Icon = modified.Icon
-	}
-	if "" != modified.Permissions {
-		if !accessLevel.UserPermissions {
-			return fmt.Errorf("This device does not have permissions necessary to write the permissions of user '%s'", original.Name)
-		}
-		// Check to make sure that the permissions exists
-		_, ok := cfg.Permissions[modified.Permissions]
-		if !ok {
-			return fmt.Errorf("Permissions level '%s' does not exist.", modified.Permissions)
-		}
-
-		original.Permissions = modified.Permissions
-	}
-
-	if "" != modified.Password {
-		if !accessLevel.UserPassword {
-			return fmt.Errorf("This device does not have permissions necessary to write the password of user '%s'", original.Name)
-		}
-		// The password was modified - the password field must be hashed, so we do that here
-		original.SetNewPassword(modified.Password)
-	}
-
-	// We have to be careful with booleans, since we can't tell if the user attempted modification and set to false, or didn't attempt
-	// modification at all. We don't want to leak information.
-	if accessLevel.UserPublic {
-		original.Public = modified.Public
-	} else if modified.Public {
-		return fmt.Errorf("This device does not have permissions necessary to write the 'public' field of user '%s'", original.Name)
+	_, ok := cfg.Permissions[original.Permissions]
+	if operm != original.Permissions && !ok {
+		return fmt.Errorf("Permissions level '%s' does not exist", original.Permissions)
 	}
 
 	return nil
