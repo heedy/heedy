@@ -10,10 +10,10 @@ var (
 	// The NoneAccessLevel is the permission to give a device when it does not have ANY permissions associated with an action
 	NoneAccessLevel = AccessLevel{}
 	// The FullAccessLevel is the permission to give a total administrator - everything is accessible
-	FullAccessLevel = AccessLevel{true, true, true,
+	FullAccessLevel = AccessLevel{true, true, true, true,
 		true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true, true, true, true, true,
-		true, true, true, true, true, true, true, nil}
+		true, true, true, true, true, true, true, true, true, true, true, true, true, nil}
 )
 
 // AccessLevel is a struct of boolean permissions given for a certain role.
@@ -23,6 +23,14 @@ type AccessLevel struct {
 	CanAccessUser   bool `json:"can_access_user"`
 	CanAccessDevice bool `json:"can_access_device"`
 	CanAccessStream bool `json:"can_access_stream"`
+
+	// Whether or not this is allowed to write non-user-editable devices
+	// For use in admin
+	CanAccessNonUserEditableDevices bool `json:"can_access_non_user_editable_devices"`
+
+	// Read/write of streams
+	CanReadStreamData  bool `json:"can_read_stream_data"`
+	CanWriteStreamData bool `json:"can_write_stream_data"`
 
 	// Access of user properties
 	UserName        bool `json:"user_name"`
@@ -35,19 +43,23 @@ type AccessLevel struct {
 	UserPassword    bool `json:"user_password"`
 
 	// Access of device properties
-	DeviceName             bool `json:"device_name"`
-	DeviceNickname         bool `json:"device_nickname"`
-	DeviceDescription      bool `json:"device_description"`
-	DeviceIcon             bool `json:"device_icon"`
-	DeviceAPIKey           bool `json:"device_apikey"`
-	DeviceEnabled          bool `json:"device_enabled"`
-	DeviceIsVisible        bool `json:"device_isvisible"`
-	DeviceUserEditable     bool `json:"device_usereditable"`
-	DevicePublic           bool `json:"device_public"`
-	DeviceCanReadUser      bool `json:"device_can_read_user"`
-	DeviceCanReadExternal  bool `json:"device_can_read_external"`
-	DeviceCanWriteUser     bool `json:"device_can_write_user"`
-	DeviceCanWriteExternal bool `json:"device_can_write_external"`
+	DeviceName                    bool `json:"device_name"`
+	DeviceNickname                bool `json:"device_nickname"`
+	DeviceDescription             bool `json:"device_description"`
+	DeviceIcon                    bool `json:"device_icon"`
+	DeviceAPIKey                  bool `json:"device_apikey"`
+	DeviceEnabled                 bool `json:"device_enabled"`
+	DeviceIsVisible               bool `json:"device_isvisible"`
+	DeviceUserEditable            bool `json:"device_usereditable"`
+	DevicePublic                  bool `json:"device_public"`
+	DeviceCanReadUser             bool `json:"device_can_read_user"`
+	DeviceCanReadExternal         bool `json:"device_can_read_external"`
+	DeviceCanWriteUser            bool `json:"device_can_write_user"`
+	DeviceCanWriteExternal        bool `json:"device_can_write_external"`
+	DeviceCanReadUserStreams      bool `json:"device_can_read_user_streams"`
+	DeviceCanReadExternalStreams  bool `json:"device_can_read_external_streams"`
+	DeviceCanWriteUserStreams     bool `json:"device_can_write_user_streams"`
+	DeviceCanWriteExternalStreams bool `json:"device_can_write_external_streams"`
 
 	// Access of stream properties
 	StreamName        bool `json:"stream_name"`

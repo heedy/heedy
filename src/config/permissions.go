@@ -34,6 +34,11 @@ type Permissions struct {
 	PublicWriteAccessLevel  string `json:"public_write_access_level"`  // The access level to public users/devices/streams
 	PrivateWriteAccessLevel string `json:"private_write_access_level"` // The access level to private users/devices/streams
 	SelfWriteAccessLevel    string `json:"self_write_access_level"`    // The access level to read self. Note that with some permissions, might be able to change self type.
+
+	// The access level to give a device that OWNS the query. IE: A device owns itself and its streams
+	// Note that since a device can't own a user, the user-related fields in this access level are ignored
+	OwnerDeviceReadAccessLevel  string `json:"owner_device_read_access_level"`
+	OwnerDeviceWriteAccessLevel string `json:"owner_device_write_access_level"`
 }
 
 // Validate ensures that the given permissions have all correct values
@@ -58,6 +63,12 @@ func (p *Permissions) Validate(c *Configuration) error {
 		return err
 	}
 	if _, err := c.GetAccessLevel(p.SelfReadAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.OwnerDeviceReadAccessLevel); err != nil {
+		return err
+	}
+	if _, err := c.GetAccessLevel(p.OwnerDeviceWriteAccessLevel); err != nil {
 		return err
 	}
 

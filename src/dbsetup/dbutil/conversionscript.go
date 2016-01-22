@@ -81,6 +81,11 @@ CREATE TABLE Devices (
     CanReadExternal BOOLEAN DEFAULT FALSE,
     CanWriteUser BOOLEAN DEFAULT FALSE,
     CanWriteExternal BOOLEAN DEFAULT FALSE,
+    CanReadUserStreams BOOLEAN DEFAULT FALSE,
+    CanReadExternalStreams BOOLEAN DEFAULT FALSE,
+    CanWriteUserStreams BOOLEAN DEFAULT FALSE,
+    CanWriteExternalStreams BOOLEAN DEFAULT FALSE,
+
 
     IsVisible BOOLEAN DEFAULT TRUE,
     UserEditable BOOLEAN DEFAULT TRUE,

@@ -24,7 +24,7 @@ type Device struct {
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 	UserID      int64  `json:"-"`           // the user that owns this device
 	APIKey      string `json:"apikey"`      // A uuid used as an api key to verify against
-	Enabled     bool   `json:"enabled"`     // Whether or not this device can do reading and writing
+	Enabled     bool   `json:"enabled"`     // Whether or not this device considers itself online (working/gathering)
 	Public      bool   `json:"public"`      // Whether the device is accessible from public
 
 	// A device always has permission to read/write/create/delete its own streams
@@ -33,6 +33,11 @@ type Device struct {
 	CanReadExternal  bool `json:"can_read_external"`  // Whether device has same access as user to external devices/streams
 	CanWriteUser     bool `json:"can_write_user"`     // Whether the device can write to other devices/streams from the same user
 	CanWriteExternal bool `json:"can_write_external"` // Whether the device can write to other devices/streams not belonging to this user
+	// The following define the access to stream data for the device
+	CanReadUserStreams      bool `json:"can_read_user_streams"`
+	CanReadExternalStreams  bool `json:"can_read_external_streams"`
+	CanWriteUserStreams     bool `json:"can_write_user_streams"`
+	CanWriteExternalStreams bool `json:"can_write_external_streams"`
 
 	IsVisible    bool `json:"visible"`
 	UserEditable bool `json:"user_editable"`
@@ -174,6 +179,10 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		CanReadExternal = ?,
 		CanWriteUser = ?,
 		CanWriteExternal = ?,
+		CanReadUserStreams = ?,
+		CanReadExternalStreams = ?,
+		CanWriteUserStreams = ?,
+		CanWriteExternalStreams = ?,
 		IsVisible = ?,
 		UserEditable = ? WHERE DeviceID = ?;`,
 		device.Name,
@@ -187,6 +196,10 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		device.CanReadExternal,
 		device.CanWriteUser,
 		device.CanWriteExternal,
+		device.CanReadUserStreams,
+		device.CanReadExternalStreams,
+		device.CanWriteUserStreams,
+		device.CanWriteExternalStreams,
 		device.IsVisible,
 		device.UserEditable,
 		device.DeviceID)
