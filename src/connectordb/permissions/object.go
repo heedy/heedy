@@ -10,7 +10,7 @@ import (
 
 /*
 // ReadObject is given a pointer to the given struct
-func ReadObject(prefix string, access *config.AccessLevel, obj interface{}) error {
+func ReadObject(prefix string, access *pconfig.AccessLevel, obj interface{}) error {
 	amap := access.GetMap()
 
 	otype := reflect.TypeOf(obj)
@@ -74,7 +74,7 @@ func ReadObjectToMap(prefix string, amap map[string]bool, obj interface{}) map[s
 }
 
 /*
-func WriteObject(prefix string, access *config.AccessLevel, original interface{}, modified interface{}) error {
+func WriteObject(prefix string, access *pconfig.AccessLevel, original interface{}, modified interface{}) error {
 	amap := access.GetMap()
 
 	oval := reflect.ValueOf(*original)

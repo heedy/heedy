@@ -134,7 +134,7 @@ func TestReadUserDevice(t *testing.T) {
 
 		assert.Equal(t, dev.UserID, user.UserID, "Incorrect device returned.")
 
-		user.Permissions = "test2"
+		user.Role = "test2"
 		err = testdb.UpdateUser(user)
 		require.Nil(t, err)
 	}

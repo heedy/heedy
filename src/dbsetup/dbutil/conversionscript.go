@@ -55,7 +55,7 @@ CREATE TABLE Users (
     Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
 
     Public BOOLEAN DEFAULT FALSE,
-    Permissions VARCHAR NOT NULL,
+    Role VARCHAR NOT NULL,
 
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,

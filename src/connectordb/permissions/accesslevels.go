@@ -1,7 +1,7 @@
 package permissions
 
 import (
-	"config"
+	pconfig "config/permissions"
 	"connectordb/users"
 	"errors"
 
@@ -11,78 +11,78 @@ import (
 // ErrNoAccess represents a total access error
 var ErrNoAccess = errors.New("The device does not have access to this resource.")
 
-// getPermissions gets the permissions level for the user
-func getPermissions(cfg *config.Configuration, u *users.User) *config.Permissions {
-	p, ok := cfg.Permissions[u.Permissions]
+// getRole gets the permissions level for the user
+func getRole(cpm *pconfig.Permissions, u *users.User) *pconfig.Role {
+	p, ok := cpm.Roles[u.Role]
 	if !ok {
 		// The permissions level does not exist! Write an angry message to the console. This is a configuration error,
 		// as such it should not be propagated to the user
-		log.WithFields(log.Fields{"user": u.Name, "permissionslevel": u.Permissions}).Errorf("Could not find permissions level '%s'! Falling back to 'nobody'!", u.Permissions)
-		return cfg.Permissions["nobody"]
+		log.WithFields(log.Fields{"user": u.Name, "role": u.Role}).Errorf("Could not find role '%s'! Falling back to 'nobody'!", u.Role)
+		return cpm.Roles["nobody"]
 	}
 	return p
 }
 
 // ReadPublicAccessLevel gets the access level for a reading device for public data
-func ReadPublicAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func ReadPublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadExternal {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].PublicReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].PublicReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).PublicReadAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).PublicReadAccessLevel)
 }
 
 // ReadPrivateAccessLevel gets the access level for a reading device for private data
-func ReadPrivateAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func ReadPrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadExternal {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].PrivateReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].PrivateReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).PrivateReadAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).PrivateReadAccessLevel)
 }
 
 // ReadSelfAccessLevel gets the access level for a reading device for data about self
-func ReadSelfAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func ReadSelfAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadUser {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].SelfReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].SelfReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).SelfReadAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).SelfReadAccessLevel)
 }
 
 // WritePublicAccessLevel gets the access level for a writing operation
-func WritePublicAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func WritePublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteExternal {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].PublicWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].PublicWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).PublicWriteAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).PublicWriteAccessLevel)
 }
 
 // WritePrivateAccessLevel gets the access level for a writing operation
-func WritePrivateAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func WritePrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteExternal {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].PrivateWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].PrivateWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).PrivateWriteAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).PrivateWriteAccessLevel)
 }
 
 // WriteSelfAccessLevel gets the access level for a writing operation
-func WriteSelfAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device) (*config.AccessLevel, error) {
+func WriteSelfAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteUser {
-		return cfg.GetAccessLevel(cfg.Permissions["nobody"].SelfWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Roles["nobody"].SelfWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
-	return cfg.GetAccessLevel(getPermissions(cfg, u).SelfWriteAccessLevel)
+	return cpm.GetAccessLevel(getRole(cpm, u).SelfWriteAccessLevel)
 }
 
 // WriteOwnerAccessLevel gives the access level to the owning device
-func WriteOwnerAccessLevel(cfg *config.Configuration, u *users.User) (*config.AccessLevel, error) {
-	return cfg.GetAccessLevel(getPermissions(cfg, u).OwnerDeviceWriteAccessLevel)
+func WriteOwnerAccessLevel(cpm *pconfig.Permissions, u *users.User) (*pconfig.AccessLevel, error) {
+	return cpm.GetAccessLevel(getRole(cpm, u).OwnerDeviceWriteAccessLevel)
 }
 
 // ReadOwnerAccessLevel gives the access level to the owning device
-func ReadOwnerAccessLevel(cfg *config.Configuration, u *users.User) (*config.AccessLevel, error) {
-	return cfg.GetAccessLevel(getPermissions(cfg, u).OwnerDeviceReadAccessLevel)
+func ReadOwnerAccessLevel(cpm *pconfig.Permissions, u *users.User) (*pconfig.AccessLevel, error) {
+	return cpm.GetAccessLevel(getRole(cpm, u).OwnerDeviceReadAccessLevel)
 }

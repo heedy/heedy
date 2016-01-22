@@ -5,24 +5,24 @@ import (
 	"errors"
 	"fmt"
 
-	"config"
+	pconfig "config/permissions"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 // GetUserWriteAccessLevel returns the access level necessary for writing. It requires the user and device that is doing the writing,
 // and the UserID of the requested object (to check if users match)
-func GetUserWriteAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device, userid int64, ispublic bool) *config.AccessLevel {
+func GetUserWriteAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, userid int64, ispublic bool) *pconfig.AccessLevel {
 	// We have to be careful while writing not to leak information about values
-	var accessLevel *config.AccessLevel
+	var accessLevel *pconfig.AccessLevel
 	var err error
 
 	if u.UserID == userid {
-		accessLevel, err = WriteSelfAccessLevel(cfg, u, d)
+		accessLevel, err = WriteSelfAccessLevel(cpm, u, d)
 	} else if ispublic {
-		accessLevel, err = WritePublicAccessLevel(cfg, u, d)
+		accessLevel, err = WritePublicAccessLevel(cpm, u, d)
 	} else {
-		accessLevel, err = WritePrivateAccessLevel(cfg, u, d)
+		accessLevel, err = WritePrivateAccessLevel(cpm, u, d)
 	}
 	if err != nil {
 		// The access level wasn't found: This is a configuration issue. This should never happen during runtime,
@@ -34,17 +34,17 @@ func GetUserWriteAccessLevel(cfg *config.Configuration, u *users.User, d *users.
 
 // GetUserReadAccessLevel returns the access level necessary for reading. It requires the user and device that is doing the reading,
 // and the UserID of the requested object (to check if users match)
-func GetUserReadAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device, userid int64, ispublic bool) *config.AccessLevel {
+func GetUserReadAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, userid int64, ispublic bool) *pconfig.AccessLevel {
 	// We have to be careful while writing not to leak information about values
-	var accessLevel *config.AccessLevel
+	var accessLevel *pconfig.AccessLevel
 	var err error
 
 	if u.UserID == userid {
-		accessLevel, err = ReadSelfAccessLevel(cfg, u, d)
+		accessLevel, err = ReadSelfAccessLevel(cpm, u, d)
 	} else if ispublic {
-		accessLevel, err = ReadPublicAccessLevel(cfg, u, d)
+		accessLevel, err = ReadPublicAccessLevel(cpm, u, d)
 	} else {
-		accessLevel, err = ReadPrivateAccessLevel(cfg, u, d)
+		accessLevel, err = ReadPrivateAccessLevel(cpm, u, d)
 	}
 	if err != nil {
 		// The access level wasn't found: This is a configuration issue. This should never happen during runtime,
@@ -58,8 +58,8 @@ func GetUserReadAccessLevel(cfg *config.Configuration, u *users.User, d *users.D
 // all. The reason we use map[string]interface{} here as the output, is because we only want to include the readable fields.
 // For example, if description: "" marshalled directly, then we don't know if we have permission to read it. To fix this,
 // ReadUserToMap takes in a fill user, and returns a map with only the readable fields available, ready for json marshalling.
-func ReadUserToMap(cfg *config.Configuration, readingUser *users.User, readingDevice *users.Device, toread *users.User) map[string]interface{} {
-	accessLevel := GetUserReadAccessLevel(cfg, readingUser, readingDevice, toread.UserID, toread.Public)
+func ReadUserToMap(cpm *pconfig.Permissions, readingUser *users.User, readingDevice *users.Device, toread *users.User) map[string]interface{} {
+	accessLevel := GetUserReadAccessLevel(cpm, readingUser, readingDevice, toread.UserID, toread.Public)
 	if !accessLevel.CanAccessUser {
 		return nil
 	}
@@ -79,8 +79,8 @@ func ReadUserToMap(cfg *config.Configuration, readingUser *users.User, readingDe
 //
 // Since I see no way of making modification work with the objects themselves, I chose to change to map[string]interface{} as the "output"
 // type used in ConnectorDB
-func UpdateUserFromMap(cfg *config.Configuration, writingUser *users.User, writingDevice *users.Device, original *users.User, modmap map[string]interface{}) error {
-	accessLevel := GetUserWriteAccessLevel(cfg, writingUser, writingDevice, original.UserID, original.Public)
+func UpdateUserFromMap(cpm *pconfig.Permissions, writingUser *users.User, writingDevice *users.Device, original *users.User, modmap map[string]interface{}) error {
+	accessLevel := GetUserWriteAccessLevel(cpm, writingUser, writingDevice, original.UserID, original.Public)
 
 	if !accessLevel.CanAccessUser {
 		return ErrNoAccess
@@ -88,7 +88,7 @@ func UpdateUserFromMap(cfg *config.Configuration, writingUser *users.User, writi
 
 	opassword := original.Password
 	oname := original.Name
-	operm := original.Permissions
+	operm := original.Role
 
 	err := WriteObjectFromMap("user_", accessLevel.GetMap(), original, modmap)
 	if err != nil {
@@ -103,9 +103,9 @@ func UpdateUserFromMap(cfg *config.Configuration, writingUser *users.User, writi
 	if oname != original.Name {
 		return errors.New("ConnectorDB does not support modification of user names")
 	}
-	_, ok := cfg.Permissions[original.Permissions]
-	if operm != original.Permissions && !ok {
-		return fmt.Errorf("Permissions level '%s' does not exist", original.Permissions)
+	_, ok := cpm.Roles[original.Role]
+	if operm != original.Role && !ok {
+		return fmt.Errorf("Permissions level '%s' does not exist", original.Role)
 	}
 
 	return nil

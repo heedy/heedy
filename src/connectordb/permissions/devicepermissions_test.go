@@ -1,7 +1,7 @@
 package permissions
 
 import (
-	"config"
+	pconfig "config/permissions"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,16 +15,16 @@ func TestDeviceReadPermissions(t *testing.T) {
 	mu := &muX
 	dX := testDevice
 	d := &dX
-	require.NotNil(t, ReadUserToMap(&config.TestConfiguration, u, d, mu))
+	require.NotNil(t, ReadUserToMap(pconfig.Get(), u, d, mu))
 
 	d.CanReadExternal = false
-	require.Nil(t, ReadUserToMap(&config.TestConfiguration, u, d, mu))
+	require.Nil(t, ReadUserToMap(pconfig.Get(), u, d, mu))
 	mu.Public = false
-	require.Nil(t, ReadUserToMap(&config.TestConfiguration, u, d, mu))
-	require.NotNil(t, ReadUserToMap(&config.TestConfiguration, u, d, u))
+	require.Nil(t, ReadUserToMap(pconfig.Get(), u, d, mu))
+	require.NotNil(t, ReadUserToMap(pconfig.Get(), u, d, u))
 
 	d.CanReadUser = false
-	require.Nil(t, ReadUserToMap(&config.TestConfiguration, u, d, mu))
+	require.Nil(t, ReadUserToMap(pconfig.Get(), u, d, mu))
 }
 
 func TestDeviceWritePermissions(t *testing.T) {
@@ -33,12 +33,12 @@ func TestDeviceWritePermissions(t *testing.T) {
 	mu := &muX
 	dX := testDevice
 	d := &dX
-	mu.Permissions = "admin"
-	require.NoError(t, UpdateUserFromMap(&config.TestConfiguration, mu, d, mu, map[string]interface{}{"nickname": "hi"}))
+	mu.Role = "admin"
+	require.NoError(t, UpdateUserFromMap(pconfig.Get(), mu, d, mu, map[string]interface{}{"nickname": "hi"}))
 
 	d.CanWriteUser = false
-	require.Error(t, UpdateUserFromMap(&config.TestConfiguration, mu, d, mu, map[string]interface{}{"nickname": "hi"}))
+	require.Error(t, UpdateUserFromMap(pconfig.Get(), mu, d, mu, map[string]interface{}{"nickname": "hi"}))
 
 	d.CanWriteExternal = false
-	require.Error(t, UpdateUserFromMap(&config.TestConfiguration, mu, d, u, map[string]interface{}{"nickname": "hi"}))
+	require.Error(t, UpdateUserFromMap(pconfig.Get(), mu, d, u, map[string]interface{}{"nickname": "hi"}))
 }

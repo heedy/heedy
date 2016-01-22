@@ -7,7 +7,7 @@ import (
 
 	"github.com/nu7hatch/gouuid"
 
-	"config"
+	pconfig "config/permissions"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -22,11 +22,11 @@ func mergeMap(a1 map[string]bool, a2 map[string]bool) map[string]bool {
 }
 
 // GetDeviceReadAccessLevel gets the access level necessary to read the given device
-func GetDeviceReadAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
-	amap := GetUserReadAccessLevel(cfg, u, d, o.UserID, o.Public).GetMap()
+func GetDeviceReadAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
+	amap := GetUserReadAccessLevel(cpm, u, d, o.UserID, o.Public).GetMap()
 	// Now, we must merge this access level with the owner-specific one if this device is the accessing device
 	if d.DeviceID == o.DeviceID {
-		lvl, err := ReadOwnerAccessLevel(cfg, u)
+		lvl, err := ReadOwnerAccessLevel(cpm, u)
 		if err != nil {
 			// See GetUserReadAccessLevel for explanation (this is not allowed to happen unless something is FUBAR)
 			log.Fatal(err.Error())
@@ -44,11 +44,11 @@ func GetDeviceReadAccessLevel(cfg *config.Configuration, u *users.User, d *users
 }
 
 // GetDeviceWriteAccessLevel gets the access level necessary to write the given device
-func GetDeviceWriteAccessLevel(cfg *config.Configuration, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
-	amap := GetUserWriteAccessLevel(cfg, u, d, o.UserID, o.Public).GetMap()
+func GetDeviceWriteAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
+	amap := GetUserWriteAccessLevel(cpm, u, d, o.UserID, o.Public).GetMap()
 	// Now, we must merge this access level with the owner-specific one if this device is the accessing device
 	if d.DeviceID == o.DeviceID {
-		lvl, err := WriteOwnerAccessLevel(cfg, u)
+		lvl, err := WriteOwnerAccessLevel(cpm, u)
 		if err != nil {
 			// See GetUserReadAccessLevel for explanation (this is not allowed to happen unless something is FUBAR)
 			log.Fatal(err.Error())
@@ -66,8 +66,8 @@ func GetDeviceWriteAccessLevel(cfg *config.Configuration, u *users.User, d *user
 }
 
 // ReadDeviceToMap : See ReadUserToMap
-func ReadDeviceToMap(cfg *config.Configuration, readingUser *users.User, readingDevice *users.Device, toread *users.Device) map[string]interface{} {
-	amap, err := GetDeviceReadAccessLevel(cfg, readingUser, readingDevice, toread)
+func ReadDeviceToMap(cpm *pconfig.Permissions, readingUser *users.User, readingDevice *users.Device, toread *users.Device) map[string]interface{} {
+	amap, err := GetDeviceReadAccessLevel(cpm, readingUser, readingDevice, toread)
 	if err != nil {
 		return nil
 	}
@@ -76,8 +76,8 @@ func ReadDeviceToMap(cfg *config.Configuration, readingUser *users.User, reading
 }
 
 // UpdateDeviceFromMap : See UodateUserFromMap
-func UpdateDeviceFromMap(cfg *config.Configuration, writingUser *users.User, writingDevice *users.Device, original *users.Device, modmap map[string]interface{}) error {
-	amap, err := GetDeviceWriteAccessLevel(cfg, writingUser, writingDevice, original)
+func UpdateDeviceFromMap(cpm *pconfig.Permissions, writingUser *users.User, writingDevice *users.Device, original *users.Device, modmap map[string]interface{}) error {
+	amap, err := GetDeviceWriteAccessLevel(cpm, writingUser, writingDevice, original)
 	if err != nil {
 		return err
 	}

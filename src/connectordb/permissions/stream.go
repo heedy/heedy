@@ -4,12 +4,12 @@ import (
 	"connectordb/users"
 	"errors"
 
-	"config"
+	pconfig "config/permissions"
 )
 
 // ReadStreamToMap : See ReadUserToMap
-func ReadStreamToMap(cfg *config.Configuration, readingUser *users.User, readingDevice *users.Device, toreaddev *users.Device, toread *users.Stream) map[string]interface{} {
-	amap, err := GetDeviceReadAccessLevel(cfg, readingUser, readingDevice, toreaddev)
+func ReadStreamToMap(cpm *pconfig.Permissions, readingUser *users.User, readingDevice *users.Device, toreaddev *users.Device, toread *users.Stream) map[string]interface{} {
+	amap, err := GetDeviceReadAccessLevel(cpm, readingUser, readingDevice, toreaddev)
 	if err != nil {
 		return nil
 	}
@@ -17,8 +17,8 @@ func ReadStreamToMap(cfg *config.Configuration, readingUser *users.User, reading
 }
 
 // UpdateDeviceFromMap : See UodateUserFromMap
-func UpdateStreamFromMap(cfg *config.Configuration, writingUser *users.User, writingDevice *users.Device, originaldev *users.Device, original *users.Stream, modmap map[string]interface{}) error {
-	amap, err := GetDeviceWriteAccessLevel(cfg, writingUser, writingDevice, originaldev)
+func UpdateStreamFromMap(cpm *pconfig.Permissions, writingUser *users.User, writingDevice *users.Device, originaldev *users.Device, original *users.Stream, modmap map[string]interface{}) error {
+	amap, err := GetDeviceWriteAccessLevel(cpm, writingUser, writingDevice, originaldev)
 	if err != nil {
 		return err
 	}

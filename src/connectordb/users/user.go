@@ -31,8 +31,8 @@ type User struct {
 	Description string `json:"description"` // A public description
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Permissions string `json:"permissions,omitempty"` // The user type (permissions level)
-	Public      bool   `json:"public"`                // Whether the user is public or not
+	Role   string `json:"role,omitempty"` // The user type (permissions level)
+	Public bool   `json:"public"`         // Whether the user is public or not
 
 	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
 	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
@@ -97,7 +97,7 @@ func (u *User) UpgradePassword(password string) bool {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
+func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, userlimit int64) error {
 
 	existing, err := userdb.readByNameOrEmail(Name, Email)
 
@@ -135,13 +135,13 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Permissions str
 	    Password,
 	    PasswordSalt,
 	    PasswordHashScheme,
-		Permissions) VALUES (?,?,?,?,?,?);`,
+		Role) VALUES (?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
 		hashtype,
-		Permissions)
+		Role)
 
 	return err
 }
@@ -254,7 +254,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 					Description=?,
 					Icon=?,
 					Public=?,
-					Permissions=?
+					Role=?
 					WHERE UserID = ?`,
 		user.Name,
 		user.Nickname,
@@ -265,7 +265,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		user.Description,
 		user.Icon,
 		user.Public,
-		user.Permissions,
+		user.Role,
 		user.UserID)
 
 	return err

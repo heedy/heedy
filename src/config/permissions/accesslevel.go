@@ -38,7 +38,7 @@ type AccessLevel struct {
 	UserEmail       bool `json:"user_email"`
 	UserDescription bool `json:"user_description"`
 	UserIcon        bool `json:"user_icon"`
-	UserPermissions bool `json:"user_permissions"`
+	UserRole        bool `json:"user_role"`
 	UserPublic      bool `json:"user_public"`
 	UserPassword    bool `json:"user_password"`
 
