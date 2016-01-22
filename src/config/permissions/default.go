@@ -4,6 +4,7 @@ package permissions
 // as its "permissions" field value
 var Default = Permissions{
 	Version: 1,
+	Watch:   true,
 
 	// Here we disallow names that would conflict with the ConnectorDB frontend
 	DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login", "user", "admin", "nobody", "root"},

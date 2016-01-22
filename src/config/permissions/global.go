@@ -27,6 +27,9 @@ func SetPath(permissions string) error {
 			globalPermissions.Close()
 		}
 		globalPermissions = pl
+		if !pl.Get().Watch {
+			globalPermissions.Close() // This will still keep the permissions themselves in memory
+		}
 
 	} else {
 		if globalPermissions != nil {

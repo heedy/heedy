@@ -45,6 +45,7 @@ func SetPath(filename string) error {
 	if globalConfiguration != nil {
 		globalConfiguration.Close()
 	}
+	cfg.OnChange = globalConfiguration.OnChange
 	globalConfiguration = cfg
 
 	// PipeScript has its own special configuration updater, which modifies the global
@@ -54,12 +55,15 @@ func SetPath(filename string) error {
 		return c.PipeScript.Set()
 	})
 
+	if !Get().Watch {
+		// Closing it will keep the config valid
+		globalConfiguration.Close()
+	}
+
 	return nil
 }
 
 // OnChangeCallback adds a calback for modified configuration file
-// BUG(daniel): The OnChangeCallbacks are lost upon configuration file change!
-// This needs to be fixed - although it does not affect normal runtime
 func OnChangeCallback(c ChangeCallback) {
 	globalConfiguration.OnChangeCallback(c)
 }

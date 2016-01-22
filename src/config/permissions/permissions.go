@@ -38,7 +38,8 @@ are not shown in the file.
 // Permissions is the structure which represents all things that are allowed and disallowed for all
 // types of users and visitors to a ConnectorDB powered server
 type Permissions struct {
-	Version int `json:"version"`
+	Version int  `json:"version"`
+	Watch   bool `json:"watch"` // Whether or not to watch the file for changes
 
 	// The given usernames are forbidden.
 	DisallowedNames []string `json:"disallow_names"` //The names that are not permitted

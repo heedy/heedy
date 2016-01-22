@@ -52,7 +52,8 @@ so will not save your changes. Save long-term changes to connectordb.conf in the
 
 // Configuration represents the options which are kept in a config file
 type Configuration struct {
-	Version int `json:"version"` // The version of the configuration file
+	Version int  `json:"version"` // The version of the configuration file
+	Watch   bool `json:"watch"`   // Whether or not to watch the config file for changes
 
 	// The permissions file (or "default") to use for setting up user access rights
 	Permissions string `json:"permissions"`
@@ -108,6 +109,7 @@ func NewConfiguration() *Configuration {
 
 	return &Configuration{
 		Version:     1,
+		Watch:       true,
 		Permissions: "default",
 		Redis: Service{
 			Hostname: "localhost",
