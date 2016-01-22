@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"config"
-
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -47,9 +45,8 @@ func ReadObject(prefix string, access *config.AccessLevel, obj interface{}) erro
 */
 
 // ReadObjectToMap is given a pointer to the given struct
-func ReadObjectToMap(prefix string, access *config.AccessLevel, obj interface{}) map[string]interface{} {
+func ReadObjectToMap(prefix string, amap map[string]bool, obj interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
-	amap := access.GetMap()
 
 	oval := reflect.ValueOf(obj)
 	oval = oval.Elem()
@@ -121,8 +118,7 @@ func WriteObject(prefix string, access *config.AccessLevel, original interface{}
 */
 
 // WriteMap takes the data given in the data map, and writes it to original
-func WriteObjectFromMap(prefix string, access *config.AccessLevel, obj interface{}, data map[string]interface{}) error {
-	amap := access.GetMap()
+func WriteObjectFromMap(prefix string, amap map[string]bool, obj interface{}, data map[string]interface{}) error {
 
 	// First make sure that we have permissions to write all the values that we are to modify
 	for key := range data {

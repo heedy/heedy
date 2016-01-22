@@ -76,3 +76,13 @@ func WriteSelfAccessLevel(cfg *config.Configuration, u *users.User, d *users.Dev
 	// There can't be an error, since config is guaranteed to be validated
 	return cfg.GetAccessLevel(getPermissions(cfg, u).SelfWriteAccessLevel)
 }
+
+// WriteOwnerAccessLevel gives the access level to the owning device
+func WriteOwnerAccessLevel(cfg *config.Configuration, u *users.User) (*config.AccessLevel, error) {
+	return cfg.GetAccessLevel(getPermissions(cfg, u).OwnerDeviceWriteAccessLevel)
+}
+
+// ReadOwnerAccessLevel gives the access level to the owning device
+func ReadOwnerAccessLevel(cfg *config.Configuration, u *users.User) (*config.AccessLevel, error) {
+	return cfg.GetAccessLevel(getPermissions(cfg, u).OwnerDeviceReadAccessLevel)
+}
