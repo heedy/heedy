@@ -1,0 +1,10 @@
+<html>
+<h1>Hi {{.ThisUser.Name}}. You are looking at {{.User.Name}}/{{.Device.Name}}</h1>
+
+
+{{range $element := .ReadStreams}}
+	{{$element.Name}}<br>
+{{end}}
+
+<p>Using cdb version {{.Version}}</p>
+</html>
