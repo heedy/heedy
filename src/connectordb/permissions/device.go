@@ -95,7 +95,8 @@ func UpdateDeviceFromMap(cpm *pconfig.Permissions, writingUser *users.User, writ
 
 	if original.Name == "user" {
 		// The user device is special - it is REQUIRED that it have full user permissions
-		if !original.CanReadUser || !original.CanReadExternal || !original.CanWriteUser || !original.CanWriteExternal {
+		if !original.CanReadUser || !original.CanReadExternal || !original.CanWriteUser || !original.CanWriteExternal ||
+			!original.CanReadUserStreams || !original.CanReadExternalStreams || !original.CanWriteUserStreams || !original.CanWriteExternalStreams {
 			return errors.New("The 'user' device must have full permissions")
 		}
 	}

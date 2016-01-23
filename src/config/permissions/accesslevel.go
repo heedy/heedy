@@ -49,8 +49,8 @@ type AccessLevel struct {
 	DeviceIcon                    bool `json:"device_icon"`
 	DeviceAPIKey                  bool `json:"device_apikey"`
 	DeviceEnabled                 bool `json:"device_enabled"`
-	DeviceIsVisible               bool `json:"device_isvisible"`
-	DeviceUserEditable            bool `json:"device_usereditable"`
+	DeviceIsVisible               bool `json:"device_visible"`
+	DeviceUserEditable            bool `json:"device_user_editable"`
 	DevicePublic                  bool `json:"device_public"`
 	DeviceCanReadUser             bool `json:"device_can_read_user"`
 	DeviceCanReadExternal         bool `json:"device_can_read_external"`
