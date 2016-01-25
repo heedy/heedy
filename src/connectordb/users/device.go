@@ -27,17 +27,8 @@ type Device struct {
 	Enabled     bool   `json:"enabled"`     // Whether or not this device considers itself online (working/gathering)
 	Public      bool   `json:"public"`      // Whether the device is accessible from public
 
-	// A device always has permission to read/write/create/delete its own streams
-	// these permissions define how the device views the outside world
-	CanReadUser      bool `json:"can_read_user"`      // Whether the device has same access as user to devices/streams belonging to user
-	CanReadExternal  bool `json:"can_read_external"`  // Whether device has same access as user to external devices/streams
-	CanWriteUser     bool `json:"can_write_user"`     // Whether the device can write to other devices/streams from the same user
-	CanWriteExternal bool `json:"can_write_external"` // Whether the device can write to other devices/streams not belonging to this user
-	// The following define the access to stream data for the device
-	CanReadUserStreams      bool `json:"can_read_user_streams"`
-	CanReadExternalStreams  bool `json:"can_read_external_streams"`
-	CanWriteUserStreams     bool `json:"can_write_user_streams"`
-	CanWriteExternalStreams bool `json:"can_write_external_streams"`
+	// The permissions allotted to this device
+	Roles string `json:"roles"`
 
 	IsVisible    bool `json:"visible"`
 	UserEditable bool `json:"user_editable"`
@@ -183,6 +174,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		CanReadExternalStreams = ?,
 		CanWriteUserStreams = ?,
 		CanWriteExternalStreams = ?,
+		EscalatedPrivileges = ?,
 		IsVisible = ?,
 		UserEditable = ? WHERE DeviceID = ?;`,
 		device.Name,
@@ -200,6 +192,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		device.CanReadExternalStreams,
 		device.CanWriteUserStreams,
 		device.CanWriteExternalStreams,
+		device.EscalatedPrivileges,
 		device.IsVisible,
 		device.UserEditable,
 		device.DeviceID)

@@ -17,20 +17,35 @@ func (p *Permissions) Validate() error {
 		if p.AccessLevels[key] == nil {
 			return fmt.Errorf("Invalid access level '%s'", key)
 		}
+		if err := p.AccessLevels[key].Validate(p); err != nil {
+			return err
+		}
 	}
 
 	// Make sure the permissions are all valid
 	hadNobody := false
-	for key := range p.Roles {
+	for key := range p.UserRoles {
 		if key == "nobody" {
 			hadNobody = true
 		}
-		if err := p.Roles[key].Validate(p); err != nil {
+		if err := p.UserRoles[key].Validate(p); err != nil {
 			return err
 		}
 	}
 	if !(hadNobody) {
-		return errors.New("There must be at least nobody permissions set.")
+		return errors.New("There must be at least nobody user role set.")
+	}
+	hadNobody = false
+	for key := range p.DeviceRoles {
+		if key == "none" {
+			hadNobody = true
+		}
+		if err := p.DeviceRoles[key].Validate(p); err != nil {
+			return err
+		}
+	}
+	if !(hadNobody) {
+		return errors.New("There must be at least none device role set.")
 	}
 
 	return nil

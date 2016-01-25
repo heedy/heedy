@@ -85,6 +85,7 @@ CREATE TABLE Devices (
     CanReadExternalStreams BOOLEAN DEFAULT FALSE,
     CanWriteUserStreams BOOLEAN DEFAULT FALSE,
     CanWriteExternalStreams BOOLEAN DEFAULT FALSE,
+    EscalatedPrivileges BOOLEAN DEFAULT FALSE,
 
 
     IsVisible BOOLEAN DEFAULT TRUE,
@@ -135,8 +136,9 @@ CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
 DECLARE
 	var_deviceid INTEGER;
 BEGIN
-	INSERT INTO Devices (Name, UserID, APIKey, CanReadUser, CanWriteUser, CanReadExternal, CanWriteExternal)
-	    VALUES ('user', NEW.UserID, NEW.PasswordSalt, TRUE,TRUE,TRUE,TRUE);
+	INSERT INTO Devices (Name, UserID, APIKey, CanReadUser, CanWriteUser, CanReadExternal, CanWriteExternal,
+        CanReadUserStreams, CanReadExternalStreams, CanWriteUserStreams, CanWriteExternalStreams, EscalatedPrivileges)
+	    VALUES ('user', NEW.UserID, NEW.PasswordSalt, TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE);
 
 	INSERT INTO Devices (Name, UserID, APIKey, UserEditable, IsVisible) VALUES ('meta', NEW.UserID, '', FALSE, FALSE);
 

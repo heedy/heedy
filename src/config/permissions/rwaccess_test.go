@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAccessLevelMap(t *testing.T) {
-	a := AccessLevel{UserName: true}
+func TestRWAccessMap(t *testing.T) {
+	a := RWAccess{UserName: true}
 	m := a.GetMap()
 	require.False(t, m["user_password"])
 	require.True(t, m["user_name"])

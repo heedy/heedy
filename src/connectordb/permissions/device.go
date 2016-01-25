@@ -23,7 +23,7 @@ func mergeMap(a1 map[string]bool, a2 map[string]bool) map[string]bool {
 
 // GetDeviceReadAccessLevel gets the access level necessary to read the given device
 func GetDeviceReadAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
-	amap := GetUserReadAccessLevel(cpm, u, d, o.UserID, o.Public).GetMap()
+	amap := GetUserReadAccessLevel(cpm, u, d, o.UserID, o.Public)
 	// Now, we must merge this access level with the owner-specific one if this device is the accessing device
 	if d.DeviceID == o.DeviceID {
 		lvl, err := ReadOwnerAccessLevel(cpm, u)
@@ -32,6 +32,15 @@ func GetDeviceReadAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.
 			log.Fatal(err.Error())
 		}
 		amap = mergeMap(amap, lvl.GetMap())
+	}
+
+	// TODO: READ ESCALATOR. The issue here is how to encode the comparisons here
+
+	if !d.EscalatedPrivileges {
+		// There is a privilege escalation that we have to fix here: the device can't have API key access to any other devices
+		// since it could just log in as those devices
+		amap = copyMap(amap)
+		amap["device_apikey"] = false
 	}
 
 	if !amap["can_access_device"] {
@@ -45,7 +54,7 @@ func GetDeviceReadAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.
 
 // GetDeviceWriteAccessLevel gets the access level necessary to write the given device
 func GetDeviceWriteAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device, o *users.Device) (map[string]bool, error) {
-	amap := GetUserWriteAccessLevel(cpm, u, d, o.UserID, o.Public).GetMap()
+	amap := GetUserWriteAccessLevel(cpm, u, d, o.UserID, o.Public)
 	// Now, we must merge this access level with the owner-specific one if this device is the accessing device
 	if d.DeviceID == o.DeviceID {
 		lvl, err := WriteOwnerAccessLevel(cpm, u)
@@ -54,6 +63,27 @@ func GetDeviceWriteAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users
 			log.Fatal(err.Error())
 		}
 		amap = mergeMap(amap, lvl.GetMap())
+
+	}
+	if !d.EscalatedPrivileges {
+		amap = copyMap(amap)
+
+		// We cannot allow the device to modify any device permissions to avoid privilege escalation
+		amap["device_can_read_user"] = false
+		amap["device_can_write_user"] = false
+		amap["device_can_read_external"] = false
+		amap["device_can_write_external"] = false
+		amap["device_can_read_user_streams"] = false
+		amap["device_can_write_user_streams"] = false
+		amap["device_can_read_external_streams"] = false
+		amap["device_can_write_external_streams"] = false
+		amap["device_escalated_privileges"] = false
+
+		// If the device is other, we cannot allow this device to change the API Key of the other
+		// since it could then log in as that device
+		if d.DeviceID != o.DeviceID {
+			amap["device_apikey"] = false
+		}
 	}
 
 	if !amap["can_access_device"] {

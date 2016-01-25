@@ -51,13 +51,22 @@ type Permissions struct {
 	// number of users
 	MaxUsers int `json:"max_users"`
 
-	// The specific permissions granted to different user types
-	// The required types are nobody and user.
+	// The specific permissions granted to different user types.
+	// The only required type is 'nobody'
 	// If a user in the database has an unknown role, an error will be printed, and the user will fall back to
 	// 'nobody' role.
-	Roles map[string]*Role `json:"roles"`
+	UserRoles map[string]*UserRole `json:"user_roles"`
 
+	// Device roles are similar to user roles. By default, devices have 0 permissions. When a device is given
+	// permissions, its access level can go UP TO its user's access.
+	DeviceRoles map[string]*DeviceRole `json:"device_roles"`
+
+	// AccessLevels are precisely that - a named structure specifying read/write/create/delete permissions
 	AccessLevels map[string]*AccessLevel `json:"access_levels"`
+
+	// RWAccess are a struct which gives the permissions matrix for each field in a user/device/stream.
+	// It defines exactly what type of read/write access is given
+	RWAccess map[string]*RWAccess `json:"rw_access"`
 }
 
 // GetAccessLevel returns the given access level
@@ -71,6 +80,21 @@ func (p *Permissions) GetAccessLevel(level string) (*AccessLevel, error) {
 	al, ok := p.AccessLevels[level]
 	if !ok {
 		return nil, fmt.Errorf("Could not find access level '%s'", level)
+	}
+	return al, nil
+}
+
+// GetRWAccess returns the given RW access
+func (p *Permissions) GetRWAccess(level string) (*RWAccess, error) {
+	if level == "none" {
+		return &NoneRWAccess, nil
+	}
+	if level == "full" {
+		return &FullRWAccess, nil
+	}
+	al, ok := p.RWAccess[level]
+	if !ok {
+		return nil, fmt.Errorf("Could not find RW access '%s'", level)
 	}
 	return al, nil
 }

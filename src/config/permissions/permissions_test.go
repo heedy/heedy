@@ -32,13 +32,13 @@ func TestValidate(t *testing.T) {
 	cfg := &Default
 	require.NoError(t, cfg.Validate())
 
-	p := cfg.Roles["user"]
-	p.PublicReadAccessLevel = "lol"
-	cfg.Roles["user"] = p
+	p := cfg.UserRoles["user"]
+	p.PublicAccessLevel = "lol"
+	cfg.UserRoles["user"] = p
 	require.Error(t, cfg.Validate())
 
-	delete(cfg.Roles, "user")
+	delete(cfg.UserRoles, "user")
 	require.NoError(t, cfg.Validate())
-	delete(cfg.Roles, "nobody")
+	delete(cfg.UserRoles, "nobody")
 	require.Error(t, cfg.Validate())
 }
