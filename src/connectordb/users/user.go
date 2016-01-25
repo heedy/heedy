@@ -31,8 +31,8 @@ type User struct {
 	Description string `json:"description"` // A public description
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Role   string `json:"role,omitempty"` // The user type (permissions level)
-	Public bool   `json:"public"`         // Whether the user is public or not
+	Roles  string `json:"roles,omitempty"` // The user type (permissions level)
+	Public bool   `json:"public"`          // Whether the user is public or not
 
 	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
 	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
@@ -130,12 +130,12 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, us
 	dbpass, salt, hashtype := UpgradePassword(Password)
 
 	_, err = userdb.Exec(`INSERT INTO Users (
-	    Name,
-	    Email,
-	    Password,
-	    PasswordSalt,
-	    PasswordHashScheme,
-		Role) VALUES (?,?,?,?,?,?);`,
+		Name,
+		Email,
+		Password,
+		PasswordSalt,
+		PasswordHashScheme,
+		Roles) VALUES (?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
@@ -245,7 +245,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE users SET
-	                Name=?,
+					Name=?,
 					Nickname=?,
 					Email=?,
 					Password=?,
@@ -254,7 +254,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 					Description=?,
 					Icon=?,
 					Public=?,
-					Role=?
+					Roles=?
 					WHERE UserID = ?`,
 		user.Name,
 		user.Nickname,
@@ -265,7 +265,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		user.Description,
 		user.Icon,
 		user.Public,
-		user.Role,
+		user.Roles,
 		user.UserID)
 
 	return err

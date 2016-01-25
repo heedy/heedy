@@ -31,8 +31,8 @@ SET search_path = public;
 
 -- This table won't exist for the first one. It is in the public schema
 CREATE TABLE connectordbmeta (
-     Key VARCHAR UNIQUE NOT NULL,
-     Value VARCHAR NOT NULL);
+	 Key VARCHAR UNIQUE NOT NULL,
+	 Value VARCHAR NOT NULL);
 
 -- The index is also in the public schema
 CREATE INDEX cdb_meta ON connectordbmeta (Key);
@@ -47,15 +47,15 @@ ALTER DATABASE connectordb SET search_path = v1,public;
 SET search_path = v1,public;
 
 CREATE TABLE Users (
-    UserID {{.pkey_exp}},
+	UserID {{.pkey_exp}},
 	Name VARCHAR UNIQUE NOT NULL,
 	Nickname VARCHAR DEFAULT '',
 	Email VARCHAR UNIQUE NOT NULL,
-    Description VARCHAR(1000) DEFAULT '',
-    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
+	Description VARCHAR(1000) DEFAULT '',
+	Icon		VARCHAR(4096) DEFAULT '', -- DATA URI
 
-    Public BOOLEAN DEFAULT FALSE,
-    Role VARCHAR NOT NULL,
+	Public BOOLEAN DEFAULT FALSE,
+	Roles VARCHAR NOT NULL,
 
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,
@@ -64,34 +64,25 @@ CREATE TABLE Users (
 CREATE UNIQUE INDEX UserNameIndex ON Users (Name);
 
 CREATE TABLE Devices (
-    DeviceID {{.pkey_exp}},
-    Name VARCHAR NOT NULL,
-    Nickname VARCHAR DEFAULT '',
-    Description VARCHAR(1000) DEFAULT '',
-    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
+	DeviceID {{.pkey_exp}},
+	Name VARCHAR NOT NULL,
+	Nickname VARCHAR DEFAULT '',
+	Description VARCHAR(1000) DEFAULT '',
+	Icon		VARCHAR(4096) DEFAULT '', -- DATA URI
 
-    UserID INTEGER,
-    APIKey VARCHAR NOT NULL,
-    Enabled BOOLEAN DEFAULT TRUE,
+	UserID INTEGER,
+	APIKey VARCHAR NOT NULL,
+	Enabled BOOLEAN DEFAULT TRUE,
 
-    Public BOOLEAN DEFAULT FALSE,
+	Public BOOLEAN DEFAULT FALSE,
 
-    -- These permissions allow limiting device RW access
-    CanReadUser BOOLEAN DEFAULT FALSE,
-    CanReadExternal BOOLEAN DEFAULT FALSE,
-    CanWriteUser BOOLEAN DEFAULT FALSE,
-    CanWriteExternal BOOLEAN DEFAULT FALSE,
-    CanReadUserStreams BOOLEAN DEFAULT FALSE,
-    CanReadExternalStreams BOOLEAN DEFAULT FALSE,
-    CanWriteUserStreams BOOLEAN DEFAULT FALSE,
-    CanWriteExternalStreams BOOLEAN DEFAULT FALSE,
-    EscalatedPrivileges BOOLEAN DEFAULT FALSE,
+	Roles VARCHAR DEFAULT '',
 
 
-    IsVisible BOOLEAN DEFAULT TRUE,
-    UserEditable BOOLEAN DEFAULT TRUE,
-    UNIQUE(UserID, Name),
-    FOREIGN KEY(UserID) REFERENCES Users(UserID) ON DELETE CASCADE);
+	IsVisible BOOLEAN DEFAULT TRUE,
+	UserEditable BOOLEAN DEFAULT TRUE,
+	UNIQUE(UserID, Name),
+	FOREIGN KEY(UserID) REFERENCES Users(UserID) ON DELETE CASCADE);
 
 
 
@@ -100,17 +91,17 @@ CREATE UNIQUE INDEX DeviceAPIIndex ON Devices (APIKey) WHERE APIKey!='';
 CREATE INDEX DeviceUserIndex ON Devices (UserID);
 
 CREATE TABLE Streams (
-    StreamID {{.pkey_exp}},
-    Name VARCHAR NOT NULL,
-    Nickname VARCHAR NOT NULL DEFAULT '',
-    Description VARCHAR(1000) DEFAULT '',
-    Icon        VARCHAR(4096) DEFAULT '', -- DATA URI
-    Schema VARCHAR NOT NULL,
-    DeviceID INTEGER,
-    Ephemeral BOOLEAN DEFAULT FALSE,
-    Downlink BOOLEAN DEFAULT FALSE,
-    UNIQUE(Name, DeviceID),
-    FOREIGN KEY(DeviceID) REFERENCES Devices(DeviceID) ON DELETE CASCADE);
+	StreamID {{.pkey_exp}},
+	Name VARCHAR NOT NULL,
+	Nickname VARCHAR NOT NULL DEFAULT '',
+	Description VARCHAR(1000) DEFAULT '',
+	Icon		VARCHAR(4096) DEFAULT '', -- DATA URI
+	Schema VARCHAR NOT NULL,
+	DeviceID INTEGER,
+	Ephemeral BOOLEAN DEFAULT FALSE,
+	Downlink BOOLEAN DEFAULT FALSE,
+	UNIQUE(Name, DeviceID),
+	FOREIGN KEY(DeviceID) REFERENCES Devices(DeviceID) ON DELETE CASCADE);
 
 
 CREATE INDEX StreamNameIndex ON Streams (Name);
@@ -136,14 +127,13 @@ CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
 DECLARE
 	var_deviceid INTEGER;
 BEGIN
-	INSERT INTO Devices (Name, UserID, APIKey, CanReadUser, CanWriteUser, CanReadExternal, CanWriteExternal,
-        CanReadUserStreams, CanReadExternalStreams, CanWriteUserStreams, CanWriteExternalStreams, EscalatedPrivileges)
-	    VALUES ('user', NEW.UserID, NEW.PasswordSalt, TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE);
+	INSERT INTO Devices (Name, UserID, APIKey,Roles)
+		VALUES ('user', NEW.UserID, NEW.PasswordSalt, 'user');
 
 	INSERT INTO Devices (Name, UserID, APIKey, UserEditable, IsVisible) VALUES ('meta', NEW.UserID, '', FALSE, FALSE);
 
 	SELECT DeviceID INTO var_deviceid FROM Devices
-	    WHERE UserID = NEW.UserID AND Name = 'meta';
+		WHERE UserID = NEW.UserID AND Name = 'meta';
 
 	INSERT INTO Streams (Name, Schema, DeviceID)
 		VALUES ('log',
@@ -154,7 +144,7 @@ BEGIN
 END $_$ LANGUAGE 'plpgsql';
 
 CREATE TRIGGER initialize_user AFTER INSERT ON Users FOR EACH ROW
-    EXECUTE PROCEDURE initial_user_setup();
+	EXECUTE PROCEDURE initial_user_setup();
 
 
 -- Set the database version

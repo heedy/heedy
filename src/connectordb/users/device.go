@@ -81,10 +81,10 @@ func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID, devicelimit int
 	}
 
 	_, err := userdb.Exec(`INSERT INTO Devices
-	    (	Name,
-	        APIKey,
-	        UserID)
-	        VALUES (?,?,?)`, Name, APIKey.String(), UserID)
+		(	Name,
+			APIKey,
+			UserID)
+			VALUES (?,?,?)`, Name, APIKey.String(), UserID)
 
 	return err
 }
@@ -159,22 +159,14 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE devices SET
-	    Name = ?,
+		Name = ?,
 		Nickname = ?,
 		Description = ?,
 		Icon = ?,
 		UserID = ?,
 		APIKey = ?,
 		Enabled = ?,
-		CanReadUser = ?,
-		CanReadExternal = ?,
-		CanWriteUser = ?,
-		CanWriteExternal = ?,
-		CanReadUserStreams = ?,
-		CanReadExternalStreams = ?,
-		CanWriteUserStreams = ?,
-		CanWriteExternalStreams = ?,
-		EscalatedPrivileges = ?,
+		Roles = ?,
 		IsVisible = ?,
 		UserEditable = ? WHERE DeviceID = ?;`,
 		device.Name,
@@ -184,15 +176,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		device.UserID,
 		device.APIKey,
 		device.Enabled,
-		device.CanReadUser,
-		device.CanReadExternal,
-		device.CanWriteUser,
-		device.CanWriteExternal,
-		device.CanReadUserStreams,
-		device.CanReadExternalStreams,
-		device.CanWriteUserStreams,
-		device.CanWriteExternalStreams,
-		device.EscalatedPrivileges,
+		device.Roles,
 		device.IsVisible,
 		device.UserEditable,
 		device.DeviceID)

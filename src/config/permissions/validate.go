@@ -36,16 +36,20 @@ func (p *Permissions) Validate() error {
 		return errors.New("There must be at least nobody user role set.")
 	}
 	hadNobody = false
+	hadUser := false
 	for key := range p.DeviceRoles {
 		if key == "none" {
 			hadNobody = true
+		}
+		if key == "user" {
+			hadUser = true
 		}
 		if err := p.DeviceRoles[key].Validate(p); err != nil {
 			return err
 		}
 	}
-	if !(hadNobody) {
-		return errors.New("There must be at least none device role set.")
+	if !hadNobody || !hadUser {
+		return errors.New("There must be at least 'none' and 'user' device roles set.")
 	}
 
 	return nil
