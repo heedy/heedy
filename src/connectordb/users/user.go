@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	ErrInvalidPassword = errors.New("Invalid Password")
 	ErrInvalidUsername = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
 	ErrInvalidEmail    = errors.New("Invalid Email Address")
 	ErrEmailExists     = errors.New("A user already exists with this email")
@@ -67,24 +66,32 @@ func (u *User) ValidityCheck() error {
 }
 
 // Sets a new password for an account
-func (u *User) SetNewPassword(newPass string) {
-	hash, salt, scheme := UpgradePassword(newPass)
+func (u *User) SetNewPassword(newPass string) error {
+	hash, salt, scheme, err := HashPassword(newPass)
+	if err != nil {
+		return err
+	}
 
 	u.PasswordHashScheme = scheme
 	u.PasswordSalt = salt
 	u.Password = hash
+	return nil
 }
 
 func (u *User) ValidatePassword(password string) bool {
-	return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
+	return CheckPassword(password, u.Password, u.PasswordSalt, u.PasswordHashScheme) == nil
 }
 
 // Upgrades the security of the password, returns True if the user needs to be
 // saved again because an upgrade was performed.
 func (u *User) UpgradePassword(password string) bool {
-	hash, salt, scheme := UpgradePassword(password)
+	if !UpgradePassword(u.Password, u.PasswordSalt, u.PasswordHashScheme) {
+		return false
+	}
 
-	if u.PasswordHashScheme == scheme {
+	hash, salt, scheme, err := HashPassword(password)
+	if err != nil {
+		// Uh oh... Since creating a hash failed, return false
 		return false
 	}
 
@@ -127,7 +134,10 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, us
 		}
 	}
 
-	dbpass, salt, hashtype := UpgradePassword(Password)
+	dbpass, salt, hashtype, err := HashPassword(Password)
+	if err != nil {
+		return err
+	}
 
 	_, err = userdb.Exec(`INSERT INTO Users (
 		Name,

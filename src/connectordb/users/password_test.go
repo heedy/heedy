@@ -6,18 +6,21 @@ package users
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCalcHash(t *testing.T) {
-	h1 := calcHash("password", "", "")
-	h2 := calcHash("password", "", "SHA512")
-	h3 := calcHash("password", "a", "SHA512")
-	h4 := calcHash("password2", "a", "SHA512")
-	h5 := calcHash("password2", "a", "SHA512")
-
-	if h1 != h2 {
-		t.Errorf("h1 and h2 should match")
-	}
+	_, err := calcHash("password", "", "")
+	require.Error(t, err)
+	h2, err := calcHash("password", "", "SHA512")
+	require.NoError(t, err)
+	h3, err := calcHash("password", "a", "SHA512")
+	require.NoError(t, err)
+	h4, err := calcHash("password2", "a", "SHA512")
+	require.NoError(t, err)
+	h5, err := calcHash("password2", "a", "SHA512")
+	require.NoError(t, err)
 
 	if h2 == h3 {
 		t.Errorf("h2 and h3 should not match")
@@ -30,4 +33,10 @@ func TestCalcHash(t *testing.T) {
 	if h5 != h4 {
 		t.Errorf("h5 and h4 should match")
 	}
+
+	h1, err := calcHash("pass", "lol", "bcrypt")
+	require.NoError(t, err)
+
+	require.Error(t, CheckPassword("mylol", h1, "lol", "bcrypt"))
+	require.NoError(t, CheckPassword("pass", h1, "lol", "bcrypt"))
 }

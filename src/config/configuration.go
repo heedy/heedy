@@ -89,6 +89,9 @@ type Configuration struct {
 	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
 	IDScramblePrime int64 `json:"database_id_scramble_prime"`
 
+	// The default algorithm to use for hashing passwords. Options are SHA512 and bcrypt
+	PasswordHash string `json:"password_hash"`
+
 	// The configuration options for pipescript (https://github.com/connectordb/pipescript)
 	PipeScript *psconfig.Configuration `json:"pipescript"`
 
@@ -170,6 +173,9 @@ func NewConfiguration() *Configuration {
 		// This is the CONSTANT default. The database will explode if this is ever changed.
 		// You have been warned.
 		IDScramblePrime: 2147483423,
+
+		// No reason not to use bcrypt
+		PasswordHash: "bcrypt",
 
 		// Use the default settings.
 		PipeScript: psconfig.Default(),

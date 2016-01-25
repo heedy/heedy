@@ -54,6 +54,7 @@ go-dependencies:
 	go get github.com/connectordb/njson
 	go get github.com/codegangsta/cli
 	go get github.com/tdewolff/minify
+	go get golang.org/x/crypto/bcrypt
 
 	go get github.com/stretchr/testify
 

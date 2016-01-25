@@ -66,6 +66,11 @@ func (c *Configuration) Validate() error {
 		return errors.New("The ID Scramble prime must be a prime > 0.")
 	}
 
+	// Now see if we have a valid hashing algorithm
+	if c.PasswordHash != "bcrypt" && c.PasswordHash != "SHA512" {
+		return errors.New("The password hashing algorithm must be one of 'SHA512' or 'bcrypt'")
+	}
+
 	// Now let's validate the frontend
 	if err := c.Frontend.Validate(c); err != nil {
 		return err
