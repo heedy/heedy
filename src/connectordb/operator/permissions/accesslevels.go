@@ -13,12 +13,12 @@ var ErrNoAccess = errors.New("The device does not have access to this resource."
 
 // getRole gets the permissions level for the user
 func getRole(cpm *pconfig.Permissions, u *users.User) *pconfig.Role {
-	p, ok := cpm.Roles[u.Role]
+	p, ok := cpm.Role[u.Role]
 	if !ok {
 		// The permissions level does not exist! Write an angry message to the console. This is a configuration error,
 		// as such it should not be propagated to the user
 		log.WithFields(log.Fields{"user": u.Name, "role": u.Role}).Errorf("Could not find role '%s'! Falling back to 'nobody'!", u.Role)
-		return cpm.Roles["nobody"]
+		return cpm.Role["nobody"]
 	}
 	return p
 }
@@ -26,7 +26,7 @@ func getRole(cpm *pconfig.Permissions, u *users.User) *pconfig.Role {
 // ReadPublicAccessLevel gets the access level for a reading device for public data
 func ReadPublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadExternal {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].PublicReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].PublicReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).PublicReadAccessLevel)
@@ -35,7 +35,7 @@ func ReadPublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Dev
 // ReadPrivateAccessLevel gets the access level for a reading device for private data
 func ReadPrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadExternal {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].PrivateReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].PrivateReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).PrivateReadAccessLevel)
@@ -44,7 +44,7 @@ func ReadPrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.De
 // ReadSelfAccessLevel gets the access level for a reading device for data about self
 func ReadSelfAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanReadUser {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].SelfReadAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].SelfReadAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).SelfReadAccessLevel)
@@ -53,7 +53,7 @@ func ReadSelfAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Devic
 // WritePublicAccessLevel gets the access level for a writing operation
 func WritePublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteExternal {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].PublicWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].PublicWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).PublicWriteAccessLevel)
@@ -62,7 +62,7 @@ func WritePublicAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.De
 // WritePrivateAccessLevel gets the access level for a writing operation
 func WritePrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteExternal {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].PrivateWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].PrivateWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).PrivateWriteAccessLevel)
@@ -71,7 +71,7 @@ func WritePrivateAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.D
 // WriteSelfAccessLevel gets the access level for a writing operation
 func WriteSelfAccessLevel(cpm *pconfig.Permissions, u *users.User, d *users.Device) (*pconfig.AccessLevel, error) {
 	if !d.CanWriteUser {
-		return cpm.GetAccessLevel(cpm.Roles["nobody"].SelfWriteAccessLevel)
+		return cpm.GetAccessLevel(cpm.Role["nobody"].SelfWriteAccessLevel)
 	}
 	// There can't be an error, since config is guaranteed to be validated
 	return cpm.GetAccessLevel(getRole(cpm, u).SelfWriteAccessLevel)

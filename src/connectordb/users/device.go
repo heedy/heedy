@@ -28,7 +28,7 @@ type Device struct {
 	Public      bool   `json:"public"`      // Whether the device is accessible from public
 
 	// The permissions allotted to this device
-	Roles string `json:"roles"`
+	Role string `json:"roles"`
 
 	IsVisible    bool `json:"visible"`
 	UserEditable bool `json:"user_editable"`
@@ -90,8 +90,8 @@ func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID, devicelimit int
 }
 
 // ReadDevicesForUserID gets all of a user's devices
-func (userdb *SqlUserDatabase) ReadDevicesForUserID(UserID int64) ([]Device, error) {
-	var devices []Device
+func (userdb *SqlUserDatabase) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
+	var devices []*Device
 
 	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserID = ?;", UserID)
 
@@ -166,7 +166,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		UserID = ?,
 		APIKey = ?,
 		Enabled = ?,
-		Roles = ?,
+		Role = ?,
 		IsVisible = ?,
 		UserEditable = ? WHERE DeviceID = ?;`,
 		device.Name,
@@ -176,7 +176,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		device.UserID,
 		device.APIKey,
 		device.Enabled,
-		device.Roles,
+		device.Role,
 		device.IsVisible,
 		device.UserEditable,
 		device.DeviceID)

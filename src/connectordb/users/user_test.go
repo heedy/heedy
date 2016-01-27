@@ -15,13 +15,13 @@ import (
 func TestCreateUser(t *testing.T) {
 
 	for _, testdb := range testdatabases {
-		err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass", "test", 0)
+		err := testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email", "TestCreateUser_pass", "test", false, 0)
 		require.Nil(t, err)
 
-		err = testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email2", "TestCreateUser_pass2", "test", 0)
+		err = testdb.CreateUser("TestCreateUser_name", "TestCreateUser_email2", "TestCreateUser_pass2", "test", false, 0)
 		require.NotNil(t, err)
 
-		err = testdb.CreateUser("TestCreateUser_name2", "TestCreateUser_email", "TestCreateUser_pass2", "test", 0)
+		err = testdb.CreateUser("TestCreateUser_name2", "TestCreateUser_email", "TestCreateUser_pass2", "test", false, 0)
 		require.NotNil(t, err)
 	}
 }
@@ -38,7 +38,7 @@ func TestReadAllUsers(t *testing.T) {
 		require.Nil(t, err)
 		require.NotNil(t, users)
 
-		err = testdb.CreateUser("TestReadAllUsers", "TestReadAllUsers_email", "TestReadAllUsers_pass", "test", 0)
+		err = testdb.CreateUser("TestReadAllUsers", "TestReadAllUsers_email", "TestReadAllUsers_pass", "test", false, 0)
 		require.Nil(t, err)
 
 		users2, err := testdb.ReadAllUsers()
@@ -57,7 +57,7 @@ func TestReadUserByName(t *testing.T) {
 		assert.NotNil(t, err)
 
 		// setup for reading
-		err = testdb.CreateUser("TestReadUserByName_name", "TestReadUserByName_email", "TestReadUserByName_pass", "test", 0)
+		err = testdb.CreateUser("TestReadUserByName_name", "TestReadUserByName_email", "TestReadUserByName_pass", "test", false, 0)
 		require.Nil(t, err)
 
 		usr, err = testdb.ReadUserByName("TestReadUserByName_name")
@@ -74,7 +74,7 @@ func TestReadUserById(t *testing.T) {
 		assert.NotNil(t, err)
 
 		// setup for reading
-		err = testdb.CreateUser("ReadUserById_name", "ReadUserById_email", "ReadUserById_pass", "test", 0)
+		err = testdb.CreateUser("ReadUserById_name", "ReadUserById_email", "ReadUserById_pass", "test", false, 0)
 		assert.Nil(t, err)
 
 		usr, err = testdb.ReadUserByName("ReadUserById_name")
@@ -134,7 +134,7 @@ func TestReadUserDevice(t *testing.T) {
 
 		assert.Equal(t, dev.UserID, user.UserID, "Incorrect device returned.")
 
-		user.Roles = "test2"
+		user.Role = "test2"
 		err = testdb.UpdateUser(user)
 		require.Nil(t, err)
 	}

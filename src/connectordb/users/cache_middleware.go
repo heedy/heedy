@@ -196,7 +196,7 @@ func (userdb *CacheMiddleware) Login(Username, Password string) (*User, *Device,
 	return user, dev, err
 }
 
-func (userdb *CacheMiddleware) ReadAllUsers() ([]User, error) {
+func (userdb *CacheMiddleware) ReadAllUsers() ([]*User, error) {
 	return userdb.UserDatabase.ReadAllUsers()
 }
 

@@ -30,8 +30,8 @@ type User struct {
 	Description string `json:"description"` // A public description
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Roles  string `json:"roles,omitempty"` // The user type (permissions level)
-	Public bool   `json:"public"`          // Whether the user is public or not
+	Role   string `json:"Role,omitempty"` // The user type (permissions level)
+	Public bool   `json:"public"`         // Whether the user is public or not
 
 	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
 	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
@@ -39,12 +39,12 @@ type User struct {
 
 }
 
-func (s *User) String() string {
+func (u *User) String() string {
 	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v ]",
-		s.UserID, s.Name, s.Email, s.Nickname, s.Password, s.PasswordSalt, s.PasswordHashScheme)
+		u.UserID, u.Name, u.Email, u.Nickname, u.Password, u.PasswordSalt, u.PasswordHashScheme)
 }
 
-// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+// ValidityCheck checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (u *User) ValidityCheck() error {
 	if !IsValidName(u.Name) {
 		return ErrInvalidUsername
@@ -65,7 +65,7 @@ func (u *User) ValidityCheck() error {
 	return nil
 }
 
-// Sets a new password for an account
+// SetNewPassword sets a new password for an account
 func (u *User) SetNewPassword(newPass string) error {
 	hash, salt, scheme, err := HashPassword(newPass)
 	if err != nil {
@@ -78,11 +78,12 @@ func (u *User) SetNewPassword(newPass string) error {
 	return nil
 }
 
+// ValidatePassword returns true if password matches
 func (u *User) ValidatePassword(password string) bool {
 	return CheckPassword(password, u.Password, u.PasswordSalt, u.PasswordHashScheme) == nil
 }
 
-// Upgrades the security of the password, returns True if the user needs to be
+// UpgradePassword upgrades the security of the password, returns True if the user needs to be
 // saved again because an upgrade was performed.
 func (u *User) UpgradePassword(password string) bool {
 	if !UpgradePassword(u.Password, u.PasswordSalt, u.PasswordHashScheme) {
@@ -104,7 +105,7 @@ func (u *User) UpgradePassword(password string) bool {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, userlimit int64) error {
+func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Public bool, userlimit int64) error {
 
 	existing, err := userdb.readByNameOrEmail(Name, Email)
 
@@ -145,18 +146,19 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, us
 		Password,
 		PasswordSalt,
 		PasswordHashScheme,
-		Roles) VALUES (?,?,?,?,?,?);`,
+		Role,
+		Public) VALUES (?,?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
 		hashtype,
-		Role)
+		Role, Public)
 
 	return err
 }
 
-/** Performs a login function on the user.
+/*Login Performs a login function on the user.
 
 Looks for a user by the (username|email)/password pair.
 Checks the password, if it's a match, tries to upgrade the password.
@@ -164,7 +166,7 @@ Finally, grabs the User device for performing user actions from.
 
 Returns an error along with the user and device if something went wrong
 
-**/
+*/
 func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device, error) {
 	user, err := userdb.readByNameOrEmail(Username, Username)
 	if err != nil {
@@ -231,8 +233,8 @@ func (userdb *SqlUserDatabase) ReadUserById(UserID int64) (*User, error) {
 	return &user, err
 }
 
-func (userdb *SqlUserDatabase) ReadAllUsers() ([]User, error) {
-	var users []User
+func (userdb *SqlUserDatabase) ReadAllUsers() ([]*User, error) {
+	var users []*User
 
 	err := userdb.Select(&users, "SELECT * FROM Users")
 
@@ -264,7 +266,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 					Description=?,
 					Icon=?,
 					Public=?,
-					Roles=?
+					Role=?
 					WHERE UserID = ?`,
 		user.Name,
 		user.Nickname,
@@ -275,7 +277,7 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		user.Description,
 		user.Icon,
 		user.Public,
-		user.Roles,
+		user.Role,
 		user.UserID)
 
 	return err

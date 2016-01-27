@@ -7,16 +7,16 @@ package permissions
 import "reflect"
 
 var (
-	// The NoneRWAccess is the RW permission to give a device when it does not have ANY permissions associated with an action
+	// NoneRWAccess is the RW permission to give a device when it does not have ANY permissions associated with an action
 	NoneRWAccess = RWAccess{}
-	// The FullRWAccess is the RW permission to give a total administrator - everything is accessible
+	// FullRWAccess is the RW permission to give a total administrator - everything is accessible
 	FullRWAccess = RWAccess{true, true, true, true,
 		true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true, nil}
 )
 
-// RWAccessLevel is a struct of boolean permissions given for a certain role.
+// RWAccess is a struct of boolean permissions given for a certain role.
 type RWAccess struct {
 
 	// General access level options
@@ -24,7 +24,7 @@ type RWAccess struct {
 	CanAccessDevice bool `json:"can_access_device"`
 	CanAccessStream bool `json:"can_access_stream"`
 	// Read/write of streams
-	CanReadStreamData bool `json:"can_access_stream_data"`
+	CanAccessStreamData bool `json:"can_access_stream_data"`
 
 	// Whether or not this is allowed to write non-user-editable devices
 	// For use in admin
@@ -36,7 +36,7 @@ type RWAccess struct {
 	UserEmail       bool `json:"user_email"`
 	UserDescription bool `json:"user_description"`
 	UserIcon        bool `json:"user_icon"`
-	UserRoles       bool `json:"user_roles"`
+	UserRole        bool `json:"user_role"`
 	UserPublic      bool `json:"user_public"`
 	UserPassword    bool `json:"user_password"`
 
@@ -50,7 +50,7 @@ type RWAccess struct {
 	DeviceIsVisible    bool `json:"device_visible"`
 	DeviceUserEditable bool `json:"device_user_editable"`
 	DevicePublic       bool `json:"device_public"`
-	DeviceRoles        bool `json:"device_roles"`
+	DeviceRole         bool `json:"device_roles"`
 
 	// Access of stream properties
 	StreamName        bool `json:"stream_name"`

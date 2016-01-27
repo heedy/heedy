@@ -24,7 +24,7 @@ func (userdb *ErrorUserdb) CreateStream(Name, Type string, DeviceID, streamlimit
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
+func (userdb *ErrorUserdb) CreateUser(Name, Email, Password, Permissions string, Public bool, userlimit int64) error {
 	return ErrorUserdbError
 }
 
@@ -44,7 +44,7 @@ func (userdb *ErrorUserdb) Login(Username, Password string) (*User, *Device, err
 	return nil, nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadAllUsers() ([]User, error) {
+func (userdb *ErrorUserdb) ReadAllUsers() ([]*User, error) {
 	return nil, ErrorUserdbError
 }
 
@@ -60,7 +60,7 @@ func (userdb *ErrorUserdb) ReadDeviceForUserByName(userid int64, devicename stri
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadDevicesForUserID(UserID int64) ([]Device, error) {
+func (userdb *ErrorUserdb) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
 	return nil, ErrorUserdbError
 }
 
@@ -72,11 +72,11 @@ func (userdb *ErrorUserdb) ReadStreamByID(StreamID int64) (*Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamsByUser(UserID int64) ([]Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
 	return nil, ErrorUserdbError
 }
 

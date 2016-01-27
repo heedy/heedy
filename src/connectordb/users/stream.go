@@ -153,8 +153,8 @@ func (userdb *SqlUserDatabase) ReadStreamByDeviceIDAndName(DeviceID int64, strea
 	return &stream, err
 }
 
-func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
-	var streams []Stream
+func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
+	var streams []*Stream
 
 	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceID = ?;", DeviceID)
 
@@ -165,8 +165,8 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]Stream, er
 	return streams, err
 }
 
-func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64) ([]Stream, error) {
-	var streams []Stream
+func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
+	var streams []*Stream
 
 	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, devices d, users u
 	WHERE

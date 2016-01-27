@@ -24,7 +24,7 @@ func (userdb *KnownUserdb) CreateStream(Name, Type string, DeviceID, streamlimit
 	return nil
 }
 
-func (userdb *KnownUserdb) CreateUser(Name, Email, Password, permissions string, userlimit int64) error {
+func (userdb *KnownUserdb) CreateUser(Name, Email, Password, permissions string, public bool, userlimit int64) error {
 	return nil
 }
 
@@ -44,8 +44,8 @@ func (userdb *KnownUserdb) Login(Username, Password string) (*User, *Device, err
 	return &KnownUser, &KnownDevice, nil
 }
 
-func (userdb *KnownUserdb) ReadAllUsers() ([]User, error) {
-	return []User{KnownUser}, nil
+func (userdb *KnownUserdb) ReadAllUsers() ([]*User, error) {
+	return []*User{&KnownUser}, nil
 }
 
 func (userdb *KnownUserdb) ReadDeviceByAPIKey(Key string) (*Device, error) {
@@ -60,24 +60,24 @@ func (userdb *KnownUserdb) ReadDeviceForUserByName(userid int64, devicename stri
 	return &KnownDevice, nil
 }
 
-func (userdb *KnownUserdb) ReadDevicesForUserID(UserID int64) ([]Device, error) {
-	return []Device{KnownDevice}, nil
+func (userdb *KnownUserdb) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
+	return []*Device{&KnownDevice}, nil
 }
 
 func (userdb *KnownUserdb) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
 	return &KnownStream, nil
 }
 
-func (userdb *KnownUserdb) ReadStreamsByUser(UserID int64) ([]Stream, error) {
-	return []Stream{KnownStream}, nil
+func (userdb *KnownUserdb) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
+	return []*Stream{&KnownStream}, nil
 }
 
 func (userdb *KnownUserdb) ReadStreamByID(StreamID int64) (*Stream, error) {
 	return &KnownStream, nil
 }
 
-func (userdb *KnownUserdb) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
-	return []Stream{KnownStream}, nil
+func (userdb *KnownUserdb) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
+	return []*Stream{&KnownStream}, nil
 }
 
 func (userdb *KnownUserdb) ReadUserById(UserID int64) (*User, error) {

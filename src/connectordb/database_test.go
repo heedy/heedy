@@ -11,15 +11,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDataBaseOperatorInterfaceBasics(t *testing.T) {
-
+func TestDataBaseBasics(t *testing.T) {
+	var o Operator
 	db, err := Open(config.TestConfiguration.Options())
 	require.NoError(t, err)
+
+	// This esnures that Database conforms to Operator
+	o = db
 
 	defer db.Close()
 	go db.RunWriter()
 
-	require.NotEqual(t, db.GetUserDatabase(), nil)
-	require.Equal(t, db.GetDatastream(), db.ds)
-	require.Equal(t, db.GetMessenger(), db.msg)
+	require.Equal(t, o.Name(), Name)
+	_, err = o.User()
+	require.Error(t, err)
+	_, err = o.Device()
+	require.Error(t, err)
+
 }

@@ -78,7 +78,7 @@ func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
 
 	//log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, testPassword)
 
-	err := testdb.CreateUser(name, email, testPassword, "test", 0)
+	err := testdb.CreateUser(name, email, testPassword, "test", false, 0)
 
 	if err != nil {
 		return nil, err

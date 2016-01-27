@@ -15,20 +15,20 @@ type UserDatabase interface {
 	// User/Device/Stream limits are in config. The UserDatabase does not have access to the config
 	CreateDevice(Name string, UserID, DeviceLimit int64) error
 	CreateStream(Name, Type string, DeviceID, StreamLimit int64) error
-	CreateUser(Name, Email, Password, Permissions string, UserLimit int64) error
+	CreateUser(Name, Email, Password, Permissions string, Public bool, UserLimit int64) error
 	DeleteDevice(Id int64) error
 	DeleteStream(Id int64) error
 	DeleteUser(UserID int64) error
 	Login(Username, Password string) (*User, *Device, error)
-	ReadAllUsers() ([]User, error)
+	ReadAllUsers() ([]*User, error)
 	ReadDeviceByAPIKey(Key string) (*Device, error)
 	ReadDeviceByID(DeviceID int64) (*Device, error)
 	ReadDeviceForUserByName(userid int64, devicename string) (*Device, error)
-	ReadDevicesForUserID(UserID int64) ([]Device, error)
+	ReadDevicesForUserID(UserID int64) ([]*Device, error)
 	ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error)
 	ReadStreamByID(StreamID int64) (*Stream, error)
-	ReadStreamsByDevice(DeviceID int64) ([]Stream, error)
-	ReadStreamsByUser(UserID int64) ([]Stream, error)
+	ReadStreamsByDevice(DeviceID int64) ([]*Stream, error)
+	ReadStreamsByUser(UserID int64) ([]*Stream, error)
 	ReadUserById(UserID int64) (*User, error)
 	ReadUserByName(Name string) (*User, error)
 	ReadUserOperatingDevice(user *User) (*Device, error)

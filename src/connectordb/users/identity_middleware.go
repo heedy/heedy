@@ -19,8 +19,8 @@ func (userdb *IdentityMiddleware) CreateStream(Name, Type string, DeviceID, stre
 	return userdb.UserDatabase.CreateStream(Name, Type, DeviceID, streamlimit)
 }
 
-func (userdb *IdentityMiddleware) CreateUser(Name, Email, Password, Permissions string, userlimit int64) error {
-	return userdb.UserDatabase.CreateUser(Name, Email, Password, Permissions, userlimit)
+func (userdb *IdentityMiddleware) CreateUser(Name, Email, Password, Permissions string, public bool, userlimit int64) error {
+	return userdb.UserDatabase.CreateUser(Name, Email, Password, Permissions, public, userlimit)
 }
 
 func (userdb *IdentityMiddleware) DeleteDevice(Id int64) error {
@@ -39,7 +39,7 @@ func (userdb *IdentityMiddleware) Login(Username, Password string) (*User, *Devi
 	return userdb.UserDatabase.Login(Username, Password)
 }
 
-func (userdb *IdentityMiddleware) ReadAllUsers() ([]User, error) {
+func (userdb *IdentityMiddleware) ReadAllUsers() ([]*User, error) {
 	return userdb.UserDatabase.ReadAllUsers()
 }
 
@@ -55,7 +55,7 @@ func (userdb *IdentityMiddleware) ReadDeviceForUserByName(userid int64, devicena
 	return userdb.UserDatabase.ReadDeviceForUserByName(userid, devicename)
 }
 
-func (userdb *IdentityMiddleware) ReadDevicesForUserID(UserID int64) ([]Device, error) {
+func (userdb *IdentityMiddleware) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
 	return userdb.UserDatabase.ReadDevicesForUserID(UserID)
 }
 
@@ -67,7 +67,7 @@ func (userdb *IdentityMiddleware) ReadStreamByID(StreamID int64) (*Stream, error
 	return userdb.UserDatabase.ReadStreamByID(StreamID)
 }
 
-func (userdb *IdentityMiddleware) ReadStreamsByDevice(DeviceID int64) ([]Stream, error) {
+func (userdb *IdentityMiddleware) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
 	return userdb.UserDatabase.ReadStreamsByDevice(DeviceID)
 }
 

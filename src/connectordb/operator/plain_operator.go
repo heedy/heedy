@@ -136,36 +136,6 @@ func (o *PlainOperator) DeleteDeviceByID(deviceID int64) error {
 	return err
 }
 
-func (o *PlainOperator) CountUsers() (int64, error) {
-	return o.Userdb.CountUsers()
-}
-
-func (o *PlainOperator) CountDevices() (int64, error) {
-	return o.Userdb.CountDevices()
-}
-
-func (o *PlainOperator) CountStreams() (int64, error) {
-	return o.Userdb.CountStreams()
-}
-
-func (o *PlainOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]users.Stream, error) {
-	return o.Userdb.ReadStreamsByDevice(deviceID)
-}
-
-func (o *PlainOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
-	return o.Userdb.CreateStream(streamname, jsonschema, deviceID)
-}
-
-//ReadStreamByID reads a stream using a stream's ID
-func (o *PlainOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
-	return o.Userdb.ReadStreamByID(streamID)
-}
-
-//ReadStreamByDeviceID reads a stream given its name and the ID of its parent device
-func (o *PlainOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
-	return o.Userdb.ReadStreamByDeviceIDAndName(deviceID, streamname)
-}
-
 //UpdateStream updates the stream. BUG(daniel) the function currently does not give an error
 //if someone attempts to update the schema (which is an illegal operation anyways)
 func (o *PlainOperator) UpdateStream(modifiedstream *users.Stream) error {
@@ -183,24 +153,4 @@ func (o *PlainOperator) UpdateStream(modifiedstream *users.Stream) error {
 	}
 
 	return err
-}
-
-//DeleteStreamByID deletes the stream using ID
-func (o *PlainOperator) DeleteStreamByID(streamID int64, substream string) error {
-	strm, err := o.ReadStreamByID(streamID)
-	if err != nil {
-		return err //Workaround #81
-	}
-
-	if substream != "" {
-		//We just delete the substream
-		err = o.ds.DeleteSubstream(strm.DeviceID, strm.StreamID, substream)
-	} else {
-		err = o.Userdb.DeleteStream(streamID)
-		if err == nil {
-			err = o.ds.DeleteStream(strm.DeviceID, strm.StreamID)
-		}
-	}
-	return err
-
 }

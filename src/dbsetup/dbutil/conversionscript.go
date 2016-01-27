@@ -55,7 +55,7 @@ CREATE TABLE Users (
 	Icon		VARCHAR(4096) DEFAULT '', -- DATA URI
 
 	Public BOOLEAN DEFAULT FALSE,
-	Roles VARCHAR NOT NULL,
+	Role VARCHAR NOT NULL,
 
 	Password VARCHAR NOT NULL,
 	PasswordSalt VARCHAR NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE Devices (
 
 	Public BOOLEAN DEFAULT FALSE,
 
-	Roles VARCHAR DEFAULT '',
+	Role VARCHAR DEFAULT '',
 
 
 	IsVisible BOOLEAN DEFAULT TRUE,
@@ -127,7 +127,7 @@ CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
 DECLARE
 	var_deviceid INTEGER;
 BEGIN
-	INSERT INTO Devices (Name, UserID, APIKey,Roles)
+	INSERT INTO Devices (Name, UserID, APIKey,Role)
 		VALUES ('user', NEW.UserID, NEW.PasswordSalt, 'user');
 
 	INSERT INTO Devices (Name, UserID, APIKey, UserEditable, IsVisible) VALUES ('meta', NEW.UserID, '', FALSE, FALSE);

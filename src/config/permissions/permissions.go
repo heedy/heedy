@@ -49,7 +49,7 @@ type Permissions struct {
 
 	// The maximum number of users to allow. 0 means don't allow any new users, and -1 means unlimited
 	// number of users
-	MaxUsers int `json:"max_users"`
+	MaxUsers int64 `json:"max_users"`
 
 	// The specific permissions granted to different user types.
 	// The only required type is 'nobody'

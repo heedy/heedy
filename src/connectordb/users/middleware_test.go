@@ -77,8 +77,8 @@ func TestMiddlewareCreateUser(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateUser("", "", "", "", 0)
-		baseError := testcase.Base.CreateUser("", "", "", "", 0)
+		testError := testCounter.CreateUser("", "", "", "", false, 0)
+		baseError := testcase.Base.CreateUser("", "", "", "", false, 0)
 
 		numCalls := testCounter.GetNumberOfCalls()
 

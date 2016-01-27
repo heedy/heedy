@@ -155,7 +155,7 @@ func UpdateUserFromMap(cpm *pconfig.Permissions, writingUser *users.User, writin
 	if oname != original.Name {
 		return errors.New("ConnectorDB does not support modification of user names")
 	}
-	_, ok := cpm.Roles[original.Role]
+	_, ok := cpm.Role[original.Role]
 	if operm != original.Role && !ok {
 		return fmt.Errorf("Permissions level '%s' does not exist", original.Role)
 	}
