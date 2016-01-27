@@ -9,6 +9,7 @@ import (
 	"connectordb/datastream"
 	"connectordb/datastream/rediscache"
 	"connectordb/messenger"
+	"connectordb/pathwrapper"
 	"connectordb/users"
 	"database/sql"
 	"dbsetup/dbutil"
@@ -31,12 +32,14 @@ var (
 
 //Database is a StreamDB database object which holds the methods
 type Database struct {
+	pathwrapper.Wrapper
+
 	Userdb users.UserDatabase //SqlUserDatabase holds the methods needed to CRUD users/devices/streams
 
-	ds  *datastream.DataStream //datastream holds methods for inserting datapoints into streams
-	msg *messenger.Messenger   //messenger is a connection to the messaging client
+	DataStream *datastream.DataStream //datastream holds methods for inserting datapoints into streams
+	Messenger  *messenger.Messenger   //messenger is a connection to the messaging client
 
-	sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+	Sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
 
 // Open ConnectorDB is given an Options object, which holds the information necessary to connect to the database
@@ -46,19 +49,22 @@ type Database struct {
 func Open(opt *config.Options) (dbp *Database, err error) {
 	var db Database
 
+	// Set up the path operation wrapper (Database is BaseOperator - wrapper makes it into Operator)
+	db.Wrapper = pathwrapper.Wrap(&db)
+
 	log.Debugln("Opening ConnectorDB")
 
 	//Dbutil prints the sqluri to log, so no need to do it here
-	db.sqldb, _, err = dbutil.OpenSqlDatabase(opt.SqlConnectionString)
+	db.Sqldb, _, err = dbutil.OpenSqlDatabase(opt.SqlConnectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb = users.NewUserDatabase(db.sqldb, config.SqlType, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
+	db.Userdb = users.NewUserDatabase(db.Sqldb, config.SqlType, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
 
 	log.Debugln("Opening messenger")
-	db.msg, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
+	db.Messenger, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +78,7 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	rc.BatchSize = int64(opt.BatchSize)
 
 	log.Debugf("Opening DataStream")
-	db.ds, err = datastream.OpenDataStream(rediscache.RedisCache{rc}, db.sqldb, opt.ChunkSize)
+	db.DataStream, err = datastream.OpenDataStream(rediscache.RedisCache{rc}, db.Sqldb, opt.ChunkSize)
 	if err != nil {
 		rc.Close()
 		db.Close()
@@ -89,14 +95,14 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 //Close closes all database connections and releases all resources.
 //A word of warning though: If RunWriter() is functional, then RunWriter will crash
 func (db *Database) Close() {
-	if db.ds != nil {
-		db.ds.Close()
+	if db.DataStream != nil {
+		db.DataStream.Close()
 	}
-	if db.msg != nil {
-		db.msg.Close()
+	if db.Messenger != nil {
+		db.Messenger.Close()
 	}
-	if db.sqldb != nil {
-		db.sqldb.Close()
+	if db.Sqldb != nil {
+		db.Sqldb.Close()
 	}
 }
 
@@ -120,17 +126,14 @@ this database, then Ndb.
 PS: RunWriter will be entirely eliminated fairly soon, since it is the main thing stopping usage of Redis cluster
 */
 func (db *Database) RunWriter() error {
-	return db.ds.RunWriter()
+	return db.DataStream.RunWriter()
 }
 
 // Clear clears the database (to be used for debugging purposes - NEVER in production)
 // It makes ALL the data go POOF
 func (db *Database) Clear() {
-	db.ds.Clear()
-	db.sqldb.Exec("DELETE FROM Users;")
-	db.sqldb.Exec("DELETE FROM Devices;")
-	db.sqldb.Exec("DELETE FROM Streams;")
-	db.sqldb.Exec("DELETE FROM Datastream;")
+	db.DataStream.Clear()
+	db.Userdb.Clear()
 }
 
 // Name is the "Name" of the database. It is needed to conform to the Operator interface

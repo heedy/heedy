@@ -2,36 +2,22 @@
 Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
 Licensed under the MIT license.
 **/
-package plainoperator
+package connectordb
 
 import (
-	"config"
-	"connectordb"
 	"connectordb/datastream"
-	"connectordb/operator/interfaces"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func OpenDb(t *testing.T) (*connectordb.Database, PlainOperator, error) {
-	db, err := connectordb.Open(config.TestOptions)
-	require.NoError(t, err)
-	db.Clear(t)
-	return db, PlainOperator{db.GetUserDatabase(), db.GetDatastream(), db.GetMessenger()}, err
-}
-
 func TestStreamTransform(t *testing.T) {
-	database, ao, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
-	database.Clear(t)
-
-	db := interfaces.PathOperatorMixin{&ao}
+	Tdb.Clear()
+	db := Tdb
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
 	require.NoError(t, db.CreateDevice("tst/tst"))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "number"}`))
 
@@ -50,7 +36,7 @@ func TestStreamTransform(t *testing.T) {
 
 	require.NoError(t, db.InsertStream("tst/tst/tst", data, false))
 
-	_, err = db.GetStreamTimeRange("tst/tst/tst", 0.0, 0, 0, badtransform)
+	_, err := db.GetStreamTimeRange("tst/tst/tst", 0.0, 0, 0, badtransform)
 	require.Error(t, err)
 	_, err = db.GetStreamIndexRange("tst/tst/tst", 0, 0, badtransform)
 	require.Error(t, err)
@@ -86,16 +72,11 @@ func TestStreamTransform(t *testing.T) {
 }
 
 func TestStreamIO(t *testing.T) {
-
-	database, ao, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
-	database.Clear(t)
-
-	db := interfaces.PathOperatorMixin{&ao}
+	Tdb.Clear()
+	db := Tdb
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
 	require.NoError(t, db.CreateDevice("tst/tst"))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 

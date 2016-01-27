@@ -16,6 +16,9 @@ var (
 type KnownUserdb struct {
 }
 
+func (userdb *KnownUserdb) Clear() {
+}
+
 func (userdb *KnownUserdb) CreateDevice(Name string, UserID, devlimit int64) error {
 	return nil
 }

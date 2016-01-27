@@ -49,6 +49,14 @@ func NewCacheMiddleware(parent UserDatabase, userCacheSize, deviceCacheSize, str
 	return &cm, nil
 }
 
+// Clear removes all data from the cache
+func (userdb *CacheMiddleware) Clear() {
+	userdb.userCache.Purge()
+	userdb.deviceCache.Purge()
+	userdb.streamCache.Purge()
+	userdb.UserDatabase.Clear()
+}
+
 // Removes a particular user and its dependents from the cache
 func (userdb *CacheMiddleware) clearCachedUser(UserID int64) {
 

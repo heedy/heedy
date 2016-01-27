@@ -1,4 +1,4 @@
-package pathoperator
+package pathwrapper
 
 import (
 	"connectordb/datastream"

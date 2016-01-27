@@ -1,4 +1,4 @@
-package pathoperator
+package pathwrapper
 
 // UpdateUser updates the user with the given name to have the given updates
 func (w Wrapper) UpdateUser(username string, updates map[string]interface{}) error {

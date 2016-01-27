@@ -1,11 +1,11 @@
-package pathoperator
+package pathwrapper
 
 import (
 	"connectordb/messenger"
 	"strings"
 	"util"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 )
 
 //SubscribeUser subscribes to everything the user does

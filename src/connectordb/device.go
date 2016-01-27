@@ -79,7 +79,7 @@ func (db *Database) UpdateDeviceByID(deviceID int64, updates map[string]interfac
 func (db *Database) DeleteDeviceByID(deviceID int64) error {
 	err := db.Userdb.DeleteDevice(deviceID)
 	if err == nil {
-		err = db.ds.DeleteDevice(deviceID)
+		err = db.DataStream.DeleteDevice(deviceID)
 	}
 	return err
 }

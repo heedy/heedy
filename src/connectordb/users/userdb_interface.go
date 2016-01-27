@@ -38,10 +38,9 @@ type UserDatabase interface {
 
 	// Returns the total number of users in the database
 	CountUsers() (int64, error)
-
-	// Returns tht total number of devices in the database
 	CountDevices() (int64, error)
-
-	// Returns the total number of streams in the database
 	CountStreams() (int64, error)
+
+	// Clears the database of all data
+	Clear()
 }

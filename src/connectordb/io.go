@@ -37,7 +37,7 @@ func (db *Database) LengthStreamByID(streamID int64, substream string) (int64, e
 	if err != nil {
 		return 0, err
 	}
-	return db.ds.StreamLength(strm.DeviceID, strm.StreamID, substream)
+	return db.DataStream.StreamLength(strm.DeviceID, strm.StreamID, substream)
 }
 
 //TimeToIndexStreamByID returns the index for the given timestamp
@@ -47,7 +47,7 @@ func (db *Database) TimeToIndexStreamByID(streamID int64, substream string, time
 		return 0, err
 	}
 
-	return db.ds.GetTimeIndex(strm.DeviceID, streamID, substream, time)
+	return db.DataStream.GetTimeIndex(strm.DeviceID, streamID, substream, time)
 }
 
 //InsertStreamByID inserts into the stream given by the ID
@@ -76,13 +76,13 @@ func (db *Database) InsertStreamByID(streamID int64, substream string, data data
 	if !strm.Ephemeral {
 
 		r := permissions.GetUserRole(pconfig.Get(), u)
-		_, err = db.ds.Insert(strm.DeviceID, strm.StreamID, substream, data, restamp, r.MaxDeviceSize, r.MaxStreamSize)
+		_, err = db.DataStream.Insert(strm.DeviceID, strm.StreamID, substream, data, restamp, r.MaxDeviceSize, r.MaxStreamSize)
 		if err != nil {
 			return err
 		}
 	}
 
-	return db.msg.Publish(streampath, messenger.Message{streampath, "", data})
+	return db.Messenger.Publish(streampath, messenger.Message{streampath, "", data})
 }
 
 //GetStreamTimeRangeByID reads time range by ID
@@ -92,7 +92,7 @@ func (db *Database) GetStreamTimeRangeByID(streamID int64, substream string, t1 
 		return nil, err
 	}
 
-	dr, err := db.ds.TRange(strm.DeviceID, strm.StreamID, substream, t1, t2)
+	dr, err := db.DataStream.TRange(strm.DeviceID, strm.StreamID, substream, t1, t2)
 	if limit > 0 {
 		dr = datastream.NewNumRange(dr, limit)
 	}
@@ -116,7 +116,7 @@ func (db *Database) GetShiftedStreamTimeRangeByID(streamID int64, substream stri
 		return nil, err
 	}
 
-	dr, err := db.ds.TimePlusIndexRange(strm.DeviceID, strm.StreamID, substream, t1, t2, shift)
+	dr, err := db.DataStream.TimePlusIndexRange(strm.DeviceID, strm.StreamID, substream, t1, t2, shift)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (db *Database) GetStreamIndexRangeByID(streamID int64, substream string, i1
 		return nil, err
 	}
 
-	dr, err := db.ds.IRange(strm.DeviceID, strm.StreamID, substream, i1, i2)
+	dr, err := db.DataStream.IRange(strm.DeviceID, strm.StreamID, substream, i1, i2)
 	if err != nil {
 		return nil, err
 	}

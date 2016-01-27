@@ -59,11 +59,11 @@ func (db *Database) DeleteStreamByID(streamID int64, substream string) error {
 
 	if substream != "" {
 		//We just delete the substream
-		err = db.ds.DeleteSubstream(strm.DeviceID, strm.StreamID, substream)
+		err = db.DataStream.DeleteSubstream(strm.DeviceID, strm.StreamID, substream)
 	} else {
 		err = db.Userdb.DeleteStream(streamID)
 		if err == nil {
-			err = db.ds.DeleteStream(strm.DeviceID, strm.StreamID)
+			err = db.DataStream.DeleteStream(strm.DeviceID, strm.StreamID)
 		}
 	}
 	return err

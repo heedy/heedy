@@ -2,12 +2,11 @@
 Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
 Licensed under the MIT license.
 **/
-package plainoperator
+package connectordb
 
 import (
 	"connectordb/datastream"
-	"connectordb/operator/interfaces"
-	"connectordb/operator/messenger"
+	"connectordb/messenger"
 	"testing"
 	"time"
 
@@ -15,16 +14,11 @@ import (
 )
 
 func TestSubscribe(t *testing.T) {
-
-	database, ao, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
-	database.Clear(t)
-
-	db := interfaces.PathOperatorMixin{&ao}
+	Tdb.Clear()
+	db := Tdb
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass"))
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
 	require.NoError(t, db.CreateDevice("tst/tst"))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
@@ -41,7 +35,7 @@ func TestSubscribe(t *testing.T) {
 		recvchan4 <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
 	}()
 
-	_, err = db.Subscribe("tst", recvchan)
+	_, err := db.Subscribe("tst", recvchan)
 	require.NoError(t, err)
 	_, err = db.Subscribe("tst/tst", recvchan2)
 	require.NoError(t, err)
@@ -49,7 +43,7 @@ func TestSubscribe(t *testing.T) {
 	require.NoError(t, err)
 	_, err = db.Subscribe("tst/tst/tst/downlink", recvchan4)
 	require.NoError(t, err)
-	database.GetMessenger().Flush() //Just to avoid problems
+	db.Messenger.Flush() //Just to avoid problems
 
 	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
@@ -74,7 +68,7 @@ func TestSubscribe(t *testing.T) {
 	}}
 
 	require.NoError(t, db.InsertStream("tst/tst/tst/downlink", data, false))
-	database.GetMessenger().Flush()
+	db.Messenger.Flush()
 	m = <-recvchan4
 	require.Equal(t, m.Stream, "tst/tst/tst/downlink")
 	require.Equal(t, m.Data[0].Data, "2")

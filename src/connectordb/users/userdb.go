@@ -40,6 +40,13 @@ func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.sqldb = sqldb
 }
 
+// Clear deletes all data stored in the userdb
+func (db *SqlUserDatabase) Clear() {
+	db.sqldb.Exec("DELETE FROM Users;")
+	db.sqldb.Exec("DELETE FROM Devices;")
+	db.sqldb.Exec("DELETE FROM Streams;")
+}
+
 func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
 	basedb := SqlUserDatabase{}
 	basedb.initSqlUserDatabase(sqldb, dbtype)

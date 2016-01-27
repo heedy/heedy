@@ -16,7 +16,7 @@ func (db *Database) SubscribeUserByID(userID int64, chn chan messenger.Message) 
 	if err != nil {
 		return nil, err
 	}
-	return db.msg.Subscribe(usr.Name+"/*/*", chn)
+	return db.Messenger.Subscribe(usr.Name+"/*/*", chn)
 }
 
 //SubscribeDeviceByID subscribes to all streams of the given device
@@ -29,7 +29,7 @@ func (db *Database) SubscribeDeviceByID(deviceID int64, chn chan messenger.Messa
 	if err != nil {
 		return nil, err
 	}
-	return db.msg.Subscribe(usr.Name+"/"+dev.Name+"/*", chn)
+	return db.Messenger.Subscribe(usr.Name+"/"+dev.Name+"/*", chn)
 }
 
 //SubscribeStreamByID subscribes to the given stream by ID
@@ -45,5 +45,5 @@ func (db *Database) SubscribeStreamByID(streamID int64, substream string, chn ch
 	if substream != "" {
 		routing = routing + "/" + substream
 	}
-	return db.msg.Subscribe(routing, chn)
+	return db.Messenger.Subscribe(routing, chn)
 }

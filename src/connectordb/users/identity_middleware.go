@@ -11,6 +11,10 @@ type IdentityMiddleware struct {
 	UserDatabase // the parent
 }
 
+func (userdb *IdentityMiddleware) Clear() {
+	userdb.UserDatabase.Clear()
+}
+
 func (userdb *IdentityMiddleware) CreateDevice(Name string, UserID, devicelimit int64) error {
 	return userdb.UserDatabase.CreateDevice(Name, UserID, devicelimit)
 }
