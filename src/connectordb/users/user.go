@@ -30,7 +30,7 @@ type User struct {
 	Description string `json:"description"` // A public description
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Role   string `json:"Role,omitempty"` // The user type (permissions level)
+	Role   string `json:"role,omitempty"` // The user type (permissions level)
 	Public bool   `json:"public"`         // Whether the user is public or not
 
 	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally

@@ -47,3 +47,23 @@ func TestStream(t *testing.T) {
 	_, err = db.ReadStreamByID(u.StreamID)
 	require.Error(t, err)
 }
+
+func TestStreamUpdate(t *testing.T) {
+	Tdb.Clear()
+	db := Tdb
+
+	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+	require.NoError(t, db.CreateDevice("myuser/mydevice"))
+	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", `{"type": "number"}`))
+
+	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"name": "lol"}))
+	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"schema": `{"type": "string"}`}))
+	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"foobar": "blah"}))
+
+	require.NoError(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"nickname": "hi"}))
+
+	u, err := db.ReadStream("myuser/mydevice/mystream")
+	require.NoError(t, err)
+	require.Equal(t, "hi", u.Nickname)
+
+}

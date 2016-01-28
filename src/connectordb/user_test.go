@@ -39,3 +39,20 @@ func TestUser(t *testing.T) {
 
 	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
 }
+
+func TestUserUpdate(t *testing.T) {
+	Tdb.Clear()
+	db := Tdb
+
+	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+
+	require.Error(t, db.UpdateUser("myuser", map[string]interface{}{"name": "lol"}))
+	require.Error(t, db.UpdateUser("myuser", map[string]interface{}{"role": "rawr"}))
+	require.Error(t, db.UpdateUser("myuser", map[string]interface{}{"foobar": "blah"}))
+
+	require.NoError(t, db.UpdateUser("myuser", map[string]interface{}{"nickname": "hi"}))
+
+	u, err := db.ReadUser("myuser")
+	require.NoError(t, err)
+	require.Equal(t, "hi", u.Nickname)
+}

@@ -24,11 +24,6 @@ var (
 	streamCache      *multicache.Multicache
 )
 
-func init() {
-	// error triggered if we have size of 0, so don't set this to 0
-	streamCache, _ = multicache.NewDefaultMulticache(10000)
-}
-
 type Stream struct {
 	StreamID    int64  `json:"-"`
 	Name        string `json:"name"`

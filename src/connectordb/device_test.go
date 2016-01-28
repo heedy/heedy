@@ -44,3 +44,27 @@ func TestDevice(t *testing.T) {
 	_, err = db.ReadDeviceByID(u.DeviceID)
 	require.Error(t, err)
 }
+
+func TestDeviceUpdate(t *testing.T) {
+	Tdb.Clear()
+	db := Tdb
+
+	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+	require.NoError(t, db.CreateDevice("myuser/mydevice"))
+
+	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"name": "lol"}))
+	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"role": "rawr"}))
+	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"foobar": "blah"}))
+
+	require.NoError(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"nickname": "hi"}))
+
+	u, err := db.ReadDevice("myuser/mydevice")
+	require.NoError(t, err)
+	require.Equal(t, "hi", u.Nickname)
+
+	require.NoError(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"apikey": ""}))
+
+	u2, err := db.ReadDevice("myuser/mydevice")
+	require.NoError(t, err)
+	require.NotEqual(t, u.APIKey, u2.APIKey)
+}

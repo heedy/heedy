@@ -5,7 +5,46 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+	"fmt"
+
+	"github.com/nu7hatch/gouuid"
 )
+
+func (db *Database) checkIfAddingDeviceWillExceedPrivateLimit(userID int64) (int64, error) {
+	perm := pconfig.Get()
+	u, err := db.ReadUserByID(userID)
+	if err != nil {
+		return 0, err
+	}
+
+	r := permissions.GetUserRole(perm, u)
+
+	// There are two devices by default: user and meta.
+	// TODO: This should really be done all in a transaction on sql side, but we don't have time
+	// to implement that now
+	if r.MaxPrivateDevices > 0 {
+		devs, err := db.ReadAllDevicesByUserID(userID)
+		if err != nil {
+			return r.MaxDevices, err
+		}
+		numprivate := int64(0)
+		for i := range devs {
+			if !devs[i].Public {
+				numprivate++
+			}
+		}
+
+		if numprivate >= r.MaxPrivateDevices {
+			return r.MaxDevices, errors.New("Exceeded maximum number of private devices for user")
+		}
+
+		// Just in case
+		if int64(len(devs)) > r.MaxDevices {
+			return r.MaxDevices, errors.New("Exceeded maximum number of devices for user")
+		}
+	}
+	return r.MaxDevices, nil
+}
 
 // CountDevices returns the total nubmer of devices in the entire database
 func (db *Database) CountDevices() (int64, error) {
@@ -20,39 +59,12 @@ func (db *Database) ReadAllDevicesByUserID(userID int64) ([]*users.Device, error
 // CreateDeviceByUserID creates a new device for the given user. It ensures that the permitted number
 // of devices is not exceeded
 func (db *Database) CreateDeviceByUserID(userID int64, devicename string) error {
-	perm := pconfig.Get()
-	u, err := db.ReadUserByID(userID)
+	maxdev, err := db.checkIfAddingDeviceWillExceedPrivateLimit(userID)
 	if err != nil {
 		return err
 	}
 
-	r := permissions.GetUserRole(perm, u)
-
-	// There are two devices by default: user and meta.
-	// TODO: This should really be done all in a transaction on sql side, but we don't have time
-	// to implement that now
-	if r.MaxPrivateDevices > 2 {
-		devs, err := db.ReadAllDevicesByUserID(userID)
-		if err != nil {
-			return err
-		}
-		numprivate := int64(0)
-		for i := range devs {
-			if !devs[i].Public {
-				numprivate++
-			}
-		}
-
-		if numprivate >= r.MaxPrivateDevices {
-			return errors.New("Exceeded maximum number of private devices")
-		}
-
-		if int64(len(devs)) > r.MaxDevices {
-			return errors.New("Exceeded maximum number of devices")
-		}
-	}
-
-	return db.Userdb.CreateDevice(devicename, userID, r.MaxDevices)
+	return db.Userdb.CreateDevice(devicename, userID, maxdev)
 }
 
 // ReadDeviceByID reads the given device
@@ -72,7 +84,49 @@ func (db *Database) ReadDeviceByAPIKey(apikey string) (*users.Device, error) {
 
 // UpdateDeviceByID updates the device with the given map of update fields
 func (db *Database) UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error {
-	return errors.New("UNIMPLEMENTED")
+
+	d, err := db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return err
+	}
+
+	oldname := d.Name
+	waspublic := d.Public
+
+	err = WriteObjectFromMap(d, updates)
+	if err != nil {
+		return err
+	}
+
+	if d.Name != oldname {
+		return errors.New("ConnectorDB does not support modification of device names")
+	}
+
+	if !d.Public && waspublic {
+		_, err = db.checkIfAddingDeviceWillExceedPrivateLimit(d.UserID)
+		if err != nil {
+			return err
+		}
+	}
+	if d.Role != "" {
+		perm := pconfig.Get()
+		_, ok := perm.DeviceRoles[d.Role]
+		if !ok {
+			return fmt.Errorf("Could not find device role '%s'", d.Role)
+		}
+	}
+
+	if d.APIKey == "" {
+		// Create a new API Key
+		newkey, err := uuid.NewV4()
+		if err != nil {
+			// This should never happen...
+			return fmt.Errorf("Failed to generate API Key: %s", err.Error())
+		}
+		d.APIKey = newkey.String()
+	}
+
+	return db.Userdb.UpdateDevice(d)
 }
 
 // DeleteDeviceByID deletes the given device

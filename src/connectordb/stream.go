@@ -47,7 +47,35 @@ func (db *Database) ReadStreamByDeviceID(deviceID int64, streamname string) (*us
 
 // UpdateStreamByID updates the given stream
 func (db *Database) UpdateStreamByID(streamID int64, updates map[string]interface{}) error {
-	return errors.New("UNIMPLEMENTED")
+	s, err := db.ReadStreamByID(streamID)
+	if err != nil {
+		return err
+	}
+
+	oldname := s.Name
+	oldschema := s.Schema
+	olddownlink := s.Downlink
+
+	err = WriteObjectFromMap(s, updates)
+	if err != nil {
+		return err
+	}
+
+	if s.Name != oldname {
+		return errors.New("ConnectorDB does not support modification of stream names")
+	}
+	if s.Schema != oldschema {
+		return errors.New("ConnectorDB does not support modification of stream schemas")
+	}
+
+	// The stream schema is validated in users
+	err = db.Userdb.UpdateStream(s)
+
+	// If the stream is no longer downlink, delete the downlink substream
+	if err == nil && olddownlink && !s.Downlink {
+		db.DeleteStreamByID(streamID, "downlink")
+	}
+	return err
 }
 
 // DeleteStreamByID removes the stream

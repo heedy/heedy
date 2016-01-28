@@ -35,6 +35,14 @@ func (db *Database) CreateUser(name, email, password, role string, public bool) 
 		return errors.New("An invalid email address was given")
 	}
 
+	if !perm.IsAllowedUsername(name) {
+		return fmt.Errorf("Username '%s' not allowed", name)
+	}
+
+	if !perm.IsAllowedEmail(email) {
+		return fmt.Errorf("Email '%s' not allowed", email)
+	}
+
 	// Make sure that the given role exists
 	r, ok := perm.UserRoles[role]
 	if !ok {
@@ -61,7 +69,39 @@ func (db *Database) ReadUser(username string) (*users.User, error) {
 
 // UpdateUserByID updates the user with the given UserID with the given data map
 func (db *Database) UpdateUserByID(userID int64, update map[string]interface{}) error {
-	return errors.New("UNIMPLEMENTED")
+	u, err := db.ReadUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	oldname := u.Name
+
+	err = WriteObjectFromMap(u, update)
+	if err != nil {
+		return err
+	}
+
+	// Now ensure that the updated user is valid
+	if u.Name != oldname {
+		return errors.New("ConnectorDB does not support modification of user names")
+	}
+
+	perm := pconfig.Get()
+
+	if !perm.IsAllowedEmail(u.Email) {
+		return fmt.Errorf("Email '%s' not allowed", u.Email)
+	}
+
+	r, ok := perm.UserRoles[u.Role]
+	if !ok {
+		return fmt.Errorf("The given role '%s' does not exist", u.Role)
+	}
+
+	if !u.Public && !r.CanBePrivate {
+		return fmt.Errorf("User can't be private.")
+	}
+
+	return db.Userdb.UpdateUser(u)
 }
 
 // DeleteUserByID removes the user with the given UserID. It propagates deletion to add devices

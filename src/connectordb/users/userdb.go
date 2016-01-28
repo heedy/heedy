@@ -13,6 +13,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/josephlewis42/multicache"
 	_ "github.com/lib/pq"
 )
 
@@ -54,6 +55,8 @@ func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, d
 	if cache == false {
 		return &basedb
 	}
+
+	streamCache, _ = multicache.NewDefaultMulticache(uint64(streamsize))
 
 	// The cache sizes were already validated
 	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize))
