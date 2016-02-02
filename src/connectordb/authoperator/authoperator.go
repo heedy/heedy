@@ -35,6 +35,13 @@ func NewAuthOperator(op operator.PathOperator, deviceID int64) (*AuthOperator, e
 	return ao, nil
 }
 
+// NewNobody logs in as a "nobody"
+func NewNobody(op operator.PathOperator) *AuthOperator {
+	ao := &AuthOperator{op, pathwrapper.Wrapper{}, "nobody", -2}
+	ao.Wrapper = pathwrapper.Wrap(ao)
+	return ao
+}
+
 // Name is the path to the device underlying the operator
 func (a *AuthOperator) Name() string {
 	return a.devicePath
@@ -43,6 +50,14 @@ func (a *AuthOperator) Name() string {
 // User returns the current user (ie, user that is logged in).
 // No permissions checking is done
 func (a *AuthOperator) User() (usr *users.User, err error) {
+	if a.deviceID == -2 {
+		// Nobody has deviceID -2
+		return &users.User{
+			UserID: -2,
+			Name:   "nobody",
+			Role:   "nobody",
+		}, nil
+	}
 	dev, err := a.Operator.ReadDeviceByID(a.deviceID)
 	if err != nil {
 		return nil, err
@@ -53,6 +68,15 @@ func (a *AuthOperator) User() (usr *users.User, err error) {
 // Device returns the current device. No permissions checking
 // is done on the device
 func (a *AuthOperator) Device() (*users.Device, error) {
+	if a.deviceID == -2 {
+		// The nobody operator has deviceID = -2
+		return &users.Device{
+			DeviceID: -2,
+			UserID:   -2,
+			Name:     "none",
+			Role:     "user",
+		}, nil
+	}
 	return a.Operator.ReadDeviceByID(a.deviceID)
 }
 
@@ -64,11 +88,11 @@ func (a *AuthOperator) AdminOperator() operator.PathOperator {
 // getUserAndDevice returns both the current user AND the current device
 // it is just there to simplify our work
 func (a *AuthOperator) getUserAndDevice() (*users.User, *users.Device, error) {
-	dev, err := a.Operator.ReadDeviceByID(a.deviceID)
+	dev, err := a.Device()
 	if err != nil {
 		return nil, nil, err
 	}
-	u, err := a.Operator.ReadUserByID(dev.UserID)
+	u, err := a.User()
 	return u, dev, err
 }
 

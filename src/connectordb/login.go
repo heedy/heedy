@@ -50,3 +50,8 @@ func (db *Database) DeviceLogin(apikey string) (*authoperator.AuthOperator, erro
 	}
 	return authoperator.NewAuthOperator(o, dev.DeviceID)
 }
+
+// Nobody returns the operator of a "nobody" - it will behave as someone who has "nobody" permissions
+func (db *Database) Nobody() *authoperator.AuthOperator {
+	return authoperator.NewNobody(db)
+}

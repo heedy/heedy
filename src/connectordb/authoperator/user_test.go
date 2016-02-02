@@ -92,3 +92,15 @@ func TestAuthUserCrud(t *testing.T) {
 	_, err = o.User()
 	require.Error(t, err)
 }
+
+func TestNobodyUser(t *testing.T) {
+	db.Clear()
+
+	//Create extra users that exist
+	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
+
+	n := db.Nobody()
+
+	_, err := n.ReadUser("streamdb_test")
+	require.Error(t, err)
+}
