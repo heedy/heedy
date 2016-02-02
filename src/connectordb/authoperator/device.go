@@ -53,6 +53,32 @@ func (a *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]*users.Device, er
 	return result, nil
 }
 
+// ReadAllUsersToMap reads all of the users who this device has permissions to read to a map
+func (a *AuthOperator) ReadUserDevicesToMap(uname string) ([]map[string]interface{}, error) {
+	u, err := a.Operator.ReadUser(uname)
+	if err != nil {
+		return nil, err
+	}
+	_, _, _, ua, da, err := a.getAccessLevels(u.UserID, u.Public, false)
+	if err != nil {
+		return nil, err
+	}
+	if !ua.CanListDevices || !da.CanListDevices {
+		return nil, errors.New("You do not have permissions necessary to list this user's devices.")
+	}
+
+	// See ReadAllUsers
+	devs, err := a.Operator.ReadUserDevices(uname)
+	result := make([]map[string]interface{}, 0, len(devs))
+	for i := range devs {
+		u, err := a.ReadDeviceToMap(uname + "/" + devs[i].Name)
+		if err == nil {
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
 // CreateDeviceByUserID attempts to create a device for the given user
 func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
 	u, err := a.Operator.ReadUserByID(userID)
@@ -84,6 +110,19 @@ func (a *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
 	}
 
 	return dev, nil
+}
+
+// ReadDeviceToMap reads the given device into a map, where only the permitted fields are present in the map
+func (a *AuthOperator) ReadDeviceToMap(devpath string) (map[string]interface{}, error) {
+	dev, err := a.Operator.ReadDevice(devpath)
+	if err != nil {
+		return nil, err
+	}
+	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(dev.DeviceID)
+	if err != nil {
+		return nil, err
+	}
+	return permissions.ReadObjectToMap(perm, ua, da, "device", dev)
 }
 
 // ReadDeviceByUserID reads the given device by its name and user ID

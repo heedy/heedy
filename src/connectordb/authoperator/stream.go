@@ -47,6 +47,32 @@ func (a *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream
 	return streams, nil
 }
 
+// ReadDeviceStreamsToMap reads all of the streams who this device has permissions to read to a map
+func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]interface{}, error) {
+	dev, err := a.Operator.ReadDevice(devname)
+	if err != nil {
+		return nil, err
+	}
+	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(dev.DeviceID)
+	if err != nil {
+		return nil, err
+	}
+	if !ua.CanListStreams || !da.CanListStreams {
+		return nil, errors.New("You do not have permissions necessary to list this device's streams.")
+	}
+
+	// See ReadAllUsers
+	ss, err := a.Operator.ReadDeviceStreams(devname)
+	result := make([]map[string]interface{}, 0, len(ss))
+	for i := range ss {
+		u, err := a.ReadDeviceToMap(devname + "/" + ss[i].Name)
+		if err == nil {
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
 // CreateStreamByDeviceID creates the given stream if permitted
 func (a *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
 	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(deviceID)
@@ -77,6 +103,19 @@ func (a *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
 	}
 
 	return s, nil
+}
+
+// ReadStreamToMap reads the given stream into a map, where only the permitted fields are present in the map
+func (a *AuthOperator) ReadStreamToMap(spath string) (map[string]interface{}, error) {
+	s, err := a.Operator.ReadStream(spath)
+	if err != nil {
+		return nil, err
+	}
+	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
+	if err != nil {
+		return nil, err
+	}
+	return permissions.ReadObjectToMap(perm, ua, da, "stream", s)
 }
 
 // ReadStreamByDeviceID uses ReadStreamByID internally
