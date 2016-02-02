@@ -2,11 +2,10 @@
 Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
 Licensed under the MIT license.
 **/
-package authoperator
+package authoperator_test
 
 import (
 	"connectordb/datastream"
-	"connectordb/operator/interfaces"
 	"strconv"
 	"testing"
 	"time"
@@ -15,17 +14,15 @@ import (
 )
 
 func BenchmarkDeviceLogin(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
 	//go db.RunWriter()
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
 	dev, _ := db.ReadDevice("streamdb_test/user")
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = NewAPILoginOperator(db, dev.APIKey)
+		_, err := db.DeviceLogin(dev.APIKey)
 		if err != nil {
 			b.Errorf("Login Failed: %v", err)
 			return
@@ -34,56 +31,46 @@ func BenchmarkDeviceLogin(b *testing.B) {
 }
 
 func BenchmarkCreateUser(b *testing.B) {
-
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 	//go db.RunWriter()
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	db.SetAdmin("streamdb_test", true)
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
 
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		name := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, o.CreateUser(name, name+"@localhost", "mypass"))
+		require.NoError(b, o.CreateUser(name, name+"@localhost", "mypass", "user", true))
 	}
 
 }
 
 func BenchmarkDeleteUser(b *testing.B) {
+	db.Clear()
 
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
-
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	db.SetAdmin("streamdb_test", true)
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
 	for n := 0; n < b.N; n++ {
 		name := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, db.CreateUser(name, name+"@localhost", "mypass"))
+		require.NoError(b, db.CreateUser(name, name+"@localhost", "mypass", "user", true))
 	}
 
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
+
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		name := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, pathOperator.DeleteUser(name))
+		require.NoError(b, o.DeleteUser(name))
 	}
 
 }
 
 func BenchmarkReadUser(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
 
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -94,70 +81,56 @@ func BenchmarkReadUser(b *testing.B) {
 }
 
 func BenchmarkUpdateUser(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		u, err := o.ReadUser("streamdb_test")
-		require.NoError(b, err)
-		u.Email = strconv.FormatInt(int64(n), 32) + "@localhost"
-		require.NoError(b, o.UpdateUser(u))
+
+		require.NoError(b, o.UpdateUser("streamdb_test", map[string]interface{}{"email": strconv.FormatInt(int64(n), 32) + "@localhost"}))
 	}
 
 }
 
 func BenchmarkCreateStream(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		sname := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, pathOperator.CreateStream("streamdb_test/user/"+sname, `{"type": "boolean"}`))
+		require.NoError(b, o.CreateStream("streamdb_test/user/"+sname, `{"type": "boolean"}`))
 	}
 }
 
 func BenchmarkReadStream(b *testing.B) {
+	db.Clear()
 
-	database, db, err := OpenDb(b)
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	defer database.Close()
-
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
-	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
 
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := pathOperator.ReadStream("streamdb_test/user/mystream")
+		_, err := o.ReadStream("streamdb_test/user/mystream")
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkInsert1(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
 
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
@@ -167,20 +140,17 @@ func BenchmarkInsert1(b *testing.B) {
 			Timestamp: float64(n + 1),
 			Data:      true,
 		}}
-		err = pathOperator.InsertStream("streamdb_test/user/mystream", data, false)
+		err = o.InsertStream("streamdb_test/user/mystream", data, false)
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkStreamLength(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
 
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
@@ -191,25 +161,22 @@ func BenchmarkStreamLength(b *testing.B) {
 			Data:      true,
 		}
 	}
-	err = pathOperator.InsertStream("streamdb_test/user/mystream", data, false)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = pathOperator.LengthStream("streamdb_test/user/mystream")
+		_, err = o.LengthStream("streamdb_test/user/mystream")
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkInsert1000(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
 
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
@@ -222,23 +189,18 @@ func BenchmarkInsert1000(b *testing.B) {
 				Data:      true,
 			}
 		}
-		err = pathOperator.InsertStream("streamdb_test/user/mystream", data, false)
+		err = o.InsertStream("streamdb_test/user/mystream", data, false)
 		require.NoError(b, err)
 	}
 	b.StopTimer()
 }
 
 func BenchmarkRead1000(b *testing.B) {
-	database, db, err := OpenDb(b)
-	require.NoError(b, err)
-	defer database.Close()
+	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
-
-	go database.RunWriter()
 
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
@@ -249,7 +211,7 @@ func BenchmarkRead1000(b *testing.B) {
 			Data:      true,
 		}
 	}
-	err = pathOperator.InsertStream("streamdb_test/user/mystream", data, false)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 	time.Sleep(1 * time.Second) //Wait a moment for batch to have some time to write the data
 
@@ -272,18 +234,13 @@ func BenchmarkRead1000(b *testing.B) {
 }
 
 func BenchmarkReadLast10(b *testing.B) {
-	database, db, err := OpenDb(b)
+	db.Clear()
+
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
-	defer database.Close()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
-	o, err := NewUserLoginOperator(db, "streamdb_test", "mypass")
-	require.NoError(b, err)
-	pathOperator := interfaces.PathOperatorMixin{o}
-
-	go database.RunWriter()
-
-	db.CreateUser("streamdb_test", "root@localhost", "mypass")
+	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
 	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
 
 	data := make([]datastream.Datapoint, 950)
@@ -293,7 +250,7 @@ func BenchmarkReadLast10(b *testing.B) {
 			Data:      true,
 		}
 	}
-	err = pathOperator.InsertStream("streamdb_test/user/mystream", data, false)
+	err = o.InsertStream("streamdb_test/user/mystream", data, false)
 	require.NoError(b, err)
 	time.Sleep(500 * time.Millisecond) //Wait a moment for batch to have some time to write the data
 	b.ResetTimer()

@@ -62,6 +62,9 @@ var Default = Permissions{
 
 			// ACCESS ALL THE THINGS
 			DeviceRole: DeviceRole{
+				CanCountUsers:      true,
+				CanCountDevices:    true,
+				CanCountStreams:    true,
 				PrivateAccessLevel: "full",
 				PublicAccessLevel:  "full",
 				UserAccessLevel:    "full",
@@ -90,6 +93,9 @@ var Default = Permissions{
 			SelfAccessLevel:    "fulldevice",
 		},
 		"user": &DeviceRole{
+			CanCountUsers:      true,
+			CanCountDevices:    true,
+			CanCountStreams:    true,
 			PrivateAccessLevel: "full",
 			PublicAccessLevel:  "full",
 			UserAccessLevel:    "full",

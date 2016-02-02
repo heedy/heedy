@@ -12,6 +12,10 @@ type DeviceRole struct {
 	// full - total permissions (everything true)
 	// none - 0 permissions (everything false)
 
+	CanCountUsers   bool
+	CanCountDevices bool
+	CanCountStreams bool
+
 	PrivateAccessLevel string `json:"private_access_level"` // The access level to private users/devices/streams
 	PublicAccessLevel  string `json:"public_access_level"`  // The access level to public users/devices/streams
 	UserAccessLevel    string `json:"user_access_level"`    // The access level to devices/streams that belong to you and your own user

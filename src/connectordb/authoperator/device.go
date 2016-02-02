@@ -4,7 +4,24 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+
+	pconfig "config/permissions"
 )
+
+// CountDevices returns the total number of users of the entire database
+func (a *AuthOperator) CountDevices() (int64, error) {
+	perm := pconfig.Get()
+	usr, dev, err := a.getUserAndDevice()
+	if err != nil {
+		return 0, err
+	}
+	urole := permissions.GetUserRole(perm, usr)
+	drole := permissions.GetDeviceRole(perm, dev)
+	if !urole.CanCountDevices || !drole.CanCountDevices {
+		return 0, errors.New("Don't have permissions necesaary to count devices")
+	}
+	return a.Operator.CountDevices()
+}
 
 // ReadAllDevicesByUserID reads all of the devices belonging to this user which the authenticated device
 // is allowed to read

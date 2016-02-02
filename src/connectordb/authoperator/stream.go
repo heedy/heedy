@@ -4,7 +4,24 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+
+	pconfig "config/permissions"
 )
+
+// CountStreams returns the total number of users of the entire database
+func (a *AuthOperator) CountStreams() (int64, error) {
+	perm := pconfig.Get()
+	usr, dev, err := a.getUserAndDevice()
+	if err != nil {
+		return 0, err
+	}
+	urole := permissions.GetUserRole(perm, usr)
+	drole := permissions.GetDeviceRole(perm, dev)
+	if !urole.CanCountStreams || !drole.CanCountStreams {
+		return 0, errors.New("Don't have permissions necesaary to count streams")
+	}
+	return a.Operator.CountStreams()
+}
 
 // ReadAllStreamsByDeviceID reads all of the streams accessible to the operator
 func (a *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream, error) {
