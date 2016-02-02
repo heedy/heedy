@@ -1,93 +1,159 @@
-/**
-Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
-Licensed under the MIT license.
-**/
 package authoperator
 
-import "connectordb/users"
+import (
+	"connectordb/authoperator/permissions"
+	"connectordb/users"
+	"errors"
+)
 
-//ReadAllUsers reads all the users
-func (o *AuthOperator) ReadAllUsers() ([]users.User, error) {
-	if o.Permissions(users.ROOT) {
-		return o.BaseOperator.ReadAllUsers()
-	}
-	//If not admin, then we only know about our own user
-	u, err := o.User()
+// ReadAllUsers reads all of the users who this device has permissions to read
+func (a *AuthOperator) ReadAllUsers() ([]*users.User, error) {
+	_, _, _, ua, da, err := a.getAccessLevels(-1, false, false)
 	if err != nil {
-		return []users.User{}, err
+		return nil, err
 	}
-	return []users.User{*u}, err
-}
+	if !ua.CanListUsers || !da.CanListUsers {
+		return nil, errors.New("You do not have permissions necessary to list users.")
+	}
 
-//CreateUser makes a new user
-func (o *AuthOperator) CreateUser(username, email, password string) error {
-	if o.Permissions(users.ROOT) {
-		err := o.BaseOperator.CreateUser(username, email, password)
+	// This is not particularly efficient, but it has the correct behavior, so
+	// screw efficiency when I just need this working. I leave efficiency to future
+	// coders.
+	usrs, err := a.Operator.ReadAllUsers()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*users.User, 0, len(usrs))
+	for i := range usrs {
+		u, err := a.ReadUserByID(usrs[i].UserID)
 		if err == nil {
-			o.MetaLog("CreateUser", username)
+			result = append(result, u)
 		}
-		return err
 	}
-	return ErrPermissions
+	return result, nil
 }
 
-//ReadUser reads a user - or rather reads any user that this device has permissions to read
-func (o *AuthOperator) ReadUser(username string) (*users.User, error) {
-	if o.Permissions(users.ROOT) {
-		return o.BaseOperator.ReadUser(username)
-	}
-	//Not an admin. See if it is asking about the current user
-	if u, err := o.User(); err == nil && u.Name == username {
-		return u, nil
-	}
-	return nil, ErrPermissions
-}
-
-//ReadUserByID reads the user given the ID
-func (o *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
-	if o.Permissions(users.ROOT) {
-		return o.BaseOperator.ReadUserByID(userID)
-	}
-	if usr, err := o.User(); err == nil && usr.UserID == userID {
-		return usr, nil
-	}
-	return nil, ErrPermissions
-}
-
-//UpdateUser performs the given modifications
-func (o *AuthOperator) UpdateUser(modifieduser *users.User) error {
-	user, err := o.ReadUserByID(modifieduser.UserID)
+// ReadAllUsersToMap reads all of the users who this device has permissions to read to a map
+func (a *AuthOperator) ReadAllUsersToMap() ([]map[string]interface{}, error) {
+	_, _, _, ua, da, err := a.getAccessLevels(-1, false, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	dev, err := o.Device()
+	if !ua.CanListUsers || !da.CanListUsers {
+		return nil, errors.New("You do not have permissions necessary to list users.")
+	}
+
+	// See ReadAllUsers
+	usrs, err := a.Operator.ReadAllUsers()
+	result := make([]map[string]interface{}, 0, len(usrs))
+	for i := range usrs {
+		u, err := a.ReadUserToMap(usrs[i].Name)
+		if err == nil {
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
+// CreateUser creates the given user if the device has user creating permissions
+func (a *AuthOperator) CreateUser(name, email, password, role string, public bool) error {
+	perm, u, _, ua, da, err := a.getAccessLevels(-1, public, false)
 	if err != nil {
 		return err
 	}
 
-	//See if the bastards tried to change a field they have no fucking business editing :-P
-	if modifieduser.RevertUneditableFields(*user, dev.RelationToUser(user)) > 0 {
-		return ErrPermissions
+	if !ua.CanCreateUser || !da.CanCreateUser {
+		return errors.New("You do not have permissions necessary to create a user.")
 	}
-	//Thankfully, ReadUser put this user right on top of the cache, so it should still be there
-	err = o.BaseOperator.UpdateUser(modifieduser)
-	if err == nil {
-		o.MetaLog("UpdateUser", modifieduser.Name)
+
+	if u.Role != role {
+		uw := permissions.GetWriteAccess(perm, ua)
+		dw := permissions.GetWriteAccess(perm, da)
+		if !uw.UserRole || !dw.UserRole {
+			return errors.New("Don't have permission to create user with different role than creator")
+		}
 	}
-	return err
+
+	return a.Operator.CreateUser(name, email, password, role, public)
 }
 
-//DeleteUserByID deletes the given user - only admin can delete
-func (o *AuthOperator) DeleteUserByID(userID int64) error {
-	if o.Permissions(users.ROOT) {
-		usr, err1 := o.ReadUserByID(userID)
+// ReadUser reads the user with the given username. Any fields for which
+// the device does not have permission are stripped from the resulting
+func (a *AuthOperator) ReadUser(username string) (*users.User, error) {
+	usr, err := a.Operator.ReadUser(username)
+	if err != nil {
+		return nil, err
+	}
+	// Don't repeat code unnecessarily
+	return a.ReadUserByID(usr.UserID)
+}
 
-		err := o.BaseOperator.DeleteUserByID(userID)
-		if err == nil && err1 == nil {
-			o.MetaLog("DeleteUser", usr.Name)
-		}
+// ReadUserByID attmepts to read the user as the given device. Any fields for which
+// the device does not have permission are stripped
+func (a *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
+	usr, err := a.Operator.ReadUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// A user is never self
+	perm, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
+	if err != nil {
+		return nil, err
+	}
+	err = permissions.DeleteDisallowedFields(perm, ua, da, "user", usr)
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
+}
+
+// ReadUserToMap reads the given user into a map, where only the permitted fields are present in the map
+func (a *AuthOperator) ReadUserToMap(username string) (map[string]interface{}, error) {
+	usr, err := a.Operator.ReadUser(username)
+	if err != nil {
+		return nil, err
+	}
+	perm, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
+	if err != nil {
+		return nil, err
+	}
+	return permissions.ReadObjectToMap(perm, ua, da, "user", usr)
+}
+
+// UpdateUserByID updates the user - fails if an attempt is made at updating fields
+// for which the device does not have permission
+func (a *AuthOperator) UpdateUserByID(userID int64, updates map[string]interface{}) error {
+	usr, err := a.Operator.ReadUserByID(userID)
+	if err != nil {
 		return err
 	}
-	return ErrPermissions
+	perm, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
+	if err != nil {
+		return err
+	}
+	err = permissions.CheckIfUpdateFieldsPermitted(perm, ua, da, "user", updates)
+	if err != nil {
+		return err
+	}
+	return a.Operator.UpdateUserByID(userID, updates)
+}
 
+// DeleteUserByID removes the given user if the device has the associated permissions
+func (a *AuthOperator) DeleteUserByID(userID int64) error {
+	usr, err := a.Operator.ReadUserByID(userID)
+	if err != nil {
+		return err
+	}
+	// A user is never self
+	_, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
+	if err != nil {
+		return err
+	}
+
+	if !ua.CanDeleteUser || !da.CanDeleteUser {
+		return errors.New("You do not have permissions necessary to delete this user.")
+	}
+
+	return a.Operator.DeleteUserByID(userID)
 }

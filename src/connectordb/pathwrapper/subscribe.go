@@ -10,7 +10,7 @@ import (
 
 //SubscribeUser subscribes to everything the user does
 func (w Wrapper) SubscribeUser(username string, chn chan messenger.Message) (*nats.Subscription, error) {
-	usr, err := w.ReadUser(username)
+	usr, err := w.AdminOperator().ReadUser(username)
 	if err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func (w Wrapper) SubscribeUser(username string, chn chan messenger.Message) (*na
 
 //SubscribeDevice subscribes to everythnig the device does
 func (w Wrapper) SubscribeDevice(devpath string, chn chan messenger.Message) (*nats.Subscription, error) {
-	dev, err := w.ReadDevice(devpath)
+	dev, err := w.AdminOperator().ReadDevice(devpath)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (w Wrapper) SubscribeStream(streampath string, chn chan messenger.Message) 
 	if err != nil {
 		return nil, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}

@@ -50,7 +50,7 @@ type RWAccess struct {
 	DeviceIsVisible    bool `json:"device_visible"`
 	DeviceUserEditable bool `json:"device_user_editable"`
 	DevicePublic       bool `json:"device_public"`
-	DeviceRole         bool `json:"device_roles"`
+	DeviceRole         bool `json:"device_role"`
 
 	// Access of stream properties
 	StreamName        bool `json:"stream_name"`

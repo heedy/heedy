@@ -28,7 +28,7 @@ type Device struct {
 	Public      bool   `json:"public"`      // Whether the device is accessible from public
 
 	// The permissions allotted to this device
-	Role string `json:"roles"`
+	Role string `json:"role"`
 
 	IsVisible    bool `json:"visible"`
 	UserEditable bool `json:"user_editable"`

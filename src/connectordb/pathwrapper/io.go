@@ -11,7 +11,7 @@ func (w Wrapper) LengthStream(streampath string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return 0, err
 	}
@@ -24,7 +24,7 @@ func (w Wrapper) TimeToIndexStream(streampath string, time float64) (int64, erro
 	if err != nil {
 		return 0, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return 0, err
 	}
@@ -37,7 +37,7 @@ func (w Wrapper) InsertStream(streampath string, data datastream.DatapointArray,
 	if err != nil {
 		return err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (w Wrapper) GetStreamTimeRange(streampath string, t1 float64, t2 float64, l
 	if err != nil {
 		return nil, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (w Wrapper) GetShiftedStreamTimeRange(streampath string, t1 float64, t2 flo
 	if err != nil {
 		return nil, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (w Wrapper) GetStreamIndexRange(streampath string, i1 int64, i2 int64, tran
 	if err != nil {
 		return nil, err
 	}
-	strm, err := w.ReadStream(streampath)
+	strm, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return nil, err
 	}

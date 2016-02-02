@@ -30,6 +30,9 @@ func GetUserRole(perm *pconfig.Permissions, u *users.User) *pconfig.UserRole {
 
 // GetDeviceRole behaves largely in the same way as GetUserRole.
 func GetDeviceRole(perm *pconfig.Permissions, d *users.Device) *pconfig.DeviceRole {
+	if d.Role == "" {
+		d.Role = "none"
+	}
 	p, ok := perm.DeviceRoles[d.Role]
 	if !ok {
 		// The permissions level does not exist! Write an angry message to the console. This is a configuration error,

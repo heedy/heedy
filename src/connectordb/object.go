@@ -75,7 +75,7 @@ func WriteObjectFromMap(obj interface{}, data map[string]interface{}) error {
 	if len(data) > 0 {
 		for key := range data {
 			// There has to be a better way to get a key
-			return fmt.Errorf("Field '%s' not found", data[key])
+			return fmt.Errorf("Field '%s' not found", key)
 		}
 	}
 

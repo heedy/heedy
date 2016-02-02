@@ -7,7 +7,7 @@ import (
 
 //ReadDeviceStreams reads all the streams for the given device
 func (w Wrapper) ReadDeviceStreams(devicepath string) ([]*users.Stream, error) {
-	dev, err := w.ReadDevice(devicepath)
+	dev, err := w.AdminOperator().ReadDevice(devicepath)
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func (w Wrapper) CreateStream(streampath, jsonschema string) error {
 	if err != nil {
 		return err
 	}
-	dev, err := w.ReadDevice(devicepath)
+	dev, err := w.AdminOperator().ReadDevice(devicepath)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (w Wrapper) ReadStream(streampath string) (*users.Stream, error) {
 		return nil, err
 	}
 
-	dev, err := w.ReadDevice(devicepath)
+	dev, err := w.AdminOperator().ReadDevice(devicepath)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (w Wrapper) ReadStream(streampath string) (*users.Stream, error) {
 
 // UpdateStream performs an update on the given stream path
 func (w Wrapper) UpdateStream(streampath string, updates map[string]interface{}) error {
-	s, err := w.ReadStream(streampath)
+	s, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (w Wrapper) DeleteStream(streampath string) error {
 	if err != nil {
 		return err
 	}
-	s, err := w.ReadStream(streampath)
+	s, err := w.AdminOperator().ReadStream(streampath)
 	if err != nil {
 		return err
 	}

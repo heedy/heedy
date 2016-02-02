@@ -9,6 +9,7 @@ import (
 	"connectordb/datastream"
 	"connectordb/datastream/rediscache"
 	"connectordb/messenger"
+	"connectordb/operator"
 	"connectordb/pathwrapper"
 	"connectordb/users"
 	"database/sql"
@@ -149,4 +150,9 @@ func (db *Database) User() (*users.User, error) {
 // Device always returns an error, since the database is not logged in as anybody
 func (db *Database) Device() (*users.Device, error) {
 	return nil, ErrAdmin
+}
+
+// AdminOperator is just the database
+func (db *Database) AdminOperator() operator.PathOperator {
+	return db
 }

@@ -75,6 +75,7 @@ func (db *Database) UpdateUserByID(userID int64, update map[string]interface{}) 
 	}
 
 	oldname := u.Name
+	_, haspassword := update["password"]
 
 	err = WriteObjectFromMap(u, update)
 	if err != nil {
@@ -99,6 +100,10 @@ func (db *Database) UpdateUserByID(userID int64, update map[string]interface{}) 
 
 	if !u.Public && !r.CanBePrivate {
 		return fmt.Errorf("User can't be private.")
+	}
+
+	if haspassword {
+		u.SetNewPassword(u.Password)
 	}
 
 	return db.Userdb.UpdateUser(u)

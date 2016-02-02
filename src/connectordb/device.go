@@ -77,11 +77,6 @@ func (db *Database) ReadDeviceByUserID(userID int64, devicename string) (*users.
 	return db.Userdb.ReadDeviceForUserByName(userID, devicename)
 }
 
-// ReadDeviceByAPIKey reads a device using only its api key
-func (db *Database) ReadDeviceByAPIKey(apikey string) (*users.Device, error) {
-	return db.Userdb.ReadDeviceByAPIKey(apikey)
-}
-
 // UpdateDeviceByID updates the device with the given map of update fields
 func (db *Database) UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error {
 

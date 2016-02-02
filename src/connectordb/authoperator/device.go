@@ -1,176 +1,106 @@
-/**
-Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
-Licensed under the MIT license.
-**/
 package authoperator
 
-import "connectordb/users"
+import (
+	"connectordb/authoperator/permissions"
+	"connectordb/users"
+	"errors"
+)
 
-/**
-devPermissionsGteDev checks if this device's permissions are greater than or
-equal to the level relative to the given device.
-
-Returns:
-
-    PermissionLevel - the relation of the other user's device to this one.
-	error - ErrPermissoins if the permission level is not set, or other errors
-	        if a database issue occurred. nil if the relation permissionlevel
-			is >= the requested one
-**/
-func (o *AuthOperator) permissionsGteDev(other *users.Device, level users.PermissionLevel) (users.PermissionLevel, error) {
-	// Get AuthOperator's device
-	dev, err := o.Device()
-	if err != nil {
-		return users.NOBODY, err
-	}
-
-	// Check if we have appropriate permissions
-	permission := dev.RelationToDevice(other)
-	if permission.Gte(level) {
-		return permission, nil
-	}
-
-	return users.NOBODY, ErrPermissions
-}
-
-/**
-permissionsGteUser checks if this device's permissions are greater than or
-equal to the level relative to the given user.
-
-Returns:
-
-    PermissionLevel - the relation of the other user's device to this one.
-	error - ErrPermissoins if the permission level is not set, or other errors
-	        if a database issue occurred. nil if the relation permissionlevel
-			is >= the requested one
-**/
-func (o *AuthOperator) permissionsGteUser(other *users.User, level users.PermissionLevel) (users.PermissionLevel, error) {
-	// Get AuthOperator's device
-	dev, err := o.Device()
-	if err != nil {
-		return users.NOBODY, err
-	}
-
-	// Check if we have appropriate permissions
-	permission := dev.RelationToUser(other)
-	if permission.Gte(level) {
-		return permission, nil
-	}
-
-	return users.NOBODY, ErrPermissions
-}
-
-//ReadAllDevicesByUserID for the given user
-func (o *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]users.Device, error) {
-	user, err := o.ReadUserByID(userID)
+// ReadAllDevicesByUserID reads all of the devices belonging to this user which the authenticated device
+// is allowed to read
+func (a *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]*users.Device, error) {
+	u, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
-
-	permission, err := o.permissionsGteUser(user, users.FAMILY)
+	_, _, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
 	if err != nil {
 		return nil, err
 	}
-
-	if permission.Gte(users.USER) {
-		return o.BaseOperator.ReadAllDevicesByUserID(userID)
+	if !ua.CanListDevices || !da.CanListDevices {
+		return nil, errors.New("You do not have permissions necessary to list this user's devices.")
 	}
 
-	dev, err := o.Device()
+	// See ReadAllUsers
+	devs, err := a.Operator.ReadAllDevicesByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
-
-	// We'll just return the current device.
-	return []users.Device{*dev}, err
+	result := make([]*users.Device, 0, len(devs))
+	for i := range devs {
+		d, err := a.ReadDeviceByID(devs[i].DeviceID)
+		if err == nil {
+			result = append(result, d)
+		}
+	}
+	return result, nil
 }
 
-//CreateDeviceByUserID creates a new device for the given user
-func (o *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
-	user, err := o.BaseOperator.ReadUserByID(userID)
+// CreateDeviceByUserID attempts to create a device for the given user
+func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
+	u, err := a.ReadUserByID(userID)
+	if err != nil {
+		return err
+	}
+	_, u, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
 	if err != nil {
 		return err
 	}
 
-	if _, err := o.permissionsGteUser(user, users.USER); err != nil {
-		return err
+	if !ua.CanCreateDevice || !da.CanCreateDevice {
+		return errors.New("You do not have permissions necessary to create this device.")
 	}
 
-	err = o.BaseOperator.CreateDeviceByUserID(userID, devicename)
-	if err == nil {
-		o.MetaLog("CreateDevice", user.Name+"/"+devicename)
-	}
-
-	return err
+	return a.Operator.CreateDeviceByUserID(userID, devicename)
 }
 
-// ReadDeviceByID reads the device using its ID
-func (o *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
-	dev, err := o.BaseOperator.ReadDeviceByID(deviceID)
+// ReadDeviceByID reads the given device by ID
+func (a *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
+	perm, dev, _, _, ua, da, err := a.getDeviceAccessLevels(deviceID)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := o.permissionsGteDev(dev, users.DEVICE); err != nil {
+	err = permissions.DeleteDisallowedFields(perm, ua, da, "device", dev)
+	if err != nil {
 		return nil, err
 	}
 
 	return dev, nil
 }
 
-// ReadDeviceByUserID reads the device using the user's ID and device name
-func (o *AuthOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
-	dev, err := o.BaseOperator.ReadDeviceByUserID(userID, devicename)
+// ReadDeviceByUserID reads the given device by its name and user ID
+func (a *AuthOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
+	dev, err := a.Operator.ReadDeviceByUserID(userID, devicename)
 	if err != nil {
 		return nil, err
 	}
-
-	if _, err := o.permissionsGteDev(dev, users.DEVICE); err != nil {
-		return nil, err
-	}
-
-	return dev, nil
+	// Don't repeat code unnecessarily
+	return a.ReadDeviceByID(dev.DeviceID)
 }
 
-// UpdateDevice updates the given device
-func (o *AuthOperator) UpdateDevice(updateddevice *users.Device) error {
-	dev, err := o.ReadDeviceByID(updateddevice.DeviceID)
+// UpdateDeviceByID updates the device using its ID
+func (a *AuthOperator) UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error {
+	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(deviceID)
 	if err != nil {
 		return err
 	}
 
-	permission, err := o.permissionsGteDev(dev, users.DEVICE)
+	err = permissions.CheckIfUpdateFieldsPermitted(perm, ua, da, "device", updates)
 	if err != nil {
 		return err
 	}
-
-	if updateddevice.RevertUneditableFields(*dev, permission) != 0 {
-		return ErrPermissions
-	}
-
-	err = o.BaseOperator.UpdateDevice(updateddevice)
-	if err == nil {
-		o.MetaLogDeviceID(dev.DeviceID, "UpdateDevice")
-	}
-
-	return err
+	return a.Operator.UpdateDeviceByID(deviceID, updates)
 }
 
-//DeleteDeviceByID deletes the device given its ID
-func (o *AuthOperator) DeleteDeviceByID(deviceID int64) error {
-	dev, err := o.ReadDeviceByID(deviceID)
+// DeleteDeviceByID removes a device based upon its ID
+func (a *AuthOperator) DeleteDeviceByID(deviceID int64) error {
+	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(deviceID)
 	if err != nil {
 		return err
 	}
-
-	if _, err := o.permissionsGteDev(dev, users.USER); err != nil {
-		return err
+	if !ua.CanDeleteDevice || !da.CanDeleteDevice {
+		return errors.New("You do not have permissions necessary to delete this device.")
 	}
-
-	devpath, err2 := o.getDevicePath(deviceID)
-	err = o.BaseOperator.DeleteDeviceByID(deviceID)
-	if err == nil && err2 == nil {
-		o.MetaLog("DeleteDevice", devpath)
-	}
-	return err
+	return a.Operator.DeleteDeviceByID(deviceID)
 }

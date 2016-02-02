@@ -7,7 +7,7 @@ import (
 
 //ReadUserDevices returns all devices for the given user
 func (w Wrapper) ReadUserDevices(username string) ([]*users.Device, error) {
-	u, err := w.ReadUser(username)
+	u, err := w.AdminOperator().ReadUser(username)
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func (w Wrapper) CreateDevice(devicepath string) error {
 	if err != nil {
 		return err
 	}
-	u, err := w.ReadUser(userName)
+	u, err := w.AdminOperator().ReadUser(userName)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (w Wrapper) ReadDevice(devicepath string) (*users.Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	u, err := w.ReadUser(usrname)
+	u, err := w.AdminOperator().ReadUser(usrname)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (w Wrapper) ReadDevice(devicepath string) (*users.Device, error) {
 
 // UpdateDevice performs an update on the given device path
 func (w Wrapper) UpdateDevice(devicepath string, updates map[string]interface{}) error {
-	dev, err := w.ReadDevice(devicepath)
+	dev, err := w.AdminOperator().ReadDevice(devicepath)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (w Wrapper) UpdateDevice(devicepath string, updates map[string]interface{})
 
 //DeleteDevice deletes an existing device
 func (w Wrapper) DeleteDevice(devicepath string) error {
-	dev, err := w.ReadDevice(devicepath)
+	dev, err := w.AdminOperator().ReadDevice(devicepath)
 	if err != nil {
 		return err
 	}

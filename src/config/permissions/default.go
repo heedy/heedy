@@ -58,7 +58,7 @@ var Default = Permissions{
 			Join:                true,
 			JoinDisabledMessage: "Join is disabled",
 
-			CanBePrivate: false,
+			CanBePrivate: true,
 
 			// ACCESS ALL THE THINGS
 			DeviceRole: DeviceRole{
@@ -75,19 +75,19 @@ var Default = Permissions{
 			PrivateAccessLevel: "none",
 			PublicAccessLevel:  "none",
 			UserAccessLevel:    "none",
-			SelfAccessLevel:    "full",
+			SelfAccessLevel:    "fulldevice",
 		},
 		"reader": &DeviceRole{
 			PrivateAccessLevel: "devicereader",
 			PublicAccessLevel:  "devicereader",
 			UserAccessLevel:    "devicereader",
-			SelfAccessLevel:    "full",
+			SelfAccessLevel:    "fulldevice",
 		},
 		"writer": &DeviceRole{
 			PrivateAccessLevel: "devicewriter",
 			PublicAccessLevel:  "devicewriter",
 			UserAccessLevel:    "devicewriter",
-			SelfAccessLevel:    "full",
+			SelfAccessLevel:    "fulldevice",
 		},
 		"user": &DeviceRole{
 			PrivateAccessLevel: "full",
@@ -106,6 +106,10 @@ var Default = Permissions{
 			CanDeleteDevice: false,
 			CanDeleteStream: false,
 
+			CanListUsers:   false,
+			CanListDevices: true,
+			CanListStreams: true,
+
 			ReadAccess:  "publicread",
 			WriteAccess: "none",
 		},
@@ -116,6 +120,10 @@ var Default = Permissions{
 			CanDeleteUser:   false,
 			CanDeleteDevice: true,
 			CanDeleteStream: true,
+
+			CanListUsers:   false,
+			CanListDevices: true,
+			CanListStreams: true,
 
 			ReadAccess:  "selfread",
 			WriteAccess: "selfwrite",
@@ -128,6 +136,10 @@ var Default = Permissions{
 			CanDeleteDevice: false,
 			CanDeleteStream: false,
 
+			CanListUsers:   false,
+			CanListDevices: true,
+			CanListStreams: true,
+
 			ReadAccess:  "deviceread",
 			WriteAccess: "none",
 		},
@@ -139,8 +151,27 @@ var Default = Permissions{
 			CanDeleteDevice: false,
 			CanDeleteStream: false,
 
+			CanListUsers:   false,
+			CanListDevices: true,
+			CanListStreams: true,
+
 			ReadAccess:  "deviceread",
 			WriteAccess: "devicewrite",
+		},
+		"fulldevice": &AccessLevel{
+			CanCreateUser:   true,
+			CanCreateDevice: true,
+			CanCreateStream: true,
+			CanDeleteUser:   false,
+			CanDeleteDevice: true,
+			CanDeleteStream: true,
+
+			CanListUsers:   true,
+			CanListDevices: true,
+			CanListStreams: true,
+
+			ReadAccess:  "full",
+			WriteAccess: "fulldevicewrite",
 		},
 	},
 
@@ -293,6 +324,37 @@ var Default = Permissions{
 			DevicePublic:                    true,
 			DeviceRole:                      false,
 			StreamName:                      true,
+			StreamNickname:                  true,
+			StreamDescription:               true,
+			StreamIcon:                      true,
+			StreamSchema:                    true,
+			StreamEphemeral:                 true,
+			StreamDownlink:                  true,
+		},
+		"fulldevicewrite": &RWAccess{
+			CanAccessUser:                   true,
+			CanAccessDevice:                 true,
+			CanAccessStream:                 true,
+			CanAccessNonUserEditableDevices: false,
+			UserName:                        false,
+			UserNickname:                    true,
+			UserEmail:                       true,
+			UserDescription:                 true,
+			UserIcon:                        true,
+			UserRole:                        false,
+			UserPublic:                      true,
+			UserPassword:                    false,
+			DeviceName:                      false,
+			DeviceNickname:                  true,
+			DeviceDescription:               true,
+			DeviceIcon:                      true,
+			DeviceAPIKey:                    true,
+			DeviceEnabled:                   true,
+			DeviceIsVisible:                 true,
+			DeviceUserEditable:              true,
+			DevicePublic:                    true,
+			DeviceRole:                      false,
+			StreamName:                      false,
 			StreamNickname:                  true,
 			StreamDescription:               true,
 			StreamIcon:                      true,

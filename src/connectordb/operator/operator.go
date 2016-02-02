@@ -13,6 +13,11 @@ import (
 // and all functionality of the database is available
 type Operator interface {
 
+	// AdminOperator returns the administrative operator (usually the *Database object).
+	// This allows things like the path wrapper to be able to read underlying users
+	// even when the user does not have access
+	AdminOperator() PathOperator
+
 	//Returns an identifier for the device this operator is acting as.
 	//AuthOperator has this as the path to the device the operator is acting as
 	Name() string
@@ -37,7 +42,6 @@ type Operator interface {
 	CreateDeviceByUserID(userID int64, devicename string) error
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
 	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
-	ReadDeviceByAPIKey(apikey string) (*users.Device, error)
 	UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error
 	DeleteDeviceByID(deviceID int64) error
 

@@ -2,46 +2,40 @@
 Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
 Licensed under the MIT license.
 **/
-package authoperator
+package authoperator_test
 
 import (
-	"connectordb/operator/interfaces"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthUserCrud(t *testing.T) {
-	fmt.Println("test authuser crud")
-
-	// Open and connect to all services.
-	database, baseOperator, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
+	db.Clear()
 
 	//Create extra users that exist
-	require.NoError(t, baseOperator.CreateUser("streamdb_test", "root@localhost", "mypass"))
-	require.NoError(t, baseOperator.CreateUser("streamdb_test2", "root@localhost2", "mypass"))
-	require.NoError(t, baseOperator.CreateUser("streamdb_test3", "root@localhost3", "mypass"))
+	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateUser("streamdb_test2", "root@localhost2", "mypass", "admin", false))
+	require.NoError(t, db.CreateUser("streamdb_test3", "root@localhost3", "mypass", "admin", false))
 
-	ao, err := NewUserAuthOperator(baseOperator, "streamdb_test")
+	o, err := db.AsUser("streamdb_test")
 	require.NoError(t, err)
-	o := interfaces.PathOperatorMixin{ao}
 
 	// Try to create a user not as an admin
-	require.Error(t, o.CreateUser("notanadmin", "lol@you", "fail"))
+	require.Error(t, o.CreateUser("notanadmin", "lol@you", "fail", "user", true))
+
+	require.Error(t, o.UpdateUser("streamdb_test", map[string]interface{}{"role": "admin"}))
 
 	//Make sure there are 3
-	usrs, err := baseOperator.ReadAllUsers()
+	usrs, err := db.ReadAllUsers()
 	require.NoError(t, err)
 	require.Equal(t, 3, len(usrs))
 
 	//Now make sure that auth is working correctly
-	usrs, err = o.ReadAllUsers()
-	require.NoError(t, err)
-	require.Equal(t, 1, len(usrs))
-	require.Equal(t, "streamdb_test", usrs[0].Name)
+	_, err = o.ReadAllUsers()
+	require.Error(t, err)
+	//require.Equal(t, 1, len(usrs))
+	//require.Equal(t, "streamdb_test", usrs[0].Name)
 
 	u, err := o.ReadUser("streamdb_test")
 	require.NoError(t, err)
@@ -52,11 +46,9 @@ func TestAuthUserCrud(t *testing.T) {
 	u, err = o.ReadUser("notauser")
 	require.Error(t, err)
 
-	require.Error(t, o.SetAdmin("streamdb_test", true))
+	require.NoError(t, o.UpdateUser("streamdb_test", map[string]interface{}{"password": "pass2"}))
 
-	require.NoError(t, o.ChangeUserPassword("streamdb_test", "pass2"))
-
-	_, err = NewUserLoginOperator(baseOperator, "streamdb_test", "pass2")
+	_, err = db.UserLogin("streamdb_test", "pass2")
 	require.NoError(t, err)
 
 	u, err = o.User()
@@ -66,11 +58,11 @@ func TestAuthUserCrud(t *testing.T) {
 	require.Error(t, o.DeleteUser("streamdb_test"))
 
 	//Now, let's make this an admin user
-	require.NoError(t, baseOperator.SetAdmin("streamdb_test", true))
+	require.NoError(t, db.UpdateUser("streamdb_test", map[string]interface{}{"role": "admin"}))
 
-	u, err = baseOperator.ReadUser("streamdb_test")
+	u, err = db.ReadUser("streamdb_test")
 	require.NoError(t, err)
-	require.Equal(t, true, u.Admin)
+	require.Equal(t, "admin", u.Role)
 
 	//Make sure there are 3 if admin
 	usrs, err = o.ReadAllUsers()
@@ -82,19 +74,20 @@ func TestAuthUserCrud(t *testing.T) {
 
 	require.NoError(t, o.DeleteUser("streamdb_test2"))
 
-	_, err = NewUserAuthOperator(baseOperator, "streamdb_test2")
+	_, err = db.AsUser("streamdb_test2")
 	require.Error(t, err)
 
-	ao, err = NewUserAuthOperator(baseOperator, "streamdb_test3")
+	o, err = db.AsUser("streamdb_test3")
 	require.NoError(t, err)
-	o = interfaces.PathOperatorMixin{ao}
+
+	require.NoError(t, o.UpdateUser("streamdb_test3", map[string]interface{}{"role": "user", "public": true}))
 
 	u, err = o.User()
 	require.NoError(t, err)
 	require.Equal(t, "streamdb_test3", u.Name)
 	require.Error(t, o.DeleteUserByID(u.UserID))
 
-	require.NoError(t, baseOperator.SetAdmin("streamdb_test3", true))
+	require.NoError(t, db.UpdateUser("streamdb_test3", map[string]interface{}{"role": "admin"}))
 	require.NoError(t, o.DeleteUserByID(u.UserID))
 	_, err = o.User()
 	require.Error(t, err)
