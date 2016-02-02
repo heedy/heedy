@@ -1,36 +1,24 @@
-/**
-Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
-Licensed under the MIT license.
-**/
-package authoperator
+package authoperator_test
 
 import (
 	"connectordb/datastream"
-	"connectordb/operator/interfaces"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamIO(t *testing.T) {
-	fmt.Printf("test auth stream io\n")
-	database, baseOperator, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
-
+	db.Clear()
 	//Let's create a stream
-	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, baseOperator.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateDevice("tst/tst"))
 
-	ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst")
+	o, err := db.AsDevice("tst/tst")
 	require.NoError(t, err)
-	o := interfaces.PathOperatorMixin{ao}
 
 	require.NoError(t, o.CreateStream("tst/tst/tst", `{"type": "integer"}`))
 
 	{
-		fmt.Println("Testing lengths")
 		//Now make sure that length is 0
 		l, err := o.LengthStream("tst/tst/tst")
 		require.NoError(t, err)
@@ -51,7 +39,6 @@ func TestAuthStreamIO(t *testing.T) {
 		require.Equal(t, int64(1), l)
 	}
 	{
-		fmt.Println("Test reading time range")
 		dr, err := o.GetStreamTimeRange("tst/tst/tst", 0.0, 2.5, 0, "")
 		require.NoError(t, err)
 
@@ -69,7 +56,6 @@ func TestAuthStreamIO(t *testing.T) {
 		dr.Close()
 	}
 	{
-		fmt.Println("Test reading index range")
 		dr, err := o.GetStreamIndexRange("tst/tst/tst", 0, 1, "")
 		require.NoError(t, err)
 
@@ -87,49 +73,42 @@ func TestAuthStreamIO(t *testing.T) {
 		dr.Close()
 	}
 	{
-		fmt.Println("Testing time to index stream")
-		i, err := baseOperator.TimeToIndexStream("tst/tst/tst", 0.3)
+		i, err := db.TimeToIndexStream("tst/tst/tst", 0.3)
 		require.NoError(t, err)
 		require.Equal(t, int64(0), i)
 	}
 	{
-		fmt.Println("Testing delete")
 		//Now let's make sure that stuff is deleted correctly
 		require.NoError(t, o.DeleteStream("tst/tst/tst"))
-		require.NoError(t, baseOperator.CreateStream("tst/tst/tst", `{"type": "string"}`))
-		l, err := baseOperator.LengthStream("tst/tst/tst")
+		require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+		l, err := db.LengthStream("tst/tst/tst")
 		require.NoError(t, err)
 		require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
 	}
 }
 
 func TestAuthSubstream(t *testing.T) {
-	fmt.Println("test auth substream")
-	database, baseOperator, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
+	db.Clear()
 
 	//Let's create a stream
-	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, baseOperator.CreateDevice("tst/tst"))
-	require.NoError(t, baseOperator.CreateDevice("tst/tst2"))
-	require.NoError(t, baseOperator.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
-	s, err := baseOperator.ReadStream("tst/tst2/tst")
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst2"))
+	require.NoError(t, db.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
+	_, err := db.ReadStream("tst/tst2/tst")
 	require.NoError(t, err)
-	s.Downlink = true
-	require.NoError(t, baseOperator.UpdateStream(s))
+	require.NoError(t, db.UpdateStream("tst/tst2/tst", map[string]interface{}{"downlink": true}))
 
-	require.NoError(t, baseOperator.SetAdmin("tst/tst", true))
+	require.NoError(t, db.UpdateDevice("tst/tst", map[string]interface{}{"role": "user"}))
 
-	ao, err := NewDeviceAuthOperator(baseOperator, "tst/tst")
+	o, err := db.AsDevice("tst/tst")
 	require.NoError(t, err)
-	o := interfaces.PathOperatorMixin{ao}
 
 	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
 		Data:      -1336,
 	}}
-	require.NoError(t, o.InsertStream("tst/tst2/tst", data, false))
+	require.NoError(t, o.InsertStream("tst/tst2/tst/downlink", data, false))
 
 	l, err := o.LengthStream("tst/tst2/tst")
 	require.NoError(t, err)

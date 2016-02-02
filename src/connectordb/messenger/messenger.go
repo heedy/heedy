@@ -11,8 +11,8 @@ as well as the messaging system that allows real-time low-latency data analysis.
 
 import (
 	"bytes"
-	"util"
 	"strings"
+	"util"
 
 	"github.com/nats-io/nats"
 	"gopkg.in/vmihailenco/msgpack.v2"
