@@ -16,7 +16,13 @@ func (db *Database) AsDevice(devicepath string) (*authoperator.AuthOperator, err
 	if err != nil {
 		return nil, err
 	}
-	return authoperator.NewAuthOperator(db, dev.DeviceID)
+
+	o, err := AddMetaLog(dev.UserID, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return authoperator.NewAuthOperator(o, dev.DeviceID)
 }
 
 // UserLogin attempts to log in using a username and password
@@ -37,5 +43,10 @@ func (db *Database) DeviceLogin(apikey string) (*authoperator.AuthOperator, erro
 	if err != nil {
 		return nil, err
 	}
-	return authoperator.NewAuthOperator(db, dev.DeviceID)
+
+	o, err := AddMetaLog(dev.UserID, db)
+	if err != nil {
+		return nil, err
+	}
+	return authoperator.NewAuthOperator(o, dev.DeviceID)
 }
