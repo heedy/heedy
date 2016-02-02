@@ -1,43 +1,31 @@
-/**
-Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
-Licensed under the MIT license.
-**/
-package authoperator
+package authoperator_test
 
 import (
-	"connectordb/operator/interfaces"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthStreamCrud(t *testing.T) {
-	fmt.Println("test authstream crud")
-
-	database, baseOperator, err := OpenDb(t)
-	require.NoError(t, err)
-	defer database.Close()
-
-	_, err = baseOperator.ReadAllStreams("bad/badder")
+	db.Clear()
+	_, err := db.ReadDeviceStreams("bad/badder")
 	require.Error(t, err)
 
-	require.NoError(t, baseOperator.CreateUser("tst", "root@localhost", "mypass"))
-	require.NoError(t, baseOperator.CreateDevice("tst/testdevice"))
+	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateDevice("tst/testdevice"))
 
-	require.NoError(t, baseOperator.CreateDevice("tst/testdevice2"))
-	require.NoError(t, baseOperator.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
+	require.NoError(t, db.CreateDevice("tst/testdevice2"))
+	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
 
-	ao, err := NewDeviceAuthOperator(baseOperator, "tst/testdevice")
+	o, err := db.AsDevice("tst/testdevice")
 	require.NoError(t, err)
-	o := interfaces.PathOperatorMixin{ao}
 
-	dev, err := baseOperator.ReadDevice("tst/testdevice2")
+	dev, err := db.ReadDevice("tst/testdevice2")
 	require.NoError(t, err)
 	_, err = o.ReadAllStreamsByDeviceID(dev.DeviceID)
 	require.Error(t, err)
 
-	_, err = o.ReadAllStreams("tst/testdevice2")
+	_, err = o.ReadDeviceStreams("tst/testdevice2")
 	require.Error(t, err)
 
 	dev, err = o.Device()
@@ -46,7 +34,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(strms))
 
-	strms, err = o.ReadAllStreams("tst/testdevice")
+	strms, err = o.ReadDeviceStreams("tst/testdevice")
 	require.NoError(t, err)
 	require.Equal(t, 0, len(strms))
 
@@ -60,20 +48,17 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "mystream", s.Name)
 
-	s.Name = "stream2"
-	require.NoError(t, o.UpdateStream(s))
+	require.NoError(t, o.UpdateStream("tst/testdevice/mystream", map[string]interface{}{"nickname": "stream2"}))
 
 	s, err = o.ReadStream("tst/testdevice/mystream")
-	require.Error(t, err)
 
-	s, err = baseOperator.ReadStream("tst/testdevice/stream2")
 	require.NoError(t, err)
-	require.Equal(t, "stream2", s.Name)
+	require.Equal(t, "stream2", s.Nickname)
 
 	require.Error(t, o.DeleteStream("tst/testdevice2/teststream"))
-	require.NoError(t, o.DeleteStream("tst/testdevice/stream2"))
+	require.NoError(t, o.DeleteStream("tst/testdevice/mystream"))
 
-	_, err = baseOperator.ReadStream("tst/testdevice/stream2")
+	_, err = db.ReadStream("tst/testdevice/mystream")
 	require.Error(t, err)
 
 	dev, err = o.ReadDevice("tst/testdevice")

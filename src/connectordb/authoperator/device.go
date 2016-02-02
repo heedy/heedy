@@ -38,11 +38,11 @@ func (a *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]*users.Device, er
 
 // CreateDeviceByUserID attempts to create a device for the given user
 func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
-	u, err := a.ReadUserByID(userID)
+	u, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
 		return err
 	}
-	_, u, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
+	_, _, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
 	if err != nil {
 		return err
 	}
