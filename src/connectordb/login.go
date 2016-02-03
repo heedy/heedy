@@ -2,8 +2,17 @@ package connectordb
 
 import (
 	"connectordb/authoperator"
-	"errors"
+	"connectordb/users"
 )
+
+// DeviceAuthOperator logs in the given device object
+func (db *Database) DeviceAuthOperator(dev *users.Device) (*authoperator.AuthOperator, error) {
+	o, err := AddMetaLog(dev.UserID, db)
+	if err != nil {
+		return nil, err
+	}
+	return authoperator.NewAuthOperator(o, dev.DeviceID)
+}
 
 // AsUser returns the AuthOperator for the given user
 func (db *Database) AsUser(username string) (*authoperator.AuthOperator, error) {
@@ -17,24 +26,17 @@ func (db *Database) AsDevice(devicepath string) (*authoperator.AuthOperator, err
 		return nil, err
 	}
 
-	o, err := AddMetaLog(dev.UserID, db)
-	if err != nil {
-		return nil, err
-	}
-
-	return authoperator.NewAuthOperator(o, dev.DeviceID)
+	return db.DeviceAuthOperator(dev)
 }
 
 // UserLogin attempts to log in using a username and password
 func (db *Database) UserLogin(username, password string) (*authoperator.AuthOperator, error) {
-	usr, err := db.ReadUser(username)
+	_, dev, err := db.Userdb.Login(username, password)
 	if err != nil {
 		return nil, err
 	}
-	if !usr.ValidatePassword(password) {
-		return nil, errors.New("Incorrect password")
-	}
-	return db.AsUser(username)
+
+	return db.DeviceAuthOperator(dev)
 }
 
 // DeviceLogin logs in as a device with the giben api key
@@ -44,11 +46,7 @@ func (db *Database) DeviceLogin(apikey string) (*authoperator.AuthOperator, erro
 		return nil, err
 	}
 
-	o, err := AddMetaLog(dev.UserID, db)
-	if err != nil {
-		return nil, err
-	}
-	return authoperator.NewAuthOperator(o, dev.DeviceID)
+	return db.DeviceAuthOperator(dev)
 }
 
 // Nobody returns the operator of a "nobody" - it will behave as someone who has "nobody" permissions

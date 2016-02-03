@@ -63,7 +63,7 @@ func CheckPassword(password, hashed, salt, scheme string) error {
 		if err != nil {
 			return err
 		}
-		if h != password {
+		if h != hashed {
 			return ErrInvalidPassword
 		}
 		return nil

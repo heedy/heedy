@@ -234,6 +234,20 @@ func (userdb *CacheMiddleware) ReadDeviceByID(DeviceID int64) (*Device, error) {
 	return dev, err
 }
 
+func (userdb *CacheMiddleware) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
+	devs, err := userdb.UserDatabase.ReadDevicesForUserID(UserID)
+	if err != nil {
+		return nil, err
+	}
+	// Cache the devices, since they will be used soon (listing devices uses cached)
+	for i := range devs {
+		if _, ok := userdb.readDevice(fmt.Sprintf("id:%d", devs[i].DeviceID)); !ok {
+			userdb.cacheDevice(devs[i], nil)
+		}
+	}
+	return devs, err
+}
+
 func (userdb *CacheMiddleware) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
 	cacheDev, ok := userdb.readDevice(fmt.Sprintf("usr:%dname:%s", userid, devicename))
 	if ok {
@@ -271,6 +285,20 @@ func (userdb *CacheMiddleware) ReadStreamByID(StreamID int64) (*Stream, error) {
 	userdb.cacheStream(stream, err)
 
 	return stream, err
+}
+
+func (userdb *CacheMiddleware) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
+	streams, err := userdb.UserDatabase.ReadStreamsByDevice(DeviceID)
+	if err != nil {
+		return nil, err
+	}
+	// Cache the streams, since they will be used soon (listing streams uses cached)
+	for i := range streams {
+		if _, ok := userdb.readStream(fmt.Sprintf("id:%d", streams[i].StreamID)); !ok {
+			userdb.cacheStream(streams[i], nil)
+		}
+	}
+	return streams, err
 }
 
 func (userdb *CacheMiddleware) ReadUserById(UserID int64) (*User, error) {

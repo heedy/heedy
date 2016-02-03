@@ -34,6 +34,9 @@ func TestCalcHash(t *testing.T) {
 		t.Errorf("h5 and h4 should match")
 	}
 
+	require.NoError(t, CheckPassword("password", h3, "a", "SHA512"))
+	require.Error(t, CheckPassword("password2", h3, "a", "SHA512"))
+
 	h1, err := calcHash("pass", "lol", "bcrypt")
 	require.NoError(t, err)
 
