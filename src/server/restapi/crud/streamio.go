@@ -5,8 +5,8 @@ Licensed under the MIT license.
 package crud
 
 import (
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,7 +26,7 @@ var (
 )
 
 //StreamLength gets the stream length
-func StreamLength(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func StreamLength(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	l, err := o.LengthStream(streampath)
@@ -35,7 +35,7 @@ func StreamLength(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //WriteStream writes the given stream
-func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func WriteStream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	var datapoints []datastream.Datapoint
@@ -61,7 +61,7 @@ func WriteStream(o operator.Operator, writer http.ResponseWriter, request *http.
 }
 
 //StreamRange gets a range of data from a stream
-func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func StreamRange(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 	q := request.URL.Query()
 	transform := q.Get("transform")
@@ -91,7 +91,7 @@ func StreamRange(o operator.Operator, writer http.ResponseWriter, request *http.
 }
 
 //StreamTime2Index gets the time associated with the index
-func StreamTime2Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func StreamTime2Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 	logger = logger.WithField("op", "Time2Index")
 

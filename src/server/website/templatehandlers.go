@@ -6,7 +6,7 @@ package website
 
 import (
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"connectordb/users"
 	"net/http"
 	"server/webcore"
@@ -31,8 +31,8 @@ type TemplateData struct {
 	// are also exposed. When giving Index,
 	//	both the current user's devices and current user's user device's streams
 	//	are sent
-	Devices []users.Device
-	Streams []users.Stream
+	Devices []*users.Device
+	Streams []*users.Stream
 
 	//And some extra status info
 	Status string
@@ -43,7 +43,7 @@ type TemplateData struct {
 }
 
 //GetTemplateData initializes the template
-func GetTemplateData(o operator.Operator) (*TemplateData, error) {
+func GetTemplateData(o *authoperator.AuthOperator) (*TemplateData, error) {
 	thisU, err := o.User()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func GetTemplateData(o operator.Operator) (*TemplateData, error) {
 }
 
 //Index reads the index
-func Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -79,7 +79,7 @@ func Index(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 }
 
 //User reads the given user
-func User(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -100,7 +100,7 @@ func User(o operator.Operator, writer http.ResponseWriter, request *http.Request
 }
 
 //Device reads the given device
-func Device(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -126,7 +126,7 @@ func Device(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 }
 
 //Stream reads the given stream
-func Stream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Stream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)

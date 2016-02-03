@@ -6,7 +6,7 @@ package restapi
 
 import (
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"util"
 
 	"net/http"
@@ -25,7 +25,7 @@ import (
 )
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
-func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func GetThis(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	res := []byte(o.Name())
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
@@ -34,26 +34,26 @@ func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 }
 
 //CountAllUsers gets all of the users in the entire database
-func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllUsers(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountUsers()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //CountAllDevices gets all of the devices in the entire database
-func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllDevices(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountDevices()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //CountAllStreams gets all of the streams in the entire database
-func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountStreams()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //Login handles logging in and out of the web interface. In particular, it handles the auth cookies, and
 //the web interface uses them for the rest
-func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Login(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	err := webcore.CreateSessionCookie(o, writer, request)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
@@ -65,7 +65,7 @@ func Login(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 }
 
 //Logout hondles logging out of the web interface. It deletes the auth cookie
-func Logout(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Logout(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	webcore.CreateSessionCookie(nil, writer, request) //nil operator deletes the cookie
 	restcore.OK(writer)
 	return webcore.DEBUG, ""

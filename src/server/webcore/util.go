@@ -5,7 +5,7 @@ Licensed under the MIT license.
 package webcore
 
 import (
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -34,7 +34,7 @@ var (
 )
 
 //APIHandler is a function that handles some part of the REST API given a specific operator on the database.
-type APIHandler func(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string)
+type APIHandler func(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string)
 
 //WriteAccessControlHeaders writes the access control headers for the site
 func WriteAccessControlHeaders(writer http.ResponseWriter, request *http.Request) {

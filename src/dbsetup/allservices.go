@@ -77,7 +77,7 @@ func Create(c *config.Configuration) error {
 			defer db.Close()
 
 			udb := users.NewUserDatabase(db, driver, false, 0, 0, 0)
-			err = udb.CreateUser(c.InitialUsername, c.InitialUserEmail, c.InitialUserPassword, c.InitialUserPermissions, 0)
+			err = udb.CreateUser(c.InitialUsername, c.InitialUserEmail, c.InitialUserPassword, c.InitialUserRole, c.InitialUserPublic, 0)
 			if err != nil {
 				return err
 			}

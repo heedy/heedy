@@ -32,7 +32,7 @@ func init() {
 			return 1
 		}
 
-		err := operator.ChangeUserPassword(username, passwd)
+		err := operator.UpdateUser(username, map[string]interface{}{"password": passwd})
 
 		if shell.PrintError(err) {
 			return 0

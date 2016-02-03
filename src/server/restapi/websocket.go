@@ -5,9 +5,9 @@ Licensed under the MIT license.
 package restapi
 
 import (
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
-	"connectordb/operator/messenger"
+	"connectordb/messenger"
 	"connectordb/query"
 	"errors"
 	"io"
@@ -126,11 +126,11 @@ type WebsocketConnection struct {
 	c chan messenger.Message
 
 	logger *log.Entry //logrus uses a mutex internally
-	o      operator.Operator
+	o      *authoperator.AuthOperator
 }
 
 //NewWebsocketConnection creates a new websocket connection based on the operators and stuff
-func NewWebsocketConnection(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*WebsocketConnection, error) {
+func NewWebsocketConnection(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*WebsocketConnection, error) {
 
 	ws, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
@@ -401,7 +401,7 @@ func (c *WebsocketConnection) Run() error {
 }
 
 //RunWebsocket runs the websocket handler
-func RunWebsocket(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func RunWebsocket(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	conn, err := NewWebsocketConnection(o, writer, request, logger)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

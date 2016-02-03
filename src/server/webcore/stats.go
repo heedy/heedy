@@ -5,7 +5,7 @@ Licensed under the MIT license.
 package webcore
 
 import (
-	"connectordb/operator/authoperator"
+	"config"
 	"fmt"
 	"math"
 	"sync"
@@ -109,7 +109,8 @@ func RunQueryTimers() {
 	for {
 		qt := config.Get().StatsDisplayTimer
 		if qt > 0 {
-			time.Sleep(qt * time.Second)
+			QueryTimePeriod := time.Duration(qt) * time.Second
+			time.Sleep(QueryTimePeriod)
 			s := fmt.Sprintf("Statistics for the past %v:\n", QueryTimePeriod)
 			for qname := range QueryTimers {
 				num, mean, variance := QueryTimers[qname].GetClear()
@@ -125,9 +126,9 @@ func RunQueryTimers() {
 
 //StatsAddFail adds an authentication failure to the statistics
 func StatsAddFail(err error) {
-	if err == authoperator.ErrPermissions {
-		atomic.AddUint32(&StatsAuthFails, 1)
-	}
+	//if err == authoperator.ErrPermissions {
+	//	atomic.AddUint32(&StatsAuthFails, 1)
+	//}
 }
 
 //RunStats periodically displays query amounts and relevant data. It does not display anything
@@ -140,7 +141,7 @@ func RunStats() {
 		st := config.Get().QueryDisplayTimer
 
 		if st > 0 {
-			time.Sleep(st * time.Second)
+			time.Sleep(time.Duration(st) * time.Second)
 
 			q := atomic.SwapUint32(&StatsRESTQueries, 0)
 			w := atomic.SwapUint32(&StatsWebQueries, 0)

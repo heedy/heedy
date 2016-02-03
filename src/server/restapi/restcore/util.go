@@ -5,8 +5,8 @@ Licensed under the MIT license.
 package restcore
 
 import (
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
 	"encoding/json"
 	"errors"
 	"io"
@@ -120,7 +120,7 @@ func ValidName(n string, err error) error {
 }
 
 //BadQ checks if there is a q= part to the given query, and gives an error if there is
-func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func BadQ(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	if val := request.URL.Query().Get("q"); val != "" {
 		return ErrBadQ
 	}

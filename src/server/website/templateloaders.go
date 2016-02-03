@@ -6,6 +6,7 @@ package website
 
 import (
 	"bytes"
+	"config"
 	"fmt"
 	"html/template"
 	"io"

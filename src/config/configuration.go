@@ -83,6 +83,7 @@ type Configuration struct {
 	InitialUserPassword string `json:"createuser_password,omitempty"`
 	InitialUserEmail    string `json:"createuser_email,omitempty"`
 	InitialUserRole     string `json:"createuser_permissions,omitempty"`
+	InitialUserPublic   bool   `json:"createuser_public,omitempty"`
 
 	// The prime number to use for scrambling IDs in the database.
 	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
