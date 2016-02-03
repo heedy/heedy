@@ -21,6 +21,8 @@ import (
 	"github.com/codegangsta/cli"
 
 	log "github.com/Sirupsen/logrus"
+
+	pconfig "config/permissions"
 )
 
 func getDatabase(c *cli.Context) string {
@@ -83,6 +85,18 @@ func runconfigCallback(c *cli.Context) {
 
 	cfg := config.NewConfiguration()
 	err := cfg.Save(n)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
+func runpermissionsCallback(c *cli.Context) {
+	n := c.Args().First()
+	if n == "" {
+		log.Fatal("You must specify the file to write permissions to")
+	}
+
+	err := pconfig.Default.Save(n)
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -271,6 +285,11 @@ func main() {
 			Name:   "config",
 			Usage:  "Creates a new configuration file with defaults at the given path.",
 			Action: runconfigCallback,
+		},
+		{
+			Name:   "permissions",
+			Usage:  "Creates a new configuration file with default permissions at the given path.",
+			Action: runpermissionsCallback,
 		},
 		{
 			Name:    "dbwriter",
