@@ -63,9 +63,12 @@ func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]inte
 
 	// See ReadAllUsers
 	ss, err := a.Operator.ReadDeviceStreams(devname)
+	if err != nil {
+		return nil, permissions.ErrNoAccess
+	}
 	result := make([]map[string]interface{}, 0, len(ss))
 	for i := range ss {
-		u, err := a.ReadDeviceToMap(devname + "/" + ss[i].Name)
+		u, err := a.ReadStreamToMap(devname + "/" + ss[i].Name)
 		if err == nil {
 			result = append(result, u)
 		}

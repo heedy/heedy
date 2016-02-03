@@ -62,6 +62,9 @@ func (a *AuthOperator) ReadAllUsersToMap() ([]map[string]interface{}, error) {
 
 	// See ReadAllUsers
 	usrs, err := a.Operator.ReadAllUsers()
+	if err != nil {
+		return nil, err
+	}
 	result := make([]map[string]interface{}, 0, len(usrs))
 	for i := range usrs {
 		u, err := a.ReadUserToMap(usrs[i].Name)

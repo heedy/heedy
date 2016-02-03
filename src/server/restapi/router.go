@@ -90,13 +90,13 @@ func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
 	//Allow for the application to match /path and /path/ to the same place.
 	prefix.StrictSlash(true)
 
-	// The websocket is run straight from here
-	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
-
 	prefix.HandleFunc("/", restcore.Authenticator(GetThis, db)).Queries("q", "this").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllUsers, db)).Queries("q", "countusers").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllDevices, db)).Queries("q", "countdevices").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllStreams, db)).Queries("q", "countstreams").Methods("GET")
+
+	// The websocket is run straight from here
+	prefix.HandleFunc("/websocket", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	query.Router(db, prefix.PathPrefix("/query").Subrouter())

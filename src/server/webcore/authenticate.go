@@ -61,6 +61,7 @@ func Authenticate(db *connectordb.Database, request *http.Request) (o *authopera
 					o = db.Nobody()
 				}
 			} else {
+				err = nil
 				// No authentication was given - use nobody
 				o = db.Nobody()
 			}
