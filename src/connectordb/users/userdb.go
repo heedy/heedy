@@ -52,11 +52,15 @@ func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, d
 	basedb := SqlUserDatabase{}
 	basedb.initSqlUserDatabase(sqldb, dbtype)
 
-	if cache == false {
-		return &basedb
+	if streamsize < 1 {
+		streamsize = 1
 	}
 
 	streamCache, _ = multicache.NewDefaultMulticache(uint64(streamsize))
+
+	if cache == false {
+		return &basedb
+	}
 
 	// The cache sizes were already validated
 	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize))
