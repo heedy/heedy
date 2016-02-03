@@ -7,6 +7,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -225,7 +226,7 @@ func Load(filename string) (*Configuration, error) {
 
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
 	// To allow comments in the json, we minify the file with js minifer before parsing
@@ -233,13 +234,13 @@ func Load(filename string) (*Configuration, error) {
 	m.AddFunc("text/javascript", js.Minify)
 	file, err = m.Bytes("text/javascript", file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
 	c := NewConfiguration()
 	err = json.Unmarshal(file, c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
 	// Before doing anything, we need to change the working directory to that of the config file.

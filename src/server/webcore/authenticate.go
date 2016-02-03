@@ -49,11 +49,16 @@ func Authenticate(db *connectordb.Database, request *http.Request) (o *authopera
 		if len(authPass) != 0 {
 			o, err = db.DeviceLogin(authPass)
 		} else {
-			cookie, err := request.Cookie("connectordb-session")
+			var cookie *http.Cookie
+			cookie, err = request.Cookie("connectordb-session")
 			if err == nil {
 				err = CookieMonster.Decode("connectordb-session", cookie.Value, &authPass)
 				if err == nil {
 					o, err = db.DeviceLogin(authPass)
+				} else {
+					//If the cookie is invalid, log in as nobody
+					err = nil
+					o = db.Nobody()
 				}
 			} else {
 				// No authentication was given - use nobody

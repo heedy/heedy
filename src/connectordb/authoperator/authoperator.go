@@ -100,7 +100,7 @@ func (a *AuthOperator) getUserAndDevice() (*users.User, *users.Device, error) {
 func (a *AuthOperator) getAccessLevels(userID int64, ispublic, issself bool) (*pconfig.Permissions, *users.User, *users.Device, *pconfig.AccessLevel, *pconfig.AccessLevel, error) {
 	u, d, err := a.getUserAndDevice()
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, permissions.ErrNoAccess
 	}
 	perm := pconfig.Get()
 
@@ -117,7 +117,7 @@ func (a *AuthOperator) getDeviceAccessLevels(deviceID int64) (*pconfig.Permissio
 
 	dev, err := a.Operator.ReadDeviceByID(deviceID)
 	if err != nil {
-		return nil, nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, permissions.ErrNoAccess
 	}
 
 	perm := pconfig.Get()

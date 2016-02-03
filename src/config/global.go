@@ -45,7 +45,10 @@ func SetPath(filename string) error {
 	if globalConfiguration != nil {
 		globalConfiguration.Close()
 	}
-	cfg.OnChange = globalConfiguration.OnChange
+	if globalConfiguration != nil {
+		cfg.OnChange = globalConfiguration.OnChange
+	}
+
 	globalConfiguration = cfg
 
 	// PipeScript has its own special configuration updater, which modifies the global

@@ -10,7 +10,7 @@ import (
 )
 
 // ErrNoAccess is returned when no access at all is given to the resource
-var ErrNoAccess = errors.New("Either you do not have permissions to access this resource, or the resource does not exist.")
+var ErrNoAccess = errors.New("Can't access this resource.")
 
 func CheckIfUpdateFieldsPermitted(perm *pconfig.Permissions, useraccess *pconfig.AccessLevel, deviceaccess *pconfig.AccessLevel, prefix string, updates map[string]interface{}) error {
 	ua := GetWriteAccess(perm, useraccess).GetMap()

@@ -28,14 +28,14 @@ func (a *AuthOperator) CountDevices() (int64, error) {
 func (a *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]*users.Device, error) {
 	u, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	_, _, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
 	if err != nil {
 		return nil, err
 	}
 	if !ua.CanListDevices || !da.CanListDevices {
-		return nil, errors.New("You do not have permissions necessary to list this user's devices.")
+		return nil, permissions.ErrNoAccess
 	}
 
 	// See ReadAllUsers
@@ -57,14 +57,14 @@ func (a *AuthOperator) ReadAllDevicesByUserID(userID int64) ([]*users.Device, er
 func (a *AuthOperator) ReadUserDevicesToMap(uname string) ([]map[string]interface{}, error) {
 	u, err := a.Operator.ReadUser(uname)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	_, _, _, ua, da, err := a.getAccessLevels(u.UserID, u.Public, false)
 	if err != nil {
 		return nil, err
 	}
 	if !ua.CanListDevices || !da.CanListDevices {
-		return nil, errors.New("You do not have permissions necessary to list this user's devices.")
+		return nil, permissions.ErrNoAccess
 	}
 
 	// See ReadAllUsers
@@ -83,7 +83,7 @@ func (a *AuthOperator) ReadUserDevicesToMap(uname string) ([]map[string]interfac
 func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) error {
 	u, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	_, _, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
 	if err != nil {
@@ -91,7 +91,7 @@ func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string) err
 	}
 
 	if !ua.CanCreateDevice || !da.CanCreateDevice {
-		return errors.New("You do not have permissions necessary to create this device.")
+		return permissions.ErrNoAccess
 	}
 
 	return a.Operator.CreateDeviceByUserID(userID, devicename)
@@ -116,7 +116,7 @@ func (a *AuthOperator) ReadDeviceByID(deviceID int64) (*users.Device, error) {
 func (a *AuthOperator) ReadDeviceToMap(devpath string) (map[string]interface{}, error) {
 	dev, err := a.Operator.ReadDevice(devpath)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(dev.DeviceID)
 	if err != nil {
@@ -129,7 +129,7 @@ func (a *AuthOperator) ReadDeviceToMap(devpath string) (map[string]interface{}, 
 func (a *AuthOperator) ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error) {
 	dev, err := a.Operator.ReadDeviceByUserID(userID, devicename)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	// Don't repeat code unnecessarily
 	return a.ReadDeviceByID(dev.DeviceID)
@@ -156,7 +156,7 @@ func (a *AuthOperator) DeleteDeviceByID(deviceID int64) error {
 		return err
 	}
 	if !ua.CanDeleteDevice || !da.CanDeleteDevice {
-		return errors.New("You do not have permissions necessary to delete this device.")
+		return permissions.ErrNoAccess
 	}
 	return a.Operator.DeleteDeviceByID(deviceID)
 }

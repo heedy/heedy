@@ -22,7 +22,7 @@ const dbconversion = `
 -- Delete the full database
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
-DROP SCHEMA v1 CASCADE;
+DROP SCHEMA IF EXISTS v1 CASCADE;
 SET search_path = public;
 
 {{end}}

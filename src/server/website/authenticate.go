@@ -48,7 +48,7 @@ func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectord
 		defer atomic.AddInt32(&webcore.StatsActive, -1)
 
 		o, err := webcore.Authenticate(db, request)
-		if err == nil {
+		if err == nil && o.Name() != "nobody" {
 			//There is a user logged in
 			l := logger.WithField("dev", o.Name())
 

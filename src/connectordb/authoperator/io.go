@@ -11,7 +11,7 @@ import (
 func (a *AuthOperator) getIOPermissions(streamID int64) (*pconfig.Permissions, *pconfig.AccessLevel, *pconfig.AccessLevel, error) {
 	s, err := a.Operator.ReadStreamByID(streamID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, permissions.ErrNoAccess
 	}
 	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
 	if err != nil {
@@ -27,7 +27,7 @@ func (a *AuthOperator) ErrorIfNoIOReadAccess(streamID int64) error {
 		return err
 	}
 	if !permissions.GetReadAccess(perm, ua).CanAccessStreamData || !permissions.GetReadAccess(perm, da).CanAccessStreamData {
-		return errors.New("Access to stream data denied.")
+		return permissions.ErrNoAccess
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (a *AuthOperator) InsertStreamByID(streamID int64, substream string, data d
 	}
 	strm, err := a.Operator.ReadStreamByID(streamID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	dev, err := a.Device()
 	if err != nil {

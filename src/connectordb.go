@@ -144,6 +144,8 @@ func createDatabaseCallback(c *cli.Context) {
 		cfg.InitialUsername = usrpass[0]
 		cfg.InitialUserPassword = usrpass[1]
 		cfg.InitialUserEmail = c.String("email")
+		cfg.InitialUserRole = "admin"
+		cfg.InitialUserPublic = false
 	}
 
 	err := dbsetup.Create(cfg)

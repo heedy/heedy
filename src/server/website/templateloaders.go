@@ -144,7 +144,7 @@ func (f *FileTemplate) Close() {
 func LoadFiles() error {
 
 	// Set up the minifier
-	minifier := minify.New()
+	minifier = minify.New()
 	minifier.AddFunc("text/css", css.Minify)
 	minifier.AddFunc("text/html", html.Minify)
 	minifier.AddFunc("text/javascript", js.Minify)

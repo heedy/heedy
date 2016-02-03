@@ -30,12 +30,12 @@ func (a *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream
 		return nil, err
 	}
 	if !ua.CanListStreams || !da.CanListStreams {
-		return nil, errors.New("You do not have permissions necessary to list this device's streams.")
+		return nil, permissions.ErrNoAccess
 	}
 
 	streams, err := a.Operator.ReadAllStreamsByDeviceID(deviceID)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 
 	for i := range streams {
@@ -51,14 +51,14 @@ func (a *AuthOperator) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream
 func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]interface{}, error) {
 	dev, err := a.Operator.ReadDevice(devname)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(dev.DeviceID)
 	if err != nil {
 		return nil, err
 	}
 	if !ua.CanListStreams || !da.CanListStreams {
-		return nil, errors.New("You do not have permissions necessary to list this device's streams.")
+		return nil, permissions.ErrNoAccess
 	}
 
 	// See ReadAllUsers
@@ -81,7 +81,7 @@ func (a *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 	}
 
 	if !ua.CanCreateStream || !da.CanCreateStream {
-		return errors.New("You do not have permissions necessary to create this stream.")
+		return permissions.ErrNoAccess
 	}
 
 	return a.Operator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
@@ -91,7 +91,7 @@ func (a *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 func (a *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
 	s, err := a.Operator.ReadStreamByID(streamID)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
 	if err != nil {
@@ -109,7 +109,7 @@ func (a *AuthOperator) ReadStreamByID(streamID int64) (*users.Stream, error) {
 func (a *AuthOperator) ReadStreamToMap(spath string) (map[string]interface{}, error) {
 	s, err := a.Operator.ReadStream(spath)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
 	if err != nil {
@@ -122,7 +122,7 @@ func (a *AuthOperator) ReadStreamToMap(spath string) (map[string]interface{}, er
 func (a *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error) {
 	stream, err := a.Operator.ReadStreamByDeviceID(deviceID, streamname)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	return a.ReadStreamByID(stream.StreamID)
 }
@@ -131,7 +131,7 @@ func (a *AuthOperator) ReadStreamByDeviceID(deviceID int64, streamname string) (
 func (a *AuthOperator) UpdateStreamByID(streamID int64, updates map[string]interface{}) error {
 	s, err := a.Operator.ReadStreamByID(streamID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	perm, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
 	if err != nil {
@@ -148,14 +148,14 @@ func (a *AuthOperator) UpdateStreamByID(streamID int64, updates map[string]inter
 func (a *AuthOperator) DeleteStreamByID(streamID int64, substream string) error {
 	s, err := a.Operator.ReadStreamByID(streamID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(s.DeviceID)
 	if err != nil {
 		return err
 	}
 	if !ua.CanDeleteStream || !da.CanDeleteStream {
-		return errors.New("You do not have permissions necessary to delete this stream.")
+		return permissions.ErrNoAccess
 	}
 	return a.Operator.DeleteStreamByID(streamID, substream)
 }

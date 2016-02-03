@@ -99,7 +99,7 @@ func (a *AuthOperator) CreateUser(name, email, password, role string, public boo
 func (a *AuthOperator) ReadUser(username string) (*users.User, error) {
 	usr, err := a.Operator.ReadUser(username)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	// Don't repeat code unnecessarily
 	return a.ReadUserByID(usr.UserID)
@@ -110,7 +110,7 @@ func (a *AuthOperator) ReadUser(username string) (*users.User, error) {
 func (a *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 	usr, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 
 	// A user is never self
@@ -129,7 +129,7 @@ func (a *AuthOperator) ReadUserByID(userID int64) (*users.User, error) {
 func (a *AuthOperator) ReadUserToMap(username string) (map[string]interface{}, error) {
 	usr, err := a.Operator.ReadUser(username)
 	if err != nil {
-		return nil, err
+		return nil, permissions.ErrNoAccess
 	}
 	perm, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
 	if err != nil {
@@ -143,7 +143,7 @@ func (a *AuthOperator) ReadUserToMap(username string) (map[string]interface{}, e
 func (a *AuthOperator) UpdateUserByID(userID int64, updates map[string]interface{}) error {
 	usr, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	perm, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
 	if err != nil {
@@ -160,7 +160,7 @@ func (a *AuthOperator) UpdateUserByID(userID int64, updates map[string]interface
 func (a *AuthOperator) DeleteUserByID(userID int64) error {
 	usr, err := a.Operator.ReadUserByID(userID)
 	if err != nil {
-		return err
+		return permissions.ErrNoAccess
 	}
 	// A user is never self
 	_, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
