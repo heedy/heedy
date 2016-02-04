@@ -51,19 +51,19 @@ func VerifyCaptcha(response string) (bool, error) {
 	return rr.Success, nil
 }
 
-func checkIfJoinAllowed(request *http.Request) error {
+func checkIfJoinAllowed(request *http.Request) (*pconfig.UserRole, error) {
 	if !webcore.IsActive {
-		return errors.New("ConnectorDB is currently disabled.")
+		return nil, errors.New("ConnectorDB is currently disabled.")
 	}
 
 	// First check if the user is authenticated (ie, a user is trying to add another user)
 	o, err := webcore.Authenticate(Database, request)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	u, err := o.User()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// We now have an operator which has join permissions - extract them!
@@ -71,29 +71,29 @@ func checkIfJoinAllowed(request *http.Request) error {
 	perm := pconfig.Get()
 	r := permissions.GetUserRole(perm, u)
 	if !r.Join {
-		return errors.New(r.JoinDisabledMessage)
+		return r, errors.New(r.JoinDisabledMessage)
 	}
 
 	// Show a message if max users is reached
 	if perm.MaxUsers >= 0 {
 		unum, err := Database.Userdb.CountUsers()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if perm.MaxUsers <= unum {
-			return errors.New("The maximum number of users has been reached.")
+			return nil, errors.New("The maximum number of users has been reached.")
 		}
 	}
 
 	// Joining is allowed
-	return nil
+	return r, nil
 }
 
 // JoinHandleGET handles joining ConnectorDB - the frontend of joining (ie GET)
 func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 	tstart := time.Now()
 	logger := webcore.GetRequestLogger(request, "join")
-	err := checkIfJoinAllowed(request)
+	_, err := checkIfJoinAllowed(request)
 	msg := ""
 	if err != nil {
 		msg = err.Error()
@@ -111,6 +111,7 @@ func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 	webcore.LogRequest(logger, webcore.DEBUG, msg, time.Since(tstart))
 }
 
+// JoinStream is the structure used to encode a stream used for join
 type JoinStream struct {
 	Name        string      `json:"name"`
 	Nickname    string      `json:"nickname"`
@@ -119,6 +120,8 @@ type JoinStream struct {
 	Schema      interface{} `json:"schema"`
 }
 
+// Joiner is the struct sent in when POST to join, which creates the desired user structure.
+// All streams described here are created under the user device
 type Joiner struct {
 	Captcha  string       `json:"captcha"`
 	Name     string       `json:"name"`
@@ -126,7 +129,6 @@ type Joiner struct {
 	Email    string       `json:"email"`
 	Password string       `json:"password"`
 	Icon     string       `json:"icon"`
-	Role     string       `json:"role"`
 	Public   bool         `json:"public"`
 	Streams  []JoinStream `json:"streams"`
 }
@@ -145,7 +147,7 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 	logger := webcore.GetRequestLogger(request, "JOIN")
 
 	// First check if join is allowed at all
-	err := checkIfJoinAllowed(request)
+	role, err := checkIfJoinAllowed(request)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return
@@ -171,7 +173,7 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	// OK - now set up the user
-	err = Database.CreateUser(j.Name, j.Email, j.Password, j.Role, j.Public)
+	err = Database.CreateUser(j.Name, j.Email, j.Password, role.JoinRole, j.Public)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return

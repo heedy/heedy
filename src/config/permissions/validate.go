@@ -25,6 +25,13 @@ func (p *Permissions) Validate() error {
 	// Make sure the permissions are all valid
 	hadNobody := false
 	for key := range p.UserRoles {
+
+		// Make sure join roles exist
+		jr := p.UserRoles[key].JoinRole
+		if _, ok := p.UserRoles[p.UserRoles[key].JoinRole]; !ok {
+			return fmt.Errorf("Join role '%s' not found", jr)
+		}
+
 		if key == "nobody" {
 			hadNobody = true
 		}

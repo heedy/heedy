@@ -7,6 +7,7 @@ package permissions
 // UserRole encodes the rules that are followed for the user type
 type UserRole struct {
 	Join                bool   `json:"join"`                  // Whether the user can use the "join" interface to add new users (which might include captcha, etc)
+	JoinRole            string `json:"join_role"`             // The role to use for users joining
 	JoinDisabledMessage string `json:"join_disabled_message"` // The error message to write when join is disabled
 
 	MaxDevices int64 `json:"max_devices"` // The maximum number of devices for the user. 0 is unlimited

@@ -30,6 +30,7 @@ var Default = Permissions{
 	UserRoles: map[string]*UserRole{
 		"nobody": &UserRole{
 			Join:                false,
+			JoinRole:            "user",
 			JoinDisabledMessage: "You must be logged in to add users",
 
 			// Ain't nobody have access
@@ -42,6 +43,7 @@ var Default = Permissions{
 		},
 		"user": &UserRole{
 			Join:                false,
+			JoinRole:            "user",
 			JoinDisabledMessage: "You must be logged in as admin to add users",
 
 			CanBePrivate: false,
@@ -56,6 +58,7 @@ var Default = Permissions{
 		},
 		"admin": &UserRole{
 			Join:                true,
+			JoinRole:            "user",
 			JoinDisabledMessage: "Join is disabled",
 
 			CanBePrivate: true,
