@@ -157,6 +157,26 @@ func NewConfiguration() *Configuration {
 			QueryDisplayTimer: 60,
 			StatsDisplayTimer: 60 * 60 * 24,
 
+			// A limit of 10MB of data per insert is reasonable to me
+			InsertLimitBytes: 1024 * 1024 * 10,
+			// 1MB per websocket is also reasonable
+			WebsocketMessageLimitBytes: 1024 * 1024,
+
+			// The time to wait on a socket write in seconds
+			WebsocketWriteWait: 2,
+
+			// Websockets ping each other to keep the connection alive
+			// This sets the number of seconds between pings
+			WebsocketPongWait:   60,
+			WebsocketPingPeriod: 54,
+
+			// Websocket upgrader read/write buffer sizes
+			WebsocketReadBufferSize:  1024,
+			WebsocketWriteBufferSize: 1024,
+
+			// 3 messages should be enough... right?
+			WebsocketMessageBuffer: 3,
+
 			// Why not minify? Turning it off is useful for debugging - but users outnumber coders by a large margin.
 			Minify: true,
 		},
@@ -235,7 +255,8 @@ func Load(filename string) (*Configuration, error) {
 		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
-	c := NewConfiguration()
+	// Set up an empty configuration
+	c := &Configuration{}
 	err = json.Unmarshal(file, c)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())

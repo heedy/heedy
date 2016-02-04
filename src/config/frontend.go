@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/securecookie"
 )
@@ -105,6 +106,25 @@ type Frontend struct {
 	// Changing during run time does not come into effect immediately: there is a delay before the change catches on.
 	StatsDisplayTimer int64 `json:"stats_display_timer"`
 
+	// The limit in bytes per REST insert
+	InsertLimitBytes           int64 `json:"insert_limit_bytes"`
+	WebsocketMessageLimitBytes int64 `json:"websocket_message_limit_bytes"`
+
+	// The time to wait on a socket write
+	WebsocketWriteWait time.Duration `json:"websocket_write_wait"`
+
+	// Websockets ping each other to keep the connection alive
+	// This sets the number od seconds between pings
+	WebsocketPongWait   time.Duration `json:"websocket_pong_wait"`
+	WebsocketPingPeriod time.Duration `json:"websocket_ping_period"`
+
+	// The websocket read/write buffer for socket upgrader
+	WebsocketReadBufferSize  int `json:"websocket_read_buffer"`
+	WebsocketWriteBufferSize int `json:"websocket_write_buffer"`
+
+	// The number of messages to buffer
+	WebsocketMessageBuffer int64 `json:"websocket_message_buffer"`
+
 	// Minify gives us whether ConnectorDB should minify the templates that are run.
 	// At this point, only the templates hav minify support - static files are not minifed
 	Minify bool `json:"minify"`
@@ -169,6 +189,38 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 
 	if f.Domain == "" {
 		f.Domain = f.Hostname
+	}
+
+	if f.InsertLimitBytes < 100 {
+		return errors.New("The limit of single insert has to be at least 100 bytes.")
+	}
+
+	if f.WebsocketMessageLimitBytes < 100 {
+		return errors.New("The limit of a websocket message has to be at least 100 bytes.")
+	}
+
+	if f.WebsocketWriteWait < 1 {
+		return errors.New("The websocket write wait time must be at least 1 second")
+	}
+
+	if f.WebsocketPongWait < 1 {
+		return errors.New("The pong wait time for websocket must be at least 1s.")
+	}
+
+	if f.WebsocketPingPeriod < 1 {
+		return errors.New("Websocket ping period must be at least 1 second")
+	}
+
+	if f.WebsocketMessageBuffer < 1 {
+		return errors.New("The websocket message buffer must have at least one message")
+	}
+
+	if f.WebsocketWriteBufferSize < 10 {
+		return errors.New("Websocket write buffer must be at least 10 bytes")
+	}
+
+	if f.WebsocketReadBufferSize < 10 {
+		return errors.New("The websocket read buffer must be at least 10 bytes")
 	}
 
 	return nil

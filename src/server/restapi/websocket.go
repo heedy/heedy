@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package restapi
 
 import (
+	"config"
 	"connectordb/authoperator"
 	"connectordb/datastream"
 	"connectordb/messenger"
@@ -12,7 +13,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"server/restapi/restcore"
 	"server/webcore"
 	"sync"
 	"sync/atomic"
@@ -26,31 +26,14 @@ import (
 )
 
 const (
-	//The max size of a websocket message
-	messageSizeLimit = 1 * restcore.Mb
-
-	//The time allowed to write a message
-	writeWait = 2 * time.Second
-
-	//Ping pong stuff - making sure that the connection still exists
-	pongWait   = 60 * time.Second
-	pingPeriod = (pongWait * 9) / 10
-
-	//The number of messages to buffer
-	messageBuffer = 3
-
 	webSocketClosed         = "EXIT"
 	webSocketClosedNonClean = "@EXIT"
 )
 
 //The websocket upgrader
 var (
-	upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		// Allow from all origins
-		CheckOrigin: func(r *http.Request) bool { return true },
-	}
+	// upgrader is initialized in the router
+	upgrader websocket.Upgrader
 
 	//websocketWaitGroup is the WaitGroup of websockets that are currently open
 	websocketWaitGroup = sync.WaitGroup{}
@@ -138,13 +121,13 @@ func NewWebsocketConnection(o *authoperator.AuthOperator, writer http.ResponseWr
 		return nil, err
 	}
 
-	ws.SetReadLimit(messageSizeLimit)
+	ws.SetReadLimit(config.Get().WebsocketMessageLimitBytes)
 
-	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, messageBuffer), logger, o}, nil
+	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, config.Get().WebsocketMessageBuffer), logger, o}, nil
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {
-	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	c.ws.SetWriteDeadline(time.Now().Add(config.Get().WebsocketWriteWait * time.Second))
 	return c.ws.WriteJSON(obj)
 }
 
@@ -244,10 +227,10 @@ type websocketCommand struct {
 func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 
 	//Set up the heartbeat reader(makes sure that sockets are alive)
-	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetReadDeadline(time.Now().Add(config.Get().WebsocketPongWait * time.Second))
 	c.ws.SetPongHandler(func(string) error {
 		//c.logger.WithField("cmd", "PingPong").Debugln()
-		c.ws.SetReadDeadline(time.Now().Add(pongWait))
+		c.ws.SetReadDeadline(time.Now().Add(config.Get().WebsocketPongWait * time.Second))
 		return nil
 	})
 
@@ -281,7 +264,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 }
 
 func (c *WebsocketConnection) updateDeadline(messageCode int, message string) error {
-	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	c.ws.SetWriteDeadline(time.Now().Add(config.Get().WebsocketWriteWait * time.Second))
 	return c.ws.WriteMessage(messageCode, []byte(message))
 }
 
@@ -330,7 +313,7 @@ func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) erro
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
 func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan bool) {
-	ticker := time.NewTicker(pingPeriod)
+	ticker := time.NewTicker(config.Get().WebsocketPingPeriod * time.Second)
 	defer func() {
 		ticker.Stop()
 		exitchan <- true
@@ -389,7 +372,7 @@ func (c *WebsocketConnection) Run() error {
 	c.RunReader(msgchn)
 	//Wait for writer to exit, or for the exit timeout to happen
 	go func() {
-		time.Sleep(writeWait)
+		time.Sleep(config.Get().WebsocketWriteWait * time.Second)
 		exitchan <- false
 	}()
 

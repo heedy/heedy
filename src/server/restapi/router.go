@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package restapi
 
 import (
+	"config"
 	"connectordb"
 	"connectordb/authoperator"
 	"util"
@@ -13,6 +14,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 
 	"server/restapi/crud"
 	"server/restapi/feed"
@@ -83,6 +85,15 @@ func (r restcloser) Close() {
 
 //Router returns a fully formed Gorilla router given an optional prefix
 func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
+
+	// Set up the websocket upgrader
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  config.Get().WebsocketReadBufferSize,
+		WriteBufferSize: config.Get().WebsocketWriteBufferSize,
+		// Allow from all origins
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}

@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package restcore
 
 import (
+	"config"
 	"connectordb/authoperator"
 	"connectordb/datastream"
 	"encoding/json"
@@ -24,9 +25,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 )
-
-//Mb is nubmer of bytes in a megabyte
-const Mb = 1024 * 1024
 
 var (
 	//ErrInvalidName is thrown when the name is bad
@@ -93,8 +91,8 @@ func byteWriter(writer http.ResponseWriter, b []byte) {
 func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	defer request.Body.Close()
 
-	//Limit requests to 10MB
-	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 10*Mb))
+	//Limit requests to the limit given in configuration
+	data, err := ioutil.ReadAll(io.LimitReader(request.Body, config.Get().InsertLimitBytes))
 	if err != nil {
 		return err
 	}
