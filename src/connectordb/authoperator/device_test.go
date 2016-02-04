@@ -10,7 +10,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	db.Clear()
 	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
 	require.NoError(t, db.CreateUser("otheruser", "root@localhost2", "mypass", "admin", false))
-	require.NoError(t, db.CreateDevice("otheruser/testdevice"))
+	require.NoError(t, db.CreateDevice("otheruser/testdevice", false))
 	_, err := db.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 
@@ -42,7 +42,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	_, err = o.ReadDevice("otheruser/testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("otheruser/testdevice"))
-	require.Error(t, o.CreateDevice("otheruser/testdevice2"))
+	require.Error(t, o.CreateDevice("otheruser/testdevice2", false))
 	_, err = db.ReadDevice("otheruser/testdevice2")
 	require.Error(t, err)
 
@@ -53,14 +53,14 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	_, err = o.ReadDeviceByUserID(dev.UserID, "testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDeviceByID(dev.DeviceID))
-	require.Error(t, o.CreateDeviceByUserID(dev.UserID, "testdevice2"))
+	require.Error(t, o.CreateDeviceByUserID(dev.UserID, "testdevice2", false))
 
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"nickname": "test"}))
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"role": "user"}))
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"apikey": ""}))
 
 	//This user should be able to crud its own devices
-	require.NoError(t, o.CreateDevice("streamdb_test/testdevice"))
+	require.NoError(t, o.CreateDevice("streamdb_test/testdevice", false))
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
@@ -87,7 +87,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
 
 	usr, err := o.User()
-	require.NoError(t, o.CreateDeviceByUserID(usr.UserID, "testdevice"))
+	require.NoError(t, o.CreateDeviceByUserID(usr.UserID, "testdevice", false))
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
 	require.NoError(t, o.DeleteDeviceByID(dev.DeviceID))
@@ -96,8 +96,8 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 func TestAuthDeviceDeviceCrud(t *testing.T) {
 	db.Clear()
 	require.NoError(t, db.CreateUser("tstusr", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tstusr/testdevice"))
-	require.NoError(t, db.CreateDevice("tstusr/test"))
+	require.NoError(t, db.CreateDevice("tstusr/testdevice", false))
+	require.NoError(t, db.CreateDevice("tstusr/test", false))
 
 	o, err := db.AsDevice("tstusr/test")
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	_, err = o.ReadDevice("tstusr/testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("tstusr/testdevice"))
-	require.Error(t, o.CreateDevice("tstusr/testdevice2"))
+	require.Error(t, o.CreateDevice("tstusr/testdevice2", false))
 	_, err = db.ReadDevice("tstusr/testdevice2")
 	require.Error(t, err)
 

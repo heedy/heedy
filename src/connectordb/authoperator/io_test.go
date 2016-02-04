@@ -11,7 +11,7 @@ func TestAuthStreamIO(t *testing.T) {
 	db.Clear()
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
 
 	o, err := db.AsDevice("tst/tst")
 	require.NoError(t, err)
@@ -92,8 +92,8 @@ func TestAuthSubstream(t *testing.T) {
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
-	require.NoError(t, db.CreateDevice("tst/tst2"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
+	require.NoError(t, db.CreateDevice("tst/tst2", false))
 	require.NoError(t, db.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
 	_, err := db.ReadStream("tst/tst2/tst")
 	require.NoError(t, err)

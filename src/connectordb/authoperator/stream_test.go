@@ -12,9 +12,9 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.Error(t, err)
 
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/testdevice"))
+	require.NoError(t, db.CreateDevice("tst/testdevice", false))
 
-	require.NoError(t, db.CreateDevice("tst/testdevice2"))
+	require.NoError(t, db.CreateDevice("tst/testdevice2", false))
 	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
 
 	o, err := db.AsDevice("tst/testdevice")

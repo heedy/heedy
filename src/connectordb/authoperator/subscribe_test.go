@@ -14,8 +14,8 @@ func TestAuthSubscribe(t *testing.T) {
 	db.Clear()
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
-	require.NoError(t, db.CreateDevice("tst/tst2"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
+	require.NoError(t, db.CreateDevice("tst/tst2", false))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
 	// Make sure we can't subscribe to streams we have no access to
