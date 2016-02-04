@@ -15,7 +15,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//Authenticator runs an auth check and either goes to the www template given or to the apifunc handler
+// Authenticator runs an auth check and either goes to the www template given or to the apifunc handler
+// The only difference here is that the apihandler can return -1 for its log level to instead return the file
+// template (as if no login ever happened)
 func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectordb.Database) http.HandlerFunc {
 	funcname := webcore.GetFuncName(apifunc)
 	qtimer := webcore.GetQueryTimer(funcname)
@@ -48,21 +50,28 @@ func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectord
 		defer atomic.AddInt32(&webcore.StatsActive, -1)
 
 		o, err := webcore.Authenticate(db, request)
-		if err == nil && o.Name() != "nobody" {
+		if err == nil {
 			//There is a user logged in
 			l := logger.WithField("dev", o.Name())
 
-			//Only count valid web queries
-			atomic.AddUint32(&webcore.StatsWebQueries, 1)
+			loglevelOrBacktrack, txt := apifunc(o, writer, request, l)
 
-			loglevel, txt := apifunc(o, writer, request, l)
+			// If -1 is returned, then a "backtrack" is requested, meaning that
+			// we use the template. This is used for nobody (when nobody has no access to
+			// a certain user/device/stream, backtrack is used to write the template)
+			if loglevelOrBacktrack != -1 {
 
-			//Find the time that this query took
-			tdiff := time.Since(tstart)
-			qtimer.Add(tdiff)
+				//Only count valid web queries
+				atomic.AddUint32(&webcore.StatsWebQueries, 1)
 
-			webcore.LogRequest(l, loglevel, txt, tdiff)
-			return
+				//Find the time that this query took
+				tdiff := time.Since(tstart)
+				qtimer.Add(tdiff)
+
+				webcore.LogRequest(l, loglevelOrBacktrack, txt, tdiff)
+				return
+			}
+			// If we get here, backtrack was requested. Pretend the user was not logged in
 		}
 
 		//If we got here, the user is not logged in. We therefore execute the "www" template given

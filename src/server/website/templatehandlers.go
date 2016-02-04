@@ -58,6 +58,10 @@ func GetTemplateData(o *authoperator.AuthOperator) (*TemplateData, error) {
 
 //Index reads the index
 func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	if o.Name() == "nobody" {
+		// Nobody does not have access to the logged in index page
+		return -1, ""
+	}
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -80,6 +84,7 @@ func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *ht
 
 //User reads the given user
 func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -87,10 +92,18 @@ func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *htt
 
 	td.User, err = o.ReadUser(mux.Vars(request)["user"])
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 	td.Devices, err = o.ReadAllDevicesByUserID(td.User.UserID)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 
@@ -108,15 +121,27 @@ func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *h
 	usr := mux.Vars(request)["user"]
 	td.User, err = o.ReadUser(usr)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 	dev := usr + "/" + mux.Vars(request)["device"]
 	td.Device, err = o.ReadDevice(dev)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 	td.Streams, err = o.ReadAllStreamsByDeviceID(td.Device.DeviceID)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 
@@ -134,16 +159,28 @@ func Stream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *h
 	usr := mux.Vars(request)["user"]
 	td.User, err = o.ReadUser(usr)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 	dev := usr + "/" + mux.Vars(request)["device"]
 	td.Device, err = o.ReadDevice(dev)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 	strm := dev + "/" + mux.Vars(request)["stream"]
 	td.Stream, err = o.ReadStream(strm)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return LoggedIn404(o, writer, logger, err)
 	}
 

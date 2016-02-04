@@ -122,6 +122,12 @@ func (c *ConfigurationLoader) Reload() error {
 		return err
 	}
 
+	// Set the global permissions
+	err = permissions.SetPath(cfg.Permissions)
+	if err != nil {
+		return err
+	}
+
 	c.Watcher.Lock()
 	c.Config = cfg
 	c.Watcher.Unlock()

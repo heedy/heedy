@@ -11,7 +11,7 @@ import (
 // CountDevices returns the total number of users of the entire database
 func (a *AuthOperator) CountDevices() (int64, error) {
 	perm := pconfig.Get()
-	usr, dev, err := a.getUserAndDevice()
+	usr, dev, err := a.UserAndDevice()
 	if err != nil {
 		return 0, err
 	}

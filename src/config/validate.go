@@ -7,6 +7,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"config/permissions"
 
@@ -53,6 +54,13 @@ func (c *Configuration) Validate() error {
 	p, err := permissions.Load(c.Permissions)
 	if err != nil {
 		return err
+	}
+	// Set the absolute path if not default
+	if c.Permissions != "default" {
+		c.Permissions, err = filepath.Abs(c.Permissions)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Check that the initial user permissions exist if given

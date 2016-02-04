@@ -85,9 +85,9 @@ func (a *AuthOperator) AdminOperator() operator.PathOperator {
 	return a.Operator.AdminOperator()
 }
 
-// getUserAndDevice returns both the current user AND the current device
+// UserAndDevice returns both the current user AND the current device
 // it is just there to simplify our work
-func (a *AuthOperator) getUserAndDevice() (*users.User, *users.Device, error) {
+func (a *AuthOperator) UserAndDevice() (*users.User, *users.Device, error) {
 	dev, err := a.Device()
 	if err != nil {
 		return nil, nil, err
@@ -98,7 +98,7 @@ func (a *AuthOperator) getUserAndDevice() (*users.User, *users.Device, error) {
 
 // getAccessLevels gets the access levels for the current user/device combo
 func (a *AuthOperator) getAccessLevels(userID int64, ispublic, issself bool) (*pconfig.Permissions, *users.User, *users.Device, *pconfig.AccessLevel, *pconfig.AccessLevel, error) {
-	u, d, err := a.getUserAndDevice()
+	u, d, err := a.UserAndDevice()
 	if err != nil {
 		return nil, nil, nil, nil, nil, permissions.ErrNoAccess
 	}
@@ -110,7 +110,7 @@ func (a *AuthOperator) getAccessLevels(userID int64, ispublic, issself bool) (*p
 
 // getDeviceAccessLevels is same as getAccessLevels, but it is given a deviceID
 func (a *AuthOperator) getDeviceAccessLevels(deviceID int64) (*pconfig.Permissions, *users.Device, *users.User, *users.Device, *pconfig.AccessLevel, *pconfig.AccessLevel, error) {
-	selfuser, selfdevice, err := a.getUserAndDevice()
+	selfuser, selfdevice, err := a.UserAndDevice()
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
