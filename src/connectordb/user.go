@@ -55,6 +55,7 @@ func (db *Database) CreateUser(name, email, password, role string, public bool) 
 	}
 
 	return db.Userdb.CreateUser(name, email, password, role, public, perm.MaxUsers)
+
 }
 
 // ReadUserByID reads the user object by ID given

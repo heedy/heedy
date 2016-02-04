@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nu7hatch/gouuid"
 )
@@ -63,7 +64,7 @@ func (d *Device) ValidityCheck() error {
 
 // CreateDevice adds a device to the system given its owner and name.
 // returns the last inserted id
-func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID, devicelimit int64) error {
+func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
 	APIKey, _ := uuid.NewV4()
 
 	if !IsValidName(Name) {
@@ -83,8 +84,13 @@ func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID, devicelimit int
 	_, err := userdb.Exec(`INSERT INTO Devices
 		(	Name,
 			APIKey,
-			UserID)
-			VALUES (?,?,?)`, Name, APIKey.String(), UserID)
+			UserID,
+			Public)
+			VALUES (?,?,?,?)`, Name, APIKey.String(), UserID, public)
+
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("Device with this name already exists")
+	}
 
 	return err
 }

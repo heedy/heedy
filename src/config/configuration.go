@@ -35,13 +35,11 @@ https://github.com/connectordb/connectordb/blob/master/src/config/configuration.
 Particular configuration options:
 frontend options: https://github.com/connectordb/connectordb/blob/master/src/config/frontend.go
 	These are the options that pertain to the ConnectorDB server (REST API, web, request logging)
-permissions: https://github.com/connectordb/connectordb/blob/master/src/config/permissions.go
+permissions: https://github.com/connectordb/connectordb/blob/master/src/config/permissions/permissions.go
 	The permissions and access levels for each user type. All user types in the database are required.
-access_levels: https://github.com/connectordb/connectordb/blob/master/src/config/accesslevel.go
-	Specific access levels, which specify detailed read/write permissions
+	"default" is the built in permission - a separate permissions file is optional
 
-The configuration file supports javascript style comments. Comments are not inserted by default in this version
-of ConnectorDB, because the JSON is generated automatically (it includes several custom values, such as auto-generated keys)
+The configuration file supports javascript style comments.
 
 Several options support live reload. Changing them in the configuration file will automatically update the corresponding setting
 in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any message).

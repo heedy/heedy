@@ -47,8 +47,7 @@ type Permissions struct {
 	// The email suffixes that are permitted during user creation
 	AllowedEmailSuffixes []string `json:"allowed_email_suffixes"`
 
-	// The maximum number of users to allow. 0 means don't allow any new users, and -1 means unlimited
-	// number of users
+	// The maximum number of users to allow. 0 means unlimited number of users
 	MaxUsers int64 `json:"max_users"`
 
 	// The specific permissions granted to different user types.

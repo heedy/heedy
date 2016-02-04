@@ -20,9 +20,9 @@ func TestDevice(t *testing.T) {
 
 	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
 
-	require.Error(t, db.CreateDevice("nouser/mydevice"))
-	require.NoError(t, db.CreateDevice("myuser/mydevice"))
-	require.Error(t, db.CreateDevice("myuser/mydevice"))
+	require.Error(t, db.CreateDevice("nouser/mydevice", false))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
+	require.Error(t, db.CreateDevice("myuser/mydevice", false))
 
 	u, err = db.ReadDevice("myuser/mydevice")
 	require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestDevice(t *testing.T) {
 
 	require.Error(t, db.DeleteDevice("myuser/mydevice"))
 
-	require.NoError(t, db.CreateDevice("myuser/mydevice"))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
 	u, err = db.ReadDevice("myuser/mydevice")
 	require.NoError(t, err)
 	require.NoError(t, db.DeleteUser("myuser"))
@@ -50,7 +50,7 @@ func TestDeviceUpdate(t *testing.T) {
 	db := Tdb
 
 	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
-	require.NoError(t, db.CreateDevice("myuser/mydevice"))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
 
 	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"name": "lol"}))
 	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"role": "rawr"}))

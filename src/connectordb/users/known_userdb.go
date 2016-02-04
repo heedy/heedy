@@ -19,7 +19,7 @@ type KnownUserdb struct {
 func (userdb *KnownUserdb) Clear() {
 }
 
-func (userdb *KnownUserdb) CreateDevice(Name string, UserID, devlimit int64) error {
+func (userdb *KnownUserdb) CreateDevice(Name string, UserID int64, public bool, devlimit int64) error {
 	return nil
 }
 

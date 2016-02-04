@@ -18,7 +18,7 @@ func TestStreamTransform(t *testing.T) {
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "number"}`))
 
 	data := datastream.DatapointArray{
@@ -77,7 +77,7 @@ func TestStreamIO(t *testing.T) {
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
 	//Now make sure that length is 0

@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/josephlewis42/multicache"
 )
@@ -117,6 +118,9 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Schema string, DeviceID int64,
 			Schema,
 			DeviceID) VALUES (?,?,?);`, Name, Schema, DeviceID)
 
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("Stream with this name already exists")
+	}
 	return err
 }
 

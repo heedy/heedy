@@ -32,8 +32,14 @@ type userCreator struct {
 //CreateUser creates a new user from a REST API request
 func CreateUser(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	usrname := mux.Vars(request)["user"]
+
+	err := restcore.ValidName(usrname, nil)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
+
 	var a userCreator
-	err := restcore.UnmarshalRequest(request, &a)
+	err = restcore.UnmarshalRequest(request, &a)
 
 	if err = o.CreateUser(usrname, a.Email, a.Password, a.Role, a.Public); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)

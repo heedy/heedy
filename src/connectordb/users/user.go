@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
+	"strings"
 )
 
 var (
@@ -106,20 +107,20 @@ func (u *User) UpgradePassword(password string) bool {
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
 func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Public bool, userlimit int64) error {
+	/*
+		existing, err := userdb.readByNameOrEmail(Name, Email)
 
-	existing, err := userdb.readByNameOrEmail(Name, Email)
+		if err == nil {
+			// Check for existence of user to provide helpful notices
 
-	if err == nil {
-		// Check for existence of user to provide helpful notices
+			switch {
+			case existing.Email == Email:
+				return ErrEmailExists
+			case existing.Name == Name:
+				return ErrUsernameExists
 
-		switch {
-		case existing.Email == Email:
-			return ErrEmailExists
-		case existing.Name == Name:
-			return ErrUsernameExists
-
-		}
-	}
+			}
+		}*/
 
 	switch {
 	case !IsValidName(Name):
@@ -154,6 +155,10 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Pu
 		salt,
 		hashtype,
 		Role, Public)
+
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("User with this email or username already exists")
+	}
 
 	return err
 }

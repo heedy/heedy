@@ -88,6 +88,10 @@ func (pl *PermissionsLoader) Reload() error {
 	pl.Permissions = p
 	pl.Watcher.Unlock()
 
+	if !p.Watch {
+		pl.Close() // This will still keep the permissions themselves in memory
+	}
+
 	return nil
 }
 

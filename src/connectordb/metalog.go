@@ -138,8 +138,8 @@ func (m MetaLog) DeleteUserByID(userID int64) error {
 	}
 	return err
 }
-func (m MetaLog) CreateDeviceByUserID(userID int64, devicename string) error {
-	err := m.Operator.CreateDeviceByUserID(userID, devicename)
+func (m MetaLog) CreateDeviceByUserID(userID int64, devicename string, public bool) error {
+	err := m.Operator.CreateDeviceByUserID(userID, devicename, public)
 	if err == nil {
 		d, err := m.AdminOperator().ReadDeviceByUserID(userID, devicename)
 		if err == nil {

@@ -39,7 +39,7 @@ type Operator interface {
 	DeleteUserByID(userID int64) error
 
 	ReadAllDevicesByUserID(userID int64) ([]*users.Device, error)
-	CreateDeviceByUserID(userID int64, devicename string) error
+	CreateDeviceByUserID(userID int64, devicename string, public bool) error
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
 	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
 	UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error

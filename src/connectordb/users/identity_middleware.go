@@ -15,8 +15,8 @@ func (userdb *IdentityMiddleware) Clear() {
 	userdb.UserDatabase.Clear()
 }
 
-func (userdb *IdentityMiddleware) CreateDevice(Name string, UserID, devicelimit int64) error {
-	return userdb.UserDatabase.CreateDevice(Name, UserID, devicelimit)
+func (userdb *IdentityMiddleware) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
+	return userdb.UserDatabase.CreateDevice(Name, UserID, public, devicelimit)
 }
 
 func (userdb *IdentityMiddleware) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {

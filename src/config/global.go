@@ -128,6 +128,10 @@ func (c *ConfigurationLoader) Reload() error {
 		return err
 	}
 
+	if !cfg.Watch {
+		c.Close() // This will still keep the permissions themselves in memory
+	}
+
 	c.Watcher.Lock()
 	c.Config = cfg
 	c.Watcher.Unlock()

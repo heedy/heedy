@@ -21,7 +21,7 @@ type PathOperator interface {
 	DeleteUser(username string) error
 
 	ReadUserDevices(username string) ([]*users.Device, error)
-	CreateDevice(devicepath string) error
+	CreateDevice(devicepath string, public bool) error
 	ReadDevice(devicepath string) (*users.Device, error)
 	UpdateDevice(devicepath string, updates map[string]interface{}) error
 	DeleteDevice(devicepath string) error

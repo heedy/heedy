@@ -38,7 +38,9 @@ func CreateDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	if err = o.CreateDevice(devpath); err != nil {
+	publics := request.URL.Query().Get("public")
+
+	if err = o.CreateDevice(devpath, publics == "true"); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 

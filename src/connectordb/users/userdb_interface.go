@@ -13,7 +13,7 @@ directly, or it can be wrapped to include caching or logging.
 **/
 type UserDatabase interface {
 	// User/Device/Stream limits are in config. The UserDatabase does not have access to the config
-	CreateDevice(Name string, UserID, DeviceLimit int64) error
+	CreateDevice(Name string, UserID int64, public bool, DeviceLimit int64) error
 	CreateStream(Name, Type string, DeviceID, StreamLimit int64) error
 	CreateUser(Name, Email, Password, Permissions string, Public bool, UserLimit int64) error
 	DeleteDevice(Id int64) error

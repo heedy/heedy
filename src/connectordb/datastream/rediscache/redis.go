@@ -86,13 +86,13 @@ const (
 		-- Check to make sure we don't go over the size limits for device and stream
 		if (ARGV[7] ~= '0') then
 			local device_size = tonumber(redis.call('hget',KEYS[2], 'size')) or 0
-			if (device_size + tonumber(ARGV[6]) > ARGV[7]) then
+			if (device_size + tonumber(ARGV[6]) > tonumber(ARGV[7])) then
 				return {["err"]="Insert Failed: Exceeded device size limit"}
 			end
 		end
 		if (ARGV[8] ~= '0') then
 			local stream_size = tonumber(redis.call('hget',KEYS[2], 'size:' .. ARGV[1])) or 0
-			if (stream_size + tonumber(ARGV[6]) > ARGV[8]) then
+			if (stream_size + tonumber(ARGV[6]) > tonumber(ARGV[8])) then
 				return {["err"]="Insert Failed: Exceeded stream size limit"}
 			end
 		end

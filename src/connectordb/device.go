@@ -10,11 +10,15 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
-func (db *Database) checkIfAddingDeviceWillExceedPrivateLimit(userID int64) (int64, error) {
+func (db *Database) checkIfAddingDeviceWillExceedPrivateLimit(public bool, userID int64) (int64, error) {
+	var devs []*users.Device
 	perm := pconfig.Get()
 	u, err := db.ReadUserByID(userID)
 	if err != nil {
 		return 0, err
+	}
+	if !u.Public && public {
+		return 0, errors.New("Can't make private user have public device")
 	}
 
 	r := permissions.GetUserRole(perm, u)
@@ -22,8 +26,8 @@ func (db *Database) checkIfAddingDeviceWillExceedPrivateLimit(userID int64) (int
 	// There are two devices by default: user and meta.
 	// TODO: This should really be done all in a transaction on sql side, but we don't have time
 	// to implement that now
-	if r.MaxPrivateDevices > 0 {
-		devs, err := db.ReadAllDevicesByUserID(userID)
+	if r.MaxPrivateDevices > 0 && !public {
+		devs, err = db.ReadAllDevicesByUserID(userID)
 		if err != nil {
 			return r.MaxDevices, err
 		}
@@ -38,11 +42,14 @@ func (db *Database) checkIfAddingDeviceWillExceedPrivateLimit(userID int64) (int
 			return r.MaxDevices, errors.New("Exceeded maximum number of private devices for user")
 		}
 
-		// Just in case
+		// Just in case - Note that this is checked in userdb when creating a device!
+		// we don't use >= because it is also used in updatedevice!
 		if int64(len(devs)) > r.MaxDevices {
 			return r.MaxDevices, errors.New("Exceeded maximum number of devices for user")
 		}
 	}
+
+	//
 	return r.MaxDevices, nil
 }
 
@@ -58,13 +65,14 @@ func (db *Database) ReadAllDevicesByUserID(userID int64) ([]*users.Device, error
 
 // CreateDeviceByUserID creates a new device for the given user. It ensures that the permitted number
 // of devices is not exceeded
-func (db *Database) CreateDeviceByUserID(userID int64, devicename string) error {
-	maxdev, err := db.checkIfAddingDeviceWillExceedPrivateLimit(userID)
+func (db *Database) CreateDeviceByUserID(userID int64, devicename string, public bool) error {
+
+	maxdev, err := db.checkIfAddingDeviceWillExceedPrivateLimit(public, userID)
 	if err != nil {
 		return err
 	}
 
-	return db.Userdb.CreateDevice(devicename, userID, maxdev)
+	return db.Userdb.CreateDevice(devicename, userID, public, maxdev)
 }
 
 // ReadDeviceByID reads the given device
@@ -98,7 +106,8 @@ func (db *Database) UpdateDeviceByID(deviceID int64, updates map[string]interfac
 	}
 
 	if !d.Public && waspublic {
-		_, err = db.checkIfAddingDeviceWillExceedPrivateLimit(d.UserID)
+		// Changing to private is same as adding a new private device
+		_, err = db.checkIfAddingDeviceWillExceedPrivateLimit(false, d.UserID)
 		if err != nil {
 			return err
 		}

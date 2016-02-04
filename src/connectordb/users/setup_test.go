@@ -88,7 +88,7 @@ func CreateTestUser(testdb UserDatabase) (*User, error) {
 
 func CreateTestDevice(testdb UserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
-	err := testdb.CreateDevice(name, usr.UserID, 0)
+	err := testdb.CreateDevice(name, usr.UserID, false, 0)
 	if err != nil {
 		return nil, err
 	}

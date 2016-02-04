@@ -47,8 +47,8 @@ func TestMiddlewareCreateDevice(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateDevice("", 0, 0)
-		baseError := testcase.Base.CreateDevice("", 0, 0)
+		testError := testCounter.CreateDevice("", 0, false, 0)
+		baseError := testcase.Base.CreateDevice("", 0, false, 0)
 
 		numCalls := testCounter.GetNumberOfCalls()
 

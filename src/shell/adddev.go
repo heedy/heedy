@@ -26,7 +26,7 @@ func init() {
 		}
 
 		path := args[1]
-		err := shell.operator.CreateDevice(path)
+		err := shell.operator.CreateDevice(path, false)
 
 		if shell.PrintError(err) {
 			return 1

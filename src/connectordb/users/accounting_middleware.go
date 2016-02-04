@@ -19,9 +19,9 @@ func (userdb *AccountingMiddleware) GetNumberOfCalls() uint64 {
 	return atomic.LoadUint64(&userdb.databaseCalls)
 }
 
-func (userdb *AccountingMiddleware) CreateDevice(Name string, UserID, devicelimit int64) error {
+func (userdb *AccountingMiddleware) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateDevice(Name, UserID, devicelimit)
+	return userdb.UserDatabase.CreateDevice(Name, UserID, public, devicelimit)
 }
 
 func (userdb *AccountingMiddleware) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {

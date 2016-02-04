@@ -19,7 +19,7 @@ func TestSubscribe(t *testing.T) {
 
 	//Let's create a stream
 	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst"))
+	require.NoError(t, db.CreateDevice("tst/tst", false))
 	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
 
 	recvchan := make(chan messenger.Message, 2)

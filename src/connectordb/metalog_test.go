@@ -38,7 +38,7 @@ func TestUserlog(t *testing.T) {
 		recvchan <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
 	}()
 
-	o.CreateDevice("streamdb_test/mydevice")
+	o.CreateDevice("streamdb_test/mydevice", false)
 	ensureUserlog(t, <-recvchan, "CreateDevice", "streamdb_test/mydevice")
 
 	o.UpdateDevice("streamdb_test/mydevice", map[string]interface{}{"nickname": "hiah"})

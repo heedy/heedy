@@ -19,7 +19,7 @@ type ErrorUserdb struct {
 func (userdb *ErrorUserdb) Clear() {
 }
 
-func (userdb *ErrorUserdb) CreateDevice(Name string, UserID, devicelimit int64) error {
+func (userdb *ErrorUserdb) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
 	return ErrorUserdbError
 }
 
