@@ -41,7 +41,7 @@ func WriteAccessControlHeaders(writer http.ResponseWriter, request *http.Request
 	if AllowCrossOrigin {
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 	} else {
-		//writer.Header().Set("Access-Control-Allow-Origin", SiteName)
+		writer.Header().Set("Access-Control-Allow-Origin", SiteName)
 	}
 	//Only set allow credentials if the origin is the site name
 	originheader := request.Header.Get("Origin")
