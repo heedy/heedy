@@ -23,48 +23,92 @@ type TemplateData struct {
 	Device *users.Device
 	Stream *users.Stream
 
-	//When given a user or device, the user's Devices and device's Streams
-	// are also exposed. When giving Index,
-	//	both the current user's devices and current user's user device's streams
-	//	are sent
-	Devices []users.Device
-	Streams []users.Stream
-
 	//And some extra status info
 	Status string
 	Ref    string
 
 	//The Database Version
 	Version string
+
+	// The operator that this TemplateData uses.
+	operator operator.Operator
 }
 
 //GetTemplateData initializes the template
-func GetTemplateData(o operator.Operator) (*TemplateData, error) {
+func GetTemplateData(o operator.Operator, request *http.Request) (*TemplateData, error) {
 	thisU, err := o.User()
 	if err != nil {
 		return nil, err
 	}
+
 	thisD, err := o.Device()
-	return &TemplateData{
+	if err != nil {
+		return nil, err
+	}
+
+	// Partially construct the data
+	td := &TemplateData{
 		ThisUser:   thisU,
 		ThisDevice: thisD,
 		Version:    connectordb.Version,
-	}, err
+		operator:   o,
+	}
+
+	// Now grab the session vars if they exist
+	var usr, dev, stream string
+	var ok bool
+
+	if usr, ok = mux.Vars(request)["user"]; ok {
+		td.User, err = o.ReadUser(usr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if dev, ok = mux.Vars(request)["device"]; ok {
+		dev = usr + "/" + dev
+
+		td.Device, err = o.ReadDevice(dev)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if stream, ok = mux.Vars(request)["stream"]; ok {
+		stream = dev + "/" + stream
+
+		td.Stream, err = o.ReadStream(stream)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return td, err
+}
+
+// Reads the devices for the user requesting the page
+func (t *TemplateData) ReadMyDevices() (out []users.Device, err error) {
+	return t.operator.ReadAllDevicesByUserID(t.ThisUser.UserId)
+}
+
+// Reads the streams for the user requesting the page
+func (t *TemplateData) ReadMyStreams() (out []users.Stream, err error) {
+	return t.operator.ReadAllStreamsByDeviceID(t.ThisDevice.DeviceId)
+}
+
+// Reads the devices for the page's user
+func (t *TemplateData) ReadDevices() (out []users.Device, err error) {
+	return t.operator.ReadAllDevicesByUserID(t.User.UserId)
+}
+
+// Reads the streams for the page's device
+func (t *TemplateData) ReadStreams() (out []users.Stream, err error) {
+	return t.operator.ReadAllStreamsByDeviceID(t.Device.DeviceId)
 }
 
 //Index reads the index
 func Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	td, err := GetTemplateData(o)
-	if err != nil {
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
-	}
-
-	td.Devices, err = o.ReadAllDevicesByUserID(td.ThisUser.UserId)
-	if err != nil {
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
-	}
-
-	td.Streams, err = o.ReadAllStreamsByDeviceID(td.ThisDevice.DeviceId)
+	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
@@ -76,18 +120,9 @@ func Index(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 
 //User reads the given user
 func User(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	td, err := GetTemplateData(o)
+	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
-	}
-
-	td.User, err = o.ReadUser(mux.Vars(request)["user"])
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
-	}
-	td.Devices, err = o.ReadAllDevicesByUserID(td.User.UserId)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -97,23 +132,9 @@ func User(o operator.Operator, writer http.ResponseWriter, request *http.Request
 
 //Device reads the given device
 func Device(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	td, err := GetTemplateData(o)
+	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
-	}
-	usr := mux.Vars(request)["user"]
-	td.User, err = o.ReadUser(usr)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
-	}
-	dev := usr + "/" + mux.Vars(request)["device"]
-	td.Device, err = o.ReadDevice(dev)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
-	}
-	td.Streams, err = o.ReadAllStreamsByDeviceID(td.Device.DeviceId)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -123,24 +144,9 @@ func Device(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 
 //Stream reads the given stream
 func Stream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
-	td, err := GetTemplateData(o)
+	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
-	}
-	usr := mux.Vars(request)["user"]
-	td.User, err = o.ReadUser(usr)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
-	}
-	dev := usr + "/" + mux.Vars(request)["device"]
-	td.Device, err = o.ReadDevice(dev)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
-	}
-	strm := dev + "/" + mux.Vars(request)["stream"]
-	td.Stream, err = o.ReadStream(strm)
-	if err != nil {
-		return LoggedIn404(o, writer, logger, err)
 	}
 
 	writer.WriteHeader(http.StatusOK)

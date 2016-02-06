@@ -2,7 +2,6 @@ package website
 
 import (
 	"connectordb"
-	"connectordb/operator"
 	"net/http"
 	"server/webcore"
 
@@ -44,6 +43,7 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 	return webcore.INFO, ""
 }
 
+/**
 // LoggedIn404 sets up the 404 page for a logged in user. This is not an error page, since
 // it is usually referring to a permissions error
 func LoggedIn404(o operator.Operator, writer http.ResponseWriter, logger *log.Entry, oerr error) (int, string) {
@@ -63,6 +63,7 @@ func LoggedIn404(o operator.Operator, writer http.ResponseWriter, logger *log.En
 
 	return webcore.DEBUG, "404"
 }
+**/
 
 //NotFoundHandler handles all pages that were not found by writing the 404 templates
 func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {

@@ -144,10 +144,10 @@ func LoadFiles() error {
 		return err
 	}
 	WWWPath = path.Join(exefolder, WWWPrefix)
-	log.Debugf("Hosting www from '%s'", WWWPath)
+	log.Infof("Hosting www from '%s'", WWWPath)
 
 	AppPath = path.Join(exefolder, AppPrefix)
-	log.Debugf("Hosting app from '%s'", AppPath)
+	log.Infof("Hosting app from '%s'", AppPath)
 
 	WWWIndex, err = NewFileTemplate(path.Join(WWWPath, "index.html"), err)
 	WWWLogin, err = NewFileTemplate(path.Join(WWWPath, "login.html"), err)
