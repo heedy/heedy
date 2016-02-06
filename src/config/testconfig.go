@@ -31,6 +31,7 @@ var TestConfiguration = func() Configuration {
 	c.InitialUsername = "test"
 	c.InitialUserEmail = "test@localhost"
 	c.InitialUserPassword = "test"
+	c.InitialUserRole = "admin"
 
 	c.BatchSize = 250
 	c.ChunkSize = 1

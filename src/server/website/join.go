@@ -7,7 +7,8 @@ package website
 import (
 	"config"
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
+	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"encoding/json"
 	"errors"
@@ -18,6 +19,8 @@ import (
 	"server/restapi/restcore"
 	"server/webcore"
 	"time"
+
+	pconfig "config/permissions"
 )
 
 type recaptchaResponse struct {
@@ -48,49 +51,49 @@ func VerifyCaptcha(response string) (bool, error) {
 	return rr.Success, nil
 }
 
-func checkIfJoinAllowed(request *http.Request) error {
+func checkIfJoinAllowed(request *http.Request) (*pconfig.UserRole, error) {
 	if !webcore.IsActive {
-		return errors.New("ConnectorDB is currently disabled.")
+		return nil, errors.New("ConnectorDB is currently disabled.")
 	}
-	joinpermissions := "nobody"
+
 	// First check if the user is authenticated (ie, a user is trying to add another user)
 	o, err := webcore.Authenticate(Database, request)
-	if err == nil {
-		// Auth succeeded! See if we are admin or user
-		u, err := o.User()
-		if err == nil {
-			if u.Admin {
-				joinpermissions = "admin"
-			} else {
-				joinpermissions = "user"
-			}
-		}
-
+	if err != nil {
+		return nil, err
 	}
-	cfg := config.Get()
-	if !cfg.Permissions[joinpermissions].Join {
-		return errors.New(cfg.Permissions[joinpermissions].JoinDisabledMessage)
+	u, err := o.User()
+	if err != nil {
+		return nil, err
 	}
 
-	if cfg.MaxUsers >= 0 {
+	// We now have an operator which has join permissions - extract them!
+
+	perm := pconfig.Get()
+	r := permissions.GetUserRole(perm, u)
+	if !r.Join {
+		return r, errors.New(r.JoinDisabledMessage)
+	}
+
+	// Show a message if max users is reached
+	if perm.MaxUsers >= 0 {
 		unum, err := Database.Userdb.CountUsers()
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if uint64(cfg.MaxUsers) <= unum {
-			return errors.New("The maximum number of users has been reached.")
+		if perm.MaxUsers <= unum {
+			return nil, errors.New("The maximum number of users has been reached.")
 		}
 	}
 
 	// Joining is allowed
-	return nil
+	return r, nil
 }
 
 // JoinHandleGET handles joining ConnectorDB - the frontend of joining (ie GET)
 func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 	tstart := time.Now()
 	logger := webcore.GetRequestLogger(request, "join")
-	err := checkIfJoinAllowed(request)
+	_, err := checkIfJoinAllowed(request)
 	msg := ""
 	if err != nil {
 		msg = err.Error()
@@ -108,6 +111,7 @@ func JoinHandleGET(writer http.ResponseWriter, request *http.Request) {
 	webcore.LogRequest(logger, webcore.DEBUG, msg, time.Since(tstart))
 }
 
+// JoinStream is the structure used to encode a stream used for join
 type JoinStream struct {
 	Name        string      `json:"name"`
 	Nickname    string      `json:"nickname"`
@@ -116,6 +120,8 @@ type JoinStream struct {
 	Schema      interface{} `json:"schema"`
 }
 
+// Joiner is the struct sent in when POST to join, which creates the desired user structure.
+// All streams described here are created under the user device
 type Joiner struct {
 	Captcha  string       `json:"captcha"`
 	Name     string       `json:"name"`
@@ -123,6 +129,7 @@ type Joiner struct {
 	Email    string       `json:"email"`
 	Password string       `json:"password"`
 	Icon     string       `json:"icon"`
+	Public   bool         `json:"public"`
 	Streams  []JoinStream `json:"streams"`
 }
 
@@ -136,11 +143,11 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 	var usr *users.User
 	var dev *users.Device
 	var strm *users.Stream
-	var uo operator.Operator
+	var uo *authoperator.AuthOperator
 	logger := webcore.GetRequestLogger(request, "JOIN")
 
 	// First check if join is allowed at all
-	err := checkIfJoinAllowed(request)
+	role, err := checkIfJoinAllowed(request)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 		return
@@ -165,9 +172,8 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	}
-	db := operator.NewOperator(Database)
 	// OK - now set up the user
-	err = db.CreateUser(j.Name, j.Email, j.Password)
+	err = Database.CreateUser(j.Name, j.Email, j.Password, role.JoinRole, j.Public)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return
@@ -175,24 +181,24 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 
 	// Now update the user with nickname/icon
 
-	usr, err = db.ReadUser(j.Name)
+	usr, err = Database.ReadUser(j.Name)
 	if err != nil {
 		goto errfail
 	}
 	usr.Nickname = j.Nickname
 	usr.Icon = j.Icon
-	err = db.UpdateUser(usr)
+	err = Database.UpdateUser(j.Name, map[string]interface{}{"icon": j.Icon, "nickname": j.Nickname})
 	if err != nil {
-		db.DeleteUser(j.Name)
+		Database.DeleteUser(j.Name)
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return
 	}
 
 	// Now create the streams using the user's operator
-	uo, err = operator.NewUserOperator(Database, j.Name)
+	uo, err = Database.AsUser(j.Name)
 
 	// Now create the streams
-	dev, err = uo.ReadDeviceByUserID(usr.UserId, "user")
+	dev, err = uo.ReadDeviceByUserID(usr.UserID, "user")
 	if err != nil {
 		goto errfail
 	}
@@ -202,22 +208,19 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 			goto errfail
 		}
 
-		err = uo.CreateStreamByDeviceID(dev.DeviceId, j.Streams[i].Name, string(schema))
+		err = uo.CreateStreamByDeviceID(dev.DeviceID, j.Streams[i].Name, string(schema))
 		if err != nil {
 			goto errfail
 		}
 
 		// Now update the stream with the extra values
-		strm, err = uo.ReadStreamByDeviceID(dev.DeviceId, j.Streams[i].Name)
+		strm, err = uo.ReadStreamByDeviceID(dev.DeviceID, j.Streams[i].Name)
 		if err != nil {
 			goto errfail
 		}
 
-		strm.Nickname = j.Streams[i].Nickname
-		strm.Icon = j.Streams[i].Icon
-		strm.Description = j.Streams[i].Description
-
-		err = uo.UpdateStream(strm)
+		err = uo.UpdateStreamByID(strm.StreamID, map[string]interface{}{"nickname": j.Streams[i].Nickname,
+			"icon": j.Streams[i].Icon, "description": j.Streams[i].Description})
 		if err != nil {
 			goto errfail
 		}
@@ -230,7 +233,7 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 	return
 
 errfail:
-	db.DeleteUser(j.Name)
+	Database.DeleteUser(j.Name)
 	restcore.WriteError(writer, logger, http.StatusInternalServerError, err, false)
 	webcore.LogRequest(logger, webcore.WARNING, "", time.Since(tstart))
 	return

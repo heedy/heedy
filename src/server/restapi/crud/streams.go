@@ -5,7 +5,7 @@ Licensed under the MIT license.
 package crud
 
 import (
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,14 +16,14 @@ import (
 )
 
 //ListStreams lists the streams that the given device has
-func ListStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func ListStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
-	d, err := o.ReadAllStreams(devpath)
+	d, err := o.ReadDeviceStreamsToMap(devpath)
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //CreateStream creates a new stream from a REST API request
-func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CreateStream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, streamname, streampath := restcore.GetStreamPath(request)
 
 	err := restcore.ValidName(streamname, nil)
@@ -48,7 +48,7 @@ func CreateStream(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //ReadStream reads a stream from a REST API request
-func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func ReadStream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	if err := restcore.BadQ(o, writer, request, logger); err != nil {
@@ -61,26 +61,21 @@ func ReadStream(o operator.Operator, writer http.ResponseWriter, request *http.R
 }
 
 //UpdateStream updates the metadata for existing stream from a REST API request
-func UpdateStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func UpdateStream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
+	var supdate map[string]interface{}
+	err := restcore.UnmarshalRequest(request, &supdate)
+
+	if err = o.UpdateStream(streampath, supdate); err != nil {
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
+	}
 	s, err := o.ReadStream(streampath)
-	if err != nil {
-		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-	}
-	err = restcore.UnmarshalRequest(request, s)
-	err = restcore.ValidName(s.Name, err)
-	if err != nil {
-		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-	}
-	if err = o.UpdateStream(s); err != nil {
-		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-	}
 	return restcore.JSONWriter(writer, s, logger, err)
 }
 
 //DeleteStream deletes existing stream from a REST API request
-func DeleteStream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func DeleteStream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 
 	err := o.DeleteStream(streampath)

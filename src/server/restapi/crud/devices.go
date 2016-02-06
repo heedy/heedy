@@ -5,13 +5,12 @@ Licensed under the MIT license.
 package crud
 
 import (
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/gorilla/mux"
-	"github.com/nu7hatch/gouuid"
 
 	"server/restapi/restcore"
 	"server/webcore"
@@ -25,21 +24,23 @@ func getDevicePath(request *http.Request) (username string, devicename string, d
 }
 
 //ListDevices lists the devices that the given user has
-func ListDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func ListDevices(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	usrname := mux.Vars(request)["user"]
-	d, err := o.ReadAllDevices(usrname)
+	d, err := o.ReadUserDevicesToMap(usrname)
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //CreateDevice creates a new user from a REST API request
-func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CreateDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, devname, devpath := getDevicePath(request)
 	err := restcore.ValidName(devname, nil)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	if err = o.CreateDevice(devpath); err != nil {
+	publics := request.URL.Query().Get("public")
+
+	if err = o.CreateDevice(devpath, publics == "true"); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 
@@ -47,48 +48,33 @@ func CreateDevice(o operator.Operator, writer http.ResponseWriter, request *http
 }
 
 //ReadDevice gets an existing device from a REST API request
-func ReadDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func ReadDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
 
 	if err := restcore.BadQ(o, writer, request, logger); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
-	d, err := o.ReadDevice(devpath)
+	d, err := o.ReadDeviceToMap(devpath)
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //UpdateDevice updates the metadata for existing device from a REST API request
-func UpdateDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func UpdateDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
 
+	var updates map[string]interface{}
+
+	err := restcore.UnmarshalRequest(request, &updates)
+
+	if err = o.UpdateDevice(devpath, updates); err != nil {
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
+	}
 	d, err := o.ReadDevice(devpath)
-	if err != nil {
-		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-	}
-
-	err = restcore.UnmarshalRequest(request, d)
-	err = restcore.ValidName(d.Name, err)
-	if err != nil {
-		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-	}
-
-	if d.ApiKey == "" {
-		//The user wants to reset the API key
-		newkey, err := uuid.NewV4()
-		if err != nil {
-			return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, false)
-		}
-		d.ApiKey = newkey.String()
-	}
-
-	if err = o.UpdateDevice(d); err != nil {
-		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-	}
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 
 //DeleteDevice deletes existing device from a REST API request
-func DeleteDevice(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func DeleteDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
 	err := o.DeleteDevice(devpath)
 	if err != nil {

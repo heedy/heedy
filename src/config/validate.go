@@ -5,80 +5,14 @@ Licensed under the MIT license.
 package config
 
 import (
-	"crypto/tls"
-	"encoding/base64"
 	"errors"
-	"os"
+	"fmt"
 	"path/filepath"
 
-	"github.com/gorilla/securecookie"
+	"config/permissions"
+
+	psconfig "github.com/connectordb/pipescript/config"
 )
-
-// Validate ensures that the given permissions have all correct values
-func (p Permissions) Validate() error {
-	return nil
-}
-
-// Validate takes a session and makes sure that all of the keys and fields are set up correctly
-func (s *Session) Validate() error {
-	if s.AuthKey == "" {
-		sessionAuthkey := securecookie.GenerateRandomKey(64)
-		s.AuthKey = base64.StdEncoding.EncodeToString(sessionAuthkey)
-	}
-	if s.EncryptionKey == "" {
-		sessionEncKey := securecookie.GenerateRandomKey(32)
-		s.EncryptionKey = base64.StdEncoding.EncodeToString(sessionEncKey)
-	}
-
-	if s.MaxAge < 0 {
-		return errors.New("Max Age for cookie must be >=0")
-	}
-
-	return nil
-}
-
-// Validate takes a frontend and ensures that all the necessary configuration fields are set up
-// correctly.
-func (f *Frontend) Validate() (err error) {
-
-	if f.TLSEnabled() {
-		// If both key and cert are given, assume that we want to use TLS
-		_, err = tls.LoadX509KeyPair(f.TLSCert, f.TLSKey)
-		if err != nil {
-			return err
-		}
-
-		//Set the file paths to be full paths
-		f.TLSCert, err = filepath.Abs(f.TLSCert)
-		if err != nil {
-			return err
-		}
-		f.TLSKey, err = filepath.Abs(f.TLSKey)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Validate the Session
-	if err = f.Session.Validate(); err != nil {
-		return err
-	}
-
-	// Set up the optional configuration parameters
-
-	if f.Hostname == "" {
-		f.Hostname, err = os.Hostname()
-		if err != nil {
-			f.Hostname = "localhost"
-		}
-	}
-
-	if f.Domain == "" {
-		f.Domain = f.Hostname
-	}
-
-	return nil
-}
 
 // Validate takes a configuration and makes sure that it is set up correctly for use in the ConnectorDB
 // database. It returns nil if the configuration is valid, and returns an error if an error was found.
@@ -96,30 +30,57 @@ func (c *Configuration) Validate() error {
 		return errors.New("Chunk size must be >=0")
 	}
 
-	// Make sure the permissions are all valid
-	hadNobody := false
-	hadUser := false
-	hadAdmin := false
-	for key := range c.Permissions {
-		if key == "admin" {
-			hadAdmin = true
+	if c.UseCache {
+		if c.UserCacheSize < 1 {
+			return errors.New("User cache size must be >=1")
 		}
-		if key == "user" {
-			hadUser = true
+		if c.DeviceCacheSize < 1 {
+			return errors.New("Device cache size must be >=1")
 		}
-		if key == "nobody" {
-			hadNobody = true
+		if c.StreamCacheSize < 1 {
+			return errors.New("Stream cache size must be >=1")
 		}
-		if err := c.Permissions[key].Validate(); err != nil {
+	}
+
+	// Validate PipeScript
+	if c.PipeScript == nil {
+		c.PipeScript = psconfig.Default()
+	}
+	if err := c.PipeScript.Validate(); err != nil {
+		return err
+	}
+
+	// Try loading the permissions
+	p, err := permissions.Load(c.Permissions)
+	if err != nil {
+		return err
+	}
+	// Set the absolute path if not default
+	if c.Permissions != "default" {
+		c.Permissions, err = filepath.Abs(c.Permissions)
+		if err != nil {
 			return err
 		}
 	}
-	if !(hadNobody && hadUser && hadAdmin) {
-		return errors.New("There must be at least user, admin, and nobody permissions set.")
+
+	// Check that the initial user permissions exist if given
+	if c.InitialUserRole != "" {
+		if _, ok := p.UserRoles[c.InitialUserRole]; !ok {
+			return fmt.Errorf("Could not find role of '%s' for the initial creation user", c.InitialUserRole)
+		}
+	}
+
+	if c.IDScramblePrime <= 0 {
+		return errors.New("The ID Scramble prime must be a prime > 0.")
+	}
+
+	// Now see if we have a valid hashing algorithm
+	if c.PasswordHash != "bcrypt" && c.PasswordHash != "SHA512" {
+		return errors.New("The password hashing algorithm must be one of 'SHA512' or 'bcrypt'")
 	}
 
 	// Now let's validate the frontend
-	if err := c.Frontend.Validate(); err != nil {
+	if err := c.Frontend.Validate(c); err != nil {
 		return err
 	}
 	return nil

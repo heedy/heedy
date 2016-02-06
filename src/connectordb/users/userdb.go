@@ -13,6 +13,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/josephlewis42/multicache"
 	_ "github.com/lib/pq"
 )
 
@@ -40,15 +41,29 @@ func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sql.DB, dbtype string) {
 	db.sqldb = sqldb
 }
 
-func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool) UserDatabase {
+// Clear deletes all data stored in the userdb
+func (db *SqlUserDatabase) Clear() {
+	db.sqldb.Exec("DELETE FROM Users;")
+	db.sqldb.Exec("DELETE FROM Devices;")
+	db.sqldb.Exec("DELETE FROM Streams;")
+}
+
+func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
 	basedb := SqlUserDatabase{}
 	basedb.initSqlUserDatabase(sqldb, dbtype)
+
+	if streamsize < 1 {
+		streamsize = 1
+	}
+
+	streamCache, _ = multicache.NewDefaultMulticache(uint64(streamsize))
 
 	if cache == false {
 		return &basedb
 	}
 
-	cached, _ := NewCacheMiddleware(&basedb, 1000, 10000, 10000)
+	// The cache sizes were already validated
+	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize))
 
 	return cached
 }

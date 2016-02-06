@@ -74,7 +74,7 @@ type Shell struct {
 	host            string
 	reader          *bufio.Reader
 	sdb             *connectordb.Database
-	operator        operator.Operator
+	operator        operator.PathOperator
 	operatorName    string // can be changed when we do a su
 	pwd             string // the present working directory of path commands
 }
@@ -119,7 +119,7 @@ func CreateShell(sdb *connectordb.Database) *Shell {
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)
 	s.sdb = sdb
-	s.operator = operator.NewOperator(sdb)
+	s.operator = sdb
 	s.operatorName = "ConnectorDB"
 	s.pwd = ""
 	return &s

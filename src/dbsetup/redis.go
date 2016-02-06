@@ -38,6 +38,9 @@ func (s *RedisService) Start() error {
 
 //Stop shuts down the redis server
 func (s *RedisService) Stop() error {
+	if s == nil {
+		return nil
+	}
 	log.Print("Stopping redis...")
 	portString := strconv.Itoa(int(s.S.Port))
 

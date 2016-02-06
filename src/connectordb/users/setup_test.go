@@ -21,7 +21,7 @@ var (
 	nextEmailId = 0
 
 	testPostgres       UserDatabase
-	testdatabases      = []SqlUserDatabase{}
+	testdatabases      = []UserDatabase{}
 	testdatabasesNames = []string{}
 	testPassword       = "P@$$W0Rd123"
 )
@@ -38,11 +38,11 @@ func GetNextEmail() string {
 
 func init() {
 	testPostgres := initDB(config.TestOptions.SqlConnectionString)
-	testdatabases = []SqlUserDatabase{testPostgres}
+	testdatabases = []UserDatabase{testPostgres}
 	testdatabasesNames = []string{"postgres"}
 }
 
-func initDB(dbName string) SqlUserDatabase {
+func initDB(dbName string) UserDatabase {
 	_ = os.Remove(dbName) // may fail if postgres
 
 	// Init the db
@@ -56,29 +56,28 @@ func initDB(dbName string) SqlUserDatabase {
 		log.Panic(err)
 	}
 
-	db := SqlUserDatabase{}
-	db.initSqlUserDatabase(sql, dbtype)
+	db := NewUserDatabase(sql, dbtype, false, 1, 1, 1)
 
 	return db
 }
 
-func CreateTestStream(testdb SqlUserDatabase, dev *Device) (*Stream, error) {
+func CreateTestStream(testdb UserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
-	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceId)
+	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceID, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	return testdb.ReadStreamByDeviceIdAndName(dev.DeviceId, name)
+	return testdb.ReadStreamByDeviceIDAndName(dev.DeviceID, name)
 }
 
-func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
+func CreateTestUser(testdb UserDatabase) (*User, error) {
 	name := GetNextName()
 	email := GetNextEmail()
 
 	//log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, testPassword)
 
-	err := testdb.CreateUser(name, email, testPassword)
+	err := testdb.CreateUser(name, email, testPassword, "test", false, 0)
 
 	if err != nil {
 		return nil, err
@@ -87,18 +86,18 @@ func CreateTestUser(testdb SqlUserDatabase) (*User, error) {
 	return testdb.ReadUserByName(name)
 }
 
-func CreateTestDevice(testdb SqlUserDatabase, usr *User) (*Device, error) {
+func CreateTestDevice(testdb UserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
-	err := testdb.CreateDevice(name, usr.UserId)
+	err := testdb.CreateDevice(name, usr.UserID, false, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	return testdb.ReadDeviceForUserByName(usr.UserId, name)
+	return testdb.ReadDeviceForUserByName(usr.UserID, name)
 }
 
 // Creates a connected user, device and stream
-func CreateUDS(testdb SqlUserDatabase) (*User, *Device, *Stream, error) {
+func CreateUDS(testdb UserDatabase) (*User, *Device, *Stream, error) {
 	u, err := CreateTestUser(testdb)
 
 	if err != nil {

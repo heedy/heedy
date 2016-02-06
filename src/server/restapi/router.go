@@ -5,14 +5,16 @@ Licensed under the MIT license.
 package restapi
 
 import (
+	"config"
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"util"
 
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 
 	"server/restapi/crud"
 	"server/restapi/feed"
@@ -25,7 +27,7 @@ import (
 )
 
 //GetThis is a command to return the "username/devicename" of the currently authenticated thing
-func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func GetThis(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	res := []byte(o.Name())
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.WriteHeader(http.StatusOK)
@@ -34,26 +36,26 @@ func GetThis(o operator.Operator, writer http.ResponseWriter, request *http.Requ
 }
 
 //CountAllUsers gets all of the users in the entire database
-func CountAllUsers(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllUsers(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountUsers()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //CountAllDevices gets all of the devices in the entire database
-func CountAllDevices(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllDevices(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountDevices()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //CountAllStreams gets all of the streams in the entire database
-func CountAllStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func CountAllStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	l, err := o.CountStreams()
-	return restcore.UintWriter(writer, l, logger, err)
+	return restcore.UintWriter(writer, uint64(l), logger, err)
 }
 
 //Login handles logging in and out of the web interface. In particular, it handles the auth cookies, and
 //the web interface uses them for the rest
-func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Login(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	err := webcore.CreateSessionCookie(o, writer, request)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
@@ -65,7 +67,7 @@ func Login(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 }
 
 //Logout hondles logging out of the web interface. It deletes the auth cookie
-func Logout(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Logout(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	webcore.CreateSessionCookie(nil, writer, request) //nil operator deletes the cookie
 	restcore.OK(writer)
 	return webcore.DEBUG, ""
@@ -83,6 +85,15 @@ func (r restcloser) Close() {
 
 //Router returns a fully formed Gorilla router given an optional prefix
 func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
+
+	// Set up the websocket upgrader
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  config.Get().WebsocketReadBufferSize,
+		WriteBufferSize: config.Get().WebsocketWriteBufferSize,
+		// Allow from all origins
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+
 	if prefix == nil {
 		prefix = mux.NewRouter()
 	}
@@ -90,13 +101,13 @@ func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
 	//Allow for the application to match /path and /path/ to the same place.
 	prefix.StrictSlash(true)
 
-	// The websocket is run straight from here
-	prefix.HandleFunc("/", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
-
 	prefix.HandleFunc("/", restcore.Authenticator(GetThis, db)).Queries("q", "this").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllUsers, db)).Queries("q", "countusers").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllDevices, db)).Queries("q", "countdevices").Methods("GET")
 	prefix.HandleFunc("/", restcore.Authenticator(CountAllStreams, db)).Queries("q", "countstreams").Methods("GET")
+
+	// The websocket is run straight from here
+	prefix.HandleFunc("/websocket", restcore.Authenticator(RunWebsocket, db)).Headers("Upgrade", "websocket").Methods("GET")
 
 	crud.Router(db, prefix.PathPrefix("/crud").Subrouter())
 	query.Router(db, prefix.PathPrefix("/query").Subrouter())

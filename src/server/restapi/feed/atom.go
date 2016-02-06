@@ -7,8 +7,8 @@ package feed
 //Code based upon golang.org/x/tools/blog/atom
 
 import (
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
 	"encoding/xml"
 	"errors"
 	"net/http"
@@ -64,7 +64,7 @@ func getAtomEntry(dpindex int64, dp datastream.Datapoint, streamname string) *En
 }
 
 //GetAtom gets an Atom feed of the given stream.
-func GetAtom(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func GetAtom(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	usrname, devname, _, streampath := restcore.GetStreamPath(request)
 	_, dr, err := getFeedData(o, writer, request, logger)
 	if err != nil {

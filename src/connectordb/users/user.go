@@ -5,16 +5,14 @@ Licensed under the MIT license.
 package users
 
 import (
-	"config"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/mail"
-	"reflect"
+	"strings"
 )
 
 var (
-	ErrInvalidPassword = errors.New("Invalid Password")
 	ErrInvalidUsername = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
 	ErrInvalidEmail    = errors.New("Invalid Email Address")
 	ErrEmailExists     = errors.New("A user already exists with this email")
@@ -25,31 +23,29 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserId      int64  `modifiable:"nobody" json:"-"`         // The primary key
-	Name        string `modifiable:"root" json:"name"`        // The public username of the user
-	Nickname    string `modifiable:"user" json:"nickname"`    // The nickname of the user
-	Email       string `modifiable:"user" json:"email"`       // The user's email address
-	Description string `modifiable:"user" json:"description"` // A public description
-	Icon        string `modifiable:"user" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	UserID int64 `json:"-"` // The primary key
 
-	Password           string `modifiable:"user" json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
-	PasswordSalt       string `modifiable:"user" json:"-"`                  // The password salt to be attached to the end of the password
-	PasswordHashScheme string `modifiable:"user" json:"-"`                  // A string representing the hashing scheme used
+	Name        string `json:"name"`        // The public username of the user
+	Nickname    string `json:"nickname"`    // The nickname of the user
+	Email       string `json:"email"`       // The user's email address
+	Description string `json:"description"` // A public description
+	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 
-	Admin bool `modifiable:"root" json:"admin"` // True/False if this is an administrator
+	Role   string `json:"role,omitempty"` // The user type (permissions level)
+	Public bool   `json:"public"`         // Whether the user is public or not
 
-	//Since we temporarily don't use limits, I have disabled cluttering results with them on json output
-	UploadLimit_Items int `modifiable:"root" json:"-"` // upload limit in items/day
-	ProcessingLimit_S int `modifiable:"root" json:"-"` // processing limit in seconds/day
-	StorageLimit_Gb   int `modifiable:"root" json:"-"` // storage limit in GB
+	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
+	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
+	PasswordHashScheme string `json:"-"`                  // A string representing the hashing scheme used
+
 }
 
-func (s *User) String() string {
-	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v, Admin: %v, Downlink: %v, Type: %v]",
-		s.UserId, s.Name, s.Email, s.Nickname, s.Password, s.PasswordSalt, s.PasswordHashScheme, s.Admin)
+func (u *User) String() string {
+	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v ]",
+		u.UserID, u.Name, u.Email, u.Nickname, u.Password, u.PasswordSalt, u.PasswordHashScheme)
 }
 
-// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+// ValidityCheck checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (u *User) ValidityCheck() error {
 	if !IsValidName(u.Name) {
 		return ErrInvalidUsername
@@ -70,34 +66,34 @@ func (u *User) ValidityCheck() error {
 	return nil
 }
 
-func (d *User) RevertUneditableFields(originalValue User, p PermissionLevel) int {
-	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
-}
-
-// Sets a new password for an account
-func (u *User) SetNewPassword(newPass string) {
-	hash, salt, scheme := UpgradePassword(newPass)
+// SetNewPassword sets a new password for an account
+func (u *User) SetNewPassword(newPass string) error {
+	hash, salt, scheme, err := HashPassword(newPass)
+	if err != nil {
+		return err
+	}
 
 	u.PasswordHashScheme = scheme
 	u.PasswordSalt = salt
 	u.Password = hash
+	return nil
 }
 
-// Checks if the device is enabled and a superdevice
-func (u *User) IsAdmin() bool {
-	return u.Admin
-}
-
+// ValidatePassword returns true if password matches
 func (u *User) ValidatePassword(password string) bool {
-	return calcHash(password, u.PasswordSalt, u.PasswordHashScheme) == u.Password
+	return CheckPassword(password, u.Password, u.PasswordSalt, u.PasswordHashScheme) == nil
 }
 
-// Upgrades the security of the password, returns True if the user needs to be
+// UpgradePassword upgrades the security of the password, returns True if the user needs to be
 // saved again because an upgrade was performed.
 func (u *User) UpgradePassword(password string) bool {
-	hash, salt, scheme := UpgradePassword(password)
+	if !UpgradePassword(u.Password, u.PasswordSalt, u.PasswordHashScheme) {
+		return false
+	}
 
-	if u.PasswordHashScheme == scheme {
+	hash, salt, scheme, err := HashPassword(password)
+	if err != nil {
+		// Uh oh... Since creating a hash failed, return false
 		return false
 	}
 
@@ -110,61 +106,64 @@ func (u *User) UpgradePassword(password string) bool {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
+func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Public bool, userlimit int64) error {
+	/*
+		existing, err := userdb.readByNameOrEmail(Name, Email)
 
-	existing, err := userdb.readByNameOrEmail(Name, Email)
+		if err == nil {
+			// Check for existence of user to provide helpful notices
 
-	if err == nil {
-		// Check for existence of user to provide helpful notices
+			switch {
+			case existing.Email == Email:
+				return ErrEmailExists
+			case existing.Name == Name:
+				return ErrUsernameExists
 
-		switch {
-		case existing.Email == Email:
-			return ErrEmailExists
-		case existing.Name == Name:
-			return ErrUsernameExists
-
-		}
-	}
-
-	cfg := config.Get()
+			}
+		}*/
 
 	switch {
 	case !IsValidName(Name):
 		return ErrInvalidUsername
-	case !cfg.IsAllowedUsername(Name):
-		return ErrInvalidUsername
-	case !cfg.IsAllowedEmail(Email):
-		return ErrDisallowedEmail
-	case cfg.MaxUsers != -1:
+	case userlimit > 0:
+		// TODO: This check should be done within the SQL transaction to avoid timing attacks
 		num, err := userdb.CountUsers()
 		if err != nil {
 			return err
 		}
-		if num >= uint64(cfg.MaxUsers) {
+		if num >= userlimit {
 			return ErrMaxUsers
 		}
 	}
 
-	dbpass, salt, hashtype := UpgradePassword(Password)
+	dbpass, salt, hashtype, err := HashPassword(Password)
+	if err != nil {
+		return err
+	}
 
 	_, err = userdb.Exec(`INSERT INTO Users (
-	    Name,
-	    Email,
-	    Password,
-	    PasswordSalt,
-	    PasswordHashScheme,
-		Nickname) VALUES (?,?,?,?,?,?);`,
+		Name,
+		Email,
+		Password,
+		PasswordSalt,
+		PasswordHashScheme,
+		Role,
+		Public) VALUES (?,?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
 		hashtype,
-		Name)
+		Role, Public)
+
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("User with this email or username already exists")
+	}
 
 	return err
 }
 
-/** Performs a login function on the user.
+/*Login Performs a login function on the user.
 
 Looks for a user by the (username|email)/password pair.
 Checks the password, if it's a match, tries to upgrade the password.
@@ -172,7 +171,7 @@ Finally, grabs the User device for performing user actions from.
 
 Returns an error along with the user and device if something went wrong
 
-**/
+*/
 func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device, error) {
 	user, err := userdb.readByNameOrEmail(Username, Username)
 	if err != nil {
@@ -194,7 +193,7 @@ func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device,
 
 // Reads the operating device for the user (the implicity device the user uses)
 func (userdb *SqlUserDatabase) ReadUserOperatingDevice(user *User) (*Device, error) {
-	return userdb.ReadDeviceForUserByName(user.UserId, "user")
+	return userdb.ReadDeviceForUserByName(user.UserID, "user")
 }
 
 // readByNameOrEmail returns a User instance if a user exists with the given
@@ -228,9 +227,9 @@ func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 
 // ReadUserById returns a User instance if a user exists with the given
 // id.
-func (userdb *SqlUserDatabase) ReadUserById(UserId int64) (*User, error) {
+func (userdb *SqlUserDatabase) ReadUserById(UserID int64) (*User, error) {
 	var user User
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserId = ? LIMIT 1;", UserId)
+	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserID = ? LIMIT 1;", UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -239,8 +238,8 @@ func (userdb *SqlUserDatabase) ReadUserById(UserId int64) (*User, error) {
 	return &user, err
 }
 
-func (userdb *SqlUserDatabase) ReadAllUsers() ([]User, error) {
-	var users []User
+func (userdb *SqlUserDatabase) ReadAllUsers() ([]*User, error) {
+	var users []*User
 
 	err := userdb.Select(&users, "SELECT * FROM Users")
 
@@ -262,39 +261,35 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 		return err
 	}
 
-	_, err := userdb.Exec(`UPDATE Users SET
-	                Name=?,
+	_, err := userdb.Exec(`UPDATE users SET
+					Name=?,
 					Nickname=?,
 					Email=?,
 					Password=?,
 					PasswordSalt=?,
 					PasswordHashScheme=?,
-	                Admin=?,
-					UploadLimit_Items=?,
-	                ProcessingLimit_S=?,
-					StorageLimit_Gb=?,
 					Description=?,
-					Icon=?
-					WHERE UserId = ?`,
+					Icon=?,
+					Public=?,
+					Role=?
+					WHERE UserID = ?`,
 		user.Name,
 		user.Nickname,
 		user.Email,
 		user.Password,
 		user.PasswordSalt,
 		user.PasswordHashScheme,
-		user.Admin,
-		user.UploadLimit_Items,
-		user.ProcessingLimit_S,
-		user.StorageLimit_Gb,
 		user.Description,
 		user.Icon,
-		user.UserId)
+		user.Public,
+		user.Role,
+		user.UserID)
 
 	return err
 }
 
 // DeleteUser removes a user from the database
-func (userdb *SqlUserDatabase) DeleteUser(UserId int64) error {
-	result, err := userdb.Exec(`DELETE FROM Users WHERE UserId = ?;`, UserId)
+func (userdb *SqlUserDatabase) DeleteUser(UserID int64) error {
+	result, err := userdb.Exec(`DELETE FROM Users WHERE UserID = ?;`, UserID)
 	return getDeleteError(result, err)
 }

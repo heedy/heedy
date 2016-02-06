@@ -101,6 +101,7 @@ func (f *FileWatcher) Watch() {
 			log.Errorf("Watcher for '%s' failed: %s", f.FileName, err.Error())
 			return
 		case <-f.done:
+			log.Debugf("Stopping file watch for '%s'", f.FileName)
 			return
 		}
 	}

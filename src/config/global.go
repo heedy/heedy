@@ -5,14 +5,16 @@ Licensed under the MIT license.
 package config
 
 import (
-	"os"
 	"path/filepath"
 	"util"
+
+	"config/permissions"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 var (
+
 	// globalConfiguration is the configuration used throughout the system.
 	// While the configuration can be reloaded during runtime, only certain properties are actually modifiable during runtime
 	// and others fail to update silently. Just a warning.
@@ -34,10 +36,32 @@ func SetPath(filename string) error {
 	if err != nil {
 		return err
 	}
+
+	err = permissions.SetPath(cfg.Get().Permissions)
+	if err != nil {
+		return err
+	}
+
 	if globalConfiguration != nil {
 		globalConfiguration.Close()
 	}
+	if globalConfiguration != nil {
+		cfg.OnChange = globalConfiguration.OnChange
+	}
+
 	globalConfiguration = cfg
+
+	// PipeScript has its own special configuration updater, which modifies the global
+	// PipeScript configuration
+	Get().PipeScript.Set()
+	OnChangeCallback(func(c *Configuration) error {
+		return c.PipeScript.Set()
+	})
+
+	if !Get().Watch {
+		// Closing it will keep the config valid
+		globalConfiguration.Close()
+	}
 
 	return nil
 }
@@ -77,9 +101,6 @@ func NewConfigurationLoader(filename string) (*ConfigurationLoader, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = c.Validate(); err != nil {
-		return nil, err
-	}
 	cf := &ConfigurationLoader{
 		Config:   c,
 		OnChange: make([]ChangeCallback, 0, 5),
@@ -101,22 +122,14 @@ func (c *ConfigurationLoader) Reload() error {
 		return err
 	}
 
-	// Before doing anything, we need to change the working directory to that of the config file.
-	// We switch back to the current working dir once done validating.
-	// Validation takes any file names and converts them to absolute paths.
-	cwd, err := os.Getwd()
+	// Set the global permissions
+	err = permissions.SetPath(cfg.Permissions)
 	if err != nil {
 		return err
 	}
-	err = os.Chdir(filepath.Dir(c.Watcher.FileName))
-	if err != nil {
-		return err
-	}
-	// Change the directory back on exit
-	defer os.Chdir(cwd)
 
-	if err = cfg.Validate(); err != nil {
-		return err
+	if !cfg.Watch {
+		c.Close() // This will still keep the permissions themselves in memory
 	}
 
 	c.Watcher.Lock()

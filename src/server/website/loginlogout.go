@@ -5,7 +5,7 @@ Licensed under the MIT license.
 package website
 
 import (
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"net/http"
 	"server/webcore"
 	"time"
@@ -14,7 +14,7 @@ import (
 )
 
 // Login handles login to the system without the api call (direct web interface)
-func Login(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Login(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	webcore.CreateSessionCookie(o, writer, request)
 	http.Redirect(writer, request, "/", http.StatusFound)
 

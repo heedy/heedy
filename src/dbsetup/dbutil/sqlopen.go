@@ -41,7 +41,7 @@ func GetDatabaseVersion(db *sql.DB, dbtype string) string {
 	var mixin SqlxMixin
 	mixin.InitSqlxMixin(db, dbtype)
 
-	err := mixin.Get(&version, "SELECT Value FROM StreamdbMeta WHERE Key = 'DBVersion'")
+	err := mixin.Get(&version, "SELECT Value FROM connectordbmeta WHERE Key = 'DBVersion'")
 
 	if err != nil {
 		version = defaultDbversion

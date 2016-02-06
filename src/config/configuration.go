@@ -7,13 +7,17 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gorilla/securecookie"
 	"github.com/nu7hatch/gouuid"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/js"
+
+	psconfig "github.com/connectordb/pipescript/config"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -21,11 +25,40 @@ import (
 //SqlType is the type of sql database used
 const SqlType = "postgres"
 
+// The header that is written to all config files
+var configHeader = `/* ConnectorDB Configuration File
+
+To see an explanation of the configuration options, please see:
+https://github.com/connectordb/connectordb/blob/master/src/config/configuration.go
+	Look at NewConfiguration() which explains defaults.
+
+Particular configuration options:
+frontend options: https://github.com/connectordb/connectordb/blob/master/src/config/frontend.go
+	These are the options that pertain to the ConnectorDB server (REST API, web, request logging)
+permissions: https://github.com/connectordb/connectordb/blob/master/src/config/permissions/permissions.go
+	The permissions and access levels for each user type. All user types in the database are required.
+	"default" is the built in permission - a separate permissions file is optional
+
+The configuration file supports javascript style comments.
+
+Several options support live reload. Changing them in the configuration file will automatically update the corresponding setting
+in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any message).
+
+When running a local database, the configuration file is in connectordb.pid in the database directory. It will be deleted on shutdown,
+so will not save your changes. Save long-term changes to connectordb.conf in the same directory.
+*/
+`
+
 // Configuration represents the options which are kept in a config file
 type Configuration struct {
-	Version int `json:"version"` // The version of the configuration file
+	Version int  `json:"version"` // The version of the configuration file
+	Watch   bool `json:"watch"`   // Whether or not to watch the config file for changes
+
+	// The permissions file (or "default") to use for setting up user access rights
+	Permissions string `json:"permissions"`
 
 	// Options pertaining to the frontend server.
+	// These are transparent to json, so they appear directly in the main json.
 	Frontend
 
 	// Configuration options for a service
@@ -37,24 +70,30 @@ type Configuration struct {
 	BatchSize int `json:"batchsize"` // BatchSize is the number of datapoints per database entry
 	ChunkSize int `json:"chunksize"` // ChunkSize is number of batches per database insert transaction
 
+	// The cache sizes for users/devices/streams
+	UseCache        bool  `json:"cache"` // Whether or not to enable caching
+	UserCacheSize   int64 `json:"user_cache_size"`
+	DeviceCacheSize int64 `json:"device_cache_size"`
+	StreamCacheSize int64 `json:"stream_cache_size"`
+
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
-	InitialUsername     string `json:"-"`
-	InitialUserPassword string `json:"-"`
-	InitialUserEmail    string `json:"-"`
+	InitialUsername     string `json:"createuser_username,omitempty"`
+	InitialUserPassword string `json:"createuser_password,omitempty"`
+	InitialUserEmail    string `json:"createuser_email,omitempty"`
+	InitialUserRole     string `json:"createuser_permissions,omitempty"`
+	InitialUserPublic   bool   `json:"createuser_public,omitempty"`
 
-	// The given usernames are forbidden.
-	DisallowedNames []string `json:"disallow_names"` //The names that are not permitted
+	// The prime number to use for scrambling IDs in the database.
+	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
+	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+	IDScramblePrime int64 `json:"database_id_scramble_prime"`
 
-	// The email suffixes that are permitted during user creation
-	AllowedEmailSuffixes []string `json:"allowed_email_suffixes"`
+	// The default algorithm to use for hashing passwords. Options are SHA512 and bcrypt
+	PasswordHash string `json:"password_hash"`
 
-	// The maximum number of users to allow. 0 means don't allow any new users, and -1 means unlimited
-	// number of users
-	MaxUsers int `json:"max_users"`
-
-	// The specific permissions granted to different user types
-	Permissions map[string]Permissions `json:"permissions"`
+	// The configuration options for pipescript (https://github.com/connectordb/pipescript)
+	PipeScript *psconfig.Configuration `json:"pipescript"`
 
 	// The following are exported fields that are used internally, and are not available to json.
 	// This is honestly just lazy programming on my part - I am using the config struct as a temporary variable
@@ -72,7 +111,9 @@ func NewConfiguration() *Configuration {
 	sessionEncKey := securecookie.GenerateRandomKey(32)
 
 	return &Configuration{
-		Version: 1,
+		Version:     1,
+		Watch:       true,
+		Permissions: "default",
 		Redis: Service{
 			Hostname: "localhost",
 			Port:     6379,
@@ -100,7 +141,7 @@ func NewConfiguration() *Configuration {
 			Enabled: true,
 
 			// Sets up the session cookie keys that are used
-			Session: Session{
+			CookieSession: CookieSession{
 				AuthKey:       base64.StdEncoding.EncodeToString(sessionAuthKey),
 				EncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
 				MaxAge:        60 * 60 * 24 * 30 * 4, //About 4 months is the default expiration time of a cookie
@@ -110,64 +151,61 @@ func NewConfiguration() *Configuration {
 			Captcha: Captcha{
 				Enabled: false,
 			},
+
+			// By default log query counts once a minute, and display server statistics
+			// once a day
+			QueryDisplayTimer: 60,
+			StatsDisplayTimer: 60 * 60 * 24,
+
+			// A limit of 10MB of data per insert is reasonable to me
+			InsertLimitBytes: 1024 * 1024 * 10,
+			// 1MB per websocket is also reasonable
+			WebsocketMessageLimitBytes: 1024 * 1024,
+
+			// The time to wait on a socket write in seconds
+			WebsocketWriteWait: 2,
+
+			// Websockets ping each other to keep the connection alive
+			// This sets the number of seconds between pings
+			WebsocketPongWait:   60,
+			WebsocketPingPeriod: 54,
+
+			// Websocket upgrader read/write buffer sizes
+			WebsocketReadBufferSize:  1024,
+			WebsocketWriteBufferSize: 1024,
+
+			// 3 messages should be enough... right?
+			WebsocketMessageBuffer: 3,
+
+			// Why not minify? Turning it off is useful for debugging - but users outnumber coders by a large margin.
+			Minify: true,
 		},
 
 		//The defaults to use for the batch and chunks
 		BatchSize: 250,
 		ChunkSize: 5,
 
-		// Disallowed names are names that would conflict with the ConnectorDB frontend
-		DisallowedNames: []string{"support", "www", "api", "app", "favicon.ico", "robots.txt", "sitemap.xml", "join", "login"},
+		UseCache:        true,
+		UserCacheSize:   1000,
+		DeviceCacheSize: 10000,
+		StreamCacheSize: 10000,
 
-		// Allow an arbitrary number of users by default
-		MaxUsers: -1,
+		// This is the CONSTANT default. The database will explode if this is ever changed.
+		// You have been warned.
+		IDScramblePrime: 2147483423,
 
-		Permissions: map[string]Permissions{
-			"nobody": {
-				Join:                false,
-				JoinDisabledMessage: "You must be logged in as admin to add users",
-			},
-			"user": {
-				Join:                false,
-				JoinDisabledMessage: "You must be logged in as admin to add users",
-			},
-			"admin": {
-				Join:                true,
-				JoinDisabledMessage: "Join is disabled",
-			},
-		},
+		// No reason not to use bcrypt
+		PasswordHash: "bcrypt",
+
+		// Use the default settings.
+		PipeScript: psconfig.Default(),
 	}
+
 }
 
 // GetSqlConnectionString returns the string used to connect to postgres
 func (c *Configuration) GetSqlConnectionString() string {
 	return c.Sql.GetSqlConnectionString()
-}
-
-// IsAllowedUsername checks if the user name is allowed by the configuration
-func (c *Configuration) IsAllowedUsername(name string) bool {
-	for i := range c.DisallowedNames {
-		if name == c.DisallowedNames[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// IsAllowedEmail checks in the configuration's AllowedEmailSuffixes to see if
-// the given email address is valid allowed to sign up.
-func (c *Configuration) IsAllowedEmail(emailAddress string) bool {
-	if len(c.AllowedEmailSuffixes) == 0 {
-		return true
-	}
-
-	for _, suffix := range c.AllowedEmailSuffixes {
-		if strings.HasSuffix(emailAddress, suffix) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // String returns a string representation of the configuration
@@ -185,21 +223,43 @@ func (c *Configuration) Save(filename string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, b, os.FileMode(0755))
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write([]byte(configHeader))
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	return err
 }
 
 // Load a configuration from the given file, and ensures that it is valid
 func Load(filename string) (*Configuration, error) {
 	log.Debugf("Loading configuration from %s", filename)
+
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
-	c := NewConfiguration()
+	// To allow comments in the json, we minify the file with js minifer before parsing
+	m := minify.New()
+	m.AddFunc("text/javascript", js.Minify)
+	file, err = m.Bytes("text/javascript", file)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
+	}
+
+	// Set up an empty configuration
+	c := &Configuration{}
 	err = json.Unmarshal(file, c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load configuration from '%s': %s", filename, err.Error())
 	}
 
 	// Before doing anything, we need to change the working directory to that of the config file.

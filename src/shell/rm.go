@@ -31,13 +31,13 @@ func init() {
 
 		switch {
 		case stream != nil:
-			err = shell.operator.DeleteStreamByID(stream.StreamId, "")
+			err = shell.operator.DeleteStreamByID(stream.StreamID, "")
 			removedName = stream.Name
 		case dev != nil:
-			err = shell.operator.DeleteDeviceByID(dev.DeviceId)
+			err = shell.operator.DeleteDeviceByID(dev.DeviceID)
 			removedName = dev.Name
 		case usr != nil:
-			err = shell.operator.DeleteUserByID(usr.UserId)
+			err = shell.operator.DeleteUserByID(usr.UserID)
 			removedName = usr.Name
 
 		}

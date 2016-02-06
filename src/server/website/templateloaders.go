@@ -5,14 +5,24 @@ Licensed under the MIT license.
 package website
 
 import (
+	"bytes"
+	"config"
 	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"path"
+	"regexp"
 	"util"
 
 	"github.com/kardianos/osext"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/css"
+	"github.com/tdewolff/minify/html"
+	"github.com/tdewolff/minify/js"
+	"github.com/tdewolff/minify/json"
+	"github.com/tdewolff/minify/svg"
+	"github.com/tdewolff/minify/xml"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -40,6 +50,9 @@ var (
 	AppStream *FileTemplate
 	App404    *FileTemplate
 	AppError  *FileTemplate
+
+	// The minifier to use when minifying templates
+	minifier *minify.M
 )
 
 //FileTemplate implements all the necessary logic to read/write a "special" templated file
@@ -94,11 +107,31 @@ func (f *FileTemplate) Reload() error {
 	return nil
 }
 
-//Execute the template
+//Execute the template.
 func (f *FileTemplate) Execute(w io.Writer, data interface{}) error {
+	// First write to a buffer, then minify the buffered data.
+	// TODO: At this time the minifier does not have support for templates,
+	// so minification happens here. BUT if it does gain support, it will be
+	// much more efficient to minify on template load, rather than on write,
+	// while not losing much minification.
+
+	if config.Get().Minify {
+		var b bytes.Buffer
+
+		f.Watcher.RLock()
+		err := f.Template.Execute(&b, data)
+		f.Watcher.RUnlock()
+		if err != nil {
+			return err
+		}
+		return minifier.Minify("text/html", w, &b)
+	}
+
+	// If we don't minify,  write straight to writer
 	f.Watcher.RLock()
 	err := f.Template.Execute(w, data)
 	f.Watcher.RUnlock()
+
 	return err
 }
 
@@ -109,6 +142,16 @@ func (f *FileTemplate) Close() {
 
 //LoadFiles sets up all the necessary files
 func LoadFiles() error {
+
+	// Set up the minifier
+	minifier = minify.New()
+	minifier.AddFunc("text/css", css.Minify)
+	minifier.AddFunc("text/html", html.Minify)
+	minifier.AddFunc("text/javascript", js.Minify)
+	minifier.AddFunc("image/svg+xml", svg.Minify)
+	minifier.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
+	minifier.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
+
 	//Now set up the app and www folder paths and make sure they exist
 	exefolder, err := osext.ExecutableFolder()
 	if err != nil {

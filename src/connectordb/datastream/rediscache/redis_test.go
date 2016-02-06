@@ -48,7 +48,7 @@ func TestRedisBasics(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), i)
 
-	i, err = rc.Insert("mybatcher", "hi", "mystream", "", dpa6, false)
+	i, err = rc.Insert("mybatcher", "hi", "mystream", "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(5), i)
 
@@ -73,7 +73,14 @@ func TestRedisInsert(t *testing.T) {
 
 	rc.BatchSize = 2
 
-	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false)
+	size, err := rc.HashSize("")
+	require.NoError(t, err)
+	require.Equal(t, int64(0), size)
+	size, err = rc.StreamSize("", "mystream", "")
+	require.NoError(t, err)
+	require.Equal(t, int64(0), size)
+
+	_, err = rc.Insert("mybatcher", "", "mystream", "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 
 	dpatest, err := rc.Get("", "mystream", "")
@@ -86,11 +93,26 @@ func TestRedisInsert(t *testing.T) {
 	require.Equal(t, writestrings[0], "{}mystream::2:4")
 	require.Equal(t, writestrings[1], "{}mystream::0:2")
 
-	_, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, false)
+	size2, err := rc.HashSize("")
+	require.NoError(t, err)
+	require.True(t, size2 > int64(0))
+	size, err = rc.StreamSize("", "mystream", "")
+	require.NoError(t, err)
+	require.Equal(t, size2, size)
+
+	_, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, false, 0, 0)
 	require.EqualError(t, err, ErrTimestamp.Error())
 
 	dpz := datastream.DatapointArray{datastream.Datapoint{5.0, "helloWorld", "me"}, datastream.Datapoint{6.0, "helloWorld2", "me2"}}
-	i, err := rc.Insert("mybatcher", "", "mystream", "", dpz, false)
+
+	// Make sure that device size gives error
+	_, err = rc.Insert("mybatcher", "", "mystream", "", dpz, false, size+3, 0)
+	require.Error(t, err)
+	// Make sure that stream size gives error
+	_, err = rc.Insert("mybatcher", "", "mystream", "", dpz, false, 0, size+3)
+	require.Error(t, err)
+
+	i, err := rc.Insert("mybatcher", "", "mystream", "", dpz, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(7), i)
 
@@ -112,22 +134,29 @@ func TestRedisInsert(t *testing.T) {
 	for iter := 1; iter < 6000; iter++ {
 		dpz = append(dpz, datastream.Datapoint{10.0 + float64(iter), true, ""})
 	}
-	i, err = rc.Insert("mybatcher", "", "mystream", "", dpz, false)
+	i, err = rc.Insert("mybatcher", "", "mystream", "", dpz, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(6007), i)
 
 	i, err = rc.StreamLength("", "mystream", "")
 	require.NoError(t, err)
 	require.Equal(t, int64(6007), i)
+
+	size2, err = rc.HashSize("")
+	require.NoError(t, err)
+	require.True(t, size2 > size)
+	size, err = rc.StreamSize("", "mystream", "")
+	require.NoError(t, err)
+	require.Equal(t, size2, size)
 }
 
 func TestRedisRestamp(t *testing.T) {
 
 	require.NoError(t, rc.Clear())
 
-	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false)
+	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false, 0, 0)
 	require.NoError(t, err)
-	_, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, true)
+	_, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, true, 0, 0)
 	require.NoError(t, err)
 
 	restampedDpa1 := make(datastream.DatapointArray, 2)
@@ -147,7 +176,7 @@ func TestRedisBatchWait(t *testing.T) {
 
 	rc.BatchSize = 2
 
-	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false)
+	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 
 	writestrings, err := rc.GetList("mybatcher")
@@ -180,11 +209,11 @@ func TestRedisSubstream(t *testing.T) {
 
 	require.NoError(t, rc.Clear())
 
-	i, err := rc.Insert("mybatcher", "", "mystream", "s1", dpa6, false)
+	i, err := rc.Insert("mybatcher", "", "mystream", "s1", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(5), i)
 
-	_, err = rc.Insert("mybatcher", "", "mystream", "s1", dpa1, false)
+	_, err = rc.Insert("mybatcher", "", "mystream", "s1", dpa1, false, 0, 0)
 	require.EqualError(t, err, ErrTimestamp.Error())
 
 	i, err = rc.StreamLength("", "mystream", "")
@@ -194,13 +223,20 @@ func TestRedisSubstream(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(5), i)
 
-	i, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, false)
+	i, err = rc.Insert("mybatcher", "", "mystream", "", dpa1, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), i)
 
 	s, err := rc.GetList("{}mystream:s1")
 	require.NoError(t, err)
 	require.EqualValues(t, 5, len(s))
+
+	// Get the stream and device sizes
+	dsize, err := rc.HashSize("")
+	require.NoError(t, err)
+	ssize, err := rc.StreamSize("", "mystream", "s1")
+	require.NoError(t, err)
+	require.True(t, dsize > ssize)
 
 	require.NoError(t, rc.DeleteSubstream("", "mystream", "s1"))
 	i, err = rc.StreamLength("", "mystream", "")
@@ -209,6 +245,14 @@ func TestRedisSubstream(t *testing.T) {
 	i, err = rc.StreamLength("", "mystream", "s1")
 	require.NoError(t, err)
 	require.Equal(t, int64(0), i)
+
+	// Get the stream and device sizes
+	dsize2, err := rc.HashSize("")
+	require.NoError(t, err)
+	require.Equal(t, dsize2, dsize-ssize)
+	ssize, err = rc.StreamSize("", "mystream", "s1")
+	require.NoError(t, err)
+	require.Equal(t, int64(0), ssize)
 
 	s, err = rc.GetList("{}mystream:s1")
 	require.NoError(t, err)
@@ -219,14 +263,14 @@ func TestRedisSubstream(t *testing.T) {
 func TestRedisHashDelete(t *testing.T) {
 	require.NoError(t, rc.Clear())
 
-	i, err := rc.Insert("mybatcher", "h1", "mystream", "s1", dpa6, false)
+	i, err := rc.Insert("mybatcher", "h1", "mystream", "s1", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, int64(5), i)
 
-	_, err = rc.Insert("mybatcher", "h1", "my2stream", "", dpa1, false)
+	_, err = rc.Insert("mybatcher", "h1", "my2stream", "", dpa1, false, 0, 0)
 	require.NoError(t, err)
 
-	_, err = rc.Insert("mybatcher", "h2", "my2stream", "", dpa1, false)
+	_, err = rc.Insert("mybatcher", "h2", "my2stream", "", dpa1, false, 0, 0)
 	require.NoError(t, err)
 
 	require.NoError(t, rc.DeleteHash("h1"))
@@ -251,7 +295,7 @@ func TestRedisHashDelete(t *testing.T) {
 
 func TestRedisTrim(t *testing.T) {
 	require.NoError(t, rc.Clear())
-	i, err := rc.Insert("mybatcher", "", "mystream", "", dpa7, false)
+	i, err := rc.Insert("mybatcher", "", "mystream", "", dpa7, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 9, i)
 
@@ -301,7 +345,7 @@ func TestRedisEmptyRange(t *testing.T) {
 func TestRedisRange(t *testing.T) {
 	require.NoError(t, rc.Clear())
 
-	i, err := rc.Insert("mybatcher", "", "mystream", "", dpa7, false)
+	i, err := rc.Insert("mybatcher", "", "mystream", "", dpa7, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 9, i)
 
@@ -364,7 +408,7 @@ func TestRedisReadBatch(t *testing.T) {
 
 	rc.BatchSize = 2
 
-	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false)
+	_, err := rc.Insert("mybatcher", "", "mystream", "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 
 	s, err := rc.NextBatch("mybatcher", "donebatch")
@@ -386,17 +430,17 @@ func BenchmarkRedis1Insert(b *testing.B) {
 	rc.BatchSize = 250
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{float64(n), true, ""}}, false)
+		rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{float64(n), true, ""}}, false, 0, 0)
 	}
 }
 
 func BenchmarkRedis1InsertRestamp(b *testing.B) {
 	rc.Clear()
 	rc.BatchSize = 250
-	rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{2.0, true, ""}}, false)
+	rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{2.0, true, ""}}, false, 0, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{1.0, true, ""}}, true)
+		rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{1.0, true, ""}}, true, 0, 0)
 	}
 }
 
@@ -407,7 +451,7 @@ func BenchmarkRedis1InsertParallel(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{1.0, true, ""}}, false)
+			rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{1.0, true, ""}}, false, 0, 0)
 		}
 	})
 }
@@ -422,7 +466,7 @@ func BenchmarkRedis1000Insert(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+		rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 	}
 }
 
@@ -437,7 +481,7 @@ func BenchmarkRedis1000InsertParallel(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+			rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 		}
 	})
 }
@@ -450,11 +494,11 @@ func BenchmarkRedis1000InsertRestamp(b *testing.B) {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
 
-	rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{9000000.0, true, ""}}, false)
+	rc.Insert("mybatcher", "", "mystream", "", datastream.DatapointArray{datastream.Datapoint{9000000.0, true, ""}}, false, 0, 0)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		rc.Insert("mybatcher", "", "mystream", "", dpa, true)
+		rc.Insert("mybatcher", "", "mystream", "", dpa, true, 0, 0)
 	}
 }
 
@@ -465,7 +509,7 @@ func BenchmarkRedisStreamLength(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		dpa[i] = datastream.Datapoint{float64(i), true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 
 	b.ResetTimer()
 
@@ -481,7 +525,7 @@ func BenchmarkRedis1000Get(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rc.Get("", "mystream", "")
@@ -495,7 +539,7 @@ func BenchmarkRedis250Get(b *testing.B) {
 	for i := 0; i < 250; i++ {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rc.Get("", "mystream", "")
@@ -509,7 +553,7 @@ func BenchmarkRedis250Range(b *testing.B) {
 	for i := 0; i < 250; i++ {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rc.Range("", "mystream", "", 0, 0)
@@ -524,7 +568,7 @@ func BenchmarkRedis250RangeMiss(b *testing.B) {
 	for i := 0; i < 250; i++ {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 
 	rc.TrimStream("", "mystream", "", 4)
 	b.ResetTimer()
@@ -541,7 +585,7 @@ func BenchmarkRedis10Range(b *testing.B) {
 	for i := 0; i < 250; i++ {
 		dpa[i] = datastream.Datapoint{1.0, true, ""}
 	}
-	rc.Insert("mybatcher", "", "mystream", "", dpa, false)
+	rc.Insert("mybatcher", "", "mystream", "", dpa, false, 0, 0)
 	rc.TrimStream("", "mystream", "", 4)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
