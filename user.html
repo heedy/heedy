@@ -9,7 +9,8 @@
 	<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
 	<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
 
-	<link rel="icon" href="/app/assets/icon.png">
+	<link rel="icon" href="/app/branding/sizes/square_xs.png">
+
 </head>
 <body>
 
@@ -120,30 +121,32 @@
 	<div class="col-md-3" id="sidebar">
 		<div class="list-group">
 			<div class="list-group-item" id="profile">
-				<img class="pageIcon" src="{{.ThisUser.Icon}}"></img>
+				<img class="pageIcon" src="{{.User.Icon}}"></img>
 
 				<hr>
-				<b>{{html .ThisUser.Name}}</b><br>
-				<p>{{html .ThisUser.Description}}</p>
+				<b>{{html .User.Name}}</b><br>
+				<p>{{html .User.Description}}</p>
 			</div>
 			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">settings</i>My Settings</a>
 			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download My Data</a>
 
-			<a href="/api/v1/crud/{{.ThisUser.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Profile Developer View</a>
-			<a href="/api/v1/crud/{{.ThisUser.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Devices Developer View</a>
+			<a href="/api/v1/crud/{{.User.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Profile Developer View</a>
+			<a href="/api/v1/crud/{{.User.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Devices Developer View</a>
 
 		</div>
 	</div>
 
-	<div class="col-md-9">
 
+
+
+	<div class="col-md-9">
 		<table class="table">
 			<thead>
 			</thead>
 			<tbody>
-										{{$username := .ThisUser.Name }}
+				{{$username := .User.Name }}
 
-				{{range $element := .ReadMyDevices}}
+				{{range $element := .ReadDevices}}
 				<tr>
 					<td>
 						<img class="mainTableImage"></img>
@@ -188,8 +191,7 @@
 <!-- Placed at the end of the document so the pages load faster -->
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-<script src="assets/js/bootstrap.min.js"></script>
+<script src="/app/assets/js/bootstrap.min.js"></script>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 

@@ -1,10 +1,197 @@
-<html>
-<h1>Hi {{.ThisUser.Name}}. You are looking at {{.User.Name}}/{{.Device.Name}}</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!--NOTE: this is an alpha version of bootstrap and should be changed in
+	the future!-->
+	<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
+	<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
+
+	<link rel="icon" href="/app/branding/sizes/square_xs.png">
+
+</head>
+<body>
+
+	<nav class="navbar navbar-light navbar-static-top bg-faded" role="banner">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="/">
+					<img class="navbar-brand" style="height:1.5em;" alt="ConnectorDB Logo" src="/app/assets/branding/sizes/title_logo_dark_xs.png"></img>
+				</a>
+
+				<button class="navbar-toggler pull-xs-right hidden-sm-up" type="button" data-toggle="collapse" data-target="#main-nav">
+					☰ Menu
+				</button>
+			</div>
+
+			<div class="collapse navbar-toggleable-xs" id="main-nav">
+				<div class="pull-xs-right">
+					<form class="form-inline pull-xs-right" >
+						<button class="btn btn-success" id="loginbutton" type="button" data-toggle="collapse" data-target="#login-accordian" aria-expanded="false">Login/Sgnup</button>
+					</form>
+
+					&nbsp;&nbsp;
+
+					<form class="form-inline pull-xs-right" role="search">
+						<input type="text" class="form-control" placeholder="Find users, devices or data" name="q">
+						<button class="btn btn-primary-outline" type="submit">Search</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</nav>
 
 
-{{range $element := .ReadStreams}}
-	{{$element.Name}}<br>
-{{end}}
 
-<p>Using cdb version {{.Version}}</p>
+	<div class="collapse" id="login-accordian">
+		<div class="container-fluid bg-inverse p-a-1">
+			<div class="row">
+				<div class="col-sm-6 m-b-3">
+					<h4>Log In</h4>
+
+					<form>
+
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Username or Email Address</label>
+							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username or Email">
+						</fieldset>
+
+						<fieldset class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+						</fieldset>
+						<button class="btn btn-success" type="submit">Login</button>
+					</form>
+
+				</div>
+				<div class="col-sm-6 m-b-3">
+					<h4>Sign Up</h4>
+					<form>
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Username</label>
+							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
+						</fieldset>
+
+						<fieldset class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+						</fieldset>
+
+
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Email Address</label>
+							<input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
+							<small class="text-muted">We'll never share your email with anyone else and won't send you promotions.</small>
+						</fieldset>
+						<button class="btn btn-success" type="submit">Sign Me Up</button>
+
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+
+	<!-- STANDARD HEADER======================================================== -->
+
+
+	<div class="jumbotron minitron">
+		<div class="container">
+			<h1>Data Collector</h1>
+			<p class="lead">Information about {{.Device.Name}} and the data it provides</p>
+		</div>
+	</div>
+
+	<div class="container">
+
+
+<!-- STANDARD SUB-PAGE ===================================================== -->
+
+<div class="row">
+	<div class="col-md-3" id="sidebar">
+		<div class="list-group">
+			<div class="list-group-item" id="profile">
+				<img class="pageIcon" src="{{.ThisUser.Icon}}"></img>
+
+				<hr>
+				<b>{{html .Device.Name}}</b><br>
+				<p>{{html .Device.Description}}</p>
+			</div>
+			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download All Data</a>
+
+			<a href="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Developer View</a>
+			<a href="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Stream Developer View</a>
+
+		</div>
+	</div>
+
+	<div class="col-md-9">
+				<ol class="breadcrumb">
+				<li><a href="/{{.User.Name}}">{{.User.Name | html}}</a></li>
+				<li class="active">{{.Device.Name}}</li>
+				<!--<li class="active">stream</li>-->
+			</ol>
+
+
+		<table class="table">
+			<thead>
+			</thead>
+			<tbody>
+				{{$username := .User.Name }}
+				{{$devicename := .Device.Name}}
+
+				{{range $element := .ReadStreams}}
+				<tr>
+					<td>
+						<img class="mainTableImage"></img>
+					</td>
+					<td>
+						<h4><a href="/{{$username}}/{{$devicename}}/{{$element.Name}}">{{$element.Name | html}}</a></h4>
+						<p>
+							Bootstrap is the world’s most popular framework for building responsive, mobile-first sites and applications. Inside you’ll find high quality HTML, CSS, and JavaScript to make starting any project easier than ever.
+							{{$element.Description | html}}</p>
+						<span class="mainTableFooter text-muted"></span>
+						<span class="lock">
+							{{/*
+							{{if $element.IsVisible}}
+								<small class="text-muted" style="color:green;">
+									<i class="material-icons">lock_open</i> Public</small>
+							{{else}}
+								<small class="text-muted" style="color:red;">
+									<i class="material-icons">lock_outline</i> Private</small>
+							{{end}}
+							*/}}
+						</span>
+					</td>
+				</tr>
+				{{end}}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- STANDARD FOOTER======================================================== -->
+
+<div class="footer">
+	<small><p>ConnectorDB version {{.Version}} | Copyright (C) 2016 The ConnectorDB Team</p></small>
+</div>
+
+</div>
+
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="/app/assets/js/bootstrap.min.js"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+</body>
 </html>
