@@ -56,6 +56,9 @@ go-dependencies:
 
 	go get github.com/stretchr/testify
 
+	# PipeScript
+	go get github.com/connectordb/pipescript
+
 
 bin/dep/gnatsd: bin/dep
 	go build -o bin/dep/gnatsd github.com/nats-io/gnatsd

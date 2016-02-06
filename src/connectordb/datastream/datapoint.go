@@ -1,10 +1,14 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datastream
 
 import (
-	"util"
-	"fmt"
+	"encoding/json"
 	"reflect"
 	"time"
+	"util"
 
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -28,6 +32,16 @@ func DatapointFromBytes(data []byte) (d Datapoint, err error) {
 	return d, err
 }
 
+// String returns a json representatino of the datapoint
+func (d *Datapoint) String() string {
+	if d == nil {
+		return "null"
+	}
+	b, _ := json.Marshal(d)
+	return string(b)
+}
+
+/*
 //String prints out a pretty string representation of the datapoint
 func (d *Datapoint) String() string {
 	if d == nil {
@@ -39,6 +53,7 @@ func (d *Datapoint) String() string {
 	}
 	return s + "]"
 }
+*/
 
 //Bytes returns the msgpack marshalled representation of the datapoint
 func (d *Datapoint) Bytes() ([]byte, error) {

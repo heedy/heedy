@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datastream
 
 //Cache is an interface that caches datapoints for all the streams until there are enoguh in memory to form a batch

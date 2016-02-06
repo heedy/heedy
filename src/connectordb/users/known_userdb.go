@@ -1,8 +1,11 @@
-package users
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 
-/** This is the known userdb, it probably won't be used in production, but it
+This is the known userdb, it probably won't be used in production, but it
 can be handy while doing testing to ensure everything returns a success.
 **/
+package users
 
 var (
 	KnownDevice = Device{Name: "KnownDev"}

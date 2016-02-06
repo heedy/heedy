@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package webcore
 
 import (
@@ -6,27 +10,31 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-// Initialize sets up the necessary global state of WebCore such that it fits the given configuration
+// Initialize sets up the necessary global state of WebCore such that it fits the given configuration.
+// Note that it is called in a config change callback, and does not use locking of state, so some weird
+// bugs might be possible if config is reloaded frequently during heavy load
 func Initialize(c *config.Configuration) error {
 	//First initialize the sessino cookies
-	authkey, err := c.GetSessionAuthKey()
+	authkey, err := c.Frontend.Session.GetAuthKey()
 	if err != nil {
 		return err
 	}
-	encryptkey, err := c.GetSessionEncryptionKey()
+	encryptkey, err := c.Frontend.Session.GetEncryptionKey()
 	if err != nil {
 		return err
 	}
 	CookieMonster = securecookie.New(authkey, encryptkey)
 
-	//Now initialize the QueryTimer map
-	QueryTimers = make(map[string]*QueryTimer)
-
 	//Set up the server globals
 	AllowCrossOrigin = c.AllowCrossOrigin
-	SiteName = c.SiteName
+	SiteName = c.SiteURL()
 
 	CookieMaxAge = c.Session.MaxAge
+
+	// Set the enabled state of the server
+	if c.Enabled != IsActive {
+		SetEnabled(c.Enabled)
+	}
 
 	return nil
 }

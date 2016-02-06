@@ -1,93 +1,61 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package query
 
 import (
 	"connectordb/datastream"
-	"connectordb/query/interpolators"
-	"connectordb/query/transforms"
+	"errors"
+
+	"github.com/connectordb/pipescript"
+	"github.com/connectordb/pipescript/interpolator"
 )
 
 //DatasetRangeElement is the element that includes the interpolator and transform for a given dataset
 type DatasetRangeElement struct {
-	Interpolator interpolators.Interpolator
-	Transform    transforms.DatapointTransform
+	Interpolator interpolator.InterpolatorInstance
+	Range        datastream.DataRange
 	AllowNil     bool
 }
 
 //Close closes the internal database connections
 func (dre *DatasetRangeElement) Close() {
-	dre.Interpolator.Close()
+	dre.Range.Close()
 }
 
-//GetDatasetPoint gets a point from the dataset for the given timestamp
-func GetDatasetPoint(timestamp float64, ranges map[string]*DatasetRangeElement) (dpp *datastream.Datapoint, err error) {
-	datamap := make(map[string]*datastream.Datapoint)
-	for key := range ranges {
-		datamap[key], err = ranges[key].Interpolator.Interpolate(timestamp)
-		if err != nil {
-			return nil, err
-		}
-		if ranges[key].Transform != nil {
-			datamap[key], err = ranges[key].Transform.Transform(datamap[key])
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return &datastream.Datapoint{Timestamp: timestamp, Data: datamap}, nil
-}
-
-//TDatasetRange is a DataRange used for TDatasets
-type TDatasetRange struct {
-	Data    map[string]*DatasetRangeElement
-	Dt      float64
-	CurTime float64
-	EndTime float64
+type DatasetRange struct {
+	Data map[string]*DatasetRangeElement
+	Iter pipescript.DatapointIterator
 }
 
 //Close closes the open DataRanges
-func (dr *TDatasetRange) Close() {
+func (dr *DatasetRange) Close() {
 	for key := range dr.Data {
 		dr.Data[key].Close()
 	}
 }
 
-//Next gets the next datapoint from the TDatasetRange
-func (dr *TDatasetRange) Next() (dp *datastream.Datapoint, err error) {
-	if dr.CurTime > dr.EndTime {
-		return nil, nil
+//Next gets the next datapoint from the DatasetRange
+func (dr *DatasetRange) Next() (*datastream.Datapoint, error) {
+	dp, err := dr.Iter.Next()
+	if err != nil || dp == nil {
+		return nil, err
 	}
-	dp, err = GetDatasetPoint(dr.CurTime, dr.Data)
-	dr.CurTime += dr.Dt
 
-	return dp, err
-}
+	// The datapoint exists. Now ensure that it is not nil
+	v, ok := dp.Data.(map[string]*pipescript.Datapoint)
+	if !ok {
+		return nil, errors.New("Invalid dataset type - PROGRAMMING ERROR")
+	}
 
-type YDatasetRange struct {
-	Data   map[string]*DatasetRangeElement
-	YRange datastream.DataRange
-	Ydp    *datastream.Datapoint
-}
-
-//Close closes the open DataRanges
-func (dr *YDatasetRange) Close() {
 	for key := range dr.Data {
-		dr.Data[key].Close()
+		v2, ok := v[key]
+		if !dr.Data[key].AllowNil && (v2 == nil || !ok) {
+			return dr.Next() // Recursively remove nils
+		}
 	}
-	dr.YRange.Close()
-}
 
-//Next gets the next datapoint from the TDatasetRange
-func (dr *YDatasetRange) Next() (dp *datastream.Datapoint, err error) {
-	if dr.Ydp == nil {
-		return nil, nil
-	}
-	dp, err = GetDatasetPoint(dr.Ydp.Timestamp, dr.Data)
-	if err != nil {
-		return dp, err
-	}
-	//Set the "y" datapoint
-	dp.Data.(map[string]*datastream.Datapoint)["y"] = dr.Ydp
+	return &datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data}, nil
 
-	dr.Ydp, err = dr.YRange.Next()
-	return dp, err
 }

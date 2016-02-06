@@ -1,12 +1,8 @@
-package users
-
-/** Package users provides an API for managing user information.
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
-All Rights Reserved
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 **/
+package users
 
 import (
 	"connectordb/datastream"
@@ -15,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"util"
 
 	"github.com/josephlewis42/multicache"
 )
@@ -117,10 +112,12 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) e
 	}
 
 	// Validate no object subtypes (they are valid, but not in this database
-	// due to ml considerations)
-	if util.SchemaContainsObjectFields(Type) {
-		return ErrInvalidSchema
-	}
+	// due to ml considerations).
+	// TODO: bug(daniel): This is totally broken. Fails on totally valid schemas such as {"type": "integer", "minimum": 0}
+	// I don't want to spend the time figuring out how it works right now
+	//if util.SchemaContainsObjectFields(Type) {
+	//	return ErrInvalidSchema
+	//}
 
 	_, err := userdb.Exec(`INSERT INTO Streams
 	    (	Name,

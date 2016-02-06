@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package authoperator
 
 import (
@@ -38,7 +42,7 @@ func TestAuthStreamIO(t *testing.T) {
 
 		data := []datastream.Datapoint{datastream.Datapoint{
 			Timestamp: 1.0,
-			Data:      1336,
+			Data:      -1336,
 		}}
 		require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
 
@@ -54,7 +58,7 @@ func TestAuthStreamIO(t *testing.T) {
 		dp, err := dr.Next()
 		require.NoError(t, err)
 		require.NotNil(t, dp)
-		require.Equal(t, int64(1336), dp.Data.(int64))
+		require.Equal(t, int64(-1336), dp.Data.(int64))
 		require.Equal(t, 1.0, dp.Timestamp)
 		require.Equal(t, "", dp.Sender)
 
@@ -72,7 +76,7 @@ func TestAuthStreamIO(t *testing.T) {
 		dp, err := dr.Next()
 		require.NoError(t, err)
 		require.NotNil(t, dp)
-		require.Equal(t, int64(1336), dp.Data.(int64))
+		require.Equal(t, int64(-1336), dp.Data.(int64))
 		require.Equal(t, 1.0, dp.Timestamp)
 		require.Equal(t, "", dp.Sender)
 
@@ -123,7 +127,7 @@ func TestAuthSubstream(t *testing.T) {
 
 	data := []datastream.Datapoint{datastream.Datapoint{
 		Timestamp: 1.0,
-		Data:      1336,
+		Data:      -1336,
 	}}
 	require.NoError(t, o.InsertStream("tst/tst2/tst", data, false))
 
@@ -137,7 +141,7 @@ func TestAuthSubstream(t *testing.T) {
 	dp, err := dr.Next()
 	require.NoError(t, err)
 	require.NotNil(t, dp)
-	require.Equal(t, int64(1336), dp.Data.(int64))
+	require.Equal(t, int64(-1336), dp.Data.(int64))
 	require.Equal(t, 1.0, dp.Timestamp)
 	require.Equal(t, "tst/tst", dp.Sender)
 

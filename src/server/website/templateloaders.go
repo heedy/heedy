@@ -1,14 +1,18 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package website
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"path"
-	"sync"
+	"util"
 
 	"github.com/kardianos/osext"
-	"gopkg.in/fsnotify.v1"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -41,13 +45,9 @@ var (
 //FileTemplate implements all the necessary logic to read/write a "special" templated file
 // as well as to update it from the folder in real time as it is modified.
 type FileTemplate struct {
-	sync.RWMutex //RWMutex allows for writing the template during runtime
-
-	FilePath string
 	Template *template.Template
 
-	Watcher *fsnotify.Watcher
-	done    chan bool
+	Watcher *util.FileWatcher
 }
 
 //NewFileTemplate loads a template from file and subscribes to changes from the file system
@@ -66,68 +66,39 @@ func NewFileTemplate(fpath string, err error) (*FileTemplate, error) {
 		return nil, err
 	}
 
-	watch, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-
-	err = watch.Add(fpath)
-	if err != nil {
-		watch.Close()
-	}
-
-	done := make(chan bool)
-
 	ft := &FileTemplate{
-		RWMutex:  sync.RWMutex{},
-		FilePath: fpath,
 		Template: tmpl,
-		Watcher:  watch,
-		done:     done,
 	}
 
-	//Run the file watch in the background
-	go ft.Watch()
+	ft.Watcher, err = util.NewFileWatcher(fpath, ft)
 
-	return ft, nil
+	return ft, err
 }
 
-//Watch is run in the background to watch for changes in the template files
-func (f *FileTemplate) Watch() {
-	for {
-		select {
-		case event := <-f.Watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				//We reload the file
-				log.Infof("Reloading file: '%s'", f.FilePath)
-				file, err := ioutil.ReadFile(f.FilePath)
-				if err != nil {
-					log.Errorf("Could not read '%s'", f.FilePath)
-				} else {
-					tmpl, err := template.New(f.FilePath).Parse(string(file))
-					if err != nil {
-						log.Errorf("Failed to parse '%s'", f.FilePath)
-					} else {
-						f.Lock()
-						f.Template = tmpl
-						f.Unlock()
-					}
-				}
-			}
-		case err := <-f.Watcher.Errors:
-			log.Printf("Watcher for '%s' failed: %s", f.FilePath, err.Error())
-			return
-		case <-f.done:
-			return
-		}
+// Reload loads up the template from the file path
+func (f *FileTemplate) Reload() error {
+	file, err := ioutil.ReadFile(f.Watcher.FileName)
+	if err != nil {
+		return err
 	}
+
+	tmpl, err := template.New(f.Watcher.FileName).Parse(string(file))
+	if err != nil {
+		err = fmt.Errorf("Failed to parse '%s': %v", f.Watcher.FileName, err.Error())
+		return err
+	}
+	f.Watcher.Lock()
+	f.Template = tmpl
+	f.Watcher.Unlock()
+
+	return nil
 }
 
 //Execute the template
 func (f *FileTemplate) Execute(w io.Writer, data interface{}) error {
-	f.RLock()
+	f.Watcher.RLock()
 	err := f.Template.Execute(w, data)
-	f.RUnlock()
+	f.Watcher.RUnlock()
 	return err
 }
 

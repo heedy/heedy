@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datastream
 
 import (
@@ -34,7 +38,7 @@ var (
 )
 
 func TestDatapointArrayString(t *testing.T) {
-	require.Equal(t, "DatapointArray{[T=1.000 D=helloWorl S=me]}", dpa3.String())
+	require.Equal(t, "DatapointArray{{\"t\":1,\"d\":\"helloWorl\",\"o\":\"me\"}}", dpa3.String())
 }
 
 func TestEquality(t *testing.T) {

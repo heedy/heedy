@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package query
 
 import (
@@ -28,7 +32,7 @@ func TestExtendedTransformRange(t *testing.T) {
 
 	dr := datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err := NewExtendedTransformRange(dr, "if $ < 5: $ >= 3")
+	tr, err := NewExtendedTransformRange(dr, "if $ < 5 | $ >= 3")
 	require.NoError(t, err)
 
 	for i := 0; i < len(dpa2); i++ {
@@ -44,7 +48,7 @@ func TestExtendedTransformRange(t *testing.T) {
 
 	dr = datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err = NewExtendedTransformRange(dr, "if $ < 5 | $ >= 3")
+	tr, err = NewExtendedTransformRange(dr, "if($ < 5):($ >= 3)")
 	require.NoError(t, err)
 
 	da, err := tr.NextArray()
@@ -103,7 +107,7 @@ func TestTransformRange(t *testing.T) {
 
 	dr := datastream.NewDatapointArrayRange(dpa, 0)
 
-	tr, err := NewTransformRange(dr, "if $ < 5: $ >= 3")
+	tr, err := NewTransformRange(dr, "if $ < 5 | $ >= 3")
 	require.NoError(t, err)
 
 	for i := 0; i < len(dpa2); i++ {

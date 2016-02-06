@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package query
 
 import (
@@ -12,9 +16,9 @@ func CompareRange(t *testing.T, dr datastream.DataRange, dpa datastream.Datapoin
 	for i := range dpa {
 		dp, err := dr.Next()
 		require.NoError(t, err, dpa[i].String())
-		if !dp.IsEqual(dpa[i]) {
-			require.Equal(t, dp.String(), dpa[i].String())
-		}
+
+		require.Equal(t, dp.String(), dpa[i].String())
+
 	}
 	dp, err := dr.Next()
 	require.NoError(t, err)

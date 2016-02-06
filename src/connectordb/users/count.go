@@ -1,14 +1,10 @@
-package users
-
 /**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 
 Provides the ability to count the number of users/devices/streams in the database
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-
-All Rights Reserved
-
 **/
+package users
 
 func (userdb *SqlUserDatabase) CountUsers() (uint64, error) {
 	var output uint64
@@ -25,5 +21,17 @@ func (userdb *SqlUserDatabase) CountStreams() (uint64, error) {
 func (userdb *SqlUserDatabase) CountDevices() (uint64, error) {
 	var output uint64
 	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices;")
+	return output, err
+}
+
+func (userdb *SqlUserDatabase) CountStreamsForDevice(DeviceID int64) (uint64, error) {
+	var output uint64
+	err := userdb.Get(&output, "SELECT COUNT(StreamId) FROM Streams WHERE DeviceId = ?;", DeviceID)
+	return output, err
+}
+
+func (userdb *SqlUserDatabase) CountDevicesForUser(UserID int64) (uint64, error) {
+	var output uint64
+	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices WHERE UserId = ?;", UserID)
 	return output, err
 }

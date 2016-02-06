@@ -1,9 +1,12 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package restcore
 
 import (
 	"connectordb/datastream"
 	"connectordb/operator"
-	"connectordb/operator/datapoint"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"util/datapoint"
 
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
@@ -226,7 +230,7 @@ func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 		return WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 
-	jreader, err := datapoint.NewJsonReader(dr)
+	jreader, err := datapoint.NewJsonArrayReader(dr)
 	if err != nil {
 		if err == io.EOF {
 			writer.Header().Set("Content-Type", "application/json; charset=utf-8")

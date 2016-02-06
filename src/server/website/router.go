@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package website
 
 //Router returns a fully formed Gorilla router given an optional prefix
@@ -8,11 +12,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Screw it, let's just use a global database
+var Database *connectordb.Database
+
 // Router handles the website
 func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	if r == nil {
 		r = mux.NewRouter()
 	}
+
+	Database = db
 
 	err := LoadFiles()
 	if err != nil {
@@ -31,11 +40,16 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	//Handle the favicon
 	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusMovedPermanently))
 	r.Handle("/robots.txt", http.RedirectHandler(www+"/robots.txt", http.StatusMovedPermanently))
+	r.Handle("/sitemap.xml", http.RedirectHandler(www+"/sitemap.xml", http.StatusMovedPermanently))
 
 	// These functions are actually fairly standard for login/logout across different apps
 	// so we make them work the same way here
 	r.Handle("/logout", http.HandlerFunc(LogoutHandler)).Methods("GET")
 	r.Handle("/login", Authenticator(WWWLogin, Login, db)).Methods("GET")
+
+	// Handle creation of new users
+	r.Handle("/join", http.HandlerFunc(JoinHandleGET)).Methods("GET")
+	r.Handle("/join", http.HandlerFunc(JoinHandlePOST)).Methods("POST")
 
 	//Now load the user/device/stream paths
 	r.HandleFunc("/", Authenticator(WWWIndex, Index, db)).Methods("GET")

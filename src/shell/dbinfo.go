@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package shell
 
 /* Gives information about the state of the database
@@ -6,7 +10,10 @@ Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors
 All Rights Reserved
 */
 
-import "fmt"
+import (
+	"config"
+	"fmt"
+)
 
 func init() {
 	help := "Prints information about the database to the console"
@@ -14,7 +21,7 @@ func init() {
 	name := "dbinfo"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := cfg.GetSqlConnectionString()
+		dbcxn := config.Get().GetSqlConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
 		users, _ := shell.operator.CountUsers()

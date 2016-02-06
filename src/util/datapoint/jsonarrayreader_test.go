@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datapoint
 
 import (
@@ -7,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestJsonReader(t *testing.T) {
+func TestJsonArrayReader(t *testing.T) {
 	timestamps := []float64{1000, 1500, 2001, 2500, 3000}
 
 	dpb := make([]datastream.Datapoint, 5)
@@ -18,7 +22,7 @@ func TestJsonReader(t *testing.T) {
 
 	dpa := datastream.NewDatapointArrayRange(dpb, 0)
 
-	jr, err := NewJsonReader(dpa)
+	jr, err := NewJsonArrayReader(dpa)
 
 	databytes := make([]byte, 5000)
 

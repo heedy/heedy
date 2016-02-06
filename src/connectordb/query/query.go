@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package query
 
 import (
@@ -25,7 +29,7 @@ type StreamQuery struct {
 	T2        float64 `json:"t2,omitempty"`        //The end time of the range to get
 	Limit     int64   `json:"limit,omitempty"`     //The limit of number of datapoints to allow
 
-	indexbacktrack int64 //The number of elements to backtrack before a starting time (used for time queries)
+	indexbacktrack int64 `json:"-"` //The number of elements to backtrack before a starting time (used for time queries)
 }
 
 //IsValid checks if the StreamQuery encodes a valid query. It does not check whether
@@ -40,7 +44,7 @@ func (s *StreamQuery) HasRange() bool {
 	return s.I1 != 0 || s.I2 != 0 || s.T1 != 0 || s.T2 != 0 || s.Limit != 0
 }
 
-//Run runs the query that the struct encodes on the given operator
+//Run runs the query that the struct encodes on the given operator.
 func (s *StreamQuery) Run(qm Operator) (datastream.DataRange, error) {
 
 	if s.T1 != 0 || s.T2 != 0 || s.Limit != 0 {

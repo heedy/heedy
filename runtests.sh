@@ -103,8 +103,23 @@ echo "Running coverage tests"
 echo "==================================================="
 #go test --timeout 15s -p=1 -v -cover connectordb/...
 go test --timeout 15s -p=1 -cover connectordb/...
+test_status=$?
+if [ "$test_status" -ne 0 ]; then
+    stop
+    exit $test_status
+fi
 go test --timeout 15s -p=1 -cover util/...
+test_status=$?
+if [ "$test_status" -ne 0 ]; then
+    stop
+    exit $test_status
+fi
 go test --timeout 15s -p=1 -cover server/...
+test_status=$?
+if [ "$test_status" -ne 0 ]; then
+    stop
+    exit $test_status
+fi
 
 #go test --timeout 15s -p=1 -bench . connectordb/...
 test_status=$?

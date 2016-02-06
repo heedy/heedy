@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package webcore
 
 import (
@@ -23,7 +27,7 @@ var (
 
 	StatsTimePeriod = 1.0 * time.Minute
 
-	QueryTimers     = map[string]*QueryTimer{}
+	QueryTimers     = make(map[string]*QueryTimer)
 	QueryTimePeriod = 24 * time.Hour
 )
 

@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package datastream
 
 //The ExtendedDataRange interface - this is the object that is returned from different caches/stores - it represents

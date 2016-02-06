@@ -1,9 +1,6 @@
-/** Package users provides an API for managing user information.
-
-Copyright 2015 - Joseph Lewis <joseph@josephlewis.net>
-                 Daniel Kumor <rdkumor@gmail.com>
-
-All Rights Reserved
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 **/
 
 package users

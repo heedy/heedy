@@ -1,9 +1,15 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package query
 
 import (
 	"connectordb/datastream"
 	"errors"
 	"fmt"
+
+	"github.com/connectordb/pipescript"
 )
 
 //MaxMergeNumber represents the maximum number of streams to merge. Any number greater than this will result in an error
@@ -12,7 +18,7 @@ var MaxMergeNumber = 10
 //MergeRange is a DataRange that merges several DataRanges together. It is used to implement the Merge command
 type MergeRange struct {
 	datarange []datastream.DataRange
-	datapoint []*datastream.Datapoint
+	iterator  pipescript.DatapointIterator
 }
 
 //Close closes the merge
@@ -23,51 +29,29 @@ func (mr *MergeRange) Close() {
 }
 
 //Next gets the next datapoint of the merged stream
-func (mr *MergeRange) Next() (dp *datastream.Datapoint, err error) {
-	//TODO: There are several inefficiencies in this implementation: First off, it is O(n), where
-	//it can be made O(logn) by using a tree. Second, I just keep nulls in the array, which is
-	//totally BS, the array could be made shorter when one range empties. But I just want to get this
-	//thing working atm, so making it efficient is a task for later.
-	mini := -1
-	mint := float64(0)
-	for i := range mr.datapoint {
-		//DataRanges that are empty will be nil
-		if mr.datapoint[i] != nil {
-			//Get the datapoint with smallest timestamp
-			if mr.datapoint[i].Timestamp < mint || mini == -1 {
-				mini = i
-				mint = mr.datapoint[i].Timestamp
-			}
-		}
+func (mr *MergeRange) Next() (*datastream.Datapoint, error) {
+	dp, err := mr.iterator.Next()
+	if err != nil || dp == nil {
+		return nil, err
 	}
-	if mini == -1 {
-		//There are no datapoints left
-		return nil, nil
-	}
-	dp = mr.datapoint[mini]
-
-	mr.datapoint[mini], err = mr.datarange[mini].Next()
-
-	return dp, err
+	return &datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data}, nil
 }
 
 //NewMergeRange generates a MergeRange given an array of DataRanges
 func NewMergeRange(dr []datastream.DataRange) (*MergeRange, error) {
-	dpa := make([]*datastream.Datapoint, 0, len(dr))
+	iarray := make([]pipescript.DatapointIterator, len(dr))
 
 	for i := range dr {
-		dp, err := dr[i].Next()
-		if err != nil {
-			//We've got an error - close all the ranges
-			for j := range dr {
-				dr[j].Close()
-			}
-			return nil, err
+		iarray[i] = &DatapointIterator{dr[i]}
+	}
+	mrg, err := pipescript.Merge(iarray)
+	if err != nil {
+		for i := range dr {
+			dr[i].Close()
 		}
-		dpa = append(dpa, dp)
 	}
 
-	return &MergeRange{dr, dpa}, nil
+	return &MergeRange{dr, mrg}, err
 }
 
 //Merge returns a MergeRange which merges the given streams into one large stream

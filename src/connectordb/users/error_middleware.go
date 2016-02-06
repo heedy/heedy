@@ -1,10 +1,13 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+
+This is the error userdb, it probably won't be used in production, but it
+can be handy while doing testing to ensure everything returns an error.
+**/
 package users
 
 import "errors"
-
-/** This is the error userdb, it probably won't be used in production, but it
-can be handy while doing testing to ensure everything returns an error.
-**/
 
 var (
 	ErrorUserdbError = errors.New("Error Middleware Error")

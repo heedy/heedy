@@ -1,4 +1,7 @@
-// Package users provides an API for managing user information.
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package users
 
 import (
@@ -17,6 +20,7 @@ var (
 	ErrEmailExists     = errors.New("A user already exists with this email")
 	ErrUsernameExists  = errors.New("A user already exists with this username")
 	ErrDisallowedEmail = errors.New("The email domain you specified is not valid")
+	ErrMaxUsers        = errors.New("Maximum user limit was reached")
 )
 
 // User is the storage type for rows of the database.
@@ -111,16 +115,33 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 	existing, err := userdb.readByNameOrEmail(Name, Email)
 
 	if err == nil {
-		// Check for existance of user to provide helpful notices
+		// Check for existence of user to provide helpful notices
+
 		switch {
 		case existing.Email == Email:
 			return ErrEmailExists
 		case existing.Name == Name:
 			return ErrUsernameExists
-		case !IsValidName(Name):
-			return ErrInvalidUsername
-		case !config.GetSystemConfiguration().IsAllowedEmail(Email):
-			return ErrDisallowedEmail
+
+		}
+	}
+
+	cfg := config.Get()
+
+	switch {
+	case !IsValidName(Name):
+		return ErrInvalidUsername
+	case !cfg.IsAllowedUsername(Name):
+		return ErrInvalidUsername
+	case !cfg.IsAllowedEmail(Email):
+		return ErrDisallowedEmail
+	case cfg.MaxUsers != -1:
+		num, err := userdb.CountUsers()
+		if err != nil {
+			return err
+		}
+		if num >= uint64(cfg.MaxUsers) {
+			return ErrMaxUsers
 		}
 	}
 

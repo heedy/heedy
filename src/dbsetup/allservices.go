@@ -1,3 +1,7 @@
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
+**/
 package dbsetup
 
 import (
@@ -36,10 +40,14 @@ func Create(c *config.Configuration) error {
 	}
 
 	//Now generate the conf file for the full configuration
-	err := c.Save(filepath.Join(c.DatabaseDirectory, "connectordb.conf"))
+	dbconf := filepath.Join(c.DatabaseDirectory, "connectordb.conf")
+	err := c.Save(dbconf)
 	if err != nil {
 		return err
 	}
+
+	// Set that conf file as the globalConfiguration
+	config.SetPath(dbconf)
 
 	if err = NewRedisService(c.DatabaseDirectory, &c.Redis).Create(); err != nil {
 		return err

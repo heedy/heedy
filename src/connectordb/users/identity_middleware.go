@@ -1,8 +1,11 @@
-package users
+/**
+Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Licensed under the MIT license.
 
-/** This is the identity userdb, it probably won't be used in production, but it
+This is the identity userdb, it probably won't be used in production, but it
 can be handy while building new userdatabases.
 **/
+package users
 
 type IdentityMiddleware struct {
 	UserDatabase // the parent
