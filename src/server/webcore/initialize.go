@@ -27,7 +27,7 @@ func Initialize(c *config.Configuration) error {
 
 	//Set up the server globals
 	AllowCrossOrigin = c.AllowCrossOrigin
-	SiteName = c.SiteURL()
+	SiteName = c.GetSiteURL()
 
 	CookieMaxAge = c.CookieSession.MaxAge
 

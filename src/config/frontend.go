@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gorilla/securecookie"
@@ -81,7 +82,7 @@ type Frontend struct {
 	// The domain name of the website at which connectordb is running.
 	// This enables Connectordb to be able to output links to itself.
 	// Leave blank if domain is the same as Hostname
-	Domain string `json:"sitename"`
+	SiteURL string `json:"siteurl"`
 
 	// Whether the site options permit CORS
 	AllowCrossOrigin bool `json:"allowcrossorigin"`
@@ -135,19 +136,31 @@ func (f *Frontend) TLSEnabled() bool {
 	return f.TLSCert != "" && f.TLSKey != ""
 }
 
-// SiteURL returns a URL to the frontend
-func (f *Frontend) SiteURL() string {
-	siteurl := "http"
+// GetSiteURL returns a URL to the frontend
+func (f *Frontend) GetSiteURL() string {
+	siteurl := f.SiteURL
 
-	if f.TLSEnabled() {
-		siteurl += "s"
-	}
-	siteurl += "://" + f.Domain
+	if !strings.HasPrefix(siteurl, "http") {
+		// If the domain given starts with http, we assume the full correct answer was
+		// set - and we don't worry about setting up a good url.
+		// Otherwise, set up the URL according to the current port setup
+		siteurl = "http"
 
-	if !(f.TLSEnabled() && f.Port == 443) || (!f.TLSEnabled() && f.Port == 80) {
-		// If it is NOT a standard port, then add the port number to the URL
-		siteurl = fmt.Sprintf("%s:%d", siteurl, f.Port)
+		if f.TLSEnabled() {
+			siteurl += "s"
+		}
+		siteurl += "://" + f.SiteURL
+		if !(f.TLSEnabled() && f.Port == 443) || (!f.TLSEnabled() && f.Port == 80) {
+			// If it is NOT a standard port, then add the port number to the URL
+			siteurl = fmt.Sprintf("%s:%d", siteurl, f.Port)
+		}
 	}
+
+	// If it ends with a slash, remove the slash
+	if strings.HasSuffix(siteurl, "/") {
+		siteurl = siteurl[0 : len(siteurl)-2]
+	}
+
 	return siteurl
 }
 
@@ -187,8 +200,8 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 		}
 	}
 
-	if f.Domain == "" {
-		f.Domain = f.Hostname
+	if f.SiteURL == "" {
+		f.SiteURL = f.Hostname
 	}
 
 	if f.InsertLimitBytes < 100 {

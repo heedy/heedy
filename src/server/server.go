@@ -153,7 +153,7 @@ func RunServer() error {
 	//Run the dbwriter
 	go db.RunWriter()
 
-	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.SiteURL())
+	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.GetSiteURL())
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
