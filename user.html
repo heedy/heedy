@@ -121,11 +121,12 @@
 	<div class="col-md-3" id="sidebar">
 		<div class="list-group">
 			<div class="list-group-item" id="profile">
-				<img class="pageIcon" src="{{.User.Icon}}"></img>
+				<img class="pageIcon" {{.User.Icon | .DataURIToAttr }}></img>
 
 				<hr>
 				<b>{{html .User.Name}}</b><br>
 				<p>{{html .User.Description}}</p>
+
 			</div>
 			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">settings</i>My Settings</a>
 			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download My Data</a>

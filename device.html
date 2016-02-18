@@ -115,7 +115,7 @@
 	<div class="col-md-3" id="sidebar">
 		<div class="list-group">
 			<div class="list-group-item" id="profile">
-				<img class="pageIcon" src="{{.ThisUser.Icon}}"></img>
+				<img class="pageIcon" {{.Device.Icon | .DataURIToAttr}}></img>
 
 				<hr>
 				<b>{{html .Device.Name}}</b><br>
