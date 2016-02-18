@@ -141,16 +141,15 @@
 			<thead>
 			</thead>
 			<tbody>
-				{{$username := .User.Name }}
-				{{$devicename := .Device.Name}}
+
 
 				{{range $element := .ReadStreams}}
 				<tr>
 					<td>
-						<img class="mainTableImage"></img>
+						<img class="mainTableImage" {{$element.Icon | $.DataURIToAttr }}></img>
 					</td>
 					<td>
-						<h4><a href="/{{$username}}/{{$devicename}}/{{$element.Name}}">{{$element.Name | html}}</a></h4>
+						<h4><a href="/{{$.User.Name}}/{{$.Device.Name}}/{{$element.Name}}">{{$element.Name}}</a></h4>
 						<p>
 							Bootstrap is the world’s most popular framework for building responsive, mobile-first sites and applications. Inside you’ll find high quality HTML, CSS, and JavaScript to make starting any project easier than ever.
 							{{$element.Description | html}}</p>
