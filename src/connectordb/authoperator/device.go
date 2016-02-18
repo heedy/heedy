@@ -18,7 +18,7 @@ func (a *AuthOperator) CountDevices() (int64, error) {
 	urole := permissions.GetUserRole(perm, usr)
 	drole := permissions.GetDeviceRole(perm, dev)
 	if !urole.CanCountDevices || !drole.CanCountDevices {
-		return 0, errors.New("Don't have permissions necesaary to count devices")
+		return 0, errors.New("Don't have permissions necessary to count devices")
 	}
 	return a.Operator.CountDevices()
 }

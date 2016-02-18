@@ -11,11 +11,13 @@ import (
 	"github.com/connectordb/pipescript"
 
 	"github.com/connectordb/pipescript/transforms" // Load all available transforms
+    "github.com/connectordb/pipescript/interpolator/interpolators"  // Load all available interpolators
 )
 
 // Register all of pipescript's standard library of transforms
 func init() {
 	transforms.Register()
+    interpolators.Register()
 }
 
 //TransformArray transforms the given array.
