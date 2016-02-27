@@ -28,7 +28,11 @@ const SqlType = "postgres"
 // The header that is written to all config files
 var configHeader = `/* ConnectorDB Configuration File
 
-To see an explanation of the configuration options, please see:
+To see an explanation of the configuration, please see:
+
+http://connectordb.github.io/docs/config.html
+
+For a list of optinos and explanations of default values:
 https://github.com/connectordb/connectordb/blob/master/src/config/configuration.go
 	Look at NewConfiguration() which explains defaults.
 
@@ -43,9 +47,6 @@ The configuration file supports javascript style comments.
 
 Several options support live reload. Changing them in the configuration file will automatically update the corresponding setting
 in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any message).
-
-When running a local database, the configuration file is in connectordb.pid in the database directory. It will be deleted on shutdown,
-so will not save your changes. Save long-term changes to connectordb.conf in the same directory.
 */
 `
 

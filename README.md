@@ -13,16 +13,16 @@ make go-dependencies
 ```
 
 ## Building
-The following will create all necessary binaries
+The following will create all necessary binaries, and download the default web interface:
 
 ```bash
 make
 ```
 
-At that point, binaries are located in `/bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.github.io/download.html).
+At that point, binaries are located in `bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.github.io/download.html).
 
 ## Testing
-This will run all tests, spawning the necessary servers in the process:
+This will run all tests, spawning the necessary servers in the process (make sure you don't have any running connectordb instances):
 
 ```bash
 make test

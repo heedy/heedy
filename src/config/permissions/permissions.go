@@ -28,6 +28,9 @@ connectordb permissions permissions.conf
 
 This will generate the "default" configuration (which is built-in).
 For more info, see:
+http://connectordb.github.io/docs/permissions.html
+
+For the default options, see:
 github.com/connectordb/connectordb/tree/master/src/config/permissions/default.go
 
 Please note that "full" and "none" are built-in access levels, and as such

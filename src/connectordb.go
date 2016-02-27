@@ -85,6 +85,10 @@ func runConnectorDBCallback(c *cli.Context) {
 	//The run command allows to set the host and port to run server on
 	cfg.Hostname = c.String("host")
 	cfg.Port = uint16(c.Int("port"))
+	// Enable random people to join
+	if c.Bool("join") {
+		pconfig.Get().UserRoles["nobody"].Join = true
+	}
 	if c.Bool("http") {
 		log.Info("Running in http-only mode")
 		cfg.TLSKey = ""
@@ -242,6 +246,10 @@ func main() {
 				cli.BoolFlag{
 					Name:  "http",
 					Usage: "forces server to run in http mode even when TLS cert/key are in conf",
+				},
+				cli.BoolFlag{
+					Name:  "join",
+					Usage: "Enables free join on the server (anyone can join)",
 				},
 			},
 		},
