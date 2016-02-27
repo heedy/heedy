@@ -52,6 +52,7 @@ func TestUpdateStream(t *testing.T) {
 
 		stream.Nickname = "true"
 		stream.Schema = streamtestType
+		stream.Datatype = "mytype"
 
 		err = testdb.UpdateStream(stream)
 		assert.Nil(t, err, "Could not update stream %v", err)

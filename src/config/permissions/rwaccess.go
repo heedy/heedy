@@ -13,7 +13,7 @@ var (
 	FullRWAccess = RWAccess{true, true, true, true,
 		true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true,
-		true, true, true, true, true, true, true, true, true, nil}
+		true, true, true, true, true, true, true, true, true, true, nil}
 )
 
 // RWAccess is a struct of boolean permissions given for a certain role.
@@ -58,6 +58,7 @@ type RWAccess struct {
 	StreamDescription bool `json:"stream_description"`
 	StreamIcon        bool `json:"stream_icon"`
 	StreamSchema      bool `json:"stream_schema"`
+	StreamDatatype    bool `json:"stream_datatype"`
 	StreamEphemeral   bool `json:"stream_ephemeral"`
 	StreamDownlink    bool `json:"stream_downlink"`
 

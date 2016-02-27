@@ -32,6 +32,7 @@ type Stream struct {
 	Description string `json:"description"` // A public description
 	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
 	Schema      string `json:"schema"`
+	Datatype    string `json:"datatype"`
 	DeviceID    int64  `json:"-"`
 	Ephemeral   bool   `json:"ephemeral"`
 	Downlink    bool   `json:"downlink"`
@@ -197,6 +198,7 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 		Description = ?,
 		Icon = ?,
 		Schema = ?,
+		DataType= ?,
 		DeviceID = ?,
 		Ephemeral = ?,
 		Downlink = ?
@@ -206,6 +208,7 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 		stream.Description,
 		stream.Icon,
 		stream.Schema,
+		stream.Datatype,
 		stream.DeviceID,
 		stream.Ephemeral,
 		stream.Downlink,
