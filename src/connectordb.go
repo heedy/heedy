@@ -8,13 +8,11 @@ import (
 	"config"
 	"connectordb"
 	"dbsetup"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"server"
 	"shell"
-	"strconv"
 	"strings"
 	"util"
 
@@ -54,27 +52,6 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	log.Debug(config.Get().String())
 
 	return config.Get()
-}
-
-func rundbwriterCallback(c *cli.Context) {
-	cfg := getConfiguration(c)
-
-	db, err := connectordb.Open(cfg.Options())
-	defer db.Close()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	pidfile := c.String("pidfile")
-	if pidfile != "" {
-		log.Debugf("writing pidfile %s", pidfile)
-		err = ioutil.WriteFile(pidfile, []byte(strconv.Itoa(os.Getpid())), 0644)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
-
-	log.Info("Running DBWriter")
-	db.RunWriter()
 }
 
 func runconfigCallback(c *cli.Context) {
@@ -290,19 +267,6 @@ func main() {
 			Name:   "permissions",
 			Usage:  "Creates a new configuration file with default permissions at the given path.",
 			Action: runpermissionsCallback,
-		},
-		{
-			Name:    "dbwriter",
-			Aliases: []string{},
-			Usage:   "Runs the Redis to postgres data transfer process",
-			Action:  rundbwriterCallback,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "pidfile",
-					Value: "",
-					Usage: "The file to write the pid of dbwriter to",
-				},
-			},
 		},
 	}
 
