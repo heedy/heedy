@@ -36,14 +36,14 @@ func getDatabase(c *cli.Context) string {
 func getConfiguration(c *cli.Context) *config.Configuration {
 	//There are a few different situations that we handle here:
 	//1) A database folder is given
-	//		In this case we read the internal connectordb.pid file to get the config
+	//		In this case we read the internal connectordb.conf file to get the config
 	//2) A config file is given
 	//		We read the file
 	var err error
 	arg := getDatabase(c)
 
 	if util.IsDirectory(arg) {
-		arg = filepath.Join(arg, "connectordb.pid")
+		arg = filepath.Join(arg, "connectordb.conf")
 	}
 	err = config.SetPath(arg)
 	if err != nil {
