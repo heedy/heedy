@@ -35,6 +35,40 @@ type Device struct {
 	UserEditable bool `json:"user_editable"`
 }
 
+// DeviceMaker is the structure used to create a device
+type DeviceMaker struct {
+	Device
+
+	Streams map[string]*StreamMaker `json:"streams"`
+
+	Devicelimit int64 `json:"-"`
+}
+
+// Validate ensures that the values are legal
+func (dm *DeviceMaker) Validate(streamLimit int) error {
+	if dm == nil {
+		return errors.New("Null device creation struct")
+	}
+
+	err := dm.Device.ValidityCheck()
+	if err != nil {
+		return err
+	}
+
+	if streamLimit > 0 && len(dm.Streams) > streamLimit {
+		return errors.New("Exceeded stream limit for device")
+	}
+
+	for s := range dm.Streams {
+		err = dm.Streams[s].Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (d *Device) String() string {
 	return fmt.Sprintf(`[users.Device |
 	Id: %v,
@@ -59,24 +93,23 @@ func (d *Device) ValidityCheck() error {
 		return InvalidNameError
 	}
 
-	return nil
+	return validateIcon(d.Icon)
+
 }
 
 // CreateDevice adds a device to the system given its owner and name.
-// returns the last inserted id
-func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
+// returns the last inserted id. It is assumed that the DeviceMaker was already validated.
+// This means that DeviceMaker.Validate() had already been called, and returned nil
+func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 	APIKey, _ := uuid.NewV4()
 
-	if !IsValidName(Name) {
-		return InvalidNameError
-	}
-	if devicelimit > 0 {
+	if d.Devicelimit > 0 {
 		// TODO: This check should happen in a transaction, since the way it is done now enables timing attacks
-		num, err := userdb.CountDevicesForUser(UserID)
+		num, err := userdb.CountDevicesForUser(d.UserID)
 		if err != nil {
 			return err
 		}
-		if num >= devicelimit {
+		if num >= d.Devicelimit {
 			return errors.New("Can't create device: Device number limit exceeded.")
 		}
 	}
@@ -85,11 +118,32 @@ func (userdb *SqlUserDatabase) CreateDevice(Name string, UserID int64, public bo
 		(	Name,
 			APIKey,
 			UserID,
-			Public)
-			VALUES (?,?,?,?)`, Name, APIKey.String(), UserID, public)
+			Public,
+			Description,
+			Icon,
+			Nickname,
+			Enabled
+		)
+			VALUES (?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
+		d.Description, d.Icon, d.Nickname, d.Enabled)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
 		return errors.New("Device with this name already exists")
+	}
+
+	if len(d.Streams) > 0 {
+		dev, err := userdb.ReadDeviceByAPIKey(APIKey.String())
+		if err != nil {
+			return err
+		}
+		for s := range d.Streams {
+			d.Streams[s].Name = s
+			d.Streams[s].DeviceID = dev.DeviceID
+			if err = userdb.CreateStream(d.Streams[s]); err != nil {
+				userdb.DeleteDevice(dev.DeviceID)
+				return err
+			}
+		}
 	}
 
 	return err

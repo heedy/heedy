@@ -22,11 +22,11 @@ func TestCreateStream(t *testing.T) {
 		_, dev, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateStream(stream.Name, streamtestType, dev.DeviceID, 0)
+		err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: stream.Name, Schema: streamtestType, DeviceID: dev.DeviceID}})
 		assert.NotNil(t, err, "Created stream with duplicate name")
 
 		// Test with invalid schema
-		err = testdb.CreateStream("tcs_001", "{", dev.DeviceID, 0)
+		err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: "tcs_001", Schema: "{", DeviceID: dev.DeviceID}})
 		assert.NotNil(t, err, "Created stream with invalid schema")
 
 		// Test with embedded objects
@@ -89,7 +89,7 @@ func TestReadStreamByDevice(t *testing.T) {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		testdb.CreateStream("TestReadStreamByDevice2", streamtestType, dev.DeviceID, 0)
+		testdb.CreateStream(&StreamMaker{Stream: Stream{Name: "TestReadStreamByDevice2", Schema: streamtestType, DeviceID: dev.DeviceID}})
 
 		streams, err := testdb.ReadStreamsByDevice(dev.DeviceID)
 		require.Nil(t, err)

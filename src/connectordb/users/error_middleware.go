@@ -19,15 +19,15 @@ type ErrorUserdb struct {
 func (userdb *ErrorUserdb) Clear() {
 }
 
-func (userdb *ErrorUserdb) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
+func (userdb *ErrorUserdb) CreateDevice(dm *DeviceMaker) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {
+func (userdb *ErrorUserdb) CreateStream(sm *StreamMaker) error {
 	return ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) CreateUser(Name, Email, Password, Permissions string, Public bool, userlimit int64) error {
+func (userdb *ErrorUserdb) CreateUser(um *UserMaker) error {
 	return ErrorUserdbError
 }
 

@@ -47,8 +47,8 @@ func TestMiddlewareCreateDevice(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateDevice("", 0, false, 0)
-		baseError := testcase.Base.CreateDevice("", 0, false, 0)
+		testError := testCounter.CreateDevice(&DeviceMaker{})
+		baseError := testcase.Base.CreateDevice(&DeviceMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -62,8 +62,8 @@ func TestMiddlewareCreateStream(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateStream("", "", 0, 0)
-		baseError := testcase.Base.CreateStream("", "", 0, 0)
+		testError := testCounter.CreateStream(&StreamMaker{})
+		baseError := testcase.Base.CreateStream(&StreamMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -77,8 +77,8 @@ func TestMiddlewareCreateUser(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateUser("", "", "", "", false, 0)
-		baseError := testcase.Base.CreateUser("", "", "", "", false, 0)
+		testError := testCounter.CreateUser(&UserMaker{})
+		baseError := testcase.Base.CreateUser(&UserMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 

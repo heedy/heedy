@@ -6,6 +6,7 @@ package users
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -40,9 +41,70 @@ type User struct {
 
 }
 
+// UserMaker is the structure used to create users
+type UserMaker struct {
+	User
+
+	// The devices to create for the user
+	Devices map[string]*DeviceMaker `json: "devices"`
+
+	// The streams to create for the user device
+	Streams map[string]*StreamMaker `json:"streams"`
+
+	Userlimit int64 `json:"-"`
+}
+
+func (um *UserMaker) Validate(deviceLimit int, streamLimit int) error {
+	if um == nil {
+		return errors.New("null user creation struct")
+	}
+	// Check the underlying user for validity, after filling in some gibberish for the password hash + salt
+	um.PasswordHashScheme = "NULL"
+	um.PasswordSalt = "NULL"
+	err := um.ValidityCheck()
+	if err != nil {
+		return err
+	}
+
+	if deviceLimit > 0 && len(um.Devices) > deviceLimit {
+		return errors.New("Exceeded device limit")
+	}
+	if streamLimit > 0 && len(um.Streams) > streamLimit {
+		return errors.New("Exceeded stream limit for user")
+	}
+	for d := range um.Devices {
+		if d == "user" {
+			return errors.New("user device is created by default")
+		}
+		if d == "meta" {
+			return errors.New("meta device is created by default")
+		}
+		if err := um.Devices[d].Validate(streamLimit); err != nil {
+			return err
+		}
+	}
+
+	for s := range um.Streams {
+		err = um.Streams[s].Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (u *User) String() string {
 	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v ]",
 		u.UserID, u.Name, u.Email, u.Nickname, u.Password, u.PasswordSalt, u.PasswordHashScheme)
+}
+
+// Ensures that the icon is a base64 encoded image
+func validateIcon(icon string) error {
+	if icon == "" {
+		return nil
+	}
+	_, err := base64.URLEncoding.DecodeString(icon)
+	return err
 }
 
 // ValidityCheck checks if the fields are valid, e.g. we're not trying to change the name to blank.
@@ -56,8 +118,17 @@ func (u *User) ValidityCheck() error {
 		return ErrInvalidEmail
 	}
 
-	if u.PasswordSalt == "" || u.PasswordHashScheme == "" {
+	if u.PasswordSalt == "" || u.PasswordHashScheme == "" || u.Password == "" {
 		return ErrInvalidPassword
+	}
+
+	err = validateIcon(u.Icon)
+	if err != nil {
+		return err
+	}
+
+	if u.Role == "" {
+		return errors.New("Role not set for user")
 	}
 
 	// NOTE: we DO NOT check for allowed email domains here, a user can change
@@ -106,37 +177,20 @@ func (u *User) UpgradePassword(password string) bool {
 
 // CreateUser creates a user given the user's credentials.
 // If a user already exists with the given credentials, an error is thrown.
-func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Public bool, userlimit int64) error {
-	/*
-		existing, err := userdb.readByNameOrEmail(Name, Email)
-
-		if err == nil {
-			// Check for existence of user to provide helpful notices
-
-			switch {
-			case existing.Email == Email:
-				return ErrEmailExists
-			case existing.Name == Name:
-				return ErrUsernameExists
-
-			}
-		}*/
-
-	switch {
-	case !IsValidName(Name):
-		return ErrInvalidUsername
-	case userlimit > 0:
+// It is assumed that the usermaker was validated (usermaker.Validate() was called)
+func (userdb *SqlUserDatabase) CreateUser(um *UserMaker) error {
+	if um.Userlimit > 0 {
 		// TODO: This check should be done within the SQL transaction to avoid timing attacks
 		num, err := userdb.CountUsers()
 		if err != nil {
 			return err
 		}
-		if num >= userlimit {
+		if num >= um.Userlimit {
 			return ErrMaxUsers
 		}
 	}
 
-	dbpass, salt, hashtype, err := HashPassword(Password)
+	dbpass, salt, hashtype, err := HashPassword(um.Password)
 	if err != nil {
 		return err
 	}
@@ -148,19 +202,64 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password, Role string, Pu
 		PasswordSalt,
 		PasswordHashScheme,
 		Role,
-		Public) VALUES (?,?,?,?,?,?,?);`,
-		Name,
-		Email,
+		Public,
+		Description,
+		Icon,
+		Nickname) VALUES (?,?,?,?,?,?,?,?,?,?);`,
+		um.Name,
+		um.Email,
 		dbpass,
 		salt,
 		hashtype,
-		Role, Public)
+		um.Role,
+		um.Public,
+		um.Description,
+		um.Icon,
+		um.Nickname)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
 		return errors.New("User with this email or username already exists")
 	}
+	if err != nil {
+		return err
+	}
 
-	return err
+	if len(um.Streams) > 0 || len(um.Devices) > 0 {
+		// TODO: Multiple-inserts should be all done in a transaction so that inserting is not super slow
+		u, err := userdb.ReadUserByName(um.Name)
+		if err != nil {
+			return err
+		}
+
+		// User creation succeeded - now make all the streams for the user device
+		if len(um.Streams) > 0 {
+
+			d, err := userdb.ReadUserOperatingDevice(u)
+			if err != nil {
+				return err
+			}
+			for s := range um.Streams {
+				um.Streams[s].Name = s
+				um.Streams[s].DeviceID = d.DeviceID
+				if err = userdb.CreateStream(um.Streams[s]); err != nil {
+					userdb.DeleteUser(u.UserID)
+					return err
+				}
+			}
+		}
+
+		// We create all of the requested devices for the user
+		for d := range um.Devices {
+			um.Devices[d].Name = d
+			um.Devices[d].UserID = u.UserID
+			if err = userdb.CreateDevice(um.Devices[d]); err != nil {
+				userdb.DeleteUser(u.UserID)
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 /*Login Performs a login function on the user.

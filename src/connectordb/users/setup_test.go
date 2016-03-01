@@ -63,7 +63,7 @@ func initDB(dbName string) UserDatabase {
 
 func CreateTestStream(testdb UserDatabase, dev *Device) (*Stream, error) {
 	name := GetNextName()
-	err := testdb.CreateStream(name, "{\"type\":\"number\"}", dev.DeviceID, 0)
+	err := testdb.CreateStream(&StreamMaker{Stream: Stream{Name: name, Schema: "{\"type\":\"number\"}", DeviceID: dev.DeviceID}})
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func CreateTestUser(testdb UserDatabase) (*User, error) {
 
 	//log.Printf("Creating test user with name: %v, email: %v, pass: %v", name, email, testPassword)
 
-	err := testdb.CreateUser(name, email, testPassword, "test", false, 0)
+	err := testdb.CreateUser(&UserMaker{User: User{Name: name, Email: email, Password: testPassword, Role: "test"}})
 
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func CreateTestUser(testdb UserDatabase) (*User, error) {
 
 func CreateTestDevice(testdb UserDatabase, usr *User) (*Device, error) {
 	name := GetNextName()
-	err := testdb.CreateDevice(name, usr.UserID, false, 0)
+	err := testdb.CreateDevice(&DeviceMaker{Device: Device{Name: name, UserID: usr.UserID}})
 	if err != nil {
 		return nil, err
 	}

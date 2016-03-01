@@ -19,19 +19,19 @@ func (userdb *AccountingMiddleware) GetNumberOfCalls() uint64 {
 	return atomic.LoadUint64(&userdb.databaseCalls)
 }
 
-func (userdb *AccountingMiddleware) CreateDevice(Name string, UserID int64, public bool, devicelimit int64) error {
+func (userdb *AccountingMiddleware) CreateDevice(dm *DeviceMaker) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateDevice(Name, UserID, public, devicelimit)
+	return userdb.UserDatabase.CreateDevice(dm)
 }
 
-func (userdb *AccountingMiddleware) CreateStream(Name, Type string, DeviceID, streamlimit int64) error {
+func (userdb *AccountingMiddleware) CreateStream(sm *StreamMaker) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateStream(Name, Type, DeviceID, streamlimit)
+	return userdb.UserDatabase.CreateStream(sm)
 }
 
-func (userdb *AccountingMiddleware) CreateUser(Name, Email, Password, Permissions string, public bool, userlimit int64) error {
+func (userdb *AccountingMiddleware) CreateUser(um *UserMaker) error {
 	atomic.AddUint64(&userdb.databaseCalls, 1)
-	return userdb.UserDatabase.CreateUser(Name, Email, Password, Permissions, public, userlimit)
+	return userdb.UserDatabase.CreateUser(um)
 }
 
 func (userdb *AccountingMiddleware) DeleteDevice(Id int64) error {
