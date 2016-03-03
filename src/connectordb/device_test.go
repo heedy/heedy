@@ -1,6 +1,7 @@
 package connectordb
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,11 +19,11 @@ func TestDevice(t *testing.T) {
 	require.Nil(t, u)
 	require.Error(t, err)
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
 
-	require.Error(t, db.CreateDevice("nouser/mydevice", false))
-	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
-	require.Error(t, db.CreateDevice("myuser/mydevice", false))
+	require.Error(t, db.CreateDevice("nouser/mydevice", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
+	require.Error(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
 
 	u, err = db.ReadDevice("myuser/mydevice")
 	require.NoError(t, err)
@@ -37,7 +38,7 @@ func TestDevice(t *testing.T) {
 
 	require.Error(t, db.DeleteDevice("myuser/mydevice"))
 
-	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
 	u, err = db.ReadDevice("myuser/mydevice")
 	require.NoError(t, err)
 	require.NoError(t, db.DeleteUser("myuser"))
@@ -49,8 +50,8 @@ func TestDeviceUpdate(t *testing.T) {
 	Tdb.Clear()
 	db := Tdb
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
-	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
 
 	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"name": "lol"}))
 	require.Error(t, db.UpdateDevice("myuser/mydevice", map[string]interface{}{"role": "rawr"}))

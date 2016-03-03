@@ -79,12 +79,14 @@ func (um *UserMaker) Validate(deviceLimit int, streamLimit int) error {
 		if d == "meta" {
 			return errors.New("meta device is created by default")
 		}
+		um.Devices[d].Name = d
 		if err := um.Devices[d].Validate(streamLimit); err != nil {
 			return err
 		}
 	}
 
 	for s := range um.Streams {
+		um.Streams[s].Name = s
 		err = um.Streams[s].Validate()
 		if err != nil {
 			return err

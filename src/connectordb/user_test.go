@@ -1,6 +1,7 @@
 package connectordb
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,12 +19,12 @@ func TestUser(t *testing.T) {
 	require.Nil(t, u)
 	require.Error(t, err)
 
-	require.Error(t, db.CreateUser("myuser", "email@email", "mypass", "notarole", true))
-	require.Error(t, db.CreateUser("myuser", "not an email", "mypass", "user", true))
-	require.Error(t, db.CreateUser("myuser", "email@email", "", "user", true))
+	require.Error(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "mypass", Role: "notarole", Public: true}}))
+	require.Error(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "not an email", Password: "mypass", Role: "user", Public: true}}))
+	require.Error(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "", Role: "user", Public: true}}))
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
-	require.Error(t, db.CreateUser("myuser", "email@email", "test2", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
+	require.Error(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test2", Role: "user", Public: true}}))
 
 	u, err = db.ReadUser("myuser")
 	require.NoError(t, err)
@@ -37,14 +38,14 @@ func TestUser(t *testing.T) {
 	_, err = db.ReadUser("tst")
 	require.Error(t, err)
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
 }
 
 func TestUserUpdate(t *testing.T) {
 	Tdb.Clear()
 	db := Tdb
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
 
 	require.Error(t, db.UpdateUser("myuser", map[string]interface{}{"name": "lol"}))
 	require.Error(t, db.UpdateUser("myuser", map[string]interface{}{"role": "rawr"}))

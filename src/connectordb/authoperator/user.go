@@ -76,8 +76,8 @@ func (a *AuthOperator) ReadAllUsersToMap() ([]map[string]interface{}, error) {
 }
 
 // CreateUser creates the given user if the device has user creating permissions
-func (a *AuthOperator) CreateUser(name, email, password, role string, public bool) error {
-	perm, u, _, ua, da, err := a.getAccessLevels(-1, public, false)
+func (a *AuthOperator) CreateUser(um *users.UserMaker) error {
+	perm, u, _, ua, da, err := a.getAccessLevels(-1, um.Public, false)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (a *AuthOperator) CreateUser(name, email, password, role string, public boo
 		return errors.New("You do not have permissions necessary to create a user.")
 	}
 
-	if u.Role != role {
+	if u.Role != um.Role {
 		uw := permissions.GetWriteAccess(perm, ua)
 		dw := permissions.GetWriteAccess(perm, da)
 		if !uw.UserRole || !dw.UserRole {
@@ -94,7 +94,7 @@ func (a *AuthOperator) CreateUser(name, email, password, role string, public boo
 		}
 	}
 
-	return a.Operator.CreateUser(name, email, password, role, public)
+	return a.Operator.CreateUser(um)
 }
 
 // ReadUser reads the user with the given username. Any fields for which

@@ -32,21 +32,21 @@ type Operator interface {
 
 	// The user/device/stream operations should be fairly self-explanatory.
 	ReadAllUsers() ([]*users.User, error)
-	CreateUser(name, email, password, role string, public bool) error
+	CreateUser(*users.UserMaker) error
 	ReadUser(username string) (*users.User, error)
 	ReadUserByID(userID int64) (*users.User, error)
 	UpdateUserByID(userID int64, updates map[string]interface{}) error
 	DeleteUserByID(userID int64) error
 
 	ReadAllDevicesByUserID(userID int64) ([]*users.Device, error)
-	CreateDeviceByUserID(userID int64, devicename string, public bool) error
+	CreateDeviceByUserID(*users.DeviceMaker) error
 	ReadDeviceByID(deviceID int64) (*users.Device, error)
 	ReadDeviceByUserID(userID int64, devicename string) (*users.Device, error)
 	UpdateDeviceByID(deviceID int64, updates map[string]interface{}) error
 	DeleteDeviceByID(deviceID int64) error
 
 	ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream, error)
-	CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error
+	CreateStreamByDeviceID(*users.StreamMaker) error
 	ReadStreamByID(streamID int64) (*users.Stream, error)
 	ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error)
 	UpdateStreamByID(streamID int64, updates map[string]interface{}) error

@@ -3,6 +3,7 @@ package connectordb
 import (
 	"connectordb/datastream"
 	"connectordb/messenger"
+	"connectordb/users"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestUserlog(t *testing.T) {
 	Tdb.Clear()
 	db := Tdb
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}}))
 
 	o, err := db.AsUser("streamdb_test")
 	require.NoError(t, err)
@@ -38,13 +39,13 @@ func TestUserlog(t *testing.T) {
 		recvchan <- messenger.Message{"TIMEOUT", "", []datastream.Datapoint{}}
 	}()
 
-	o.CreateDevice("streamdb_test/mydevice", false)
+	o.CreateDevice("streamdb_test/mydevice", &users.DeviceMaker{})
 	ensureUserlog(t, <-recvchan, "CreateDevice", "streamdb_test/mydevice")
 
 	o.UpdateDevice("streamdb_test/mydevice", map[string]interface{}{"nickname": "hiah"})
 	ensureUserlog(t, <-recvchan, "UpdateDevice", "streamdb_test/mydevice")
 
-	o.CreateStream("streamdb_test/mydevice/mystream", "{\"type\": \"string\"}")
+	o.CreateStream("streamdb_test/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: "{\"type\": \"string\"}"}})
 	ensureUserlog(t, <-recvchan, "CreateStream", "streamdb_test/mydevice/mystream")
 
 	{
@@ -65,7 +66,7 @@ func TestUserlog(t *testing.T) {
 
 	require.NoError(t, db.UpdateUser("streamdb_test", map[string]interface{}{"role": "admin"}))
 
-	require.NoError(t, o.CreateUser("starry_eyed_userlog", "rofl@localhost", "mypass", "user", true))
+	require.NoError(t, o.CreateUser(&users.UserMaker{User: users.User{Name: "starry_eyed_userlog", Email: "rofl@localhost", Password: "mypass", Role: "user", Public: true}}))
 	ensureUserlog(t, <-recvchan, "CreateUser", "starry_eyed_userlog")
 
 	require.NoError(t, o.DeleteUser("starry_eyed_userlog"))

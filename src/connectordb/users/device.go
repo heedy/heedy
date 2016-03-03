@@ -60,6 +60,7 @@ func (dm *DeviceMaker) Validate(streamLimit int) error {
 	}
 
 	for s := range dm.Streams {
+		dm.Streams[s].Name = s
 		err = dm.Streams[s].Validate()
 		if err != nil {
 			return err

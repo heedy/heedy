@@ -6,6 +6,7 @@ package authoperator_test
 
 import (
 	"connectordb/datastream"
+	"connectordb/users"
 	"strconv"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func BenchmarkDeviceLogin(b *testing.B) {
 	db.Clear()
 
 	//go db.RunWriter()
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	dev, _ := db.ReadDevice("streamdb_test/user")
 
 	b.ResetTimer()
@@ -33,14 +34,14 @@ func BenchmarkDeviceLogin(b *testing.B) {
 func BenchmarkCreateUser(b *testing.B) {
 	db.Clear()
 	//go db.RunWriter()
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		name := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, o.CreateUser(name, name+"@localhost", "mypass", "user", true))
+		require.NoError(b, o.CreateUser(&users.UserMaker{User: users.User{Name: name, Email: name + "@localhost", Password: "mypass", Role: "user", Public: true}}))
 	}
 
 }
@@ -48,10 +49,10 @@ func BenchmarkCreateUser(b *testing.B) {
 func BenchmarkDeleteUser(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	for n := 0; n < b.N; n++ {
 		name := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, db.CreateUser(name, name+"@localhost", "mypass", "user", true))
+		require.NoError(b, db.CreateUser(&users.UserMaker{User: users.User{Name: name, Email: name + "@localhost", Password: "mypass", Role: "user", Public: true}}))
 	}
 
 	o, err := db.UserLogin("streamdb_test", "mypass")
@@ -68,7 +69,7 @@ func BenchmarkDeleteUser(b *testing.B) {
 func BenchmarkReadUser(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
@@ -83,7 +84,7 @@ func BenchmarkReadUser(b *testing.B) {
 func BenchmarkUpdateUser(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
@@ -98,25 +99,25 @@ func BenchmarkUpdateUser(b *testing.B) {
 func BenchmarkCreateStream(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		sname := strconv.FormatInt(int64(n), 32)
-		require.NoError(b, o.CreateStream("streamdb_test/user/"+sname, `{"type": "boolean"}`))
+		require.NoError(b, o.CreateStream("streamdb_test/user/"+sname, &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 	}
 }
 
 func BenchmarkReadStream(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -128,11 +129,11 @@ func BenchmarkReadStream(b *testing.B) {
 func BenchmarkInsert1(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -148,11 +149,11 @@ func BenchmarkInsert1(b *testing.B) {
 func BenchmarkStreamLength(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	data := make([]datastream.Datapoint, 1000)
 	for i := 0; i < 1000; i++ {
@@ -174,11 +175,11 @@ func BenchmarkStreamLength(b *testing.B) {
 func BenchmarkInsert1000(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -198,11 +199,11 @@ func BenchmarkInsert1000(b *testing.B) {
 func BenchmarkRead1000(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	data := make([]datastream.Datapoint, 1000)
 	for i := 0; i < 1000; i++ {
@@ -236,12 +237,12 @@ func BenchmarkRead1000(b *testing.B) {
 func BenchmarkReadLast10(b *testing.B) {
 	db.Clear()
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(b, err)
 
-	db.CreateUser("streamdb_test", "root@localhost", "mypass", "admin", true)
-	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", `{"type": "boolean"}`))
+	db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "admin", Public: true}})
+	require.NoError(b, db.CreateStream("streamdb_test/user/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "boolean"}`}}))
 
 	data := make([]datastream.Datapoint, 950)
 	for i := 0; i < 950; i++ {

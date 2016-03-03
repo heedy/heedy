@@ -3,6 +3,7 @@ package authoperator_test
 import (
 	"connectordb/datastream"
 	"connectordb/messenger"
+	"connectordb/users"
 	"testing"
 	"time"
 
@@ -13,10 +14,10 @@ import (
 func TestAuthSubscribe(t *testing.T) {
 	db.Clear()
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
-	require.NoError(t, db.CreateDevice("tst/tst2", false))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tst/tst", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateDevice("tst/tst2", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("tst/tst/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 
 	// Make sure we can't subscribe to streams we have no access to
 	{

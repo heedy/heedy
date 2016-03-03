@@ -5,7 +5,6 @@ import (
 	"connectordb/users"
 	"errors"
 	"fmt"
-	"net/mail"
 )
 
 // CountUsers returns the total number of users of the entire database
@@ -22,39 +21,35 @@ func (db *Database) ReadAllUsers() ([]*users.User, error) {
 
 // CreateUser creates a user with the given information. It checks some basic validity
 // before creating, and ensures that roles exist/max user amounts are upheld
-func (db *Database) CreateUser(name, email, password, role string, public bool) error {
+func (db *Database) CreateUser(u *users.UserMaker) error {
 	perm := pconfig.Get()
 
-	if password == "" {
-		return errors.New("Password must have at least one character")
+	if !perm.IsAllowedUsername(u.Name) {
+		return fmt.Errorf("Username '%s' not allowed", u.Name)
 	}
 
-	// Make sure that the given email is valid
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return errors.New("An invalid email address was given")
-	}
-
-	if !perm.IsAllowedUsername(name) {
-		return fmt.Errorf("Username '%s' not allowed", name)
-	}
-
-	if !perm.IsAllowedEmail(email) {
-		return fmt.Errorf("Email '%s' not allowed", email)
+	if !perm.IsAllowedEmail(u.Email) {
+		return fmt.Errorf("Email '%s' not allowed", u.Email)
 	}
 
 	// Make sure that the given role exists
-	r, ok := perm.UserRoles[role]
+	r, ok := perm.UserRoles[u.Role]
 	if !ok {
-		return fmt.Errorf("The given role '%s' does not exist", role)
+		return fmt.Errorf("The given role '%s' does not exist", u.Role)
 	}
 
 	// Make sure that users with this role are allowed to be private if private is set
-	if !public && !r.CanBePrivate {
-		return fmt.Errorf("Users with role '%s' can't be private.", role)
+	if !u.Public && !r.CanBePrivate {
+		return fmt.Errorf("Users with role '%s' can't be private.", u.Role)
 	}
 
-	return db.Userdb.CreateUser(name, email, password, role, public, perm.MaxUsers)
+	// Perform user-level validation before creating the user
+	if err := u.Validate(int(r.MaxDevices), int(r.MaxStreams)); err != nil {
+		return err
+	}
+	// Set the user limit
+	u.Userlimit = perm.MaxUsers
+	return db.Userdb.CreateUser(u)
 
 }
 

@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package authoperator_test
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,15 +15,15 @@ func TestAuthUserCrud(t *testing.T) {
 	db.Clear()
 
 	//Create extra users that exist
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateUser("streamdb_test2", "root@localhost2", "mypass", "admin", false))
-	require.NoError(t, db.CreateUser("streamdb_test3", "root@localhost3", "mypass", "admin", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test2", Email: "root@localhost2", Password: "mypass", Role: "admin", Public: false}}))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test3", Email: "root@localhost3", Password: "mypass", Role: "admin", Public: false}}))
 
 	o, err := db.AsUser("streamdb_test")
 	require.NoError(t, err)
 
 	// Try to create a user not as an admin
-	require.Error(t, o.CreateUser("notanadmin", "lol@you", "fail", "user", true))
+	require.Error(t, o.CreateUser(&users.UserMaker{User: users.User{Name: "notanadmin", Email: "lol@you", Password: "fail", Role: "user", Public: true}}))
 
 	require.Error(t, o.UpdateUser("streamdb_test", map[string]interface{}{"role": "admin"}))
 
@@ -97,7 +98,7 @@ func TestNobodyUser(t *testing.T) {
 	db.Clear()
 
 	//Create extra users that exist
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
 
 	n := db.Nobody()
 

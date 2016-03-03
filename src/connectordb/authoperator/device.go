@@ -80,12 +80,12 @@ func (a *AuthOperator) ReadUserDevicesToMap(uname string) ([]map[string]interfac
 }
 
 // CreateDeviceByUserID attempts to create a device for the given user
-func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string, public bool) error {
-	u, err := a.Operator.ReadUserByID(userID)
+func (a *AuthOperator) CreateDeviceByUserID(dm *users.DeviceMaker) error {
+	u, err := a.Operator.ReadUserByID(dm.UserID)
 	if err != nil {
 		return permissions.ErrNoAccess
 	}
-	_, _, _, ua, da, err := a.getAccessLevels(userID, u.Public, false)
+	_, _, _, ua, da, err := a.getAccessLevels(dm.UserID, u.Public, false)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (a *AuthOperator) CreateDeviceByUserID(userID int64, devicename string, pub
 		return permissions.ErrNoAccess
 	}
 
-	return a.Operator.CreateDeviceByUserID(userID, devicename, public)
+	return a.Operator.CreateDeviceByUserID(dm)
 }
 
 // ReadDeviceByID reads the given device by ID
