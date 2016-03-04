@@ -68,8 +68,8 @@ func Create(c *config.Configuration) error {
 		defer p.Stop()
 
 		//Now that the databases are all created (and postgres is running), we check if we are to create a default user
-		if c.InitialUsername != "" {
-			log.Infof("Creating user %s (%s)", c.InitialUsername, c.InitialUserEmail)
+		if c.InitialUser != nil && c.InitialUser.Name != "" {
+			log.Infof("Creating user %s (%s)", c.InitialUser.Name, c.InitialUser.Email)
 			db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
 			if err != nil {
 				return err
@@ -77,7 +77,17 @@ func Create(c *config.Configuration) error {
 			defer db.Close()
 
 			udb := users.NewUserDatabase(db, driver, false, 0, 0, 0)
-			err = udb.CreateUser(c.InitialUsername, c.InitialUserEmail, c.InitialUserPassword, c.InitialUserRole, c.InitialUserPublic, 0)
+
+			err = udb.CreateUser(&users.UserMaker{User: users.User{
+				Name:        c.InitialUser.Name,
+				Email:       c.InitialUser.Email,
+				Password:    c.InitialUser.Password,
+				Description: c.InitialUser.Description,
+				Icon:        c.InitialUser.Icon,
+				Role:        c.InitialUser.Role,
+				Nickname:    c.InitialUser.Nickname,
+				Public:      c.InitialUser.Public,
+			}})
 			if err != nil {
 				return err
 			}

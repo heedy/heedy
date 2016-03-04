@@ -136,11 +136,12 @@ func createDatabaseCallback(c *cli.Context) {
 		if len(usrpass) != 2 {
 			log.Fatal("The username flag must be in username:password format")
 		}
-		cfg.InitialUsername = usrpass[0]
-		cfg.InitialUserPassword = usrpass[1]
-		cfg.InitialUserEmail = c.String("email")
-		cfg.InitialUserRole = "admin"
-		cfg.InitialUserPublic = false
+		cfg.InitialUser = &config.UserMaker{
+			Name:     usrpass[0],
+			Password: usrpass[1],
+			Email:    c.String("email"),
+			Role:     "admin",
+		}
 	}
 
 	err := dbsetup.Create(cfg)

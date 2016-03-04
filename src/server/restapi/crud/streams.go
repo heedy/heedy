@@ -6,8 +6,7 @@ package crud
 
 import (
 	"connectordb/authoperator"
-	"io"
-	"io/ioutil"
+	"connectordb/users"
 	"net/http"
 	"server/restapi/restcore"
 	"server/webcore"
@@ -31,15 +30,13 @@ func CreateStream(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	defer request.Body.Close()
-
-	//Limit the schema to 512KB
-	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 512000))
+	var sm users.StreamMaker
+	err = restcore.UnmarshalRequest(request, &sm)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	if err = o.CreateStream(streampath, string(data)); err != nil {
+	if err = o.CreateStream(streampath, &sm); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 

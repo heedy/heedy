@@ -79,11 +79,7 @@ type Configuration struct {
 
 	//These are optional - if they are set, an initial user is created on Create()
 	//They are used only when passing a Configuration object to Create()
-	InitialUsername     string `json:"createuser_username,omitempty"`
-	InitialUserPassword string `json:"createuser_password,omitempty"`
-	InitialUserEmail    string `json:"createuser_email,omitempty"`
-	InitialUserRole     string `json:"createuser_permissions,omitempty"`
-	InitialUserPublic   bool   `json:"createuser_public,omitempty"`
+	InitialUser *UserMaker `json:"initial_user"`
 
 	// The prime number to use for scrambling IDs in the database.
 	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
@@ -101,6 +97,21 @@ type Configuration struct {
 	// placeholder when creating/starting a database... So technically it is part of the configuration, but it is
 	// given explicitly as part of the command line args
 	DatabaseDirectory string `json:"-"`
+}
+
+// Since we can't import the *actual* UserMaker from users (since that would give an import loop)
+// we need to have our own version here - this version doesn't allow recusrive tree creation
+type UserMaker struct {
+	Name        string `json:"name"`        // The public username of the user
+	Nickname    string `json:"nickname"`    // The nickname of the user
+	Email       string `json:"email"`       // The user's email address
+	Description string `json:"description"` // A public description
+	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+
+	Role   string `json:"role,omitempty"` // The user type (permissions level)
+	Public bool   `json:"public"`         // Whether the user is public or not
+
+	Password string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
 }
 
 // NewConfiguration generates a configuration with reasonable defaults for use in ConnectorDB

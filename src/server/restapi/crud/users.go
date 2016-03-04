@@ -6,6 +6,7 @@ package crud
 
 import (
 	"connectordb/authoperator"
+	"connectordb/users"
 	"server/restapi/restcore"
 	"server/webcore"
 
@@ -22,13 +23,6 @@ func ListUsers(o *authoperator.AuthOperator, writer http.ResponseWriter, request
 	return restcore.JSONWriter(writer, u, logger, err)
 }
 
-type userCreator struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-	Public   bool   `json:"public"`
-}
-
 //CreateUser creates a new user from a REST API request
 func CreateUser(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	usrname := mux.Vars(request)["user"]
@@ -38,10 +32,13 @@ func CreateUser(o *authoperator.AuthOperator, writer http.ResponseWriter, reques
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	var a userCreator
-	err = restcore.UnmarshalRequest(request, &a)
+	var um users.UserMaker
+	err = restcore.UnmarshalRequest(request, &um)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
 
-	if err = o.CreateUser(usrname, a.Email, a.Password, a.Role, a.Public); err != nil {
+	if err = o.CreateUser(&um); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 
 	}
