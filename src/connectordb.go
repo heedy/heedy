@@ -91,8 +91,8 @@ func runConnectorDBCallback(c *cli.Context) {
 	}
 	if c.Bool("http") {
 		log.Info("Running in http-only mode")
-		cfg.TLSKey = ""
-		cfg.TLSCert = ""
+		cfg.TLS.Key = ""
+		cfg.TLS.Cert = ""
 	}
 
 	err := server.RunServer()
