@@ -37,7 +37,7 @@ func CreateUser(o *authoperator.AuthOperator, writer http.ResponseWriter, reques
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
-
+	um.Name = usrname
 	if err = o.CreateUser(&um); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 

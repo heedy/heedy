@@ -45,6 +45,7 @@ func CreateDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
+	dm.Name = devname
 	if err = o.CreateDevice(devpath, &dm); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}

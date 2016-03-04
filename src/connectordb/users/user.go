@@ -74,7 +74,7 @@ func (um *UserMaker) Validate(deviceLimit int, streamLimit int) error {
 	}
 	for d := range um.Devices {
 		if d == "user" {
-			return errors.New("user device is created by default")
+			return errors.New("user device is created by default. Set its streams in \"streams\" property")
 		}
 		if d == "meta" {
 			return errors.New("meta device is created by default")

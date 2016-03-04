@@ -39,6 +39,23 @@ func Create(c *config.Configuration) error {
 		return err
 	}
 
+	var umaker *users.UserMaker
+	if c.InitialUser != nil && c.InitialUser.Name != "" {
+		umaker = &users.UserMaker{User: users.User{
+			Name:        c.InitialUser.Name,
+			Email:       c.InitialUser.Email,
+			Password:    c.InitialUser.Password,
+			Description: c.InitialUser.Description,
+			Icon:        c.InitialUser.Icon,
+			Role:        c.InitialUser.Role,
+			Nickname:    c.InitialUser.Nickname,
+			Public:      c.InitialUser.Public,
+		}}
+
+		// Remove the password so it doesn't show up in the configuration
+		c.InitialUser.Password = ""
+	}
+
 	//Now generate the conf file for the full configuration
 	dbconf := filepath.Join(c.DatabaseDirectory, "connectordb.conf")
 	err := c.Save(dbconf)
@@ -68,7 +85,7 @@ func Create(c *config.Configuration) error {
 		defer p.Stop()
 
 		//Now that the databases are all created (and postgres is running), we check if we are to create a default user
-		if c.InitialUser != nil && c.InitialUser.Name != "" {
+		if umaker != nil {
 			log.Infof("Creating user %s (%s)", c.InitialUser.Name, c.InitialUser.Email)
 			db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
 			if err != nil {
@@ -78,16 +95,7 @@ func Create(c *config.Configuration) error {
 
 			udb := users.NewUserDatabase(db, driver, false, 0, 0, 0)
 
-			err = udb.CreateUser(&users.UserMaker{User: users.User{
-				Name:        c.InitialUser.Name,
-				Email:       c.InitialUser.Email,
-				Password:    c.InitialUser.Password,
-				Description: c.InitialUser.Description,
-				Icon:        c.InitialUser.Icon,
-				Role:        c.InitialUser.Role,
-				Nickname:    c.InitialUser.Nickname,
-				Public:      c.InitialUser.Public,
-			}})
+			err = udb.CreateUser(umaker)
 			if err != nil {
 				return err
 			}

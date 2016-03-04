@@ -36,6 +36,7 @@ func CreateStream(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
+	sm.Name = streamname
 	if err = o.CreateStream(streampath, &sm); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
