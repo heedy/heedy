@@ -1,103 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<!--NOTE: this is an alpha version of bootstrap and should be changed in
-	the future!-->
-	<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
-	<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
-
-	<link rel="icon" href="/app/branding/sizes/square_xs.png">
-
+	{{template "headerscripts"}}
+	<title>{{.Device.Name}} | ConnectorDB</title>
 </head>
 <body>
-
-	<nav class="navbar navbar-light navbar-static-top bg-faded" role="banner">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<a class="navbar-brand" href="/">
-					<img class="navbar-brand" style="height:1.5em;" alt="ConnectorDB Logo" src="/app/assets/branding/sizes/title_logo_dark_xs.png"></img>
-				</a>
-
-				<button class="navbar-toggler pull-xs-right hidden-sm-up" type="button" data-toggle="collapse" data-target="#main-nav">
-					☰ Menu
-				</button>
-			</div>
-
-			<div class="collapse navbar-toggleable-xs" id="main-nav">
-				<div class="pull-xs-right">
-					<form class="form-inline pull-xs-right" >
-						<button class="btn btn-success" id="loginbutton" type="button" data-toggle="collapse" data-target="#login-accordian" aria-expanded="false">Login/Sgnup</button>
-					</form>
-
-					&nbsp;&nbsp;
-
-					<form class="form-inline pull-xs-right" role="search">
-						<input type="text" class="form-control" placeholder="Find users, devices or data" name="q">
-						<button class="btn btn-primary-outline" type="submit">Search</button>
-					</form>
-				</div>
-			</div>
-		</div>
-	</nav>
-
-
-
-	<div class="collapse" id="login-accordian">
-		<div class="container-fluid bg-inverse p-a-1">
-			<div class="row">
-				<div class="col-sm-6 m-b-3">
-					<h4>Log In</h4>
-
-					<form>
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username or Email Address</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username or Email">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-						<button class="btn btn-success" type="submit">Login</button>
-					</form>
-
-				</div>
-				<div class="col-sm-6 m-b-3">
-					<h4>Sign Up</h4>
-					<form>
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Email Address</label>
-							<input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
-							<small class="text-muted">We'll never share your email with anyone else and won't send you promotions.</small>
-						</fieldset>
-						<button class="btn btn-success" type="submit">Sign Me Up</button>
-
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-
-
-	<!-- STANDARD HEADER======================================================== -->
-
+{{template "navbar" .}}
 
 	<div class="jumbotron minitron">
 		<div class="container">
@@ -118,11 +26,17 @@
 				<img class="pageIcon" {{.Device.Icon | .DataURIToAttr}}></img>
 
 				<hr>
-				<b>{{html .Device.Name}}</b><br>
-				<p>{{html .Device.Description}}</p>
+				<b>{{.Device.Name}}</b><br>
+				<p>{{default .Device.Description "_This device has no description yet_"}}</p>
 			</div>
-			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download All Data</a>
+			{{if eq .ThisUser.UserId .User.UserId}}
+			<a href="#editModal" class="list-group-item" data-toggle="modal"><i class=" material-icons sidebar-icon">settings</i>Edit Device</a>
+			<a href="#newStreamModal" class="list-group-item" data-toggle="modal"><i class=" material-icons sidebar-icon">create</i>Create New Stream</a>
+			{{end}}
 
+<!--
+			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download All Data</a>
+-->
 			<a href="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Developer View</a>
 			<a href="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Stream Developer View</a>
 
@@ -131,9 +45,8 @@
 
 	<div class="col-md-9">
 				<ol class="breadcrumb">
-				<li><a href="/{{.User.Name}}">{{.User.Name | html}}</a></li>
+				<li><a href="/{{.User.Name}}">{{.User.Name}}</a></li>
 				<li class="active">{{.Device.Name}}</li>
-				<!--<li class="active">stream</li>-->
 			</ol>
 
 
@@ -151,8 +64,7 @@
 					<td>
 						<h4><a href="/{{$.User.Name}}/{{$.Device.Name}}/{{$element.Name}}">{{$element.Name}}</a></h4>
 						<p>
-							Bootstrap is the world’s most popular framework for building responsive, mobile-first sites and applications. Inside you’ll find high quality HTML, CSS, and JavaScript to make starting any project easier than ever.
-							{{$element.Description | html}}</p>
+							{{default $element.Description "_This stream doesn't have a description yet_"}}</p>
 						<span class="mainTableFooter text-muted"></span>
 						<span class="lock">
 							{{/*
@@ -173,23 +85,104 @@
 	</div>
 </div>
 
-<!-- STANDARD FOOTER======================================================== -->
 
-<div class="footer">
-	<small><p>ConnectorDB version {{.Version}} | Copyright (C) 2016 The ConnectorDB Team</p></small>
+
+<!--
+
+Modification modals
+
+-->
+
+{{if eq .ThisUser.UserId .User.UserId}}
+<div class="modal fade" tabindex="-1" id="editModal" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	     	<div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		          <span aria-hidden="true">&times;</span>
+		        </button>
+	        	<h4 class="modal-title" id="editModalLabel">Edit Device</h4>
+	      	</div>
+	      	<div class="modal-body">
+				<form id="deviceedit" onsubmit="return submitUpdate('#deviceedit')" action="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}">
+					<div class="form-group row">
+						<label for="Nickname" class="col-sm-2 form-control-label">Nickname</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="Nickname" placeholder="Nickname" value="{{ .Device.Nickname }}"></input>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="Description" class="col-sm-2 form-control-label">Description</label>
+						<div class="col-sm-10">
+							<textarea class="form-control" name="Description" placeholder="Description, markdown supported">{{ .Device.Description }}</textarea>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</form>
+			</div>
+		</div>
+	</div>
 </div>
 
+
+
+
+<div class="modal fade" tabindex="-1" id="newStreamModal" role="dialog" aria-labelledby="newStreamModal" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title" id="newStreamModal">New Stream</h4>
+			</div>
+			<div class="modal-body">
+				<form id="newStream" onsubmit="return submitForm('#newStream', 'Name')" action="/api/v1/crud/{{.User.Name}}/{{.Device.Name}}">
+					<div class="form-group row">
+						<label for="Name" class="col-sm-2 form-control-label">Name</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="Name" placeholder="The official device name, may not contain spaces, \ / ? or #" required="true" pattern="[^/\\ ?\t\n\r#]+"></input>
+						</div>
+
+					</div>
+					<div class="form-group row">
+						<label for="Nickname" class="col-sm-2 form-control-label">Nickname</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="Nickname" placeholder="The name everyone will see for this device."></input>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="Description" class="col-sm-2 form-control-label">Description</label>
+						<div class="col-sm-10">
+							<textarea class="form-control" name="Description" placeholder="Description, markdown supported"></textarea>
+						</div>
+					</div>
+
+					<div class="form-group row">
+						<label for="Type" class="col-sm-2 form-control-label">Type of data</label>
+						<div class="col-sm-10">
+							<select class="form-control" name="Type">
+							  <option value="{&quot;type&quot;:&quot;number&quot;}">Numeric</option>
+							  <option value="{&quot;type&quot;:&quot;string&quot;}">String</option>
+							  <option value="{&quot;type&quot;:&quot;object&quot;}">Object</option>
+							</select>
+						</div>
+
+					</div>
+
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</form>
+
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}
+
+{{template "footer"}}
 </div>
 
-
-
-<!-- Bootstrap core JavaScript
-================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-<script src="/app/assets/js/bootstrap.min.js"></script>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{{template "footerscripts"}}
 
 
 </body>

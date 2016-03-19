@@ -1,0 +1,145 @@
+{{define "header"}}
+{{end}}
+
+
+
+
+
+{{define "footer"}}
+<!-- STANDARD FOOTER======================================================== -->
+
+<div class="footer">
+	<small><p>ConnectorDB version {{Version}} | Copyright (C) 2016 The ConnectorDB Team</p></small>
+</div>
+{{end}}
+
+{{define "footerscripts"}}
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="/app/assets/js/bootstrap.min.js"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="/app/assets/js/formsubmit.js"></script>
+{{end}}
+
+
+
+{{define "headerscripts"}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!--NOTE: this is an alpha version of bootstrap and should be changed in
+the future!-->
+<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
+<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
+
+<link rel="icon" href="/app/branding/sizes/square_xs.png">
+{{end}}
+
+
+
+
+{{define "login_accordion"}}
+	<div class="collapse" id="login-accordian">
+		<div class="container-fluid bg-inverse p-a-1">
+			<div class="row">
+				<div class="col-sm-6 m-b-3">
+					<h4>Log In</h4>
+
+					<form>
+
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Username or Email Address</label>
+							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username or Email">
+						</fieldset>
+
+						<fieldset class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+						</fieldset>
+						<button class="btn btn-success" type="submit">Login</button>
+					</form>
+
+				</div>
+				<div class="col-sm-6 m-b-3">
+					<h4>Sign Up</h4>
+					<form>
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Username</label>
+							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
+						</fieldset>
+
+						<fieldset class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+						</fieldset>
+
+
+						<fieldset class="form-group">
+							<label for="exampleInputEmail1">Email Address</label>
+							<input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
+							<small class="text-muted">We'll never share your email with anyone else and won't send you promotions.</small>
+						</fieldset>
+						<button class="btn btn-success" type="submit">Sign Me Up</button>
+
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+{{end}}
+
+
+{{define "logged_in"}}
+
+{{end}}
+
+
+{{define "navbar"}}
+
+	{{$loggedin := .ThisUser}}
+
+
+	<nav class="navbar navbar-light navbar-static-top bg-faded" role="banner">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="/">
+					<img class="navbar-brand" style="height:1.5em;" alt="ConnectorDB Logo" src="/app/assets/branding/sizes/title_logo_dark_xs.png"></img>
+				</a>
+
+				<button class="navbar-toggler pull-xs-right hidden-sm-up" type="button" data-toggle="collapse" data-target="#main-nav">
+					☰ Menu
+				</button>
+			</div>
+
+			<div class="collapse navbar-toggleable-xs" id="main-nav">
+				<div class="pull-xs-right">
+					<form class="form-inline pull-xs-right" >
+						{{if $loggedin}}
+							<a class="btn" id="logoffbutton" type="button" href="/logout" >Logoff</a>
+						{{else}}
+							<button class="btn btn-success" id="loginbutton" type="button" data-toggle="collapse" data-target="#login-accordian" aria-expanded="false">Login/Sgnup</button>
+						{{end}}
+					</form>
+
+					&nbsp;&nbsp;
+
+					<form class="form-inline pull-xs-right" role="search">
+						<input type="text" class="form-control" placeholder="Find users, devices or data" name="q">
+						<button class="btn btn-primary-outline" type="submit">Search</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</nav>
+
+	{{if $loggedin}}
+		<!--no accordion needed-->
+	{{else}}
+		{{template "login_accordion" .}}
+	{{end}}
+
+{{end}}

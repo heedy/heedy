@@ -1,199 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<!--NOTE: this is an alpha version of bootstrap and should be changed in
-	the future!-->
-	<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
-	<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
-
-	<link rel="icon" href="/app/branding/sizes/square_xs.png">
-
+	{{template "headerscripts"}}
+	<title>{{.User.Name}} | ConnectorDB</title>
 </head>
 <body>
 
-	<nav class="navbar navbar-light navbar-static-top bg-faded" role="banner">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<a class="navbar-brand" href="/">
-					<img class="navbar-brand" style="height:1.5em;" alt="ConnectorDB Logo" src="/app/assets/branding/sizes/title_logo_dark_xs.png"></img>
-				</a>
-
-				<button class="navbar-toggler pull-xs-right hidden-sm-up" type="button" data-toggle="collapse" data-target="#main-nav">
-					☰ Menu
-				</button>
-			</div>
-
-			<div class="collapse navbar-toggleable-xs" id="main-nav">
-				<div class="pull-xs-right">
-					<form class="form-inline pull-xs-right" >
-						<button class="btn btn-success" id="loginbutton" type="button" data-toggle="collapse" data-target="#login-accordian" aria-expanded="false">Login/Sgnup</button>
-					</form>
-
-					&nbsp;&nbsp;
-
-					<form class="form-inline pull-xs-right" role="search">
-						<input type="text" class="form-control" placeholder="Find users, devices or data" name="q">
-						<button class="btn btn-primary-outline" type="submit">Search</button>
-					</form>
-				</div>
-			</div>
-		</div>
-	</nav>
-
-
-
-	<div class="collapse" id="login-accordian">
-		<div class="container-fluid bg-inverse p-a-1">
-			<div class="row">
-				<div class="col-sm-6 m-b-3">
-					<h4>Log In</h4>
-
-					<form>
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username or Email Address</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username or Email">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-						<button class="btn btn-success" type="submit">Login</button>
-					</form>
-
-				</div>
-				<div class="col-sm-6 m-b-3">
-					<h4>Sign Up</h4>
-					<form>
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Email Address</label>
-							<input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
-							<small class="text-muted">We'll never share your email with anyone else and won't send you promotions.</small>
-						</fieldset>
-						<button class="btn btn-success" type="submit">Sign Me Up</button>
-
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-
-
-	<!-- STANDARD HEADER======================================================== -->
-
-
+	{{template "navbar" .}}
 	<div class="jumbotron minitron">
 		<div class="container">
 			<h1>User</h1>
 			<p class="lead">Information about {{.User.Name}} and their data collectors</p>
+			{{template "header"}}
+
 		</div>
 	</div>
 
 	<div class="container">
-		<!--
-		<ol class="breadcrumb">
-		<li><a href="#">User</a></li>
-		<li class="">device</li>
-		<li class="active">stream</li>
-	</ol>
--->
+		<div class="row">
+			<div class="col-md-3" id="sidebar">
+				<div class="list-group">
+					<div class="list-group-item" id="profile">
+						<img class="pageIcon" {{.User.Icon | .DataURIToAttr }}></img>
 
-<!-- STANDARD SUB-PAGE ===================================================== -->
+						<hr>
+						<b>{{.User.Name}}</b><br>
+						<p>{{.User.Description | markdown}}</p>
 
-<div class="row">
-	<div class="col-md-3" id="sidebar">
-		<div class="list-group">
-			<div class="list-group-item" id="profile">
-				<img class="pageIcon" {{.User.Icon | .DataURIToAttr }}></img>
+					</div>
 
-				<hr>
-				<b>{{html .User.Name}}</b><br>
-				<p>{{html .User.Description}}</p>
+					{{if eq .ThisUser.UserId .User.UserId}}
+					<a href="#hiddenSettings" class="list-group-item" data-toggle="modal"><i class=" material-icons sidebar-icon">settings</i>My Settings</a>
+					<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download My Data</a>
+					<a href="#newDeviceModal" class="list-group-item" data-toggle="modal"><i class=" material-icons sidebar-icon">create</i>Create New Device</a>
+					{{end}}
+					<a href="/api/v1/crud/{{.User.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Profile Developer View</a>
+					<a href="/api/v1/crud/{{.User.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Devices Developer View</a>
 
+				</div>
 			</div>
-			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">settings</i>My Settings</a>
-			<a href="#" class="list-group-item"><i class=" material-icons sidebar-icon">archive</i>Download My Data</a>
 
-			<a href="/api/v1/crud/{{.User.Name}}" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Profile Developer View</a>
-			<a href="/api/v1/crud/{{.User.Name}}?q=ls" class="list-group-item"><i class=" material-icons sidebar-icon">code</i>Devices Developer View</a>
+
+
+
+			<div class="col-md-9">
+				<table class="table">
+					<thead>
+					</thead>
+					<tbody>
+						{{range $element := .ReadDevices}}
+						<tr>
+							<td>
+								<img class="mainTableImage" {{$element.Icon | $.DataURIToAttr }}></img>
+							</td>
+							<td width="99%">
+								<h4><a href="{{$.User.Name}}/{{$element.Name}}">{{$element.Name | html}}</a></h4>
+								<p>{{default $element.Description "_This device has no description yet_"}}</p>
+								<span class="mainTableFooter text-muted"></span>
+								<span class="lock">
+
+									{{if $element.IsVisible}}
+										<small class="text-muted" style="color:green;">
+											<i class="material-icons">lock_open</i> Public
+										</small>
+									{{else}}
+										<small class="text-muted" style="color:red;">
+												<i class="material-icons">lock_outline</i> Private
+										</small>
+									{{end}}
+
+								</span>
+							</td>
+						</tr>
+						{{end}}
+					</tbody>
+				</table>
+
+				{{if eq .ThisUser.UserId .User.UserId}}
+				<div class="modal fade bd-example-modal-lg" tabindex="-1" id="hiddenSettings" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-lg" role="document">
+					    <div class="modal-content">
+					     	<div class="modal-header">
+						        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						          <span aria-hidden="true">&times;</span>
+						        </button>
+					        	<h4 class="modal-title" id="myModalLabel">Settings</h4>
+					      	</div>
+					      	<div class="modal-body">
+
+								<!-- Public information card -->
+								<div class="card">
+									<div class="card-header"> <h4>Profile</h4> </div>
+									<div class="card-block">
+										<form id="useredit" onsubmit="return submitUpdate('#useredit')" action="/api/v1/crud/{{.User.Name}}">
+											<div class="form-group row">
+												<label for="Nickname" class="col-sm-2 form-control-label">Nickname</label>
+												<div class="col-sm-10">
+													<input type="text" class="form-control" name="Nickname" placeholder="Nickname" value="{{ .User.Nickname }}"></input>
+												</div>
+											</div>
+											<div class="form-group row">
+												<label for="Description" class="col-sm-2 form-control-label">Description</label>
+												<div class="col-sm-10">
+													<textarea class="form-control" name="Description" placeholder="Description, markdown supported">{{ .User.Description }}</textarea>
+												</div>
+											</div>
+
+											<button type="submit" class="btn btn-primary">Submit</button>
+										</form>
+									</div>
+								</div>
+
+
+								<!-- Password Change Card -->
+								<div class="card">
+									<div class="card-header">
+										<h4>Password Change</h4>
+									</div>
+									<div class="card-block">
+										<form id="passchange" onsubmit="return submitUpdate('#passchange')" action="/api/v1/crud/{{.User.Name}}">
+											<div class="form-group row">
+												<label for="pass" class="col-sm-2 form-control-label">New Password</label>
+												<div class="col-sm-10">
+													<input type="password" class="form-control" name="Password" placeholder="New Password"></input>
+												</div>
+											</div>
+											<button type="submit" class="btn btn-primary">Submit</button>
+										</form>
+									</div>
+								</div>
+
+								<!-- Delete Account Card -->
+								<div class="card card-inverse">
+									<div class="card-header card-inverse card-danger">
+										<h4>Delete Account</h4>
+									</div>
+									<div class="card-block">
+										<p>While ConnectorDB is in beta we need to manually delete accounts.
+											If you'd like to delete your account, send an
+											email to
+											<a href="mailto:support@connectordb.com">support@connectordb.com</a>
+											and we'll be happy to do it for you.</a>
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+
+				<div class="modal fade" tabindex="-1" id="newDeviceModal" role="dialog" aria-labelledby="newDeviceModal" aria-hidden="true">
+					<div class="modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+								<h4 class="modal-title" id="newDeviceModal">New Device</h4>
+							</div>
+							<div class="modal-body">
+								<form id="newdevice" onsubmit="return submitForm('#newdevice', 'Name')" action="/api/v1/crud/{{.User.Name}}/">
+									<div class="form-group row">
+										<label for="Name" class="col-sm-2 form-control-label">Name</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" name="Name" placeholder="The official device name, may not contain spaces, \ / ? or #" required="true" pattern="[^/\\ ?\t\n\r#]+"></input>
+										</div>
+
+									</div>
+									<div class="form-group row">
+										<label for="Nickname" class="col-sm-2 form-control-label">Nickname</label>
+										<div class="col-sm-10">
+											<input type="text" class="form-control" name="Nickname" placeholder="The name everyone will see for this device."></input>
+										</div>
+									</div>
+									<div class="form-group row">
+										<label for="Description" class="col-sm-2 form-control-label">Description</label>
+										<div class="col-sm-10">
+											<textarea class="form-control" name="Description" placeholder="Description, markdown supported"></textarea>
+										</div>
+									</div>
+
+									<button type="submit" class="btn btn-primary">Submit</button>
+								</form>
+
+							</div>
+						</div>
+					</div>
+				</div>
+				{{end}}
+			</div>
 
 		</div>
+
+	{{template "footer"}}
 	</div>
 
-
-
-
-	<div class="col-md-9">
-		<table class="table">
-			<thead>
-			</thead>
-			<tbody>
-
-				{{range $element := .ReadDevices}}
-				<tr>
-					<td>
-						<img class="mainTableImage" {{$element.Icon | $.DataURIToAttr }}></img>
-					</td>
-					<td>
-						<h4><a href="{{$.User.Name}}/{{$element.Name}}">{{$element.Name | html}}</a></h4>
-						<p>Bootstrap is the world’s most popular framework for building responsive, mobile-first sites and applications. Inside you’ll find high quality HTML, CSS, and JavaScript to make starting any project easier than ever.
-							{{$element.Description | html}}</p>
-						<span class="mainTableFooter text-muted"></span>
-						<span class="lock">
-							{{/*
-							{{if $.element.IsVisible}}
-								<small class="text-muted" style="color:green;">
-									<i class="material-icons">lock_open</i> Public</small>
-							{{else}}
-								<small class="text-muted" style="color:red;">
-									<i class="material-icons">lock_outline</i> Private</small>
-							{{end}}
-							*/}}
-						</span>
-					</td>
-				</tr>
-				{{end}}
-			</tbody>
-		</table>
-	</div>
-
-</div>
-
-<!-- STANDARD FOOTER======================================================== -->
-
-<div class="footer">
-	<small><p>ConnectorDB version {{.Version}} | Copyright (C) 2016 The ConnectorDB Team</p></small>
-</div>
-
-</div>
-
-
-
-<!-- Bootstrap core JavaScript
-================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-<script src="/app/assets/js/bootstrap.min.js"></script>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
+{{template "footerscripts"}}
 
 </body>
 </html>

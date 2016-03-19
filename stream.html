@@ -1,103 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-	<!--NOTE: this is an alpha version of bootstrap and should be changed in
-	the future!-->
-	<link href="/app/assets/css/bootstrap.min.css" rel="stylesheet"></link>
-	<link href="/app/assets/css/connectordb.css" rel="stylesheet"></link>
-
-	<link rel="icon" href="/app/branding/sizes/square_xs.png">
-
+	{{template "headerscripts"}}
+	<title>{{.Stream.Name}} | ConnectorDB</title>
 </head>
 <body>
 
-	<nav class="navbar navbar-light navbar-static-top bg-faded" role="banner">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<a class="navbar-brand" href="/">
-					<img class="navbar-brand" style="height:1.5em;" alt="ConnectorDB Logo" src="/app/assets/branding/sizes/title_logo_dark_xs.png"></img>
-				</a>
-
-				<button class="navbar-toggler pull-xs-right hidden-sm-up" type="button" data-toggle="collapse" data-target="#main-nav">
-					☰ Menu
-				</button>
-			</div>
-
-			<div class="collapse navbar-toggleable-xs" id="main-nav">
-				<div class="pull-xs-right">
-					<form class="form-inline pull-xs-right" >
-						<button class="btn btn-success" id="loginbutton" type="button" data-toggle="collapse" data-target="#login-accordian" aria-expanded="false">Login/Sgnup</button>
-					</form>
-
-					&nbsp;&nbsp;
-
-					<form class="form-inline pull-xs-right" role="search">
-						<input type="text" class="form-control" placeholder="Find users, devices or data" name="q">
-						<button class="btn btn-primary-outline" type="submit">Search</button>
-					</form>
-				</div>
-			</div>
-		</div>
-	</nav>
-
-
-
-	<div class="collapse" id="login-accordian">
-		<div class="container-fluid bg-inverse p-a-1">
-			<div class="row">
-				<div class="col-sm-6 m-b-3">
-					<h4>Log In</h4>
-
-					<form>
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username or Email Address</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username or Email">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-						<button class="btn btn-success" type="submit">Login</button>
-					</form>
-
-				</div>
-				<div class="col-sm-6 m-b-3">
-					<h4>Sign Up</h4>
-					<form>
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Username</label>
-							<input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
-						</fieldset>
-
-						<fieldset class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-						</fieldset>
-
-
-						<fieldset class="form-group">
-							<label for="exampleInputEmail1">Email Address</label>
-							<input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
-							<small class="text-muted">We'll never share your email with anyone else and won't send you promotions.</small>
-						</fieldset>
-						<button class="btn btn-success" type="submit">Sign Me Up</button>
-
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-
-
-	<!-- STANDARD HEADER======================================================== -->
-
+{{template "navbar" .}}
 
 	<div class="jumbotron minitron">
 		<div class="container">
@@ -130,9 +39,9 @@
 
 			<div class="col-md-9">
 				<ol class="breadcrumb">
-					<li><a href="/{{.User.Name}}">{{.User.Name | html}}</a></li>
-					<li><a href="/{{.User.Name}}/{{.Device.Name}}">{{.Device.Name | html}}</a></li>
-					<li class="active">{{.Stream.Name | html}}</li>
+					<li><a href="/{{.User.Name}}">{{.User.Name}}</a></li>
+					<li><a href="/{{.User.Name}}/{{.Device.Name}}">{{.Device.Name }}</a></li>
+					<li class="active">{{.Stream.Name }}</li>
 				</ol>
 
 
@@ -140,13 +49,12 @@
 					<thead>
 					</thead>
 					<tbody>
-						<tr><th>Name</th><td>{{ .Stream.Name | html }}</td></tr>
-						<tr><th>Nickname</th><td>{{ .Stream.Nickname | html }}</td></tr>
+						<tr><th>Name</th><td>{{ .Stream.Name }}</td></tr>
+						<tr><th>Nickname</th><td>{{default .Stream.Nickname "_This stream doesn't have a nickname_" }}</td></tr>
 						<tr>
 							<th>Description</th>
-							<td>{{if .Stream.Description }}
-								{{.Stream.Description | html}}
-								{{else}} <i>No description set</i>{{end}}
+							<td>
+								{{default .Stream.Description "_This stream has no description yet_"}}
 							</td>
 						</tr>
 
@@ -183,17 +91,17 @@
 						<h3>Edit Stream</h3>
 					</div>
 					<div class="card-block">
-						<form id="streamedit" onsubmit="return submitForm('#streamedit')" action="/api/v1/crud/{{.User.Name | html}}/{{.Device.Name | html}}/{{.Stream.Name | html}}">
+						<form id="streamedit" onsubmit="return submitUpdate('#streamedit')" action="/api/v1/crud/{{.User.Name | html}}/{{.Device.Name | html}}/{{.Stream.Name | html}}">
 							<div class="form-group row">
 								<label for="Nickname" class="col-sm-2 form-control-label">Nickname</label>
 								<div class="col-sm-10">
-									<input type="text" class="form-control" name="Nickname" placeholder="Nickname" value="{{ .Stream.Nickname | html }}"></input>
+									<input type="text" class="form-control" name="Nickname" placeholder="Nickname" value="{{ .Stream.Nickname }}"></input>
 								</div>
 							</div>
 							<div class="form-group row">
 								<label for="Description" class="col-sm-2 form-control-label">Description</label>
 								<div class="col-sm-10">
-									<input type="text" class="form-control" name="Description" placeholder="Description" value="{{ .Stream.Description | html }}"></input>
+									<textarea class="form-control" name="Description" placeholder="Description, markdown supported">{{ .Stream.Description }}</textarea>
 								</div>
 							</div>
 
@@ -208,23 +116,10 @@
 
 		</div>
 
-		<!-- STANDARD FOOTER======================================================== -->
+{{template "footer"}}
+</div>
 
-		<div class="footer">
-			<small><p>ConnectorDB version {{.Version}} | Copyright (C) 2016 The ConnectorDB Team</p></small>
-		</div>
+{{template "footerscripts"}}
 
-	</div>
-
-
-
-	<!-- Bootstrap core JavaScript
-	================================================== -->
-	<!-- Placed at the end of the document so the pages load faster -->
-
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-	<script src="/app/assets/js/bootstrap.min.js"></script>
-	<script src="/app/assets/js/formsubmit.js"></script>
-	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	</body>
-	</html>
+</body>
+</html>
