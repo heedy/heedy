@@ -122,7 +122,7 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) e
 	_, err := userdb.Exec(`INSERT INTO Streams
 	    (	Name,
 	        Type,
-	        DeviceId) VALUES (?,?,?);`, Name, Type, DeviceId)
+	        DeviceId, Icon) VALUES (?,?,?,?);`, Name, Type, DeviceId, DefaultStreamIcon)
 
 	return err
 }

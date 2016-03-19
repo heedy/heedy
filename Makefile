@@ -45,7 +45,6 @@ go-dependencies:
 	go get github.com/xeipuuv/gojsonschema
 	go get gopkg.in/vmihailenco/msgpack.v2
 	go get gopkg.in/fsnotify.v1
-	go get github.com/vharitonsky/iniflags
 	go get github.com/kardianos/osext
 	go get github.com/nu7hatch/gouuid
 	go get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
@@ -53,6 +52,11 @@ go-dependencies:
 	go get github.com/josephlewis42/multicache
 	go get github.com/connectordb/njson
 	go get github.com/codegangsta/cli
+
+	# web services
+	go get github.com/gernest/hot				# hot template reloading
+	go get github.com/russross/blackfriday		# markdown processing
+	go get github.com/microcosm-cc/bluemonday	# unsafe html stripper
 
 	go get github.com/stretchr/testify
 

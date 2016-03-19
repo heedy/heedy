@@ -16,7 +16,7 @@ import (
 )
 
 //Authenticator runs an auth check and either goes to the www template given or to the apifunc handler
-func Authenticator(www *FileTemplate, apifunc webcore.APIHandler, db *connectordb.Database) http.HandlerFunc {
+func Authenticator(www wwwtemplatebookmark, apifunc webcore.APIHandler, db *connectordb.Database) http.HandlerFunc {
 	funcname := webcore.GetFuncName(apifunc)
 	qtimer := webcore.GetQueryTimer(funcname)
 

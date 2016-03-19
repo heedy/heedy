@@ -5,110 +5,96 @@ Licensed under the MIT license.
 package website
 
 import (
-	"fmt"
+	"connectordb"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"path"
-	"util"
-
-	"github.com/kardianos/osext"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/gernest/hot"
+	"github.com/kardianos/osext"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday"
 )
 
-var (
+const (
 	//The prefix to use for the paths in web server
 	WWWPrefix = "www"
 	AppPrefix = "app"
+)
+
+type wwwtemplatebookmark string
+type apptemplatebookmark string
+
+var (
 
 	// WWWPath is the path to the not-logged-in website files
 	WWWPath string
 	// AppPath is the path to the logged-in user website files
 	AppPath string
 
-	//These are the pre-loaded templates for non-logged in users
-	WWWIndex *FileTemplate
-	WWWLogin *FileTemplate
-	WWWJoin  *FileTemplate
-	WWW404   *FileTemplate
+	// These are the pre-loaded templates for non-logged in users
+	WWWTemplate *hot.Template
+	// These are the pre-loaded templates for logged in users
+	AppTemplate *hot.Template
 
-	//These are the pre-loaded templates for logged in users
-	AppIndex  *FileTemplate
-	AppUser   *FileTemplate
-	AppDevice *FileTemplate
-	AppStream *FileTemplate
-	App404    *FileTemplate
-	AppError  *FileTemplate
+	// These are convenience functions for accessing specific endpoints
+	WWWLogin  wwwtemplatebookmark = "login.html"
+	WWWIndex  wwwtemplatebookmark = "index.html"
+	WWW404    wwwtemplatebookmark = "404.html"
+	WWWJoin   wwwtemplatebookmark = "join.html"
+	AppIndex  apptemplatebookmark = "index.html"
+	AppUser   apptemplatebookmark = "user.html"
+	AppDevice apptemplatebookmark = "device.html"
+	AppStream apptemplatebookmark = "stream.html"
+	AppError  apptemplatebookmark = "error.html"
 )
 
-//FileTemplate implements all the necessary logic to read/write a "special" templated file
-// as well as to update it from the folder in real time as it is modified.
-type FileTemplate struct {
-	Template *template.Template
-
-	Watcher *util.FileWatcher
+func (w wwwtemplatebookmark) Execute(wr io.Writer, data interface{}) (err error) {
+	return WWWTemplate.Execute(wr, string(w), data)
 }
 
-//NewFileTemplate loads a template from file and subscribes to changes from the file system
-func NewFileTemplate(fpath string, err error) (*FileTemplate, error) {
-	if err != nil {
-		return nil, err
-	}
-	f, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		log.Warnf("Could not read '%s'", fpath)
-		return nil, err
-	}
-	tmpl, err := template.New(fpath).Parse(string(f))
-	if err != nil {
-		log.Warnf("Failed to parse '%s'", fpath)
-		return nil, err
-	}
-
-	ft := &FileTemplate{
-		Template: tmpl,
-	}
-
-	ft.Watcher, err = util.NewFileWatcher(fpath, ft)
-
-	return ft, err
+func (w apptemplatebookmark) Execute(wr io.Writer, data interface{}) (err error) {
+	return AppTemplate.Execute(wr, string(w), data)
 }
 
-// Reload loads up the template from the file path
-func (f *FileTemplate) Reload() error {
-	file, err := ioutil.ReadFile(f.Watcher.FileName)
-	if err != nil {
-		return err
-	}
-
-	tmpl, err := template.New(f.Watcher.FileName).Parse(string(file))
-	if err != nil {
-		err = fmt.Errorf("Failed to parse '%s': %v", f.Watcher.FileName, err.Error())
-		return err
-	}
-	f.Watcher.Lock()
-	f.Template = tmpl
-	f.Watcher.Unlock()
-
-	return nil
+func isBlank(text string) bool {
+	return text == ""
 }
 
-//Execute the template
-func (f *FileTemplate) Execute(w io.Writer, data interface{}) error {
-	f.Watcher.RLock()
-	err := f.Template.Execute(w, data)
-	f.Watcher.RUnlock()
-	return err
+func dataURIToAttr(uri string) template.HTMLAttr {
+	return template.HTMLAttr("src=\"" + uri + "\"")
 }
 
-// Close shuts down the file template
-func (f *FileTemplate) Close() {
-	f.Watcher.Close()
+func markdown(input string) template.HTML {
+	unsafe := blackfriday.MarkdownCommon([]byte(input))
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	return template.HTML(string(html))
+}
+
+func version() string {
+	return connectordb.Version
+}
+
+// defaultMarkdown returns HTML formatted first text if it is not blank,
+// otherwise it returns markdown formatted second text
+func defaultMarkdown(first, defaultText string) template.HTML {
+	if !isBlank(first) {
+		return markdown(first)
+	}
+	return markdown(defaultText)
 }
 
 //LoadFiles sets up all the necessary files
 func LoadFiles() error {
+	funcMap := template.FuncMap{
+		"isblank":      isBlank,
+		"dataURIToSrc": dataURIToAttr,
+		"Version":      version,
+		"markdown":     markdown,
+		"default":      defaultMarkdown,
+	}
+
 	//Now set up the app and www folder paths and make sure they exist
 	exefolder, err := osext.ExecutableFolder()
 	if err != nil {
@@ -120,17 +106,35 @@ func LoadFiles() error {
 	AppPath = path.Join(exefolder, AppPrefix)
 	log.Infof("Hosting app from '%s'", AppPath)
 
-	WWWIndex, err = NewFileTemplate(path.Join(WWWPath, "index.html"), err)
-	WWWLogin, err = NewFileTemplate(path.Join(WWWPath, "login.html"), err)
-	WWW404, err = NewFileTemplate(path.Join(WWWPath, "404.html"), err)
-	WWWJoin, err = NewFileTemplate(path.Join(WWWPath, "join.html"), err)
+	{
+		config := &hot.Config{
+			Watch:          true,
+			BaseName:       "index",
+			Dir:            WWWPath,
+			FilesExtension: []string{".html"},
+			Funcs:          funcMap,
+		}
 
-	AppIndex, err = NewFileTemplate(path.Join(AppPath, "index.html"), err)
-	AppUser, err = NewFileTemplate(path.Join(AppPath, "user.html"), err)
-	AppDevice, err = NewFileTemplate(path.Join(AppPath, "device.html"), err)
-	AppStream, err = NewFileTemplate(path.Join(AppPath, "stream.html"), err)
-	App404, err = NewFileTemplate(path.Join(AppPath, "404.html"), err)
-	AppError, err = NewFileTemplate(path.Join(AppPath, "error.html"), err)
+		WWWTemplate, err = hot.New(config)
+		if err != nil {
+			return err
+		}
+	}
+
+	{
+		config := &hot.Config{
+			Watch:          true,
+			BaseName:       "index",
+			Dir:            AppPath,
+			FilesExtension: []string{".html"},
+			Funcs:          funcMap,
+		}
+
+		AppTemplate, err = hot.New(config)
+		if err != nil {
+			return err
+		}
+	}
 
 	return err
 }

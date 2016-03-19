@@ -153,13 +153,15 @@ func (userdb *SqlUserDatabase) CreateUser(Name, Email, Password string) error {
 	    Password,
 	    PasswordSalt,
 	    PasswordHashScheme,
-		Nickname) VALUES (?,?,?,?,?,?);`,
+		Nickname,
+		Icon) VALUES (?,?,?,?,?,?,?);`,
 		Name,
 		Email,
 		dbpass,
 		salt,
 		hashtype,
-		Name)
+		Name,
+		DefaultUserIcon)
 
 	return err
 }

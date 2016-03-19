@@ -8,6 +8,7 @@ import (
 	"connectordb"
 	"connectordb/operator"
 	"connectordb/users"
+	"html/template"
 	"net/http"
 	"server/webcore"
 
@@ -36,6 +37,10 @@ type TemplateData struct {
 
 	// The operator that this TemplateData uses.
 	operator operator.Operator
+}
+
+func (td *TemplateData) DataURIToAttr(uri string) template.HTMLAttr {
+	return template.HTMLAttr("src=\"" + uri + "\"")
 }
 
 //GetTemplateData initializes the template
@@ -108,6 +113,11 @@ func (t *TemplateData) ReadDevices() (out []users.Device, err error) {
 // Reads the streams for the page's device
 func (t *TemplateData) ReadStreams() (out []users.Stream, err error) {
 	return t.operator.ReadAllStreamsByDeviceID(t.Device.DeviceId)
+}
+
+// Reads all users on the system
+func (t *TemplateData) ReadUsers() (out []users.User, err error) {
+	return t.operator.ReadAllUsers()
 }
 
 //Index reads the index

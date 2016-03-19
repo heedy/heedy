@@ -171,8 +171,9 @@ func (userdb *SqlUserDatabase) CreateDevice(Name string, UserId int64) error {
 	_, err := userdb.Exec(`INSERT INTO Devices
 	    (	Name,
 	        ApiKey,
-	        UserId)
-	        VALUES (?,?,?)`, Name, ApiKey.String(), UserId)
+	        UserId,
+			Icon)
+	        VALUES (?,?,?,?)`, Name, ApiKey.String(), UserId, DefaultDeviceIcon)
 
 	return err
 }
