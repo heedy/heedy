@@ -1,6 +1,7 @@
 package connectordb
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,13 +19,13 @@ func TestStream(t *testing.T) {
 	require.Nil(t, u)
 	require.Error(t, err)
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
-	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
 
-	require.Error(t, db.CreateStream("nouser/mydevice/mystream", `{"type":"number"}`))
-	require.Error(t, db.CreateStream("myuser/nodevice/mystream", `{"type":"number"}`))
-	require.Error(t, db.CreateStream("myuser/mydevice/mystream", `{"type":"foobar"}`))
-	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", `{"type":"number"}`))
+	require.Error(t, db.CreateStream("nouser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
+	require.Error(t, db.CreateStream("myuser/nodevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
+	require.Error(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"foobar"}`}}))
+	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
 
 	u, err = db.ReadStream("myuser/mydevice/mystream")
 	require.NoError(t, err)
@@ -40,7 +41,7 @@ func TestStream(t *testing.T) {
 
 	require.Error(t, db.DeleteStream("myuser/mydevice/mystream"))
 
-	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", `{"type":"number"}`))
+	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
 	u, err = db.ReadStream("myuser/mydevice/mystream")
 	require.NoError(t, err)
 	require.NoError(t, db.DeleteUser("myuser"))
@@ -52,9 +53,9 @@ func TestStreamUpdate(t *testing.T) {
 	Tdb.Clear()
 	db := Tdb
 
-	require.NoError(t, db.CreateUser("myuser", "email@email", "test", "user", true))
-	require.NoError(t, db.CreateDevice("myuser/mydevice", false))
-	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", `{"type": "number"}`))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
 
 	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"name": "lol"}))
 	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"schema": `{"type": "string"}`}))

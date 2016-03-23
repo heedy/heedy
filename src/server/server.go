@@ -157,8 +157,8 @@ func RunServer() error {
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
-	if c.TLSKey != "" && c.TLSCert != "" {
-		return http.ListenAndServeTLS(listenhost, c.TLSCert, c.TLSKey, nil)
+	if c.TLS.Key != "" && c.TLS.Cert != "" {
+		return http.ListenAndServeTLS(listenhost, c.TLS.Cert, c.TLS.Key, nil)
 	}
 	return http.ListenAndServe(listenhost, nil)
 }

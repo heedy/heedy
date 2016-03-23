@@ -15,7 +15,7 @@ func (w Wrapper) ReadUserDevices(username string) ([]*users.Device, error) {
 }
 
 //CreateDevice creates a new device at the given path
-func (w Wrapper) CreateDevice(devicepath string, public bool) error {
+func (w Wrapper) CreateDevice(devicepath string, d *users.DeviceMaker) error {
 	userName, deviceName, err := util.SplitDevicePath(devicepath)
 	if err != nil {
 		return err
@@ -24,8 +24,9 @@ func (w Wrapper) CreateDevice(devicepath string, public bool) error {
 	if err != nil {
 		return err
 	}
-
-	return w.CreateDeviceByUserID(u.UserID, deviceName, public)
+	d.Name = deviceName
+	d.UserID = u.UserID
+	return w.CreateDeviceByUserID(d)
 }
 
 // ReadDevice reads the given device

@@ -21,13 +21,13 @@ type PathOperator interface {
 	DeleteUser(username string) error
 
 	ReadUserDevices(username string) ([]*users.Device, error)
-	CreateDevice(devicepath string, public bool) error
+	CreateDevice(devicepath string, d *users.DeviceMaker) error
 	ReadDevice(devicepath string) (*users.Device, error)
 	UpdateDevice(devicepath string, updates map[string]interface{}) error
 	DeleteDevice(devicepath string) error
 
 	ReadDeviceStreams(devicepath string) ([]*users.Stream, error)
-	CreateStream(streampath, jsonschema string) error
+	CreateStream(streampath string, s *users.StreamMaker) error
 	ReadStream(streampath string) (*users.Stream, error)
 	UpdateStream(streampath string, updates map[string]interface{}) error
 	DeleteStream(streampath string) error

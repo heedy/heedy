@@ -20,15 +20,15 @@ func TestCreateDevice(t *testing.T) {
 		usr2, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestCreateDevice", usr.UserID, false, 0)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr.UserID}})
 		require.Nil(t, err)
 
 		// DeviceName/Usernames must be unique
-		err = testdb.CreateDevice("TestCreateDevice", usr.UserID, false, 0)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr.UserID}})
 		assert.NotNil(t, err, "Created device with duplicate name under the same user")
 
 		// but should work with different users
-		err = testdb.CreateDevice("TestCreateDevice", usr2.UserID, false, 0)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr2.UserID}})
 		assert.Nil(t, err, "Could not create device with secnod user %v", err)
 	}
 }
@@ -38,7 +38,7 @@ func TestReadDeviceByID(t *testing.T) {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestReadStreamByID", usr.UserID, false, 0)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestReadStreamByID", UserID: usr.UserID}})
 		require.Nil(t, err)
 
 		devforid, err := testdb.ReadDeviceForUserByName(usr.UserID, "TestReadStreamByID")
@@ -74,7 +74,7 @@ func TestUpdateDevice(t *testing.T) {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestUpdateDevice", usr.UserID, false, 0)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestUpdateDevice", UserID: usr.UserID}})
 		require.Nil(t, err)
 
 		obj, err := testdb.ReadDeviceForUserByName(usr.UserID, "TestUpdateDevice")

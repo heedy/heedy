@@ -69,6 +69,12 @@ func (s *CookieSession) GetEncryptionKey() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(s.EncryptionKey)
 }
 
+// TLS enables TLS support on the server
+type TLS struct {
+	Key  string `json:"key"`
+	Cert string `json:"cert"`
+}
+
 // Frontend represents the ConnectorDB frontend server options
 type Frontend struct {
 
@@ -90,10 +96,8 @@ type Frontend struct {
 	// The session cookies to allow in the website
 	CookieSession CookieSession `json:"cookie"`
 
-	// These two options enable https on the server. Both files must exist
-	// for TLS to be enabled
-	TLSKey  string `json:"tls_key"`
-	TLSCert string `json:"tls_cert"`
+	// This enables TLS on the server
+	TLS TLS `json:"tls"`
 
 	Captcha Captcha `json:"captcha"`
 
@@ -133,7 +137,7 @@ type Frontend struct {
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
 func (f *Frontend) TLSEnabled() bool {
-	return f.TLSCert != "" && f.TLSKey != ""
+	return f.TLS.Cert != "" && f.TLS.Key != ""
 }
 
 // GetSiteURL returns a URL to the frontend
@@ -170,17 +174,17 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 
 	if f.TLSEnabled() {
 		// If both key and cert are given, assume that we want to use TLS
-		_, err = tls.LoadX509KeyPair(f.TLSCert, f.TLSKey)
+		_, err = tls.LoadX509KeyPair(f.TLS.Cert, f.TLS.Key)
 		if err != nil {
 			return err
 		}
 
 		//Set the file paths to be full paths
-		f.TLSCert, err = filepath.Abs(f.TLSCert)
+		f.TLS.Cert, err = filepath.Abs(f.TLS.Cert)
 		if err != nil {
 			return err
 		}
-		f.TLSKey, err = filepath.Abs(f.TLSKey)
+		f.TLS.Key, err = filepath.Abs(f.TLS.Key)
 		if err != nil {
 			return err
 		}

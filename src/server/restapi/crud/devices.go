@@ -6,6 +6,7 @@ package crud
 
 import (
 	"connectordb/authoperator"
+	"connectordb/users"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -38,9 +39,14 @@ func CreateDevice(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	publics := request.URL.Query().Get("public")
+	var dm users.DeviceMaker
+	err = restcore.UnmarshalRequest(request, &dm)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
 
-	if err = o.CreateDevice(devpath, publics == "true"); err != nil {
+	dm.Name = devname
+	if err = o.CreateDevice(devpath, &dm); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 

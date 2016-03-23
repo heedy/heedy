@@ -1,6 +1,7 @@
 package authoperator_test
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -8,9 +9,9 @@ import (
 
 func TestAuthDeviceUserCrud(t *testing.T) {
 	db.Clear()
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateUser("otheruser", "root@localhost2", "mypass", "admin", false))
-	require.NoError(t, db.CreateDevice("otheruser/testdevice", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "otheruser", Email: "root@localhost2", Password: "mypass", Role: "admin", Public: false}}))
+	require.NoError(t, db.CreateDevice("otheruser/testdevice", &users.DeviceMaker{}))
 	_, err := db.ReadDevice("otheruser/testdevice")
 	require.NoError(t, err)
 
@@ -42,7 +43,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	_, err = o.ReadDevice("otheruser/testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("otheruser/testdevice"))
-	require.Error(t, o.CreateDevice("otheruser/testdevice2", false))
+	require.Error(t, o.CreateDevice("otheruser/testdevice2", &users.DeviceMaker{}))
 	_, err = db.ReadDevice("otheruser/testdevice2")
 	require.Error(t, err)
 
@@ -53,14 +54,14 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	_, err = o.ReadDeviceByUserID(dev.UserID, "testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDeviceByID(dev.DeviceID))
-	require.Error(t, o.CreateDeviceByUserID(dev.UserID, "testdevice2", false))
+	require.Error(t, o.CreateDeviceByUserID(&users.DeviceMaker{Device: users.Device{UserID: dev.UserID, Name: "testdevice2"}}))
 
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"nickname": "test"}))
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"role": "user"}))
 	require.Error(t, o.UpdateDevice("otheruser/testdevice", map[string]interface{}{"apikey": ""}))
 
 	//This user should be able to crud its own devices
-	require.NoError(t, o.CreateDevice("streamdb_test/testdevice", false))
+	require.NoError(t, o.CreateDevice("streamdb_test/testdevice", &users.DeviceMaker{}))
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
 	require.Equal(t, "testdevice", dev.Name)
@@ -87,7 +88,7 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 	require.NoError(t, o.DeleteDevice("streamdb_test/testdevice"))
 
 	usr, err := o.User()
-	require.NoError(t, o.CreateDeviceByUserID(usr.UserID, "testdevice", false))
+	require.NoError(t, o.CreateDeviceByUserID(&users.DeviceMaker{Device: users.Device{UserID: usr.UserID, Name: "testdevice"}}))
 	dev, err = o.ReadDevice("streamdb_test/testdevice")
 	require.NoError(t, err)
 	require.NoError(t, o.DeleteDeviceByID(dev.DeviceID))
@@ -95,9 +96,9 @@ func TestAuthDeviceUserCrud(t *testing.T) {
 
 func TestAuthDeviceDeviceCrud(t *testing.T) {
 	db.Clear()
-	require.NoError(t, db.CreateUser("tstusr", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tstusr/testdevice", false))
-	require.NoError(t, db.CreateDevice("tstusr/test", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tstusr", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tstusr/testdevice", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateDevice("tstusr/test", &users.DeviceMaker{}))
 
 	o, err := db.AsDevice("tstusr/test")
 	require.NoError(t, err)
@@ -106,7 +107,7 @@ func TestAuthDeviceDeviceCrud(t *testing.T) {
 	_, err = o.ReadDevice("tstusr/testdevice")
 	require.Error(t, err)
 	require.Error(t, o.DeleteDevice("tstusr/testdevice"))
-	require.Error(t, o.CreateDevice("tstusr/testdevice2", false))
+	require.Error(t, o.CreateDevice("tstusr/testdevice2", &users.DeviceMaker{}))
 	_, err = db.ReadDevice("tstusr/testdevice2")
 	require.Error(t, err)
 

@@ -64,9 +64,9 @@ func (c *Configuration) Validate() error {
 	}
 
 	// Check that the initial user permissions exist if given
-	if c.InitialUserRole != "" {
-		if _, ok := p.UserRoles[c.InitialUserRole]; !ok {
-			return fmt.Errorf("Could not find role of '%s' for the initial creation user", c.InitialUserRole)
+	if c.InitialUser != nil && c.InitialUser.Role != "" {
+		if _, ok := p.UserRoles[c.InitialUser.Role]; !ok {
+			return fmt.Errorf("Could not find role of '%s' for the initial creation user", c.InitialUser.Role)
 		}
 	}
 

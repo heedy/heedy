@@ -7,6 +7,7 @@ package authoperator_test
 import (
 	"config"
 	"connectordb"
+	"connectordb/users"
 	"log"
 	"testing"
 
@@ -26,7 +27,7 @@ func init() {
 
 func TestAuthOperatorBasics(t *testing.T) {
 	db.Clear()
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
 
 	_, err := db.UserLogin("streamdb_test", "wrongpass")
 	require.Error(t, err)
@@ -53,7 +54,7 @@ func TestAuthOperatorBasics(t *testing.T) {
 func TestCountAll(t *testing.T) {
 	db.Clear()
 
-	require.NoError(t, db.CreateUser("streamdb_test", "root@localhost", "mypass", "user", true))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "streamdb_test", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
 
 	o, err := db.UserLogin("streamdb_test", "mypass")
 	require.NoError(t, err)

@@ -15,7 +15,7 @@ func (w Wrapper) ReadDeviceStreams(devicepath string) ([]*users.Stream, error) {
 }
 
 //CreateStream makes a new stream
-func (w Wrapper) CreateStream(streampath, jsonschema string) error {
+func (w Wrapper) CreateStream(streampath string, s *users.StreamMaker) error {
 	_, devicepath, _, streamname, _, err := util.SplitStreamPath(streampath)
 	if err != nil {
 		return err
@@ -24,7 +24,9 @@ func (w Wrapper) CreateStream(streampath, jsonschema string) error {
 	if err != nil {
 		return err
 	}
-	return w.CreateStreamByDeviceID(dev.DeviceID, streamname, jsonschema)
+	s.Name = streamname
+	s.DeviceID = dev.DeviceID
+	return w.CreateStreamByDeviceID(s)
 }
 
 //ReadStream reads the given stream

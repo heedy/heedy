@@ -11,6 +11,7 @@ All Rights Reserved
 */
 
 import (
+	"connectordb/users"
 	"fmt"
 )
 
@@ -37,7 +38,7 @@ func init() {
 		path = shell.ResolvePath(path)
 
 		fmt.Printf("Creating Stream %v\n", path)
-		err := shell.operator.CreateStream(path, streamType)
+		err := shell.operator.CreateStream(path, &users.StreamMaker{Stream: users.Stream{Schema: streamType}})
 
 		if shell.PrintError(err) {
 			return 2

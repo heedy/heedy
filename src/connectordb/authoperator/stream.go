@@ -77,8 +77,8 @@ func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]inte
 }
 
 // CreateStreamByDeviceID creates the given stream if permitted
-func (a *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
-	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(deviceID)
+func (a *AuthOperator) CreateStreamByDeviceID(sm *users.StreamMaker) error {
+	_, _, _, _, ua, da, err := a.getDeviceAccessLevels(sm.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (a *AuthOperator) CreateStreamByDeviceID(deviceID int64, streamname, jsonsc
 		return permissions.ErrNoAccess
 	}
 
-	return a.Operator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+	return a.Operator.CreateStreamByDeviceID(sm)
 }
 
 // ReadStreamByID reads the given stream

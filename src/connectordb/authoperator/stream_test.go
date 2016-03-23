@@ -1,6 +1,7 @@
 package authoperator_test
 
 import (
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,11 +12,11 @@ func TestAuthStreamCrud(t *testing.T) {
 	_, err := db.ReadDeviceStreams("bad/badder")
 	require.Error(t, err)
 
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/testdevice", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tst/testdevice", &users.DeviceMaker{}))
 
-	require.NoError(t, db.CreateDevice("tst/testdevice2", false))
-	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", `{"type":"string"}`))
+	require.NoError(t, db.CreateDevice("tst/testdevice2", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 
 	o, err := db.AsDevice("tst/testdevice")
 	require.NoError(t, err)
@@ -38,8 +39,8 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(strms))
 
-	require.Error(t, o.CreateStream("tst/testdevice2/mystream", `{"type":"string"}`))
-	require.NoError(t, o.CreateStream("tst/testdevice/mystream", `{"type":"string"}`))
+	require.Error(t, o.CreateStream("tst/testdevice2/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
+	require.NoError(t, o.CreateStream("tst/testdevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 
 	_, err = o.ReadStream("tst/testdevice2/teststream")
 	require.Error(t, err)
@@ -64,7 +65,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	dev, err = o.ReadDevice("tst/testdevice")
 	require.NoError(t, err)
 
-	require.NoError(t, o.CreateStreamByDeviceID(dev.DeviceID, "testme", `{"type":"string"}`))
+	require.NoError(t, o.CreateStreamByDeviceID(&users.StreamMaker{Stream: users.Stream{DeviceID: dev.DeviceID, Name: "testme", Schema: `{"type": "string"}`}}))
 
 	s, err = o.ReadStreamByDeviceID(dev.DeviceID, "testme")
 	require.NoError(t, err)

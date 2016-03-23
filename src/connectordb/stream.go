@@ -19,9 +19,9 @@ func (db *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream, e
 
 //CreateStreamByDeviceID creates the stream given a jsonschema as a string.
 // It also enforces the max stream limit for the user
-func (db *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
+func (db *Database) CreateStreamByDeviceID(s *users.StreamMaker) error {
 	perm := pconfig.Get()
-	dev, err := db.ReadDeviceByID(deviceID)
+	dev, err := db.ReadDeviceByID(s.DeviceID)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,11 @@ func (db *Database) CreateStreamByDeviceID(deviceID int64, streamname, jsonschem
 
 	r := permissions.GetUserRole(perm, u)
 
-	return db.Userdb.CreateStream(streamname, jsonschema, deviceID, r.MaxStreams)
+	if err = s.Validate(); err != nil {
+		return err
+	}
+	s.Streamlimit = r.MaxStreams
+	return db.Userdb.CreateStream(s)
 }
 
 // ReadStreamByID reads the given stream

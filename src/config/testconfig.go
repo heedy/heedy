@@ -28,10 +28,12 @@ var TestConfiguration = func() Configuration {
 		Enabled: true,
 	}
 
-	c.InitialUsername = "test"
-	c.InitialUserEmail = "test@localhost"
-	c.InitialUserPassword = "test"
-	c.InitialUserRole = "admin"
+	c.InitialUser = &UserMaker{
+		Name:     "test",
+		Email:    "test@localhost",
+		Password: "test",
+		Role:     "admin",
+	}
 
 	c.BatchSize = 250
 	c.ChunkSize = 1

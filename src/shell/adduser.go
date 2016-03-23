@@ -11,6 +11,7 @@ All Rights Reserved
 */
 
 import (
+	"connectordb/users"
 	"fmt"
 )
 
@@ -45,7 +46,13 @@ func init() {
 
 		fmt.Printf("Creating User %v at %v\n", name, email)
 
-		err := shell.operator.CreateUser(name, email, password, role, ispublic == "true" || ispublic == "")
+		err := shell.operator.CreateUser(&users.UserMaker{User: users.User{
+			Name:     name,
+			Email:    email,
+			Password: password,
+			Role:     role,
+			Public:   ispublic == "true" || ispublic == "",
+		}})
 		if shell.PrintError(err) {
 			return 1
 		}

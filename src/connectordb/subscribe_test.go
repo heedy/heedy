@@ -7,6 +7,7 @@ package connectordb
 import (
 	"connectordb/datastream"
 	"connectordb/messenger"
+	"connectordb/users"
 	"testing"
 	"time"
 
@@ -18,9 +19,9 @@ func TestSubscribe(t *testing.T) {
 	db := Tdb
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "email@email", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tst/tst", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("tst/tst/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"string"}`}}))
 
 	recvchan := make(chan messenger.Message, 2)
 	recvchan2 := make(chan messenger.Message, 2)

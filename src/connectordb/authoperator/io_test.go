@@ -2,6 +2,7 @@ package authoperator_test
 
 import (
 	"connectordb/datastream"
+	"connectordb/users"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,13 +11,13 @@ import (
 func TestAuthStreamIO(t *testing.T) {
 	db.Clear()
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tst/tst", &users.DeviceMaker{}))
 
 	o, err := db.AsDevice("tst/tst")
 	require.NoError(t, err)
 
-	require.NoError(t, o.CreateStream("tst/tst/tst", `{"type": "integer"}`))
+	require.NoError(t, o.CreateStream("tst/tst/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "integer"}`}}))
 
 	{
 		//Now make sure that length is 0
@@ -80,7 +81,7 @@ func TestAuthStreamIO(t *testing.T) {
 	{
 		//Now let's make sure that stuff is deleted correctly
 		require.NoError(t, o.DeleteStream("tst/tst/tst"))
-		require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+		require.NoError(t, db.CreateStream("tst/tst/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 		l, err := db.LengthStream("tst/tst/tst")
 		require.NoError(t, err)
 		require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")
@@ -91,10 +92,10 @@ func TestAuthSubstream(t *testing.T) {
 	db.Clear()
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
-	require.NoError(t, db.CreateDevice("tst/tst2", false))
-	require.NoError(t, db.CreateStream("tst/tst2/tst", `{"type": "integer"}`))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("tst/tst", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateDevice("tst/tst2", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("tst/tst2/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "integer"}`}}))
 	_, err := db.ReadStream("tst/tst2/tst")
 	require.NoError(t, err)
 	require.NoError(t, db.UpdateStream("tst/tst2/tst", map[string]interface{}{"downlink": true}))

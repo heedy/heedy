@@ -6,6 +6,7 @@ package connectordb
 
 import (
 	"connectordb/datastream"
+	"connectordb/users"
 	"fmt"
 	"testing"
 
@@ -17,9 +18,15 @@ func TestStreamTransform(t *testing.T) {
 	db := Tdb
 
 	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "number"}`))
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true},
+		Devices: map[string]*users.DeviceMaker{
+			"tst": &users.DeviceMaker{Streams: map[string]*users.StreamMaker{
+				"tst": &users.StreamMaker{Stream: users.Stream{
+					Schema: `{"type": "number"}`,
+				}},
+			}},
+		},
+	}))
 
 	data := datastream.DatapointArray{
 		datastream.Datapoint{Timestamp: 1.0, Data: 1336},
@@ -75,10 +82,16 @@ func TestStreamIO(t *testing.T) {
 	Tdb.Clear()
 	db := Tdb
 
-	//Let's create a stream
-	require.NoError(t, db.CreateUser("tst", "root@localhost", "mypass", "user", true))
-	require.NoError(t, db.CreateDevice("tst/tst", false))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+	//Let's create a user/device/stream combo
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true},
+		Devices: map[string]*users.DeviceMaker{
+			"tst": &users.DeviceMaker{Streams: map[string]*users.StreamMaker{
+				"tst": &users.StreamMaker{Stream: users.Stream{
+					Schema: `{"type": "string"}`,
+				}},
+			}},
+		},
+	}))
 
 	//Now make sure that length is 0
 	l, err := db.LengthStream("tst/tst/tst")
@@ -215,7 +228,7 @@ func TestStreamIO(t *testing.T) {
 
 	//Now let's make sure that stuff is deleted correctly
 	require.NoError(t, db.DeleteStream("tst/tst/tst"))
-	require.NoError(t, db.CreateStream("tst/tst/tst", `{"type": "string"}`))
+	require.NoError(t, db.CreateStream("tst/tst/tst", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 	l, err = db.LengthStream("tst/tst/tst")
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l, "Timebatch has residual data from deleted stream")

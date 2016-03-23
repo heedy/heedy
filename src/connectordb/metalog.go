@@ -44,7 +44,7 @@ func AddMetaLog(userID int64, o operator.Operator) (MetaLog, error) {
 func (m MetaLog) checkcreate(path string) error {
 	_, err := m.AdminOperator().ReadStream(path)
 	if err != nil {
-		return m.AdminOperator().CreateStream(path, `{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}`)
+		return m.AdminOperator().CreateStream(path, &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}`}})
 
 	}
 	return nil
@@ -115,10 +115,10 @@ func (m MetaLog) logStreamID(streamID int64, cmd string) {
 	}
 }
 
-func (m MetaLog) CreateUser(name, email, password, role string, public bool) error {
-	err := m.Operator.CreateUser(name, email, password, role, public)
+func (m MetaLog) CreateUser(u *users.UserMaker) error {
+	err := m.Operator.CreateUser(u)
 	if err == nil {
-		m.writeLog("CreateUser", name)
+		m.writeLog("CreateUser", u.Name)
 	}
 	return err
 }
@@ -138,12 +138,12 @@ func (m MetaLog) DeleteUserByID(userID int64) error {
 	}
 	return err
 }
-func (m MetaLog) CreateDeviceByUserID(userID int64, devicename string, public bool) error {
-	err := m.Operator.CreateDeviceByUserID(userID, devicename, public)
+func (m MetaLog) CreateDeviceByUserID(d *users.DeviceMaker) error {
+	err := m.Operator.CreateDeviceByUserID(d)
 	if err == nil {
-		d, err := m.AdminOperator().ReadDeviceByUserID(userID, devicename)
+		dev, err := m.AdminOperator().ReadDeviceByUserID(d.UserID, d.Name)
 		if err == nil {
-			m.logDeviceID(d.DeviceID, "CreateDevice")
+			m.logDeviceID(dev.DeviceID, "CreateDevice")
 		}
 	}
 	return err
@@ -167,12 +167,12 @@ func (m MetaLog) DeleteDeviceByID(deviceID int64) error {
 	}
 	return err
 }
-func (m MetaLog) CreateStreamByDeviceID(deviceID int64, streamname, jsonschema string) error {
-	err := m.Operator.CreateStreamByDeviceID(deviceID, streamname, jsonschema)
+func (m MetaLog) CreateStreamByDeviceID(s *users.StreamMaker) error {
+	err := m.Operator.CreateStreamByDeviceID(s)
 	if err == nil {
-		s, err := m.AdminOperator().ReadStreamByDeviceID(deviceID, streamname)
+		strm, err := m.AdminOperator().ReadStreamByDeviceID(s.DeviceID, s.Name)
 		if err == nil {
-			m.logStreamID(s.StreamID, "CreateStream")
+			m.logStreamID(strm.StreamID, "CreateStream")
 		}
 	}
 	return err

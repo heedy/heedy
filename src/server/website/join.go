@@ -121,28 +121,19 @@ type JoinStream struct {
 }
 
 // Joiner is the struct sent in when POST to join, which creates the desired user structure.
-// All streams described here are created under the user device
 type Joiner struct {
-	Captcha  string       `json:"captcha"`
-	Name     string       `json:"name"`
-	Nickname string       `json:"nickname"`
-	Email    string       `json:"email"`
-	Password string       `json:"password"`
-	Icon     string       `json:"icon"`
-	Public   bool         `json:"public"`
-	Streams  []JoinStream `json:"streams"`
+	users.UserMaker
+	Captcha string `json:"captcha"`
 }
 
 // JoinHandlePOST handles the actual user creation based upon the given structure
+// The only difference here than CRUD CreateUser is that the user creation is done with the
+// admin operator
 func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 
 	tstart := time.Now()
 
 	var j Joiner
-	var schema []byte
-	var usr *users.User
-	var dev *users.Device
-	var strm *users.Stream
 	var uo *authoperator.AuthOperator
 	logger := webcore.GetRequestLogger(request, "JOIN")
 
@@ -173,68 +164,16 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	// OK - now set up the user
-	err = Database.CreateUser(j.Name, j.Email, j.Password, role.JoinRole, j.Public)
+	j.UserMaker.Role = role.JoinRole
+	err = Database.CreateUser(&j.UserMaker)
 	if err != nil {
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return
-	}
-
-	// Now update the user with nickname/icon
-
-	usr, err = Database.ReadUser(j.Name)
-	if err != nil {
-		goto errfail
-	}
-	usr.Nickname = j.Nickname
-	usr.Icon = j.Icon
-	err = Database.UpdateUser(j.Name, map[string]interface{}{"icon": j.Icon, "nickname": j.Nickname})
-	if err != nil {
-		Database.DeleteUser(j.Name)
-		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
-		return
-	}
-
-	// Now create the streams using the user's operator
-	uo, err = Database.AsUser(j.Name)
-
-	// Now create the streams
-	dev, err = uo.ReadDeviceByUserID(usr.UserID, "user")
-	if err != nil {
-		goto errfail
-	}
-	for i := range j.Streams {
-		schema, err = json.Marshal(j.Streams[i].Schema)
-		if err != nil {
-			goto errfail
-		}
-
-		err = uo.CreateStreamByDeviceID(dev.DeviceID, j.Streams[i].Name, string(schema))
-		if err != nil {
-			goto errfail
-		}
-
-		// Now update the stream with the extra values
-		strm, err = uo.ReadStreamByDeviceID(dev.DeviceID, j.Streams[i].Name)
-		if err != nil {
-			goto errfail
-		}
-
-		err = uo.UpdateStreamByID(strm.StreamID, map[string]interface{}{"nickname": j.Streams[i].Nickname,
-			"icon": j.Streams[i].Icon, "description": j.Streams[i].Description})
-		if err != nil {
-			goto errfail
-		}
 	}
 
 	// Great success! The user was created successfully. We now write the cookie for the user
 	webcore.CreateSessionCookie(uo, writer, request)
 	webcore.LogRequest(logger, webcore.INFO, fmt.Sprintf("User '%s' Joined", j.Name), time.Since(tstart))
 	restcore.OK(writer)
-	return
-
-errfail:
-	Database.DeleteUser(j.Name)
-	restcore.WriteError(writer, logger, http.StatusInternalServerError, err, false)
-	webcore.LogRequest(logger, webcore.WARNING, "", time.Since(tstart))
 	return
 }

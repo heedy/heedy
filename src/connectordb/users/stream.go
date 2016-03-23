@@ -38,6 +38,18 @@ type Stream struct {
 	Downlink    bool   `json:"downlink"`
 }
 
+// The struct passed in to create a stream
+type StreamMaker struct {
+	Stream
+
+	Streamlimit int64 `json:"-"`
+}
+
+// Validate ensures that the maker holds allowed values
+func (s *StreamMaker) Validate() error {
+	return s.ValidityCheck()
+}
+
 func (s *Stream) String() string {
 	return fmt.Sprintf("[users.Stream | Id: %v, Name: %v, Nick: %v, Device: %v, Ephem: %v, Downlink: %v, Schema: %v]",
 		s.StreamID, s.Name, s.Nickname, s.DeviceID, s.Ephemeral, s.Downlink, s.Schema)
@@ -54,8 +66,8 @@ func (s *Stream) ValidityCheck() error {
 	if !IsValidName(s.Name) {
 		return ErrInvalidUsername
 	}
-
-	return nil
+	err = validateIcon(s.Icon)
+	return err
 }
 
 // Validate ensures the array of datapoints conforms to the schema and such
@@ -91,25 +103,22 @@ func (s *Stream) GetSchema() (schema.Schema, error) {
 	return *computedSchema, nil
 }
 
-// CreateStream creates a new stream for a given device with the given name, schema and default values.
-func (userdb *SqlUserDatabase) CreateStream(Name, Schema string, DeviceID int64, streamlimit int64) error {
-
-	if !IsValidName(Name) {
-		return InvalidNameError
-	}
+// CreateStream creates a new stream for a given device with the given name, schema and default values
+// It is assumed that streammaker.Validate() has already been run on the stream
+func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 
 	// Validate that the schema is correct
-	if _, err := schema.NewSchema(Schema); err != nil {
+	if _, err := schema.NewSchema(s.Schema); err != nil {
 		return ErrInvalidSchema
 	}
 
-	if streamlimit > 0 {
+	if s.Streamlimit > 0 {
 		// TODO: This should be done in an SQL transaction due to possible timing bugs
-		num, err := userdb.CountStreamsForDevice(DeviceID)
+		num, err := userdb.CountStreamsForDevice(s.DeviceID)
 		if err != nil {
 			return err
 		}
-		if num >= streamlimit {
+		if num >= s.Streamlimit {
 			return errors.New("Cannot create stream: Exceeded maximum stream number for device.")
 		}
 	}
@@ -117,7 +126,14 @@ func (userdb *SqlUserDatabase) CreateStream(Name, Schema string, DeviceID int64,
 	_, err := userdb.Exec(`INSERT INTO Streams
 		(	Name,
 			Schema,
-			DeviceID) VALUES (?,?,?);`, Name, Schema, DeviceID)
+			DeviceID,
+			Description,
+			DataType,
+			Icon,
+			Nickname,
+			Ephemeral,
+			Downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, s.Schema, s.DeviceID,
+		s.Description, s.Datatype, s.Icon, s.Nickname, s.Ephemeral, s.Downlink)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
 		return errors.New("Stream with this name already exists")

@@ -40,6 +40,9 @@ func calcHash(password, salt, scheme string) (string, error) {
 
 // HashPassword receives a plaintext password and returns the password, salt and type.
 func HashPassword(password string) (string, string, string, error) {
+	if password == "" {
+		return "", "", "", errors.New("Empty Password")
+	}
 	salt, err := uuid.NewV4()
 	if err != nil {
 		return "", "", "", err
