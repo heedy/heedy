@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/dkumor/acmewrapper"
 	"github.com/gorilla/securecookie"
 	"github.com/nu7hatch/gouuid"
 	"github.com/tdewolff/minify"
@@ -162,6 +163,20 @@ func NewConfiguration() *Configuration {
 			// By default, captcha is disabled
 			Captcha: Captcha{
 				Enabled: false,
+			},
+
+			// Set up the default TLS options
+			TLS: TLS{
+				Enabled: false,
+				Key:     "tls_key.pem",
+				Cert:    "tls_cert.crt",
+				ACME: ACME{
+					Server:       acmewrapper.DefaultServer,
+					PrivateKey:   "acme_privatekey.pem",
+					Registration: "acme_registration.json",
+					Domains:      []string{"example.com", "www.example.com"},
+					Enabled:      false,
+				},
 			},
 
 			// By default log query counts once a minute, and display server statistics

@@ -55,6 +55,7 @@ go-dependencies:
 	go get github.com/codegangsta/cli
 	go get github.com/tdewolff/minify
 	go get golang.org/x/crypto/bcrypt
+	go get github.com/dkumor/acmewrapper # Let's encrypt support
 
 	go get github.com/stretchr/testify
 

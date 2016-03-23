@@ -7,6 +7,7 @@ package server
 import (
 	"config"
 	"connectordb"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,7 +19,11 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/dkumor/acmewrapper"
 	"github.com/gorilla/mux"
+	"github.com/xenolf/lego/acme"
+
+	stdlog "log"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -104,6 +109,10 @@ func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
 func RunServer() error {
 	SetFileLimit()
 
+	// ACME has a special logger, so set it
+	acme.Logger = stdlog.New(log.StandardLogger().Writer(), "", 0)
+	acmewrapper.Logger = log.StandardLogger()
+
 	// Gets the global server configuration
 	c := config.Get()
 
@@ -144,7 +153,7 @@ func RunServer() error {
 	}
 
 	//Set up the web server
-	http.Handle("/", SecurityHeaderHandler(r))
+	handler := SecurityHeaderHandler(r)
 
 	//Show the statistics
 	go webcore.RunStats()
@@ -157,8 +166,37 @@ func RunServer() error {
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
-	if c.TLS.Key != "" && c.TLS.Cert != "" {
-		return http.ListenAndServeTLS(listenhost, c.TLS.Cert, c.TLS.Key, nil)
+	if c.TLSEnabled() {
+		// Enable http2 support &Let's Encrypt support
+		w, err := acmewrapper.New(acmewrapper.Config{
+			Address:          listenhost,
+			Server:           c.TLS.ACME.Server,
+			PrivateKeyFile:   c.TLS.ACME.PrivateKey,
+			RegistrationFile: c.TLS.ACME.Registration,
+			Domains:          c.TLS.ACME.Domains,
+			TLSCertFile:      c.TLS.Cert,
+			TLSKeyFile:       c.TLS.Key,
+			TOSCallback:      acmewrapper.TOSAgree,
+			AcmeDisabled:     !c.TLS.ACME.Enabled,
+		})
+		if err != nil {
+			return err
+		}
+		tlsconfig := w.TLSConfig()
+
+		listener, err := tls.Listen("tcp", listenhost, tlsconfig)
+		if err != nil {
+			return err
+		}
+
+		server := &http.Server{
+			Addr:      listenhost,
+			Handler:   handler,
+			TLSConfig: tlsconfig,
+		}
+
+		return server.Serve(listener)
 	}
+	http.Handle("/", handler)
 	return http.ListenAndServe(listenhost, nil)
 }

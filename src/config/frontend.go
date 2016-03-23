@@ -59,7 +59,7 @@ func (s *CookieSession) Validate() error {
 	return nil
 }
 
-// GetSessionEncryptionKey returns the bytes associated with the config string
+// GetEncryptionKey returns the bytes associated with the config string
 func (s *CookieSession) GetEncryptionKey() ([]byte, error) {
 	//If no session encryption key is in config, generate one
 	if s.EncryptionKey == "" {
@@ -69,10 +69,23 @@ func (s *CookieSession) GetEncryptionKey() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(s.EncryptionKey)
 }
 
+// ACME is the struct which holds the Let's Encrypt options of the database
+type ACME struct {
+	Enabled      bool     `json:"enabled"`
+	Server       string   `json:"server"`
+	PrivateKey   string   `json:"private_key"`
+	Registration string   `json:"registration"`
+	Domains      []string `json:"domains"`
+	TOSAgree     bool     `json:"tos_agree"`
+}
+
 // TLS enables TLS support on the server
 type TLS struct {
-	Key  string `json:"key"`
-	Cert string `json:"cert"`
+	Enabled bool   `json:"enabled"`
+	Key     string `json:"key"`
+	Cert    string `json:"cert"`
+
+	ACME ACME `json:"acme"`
 }
 
 // Frontend represents the ConnectorDB frontend server options
@@ -137,7 +150,7 @@ type Frontend struct {
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
 func (f *Frontend) TLSEnabled() bool {
-	return f.TLS.Cert != "" && f.TLS.Key != ""
+	return f.TLS.Enabled
 }
 
 // GetSiteURL returns a URL to the frontend
@@ -173,12 +186,9 @@ func (f *Frontend) GetSiteURL() string {
 func (f *Frontend) Validate(c *Configuration) (err error) {
 
 	if f.TLSEnabled() {
-		// If both key and cert are given, assume that we want to use TLS
-		_, err = tls.LoadX509KeyPair(f.TLS.Cert, f.TLS.Key)
-		if err != nil {
-			return err
+		if f.TLS.Key == "" || f.TLS.Cert == "" {
+			return errors.New("TLS key or cert was not given")
 		}
-
 		//Set the file paths to be full paths
 		f.TLS.Cert, err = filepath.Abs(f.TLS.Cert)
 		if err != nil {
@@ -188,6 +198,32 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 		if err != nil {
 			return err
 		}
+
+		if f.TLS.ACME.Enabled {
+
+			if f.TLS.ACME.PrivateKey == "" || f.TLS.ACME.Registration != "" {
+				return errors.New("ACME registration and private key files not given")
+			}
+			if f.TLS.ACME.Server == "" {
+				return errors.New("ACME server not given")
+			}
+			if len(f.TLS.ACME.Domains) == 0 {
+				return errors.New("ACME requires a valid list of domains for certificate")
+			}
+			if !f.TLS.ACME.TOSAgree {
+				return errors.New("Must agree to the TOS of your ACME server.")
+			}
+
+		} else {
+			// If ACME is not on, we require that the key/cert exist already
+			_, err = tls.LoadX509KeyPair(f.TLS.Cert, f.TLS.Key)
+			if err != nil {
+				return err
+			}
+		}
+
+		//
+
 	}
 
 	// Validate the Session
