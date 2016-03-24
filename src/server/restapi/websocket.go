@@ -121,13 +121,13 @@ func NewWebsocketConnection(o *authoperator.AuthOperator, writer http.ResponseWr
 		return nil, err
 	}
 
-	ws.SetReadLimit(config.Get().WebsocketMessageLimitBytes)
+	ws.SetReadLimit(config.Get().Websocket.MessageLimitBytes)
 
-	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, config.Get().WebsocketMessageBuffer), logger, o}, nil
+	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, config.Get().Websocket.MessageBuffer), logger, o}, nil
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {
-	c.ws.SetWriteDeadline(time.Now().Add(config.Get().WebsocketWriteWait * time.Second))
+	c.ws.SetWriteDeadline(time.Now().Add(config.Get().Websocket.WriteWait * time.Second))
 	return c.ws.WriteJSON(obj)
 }
 
@@ -227,10 +227,10 @@ type websocketCommand struct {
 func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 
 	//Set up the heartbeat reader(makes sure that sockets are alive)
-	c.ws.SetReadDeadline(time.Now().Add(config.Get().WebsocketPongWait * time.Second))
+	c.ws.SetReadDeadline(time.Now().Add(config.Get().Websocket.PongWait * time.Second))
 	c.ws.SetPongHandler(func(string) error {
 		//c.logger.WithField("cmd", "PingPong").Debugln()
-		c.ws.SetReadDeadline(time.Now().Add(config.Get().WebsocketPongWait * time.Second))
+		c.ws.SetReadDeadline(time.Now().Add(config.Get().Websocket.PongWait * time.Second))
 		return nil
 	})
 
@@ -264,7 +264,7 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 }
 
 func (c *WebsocketConnection) updateDeadline(messageCode int, message string) error {
-	c.ws.SetWriteDeadline(time.Now().Add(config.Get().WebsocketWriteWait * time.Second))
+	c.ws.SetWriteDeadline(time.Now().Add(config.Get().Websocket.WriteWait * time.Second))
 	return c.ws.WriteMessage(messageCode, []byte(message))
 }
 
@@ -313,7 +313,7 @@ func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) erro
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
 func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan bool) {
-	ticker := time.NewTicker(config.Get().WebsocketPingPeriod * time.Second)
+	ticker := time.NewTicker(config.Get().Websocket.PingPeriod * time.Second)
 	defer func() {
 		ticker.Stop()
 		exitchan <- true
@@ -372,7 +372,7 @@ func (c *WebsocketConnection) Run() error {
 	c.RunReader(msgchn)
 	//Wait for writer to exit, or for the exit timeout to happen
 	go func() {
-		time.Sleep(config.Get().WebsocketWriteWait * time.Second)
+		time.Sleep(config.Get().Websocket.WriteWait * time.Second)
 		exitchan <- false
 	}()
 

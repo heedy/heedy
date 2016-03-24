@@ -162,7 +162,6 @@ func RunServer() error {
 	//Run the dbwriter
 	go db.RunWriter()
 
-	log.Infof("Running ConnectorDB v%s at %s", connectordb.Version, c.GetSiteURL())
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
@@ -194,9 +193,16 @@ func RunServer() error {
 			Handler:   handler,
 			TLSConfig: tlsconfig,
 		}
+		acmestring := ""
+		if c.TLS.ACME.Enabled {
+			acmestring = " ACME"
+		}
+
+		log.Infof("Running ConnectorDB v%s at %s (%s TLS%s)", connectordb.Version, c.GetSiteURL(), listenhost, acmestring)
 
 		return server.Serve(listener)
 	}
+	log.Infof("Running ConnectorDB v%s at %s (%s)", connectordb.Version, c.GetSiteURL(), listenhost)
 	http.Handle("/", handler)
 	return http.ListenAndServe(listenhost, nil)
 }

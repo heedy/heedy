@@ -5,16 +5,8 @@ Licensed under the MIT license.
 package config
 
 import (
-	"crypto/tls"
-	"encoding/base64"
-	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/gorilla/securecookie"
 )
 
 // Captcha allows using reCaptcha to ensure logins are real users
@@ -22,70 +14,6 @@ type Captcha struct {
 	Enabled    bool   `json:"enabled"`
 	SiteKey    string `json:"site_key"`
 	SiteSecret string `json:"site_secret"`
-}
-
-// CookieSession refers to a cookie session
-type CookieSession struct {
-	AuthKey       string `json:"authkey"`       //The key used to sign sessions
-	EncryptionKey string `json:"encryptionkey"` //The key used to encrypt sessions in cookies
-	MaxAge        int    `json:"maxage"`        //The maximum age of a cookie in a session (seconds)
-}
-
-// GetSessionAuthKey returns the bytes associated with the config string
-func (s *CookieSession) GetAuthKey() ([]byte, error) {
-	//If no session key is in config, generate one
-	if s.AuthKey == "" {
-		return securecookie.GenerateRandomKey(64), nil
-	}
-
-	return base64.StdEncoding.DecodeString(s.AuthKey)
-}
-
-// Validate takes a session and makes sure that all of the keys and fields are set up correctly
-func (s *CookieSession) Validate() error {
-	if s.AuthKey == "" {
-		sessionAuthkey := securecookie.GenerateRandomKey(64)
-		s.AuthKey = base64.StdEncoding.EncodeToString(sessionAuthkey)
-	}
-	if s.EncryptionKey == "" {
-		sessionEncKey := securecookie.GenerateRandomKey(32)
-		s.EncryptionKey = base64.StdEncoding.EncodeToString(sessionEncKey)
-	}
-
-	if s.MaxAge < 0 {
-		return errors.New("Max Age for cookie must be >=0")
-	}
-
-	return nil
-}
-
-// GetEncryptionKey returns the bytes associated with the config string
-func (s *CookieSession) GetEncryptionKey() ([]byte, error) {
-	//If no session encryption key is in config, generate one
-	if s.EncryptionKey == "" {
-		return securecookie.GenerateRandomKey(32), nil
-	}
-
-	return base64.StdEncoding.DecodeString(s.EncryptionKey)
-}
-
-// ACME is the struct which holds the Let's Encrypt options of the database
-type ACME struct {
-	Enabled      bool     `json:"enabled"`
-	Server       string   `json:"server"`
-	PrivateKey   string   `json:"private_key"`
-	Registration string   `json:"registration"`
-	Domains      []string `json:"domains"`
-	TOSAgree     bool     `json:"tos_agree"`
-}
-
-// TLS enables TLS support on the server
-type TLS struct {
-	Enabled bool   `json:"enabled"`
-	Key     string `json:"key"`
-	Cert    string `json:"cert"`
-
-	ACME ACME `json:"acme"`
 }
 
 // Frontend represents the ConnectorDB frontend server options
@@ -125,23 +53,10 @@ type Frontend struct {
 	StatsDisplayTimer int64 `json:"stats_display_timer"`
 
 	// The limit in bytes per REST insert
-	InsertLimitBytes           int64 `json:"insert_limit_bytes"`
-	WebsocketMessageLimitBytes int64 `json:"websocket_message_limit_bytes"`
+	InsertLimitBytes int64 `json:"insert_limit_bytes"`
 
-	// The time to wait on a socket write
-	WebsocketWriteWait time.Duration `json:"websocket_write_wait"`
-
-	// Websockets ping each other to keep the connection alive
-	// This sets the number od seconds between pings
-	WebsocketPongWait   time.Duration `json:"websocket_pong_wait"`
-	WebsocketPingPeriod time.Duration `json:"websocket_ping_period"`
-
-	// The websocket read/write buffer for socket upgrader
-	WebsocketReadBufferSize  int `json:"websocket_read_buffer"`
-	WebsocketWriteBufferSize int `json:"websocket_write_buffer"`
-
-	// The number of messages to buffer
-	WebsocketMessageBuffer int64 `json:"websocket_message_buffer"`
+	// Options for websocket connections
+	Websocket Websocket `json:"websocket"`
 
 	// Minify gives us whether ConnectorDB should minify the templates that are run.
 	// At this point, only the templates hav minify support - static files are not minifed
@@ -179,102 +94,4 @@ func (f *Frontend) GetSiteURL() string {
 	}
 
 	return siteurl
-}
-
-// Validate takes a frontend and ensures that all the necessary configuration fields are set up
-// correctly.
-func (f *Frontend) Validate(c *Configuration) (err error) {
-
-	if f.TLSEnabled() {
-		if f.TLS.Key == "" || f.TLS.Cert == "" {
-			return errors.New("TLS key or cert was not given")
-		}
-		//Set the file paths to be full paths
-		f.TLS.Cert, err = filepath.Abs(f.TLS.Cert)
-		if err != nil {
-			return err
-		}
-		f.TLS.Key, err = filepath.Abs(f.TLS.Key)
-		if err != nil {
-			return err
-		}
-
-		if f.TLS.ACME.Enabled {
-
-			if f.TLS.ACME.PrivateKey == "" || f.TLS.ACME.Registration != "" {
-				return errors.New("ACME registration and private key files not given")
-			}
-			if f.TLS.ACME.Server == "" {
-				return errors.New("ACME server not given")
-			}
-			if len(f.TLS.ACME.Domains) == 0 {
-				return errors.New("ACME requires a valid list of domains for certificate")
-			}
-			if !f.TLS.ACME.TOSAgree {
-				return errors.New("Must agree to the TOS of your ACME server.")
-			}
-
-		} else {
-			// If ACME is not on, we require that the key/cert exist already
-			_, err = tls.LoadX509KeyPair(f.TLS.Cert, f.TLS.Key)
-			if err != nil {
-				return err
-			}
-		}
-
-		//
-
-	}
-
-	// Validate the Session
-	if err = f.CookieSession.Validate(); err != nil {
-		return err
-	}
-
-	// Set up the optional configuration parameters
-
-	if f.Hostname == "" {
-		f.Hostname, err = os.Hostname()
-		if err != nil {
-			f.Hostname = "localhost"
-		}
-	}
-
-	if f.SiteURL == "" {
-		f.SiteURL = f.Hostname
-	}
-
-	if f.InsertLimitBytes < 100 {
-		return errors.New("The limit of single insert has to be at least 100 bytes.")
-	}
-
-	if f.WebsocketMessageLimitBytes < 100 {
-		return errors.New("The limit of a websocket message has to be at least 100 bytes.")
-	}
-
-	if f.WebsocketWriteWait < 1 {
-		return errors.New("The websocket write wait time must be at least 1 second")
-	}
-
-	if f.WebsocketPongWait < 1 {
-		return errors.New("The pong wait time for websocket must be at least 1s.")
-	}
-
-	if f.WebsocketPingPeriod < 1 {
-		return errors.New("Websocket ping period must be at least 1 second")
-	}
-
-	if f.WebsocketMessageBuffer < 1 {
-		return errors.New("The websocket message buffer must have at least one message")
-	}
-
-	if f.WebsocketWriteBufferSize < 10 {
-		return errors.New("Websocket write buffer must be at least 10 bytes")
-	}
-
-	if f.WebsocketReadBufferSize < 10 {
-		return errors.New("The websocket read buffer must be at least 10 bytes")
-	}
-
-	return nil
 }

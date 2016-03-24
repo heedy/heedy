@@ -7,12 +7,51 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"config/permissions"
 
 	psconfig "github.com/connectordb/pipescript/config"
 )
+
+// Validate takes a frontend and ensures that all the necessary configuration fields are set up
+// correctly.
+func (f *Frontend) Validate(c *Configuration) (err error) {
+
+	// Validate the TLS config
+	if err = f.TLS.Validate(); err != nil {
+		return err
+	}
+
+	// Validate the Session
+	if err = f.CookieSession.Validate(); err != nil {
+		return err
+	}
+
+	// Set up the optional configuration parameters
+
+	if f.Hostname == "" {
+		f.Hostname, err = os.Hostname()
+		if err != nil {
+			f.Hostname = "localhost"
+		}
+	}
+
+	if f.SiteURL == "" {
+		f.SiteURL = f.Hostname
+	}
+
+	if f.InsertLimitBytes < 100 {
+		return errors.New("The limit of single insert has to be at least 100 bytes.")
+	}
+
+	if err = f.Websocket.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // Validate takes a configuration and makes sure that it is set up correctly for use in the ConnectorDB
 // database. It returns nil if the configuration is valid, and returns an error if an error was found.
