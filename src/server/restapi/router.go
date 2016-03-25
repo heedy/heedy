@@ -88,8 +88,8 @@ func Router(db *connectordb.Database, prefix *mux.Router) (*mux.Router, error) {
 
 	// Set up the websocket upgrader
 	upgrader = websocket.Upgrader{
-		ReadBufferSize:  config.Get().WebsocketReadBufferSize,
-		WriteBufferSize: config.Get().WebsocketWriteBufferSize,
+		ReadBufferSize:  config.Get().Websocket.ReadBufferSize,
+		WriteBufferSize: config.Get().Websocket.WriteBufferSize,
 		// Allow from all origins
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
