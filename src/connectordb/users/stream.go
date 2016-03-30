@@ -10,7 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"reflect"
+	"strings"
 
 	"github.com/josephlewis42/multicache"
 )
@@ -25,29 +25,37 @@ var (
 	streamCache      *multicache.Multicache
 )
 
-func init() {
-	// error triggered if we have size of 0, so don't set this to 0
-	streamCache, _ = multicache.NewDefaultMulticache(10000)
+type Stream struct {
+	StreamID    int64  `json:"-"`
+	Name        string `json:"name"`
+	Nickname    string `json:"nickname"`
+	Description string `json:"description"` // A public description
+	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	Schema      string `json:"schema"`
+	Datatype    string `json:"datatype"`
+	DeviceID    int64  `json:"-"`
+	Ephemeral   bool   `json:"ephemeral"`
+	Downlink    bool   `json:"downlink"`
 }
 
-type Stream struct {
-	StreamId    int64  `modifiable:"nobody" json:"-"`
-	Name        string `modifiable:"device" json:"name"`
-	Nickname    string `modifiable:"device" json:"nickname"`
-	Description string `modifiable:"device" json:"description"` // A public description
-	Icon        string `modifiable:"device" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
-	Type        string `modifiable:"root" json:"type"`
-	DeviceId    int64  `modifiable:"nobody" json:"-"`
-	Ephemeral   bool   `modifiable:"device" json:"ephemeral"`
-	Downlink    bool   `modifiable:"device" json:"downlink"`
+// The struct passed in to create a stream
+type StreamMaker struct {
+	Stream
+
+	Streamlimit int64 `json:"-"`
+}
+
+// Validate ensures that the maker holds allowed values
+func (s *StreamMaker) Validate() error {
+	return s.ValidityCheck()
 }
 
 func (s *Stream) String() string {
-	return fmt.Sprintf("[users.Stream | Id: %v, Name: %v, Nick: %v, Device: %v, Ephem: %v, Downlink: %v, Type: %v]",
-		s.StreamId, s.Name, s.Nickname, s.DeviceId, s.Ephemeral, s.Downlink, s.Type)
+	return fmt.Sprintf("[users.Stream | Id: %v, Name: %v, Nick: %v, Device: %v, Ephem: %v, Downlink: %v, Schema: %v]",
+		s.StreamID, s.Name, s.Nickname, s.DeviceID, s.Ephemeral, s.Downlink, s.Schema)
 }
 
-// Checks if the fields are valid, e.g. we're not trying to change the name to blank.
+// ValidityCheck checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
 
 	_, err := s.GetSchema()
@@ -58,12 +66,8 @@ func (s *Stream) ValidityCheck() error {
 	if !IsValidName(s.Name) {
 		return ErrInvalidUsername
 	}
-
-	return nil
-}
-
-func (d *Stream) RevertUneditableFields(originalValue Stream, p PermissionLevel) int {
-	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
+	err = validateIcon(s.Icon)
+	return err
 }
 
 // Validate ensures the array of datapoints conforms to the schema and such
@@ -83,56 +87,66 @@ func (s *Stream) Validate(data datastream.DatapointArray) bool {
 	return true
 }
 
-// Gets the jsonschema associated with this stream
+// GetSchema gets the jsonschema associated with this stream
 func (s *Stream) GetSchema() (schema.Schema, error) {
-	strmschema, ok := streamCache.Get(s.Type)
+	strmschema, ok := streamCache.Get(s.Schema)
 	if ok {
 		return strmschema.(schema.Schema), nil
 	}
 
-	computedSchema, err := schema.NewSchema(s.Type)
+	computedSchema, err := schema.NewSchema(s.Schema)
 	if err != nil || computedSchema == nil {
 		return schema.Schema{}, err
 	}
 
-	streamCache.Add(s.Type, *computedSchema)
+	streamCache.Add(s.Schema, *computedSchema)
 	return *computedSchema, nil
 }
 
-// CreateStream creates a new stream for a given device with the given name, schema and default values.
-func (userdb *SqlUserDatabase) CreateStream(Name, Type string, DeviceId int64) error {
-
-	if !IsValidName(Name) {
-		return InvalidNameError
-	}
+// CreateStream creates a new stream for a given device with the given name, schema and default values
+// It is assumed that streammaker.Validate() has already been run on the stream
+func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 
 	// Validate that the schema is correct
-	if _, err := schema.NewSchema(Type); err != nil {
+	if _, err := schema.NewSchema(s.Schema); err != nil {
 		return ErrInvalidSchema
 	}
 
-	// Validate no object subtypes (they are valid, but not in this database
-	// due to ml considerations).
-	// TODO: bug(daniel): This is totally broken. Fails on totally valid schemas such as {"type": "integer", "minimum": 0}
-	// I don't want to spend the time figuring out how it works right now
-	//if util.SchemaContainsObjectFields(Type) {
-	//	return ErrInvalidSchema
-	//}
+	if s.Streamlimit > 0 {
+		// TODO: This should be done in an SQL transaction due to possible timing bugs
+		num, err := userdb.CountStreamsForDevice(s.DeviceID)
+		if err != nil {
+			return err
+		}
+		if num >= s.Streamlimit {
+			return errors.New("Cannot create stream: Exceeded maximum stream number for device.")
+		}
+	}
 
 	_, err := userdb.Exec(`INSERT INTO Streams
-	    (	Name,
-	        Type,
-	        DeviceId, Icon) VALUES (?,?,?,?);`, Name, Type, DeviceId, DefaultStreamIcon)
+		(	Name,
+			Schema,
+			DeviceID,
+			Description,
+			DataType,
+			Icon,
+			Nickname,
+			Ephemeral,
+			Downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, s.Schema, s.DeviceID,
+		s.Description, s.Datatype, s.Icon, s.Nickname, s.Ephemeral, s.Downlink)
 
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("Stream with this name already exists")
+	}
 	return err
 }
 
-// ReadStreamById fetches the stream with the given id and returns it, or nil if
+// ReadStreamByID fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *SqlUserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
+func (userdb *SqlUserDatabase) ReadStreamByID(StreamID int64) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamId = ? LIMIT 1;", StreamId)
+	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamID = ? LIMIT 1;", StreamID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -141,12 +155,12 @@ func (userdb *SqlUserDatabase) ReadStreamById(StreamId int64) (*Stream, error) {
 	return &stream, err
 }
 
-// ReadStreamById fetches the stream with the given id and returns it, or nil if
+// ReadStreamByDeviceIDAndName fetches the stream with the given id and returns it, or nil if
 // no such stream exists.
-func (userdb *SqlUserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, streamName string) (*Stream, error) {
+func (userdb *SqlUserDatabase) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceId = ? AND Name = ? LIMIT 1;", DeviceId, streamName)
+	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceID = ? AND Name = ? LIMIT 1;", DeviceID, streamName)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -155,10 +169,10 @@ func (userdb *SqlUserDatabase) ReadStreamByDeviceIdAndName(DeviceId int64, strea
 	return &stream, err
 }
 
-func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, error) {
-	var streams []Stream
+func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
+	var streams []*Stream
 
-	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceId = ?;", DeviceId)
+	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceID = ?;", DeviceID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -167,14 +181,14 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceId int64) ([]Stream, er
 	return streams, err
 }
 
-func (userdb *SqlUserDatabase) ReadStreamsByUser(UserId int64) ([]Stream, error) {
-	var streams []Stream
+func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
+	var streams []*Stream
 
-	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, Devices d, Users u
+	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, devices d, users u
 	WHERE
-		u.UserId = ? AND
-		d.UserId = u.UserId AND
-		s.DeviceId = d.DeviceId`, UserId)
+		u.UserID = ? AND
+		d.UserID = u.UserID AND
+		s.DeviceID = d.DeviceID`, UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -194,31 +208,33 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 		return err
 	}
 
-	_, err := userdb.Exec(`UPDATE Streams SET
-	    Name = ?,
+	_, err := userdb.Exec(`UPDATE streams SET
+		Name = ?,
 		Nickname = ?,
 		Description = ?,
 		Icon = ?,
-	    Type = ?,
-	    DeviceId = ?,
-	    Ephemeral = ?,
-	    Downlink = ?
-	    WHERE StreamId = ?;`,
+		Schema = ?,
+		DataType= ?,
+		DeviceID = ?,
+		Ephemeral = ?,
+		Downlink = ?
+		WHERE StreamID = ?;`,
 		stream.Name,
 		stream.Nickname,
 		stream.Description,
 		stream.Icon,
-		stream.Type,
-		stream.DeviceId,
+		stream.Schema,
+		stream.Datatype,
+		stream.DeviceID,
 		stream.Ephemeral,
 		stream.Downlink,
-		stream.StreamId)
+		stream.StreamID)
 
 	return err
 }
 
 // DeleteStream removes a stream from the database
 func (userdb *SqlUserDatabase) DeleteStream(Id int64) error {
-	result, err := userdb.Exec(`DELETE FROM Streams WHERE StreamId = ?;`, Id)
+	result, err := userdb.Exec(`DELETE FROM Streams WHERE StreamID = ?;`, Id)
 	return getDeleteError(result, err)
 }

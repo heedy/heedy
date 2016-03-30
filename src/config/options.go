@@ -19,6 +19,11 @@ type Options struct {
 
 	SqlConnectionString string
 
+	UserCacheSize   int64
+	DeviceCacheSize int64
+	StreamCacheSize int64
+	CacheEnabled    bool
+
 	BatchSize int // BatchSize is the number of datapoints per batch of data in a stream
 	ChunkSize int // ChunkSize is the number of batches to queue up before writing to storage
 }
@@ -51,6 +56,11 @@ func (c *Configuration) Options() *Options {
 
 	opt.BatchSize = c.BatchSize
 	opt.ChunkSize = c.ChunkSize
+
+	opt.CacheEnabled = c.UseCache
+	opt.DeviceCacheSize = c.DeviceCacheSize
+	opt.UserCacheSize = c.UserCacheSize
+	opt.StreamCacheSize = c.StreamCacheSize
 
 	return &opt
 }

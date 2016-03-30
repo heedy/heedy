@@ -50,7 +50,7 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 /**
 // LoggedIn404 sets up the 404 page for a logged in user. This is not an error page, since
 // it is usually referring to a permissions error
-func LoggedIn404(o operator.Operator, writer http.ResponseWriter, logger *log.Entry, oerr error) (int, string) {
+func LoggedIn404(o *authoperator.AuthOperator, writer http.ResponseWriter, logger *log.Entry, oerr error) (int, string) {
 	td, err := GetTemplateData(o)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)

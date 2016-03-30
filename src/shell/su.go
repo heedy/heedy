@@ -10,10 +10,7 @@ Copyright 2015 - The ConnectorDB Contributors; see AUTHORS for a list of authors
 All Rights Reserved
 */
 
-import (
-	"connectordb/operator"
-	"fmt"
-)
+import "fmt"
 
 func init() {
 	help := "Changes priviliges to a particular user: 'su username'"
@@ -28,7 +25,7 @@ func init() {
 
 		username := args[1]
 
-		suOperator, err := operator.NewUserOperator(shell.sdb, username)
+		suOperator, err := shell.sdb.AsUser(username)
 		if shell.PrintError(err) {
 			return 1
 		}

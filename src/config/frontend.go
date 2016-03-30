@@ -5,10 +5,8 @@ Licensed under the MIT license.
 package config
 
 import (
-	"encoding/base64"
 	"fmt"
-
-	"github.com/gorilla/securecookie"
+	"strings"
 )
 
 // Captcha allows using reCaptcha to ensure logins are real users
@@ -16,33 +14,6 @@ type Captcha struct {
 	Enabled    bool   `json:"enabled"`
 	SiteKey    string `json:"site_key"`
 	SiteSecret string `json:"site_secret"`
-}
-
-// Session refers to a cookie session
-type Session struct {
-	AuthKey       string `json:"authkey"`       //The key used to sign sessions
-	EncryptionKey string `json:"encryptionkey"` //The key used to encrypt sessions in cookies
-	MaxAge        int    `json:"maxage"`        //The maximum age of a cookie in a session (seconds)
-}
-
-// GetSessionAuthKey returns the bytes associated with the config string
-func (s *Session) GetAuthKey() ([]byte, error) {
-	//If no session key is in config, generate one
-	if s.AuthKey == "" {
-		return securecookie.GenerateRandomKey(64), nil
-	}
-
-	return base64.StdEncoding.DecodeString(s.AuthKey)
-}
-
-// GetSessionEncryptionKey returns the bytes associated with the config string
-func (s *Session) GetEncryptionKey() ([]byte, error) {
-	//If no session encryption key is in config, generate one
-	if s.EncryptionKey == "" {
-		return securecookie.GenerateRandomKey(32), nil
-	}
-
-	return base64.StdEncoding.DecodeString(s.EncryptionKey)
 }
 
 // Frontend represents the ConnectorDB frontend server options
@@ -58,39 +29,69 @@ type Frontend struct {
 	// The domain name of the website at which connectordb is running.
 	// This enables Connectordb to be able to output links to itself.
 	// Leave blank if domain is the same as Hostname
-	Domain string `json:"sitename"`
+	SiteURL string `json:"siteurl"`
 
 	// Whether the site options permit CORS
 	AllowCrossOrigin bool `json:"allowcrossorigin"`
 
 	// The session cookies to allow in the website
-	Session Session `json:"session"`
+	CookieSession CookieSession `json:"cookie"`
 
-	// These two options enable https on the server. Both files must exist
-	// for TLS to be enabled
-	TLSKey  string `json:"tls_key"`
-	TLSCert string `json:"tls_cert"`
+	// This enables TLS on the server
+	TLS TLS `json:"tls"`
 
 	Captcha Captcha `json:"captcha"`
+
+	// The QueryDisplayTimer is how often to display aggregate query numbers (is seconds) in the log
+	// This is a simple one-line summary of how many requests were processed.
+	// Note that the change will not come into effect immediately if modified during runtime, there will be a delay before
+	// the change catches on
+	QueryDisplayTimer int64 `json:"query_display_timer"`
+	// StatsDisplayTimer is how often to display server query statistics (in seconds). These are detailed
+	// timing information for all queries, including how long they take and their standard deviations.
+	// Changing during run time does not come into effect immediately: there is a delay before the change catches on.
+	StatsDisplayTimer int64 `json:"stats_display_timer"`
+
+	// The limit in bytes per REST insert
+	InsertLimitBytes int64 `json:"insert_limit_bytes"`
+
+	// Options for websocket connections
+	Websocket Websocket `json:"websocket"`
+
+	// Minify gives us whether ConnectorDB should minify the templates that are run.
+	// At this point, only the templates hav minify support - static files are not minifed
+	Minify bool `json:"minify"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
 func (f *Frontend) TLSEnabled() bool {
-	return f.TLSCert != "" && f.TLSKey != ""
+	return f.TLS.Enabled
 }
 
-// SiteURL returns a URL to the frontend
-func (f *Frontend) SiteURL() string {
-	siteurl := "http"
+// GetSiteURL returns a URL to the frontend
+func (f *Frontend) GetSiteURL() string {
+	siteurl := f.SiteURL
 
-	if f.TLSEnabled() {
-		siteurl += "s"
-	}
-	siteurl += "://" + f.Domain
+	if !strings.HasPrefix(siteurl, "http") {
+		// If the domain given starts with http, we assume the full correct answer was
+		// set - and we don't worry about setting up a good url.
+		// Otherwise, set up the URL according to the current port setup
+		siteurl = "http"
 
-	if !(f.TLSEnabled() && f.Port == 443) || (!f.TLSEnabled() && f.Port == 80) {
-		// If it is NOT a standard port, then add the port number to the URL
-		siteurl = fmt.Sprintf("%s:%d", siteurl, f.Port)
+		if f.TLSEnabled() {
+			siteurl += "s"
+		}
+		siteurl += "://" + f.SiteURL
+		if !(f.TLSEnabled() && f.Port == 443) || (!f.TLSEnabled() && f.Port == 80) {
+			// If it is NOT a standard port, then add the port number to the URL
+			siteurl = fmt.Sprintf("%s:%d", siteurl, f.Port)
+		}
 	}
+
+	// If it ends with a slash, remove the slash
+	if strings.HasSuffix(siteurl, "/") {
+		siteurl = siteurl[0 : len(siteurl)-2]
+	}
+
 	return siteurl
 }

@@ -11,6 +11,7 @@ All Rights Reserved
 */
 
 import (
+	"connectordb/users"
 	"fmt"
 )
 
@@ -26,7 +27,7 @@ func init() {
 		}
 
 		path := args[1]
-		err := shell.operator.CreateDevice(path)
+		err := shell.operator.CreateDevice(path, &users.DeviceMaker{})
 
 		if shell.PrintError(err) {
 			return 1

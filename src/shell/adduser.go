@@ -11,6 +11,7 @@ All Rights Reserved
 */
 
 import (
+	"connectordb/users"
 	"fmt"
 )
 
@@ -22,6 +23,12 @@ func init() {
 	main := func(shell *Shell, args []string) uint8 {
 		name := shell.ReadAnswer("Enter the name for the new user: ")
 		email := shell.ReadAnswer("Enter the email for the new user: ")
+		role := shell.ReadAnswer("Enter the role for the new user (user): ")
+		ispublic := shell.ReadAnswer("Is this user public (true): ")
+
+		if role == "" {
+			role = "user"
+		}
 
 		// Do the password check
 		password := ""
@@ -39,7 +46,13 @@ func init() {
 
 		fmt.Printf("Creating User %v at %v\n", name, email)
 
-		err := shell.operator.CreateUser(name, email, password)
+		err := shell.operator.CreateUser(&users.UserMaker{User: users.User{
+			Name:     name,
+			Email:    email,
+			Password: password,
+			Role:     role,
+			Public:   ispublic == "true" || ispublic == "",
+		}})
 		if shell.PrintError(err) {
 			return 1
 		}

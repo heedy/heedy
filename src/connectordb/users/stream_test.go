@@ -22,11 +22,11 @@ func TestCreateStream(t *testing.T) {
 		_, dev, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateStream(stream.Name, streamtestType, dev.DeviceId)
+		err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: stream.Name, Schema: streamtestType, DeviceID: dev.DeviceID}})
 		assert.NotNil(t, err, "Created stream with duplicate name")
 
 		// Test with invalid schema
-		err = testdb.CreateStream("tcs_001", "{", dev.DeviceId)
+		err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: "tcs_001", Schema: "{", DeviceID: dev.DeviceID}})
 		assert.NotNil(t, err, "Created stream with invalid schema")
 
 		// Test with embedded objects
@@ -38,7 +38,7 @@ func TestCreateStream(t *testing.T) {
 						"type":"object"
 					}
 				}
-			}`, dev.DeviceId)
+			}`, dev.DeviceID)
 			assert.NotNil(t, err, "Created stream with object schema")
 		*/
 	}
@@ -51,12 +51,13 @@ func TestUpdateStream(t *testing.T) {
 		require.Nil(t, err)
 
 		stream.Nickname = "true"
-		stream.Type = streamtestType
+		stream.Schema = streamtestType
+		stream.Datatype = "mytype"
 
 		err = testdb.UpdateStream(stream)
 		assert.Nil(t, err, "Could not update stream %v", err)
 
-		stream2, err := testdb.ReadStreamById(stream.StreamId)
+		stream2, err := testdb.ReadStreamByID(stream.StreamID)
 		require.Nil(t, err, "got an error when trying to get a stream that should exist %v", err)
 
 		if !reflect.DeepEqual(stream, stream2) {
@@ -74,10 +75,10 @@ func TestDeleteStream(t *testing.T) {
 		_, _, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		err = testdb.DeleteStream(stream.StreamId)
+		err = testdb.DeleteStream(stream.StreamID)
 		require.Nil(t, err, "Error when attempted delete %v", err)
 
-		_, err = testdb.ReadStreamById(stream.StreamId)
+		_, err = testdb.ReadStreamByID(stream.StreamID)
 		require.NotNil(t, err, "The stream with the selected ID should have errored out, but it was not")
 	}
 }
@@ -88,9 +89,9 @@ func TestReadStreamByDevice(t *testing.T) {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		testdb.CreateStream("TestReadStreamByDevice2", streamtestType, dev.DeviceId)
+		testdb.CreateStream(&StreamMaker{Stream: Stream{Name: "TestReadStreamByDevice2", Schema: streamtestType, DeviceID: dev.DeviceID}})
 
-		streams, err := testdb.ReadStreamsByDevice(dev.DeviceId)
+		streams, err := testdb.ReadStreamsByDevice(dev.DeviceID)
 		require.Nil(t, err)
 		require.Len(t, streams, 2, "didn't get enough streams")
 	}
@@ -105,7 +106,7 @@ func TestReadStreamsByUser(t *testing.T) {
 		require.NotNil(t, user)
 		require.NotNil(t, stream)
 
-		fmt.Printf("User Id: %v\n", user.UserId)
+		fmt.Printf("User Id: %v\n", user.UserID)
 
 		inserted[*stream] = true
 
@@ -115,7 +116,7 @@ func TestReadStreamsByUser(t *testing.T) {
 
 			require.Nil(t, err)
 
-			fmt.Printf("Device Id: %v\n", device.DeviceId)
+			fmt.Printf("Device Id: %v\n", device.DeviceID)
 
 			// create a bunch of streams
 			for j := 0; j < 10; j++ {
@@ -126,7 +127,7 @@ func TestReadStreamsByUser(t *testing.T) {
 		}
 
 		// Test selecting them
-		streams, err := testdb.ReadStreamsByUser(user.UserId)
+		streams, err := testdb.ReadStreamsByUser(user.UserID)
 		require.Nil(t, err, "Retrieved streams was nil")
 
 		// We need to add in the other missing log stream.

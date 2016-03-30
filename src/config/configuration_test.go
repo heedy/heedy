@@ -10,15 +10,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEmail(t *testing.T) {
+func TestValidate(t *testing.T) {
+	cfg := NewConfiguration()
+	require.NoError(t, cfg.Validate())
+
+	cfg.Permissions = "boo"
+	require.Error(t, cfg.Validate())
+}
+
+func TestSave(t *testing.T) {
 	cfg := NewConfiguration()
 
-	require.True(t, cfg.IsAllowedEmail("foo@bar.com"))
-	cfg.AllowedEmailSuffixes = []string{"bar.com", "baz.com"}
+	require.NoError(t, cfg.Save("test.conf"))
 
-	require.False(t, cfg.IsAllowedEmail("foo@foo.com"))
-	require.True(t, cfg.IsAllowedEmail("foo@bar.com"))
-	require.True(t, cfg.IsAllowedEmail("foo@baz.com"))
-
-	require.True(t, cfg.IsAllowedEmail("foo@subdomain.baz.com"))
+	cfg2, err := Load("test.conf")
+	require.NoError(t, err)
+	require.NoError(t, cfg2.Validate())
 }

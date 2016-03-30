@@ -20,49 +20,49 @@ func TestCreateDevice(t *testing.T) {
 		usr2, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr.UserID}})
 		require.Nil(t, err)
 
 		// DeviceName/Usernames must be unique
-		err = testdb.CreateDevice("TestCreateDevice", usr.UserId)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr.UserID}})
 		assert.NotNil(t, err, "Created device with duplicate name under the same user")
 
 		// but should work with different users
-		err = testdb.CreateDevice("TestCreateDevice", usr2.UserId)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestCreateDevice", UserID: usr2.UserID}})
 		assert.Nil(t, err, "Could not create device with secnod user %v", err)
 	}
 }
 
-func TestReadDeviceById(t *testing.T) {
+func TestReadDeviceByID(t *testing.T) {
 	for _, testdb := range testdatabases {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestReadStreamById", usr.UserId)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestReadStreamByID", UserID: usr.UserID}})
 		require.Nil(t, err)
 
-		devforid, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestReadStreamById")
+		devforid, err := testdb.ReadDeviceForUserByName(usr.UserID, "TestReadStreamByID")
 		require.Nil(t, err)
 
-		id := devforid.DeviceId
-		obj, err := testdb.ReadDeviceById(id)
+		id := devforid.DeviceID
+		obj, err := testdb.ReadDeviceByID(id)
 		require.Nil(t, err)
 		require.NotNil(t, obj)
 	}
 }
 
-func TestReadDeviceByApiKey(t *testing.T) {
+func TestReadDeviceByAPIKey(t *testing.T) {
 	for _, testdb := range testdatabases {
 		_, dev, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		key := dev.ApiKey
+		key := dev.APIKey
 
-		dev2, err := testdb.ReadDeviceByApiKey(key)
+		dev2, err := testdb.ReadDeviceByAPIKey(key)
 		require.Nil(t, err)
-		assert.Equal(t, key, dev2.ApiKey)
+		assert.Equal(t, key, dev2.APIKey)
 
-		dev3, err := testdb.ReadDeviceByApiKey("")
+		dev3, err := testdb.ReadDeviceByAPIKey("")
 		assert.NotNil(t, err, "non existing device read by api key, dev %v", dev3)
 	}
 
@@ -74,22 +74,21 @@ func TestUpdateDevice(t *testing.T) {
 		usr, err := CreateTestUser(testdb)
 		require.Nil(t, err)
 
-		err = testdb.CreateDevice("TestUpdateDevice", usr.UserId)
+		err = testdb.CreateDevice(&DeviceMaker{Device: Device{Name: "TestUpdateDevice", UserID: usr.UserID}})
 		require.Nil(t, err)
 
-		obj, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestUpdateDevice")
+		obj, err := testdb.ReadDeviceForUserByName(usr.UserID, "TestUpdateDevice")
 		require.Nil(t, err)
 		require.NotNil(t, obj)
 
-		obj.ApiKey = obj.ApiKey + "Testing" // should work with all UUIDs, still will be unique
+		obj.APIKey = obj.APIKey + "Testing" // should work with all UUIDs, still will be unique
 		obj.Enabled = false
 		obj.Nickname = "My Wifi Router"
-		obj.IsAdmin = true
 
 		err = testdb.UpdateDevice(obj)
 		require.Nil(t, err)
 
-		obj2, err := testdb.ReadDeviceForUserByName(usr.UserId, "TestUpdateDevice")
+		obj2, err := testdb.ReadDeviceForUserByName(usr.UserID, "TestUpdateDevice")
 		require.Nil(t, err)
 		require.NotNil(t, obj2)
 
@@ -107,10 +106,10 @@ func TestDeleteDevice(t *testing.T) {
 		usr, obj, _, err := CreateUDS(testdb)
 		require.Nil(t, err)
 
-		err = testdb.DeleteDevice(obj.DeviceId)
+		err = testdb.DeleteDevice(obj.DeviceID)
 		assert.Nil(t, err, "error on delete %v", err)
 
-		obj, err = testdb.ReadDeviceForUserByName(usr.UserId, "TestDeleteDevice")
+		obj, err = testdb.ReadDeviceForUserByName(usr.UserID, "TestDeleteDevice")
 		assert.NotNil(t, err, "should not succeed, device should be gone %v", err)
 	}
 }

@@ -7,7 +7,10 @@ package dbutil
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"text/template"
+
+	"config"
 
 	log "github.com/Sirupsen/logrus"
 	//"path/filepath"
@@ -37,12 +40,15 @@ func getConversion(dbtype string, dbversion string, dropOld bool) (string, error
 		dbversion = defaultDbversion
 	}
 
+	templateParams["IDScramblePrime"] = strconv.FormatInt(config.Get().IDScramblePrime, 10)
+
 	templateParams["DBVersion"] = dbversion
 	templateParams["DBType"] = dbtype
 	if dropOld {
-		templateParams["DroppingTables"] = "true"
+		templateParams["Reset"] = "true"
+		templateParams["DBVersion"] = defaultDbversion
 	} else {
-		templateParams["DroppingTables"] = "false"
+		templateParams["Reset"] = "false"
 	}
 
 	if dbtype == "postgres" {
@@ -65,7 +71,7 @@ func getConversion(dbtype string, dbversion string, dropOld bool) (string, error
 
 /** Upgrades the database with the given connection string, returns an error if anything goes wrong.
 **/
-func UpgradeDatabase(cxnstring string, dropold bool) error {
+func UpgradeDatabase(cxnstring string, reset bool) error {
 
 	db, driver, err := OpenSqlDatabase(cxnstring)
 	if err != nil {
@@ -76,7 +82,7 @@ func UpgradeDatabase(cxnstring string, dropold bool) error {
 	version := GetDatabaseVersion(db, driver)
 	log.Printf("Upgrading DB From Version: %v", version)
 
-	conversionstr, err := getConversion(driver, version, dropold)
+	conversionstr, err := getConversion(driver, version, reset)
 
 	if err != nil {
 		return err

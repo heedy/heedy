@@ -29,7 +29,7 @@ func TestDataStream(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, i)
 
-	i, err = ds.Insert(0, 1, "", dpa6, false)
+	i, err = ds.Insert(0, 1, "", dpa6, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 5, i)
 
@@ -107,7 +107,7 @@ func TestTimePlusIndexRange(t *testing.T) {
 
 	ds.Clear()
 
-	i, err := ds.Insert(0, 1, "", dpa7, false)
+	i, err := ds.Insert(0, 1, "", dpa7, false, 0, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 9, i)
 	dr, err := ds.TRange(0, 1, "", 5., 0.0)

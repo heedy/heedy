@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/connectordb/pipescript"
+	"github.com/connectordb/pipescript/interpolator"
 )
 
 //MaxMergeNumber represents the maximum number of streams to merge. Any number greater than this will result in an error
@@ -44,7 +45,7 @@ func NewMergeRange(dr []datastream.DataRange) (*MergeRange, error) {
 	for i := range dr {
 		iarray[i] = &DatapointIterator{dr[i]}
 	}
-	mrg, err := pipescript.Merge(iarray)
+	mrg, err := interpolator.Merge(iarray)
 	if err != nil {
 		for i := range dr {
 			dr[i].Close()

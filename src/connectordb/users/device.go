@@ -11,177 +11,150 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"reflect"
+	"strings"
 
 	"github.com/nu7hatch/gouuid"
 )
 
 // Devices are general purposed external and internal data users,
-//
 type Device struct {
-	DeviceId         int64  `modifiable:"nobody" json:"-"`           // The primary key of this device
-	Name             string `modifiable:"user" json:"name"`          // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname         string `modifiable:"device" json:"nickname"`    // The human readable name of this device
-	Description      string `modifiable:"device" json:"description"` // A public description
-	Icon             string `modifiable:"device" json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
-	UserId           int64  `modifiable:"root" json:"-"`             // the user that owns this device
-	ApiKey           string `modifiable:"device" json:"apikey"`      // A uuid used as an api key to verify against
-	Enabled          bool   `modifiable:"user" json:"enabled"`       // Whether or not this device can do reading and writing
-	IsAdmin          bool   `modifiable:"root" json:"admin"`         // Whether or not this is a "superdevice" which has access to the whole API
-	CanWrite         bool   `modifiable:"user" json:"-"`             // Can this device write to streams? (inactive right now)
-	CanWriteAnywhere bool   `modifiable:"user" json:"-"`             // Can this device write to others streams? (inactive right now)
-	CanActAsUser     bool   `modifiable:"user" json:"user"`          // Can this device operate as a user? (inactive right now)
-	IsVisible        bool   `modifiable:"root" json:"visible"`
-	UserEditable     bool   `modifiable:"root" json:"-"`
+	DeviceID    int64  `json:"-"`           // The primary key of this device
+	Name        string `json:"name"`        // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname    string `json:"nickname"`    // The human readable name of this device
+	Description string `json:"description"` // A public description
+	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	UserID      int64  `json:"-"`           // the user that owns this device
+	APIKey      string `json:"apikey"`      // A uuid used as an api key to verify against
+	Enabled     bool   `json:"enabled"`     // Whether or not this device considers itself online (working/gathering)
+	Public      bool   `json:"public"`      // Whether the device is accessible from public
+
+	// The permissions allotted to this device
+	Role string `json:"role"`
+
+	IsVisible    bool `json:"visible"`
+	UserEditable bool `json:"user_editable"`
 }
 
-func (s *Device) String() string {
+// DeviceMaker is the structure used to create a device
+type DeviceMaker struct {
+	Device
+
+	Streams map[string]*StreamMaker `json:"streams"`
+
+	Devicelimit int64 `json:"-"`
+}
+
+// Validate ensures that the values are legal
+func (dm *DeviceMaker) Validate(streamLimit int) error {
+	if dm == nil {
+		return errors.New("Null device creation struct")
+	}
+
+	err := dm.Device.ValidityCheck()
+	if err != nil {
+		return err
+	}
+
+	if streamLimit > 0 && len(dm.Streams) > streamLimit {
+		return errors.New("Exceeded stream limit for device")
+	}
+
+	for s := range dm.Streams {
+		dm.Streams[s].Name = s
+		err = dm.Streams[s].Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *Device) String() string {
 	return fmt.Sprintf(`[users.Device |
 	Id: %v,
 	Name: %v,
 	Nick: %v,
 	Api: %v,
 	Enabled: %v,
-	Admin: %v,
-	Write: %v,
-	Write anywhere: %v,
-	User Write: %v,
-	Vizible: %v,
+	Visible: %v,
 	UserEdit: %v]`,
-		s.DeviceId,
-		s.Name,
-		s.Nickname,
-		s.ApiKey,
-		s.Enabled,
-		s.IsAdmin,
-		s.CanWrite,
-		s.CanWriteAnywhere,
-		s.CanActAsUser,
-		s.IsVisible,
-		s.UserEditable)
+		d.DeviceID,
+		d.Name,
+		d.Nickname,
+		d.APIKey,
+		d.Enabled,
+		d.IsVisible,
+		d.UserEditable)
 }
 
+// ValidityCheck ensures valid name
 func (d *Device) ValidityCheck() error {
 	if !IsValidName(d.Name) {
 		return InvalidNameError
 	}
 
-	return nil
-}
+	return validateIcon(d.Icon)
 
-func (d *Device) GeneralPermissions() PermissionLevel {
-	if !d.Enabled {
-		return ANYBODY
-	}
-
-	if d.IsAdmin {
-		return ROOT
-	}
-
-	return ENABLED
-}
-
-func (d *Device) RelationToUser(user *User) PermissionLevel {
-	// guards
-	if user == nil || !d.Enabled {
-		return ANYBODY
-	}
-
-	// Permision Levels
-	if d.IsAdmin {
-		return ROOT
-	}
-
-	if d.UserId == user.UserId {
-		if d.CanActAsUser {
-			return USER
-		}
-
-		return DEVICE
-	}
-
-	return ANYBODY
-}
-
-func (d *Device) RelationToDevice(device *Device) PermissionLevel {
-	// guards
-	if device == nil || !d.Enabled {
-		return ANYBODY
-	}
-
-	// Permision Levels
-	if d.IsAdmin {
-		return ROOT
-	}
-
-	if d.UserId == device.UserId {
-		if d.CanActAsUser {
-			return USER
-		}
-
-		if d.DeviceId == device.DeviceId {
-			return DEVICE
-		}
-
-		return FAMILY
-	}
-
-	return ENABLED
-}
-
-func (d *Device) RelationToStream(stream *Stream, streamParent *Device) PermissionLevel {
-	// guards
-	if stream == nil || streamParent == nil || !d.Enabled {
-		return ANYBODY
-	}
-
-	// Permision Levels
-	if d.IsAdmin {
-		return ROOT
-	}
-
-	if d.CanActAsUser && d.UserId == streamParent.UserId {
-		return USER
-	}
-
-	if d.DeviceId == stream.DeviceId {
-		return DEVICE
-	}
-
-	if d.UserId == streamParent.UserId {
-		return FAMILY
-	}
-
-	return ENABLED
-}
-
-func (d *Device) RevertUneditableFields(originalValue Device, p PermissionLevel) int {
-	return revertUneditableFields(reflect.ValueOf(d), reflect.ValueOf(originalValue), p)
 }
 
 // CreateDevice adds a device to the system given its owner and name.
-// returns the last inserted id
-func (userdb *SqlUserDatabase) CreateDevice(Name string, UserId int64) error {
-	ApiKey, _ := uuid.NewV4()
+// returns the last inserted id. It is assumed that the DeviceMaker was already validated.
+// This means that DeviceMaker.Validate() had already been called, and returned nil
+func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
+	APIKey, _ := uuid.NewV4()
 
-	if !IsValidName(Name) {
-		return InvalidNameError
+	if d.Devicelimit > 0 {
+		// TODO: This check should happen in a transaction, since the way it is done now enables timing attacks
+		num, err := userdb.CountDevicesForUser(d.UserID)
+		if err != nil {
+			return err
+		}
+		if num >= d.Devicelimit {
+			return errors.New("Can't create device: Device number limit exceeded.")
+		}
 	}
 
 	_, err := userdb.Exec(`INSERT INTO Devices
-	    (	Name,
-	        ApiKey,
-	        UserId,
-			Icon)
-	        VALUES (?,?,?,?)`, Name, ApiKey.String(), UserId, DefaultDeviceIcon)
+		(	Name,
+			APIKey,
+			UserID,
+			Public,
+			Description,
+			Icon,
+			Nickname,
+			Enabled
+		)
+			VALUES (?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
+		d.Description, d.Icon, d.Nickname, d.Enabled)
+
+	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
+		return errors.New("Device with this name already exists")
+	}
+
+	if len(d.Streams) > 0 {
+		dev, err := userdb.ReadDeviceByAPIKey(APIKey.String())
+		if err != nil {
+			return err
+		}
+		for s := range d.Streams {
+			d.Streams[s].Name = s
+			d.Streams[s].DeviceID = dev.DeviceID
+			if err = userdb.CreateStream(d.Streams[s]); err != nil {
+				userdb.DeleteDevice(dev.DeviceID)
+				return err
+			}
+		}
+	}
 
 	return err
 }
 
-func (userdb *SqlUserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, error) {
-	var devices []Device
+// ReadDevicesForUserID gets all of a user's devices
+func (userdb *SqlUserDatabase) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
+	var devices []*Device
 
-	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserId = ?;", UserId)
+	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserID = ?;", UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -190,10 +163,11 @@ func (userdb *SqlUserDatabase) ReadDevicesForUserId(UserId int64) ([]Device, err
 	return devices, err
 }
 
+// ReadDeviceForUserByName reads a device given a userID and device name
 func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserId = ? AND Name = ? LIMIT 1;", userid, devicename)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserID = ? AND Name = ? LIMIT 1;", userid, devicename)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -202,11 +176,11 @@ func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename 
 	return &dev, err
 }
 
-// ReadDeviceById selects the device with the given id from the database, returning nil if none can be found
-func (userdb *SqlUserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
+// ReadDeviceByID selects the device with the given id from the database, returning nil if none can be found
+func (userdb *SqlUserDatabase) ReadDeviceByID(DeviceID int64) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceId = ? LIMIT 1", DeviceId)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceID = ? LIMIT 1", DeviceID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -216,16 +190,16 @@ func (userdb *SqlUserDatabase) ReadDeviceById(DeviceId int64) (*Device, error) {
 
 }
 
-// ReadDeviceByApiKey reads a device by an api key and returns it, it will be
+// ReadDeviceByAPIKey reads a device by an api key and returns it, it will be
 // nil if an error was encountered and error will be set.
-func (userdb *SqlUserDatabase) ReadDeviceByApiKey(Key string) (*Device, error) {
+func (userdb *SqlUserDatabase) ReadDeviceByAPIKey(Key string) (*Device, error) {
 	var dev Device
 
 	if Key == "" {
 		return nil, errors.New("Must have non-empty api key")
 	}
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE ApiKey = ? LIMIT 1;", Key)
+	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE APIKey = ? LIMIT 1;", Key)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -245,40 +219,34 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		return err
 	}
 
-	_, err := userdb.Exec(`UPDATE Devices SET
-	    Name = ?,
+	_, err := userdb.Exec(`UPDATE devices SET
+		Name = ?,
 		Nickname = ?,
 		Description = ?,
 		Icon = ?,
-		UserId = ?,
-		ApiKey = ?,
+		UserID = ?,
+		APIKey = ?,
 		Enabled = ?,
-		IsAdmin = ?,
-		CanWrite = ?,
-		CanWriteAnywhere = ?,
-		CanActAsUser = ?,
+		Role = ?,
 		IsVisible = ?,
-		UserEditable = ? WHERE DeviceId = ?;`,
+		UserEditable = ? WHERE DeviceID = ?;`,
 		device.Name,
 		device.Nickname,
 		device.Description,
 		device.Icon,
-		device.UserId,
-		device.ApiKey,
+		device.UserID,
+		device.APIKey,
 		device.Enabled,
-		device.IsAdmin,
-		device.CanWrite,
-		device.CanWriteAnywhere,
-		device.CanActAsUser,
+		device.Role,
 		device.IsVisible,
 		device.UserEditable,
-		device.DeviceId)
+		device.DeviceID)
 
 	return err
 }
 
 // DeleteDevice removes a device from the system.
-func (userdb *SqlUserDatabase) DeleteDevice(Id int64) error {
-	result, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceId = ?;`, Id)
+func (userdb *SqlUserDatabase) DeleteDevice(ID int64) error {
+	result, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceID = ?;`, ID)
 	return getDeleteError(result, err)
 }

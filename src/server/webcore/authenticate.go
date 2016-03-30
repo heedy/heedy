@@ -6,7 +6,7 @@ package webcore
 
 import (
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"errors"
 	"net/http"
 	"sync/atomic"
@@ -30,43 +30,52 @@ var (
 )
 
 // Authenticate gets the authenticated device Operator given an http.Request
-func Authenticate(db *connectordb.Database, request *http.Request) (operator.Operator, error) {
-
+func Authenticate(db *connectordb.Database, request *http.Request) (o *authoperator.AuthOperator, err error) {
 	//Basic auth overrides all other auth
 	authUser, authPass, ok := request.BasicAuth()
 
-	if !ok {
+	if ok {
+		if authUser != "" {
+			o, err = db.UserLogin(authUser, authPass)
+
+		} else {
+			o, err = db.DeviceLogin(authPass)
+		}
+	} else {
 		//Basic auth is unavailable.
 
 		//Check if there is an apikey parameter in the query itself
 		authPass = request.URL.Query().Get("apikey")
-
-		//If there was no apikey, check for a cookie
-		if len(authPass) == 0 {
-			cookie, err := request.Cookie("connectordb-session")
-			if err != nil {
-				atomic.AddUint32(&StatsAuthFails, 1)
-				return nil, ErrNoAuthentication
-			}
-			if err = CookieMonster.Decode("connectordb-session", cookie.Value, &authPass); err != nil {
-				atomic.AddUint32(&StatsAuthFails, 1)
-				return nil, err
+		if len(authPass) != 0 {
+			o, err = db.DeviceLogin(authPass)
+		} else {
+			var cookie *http.Cookie
+			cookie, err = request.Cookie("connectordb-session")
+			if err == nil {
+				err = CookieMonster.Decode("connectordb-session", cookie.Value, &authPass)
+				if err == nil {
+					o, err = db.DeviceLogin(authPass)
+				} else {
+					//If the cookie is invalid, log in as nobody
+					err = nil
+					o = db.Nobody()
+				}
+			} else {
+				err = nil
+				// No authentication was given - use nobody
+				o = db.Nobody()
 			}
 		}
 	}
 
-	//If we got here, it looks like some form of auth was extracted.
-	o, err := operator.NewPathLoginOperator(db, authUser, authPass)
-
 	if err != nil {
 		atomic.AddUint32(&StatsAuthFails, 1)
-		time.Sleep(UnsuccessfulLoginWait)
 	}
 	return o, err
 }
 
 //CreateSessionCookie generates the authentication cookie from an authenticated user
-func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, request *http.Request) error {
+func CreateSessionCookie(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request) error {
 	if o == nil {
 		//If the operator is nil, we delete the cookie
 		cookie := &http.Cookie{
@@ -82,7 +91,7 @@ func CreateSessionCookie(o operator.Operator, writer http.ResponseWriter, reques
 		return err
 	}
 
-	encoded, err := CookieMonster.Encode("connectordb-session", dev.ApiKey)
+	encoded, err := CookieMonster.Encode("connectordb-session", dev.APIKey)
 	if err != nil {
 		return err
 	}

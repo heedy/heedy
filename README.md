@@ -1,43 +1,31 @@
-<<<<<<< HEAD
 [![Build Status](https://magnum.travis-ci.com/dkumor/connectordb.svg?token=wkfH9e4qB6qZhTstfRXR&branch=master)](https://magnum.travis-ci.com/dkumor/connectordb)
 
-ConnectorDB
-=========================
-A database that connects stuff
+# ConnectorDB
+An Open-Source database for Quantified Self and IoT. Please visit [the website](https://connectordb.github.io) for more information.
 
 ## Dependencies
-You must have redis and postgres installed. To install the other necessary go dependencies, run:
+You must have redis and postgres installed. ConnectorDB also requires at least golang 1.5, and needs 1.6 for http2.
+
+To install the other necessary go dependencies, run:
+
 ```bash
-make dependencies
+make go-dependencies
 ```
 
 ## Building
+The following will create all necessary binaries, and download the default web interface:
 
-The following will create all necessary binaries
 ```bash
 make
 ```
 
-At that point, binaries are located in `/bin`.
-
-To have the python libs work, go to `src/clients/python` and follow instructions in readme there.
+At that point, binaries are located in `bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.github.io/download.html).
 
 ## Testing
+This will run all tests, spawning the necessary servers in the process (make sure you don't have any running connectordb instances):
 
-This will run all tests, spawning the necessary servers in the process:
 ```bash
 make test
 ```
-=======
-# connectordb_web
 
-The web component of the ConnectorDB database. This is the underlying code of the default application that ships with ConnectorDB.
-
-## Installing
-
-Debugging the code here requires installing the files in this folder (cloning the repository) into `site/app` in the ConnectorDB code. This should be done automatically when cloning ConnectorDB.
-
-In order to download the dependencies necessary to run the app, run `bower update`.
-
-To modify the code (and in order to have an easy method for debugging), once connectordb is built, go to the `bin/app` directory, delete all files within, and clone this repository into it. This allows you to modify the site as ConnectorDB is running.
->>>>>>> c10eaf69048898a8f592217eca771431c2e18d57
+Note that this must be run _after_ build is completed.

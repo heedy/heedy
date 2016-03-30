@@ -39,6 +39,23 @@ func Create(c *config.Configuration) error {
 		return err
 	}
 
+	var umaker *users.UserMaker
+	if c.InitialUser != nil && c.InitialUser.Name != "" {
+		umaker = &users.UserMaker{User: users.User{
+			Name:        c.InitialUser.Name,
+			Email:       c.InitialUser.Email,
+			Password:    c.InitialUser.Password,
+			Description: c.InitialUser.Description,
+			Icon:        c.InitialUser.Icon,
+			Role:        c.InitialUser.Role,
+			Nickname:    c.InitialUser.Nickname,
+			Public:      c.InitialUser.Public,
+		}}
+
+		// Remove the password so it doesn't show up in the configuration
+		c.InitialUser.Password = ""
+	}
+
 	//Now generate the conf file for the full configuration
 	dbconf := filepath.Join(c.DatabaseDirectory, "connectordb.conf")
 	err := c.Save(dbconf)
@@ -49,45 +66,42 @@ func Create(c *config.Configuration) error {
 	// Set that conf file as the globalConfiguration
 	config.SetPath(dbconf)
 
-	if err = NewRedisService(c.DatabaseDirectory, &c.Redis).Create(); err != nil {
-		return err
-	}
-	if err = NewGnatsdService(c.DatabaseDirectory, &c.Nats).Create(); err != nil {
-		return err
-	}
-
-	p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
-	if err = p.Create(); err != nil {
-		return err
-	}
-	//Stop the database once finished with it
-	defer p.Stop()
-
-	//Now that the databases are all created (and postgres is running), we check if we are to create a default user
-	if c.InitialUsername != "" {
-		log.Infof("Creating user %s (%s)", c.InitialUsername, c.InitialUserEmail)
-		db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
-		if err != nil {
+	if c.Redis.Enabled {
+		if err = NewRedisService(c.DatabaseDirectory, &c.Redis).Create(); err != nil {
 			return err
 		}
-		defer db.Close()
-
-		udb := users.NewUserDatabase(db, driver, false)
-		err = udb.CreateUser(c.InitialUsername, c.InitialUserEmail, c.InitialUserPassword)
-		if err != nil {
-			return err
-		}
-		usr, err := udb.ReadUserByName(c.InitialUsername)
-		if err != nil {
-			return err
-		}
-		usr.Admin = true
-		err = udb.UpdateUser(usr)
-		if err != nil {
-			return err
-		}
-
 	}
+	if c.Nats.Enabled {
+		if err = NewGnatsdService(c.DatabaseDirectory, &c.Nats).Create(); err != nil {
+			return err
+		}
+	}
+	if c.Sql.Enabled {
+		p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
+		if err = p.Create(); err != nil {
+			return err
+		}
+		//Stop the database once finished with it
+		defer p.Stop()
+
+		//Now that the databases are all created (and postgres is running), we check if we are to create a default user
+		if umaker != nil {
+			log.Infof("Creating user %s (%s)", c.InitialUser.Name, c.InitialUser.Email)
+			db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
+			if err != nil {
+				return err
+			}
+			defer db.Close()
+
+			udb := users.NewUserDatabase(db, driver, false, 0, 0, 0)
+
+			err = udb.CreateUser(umaker)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -109,20 +123,34 @@ func Start(dbfolder string) error {
 	//Overwrite the database directory
 	c.DatabaseDirectory = dbfolder
 
-	r := NewRedisService(c.DatabaseDirectory, &c.Redis)
-	if err := r.Start(); err != nil {
-		return err
+	var r Service
+	var g Service
+	if c.Redis.Enabled {
+		r = NewRedisService(c.DatabaseDirectory, &c.Redis)
+		if err := r.Start(); err != nil {
+			return err
+		}
 	}
-	g := NewGnatsdService(c.DatabaseDirectory, &c.Nats)
-	if err := g.Start(); err != nil {
-		r.Stop()
-		return err
+	if c.Nats.Enabled {
+		g = NewGnatsdService(c.DatabaseDirectory, &c.Nats)
+		if err := g.Start(); err != nil {
+			if r != nil {
+				r.Stop()
+			}
+			return err
+		}
 	}
-	p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
-	if err := p.Start(); err != nil {
-		r.Stop()
-		g.Stop()
-		return err
+	if c.Sql.Enabled {
+		p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
+		if err := p.Start(); err != nil {
+			if r != nil {
+				r.Stop()
+			}
+			if g != nil {
+				g.Stop()
+			}
+			return err
+		}
 	}
 
 	//Now we save the current config to the pid file
@@ -147,10 +175,18 @@ func Stop(dbfolder string) error {
 	}
 	//Overwrite the database directory
 	c.DatabaseDirectory = dbfolder
-
-	errR := NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
-	errG := NewGnatsdService(c.DatabaseDirectory, &c.Nats).Stop()
-	errP := NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	var errR error
+	var errG error
+	var errP error
+	if c.Redis.Enabled {
+		errR = NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
+	}
+	if c.Nats.Enabled {
+		errG = NewGnatsdService(c.DatabaseDirectory, &c.Nats).Stop()
+	}
+	if c.Sql.Enabled {
+		errP = NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	}
 	if errR != nil {
 		return errR
 	}

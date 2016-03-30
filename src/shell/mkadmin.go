@@ -25,7 +25,7 @@ func init() {
 
 		operator := shell.operator
 
-		err := operator.SetAdmin(args[1], true)
+		err := operator.UpdateUser(args[1], map[string]interface{}{"role": "admin"})
 		if shell.PrintError(err) {
 			return 1
 		}

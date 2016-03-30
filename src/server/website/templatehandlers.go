@@ -6,7 +6,7 @@ package website
 
 import (
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"connectordb/users"
 	"html/template"
 	"net/http"
@@ -36,7 +36,7 @@ type TemplateData struct {
 	Version string
 
 	// The operator that this TemplateData uses.
-	operator operator.Operator
+	operator *authoperator.AuthOperator
 }
 
 func (td *TemplateData) DataURIToAttr(uri string) template.HTMLAttr {
@@ -44,7 +44,7 @@ func (td *TemplateData) DataURIToAttr(uri string) template.HTMLAttr {
 }
 
 //GetTemplateData initializes the template
-func GetTemplateData(o operator.Operator, request *http.Request) (*TemplateData, error) {
+func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*TemplateData, error) {
 	thisU, err := o.User()
 	if err != nil {
 		return nil, err
@@ -96,32 +96,32 @@ func GetTemplateData(o operator.Operator, request *http.Request) (*TemplateData,
 }
 
 // Reads the devices for the user requesting the page
-func (t *TemplateData) ReadMyDevices() (out []users.Device, err error) {
-	return t.operator.ReadAllDevicesByUserID(t.ThisUser.UserId)
+func (t *TemplateData) ReadMyDevices() (out []*users.Device, err error) {
+	return t.operator.ReadAllDevicesByUserID(t.ThisUser.UserID)
 }
 
 // Reads the streams for the user requesting the page
-func (t *TemplateData) ReadMyStreams() (out []users.Stream, err error) {
-	return t.operator.ReadAllStreamsByDeviceID(t.ThisDevice.DeviceId)
+func (t *TemplateData) ReadMyStreams() (out []*users.Stream, err error) {
+	return t.operator.ReadAllStreamsByDeviceID(t.ThisDevice.DeviceID)
 }
 
 // Reads the devices for the page's user
-func (t *TemplateData) ReadDevices() (out []users.Device, err error) {
-	return t.operator.ReadAllDevicesByUserID(t.User.UserId)
+func (t *TemplateData) ReadDevices() (out []*users.Device, err error) {
+	return t.operator.ReadAllDevicesByUserID(t.User.UserID)
 }
 
 // Reads the streams for the page's device
-func (t *TemplateData) ReadStreams() (out []users.Stream, err error) {
-	return t.operator.ReadAllStreamsByDeviceID(t.Device.DeviceId)
+func (t *TemplateData) ReadStreams() (out []*users.Stream, err error) {
+	return t.operator.ReadAllStreamsByDeviceID(t.Device.DeviceID)
 }
 
 // Reads all users on the system
-func (t *TemplateData) ReadUsers() (out []users.User, err error) {
+func (t *TemplateData) ReadUsers() (out []*users.User, err error) {
 	return t.operator.ReadAllUsers()
 }
 
 //Index reads the index
-func Index(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -133,7 +133,7 @@ func Index(o operator.Operator, writer http.ResponseWriter, request *http.Reques
 }
 
 //User reads the given user
-func User(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -145,7 +145,7 @@ func User(o operator.Operator, writer http.ResponseWriter, request *http.Request
 }
 
 //Device reads the given device
-func Device(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -157,7 +157,7 @@ func Device(o operator.Operator, writer http.ResponseWriter, request *http.Reque
 }
 
 //Stream reads the given stream
-func Stream(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func Stream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)

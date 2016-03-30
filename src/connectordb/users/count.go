@@ -6,32 +6,32 @@ Provides the ability to count the number of users/devices/streams in the databas
 **/
 package users
 
-func (userdb *SqlUserDatabase) CountUsers() (uint64, error) {
-	var output uint64
-	err := userdb.Get(&output, "SELECT COUNT(UserId) FROM Users;")
+func (userdb *SqlUserDatabase) CountUsers() (int64, error) {
+	var output int64
+	err := userdb.Get(&output, "SELECT COUNT(UserID) FROM Users;")
 	return output, err
 }
 
-func (userdb *SqlUserDatabase) CountStreams() (uint64, error) {
-	var output uint64
-	err := userdb.Get(&output, "SELECT COUNT(StreamId) FROM Streams;")
+func (userdb *SqlUserDatabase) CountStreams() (int64, error) {
+	var output int64
+	err := userdb.Get(&output, "SELECT COUNT(StreamID) FROM Streams;")
 	return output, err
 }
 
-func (userdb *SqlUserDatabase) CountDevices() (uint64, error) {
-	var output uint64
-	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices;")
+func (userdb *SqlUserDatabase) CountDevices() (int64, error) {
+	var output int64
+	err := userdb.Get(&output, "SELECT COUNT(DeviceID) FROM Devices;")
 	return output, err
 }
 
-func (userdb *SqlUserDatabase) CountStreamsForDevice(DeviceID int64) (uint64, error) {
-	var output uint64
-	err := userdb.Get(&output, "SELECT COUNT(StreamId) FROM Streams WHERE DeviceId = ?;", DeviceID)
+func (userdb *SqlUserDatabase) CountStreamsForDevice(DeviceID int64) (int64, error) {
+	var output int64
+	err := userdb.Get(&output, "SELECT COUNT(StreamID) FROM Streams WHERE DeviceID = ?;", DeviceID)
 	return output, err
 }
 
-func (userdb *SqlUserDatabase) CountDevicesForUser(UserID int64) (uint64, error) {
-	var output uint64
-	err := userdb.Get(&output, "SELECT COUNT(DeviceId) FROM Devices WHERE UserId = ?;", UserID)
+func (userdb *SqlUserDatabase) CountDevicesForUser(UserID int64) (int64, error) {
+	var output int64
+	err := userdb.Get(&output, "SELECT COUNT(DeviceID) FROM Devices WHERE UserID = ?;", UserID)
 	return output, err
 }

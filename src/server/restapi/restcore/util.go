@@ -5,8 +5,9 @@ Licensed under the MIT license.
 package restcore
 
 import (
+	"config"
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
 	"encoding/json"
 	"errors"
 	"io"
@@ -24,9 +25,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 )
-
-//Mb is nubmer of bytes in a megabyte
-const Mb = 1024 * 1024
 
 var (
 	//ErrInvalidName is thrown when the name is bad
@@ -93,8 +91,8 @@ func byteWriter(writer http.ResponseWriter, b []byte) {
 func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	defer request.Body.Close()
 
-	//Limit requests to 10MB
-	data, err := ioutil.ReadAll(io.LimitReader(request.Body, 10*Mb))
+	//Limit requests to the limit given in configuration
+	data, err := ioutil.ReadAll(io.LimitReader(request.Body, config.Get().InsertLimitBytes))
 	if err != nil {
 		return err
 	}
@@ -120,7 +118,7 @@ func ValidName(n string, err error) error {
 }
 
 //BadQ checks if there is a q= part to the given query, and gives an error if there is
-func BadQ(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
+func BadQ(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) error {
 	if val := request.URL.Query().Get("q"); val != "" {
 		return ErrBadQ
 	}

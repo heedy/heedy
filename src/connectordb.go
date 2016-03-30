@@ -8,19 +8,19 @@ import (
 	"config"
 	"connectordb"
 	"dbsetup"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"server"
 	"shell"
-	"strconv"
 	"strings"
 	"util"
 
 	"github.com/codegangsta/cli"
 
 	log "github.com/Sirupsen/logrus"
+
+	pconfig "config/permissions"
 )
 
 func getDatabase(c *cli.Context) string {
@@ -34,14 +34,14 @@ func getDatabase(c *cli.Context) string {
 func getConfiguration(c *cli.Context) *config.Configuration {
 	//There are a few different situations that we handle here:
 	//1) A database folder is given
-	//		In this case we read the internal connectordb.pid file to get the config
+	//		In this case we read the internal connectordb.conf file to get the config
 	//2) A config file is given
 	//		We read the file
 	var err error
 	arg := getDatabase(c)
 
 	if util.IsDirectory(arg) {
-		arg = filepath.Join(arg, "connectordb.pid")
+		arg = filepath.Join(arg, "connectordb.conf")
 	}
 	err = config.SetPath(arg)
 	if err != nil {
@@ -52,27 +52,6 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	log.Debug(config.Get().String())
 
 	return config.Get()
-}
-
-func rundbwriterCallback(c *cli.Context) {
-	cfg := getConfiguration(c)
-
-	db, err := connectordb.Open(cfg.Options())
-	defer db.Close()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	pidfile := c.String("pidfile")
-	if pidfile != "" {
-		log.Debugf("writing pidfile %s", pidfile)
-		err = ioutil.WriteFile(pidfile, []byte(strconv.Itoa(os.Getpid())), 0644)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
-
-	log.Info("Running DBWriter")
-	db.RunWriter()
 }
 
 func runconfigCallback(c *cli.Context) {
@@ -88,16 +67,32 @@ func runconfigCallback(c *cli.Context) {
 	}
 }
 
+func runpermissionsCallback(c *cli.Context) {
+	n := c.Args().First()
+	if n == "" {
+		log.Fatal("You must specify the file to write permissions to")
+	}
+
+	err := pconfig.Default.Save(n)
+	if err != nil {
+		log.Error(err.Error())
+	}
+}
+
 func runConnectorDBCallback(c *cli.Context) {
 	cfg := getConfiguration(c)
 
 	//The run command allows to set the host and port to run server on
 	cfg.Hostname = c.String("host")
 	cfg.Port = uint16(c.Int("port"))
+	// Enable random people to join
+	if c.Bool("join") {
+		pconfig.Get().UserRoles["nobody"].Join = true
+	}
 	if c.Bool("http") {
 		log.Info("Running in http-only mode")
-		cfg.TLSKey = ""
-		cfg.TLSCert = ""
+		cfg.TLS.Key = ""
+		cfg.TLS.Cert = ""
 	}
 
 	err := server.RunServer()
@@ -141,9 +136,12 @@ func createDatabaseCallback(c *cli.Context) {
 		if len(usrpass) != 2 {
 			log.Fatal("The username flag must be in username:password format")
 		}
-		cfg.InitialUsername = usrpass[0]
-		cfg.InitialUserPassword = usrpass[1]
-		cfg.InitialUserEmail = c.String("email")
+		cfg.InitialUser = &config.UserMaker{
+			Name:     usrpass[0],
+			Password: usrpass[1],
+			Email:    c.String("email"),
+			Role:     "admin",
+		}
 	}
 
 	err := dbsetup.Create(cfg)
@@ -250,6 +248,10 @@ func main() {
 					Name:  "http",
 					Usage: "forces server to run in http mode even when TLS cert/key are in conf",
 				},
+				cli.BoolFlag{
+					Name:  "join",
+					Usage: "Enables free join on the server (anyone can join)",
+				},
 			},
 		},
 		{
@@ -271,17 +273,9 @@ func main() {
 			Action: runconfigCallback,
 		},
 		{
-			Name:    "dbwriter",
-			Aliases: []string{},
-			Usage:   "Runs the Redis to postgres data transfer process",
-			Action:  rundbwriterCallback,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "pidfile",
-					Value: "",
-					Usage: "The file to write the pid of dbwriter to",
-				},
-			},
+			Name:   "permissions",
+			Usage:  "Creates a new configuration file with default permissions at the given path.",
+			Action: runpermissionsCallback,
 		},
 	}
 

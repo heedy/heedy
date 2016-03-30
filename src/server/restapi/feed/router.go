@@ -6,8 +6,8 @@ package feed
 
 import (
 	"connectordb"
+	"connectordb/authoperator"
 	"connectordb/datastream"
-	"connectordb/operator"
 	"connectordb/users"
 	"net/http"
 	"server/restapi/restcore"
@@ -23,7 +23,7 @@ var (
 )
 
 //Get the last week's data
-func getFeedData(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*users.Stream, datastream.DataRange, error) {
+func getFeedData(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (*users.Stream, datastream.DataRange, error) {
 	_, _, _, streampath := restcore.GetStreamPath(request)
 	transform := request.URL.Query().Get("transform")
 

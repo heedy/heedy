@@ -15,11 +15,11 @@ import (
 // bugs might be possible if config is reloaded frequently during heavy load
 func Initialize(c *config.Configuration) error {
 	//First initialize the sessino cookies
-	authkey, err := c.Frontend.Session.GetAuthKey()
+	authkey, err := c.Frontend.CookieSession.GetAuthKey()
 	if err != nil {
 		return err
 	}
-	encryptkey, err := c.Frontend.Session.GetEncryptionKey()
+	encryptkey, err := c.Frontend.CookieSession.GetEncryptionKey()
 	if err != nil {
 		return err
 	}
@@ -27,9 +27,9 @@ func Initialize(c *config.Configuration) error {
 
 	//Set up the server globals
 	AllowCrossOrigin = c.AllowCrossOrigin
-	SiteName = c.SiteURL()
+	SiteName = c.GetSiteURL()
 
-	CookieMaxAge = c.Session.MaxAge
+	CookieMaxAge = c.CookieSession.MaxAge
 
 	// Set the enabled state of the server
 	if c.Enabled != IsActive {

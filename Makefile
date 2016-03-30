@@ -52,6 +52,9 @@ go-dependencies:
 	go get github.com/josephlewis42/multicache
 	go get github.com/connectordb/njson
 	go get github.com/codegangsta/cli
+	go get github.com/tdewolff/minify
+	go get golang.org/x/crypto/bcrypt
+	go get github.com/dkumor/acmewrapper # Let's encrypt support
 
 	# web services
 	go get github.com/gernest/hot				# hot template reloading

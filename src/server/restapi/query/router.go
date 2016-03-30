@@ -5,12 +5,12 @@ Licensed under the MIT license.
 package query
 
 import (
-	"server/restapi/restcore"
 	"connectordb"
-	"connectordb/operator"
+	"connectordb/authoperator"
 	"connectordb/query"
 	"fmt"
 	"net/http"
+	"server/restapi/restcore"
 
 	"github.com/gorilla/mux"
 
@@ -18,7 +18,7 @@ import (
 )
 
 //GenerateDataset allows to generate a dataset of multiple streams at once to simplify analysis of data
-func GenerateDataset(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func GenerateDataset(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	var datasetquery query.DatasetQuery
 	err := restcore.UnmarshalRequest(request, &datasetquery)
 	if err != nil {
@@ -29,7 +29,7 @@ func GenerateDataset(o operator.Operator, writer http.ResponseWriter, request *h
 }
 
 //MergeStreams allows to generate a dataset of multiple streams at once to simplify analysis of data
-func MergeStreams(o operator.Operator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+func MergeStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	var mergequery []*query.StreamQuery
 	err := restcore.UnmarshalRequest(request, &mergequery)
 	if err != nil {

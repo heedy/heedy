@@ -47,8 +47,8 @@ func TestMiddlewareCreateDevice(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateDevice("", 0)
-		baseError := testcase.Base.CreateDevice("", 0)
+		testError := testCounter.CreateDevice(&DeviceMaker{})
+		baseError := testcase.Base.CreateDevice(&DeviceMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -62,8 +62,8 @@ func TestMiddlewareCreateStream(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateStream("", "", 0)
-		baseError := testcase.Base.CreateStream("", "", 0)
+		testError := testCounter.CreateStream(&StreamMaker{})
+		baseError := testcase.Base.CreateStream(&StreamMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -77,8 +77,8 @@ func TestMiddlewareCreateUser(t *testing.T) {
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testError := testCounter.CreateUser("", "", "")
-		baseError := testcase.Base.CreateUser("", "", "")
+		testError := testCounter.CreateUser(&UserMaker{})
+		baseError := testcase.Base.CreateUser(&UserMaker{})
 
 		numCalls := testCounter.GetNumberOfCalls()
 
@@ -193,34 +193,34 @@ func TestMiddlewareReadAllUsers(t *testing.T) {
 	}
 }
 
-func TestMiddlewareReadDeviceByApiKey(t *testing.T) {
+func TestMiddlewareReadDeviceByAPIKey(t *testing.T) {
 	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadDeviceByApiKey("")
-		baseResult, baseError := testcase.Base.ReadDeviceByApiKey("")
+		testResult, testError := testCounter.ReadDeviceByAPIKey("")
+		baseResult, baseError := testcase.Base.ReadDeviceByAPIKey("")
 
 		numCalls := testCounter.GetNumberOfCalls()
 
-		prefix := "TestMiddlewareReadDeviceByApiKey"
+		prefix := "TestMiddlewareReadDeviceByAPIKey"
 		AssertEqMiddlewareTest(t, testError, baseError, prefix+" Errors", index)
 		AssertEqMiddlewareTest(t, &testResult, &baseResult, prefix+" Result", index)
 		AssertEqMiddlewareTest(t, numCalls, testcase.NumCalls, prefix+" #Calls", index)
 	}
 }
 
-func TestMiddlewareReadDeviceById(t *testing.T) {
+func TestMiddlewareReadDeviceByID(t *testing.T) {
 	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadDeviceById(0)
-		baseResult, baseError := testcase.Base.ReadDeviceById(0)
+		testResult, testError := testCounter.ReadDeviceByID(0)
+		baseResult, baseError := testcase.Base.ReadDeviceByID(0)
 
 		numCalls := testCounter.GetNumberOfCalls()
 
-		prefix := "TestMiddlewareReadDeviceById"
+		prefix := "TestMiddlewareReadDeviceByID"
 		AssertEqMiddlewareTest(t, testError, baseError, prefix+" Errors", index)
 		AssertEqMiddlewareTest(t, &testResult, &baseResult, prefix+" Result", index)
 		AssertEqMiddlewareTest(t, numCalls, testcase.NumCalls, prefix+" #Calls", index)
@@ -261,51 +261,51 @@ func TestMiddlewareReadReadDeviceForUserByName(t *testing.T) {
 	}
 }
 
-func TestMiddlewareReadDeviceForUserId(t *testing.T) {
+func TestMiddlewareReadDeviceForUserID(t *testing.T) {
 	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadDevicesForUserId(0)
-		baseResult, baseError := testcase.Base.ReadDevicesForUserId(0)
+		testResult, testError := testCounter.ReadDevicesForUserID(0)
+		baseResult, baseError := testcase.Base.ReadDevicesForUserID(0)
 
 		numCalls := testCounter.GetNumberOfCalls()
 
-		prefix := "TestMiddlewareReadDeviceForUserId"
+		prefix := "TestMiddlewareReadDeviceForUserID"
 		AssertEqMiddlewareTest(t, testError, baseError, prefix+" Errors", index)
 		AssertEqMiddlewareTest(t, testResult, baseResult, prefix+" Result", index)
 		AssertEqMiddlewareTest(t, numCalls, testcase.NumCalls, prefix+" #Calls", index)
 	}
 }
 
-func TestMiddlewareReadStreamByDeviceIdAndName(t *testing.T) {
+func TestMiddlewareReadStreamByDeviceIDAndName(t *testing.T) {
 	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadStreamByDeviceIdAndName(0, "foo")
-		baseResult, baseError := testcase.Base.ReadStreamByDeviceIdAndName(0, "foo")
+		testResult, testError := testCounter.ReadStreamByDeviceIDAndName(0, "foo")
+		baseResult, baseError := testcase.Base.ReadStreamByDeviceIDAndName(0, "foo")
 
 		numCalls := testCounter.GetNumberOfCalls()
 
-		prefix := "TestMiddlewareReadStreamByDeviceIdAndName"
+		prefix := "TestMiddlewareReadStreamByDeviceIDAndName"
 		AssertEqMiddlewareTest(t, testError, baseError, prefix+" Errors", index)
 		AssertEqMiddlewareTest(t, &testResult, &baseResult, prefix+" Result", index)
 		AssertEqMiddlewareTest(t, numCalls, testcase.NumCalls, prefix+" #Calls", index)
 	}
 }
 
-func TestMiddlewareReadStreamById(t *testing.T) {
+func TestMiddlewareReadStreamByID(t *testing.T) {
 	var testcases = GetCommonTestcases()
 
 	for index, testcase := range testcases {
 		testCounter := AccountingMiddleware{testcase.Test, 0}
-		testResult, testError := testCounter.ReadStreamById(0)
-		baseResult, baseError := testcase.Base.ReadStreamById(0)
+		testResult, testError := testCounter.ReadStreamByID(0)
+		baseResult, baseError := testcase.Base.ReadStreamByID(0)
 
 		numCalls := testCounter.GetNumberOfCalls()
 
-		prefix := "TestMiddlewareReadStreamById"
+		prefix := "TestMiddlewareReadStreamByID"
 		AssertEqMiddlewareTest(t, testError, baseError, prefix+" Errors", index)
 		AssertEqMiddlewareTest(t, &testResult, &baseResult, prefix+" Result", index)
 		AssertEqMiddlewareTest(t, numCalls, testcase.NumCalls, prefix+" #Calls", index)
