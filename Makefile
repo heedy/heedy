@@ -35,38 +35,38 @@ clean:
 
 go-dependencies:
 	# services
-	$(GO) get github.com/nats-io/nats github.com/nats-io/gnatsd
-	$(GO) get gopkg.in/redis.v3
+	$(GO) get -u github.com/nats-io/nats github.com/nats-io/gnatsd
+	$(GO) get -u gopkg.in/redis.v3
 
 	# databases
-	$(GO) get github.com/lib/pq
-	$(GO) get github.com/connectordb/duck
-	$(GO) get github.com/josephlewis42/sqlx # our own so we don't depend on someone who claims the library will change in the future
+	$(GO) get -u github.com/lib/pq
+	$(GO) get -u github.com/connectordb/duck
+	$(GO) get -u github.com/josephlewis42/sqlx # our own so we don't depend on someone who claims the library will change in the future
 
 	# utilities
-	$(GO) get github.com/xeipuuv/gojsonschema
-	$(GO) get gopkg.in/vmihailenco/msgpack.v2
-	$(GO) get gopkg.in/fsnotify.v1
-	$(GO) get github.com/kardianos/osext
-	$(GO) get github.com/nu7hatch/gouuid
-	$(GO) get github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
-	$(GO) get github.com/Sirupsen/logrus
-	$(GO) get github.com/josephlewis42/multicache
-	$(GO) get github.com/connectordb/njson
-	$(GO) get github.com/codegangsta/cli
-	$(GO) get github.com/tdewolff/minify
-	$(GO) get golang.org/x/crypto/bcrypt
-	$(GO) get github.com/dkumor/acmewrapper # Let's encrypt support
+	$(GO) get -u github.com/xeipuuv/gojsonschema
+	$(GO) get -u gopkg.in/vmihailenco/msgpack.v2
+	$(GO) get -u gopkg.in/fsnotify.v1
+	$(GO) get -u github.com/kardianos/osext
+	$(GO) get -u github.com/nu7hatch/gouuid
+	$(GO) get -u github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
+	$(GO) get -u github.com/Sirupsen/logrus
+	$(GO) get -u github.com/josephlewis42/multicache
+	$(GO) get -u github.com/connectordb/njson
+	$(GO) get -u github.com/codegangsta/cli
+	$(GO) get -u github.com/tdewolff/minify
+	$(GO) get -u golang.org/x/crypto/bcrypt
+	$(GO) get -u github.com/dkumor/acmewrapper # Let's encrypt support
 
 	# web services
-	$(GO) get github.com/gernest/hot				# hot template reloading
-	$(GO) get github.com/russross/blackfriday		# markdown processing
-	$(GO) get github.com/microcosm-cc/bluemonday	# unsafe html stripper
+	$(GO) get -u github.com/gernest/hot				# hot template reloading
+	$(GO) get -u github.com/russross/blackfriday		# markdown processing
+	$(GO) get -u github.com/microcosm-cc/bluemonday	# unsafe html stripper
 
-	$(GO) get github.com/stretchr/testify
+	$(GO) get -u github.com/stretchr/testify
 
 	# PipeScript
-	$(GO) get github.com/connectordb/pipescript
+	$(GO) get -u github.com/connectordb/pipescript
 
 
 bin/dep/gnatsd: bin/dep

@@ -54,7 +54,7 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 	return config.Get()
 }
 
-func runconfigCallback(c *cli.Context) {
+func runconfigCallback(c *cli.Context) error {
 	n := c.Args().First()
 	if n == "" {
 		log.Fatal("You must specify the file to write config to")
@@ -65,9 +65,10 @@ func runconfigCallback(c *cli.Context) {
 	if err != nil {
 		log.Error(err.Error())
 	}
+	return err
 }
 
-func runpermissionsCallback(c *cli.Context) {
+func runpermissionsCallback(c *cli.Context) error {
 	n := c.Args().First()
 	if n == "" {
 		log.Fatal("You must specify the file to write permissions to")
@@ -77,9 +78,10 @@ func runpermissionsCallback(c *cli.Context) {
 	if err != nil {
 		log.Error(err.Error())
 	}
+	return err
 }
 
-func runConnectorDBCallback(c *cli.Context) {
+func runConnectorDBCallback(c *cli.Context) error {
 	cfg := getConfiguration(c)
 
 	//The run command allows to set the host and port to run server on
@@ -99,9 +101,10 @@ func runConnectorDBCallback(c *cli.Context) {
 	if err != nil {
 		log.Error(err.Error())
 	}
+	return err
 }
 
-func runShellCallback(c *cli.Context) {
+func runShellCallback(c *cli.Context) error {
 	cfg := getConfiguration(c)
 	db, err := connectordb.Open(cfg.Options())
 	defer db.Close()
@@ -117,10 +120,11 @@ func runShellCallback(c *cli.Context) {
 		s.RunCommand(scmd)
 	}
 
+	return nil
 }
 
 //This is called when the user runs "connectordb create"
-func createDatabaseCallback(c *cli.Context) {
+func createDatabaseCallback(c *cli.Context) error {
 	cfg := config.NewConfiguration()
 	if c.Bool("test") {
 		log.Warn("test flag: Using testing configuration!")
@@ -148,10 +152,11 @@ func createDatabaseCallback(c *cli.Context) {
 	if err != nil {
 		log.Error(err.Error())
 	}
+	return err
 }
 
 //This is called when the user runs "connectordb start"
-func startDatabaseCallback(c *cli.Context) {
+func startDatabaseCallback(c *cli.Context) error {
 	log.Info("Starting Database")
 	//force removes the pid file
 	if c.Bool("force") {
@@ -165,16 +170,18 @@ func startDatabaseCallback(c *cli.Context) {
 			log.Error("Use the --force flag if you know that it is not.")
 		}
 	}
+	return err
 }
 
 //This is called when the user runs "connectordb stop"
-func stopDatabaseCallback(c *cli.Context) {
+func stopDatabaseCallback(c *cli.Context) error {
 	log.Info("Stopping Database")
 
 	err := dbsetup.Stop(getDatabase(c))
 	if err != nil {
 		log.Error(err.Error())
 	}
+	return err
 }
 
 func main() {

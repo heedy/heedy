@@ -10,6 +10,7 @@ To install the other necessary go dependencies, run:
 
 ```bash
 make go-dependencies
+make submodules
 ```
 
 ## Building

@@ -87,6 +87,9 @@ func defaultMarkdown(first, defaultText string) template.HTML {
 
 //LoadFiles sets up all the necessary files
 func LoadFiles() error {
+
+	logger := log.StandardLogger().WriterLevel(log.DebugLevel)
+
 	funcMap := template.FuncMap{
 		"isblank":      isBlank,
 		"dataURIToSrc": dataURIToAttr,
@@ -101,18 +104,20 @@ func LoadFiles() error {
 		return err
 	}
 	WWWPath = path.Join(exefolder, WWWPrefix)
-	log.Infof("Hosting www from '%s'", WWWPath)
+	log.Debugf("Hosting www from '%s'", WWWPath)
 
 	AppPath = path.Join(exefolder, AppPrefix)
-	log.Infof("Hosting app from '%s'", AppPath)
+	log.Debugf("Hosting app from '%s'", AppPath)
 
 	{
+
 		config := &hot.Config{
 			Watch:          true,
 			BaseName:       "index",
 			Dir:            WWWPath,
 			FilesExtension: []string{".html"},
 			Funcs:          funcMap,
+			Log:            logger,
 		}
 
 		WWWTemplate, err = hot.New(config)
@@ -128,6 +133,7 @@ func LoadFiles() error {
 			Dir:            AppPath,
 			FilesExtension: []string{".html"},
 			Funcs:          funcMap,
+			Log:            logger,
 		}
 
 		AppTemplate, err = hot.New(config)

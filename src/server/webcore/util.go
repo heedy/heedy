@@ -44,7 +44,6 @@ func WriteAccessControlHeaders(writer http.ResponseWriter, request *http.Request
 		writer.Header().Set("Access-Control-Allow-Origin", originheader)
 		writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-		log.Info("local origin: " + originheader)
 		return
 	}
 
