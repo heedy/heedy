@@ -6,7 +6,6 @@ package website
 
 import (
 	"connectordb"
-	"connectordb/authoperator"
 	"net/http"
 	"server/webcore"
 
@@ -25,12 +24,12 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 	}
 	u, err2 := uuid.NewV4()
 	if err2 != nil {
-		logger.WithField("ref", "OSHIT").Errorln("Failed to generate error UUID: " + err2.Error())
-		logger.WithField("ref", "OSHIT").Warningln("Original Error: " + err.Error())
+		logger.WithField("ref", "WEBERR").Errorln("Failed to generate error UUID: " + err2.Error())
+		logger.WithField("ref", "WEBERR").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 
 		errmap["msg"] = "Failed to generate error UUID"
-		errmap["ref"] = "OSHIT"
+		errmap["ref"] = "WEBERR"
 		return webcore.INFO, ""
 	}
 	errmap["ref"] = u.String()
@@ -48,6 +47,7 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 	return webcore.INFO, ""
 }
 
+/**
 // LoggedIn404 sets up the 404 page for a logged in user. This is not an error page, since
 // it is usually referring to a permissions error
 func LoggedIn404(o *authoperator.AuthOperator, writer http.ResponseWriter, logger *log.Entry, oerr error) (int, string) {
@@ -67,6 +67,7 @@ func LoggedIn404(o *authoperator.AuthOperator, writer http.ResponseWriter, logge
 
 	return webcore.DEBUG, "404"
 }
+**/
 
 //NotFoundHandler handles all pages that were not found by writing the 404 templates
 func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {

@@ -16,7 +16,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
-// Device are general purposed external and internal data users,
+// Devices are general purposed external and internal data users,
 type Device struct {
 	DeviceID    int64  `json:"-"`           // The primary key of this device
 	Name        string `json:"name"`        // The registered name of this device, should be universally unique like "Devicename_serialnum"
