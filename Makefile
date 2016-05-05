@@ -15,8 +15,7 @@ bin:
 	$(COPY) src/dbsetup/config bin/
 
 submodules:
-	git submodule init
-	git submodule update
+	git submodule update --init --recursive
 
 
 resources: bin
