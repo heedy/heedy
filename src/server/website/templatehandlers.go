@@ -122,6 +122,10 @@ func (t *TemplateData) ReadUsers() (out []*users.User, err error) {
 
 //Index reads the index
 func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	if o.Name() == "nobody" {
+		// Nobody does not have access to the logged in index page
+		return -1, ""
+	}
 	td, err := GetTemplateData(o, request)
 	if err != nil {
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
@@ -136,6 +140,10 @@ func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *ht
 func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 
@@ -148,6 +156,10 @@ func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *htt
 func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 
@@ -160,6 +172,10 @@ func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *h
 func Stream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	td, err := GetTemplateData(o, request)
 	if err != nil {
+		if o.Name() == "nobody" {
+			// Backtrack - show the nobody their login page
+			return -1, ""
+		}
 		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
 	}
 

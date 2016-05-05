@@ -23,8 +23,11 @@ func Authenticator(www wwwtemplatebookmark, apifunc webcore.APIHandler, db *conn
 	qtimer := webcore.GetQueryTimer(funcname)
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+		// Make sure the path if given (of form /{user}/...) has {user} not be one of the
+		// pre-assigned prefixes
 		usr, ok := mux.Vars(request)["user"]
-		if ok && usr == "api" || usr == WWWPrefix || usr == AppPrefix {
+		if ok && (usr == "api" || usr == WWWPrefix || usr == AppPrefix) {
 			//We don't want to pass 404s to the handlers
 			NotFoundHandler(writer, request)
 			return

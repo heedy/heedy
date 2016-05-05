@@ -11,7 +11,6 @@ install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests jsonschema websocket-client coverage
-    - npm install -g bower
     - make deps
 
 script:
@@ -20,7 +19,7 @@ script:
 
 notifications:
     slack: connectordb:3YIEG5E8KpOqaNbScZv0Rs0r
-    
+
     notifications:
 
 webhooks:

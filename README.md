@@ -9,12 +9,11 @@ You must have redis and postgres installed. ConnectorDB also requires at least g
 To install the other necessary go dependencies, run:
 
 ```bash
-make go-dependencies
-make submodules
+make deps
 ```
 
 ## Building
-The following will create all necessary binaries, and download the default web interface:
+The following will create all necessary binaries:
 
 ```bash
 make
