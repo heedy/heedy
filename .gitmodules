@@ -1,0 +1,3 @@
+[submodule "assets/branding"]
+	path = assets/branding
+	url = https://github.com/connectordb/branding
