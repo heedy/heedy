@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
+	pconfig "config/permissions"
 )
 
 // Authenticator runs an auth check and either goes to the www template given or to the apifunc handler
@@ -78,8 +80,12 @@ func Authenticator(www wwwtemplatebookmark, apifunc webcore.APIHandler, db *conn
 		}
 
 		//If we got here, the user is not logged in. We therefore execute the "www" template given
-		www.Execute(writer, map[string]string{
-			"Version": connectordb.Version,
+		www.Execute(writer, struct {
+			Version string
+			Join    bool
+		}{
+			Version: connectordb.Version,
+			Join:    pconfig.Get().UserRoles["nobody"].Join,
 		})
 
 		webcore.LogRequest(logger, webcore.DEBUG, "", time.Since(tstart))

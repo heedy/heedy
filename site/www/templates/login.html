@@ -12,7 +12,9 @@
       <input type="text" id="username" placeholder="username"/>
       <input type="password" id="password" placeholder="password"/>
       <button name="loginbtn" id="loginbtn" onclick="return login();">login</button>
+      {{if .Join}}
       <p class="message">Not registered? <a href="#">Create an account</a></p>
+      {{end}}
     </form>
   </div>
 </div>
