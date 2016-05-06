@@ -1,3 +1,24 @@
+{{template "header" .}}
+
+<div class="login-page">
+{{ if .Join }}
+  <div class="form">
+    <img id="connectordb-logo" src="/www/img/square.png" alt="ConnectorDB"></img>
+
+    <form class="login-form">
+      {{template "join" .}}
+    </form>
+  </div>
+  {{template "footer" .}}
+  {{else}}
+  <!-- If there was an error or if join is disabled for some reason -->
+  <h2 style="color: white; text-align: center; width: 400px; height: 300px; position:absolute; top: 50%; left: 50%; margin-left: -200px;margin-top:-150px;">{{ .ErrMsg }}</h2>
+</body>
+</html>
+  {{end}}
+
+
+<!--
 <!doctype html>
 <html class="no-js" lang="">
     <head>
@@ -8,7 +29,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="apple-touch-icon" href="apple-touch-icon.png">
-        <!-- Place favicon.ico in the root directory -->
+        <!-- Place favicon.ico in the root directory
 
         <link rel="stylesheet" href="/www/css/normalize.css">
         <link rel="stylesheet" href="/www/css/main.css">
@@ -20,11 +41,11 @@
     <body>
         <!--[if lt IE 8]>
             <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-        <![endif]-->
+        <![endif]--
         <div id="wrap">
         <div id="main">
         <form id="msform">
-            <!-- progressbar -->
+            <!-- progressbar --
         	<img id="connectordb-logo" src="/www/img/title_logo_light_xs.png" alt="ConnectorDB"></img>
             {{if .Join}}
         	<div id="container">
@@ -34,7 +55,7 @@
         		<li>Data</li>
         	</ul>
         	</div>
-        	<!-- fieldsets -->
+        	<!-- fieldsets --
 
         	<fieldset>
         		<h2 class="fs-title">Account Setup</h2>
@@ -82,13 +103,13 @@
         		<input type="submit" name="submit" class="submit action-button" value="Submit" />
         	</fieldset>
             {{else}}
-            <!-- If there was an error or if join is disabled for some reason -->
+            <!-- If there was an error or if join is disabled for some reason --
             <h2 style="color: white; text-align: center; width: 400px; height: 300px; position:absolute; top: 50%; left: 50%; margin-left: -200px;margin-top:-150px;">{{ .ErrMsg }}</h2>
             {{end}}
         </form>
-        
+
     </div>
-    
+
     </div>
 
         <div id="footer">
@@ -104,7 +125,7 @@
 
 
         <script>
-        
+
         var isvalidchange = true;
         // On change text
         function updateName() {
@@ -124,8 +145,8 @@
                 alert("Passwords do not match");
             }
         }
-        
-        
+
+
         //jQuery time
         var current_fs, next_fs, previous_fs; //fieldsets
         var left, opacity, scale; //fieldset properties which we will animate
@@ -136,7 +157,7 @@
         		next.fadeIn(200,fdone);
         	})
         }
-        
+
         function showNext(){
         	if(animating) return false;
         	animating = true;
@@ -179,15 +200,15 @@
                     public: true,
                     streams: [],
                 };
-                
+
             //Validate the data
-            
+
             // Make sure that the name,nickname,email and password are set up correctly.
             if (dat.name=="" || dat.nickname=="" || dat.email=="" || dat.password=="" || dat.password!=$("#password2").val()) {
                 alert("Please fill in all of the fields under ACCOUNT");
                 return false;
             }
-            
+
             // Now set up the streams
             var hadrating = false;
             for (i=1;i<= 5;i++) {
@@ -215,7 +236,7 @@
                         name: "goal_"+ val.replace(/\s+/g, '').toLowerCase(),
                         nickname: val,
                         description: "A life goal",
-                        schema: {type: "object",  properties: { 
+                        schema: {type: "object",  properties: {
                             hours: {type: "number",minimum: 0},
                             summary: {type: "string"}}},
                     });
@@ -225,8 +246,8 @@
                 alert("Really? No goals in life? Maybe ConnectorDB isn't for you...");
                 return false;
             }
-            
-            
+
+
             console.log(JSON.stringify(dat));
             $.ajax({
                 url: '/join',
@@ -243,12 +264,12 @@
                    console.log(response);
                    alert("Could not add user: "+response.msg);
                 }
-                
+
             });
         	return false;
         })
 
-        </script>
+        </script>-->
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
         <!--
@@ -260,6 +281,7 @@
             r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
             ga('create','UA-XXXXX-X','auto');ga('send','pageview');
         </script>
-    -->
+    --
     </body>
 </html>
+-->

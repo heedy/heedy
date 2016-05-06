@@ -1,4 +1,6 @@
-
+$('.message a').click(function(){
+   $('form').animate({height: "toggle", opacity: "toggle"}, "slow");
+});
 //login attempts to log into ConnectorDB. If successful, it refreshes the site. if not, it notifies the user.
 function login() {
 	usrname = $("#username").val()
@@ -26,7 +28,8 @@ function login() {
 					location.reload(true);
 			},
 			error: function(request, textStatus, errorThrown) {
-				$("#msform").addClass("has-error")
+				$(".login-form").effect("shake");
+        $("#loginbtn").animate({backgroundColor: "red"}).animate({backgroundColor: "#005c9e"});
 				$("#username").prop('disabled', false);
 				$("#password").prop('disabled', false);
 				$("#password").val("");
