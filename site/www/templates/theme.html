@@ -14,6 +14,9 @@
         <link rel="stylesheet" href="/www/css/normalize.css">
         <link rel="stylesheet" href="/www/css/main.css">
         <script src="/www/js/vendor/modernizr-2.8.3.min.js"></script>
+        {{if .Captcha}}
+        <script src='https://www.google.com/recaptcha/api.js'></script>
+        {{end}}
     </head>
     <body>
 

@@ -1,6 +1,61 @@
 {{define "join"}}
-      <input type="text" placeholder="name"/>
-      <input type="password" placeholder="password"/>
-      <input type="text" placeholder="email address"/>
-      <button>create</button>
+      <input type="text" id="jusername" placeholder="username"/>
+      <input type="password" id="jpassword" placeholder="password"/>
+      <input type="password" id="jpassword2" placeholder="repeat password"/>
+      <input type="text" id="jemail" placeholder="email address"/>
+      {{ if .Captcha }}
+      <hr />
+      <div class="g-recaptcha" data-sitekey="{{.SiteKey}}"></div>
+      <hr />
+      {{end}}
+      <button id="createuser" onclick="return createUser();">create</button>
+
+      <script>
+      function checkPasswordMatch() {
+          if ($("#jpassword").val()!=$("#jpassword2").val()) {
+              alert("Passwords do not match");
+              return false;
+          }
+          return true;
+      }
+      function createUser() {
+        if (!checkPasswordMatch()) {
+          return false;
+        }
+        var dat = {
+          {{ if .Captcha }}
+          captcha: grecaptcha.getResponse(),
+          {{ end }}
+          name: $("#jusername").val(),
+          email: $("#jemail").val(),
+          password: $("#jpassword").val(),
+          public: true,
+        };
+
+        // Make sure all fields are set up correctly
+        if (dat.name=="" || dat.email=="" || dat.password=="") {
+          alert("Please fill in all fields");
+          return false;
+        }
+
+        $.ajax({
+            url: '/join',
+            type: "POST",
+            xhrFields: {
+                withCredentials: true
+            },
+            data: JSON.stringify(dat),
+            success: function(msg) {
+                location.href="/";
+            },
+            error: function(xhr, textStatus, errorThrown){
+               var response = JSON.parse(xhr.responseText);
+               console.log(response);
+               alert("Could not add user: "+response.msg);
+            }
+
+        });
+        return false;
+      }
+      </script>
 {{end}}

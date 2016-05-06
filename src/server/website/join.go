@@ -170,6 +170,11 @@ func JoinHandlePOST(writer http.ResponseWriter, request *http.Request) {
 		restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 		return
 	}
+	uo, err = Database.AsUser(j.Name)
+	if err != nil {
+		restcore.WriteError(writer, logger, http.StatusInternalServerError, err, true)
+		return
+	}
 
 	// Great success! The user was created successfully. We now write the cookie for the user
 	webcore.CreateSessionCookie(uo, writer, request)

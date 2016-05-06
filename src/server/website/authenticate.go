@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package website
 
 import (
+	"config"
 	"connectordb"
 	"errors"
 	"net/http"
@@ -80,12 +81,18 @@ func Authenticator(www wwwtemplatebookmark, apifunc webcore.APIHandler, db *conn
 		}
 
 		//If we got here, the user is not logged in. We therefore execute the "www" template given
+		cfg := config.Get()
+
 		www.Execute(writer, struct {
 			Version string
 			Join    bool
+			Captcha bool
+			SiteKey string
 		}{
 			Version: connectordb.Version,
 			Join:    pconfig.Get().UserRoles["nobody"].Join,
+			Captcha: cfg.Captcha.Enabled,
+			SiteKey: cfg.Captcha.SiteKey,
 		})
 
 		webcore.LogRequest(logger, webcore.DEBUG, "", time.Since(tstart))
