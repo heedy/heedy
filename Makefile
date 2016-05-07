@@ -4,7 +4,7 @@ COPY:=rsync -r --exclude=.git
 .PHONY: all clean build test submodules resources deps phony
 
 all: bin/dep/gnatsd bin/connectordb resources
-deps: go-dependencies submodules
+deps: go-dependencies submodules app
 build: resources bin/connectordb
 
 #Empty rule for forcing rebuilds
@@ -17,10 +17,12 @@ bin:
 submodules:
 	git submodule update --init --recursive
 
+app: submodules
+	cd site/app;npm update
 
 resources: bin
 	$(COPY) site/www bin/
-	$(COPY)  site/app bin/
+	cd site/app;npm run build
 
 
 # Rule to go from source go file to binary

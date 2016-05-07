@@ -45,12 +45,18 @@ func (td *TemplateData) DataURIToAttr(uri string) template.HTMLAttr {
 
 //GetTemplateData initializes the template
 func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*TemplateData, error) {
-	thisU, err := o.User()
+	thisU, thisD, err := o.UserAndDevice()
 	if err != nil {
 		return nil, err
 	}
 
-	thisD, err := o.Device()
+	// ThisU and thisDev are admin views of the data - we need to get only the data visible to
+	// the user
+	thisU, err = o.ReadUserByID(thisU.UserID)
+	if err != nil {
+		return nil, err
+	}
+	thisD, err = o.ReadDeviceByID(thisD.DeviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +76,7 @@ func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*Temp
 	if usr, ok = mux.Vars(request)["user"]; ok {
 		td.User, err = o.ReadUser(usr)
 		if err != nil {
-			return nil, err
+			return td, err
 		}
 	}
 
@@ -79,7 +85,7 @@ func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*Temp
 
 		td.Device, err = o.ReadDevice(dev)
 		if err != nil {
-			return nil, err
+			return td, err
 		}
 	}
 
@@ -88,7 +94,7 @@ func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*Temp
 
 		td.Stream, err = o.ReadStream(stream)
 		if err != nil {
-			return nil, err
+			return td, err
 		}
 	}
 
@@ -128,7 +134,7 @@ func Index(o *authoperator.AuthOperator, writer http.ResponseWriter, request *ht
 	}
 	td, err := GetTemplateData(o, request)
 	if err != nil {
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false, td)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -144,7 +150,7 @@ func User(o *authoperator.AuthOperator, writer http.ResponseWriter, request *htt
 			// Backtrack - show the nobody their login page
 			return -1, ""
 		}
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false, td)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -160,7 +166,7 @@ func Device(o *authoperator.AuthOperator, writer http.ResponseWriter, request *h
 			// Backtrack - show the nobody their login page
 			return -1, ""
 		}
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false, td)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -176,7 +182,7 @@ func Stream(o *authoperator.AuthOperator, writer http.ResponseWriter, request *h
 			// Backtrack - show the nobody their login page
 			return -1, ""
 		}
-		return WriteError(logger, writer, http.StatusUnauthorized, err, false)
+		return WriteError(logger, writer, http.StatusUnauthorized, err, false, td)
 	}
 
 	writer.WriteHeader(http.StatusOK)

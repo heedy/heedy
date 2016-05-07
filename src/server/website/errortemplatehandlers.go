@@ -17,10 +17,11 @@ import (
 // These functions use the structures defined in templatehandlers
 
 //WriteError writes the templated error page
-func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err error, iserr bool) (int, string) {
+func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err error, iserr bool, tp *TemplateData) (int, string) {
 	errmap := map[string]interface{}{
-		"code": status,
-		"msg":  err.Error(),
+		"code":    status,
+		"msg":     err.Error(),
+		"context": tp,
 	}
 	u, err2 := uuid.NewV4()
 	if err2 != nil {

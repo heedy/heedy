@@ -6,6 +6,7 @@ package website
 
 import (
 	"connectordb"
+	"encoding/json"
 	"html/template"
 	"io"
 	"path"
@@ -72,6 +73,11 @@ func markdown(input string) template.HTML {
 	return template.HTML(string(html))
 }
 
+func jsonMarshal(input interface{}) template.JS {
+	v, _ := json.Marshal(input)
+	return template.JS(string(v))
+}
+
 func version() string {
 	return connectordb.Version
 }
@@ -96,6 +102,7 @@ func LoadFiles() error {
 		"Version":      version,
 		"markdown":     markdown,
 		"default":      defaultMarkdown,
+		"json":         jsonMarshal,
 	}
 
 	//Now set up the app and www folder paths and make sure they exist
@@ -115,7 +122,7 @@ func LoadFiles() error {
 			Watch:          true,
 			BaseName:       "index",
 			Dir:            WWWPath,
-			FilesExtension: []string{".html"},
+			FilesExtension: []string{".html", ".tpl"},
 			Funcs:          funcMap,
 			Log:            logger,
 		}
@@ -131,7 +138,7 @@ func LoadFiles() error {
 			Watch:          true,
 			BaseName:       "index",
 			Dir:            AppPath,
-			FilesExtension: []string{".html"},
+			FilesExtension: []string{".html", ".tpl"},
 			Funcs:          funcMap,
 			Log:            logger,
 		}
