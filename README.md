@@ -1,11 +1,47 @@
-# connectordb_web
+# ConnectorDB Frontend App
 
-The web component of the ConnectorDB database. This is the underlying code of the default application that ships with ConnectorDB.
+This is the web app used by default in ConnectorDB. It contains all of the relevant analysis, display and plotting code.
 
-## Installing
 
-Debugging the code here requires installing the files in this folder (cloning the repository) into `site/app` in the ConnectorDB code. This should be done automatically when cloning ConnectorDB.
+## Building
 
-In order to download the dependencies necessary to run the app, run `bower update`.
+To debug the app, you will need a functioning ConnectorDB development environment.
 
-To modify the code (and in order to have an easy method for debugging), once connectordb is built, go to the `bin/app` directory, delete all files within, and clone this repository into it. This allows you to modify the site as ConnectorDB is running.
+To start off, build the ConnectorDB database:
+
+```bash
+git clone https://github.com/connectordb/connectordb
+cd connectordb
+make deps
+make
+```
+
+After build completes, start the ConnectorDB server:
+
+```bash
+./bin/connectordb create testdb
+./bin/connectordb start testdb
+./bin/connectordb run testdb --join
+```
+
+Open `localhost:8000`, where you will see the login screen - create a new user.
+
+### Setting up webapp development
+
+Once you have the server running, you will want to start on the app itself. Web portions of ConnectorDB (including alternate web frontends) should be developed from the `site` subdirectory.
+
+This app is pulled by default during `make deps`. To begin development, we update to the newest version (which might be newer than the one used by ConnectorDB):
+
+```
+cd site/app
+git checkout master
+git pull
+```
+
+Now you can start live updates to the code, which will automatically be reflected in your ConnectorDB server:
+
+```
+npm run watch
+```
+
+NOTE: npm scripts must be run in the `site/app` directory to work correctly.

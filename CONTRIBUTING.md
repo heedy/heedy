@@ -1,1 +1,0 @@
-When opening a pull request with changes to CSS or visuals, make sure to include a screen shot of your changes.
