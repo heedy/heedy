@@ -13,6 +13,7 @@
 
         <link rel="stylesheet" href="app/css/normalize.css">
         <link rel="stylesheet" href="app/css/main.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <script src="app/js/modernizr-2.8.3.min.js"></script>
     </head>
     <body>
@@ -21,10 +22,6 @@
         <![endif]-->
 {{end}}
 {{define "footer"}}
-<div id="footer">
-    ConnectorDB {{ .Version }}<br/>
-    &copy; 2016 The <a href="https://connectordb.github.io" >ConnectorDB</a> contributors.
-</div>
 </body>
 </html>
 {{end}}

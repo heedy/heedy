@@ -98,21 +98,9 @@ textarea {
 
 @import url(https://fonts.googleapis.com/css?family=Roboto:300);
 
-
-#footer {
-
-   width:100%;
-   height:60px;   /* Height of the footer */
-   font-size: 10px;
-   font-style: normal;
-   text-align: center;
-   clear: both;
+body {
+  background-color: #F0F0F0;
 }
-
-#footer a {
-    font-style: italic;
-}
-
 
 
 

@@ -7,10 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:js": "cross-env NODE_ENV=production webpack -p",
     "build:html": "rsync -r ./app ../../bin",
-    "build": "npm run build:html && npm run build:js",
+    "build:branding": "cp branding/title_logo_light.png ../../bin/app",
+    "build": "npm run build:html && npm run build:js && npm run build:branding",
     "js:watch": "webpack -d --watch",
     "html:watch": "watch 'npm run build:html' ./app",
-    "watch": "parallelshell 'npm run js:watch' 'npm run html:watch'"
+    "watch": "npm run build:branding && parallelshell 'npm run js:watch' 'npm run html:watch'"
   },
   "author": "",
   "license": "MIT",
