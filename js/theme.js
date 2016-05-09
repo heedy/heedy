@@ -8,7 +8,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import Dialog from 'material-ui/Dialog';
 import {deepOrange500} from 'material-ui/styles/colors';
 import FlatButton from 'material-ui/FlatButton';
-import Toolbar from 'material-ui/Toolbar';
+import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
 import Avatar from 'material-ui/Avatar';
@@ -27,6 +27,7 @@ import {
     CardTitle,
     CardText
 } from 'material-ui/Card';
+import TextField from 'material-ui/TextField';
 
 const muiTheme = getMuiTheme({
 
@@ -120,7 +121,30 @@ export function siteRenderer(node) {
                         height: `${spacing.desktopKeylineIncrement}px`,
                         background: "#009e42",
                         boxShadow: "0px 2px 5px #888888"
-                    }} zDepth={50}></Toolbar>
+                    }} zDepth={50}>
+                        <ToolbarGroup firstChild={true} style={{
+                            marginLeft: "10px",
+                            marginRight: "10px",
+                            marginTop: "10px",
+                            marginBottom: "10px",
+                            background: "#00b34a",
+                            width: "100%",
+                            borderRadius: "5px"
+                        }}>
+                            <FontIcon className="material-icons" style={{
+                                color: "#00662a",
+                                marginTop: "-5px"
+                            }}>
+                                search
+                            </FontIcon>
+                            <TextField hintText="Search" style={{
+                                paddingLeft: "10px"
+                            }} inputStyle={{
+                                color: "white"
+                            }} fullWidth={true} underlineShow={false}/>
+
+                        </ToolbarGroup>
+                    </Toolbar>
                     <Card style={styles.cardStyle}>
                         <CardText>
                             <h1 >
