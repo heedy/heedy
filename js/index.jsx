@@ -3,7 +3,7 @@ import {render} from 'react-dom';
 
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
-import {siteRenderer} from './theme';
+import Theme from './Theme';
 
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
@@ -59,5 +59,6 @@ export function NotFound(context) {
 
 export function Index(context) {
     console.log(context);
-    render(siteRenderer(App), document.getElementById('app'));
+    render(
+        <Theme/>, document.getElementById('app'));
 }
