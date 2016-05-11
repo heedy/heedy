@@ -1,10 +1,14 @@
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
+
 import {spacing} from 'material-ui/styles';
 import FontIcon from 'material-ui/FontIcon';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
+
+import {setSearchText} from './actions'
 
 const styles = {
     searchbar: {
@@ -64,7 +68,8 @@ class TopBar extends Component {
                         search
                     </FontIcon>
                     <TextField hintText="Search" style={{
-                        paddingLeft: "10px"
+                        paddingLeft: "10px",
+                        fontWeight: "bold"
                     }} inputStyle={{
                         color: "white"
                     }} fullWidth={true} underlineShow={false} value={this.props.searchText} onChange={this.props.searchTextChanged}/>
@@ -74,4 +79,6 @@ class TopBar extends Component {
     }
 }
 
-export default TopBar;
+export default connect((state) => ({searchText: state.searchText}), (dispatch) => ({
+    searchTextChanged: (e, txt) => dispatch(setSearchText(txt))
+}))(TopBar);

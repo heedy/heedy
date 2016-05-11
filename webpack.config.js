@@ -6,7 +6,7 @@ var BUILD_DIR = path.resolve(__dirname, '../../bin/app');
 var APP_DIR = path.resolve(__dirname, 'js');
 var env = process.env.NODE_ENV
 var config = {
-    entry: APP_DIR + '/index.jsx',
+    entry: APP_DIR + '/index.js',
     output: {
         path: BUILD_DIR,
         filename: 'bundle.js',

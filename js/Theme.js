@@ -45,23 +45,13 @@ class Theme extends Component {
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
-                    <Navigation docked={isNavigationDocked} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})} links={[
-                        {
-                            title: "Hello Sir",
-                            subtitle: "hi",
-                            icon: "face",
-                            value: "hi"
-                        }, {
-                            title: "Log Out",
-                            subtitle: "Exit your session",
-                            icon: "power_settings_new",
-                            value: "hi2"
-                        }
-                    ]} onClick={(val) => console.log(val)} selected={""}/>
-                    <TopBar navDocked={isNavigationDocked} searchText="" hamburgerClick={() => this.setState({drawerOpen: true})}/>
+                    <Navigation docked={isNavigationDocked} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
+                    <TopBar navDocked={isNavigationDocked} hamburgerClick={() => this.setState({drawerOpen: true})}/>
                     <div style={isNavigationDocked
                         ? styles.container
-                        : styles.containerFullWidth}></div>
+                        : styles.containerFullWidth}>
+                        {this.props.children}
+                    </div>
                 </div>
             </MuiThemeProvider>
         );

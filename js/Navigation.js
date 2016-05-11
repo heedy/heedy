@@ -1,4 +1,6 @@
 import React from 'react';
+import {connect} from 'react-redux';
+
 import {spacing} from 'material-ui/styles';
 import Drawer from 'material-ui/Drawer';
 import {List, ListItem, MakeSelectable} from 'material-ui/List';
@@ -6,6 +8,8 @@ import FontIcon from 'material-ui/FontIcon';
 
 // This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
 const SelectableList = MakeSelectable(List);
+
+import {showPage} from './reducer'
 
 // styles are all of the colors and sizes for the underlying website theme
 const styles = {
@@ -62,7 +66,7 @@ class Navigation extends React.Component {
                 </div>
                 <SelectableList value={this.props.selected} onChange={this.props.onClick}>
                     {this.props.links.map((link) => (
-                        <ListItem key={link.value} value={link.value} focusState={link.focused
+                        <ListItem key={link.page} value={link.page} focusState={link.focused
                             ? 'focused'
                             : 'none'} leftIcon={< FontIcon className = "material-icons" style = {{color: "black"}} > {
                             link.icon
@@ -85,4 +89,8 @@ class Navigation extends React.Component {
     }
 }
 
-export default Navigation;
+export default connect((state) => ({links: state.navigation, selected: state.linkSelected}), (dispatch) => ({
+    onClick: (e, id) => {
+        dispatch(showPage(id));
+    }
+}))(Navigation);
