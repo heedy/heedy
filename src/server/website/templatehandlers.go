@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package website
 
 import (
+	"config"
 	"connectordb"
 	"connectordb/authoperator"
 	"connectordb/users"
@@ -29,11 +30,14 @@ type TemplateData struct {
 	Stream *users.Stream
 
 	//And some extra status info
-	Status string
-	Ref    string
+	StatusCode int
+	Msg        string
+	Ref        string
 
 	//The Database Version
 	Version string
+	// The root URL
+	SiteURL string
 
 	// The operator that this TemplateData uses.
 	operator *authoperator.AuthOperator
@@ -66,6 +70,7 @@ func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*Temp
 		ThisUser:   thisU,
 		ThisDevice: thisD,
 		Version:    connectordb.Version,
+		SiteURL:    config.Get().GetSiteURL(),
 		operator:   o,
 	}
 

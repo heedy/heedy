@@ -18,24 +18,25 @@ import (
 
 //WriteError writes the templated error page
 func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err error, iserr bool, tp *TemplateData) (int, string) {
-	errmap := map[string]interface{}{
-		"code":    status,
-		"msg":     err.Error(),
-		"context": tp,
+	if tp == nil {
+		tp = &TemplateData{}
 	}
+	tp.StatusCode = status
+	tp.Msg = err.Error()
+
 	u, err2 := uuid.NewV4()
 	if err2 != nil {
 		logger.WithField("ref", "WEBERR").Errorln("Failed to generate error UUID: " + err2.Error())
 		logger.WithField("ref", "WEBERR").Warningln("Original Error: " + err.Error())
 		writer.WriteHeader(520)
 
-		errmap["msg"] = "Failed to generate error UUID"
-		errmap["ref"] = "WEBERR"
+		tp.Msg = "Failed to generate error UUID"
+		tp.Ref = "WEBERR"
 		return webcore.INFO, ""
 	}
-	errmap["ref"] = u.String()
+	tp.Ref = u.String()
 	//Now that we have the error message, we log it and send the messages
-	l := logger.WithFields(log.Fields{"ref": u.String(), "code": status})
+	l := logger.WithFields(log.Fields{"Ref": u.String(), "Code": status})
 	if iserr {
 		l.Errorln(err.Error())
 	} else {
@@ -43,7 +44,7 @@ func WriteError(logger *log.Entry, writer http.ResponseWriter, status int, err e
 	}
 
 	writer.WriteHeader(status)
-	AppError.Execute(writer, errmap)
+	AppError.Execute(writer, tp)
 
 	return webcore.INFO, ""
 }
