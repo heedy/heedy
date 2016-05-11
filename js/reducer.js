@@ -13,12 +13,6 @@ export default function reducer(state = InitialState, action) {
             }
             return out;
 
-        case 'SHOW_PAGE':
-            return {
-                ...state,
-                linkSelected: action.value
-            };
-
         case 'SET_SEARCH_TEXT':
             return {
                 ...state,

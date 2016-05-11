@@ -87,6 +87,6 @@ class TopBar extends Component {
     }
 }
 
-export default connect((state) => ({searchText: state.searchText}), (dispatch) => ({
+export default connect((state) => ({searchText: state.app.searchText}), (dispatch) => ({
     searchTextChanged: (e, txt) => dispatch(setSearchText(txt))
 }))(TopBar);

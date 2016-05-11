@@ -60,7 +60,7 @@ class Navigation extends React.Component {
                 ? true
                 : this.props.open} onRequestChange={this.props.onRequestChange}>
                 <div style={styles.logo}>
-                    <img src="app/title_logo_light.png" style={{
+                    <img src={SiteURL + "/app/title_logo_light.png"} style={{
                         height: "24px"
                     }}/>
                 </div>
@@ -89,7 +89,7 @@ class Navigation extends React.Component {
     }
 }
 
-export default connect((state) => ({links: state.navigation, selected: state.linkSelected}), (dispatch) => ({
+export default connect((state) => ({links: state.app.navigation}), (dispatch) => ({
     onClick: (e, id) => {
         dispatch(showPage(id));
     }

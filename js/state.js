@@ -9,17 +9,14 @@ const InitialState = {
             title: "{self}",
             subtitle: "View your devices",
             icon: "face",
-            page: "{self}"
+            page: "/{self}"
         }, {
             title: "Log Out",
             subtitle: "Exit your session",
             icon: "power_settings_new",
-            page: "logout"
+            page: "/logout"
         }
     ],
-
-    // the currently visible page
-    currentPage: "",
 
     // The text displayed in the search box
     searchText: ""

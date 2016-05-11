@@ -1,6 +1,8 @@
 import React, {Component, PropTypes} from 'react';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import {Card, CardText} from 'material-ui/Card';
+
 import {spacing} from 'material-ui/styles';
 import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
 
@@ -25,12 +27,19 @@ const styles = {
     containerFullWidth: {
         textAlign: 'center',
         background: "#F0F0F0"
+    },
+    cardStyle: {
+        marginTop: "20px",
+        marginRight: "auto",
+        marginLeft: "auto",
+        maxWidth: "80%"
     }
 };
 
 class Theme extends Component {
     static propTypes = {
-        width: PropTypes.number.isRequired
+        width: PropTypes.number.isRequired,
+        location: PropTypes.object.isRequired
     };
 
     constructor(props) {
@@ -45,12 +54,16 @@ class Theme extends Component {
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
-                    <Navigation docked={isNavigationDocked} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
+                    <Navigation docked={isNavigationDocked} selected={this.props.location.pathname} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
                     <TopBar navDocked={isNavigationDocked} hamburgerClick={() => this.setState({drawerOpen: true})}/>
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>
-                        {this.props.children}
+                        <Card style={styles.cardStyle}>
+                            <CardText>
+                                {this.props.children}
+                            </CardText>
+                        </Card>
                     </div>
                 </div>
             </MuiThemeProvider>
