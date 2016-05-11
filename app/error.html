@@ -3,9 +3,6 @@
     <script src="/app/bundle.js" type="text/javascript"></script>
     <script>
     // Set up global error status codes for displaying error
-    var ErrorStatusCode = "{{ .code }}";
-    var ErrorMessage = "{{ .msg }}";
-    var ErrorRefCode = "{{ .ref }}";
-    App.Error({{json .context}});
+    App.Error({{json .}});
     </script>
 {{template "footer" .}}
