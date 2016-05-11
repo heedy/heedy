@@ -1,7 +1,6 @@
 import InitialState from './state';
 
 export default function reducer(state = InitialState, action) {
-    console.log(action);
     switch (action.type) {
         case 'LOAD_CONTEXT':
             var out = Object.assign({}, state, {context: action.value});

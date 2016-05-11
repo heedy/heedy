@@ -1,7 +1,7 @@
 import React from 'react';
 import {render} from 'react-dom';
 
-import {createStore, combineReducers, applyMiddleware} from 'redux'
+import {createStore, combineReducers, applyMiddleware, compose} from 'redux'
 import {Provider} from 'react-redux'
 import {Router, Route, browserHistory} from 'react-router'
 import {syncHistoryWithStore, routerReducer, routerMiddleware} from 'react-router-redux'
@@ -18,7 +18,14 @@ injectTapEventPlugin();
 
 // runApp renders the app. It is assumed that the context is already set up correctly
 function runApp(context, page) {
-    let store = createStore(combineReducers({app: reducer, routing: routerReducer}), applyMiddleware(routerMiddleware(browserHistory)));
+    // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
+    // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
+    let browserMiddleware = applyMiddleware(routerMiddleware(browserHistory))
+    let finalCreateStore = compose(browserMiddleware, window.devToolsExtension
+        ? window.devToolsExtension()
+        : f => f)(createStore);
+
+    let store = finalCreateStore(combineReducers({app: reducer, routing: routerReducer}));
 
     // Set up the history through react-router-redux
     let history = syncHistoryWithStore(browserHistory, store);

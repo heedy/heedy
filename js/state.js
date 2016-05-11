@@ -6,7 +6,12 @@ const InitialState = {
     // navigation is displayed in the app's main nmenu
     navigation: [
         {
-            title: "{self}",
+            title: "Progress Log",
+            subtitle: "Manually insert data",
+            icon: "star",
+            page: "/"
+        }, {
+            title: "Profile",
             subtitle: "View your devices",
             icon: "face",
             page: "/{self}"

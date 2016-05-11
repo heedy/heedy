@@ -5,8 +5,10 @@ import {push} from 'react-router-redux'
 export function showPage(name) {
     // First, deal with special values
     switch (name) {
-        case "logout":
-            window.href = "/logout"
+        case "/logout":
+            // Instead of playing app with logout, we actually want to log out - which means that
+            // we actively set the window location
+            window.location = SiteURL + "/logout";
             return null;
 
     }

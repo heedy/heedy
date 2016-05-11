@@ -5,7 +5,6 @@ class Main extends Component {
     static propTypes = {};
 
     render() {
-        console.log("Render main");
         return (
             <p>
                 Main
