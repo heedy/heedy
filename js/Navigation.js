@@ -54,6 +54,16 @@ class Navigation extends React.Component {
         onRequestChange: React.PropTypes.func
     };
 
+    // The navigation does not close itself when in mobile mode when clicked
+    // we therefore manually close it on click
+    onClick(e, v) {
+        this.props.onClick(e, v);
+        if (!this.props.docked) {
+            this.props.onRequestChange(false);
+        }
+
+    }
+
     render() {
         return (
             <Drawer docked={this.props.docked} open={this.props.docked
@@ -64,7 +74,7 @@ class Navigation extends React.Component {
                         height: "24px"
                     }}/>
                 </div>
-                <SelectableList value={this.props.selected} onChange={this.props.onClick}>
+                <SelectableList value={this.props.selected} onChange={(e, v) => this.onClick(e, v)}>
                     {this.props.links.map((link) => (
                         <ListItem key={link.page} value={link.page} focusState={link.focused
                             ? 'focused'
