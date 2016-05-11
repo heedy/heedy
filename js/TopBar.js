@@ -62,7 +62,6 @@ class TopBar extends Component {
                         marginLeft: "10px"
                     })}>
                     <FontIcon className="material-icons" style={{
-                        color: "#00662a",
                         marginTop: "-5px"
                     }}>
                         search
@@ -72,7 +71,16 @@ class TopBar extends Component {
                         fontWeight: "bold"
                     }} inputStyle={{
                         color: "white"
-                    }} fullWidth={true} underlineShow={false} value={this.props.searchText} onChange={this.props.searchTextChanged}/>
+                    }} fullWidth={true} underlineShow={false} value={this.props.searchText} onChange={this.props.searchTextChanged}/> {this.props.searchText == ""
+                        ? null
+                        : (
+                            <FontIcon className="material-icons" style={{
+                                marginTop: "-5px",
+                                paddingRight: "10px"
+                            }} onTouchTap={() => this.props.searchTextChanged(null, "")}>
+                                close
+                            </FontIcon>
+                        )}
                 </ToolbarGroup>
             </Toolbar>
         );

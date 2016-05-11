@@ -9,7 +9,7 @@ import FontIcon from 'material-ui/FontIcon';
 // This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
 const SelectableList = MakeSelectable(List);
 
-import {showPage} from './reducer'
+import {showPage} from './actions'
 
 // styles are all of the colors and sizes for the underlying website theme
 const styles = {
