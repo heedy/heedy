@@ -14,9 +14,9 @@ class Error extends Component {
                 paddingTop: 200,
                 paddingBottom: 100
             }}>
-                <h1>{ErrorStatusCode}</h1>
-                <h2>Sorry, can't access this one!</h2>
-                <p>{ErrorRefCode}</p>
+                <h1>Oh no...</h1>
+                <h2>There seems to have been an error</h2>
+                <p>This object either doesn't exist, or you can't access it</p>
             </div>
         );
     }

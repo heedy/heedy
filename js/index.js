@@ -1,23 +1,27 @@
 import React from 'react';
 import {render} from 'react-dom';
 
-import {createStore, combineReducers, applyMiddleware, compose} from 'redux'
-import {Provider} from 'react-redux'
-import {Router, Route, browserHistory} from 'react-router'
-import {syncHistoryWithStore, routerReducer, routerMiddleware} from 'react-router-redux'
+import {createStore, combineReducers, applyMiddleware, compose} from 'redux';
+import {Provider} from 'react-redux';
+import {Router, Route, browserHistory} from 'react-router';
+import {syncHistoryWithStore, routerReducer, routerMiddleware} from 'react-router-redux';
 
-import reducer from './reducer'
-
-import App from './App'
-import {showPage} from './actions'
+import reducer from './reducer';
+import App from './App';
+import {showPage} from './actions';
+import storage from './storage';
 
 import injectTapEventPlugin from 'react-tap-event-plugin';
+
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
 injectTapEventPlugin();
 
 // runApp renders the app. It is assumed that the context is already set up correctly
 function runApp(context, page) {
+    // add the context to storage
+    storage.addContext(context);
+
     // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
     // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
     let browserMiddleware = applyMiddleware(routerMiddleware(browserHistory))
