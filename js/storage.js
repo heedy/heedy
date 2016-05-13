@@ -30,6 +30,14 @@ class Storage {
         this.callbacks = {};
     }
 
+    // Just in case we want to log out - this clears all of the storage so that no data is left over
+    clear() {
+        console.log("Clearing storage...");
+        return this.store.clear().then(() => {
+            return this.queryqueue.clear()
+        });
+    }
+
     // addContext adds the data returned with the page context when it is initially requested
     addContext(context) {
         if (context.ThisUser != null) {
@@ -57,6 +65,21 @@ class Storage {
             timestamp: Date.now()
         }
         this.hotstore[path] = newval;
+
+        if (obj.ref !== undefined) {
+            console.log("Removing from cache: " + path);
+            this.store.removeItem(path).then(() => {
+                // remove from hotstore
+                delete this.hotstore[path];
+
+                // Run all callbacks
+                for (let id in this.callbacks) {
+                    this.callbacks[id](path, newval);
+                }
+            });
+            return;
+        }
+
         console.log("Updating cache: " + path, newval);
         this.store.setItem(path, newval).then(() => {
 

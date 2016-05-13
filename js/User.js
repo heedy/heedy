@@ -17,6 +17,7 @@ class User extends Component {
             user: null,
             error: null
         };
+        this.isquerying = false;
     }
 
     // Upon mounting, create a callback which will update the component state when the user is updated
@@ -27,7 +28,11 @@ class User extends Component {
         storage.addCallback(this.callbackID, (path, obj) => {
             // If the current user was updated, update the view
             if (path == this.props.params.user) {
-                this.setState({user: obj});
+                if (obj.ref !== undefined) {
+                    this.setState({error: obj});
+                } else {
+                    this.setState({user: obj});
+                }
             }
         });
 
@@ -40,21 +45,34 @@ class User extends Component {
 
     // This is called whenever the user changes
     componentWillReceiveProps(nextProps) {
+        if (this.isquerying) {
+            return;
+        }
+        this.isquerying = true;
         // Set the user to null, since the old user should not longer be displayed
         this.setState({user: null, error: null});
 
         // Get the user from cache - this allows the app to feel fast on slow internet,
         // and enables it to work in offline mode
         storage.get(nextProps.params.user).then((response) => {
+            this.isquerying = false;
             // Set the user to the cached value
-            this.setState({user: response});
+            if (response != null) {
+                if (response.ref !== undefined) {
+                    this.setState({error: response});
+                } else if (response.name !== undefined) {
+                    this.setState({user: response});
 
-            // If the user was recently queried, don't query it again needlessly
-            if (response != null && response.timestamp > Date.now() - 1000 * 10) {
-                return;
+                    // If the user was recently queried, don't query it again needlessly
+                    if (response.timestamp > Date.now() - 1000 * 10) {
+                        return;
+                    }
+                }
             }
+
             storage.query(nextProps.params.user).catch((err) => console.log(err));
-        }).catch(function(err) {
+        }).catch((err) => {
+            this.isquerying = false;
             console.log(err);
         });
     }
@@ -62,7 +80,7 @@ class User extends Component {
     render() {
         if (this.state.error != null) {
             // There was an error
-            return (<Error/>);
+            return (<Error err={this.state.error}/>);
         }
         if (this.state.user == null) {
             // The user is currently being queried

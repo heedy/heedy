@@ -9,7 +9,7 @@ import FontIcon from 'material-ui/FontIcon';
 // This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
 const SelectableList = MakeSelectable(List);
 
-import {showPage} from './actions'
+import {push} from 'react-router-redux'
 
 // styles are all of the colors and sizes for the underlying website theme
 const styles = {
@@ -101,6 +101,6 @@ class Navigation extends React.Component {
 
 export default connect((state) => ({links: state.app.navigation}), (dispatch) => ({
     onClick: (e, id) => {
-        dispatch(showPage(id));
+        dispatch(push(id));
     }
 }))(Navigation);

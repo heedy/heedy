@@ -9,6 +9,7 @@ import Main from './Main';
 import User from './User';
 import Device from './Device';
 import Stream from './Stream';
+import Logout from './Logout';
 
 class App extends Component {
     static propTypes = {
@@ -19,6 +20,7 @@ class App extends Component {
             <Router history={this.props.history}>
                 <Route path="/" component={Theme}>
                     <IndexRoute component={Main}/>
+                    <Route path="/logout" component={Logout}/>
                     <Route path="/:user" component={User}/>
                     <Route path="/:user/:device" component={Device}/>
                     <Route path="/:user/:device/:stream" component={Stream}/>

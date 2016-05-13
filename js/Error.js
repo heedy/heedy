@@ -6,17 +6,20 @@ import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
 class Error extends Component {
+    static propTypes = {
+        err: PropTypes.shape({code: PropTypes.number.isRequired, ref: PropTypes.string.isRequired, msg: PropTypes.string.isRequired}).isRequired
+    };
 
     render() {
         return (
             <div style={{
                 textAlign: "center",
                 paddingTop: 200,
-                paddingBottom: 100
+                paddingBottom: 200
             }}>
-                <h1>Oh no...</h1>
-                <h2>There seems to have been an error</h2>
-                <p>This object either doesn't exist, or you can't access it</p>
+                <h1>{this.props.err.code}</h1>
+                <h2>{this.props.err.msg}</h2>
+                <p>{this.props.err.ref}</p>
             </div>
         );
     }
