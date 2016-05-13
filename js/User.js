@@ -1,5 +1,8 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
+import prettydate from 'pretty-date';
+
+import {Card, CardText} from 'material-ui/Card';
 
 import storage from './storage';
 
@@ -49,6 +52,13 @@ class User extends Component {
             return;
         }
         this.isquerying = true;
+
+        // Now: The willReceiveProps is a lie, it is called even when the props are basically the same.
+        // So we check if the one prop we care about is here
+        if (this.state.user != null && this.state.user.name == nextProps.params.user) {
+            return;
+        }
+
         // Set the user to null, since the old user should not longer be displayed
         this.setState({user: null, error: null});
 
@@ -88,12 +98,12 @@ class User extends Component {
         }
 
         return (
-            <div>
-                <h1>User: {this.state.user.name}</h1>
-                <h3>{this.state.user.timestamp}</h3>
-            </div>
+            <Card >
+                <CardText>
+                    <h1>User: {this.state.user.name}</h1>
+                </CardText>
+            </Card>
         );
     }
 }
-
 export default User;

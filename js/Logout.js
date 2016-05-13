@@ -16,8 +16,7 @@ class Logout extends Component {
         return (
             <div style={{
                 textAlign: "center",
-                paddingTop: 200,
-                paddingBottom: 200
+                paddingTop: 200
             }}>
                 <h1>
                     Logging Out ...

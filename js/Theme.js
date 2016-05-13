@@ -28,7 +28,7 @@ const styles = {
         textAlign: 'center',
         background: "#F0F0F0"
     },
-    cardStyle: {
+    mainStyle: {
         marginTop: "20px",
         marginRight: "auto",
         marginLeft: "auto",
@@ -59,11 +59,9 @@ class Theme extends Component {
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>
-                        <Card style={styles.cardStyle}>
-                            <CardText>
-                                {this.props.children}
-                            </CardText>
-                        </Card>
+                        <div style={styles.mainStyle}>
+                            {this.props.children}
+                        </div>
                     </div>
                 </div>
             </MuiThemeProvider>

@@ -14,8 +14,7 @@ class Error extends Component {
         return (
             <div style={{
                 textAlign: "center",
-                paddingTop: 200,
-                paddingBottom: 200
+                paddingTop: 200
             }}>
                 <h1>{this.props.err.code}</h1>
                 <h2>{this.props.err.msg}</h2>
