@@ -1,7 +1,4 @@
 const InitialState = {
-    // The context is set up during runtime, before the app is displayed. It contains
-    // the data sent from ConnectorDB about the current user
-    context: null,
 
     // navigation is displayed in the app's main nmenu
     navigation: [
@@ -25,6 +22,22 @@ const InitialState = {
 
     // The text displayed in the search box
     searchText: ""
+
+    // The currently logged in user and device. This is set up immediately on app start.
+    // even before the app is rendered. Note that these are NOT updated along with
+    // the app storage - this is the initial user and device
+    thisUser: "",
+    thisDevice: "",
+
+    // The URL of the website, also available as global variable "SiteURL". This is set up
+    // from the context on app load
+    siteURL: ""
+
+    // Page states are kept for every user/device/stream visited in this session.
+    // This allows for back-and-forth between pages without losing your place!
+    userpage: {},
+    devicepage: {},
+    streampage: {}
 };
 
 export default InitialState;

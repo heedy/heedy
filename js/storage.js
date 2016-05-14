@@ -22,9 +22,6 @@ class Storage {
         // this fixes the issue by making objects available from a "hot" store until store contains them.
         this.hotstore = {}
 
-        // a connectordb query queue, allowing to queue up actions when there is no internet
-        this.queryqueue = localforage.createInstance({name: "queryqueue"});
-
         // Add callbacks that are run when a value is set.
         // The callbacks are indexed by an id, which allows removing them when not needed anymore
         this.callbacks = {};

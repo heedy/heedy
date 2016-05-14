@@ -1,29 +1,13 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
-import prettydate from 'pretty-date';
 
-import {Card, CardText, CardHeader, CardActions} from 'material-ui/Card';
-import {
-    Table,
-    TableBody,
-    TableHeader,
-    TableHeaderColumn,
-    TableRow,
-    TableRowColumn
-} from 'material-ui/Table';
-import Avatar from 'material-ui/Avatar';
-import FontIcon from 'material-ui/FontIcon';
-import IconButton from 'material-ui/IconButton';
-
-import {GridList, GridTile} from 'material-ui/GridList';
 import Subheader from 'material-ui/Subheader';
-
-import ReactMarkdown from 'react-markdown';
 
 import storage from './storage';
 
-import Error from './Error';
-import Loading from './Loading';
+import Error from './components/Error';
+import Loading from './components/Loading';
+import UserCard from './components/UserCard'
 
 class User extends Component {
     static propTypes = {
@@ -114,51 +98,9 @@ class User extends Component {
         }
         return (
             <div>
-                <Card style={{
-                    textAlign: "left"
-                }}>
-                    <CardHeader title={this.state.user.nickname != ""
-                        ? this.state.user.nickname
-                        : this.state.user.name} subtitle={this.state.user.name} actAsExpander={true} showExpandableButton={true} avatar={< Avatar > U < /Avatar>}>
-                        <IconButton style={{
-                            float: "right",
-                            marginRight: 30,
-                            marginTop: -5
-                        }} onTouchTap={this.props.hamburgerClick}>
-                            <FontIcon className="material-icons">
-                                edit
-                            </FontIcon>
-                        </IconButton>
-                    </CardHeader>
-                    <CardText expandable={true}>
-                        {this.state.user.description == ""
-                            ? (null)
-                            : (
-                                <div style={{
-                                    color: "grey"
-                                }}><ReactMarkdown escapeHtml={true} source={this.state.user.description}/></div>
-                            )}
-                        <Table selectable={false}>
-                            <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
-                                <TableRow>
-                                    <TableHeaderColumn>Email</TableHeaderColumn>
-                                    <TableHeaderColumn>Public</TableHeaderColumn>
-                                    <TableHeaderColumn>Role</TableHeaderColumn>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody displayRowCheckbox={false}>
-                                <TableRow>
-                                    <TableRowColumn>{this.state.user.email}</TableRowColumn>
-                                    <TableRowColumn>{this.state.user.public
-                                            ? "true"
-                                            : "false"}</TableRowColumn>
-                                    <TableRowColumn>{this.state.user.role}</TableRowColumn>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-
-                    </CardText>
-                </Card>
+                <UserCard user={this.state.user} editing={false} onEditClick={() => {
+                    console.log("edit click");
+                }}/>
                 <Subheader style={{
                     marginTop: 20
                 }}>Devices</Subheader>

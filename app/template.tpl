@@ -20,12 +20,14 @@
         <!--[if lt IE 8]>
             <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
+        <div id="app"></div>
+        <script src="/app/bundle.js" type="text/javascript"></script>
         <script>
           // We define the site URL as a global variable
           var SiteURL = "{{.SiteURL}}";
+
+          App.run({{json .}});
         </script>
-{{end}}
-{{define "footer"}}
 </body>
 </html>
 {{end}}
