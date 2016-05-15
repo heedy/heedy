@@ -9,33 +9,13 @@ import {
     TableRow,
     TableRowColumn
 } from 'material-ui/Table';
-import prettydate from 'pretty-date';
+
+import TimeDifference from './TimeDifference';
 
 class UserView extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            elapsed: ""
-        }
-    }
+
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired
-    }
-
-    componentDidMount() {
-        this.timer = setInterval(() => this.tick(), 5000);
-        this.setState({
-            elapsed: prettydate.format(new Date(this.props.user.timestamp))
-        });
-    }
-
-    tick() {
-        this.setState({
-            elapsed: prettydate.format(new Date(this.props.user.timestamp))
-        });
-    }
-    componentWillUnmount() {
-        clearInterval(this.timer);
     }
 
     render() {
@@ -68,7 +48,7 @@ class UserView extends Component {
                                     ? "true"
                                     : "false"}</TableRowColumn>
                             <TableRowColumn>{this.props.user.role}</TableRowColumn>
-                            <TableRowColumn>{this.state.elapsed}</TableRowColumn>
+                            <TableRowColumn><TimeDifference timestamp={this.props.user.timestamp}/></TableRowColumn>
                         </TableRow>
                     </TableBody>
 
