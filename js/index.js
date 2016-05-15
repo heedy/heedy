@@ -12,6 +12,8 @@ import App from './App';
 import {showPage} from './actions';
 import storage from './storage';
 
+export var cache = storage;
+
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
 // Needed for onTouchTap
@@ -20,18 +22,18 @@ injectTapEventPlugin();
 
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
 // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
-let appMiddleware = applyMiddleware(routerMiddleware(thunk, browserHistory))
+let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory));
 let finalCreateStore = compose(appMiddleware, window.devToolsExtension
     ? window.devToolsExtension()
     : f => f)(createStore);
 
-let store = finalCreateStore();
+export var store = finalCreateStore(combineReducers({app: reducer, routing: routerReducer}));
 
 // Set up the history through react-router-redux
 let history = syncHistoryWithStore(browserHistory, store);
 
-// runApp renders the app. It is assumed that the context is already set up correctly
-export function runApp(context) {
+// run renders the app. It is assumed that the context is already set up correctly
+export function run(context) {
     // add the context to storage
     storage.addContext(context);
 
