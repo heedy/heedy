@@ -13,16 +13,12 @@ import UserEdit from './UserEdit';
 import storage from '../storage';
 
 class UserCard extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            expanded: false
-        }
-    }
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
         editing: PropTypes.bool.isRequired,
-        onEditClick: PropTypes.func
+        onEditClick: PropTypes.func.isRequired,
+        expanded: PropTypes.bool.isRequired,
+        onExpandClick: PropTypes.func.isRequired
     }
 
     render() {
@@ -34,16 +30,16 @@ class UserCard extends Component {
         return (
             <Card style={{
                 textAlign: "left"
-            }} onExpandChange={(cng) => this.setState({expanded: cng})}>
-                <CardHeader title={nickname} subtitle={this.props.user.name} actAsExpander={true} showExpandableButton={true} avatar={< Avatar > U < /Avatar>}>
-                    {(this.state.expanded && !this.props.editing)
+            }} onExpandChange={this.props.onExpandClick} expanded={this.props.expanded}>
+                <CardHeader title={nickname} subtitle={this.props.user.name} showExpandableButton={true} avatar={< Avatar > U < /Avatar>}>
+                    {(this.props.expanded && !this.props.editing)
                         ? (
                             <div style={{
                                 float: "right",
                                 marginRight: 35,
                                 marginTop: "-5px"
                             }}>
-                                <IconButton onTouchTap={this.props.onEditClick} tooltip="edit">
+                                <IconButton onTouchTap={() => this.props.onEditClick(true)} tooltip="edit">
                                     <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                         edit
                                     </FontIcon>

@@ -18,9 +18,9 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.user !== undefined)
+            if (props.user !== undefined) 
                 return props.user;
-            if (props.params.user !== undefined)
+            if (props.params.user !== undefined) 
                 return props.params.user;
             return "";
         },
@@ -28,9 +28,9 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.device !== undefined)
+            if (props.device !== undefined) 
                 return props.device;
-            if (props.params.device !== undefined)
+            if (props.params.device !== undefined) 
                 return props.params.device;
             return "";
         },
@@ -38,18 +38,16 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.stream !== undefined)
+            if (props.stream !== undefined) 
                 return props.stream;
-            if (props.params.stream !== undefined)
+            if (props.params.stream !== undefined) 
                 return props.params.stream;
             return "";
         },
         getInitialState: function() {
-            console.log("initialstate");
             return {user: null, device: null, stream: null, error: null};
         },
         getData: function(nextProps) {
-            console.log("getData");
             let thisUser = this.getUser(nextProps);
             // Get the user/device/stream from cache - this allows the app to feel fast in
             // slow internet, and enables working in offline mode
@@ -107,7 +105,6 @@ export default function connectStorage(Component) {
             }
         },
         componentWillMount: function() {
-            console.log("willmount");
             // https://stackoverflow.com/questions/1349404/generate-a-string-of-5-random-characters-in-javascript
             this.callbackID = Math.random().toString(36).substring(7);
 

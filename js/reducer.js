@@ -1,4 +1,20 @@
-import InitialState from './state';
+import InitialState, {UserPageInitialState} from './state';
+
+function userPageReducer(state = UserPageInitialState, action) {
+    switch (action.type) {
+        case 'USERPAGE_EDIT':
+            return {
+                ...state,
+                editing: action.value
+            }
+        case 'USERPAGE_EXPAND':
+            return {
+                ...state,
+                expanded: action.value
+            }
+    }
+    return state;
+}
 
 export default function reducer(state = InitialState, action) {
     switch (action.type) {
@@ -23,5 +39,16 @@ export default function reducer(state = InitialState, action) {
                 searchText: action.value
             };
     }
+    if (action.type.startsWith("USERPAGE")) {
+        let newpage = {
+            ...state,
+            userpage: {
+                ...state.userpage
+            }
+        };
+        newpage.userpage[action.name] = userPageReducer(newpage.userpage[action.name], action);
+        return newpage;
+    }
+
     return state;
 }

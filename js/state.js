@@ -1,3 +1,12 @@
+// This file contains the initial states used for setting up the state in redux
+
+export const UserPageInitialState = {
+    // whether currently editing the user
+    editing: false,
+    // Whether the user card is expanded
+    expanded: false
+};
+
 const InitialState = {
 
     // navigation is displayed in the app's main nmenu
@@ -41,3 +50,11 @@ const InitialState = {
 };
 
 export default InitialState;
+
+// get the user page from the state - the state might not have this
+// particular page initialized, meaning that it wasn't acted upon
+export function getUserState(user, state) {
+    return (state.app.userpage[user] !== undefined
+        ? state.app.userpage[user]
+        : UserPageInitialState);
+}
