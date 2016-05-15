@@ -55,7 +55,7 @@ class UserCard extends Component {
                 </CardHeader>
                 <CardText expandable={true}>
                     {this.props.editing
-                        ? (<UserEdit user={this.props.user}/>)
+                        ? (<UserEdit user={this.props.user} onCancelClick={() => this.props.onEditClick(false)}/>)
                         : (<UserView user={this.props.user}/>)}
                 </CardText>
             </Card>

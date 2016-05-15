@@ -45,3 +45,8 @@ npm run watch
 ```
 
 NOTE: npm scripts must be run in the `site/app` directory to work correctly.
+
+
+### Tools
+
+The frontend app is built with react-redux. In order to help with debugging, you should download the [Redux DevTools Extension](https://github.com/zalmoxisus/redux-devtools-extension), and add `?debug_session=1` to the end of your URL, so that you can persist the state between app code modifications.

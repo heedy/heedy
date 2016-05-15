@@ -8,6 +8,25 @@ export const UserPageInitialState = {
 };
 
 const InitialState = {
+    // roles represents the possible permissions allowed by ConnectorDB.
+    // Note that the values given here correspond to the default ConnectorDB settings.
+    // One can change ConnectorDB to have a different permissions structure, which would
+    // make these values inconsistent with ConnectorDB.... so don't do that
+    roles: {
+        user: {
+            user: {
+                description: "can read/edit own devices and read public users/devices"
+            },
+            admin: {
+                description: "has administrative access to the database"
+            }
+        },
+        device: {
+            user: {
+                description: "has all permissions that the owning user has"
+            }
+        }
+    },
 
     // navigation is displayed in the app's main nmenu
     navigation: [
