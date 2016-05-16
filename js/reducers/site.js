@@ -47,6 +47,10 @@ const InitialState = {
     // from the context on app load
     siteURL: "",
 
+    // The status message to show in the snack bar
+    status: "",
+    statusvisible: false
+
 };
 
 export default function siteReducer(state = InitialState, action) {
@@ -65,6 +69,17 @@ export default function siteReducer(state = InitialState, action) {
                 out.navigation[i].page = out.navigation[i].page.replace("{self}", out.thisUser.name);
             }
             return out;
+        case 'STATUS_HIDE':
+            return {
+                ...state,
+                statusvisible: false
+            };
+        case 'SHOW_STATUS':
+            return {
+                ...state,
+                statusvisible: true,
+                status: action.value
+            }
     }
     return state
 }

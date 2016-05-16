@@ -136,6 +136,51 @@ class Storage {
         });
     }
 
+    del(path) {
+        console.log("delete: " + path);
+        let p = path.split("/");
+        switch (p.length) {
+            case 1:
+                var v = this.cdb.deleteUser(p[0]);
+                break;
+            case 2:
+                var v = this.cdb.deleteDevice(p[0], p[1]);
+                break;
+            case 3:
+                var v = this.cdb.deleteStream(p[0], p[1], p[2]);
+                break;
+        }
+        return v.then((result) => {
+            return this.store.removeItem(path).then(() => {
+                // remove from hotstore
+                delete this.hotstore[path];
+
+                return result;
+            });
+        });
+    }
+    update(path, structure) {
+        console.log("update: " + path);
+        let p = path.split("/");
+        switch (p.length) {
+            case 1:
+                var v = this.cdb.updateUser(p[0], structure);
+                break;
+            case 2:
+                var v = this.cdb.updateDevice(p[0], p[1], structure);
+                break;
+            case 3:
+                var v = this.cdb.updateStream(p[0], p[1], p[2], structure);
+                break;
+        }
+        return v.then((result) => {
+            if (result.ref === undefined) {
+                this.set(path, result);
+            }
+            return result;
+        });
+    }
+
 }
 var storage = new Storage();
 

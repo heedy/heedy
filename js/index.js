@@ -20,6 +20,9 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 // http://stackoverflow.com/a/34015469/988941
 injectTapEventPlugin();
 
+// Can always use some help!
+console.log("Hi! You can follow along in the source code at https://github.com/connectordb/connectordb-frontend - and perhaps you can help out?");
+
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
 // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
 let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory));
@@ -39,7 +42,7 @@ let history = syncHistoryWithStore(browserHistory, store);
 export function run(context) {
     // add the context to storage
     storage.addContext(context);
-
+    // add context to state
     store.dispatch({type: 'LOAD_CONTEXT', value: context});
 
     render((

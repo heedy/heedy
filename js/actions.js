@@ -22,3 +22,8 @@ export function editCancel(type, uname, dname, sname) {
 export function go(loc) {
     return push("/" + loc);
 }
+
+// Show a message in the snack bar
+export function showMessage(msg) {
+    return {type: 'SHOW_STATUS', value: msg};
+}

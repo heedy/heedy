@@ -1,7 +1,8 @@
 import React, {Component, PropTypes} from 'react';
+import {connect} from 'react-redux';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import {Card, CardText} from 'material-ui/Card';
+import Snackbar from 'material-ui/Snackbar';
 
 import {spacing} from 'material-ui/styles';
 import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
@@ -70,10 +71,13 @@ class Theme extends Component {
                             {this.props.children}
                         </div>
                     </div>
+                    <Snackbar autoHideDuration={4000} message={this.props.message} open={this.props.showmsg} onRequestClose={this.props.onMsgClose}/>
                 </div>
             </MuiThemeProvider>
         );
     }
 }
 
-export default withWidth()(Theme);
+export default connect((state) => ({message: state.site.status, showmsg: state.site.statusvisible}), (dispatch) => ({
+    onMsgClose: () => dispatch({type: 'STATUS_HIDE'})
+}))(withWidth()(Theme));

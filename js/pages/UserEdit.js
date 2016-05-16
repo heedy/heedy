@@ -1,14 +1,18 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
-import {editCancel} from '../actions';
+import {editCancel, go, showMessage} from '../actions';
 
+import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import Checkbox from 'material-ui/Checkbox';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import Avatar from 'material-ui/Avatar';
+import Snackbar from 'material-ui/Snackbar';
+
+import storage from '../storage';
 
 class UserEdit extends Component {
     static propTypes = {
@@ -22,9 +26,69 @@ class UserEdit extends Component {
         descriptionChange: PropTypes.func.isRequired,
         roleChange: PropTypes.func.isRequired,
         passwordChange: PropTypes.func.isRequired,
-        password2Change: PropTypes.func.isRequired
+        password2Change: PropTypes.func.isRequired,
+        onDelete: PropTypes.func.isRequired,
+        onSave: PropTypes.func.isRequired
     }
+    constructor(props) {
+        super(props);
+        this.state = {
+            dialogopen: false,
+            message: ""
+        };
+    }
+    dialogDelete() {
+        // Delete the user
+        this.setState({dialogopen: false, message: "Deleting user..."});
+        storage.del(this.props.user.name).then((result) => {
+            if (result == "ok")
+                this.props.onDelete();
+            else {
+                this.setState({message: result.msg});
+            }
 
+        }).catch((err) => {
+            console.log(err);
+            this.setState({message: "Failed to delete user"});
+        });
+    }
+    save() {
+        let state = Object.assign({}, this.props.state);
+        if (state.password !== undefined) {
+            if (state.password != state.password2) {
+                this.setState({message: "Passwords do not match"});
+                return;
+            }
+            if (state.password == "") {
+                delete state.password;
+
+            }
+            delete state.password2;
+        }
+
+        // Now delete any state values that match current values
+        for (var key in Object.keys(state)) {
+            if (this.props.user[key] !== undefined) {
+                if (this.props.user[key] == state[key]) {
+                    delete state[key];
+                }
+            }
+        }
+        this.setState({message: "Updating user..."});
+
+        // Finally, update the user
+        storage.update(this.props.user.name, state).then((result) => {
+            if (result.ref === undefined) {
+                this.props.onSave();
+                return;
+            }
+            this.setState({message: result.msg});
+        }).catch((err) => {
+            console.log(err);
+            this.setState({message: "Failed to update user"});
+        });
+
+    }
     render() {
         let user = this.props.user;
         let edits = this.props.state;
@@ -82,14 +146,18 @@ class UserEdit extends Component {
                     <div style={{
                         paddingTop: "20px"
                     }}>
-                        <FlatButton primary={true} label="Save"/>
+                        <FlatButton primary={true} label="Save" onTouchTap={() => this.save()}/>
                         <FlatButton label=" Cancel" onTouchTap={this.props.onCancelClick}/>
                         <FlatButton label="Delete" style={{
                             color: "red",
                             float: "right"
-                        }}/>
+                        }} onTouchTap={() => this.setState({dialogopen: true})}/>
                     </div>
                 </CardText>
+                <Dialog title="Delete User" actions={[(<FlatButton label="Cancel" onTouchTap={() => this.setState({dialogopen: false})} keyboardFocused={true}/>), (<FlatButton label="Delete" onTouchTap={() => this.dialogDelete()}/>)]} modal={false} open={this.state.dialogopen}>
+                    Are you sure you want to delete the user "{user.name}"?
+                </Dialog>
+                <Snackbar open={this.state.message != ""} message={this.state.message}/>
             </Card>
         );
     }
@@ -104,5 +172,13 @@ export default connect((store) => ({roles: store.site.roles.user}), (dispatch, p
     roleChange: (e, role) => dispatch({type: "USER_EDIT_ROLE", uname: props.user.name, value: role}),
     publicChange: (e, val) => dispatch({type: "USER_EDIT_PUBLIC", uname: props.user.name, value: val}),
     emailChange: (e, val) => dispatch({type: "USER_EDIT_EMAIL", uname: props.user.name, value: val}),
-    onCancelClick: () => dispatch(editCancel("USER", props.user.name))
+    onCancelClick: () => dispatch(editCancel("USER", props.user.name)),
+    onSave: () => {
+        dispatch(showMessage("Updated User"));
+        dispatch(editCancel("USER", props.user.name));
+    },
+    onDelete: () => {
+        dispatch(showMessage("User Deleted"));
+        dispatch(go(""));
+    }
 }))(UserEdit);
