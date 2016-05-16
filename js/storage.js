@@ -9,6 +9,7 @@
 import {ConnectorDB} from 'connectordb';
 
 import localforage from 'localforage';
+import startsWith from 'localforage-startswith';
 
 class Storage {
     constructor() {
@@ -110,6 +111,47 @@ class Storage {
             // If a result is returned, add to cache
             this.set(path, result);
             return result;
+        });
+    }
+    // lsquery
+    query_ls(path) {
+        console.log("query_ls: " + path);
+        let p = path.split("/");
+        switch (p.length) {
+            case 1:
+                var v = this.cdb.listDevices(p[0]);
+                break;
+            case 2:
+                var v = this.cdb.listStreams(p[0], p[1]);
+                break;
+        }
+        return v.then((result) => {
+            // If the query was successful, add all of the devices to cache
+            if (result.ref === undefined) {
+                for (let i = 0; i < result.length; i++) {
+                    this.set(path + "/" + result[i].name, result[i]);
+                }
+            }
+
+            return result;
+        });
+    }
+
+    ls(path) {
+        console.log("ls " + path);
+        // for some reason, startsWith can't handle paths ending with '/', so to work around it, we query
+        // all that start with the name, and then remove the ones that are not relevant
+        // TODO: fix this...
+
+        return this.store.startsWith(path).then((result) => {
+            var ret = [];
+            Object.keys(result).forEach((key) => {
+                if (key.startsWith(path + "/")) {
+                    ret.push(result[key]);
+                }
+            });
+
+            return ret;
         });
     }
 
