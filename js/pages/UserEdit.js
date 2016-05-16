@@ -67,13 +67,13 @@ class UserEdit extends Component {
         }
 
         // Now delete any state values that match current values
-        for (var key in Object.keys(state)) {
+        Object.keys(state).forEach((key) => {
             if (this.props.user[key] !== undefined) {
                 if (this.props.user[key] == state[key]) {
                     delete state[key];
                 }
             }
-        }
+        });
         this.setState({message: "Updating user..."});
 
         // Finally, update the user

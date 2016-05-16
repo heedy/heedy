@@ -160,7 +160,7 @@ class Storage {
         });
     }
     update(path, structure) {
-        console.log("update: " + path);
+        console.log("update: " + path, structure);
         let p = path.split("/");
         switch (p.length) {
             case 1:
