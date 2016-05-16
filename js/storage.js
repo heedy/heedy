@@ -30,9 +30,7 @@ class Storage {
     // Just in case we want to log out - this clears all of the storage so that no data is left over
     clear() {
         console.log("Clearing storage...");
-        return this.store.clear().then(() => {
-            return this.queryqueue.clear()
-        });
+        return this.store.clear();
     }
 
     // addContext adds the data returned with the page context when it is initially requested

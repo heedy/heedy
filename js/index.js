@@ -7,7 +7,7 @@ import thunk from 'redux-thunk'
 import {Router, Route, browserHistory} from 'react-router';
 import {syncHistoryWithStore, routerReducer, routerMiddleware} from 'react-router-redux';
 
-import reducer from './reducer';
+import {reducers} from './reducers/index';
 import App from './App';
 import {showPage} from './actions';
 import storage from './storage';
@@ -27,7 +27,10 @@ let finalCreateStore = compose(appMiddleware, window.devToolsExtension
     ? window.devToolsExtension()
     : f => f)(createStore);
 
-export var store = finalCreateStore(combineReducers({app: reducer, routing: routerReducer}));
+export var store = finalCreateStore(combineReducers({
+    ...reducers,
+    routing: routerReducer
+}));
 
 // Set up the history through react-router-redux
 let history = syncHistoryWithStore(browserHistory, store);

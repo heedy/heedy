@@ -99,7 +99,7 @@ class Navigation extends React.Component {
     }
 }
 
-export default connect((state) => ({links: state.app.navigation}), (dispatch) => ({
+export default connect((state) => ({links: state.site.navigation}), (dispatch) => ({
     onClick: (e, id) => {
         dispatch(push(id));
     }

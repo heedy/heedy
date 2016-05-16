@@ -5,7 +5,7 @@ import {Router, Route, IndexRoute, browserHistory} from 'react-router'
 
 import Theme from './Theme';
 
-import Main from './Main';
+import MainPage from './MainPage';
 import User from './User';
 import Device from './Device';
 import Stream from './Stream';
@@ -19,7 +19,7 @@ class App extends Component {
         return (
             <Router history={this.props.history}>
                 <Route path="/" component={Theme}>
-                    <IndexRoute component={Main}/>
+                    <IndexRoute component={MainPage}/>
                     <Route path="/logout" component={Logout}/>
                     <Route path="/:user" component={User}/>
                     <Route path="/:user/:device" component={Device}/>

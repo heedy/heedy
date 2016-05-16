@@ -33,6 +33,11 @@ const styles = {
         marginRight: "auto",
         marginLeft: "auto",
         maxWidth: "80%"
+    },
+    mainStyleFullWidth: {
+        marginTop: "20px",
+        marginRight: "10px",
+        marginLeft: "10px"
     }
 };
 
@@ -59,7 +64,9 @@ class Theme extends Component {
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>
-                        <div style={styles.mainStyle}>
+                        <div style={isNavigationDocked
+                            ? styles.mainStyle
+                            : styles.mainStyleFullWidth}>
                             {this.props.children}
                         </div>
                     </div>
