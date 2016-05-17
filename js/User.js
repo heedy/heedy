@@ -14,6 +14,7 @@ import DeviceCreate from './pages/DeviceCreate';
 class User extends Component {
     static propTypes = {
         user: PropTypes.object,
+        devarray: PropTypes.object,
         error: PropTypes.object,
         location: PropTypes.object.isRequired,
         state: PropTypes.object
@@ -23,7 +24,7 @@ class User extends Component {
         if (this.props.error != null) {
             return (<Error err={this.props.error}/>);
         }
-        if (this.props.user == null) {
+        if (this.props.user == null || this.props.devarray == null) {
             // Currently querying
             return (<Loading/>);
         }
@@ -37,11 +38,11 @@ class User extends Component {
 
         }
 
-        return (<UserView user={this.props.user} state={this.props.state.view}/>);
+        return (<UserView user={this.props.user} state={this.props.state.view} devarray={this.props.devarray}/>);
     }
 }
 export default connectStorage(connect((store, props) => ({
     state: getUserState((props.user != null
         ? props.user.name
         : ""), store)
-}))(User));
+}))(User), true, false);

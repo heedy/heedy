@@ -9,7 +9,8 @@
 import {ConnectorDB} from 'connectordb';
 
 import localforage from 'localforage';
-import startsWith from 'localforage-startswith';
+import 'localforage-startswith';
+import 'localforage-setitems';
 
 class Storage {
     constructor() {
@@ -91,6 +92,25 @@ class Storage {
         });
     }
 
+    setmany(obj) {
+        Object.keys(obj).forEach((key) => {
+            obj[key].timestamp = Date.now();
+        });
+        this.hotstore = Object.assign(this.hotstore, obj);
+        console.log("Inserting multiple: ", obj);
+        this.store.setItems(obj).then(() => {
+            Object.keys(obj).forEach((key) => {
+                delete this.hotstore[key];
+
+                for (let id in this.callbacks) {
+                    this.callbacks[id](key, obj[key]);
+                }
+            });
+        }).catch(function(err) {
+            console.log(err);
+        });
+    }
+
     // query gets the most recent value of the given path directly from the ConnectorDB server.
     // this allows using new values, bypassing the cache completely
     query(path) {
@@ -126,14 +146,16 @@ class Storage {
                 break;
         }
         return v.then((result) => {
+            let res = {};
             // If the query was successful, add all of the devices to cache
             if (result.ref === undefined) {
                 for (let i = 0; i < result.length; i++) {
-                    this.set(path + "/" + result[i].name, result[i]);
+                    res[path + "/" + result[i].name] = result[i];
                 }
             }
+            this.setmany(res);
 
-            return result;
+            return res;
         });
     }
 
@@ -144,14 +166,13 @@ class Storage {
         // TODO: fix this...
 
         return this.store.startsWith(path).then((result) => {
-            var ret = [];
             Object.keys(result).forEach((key) => {
-                if (key.startsWith(path + "/")) {
-                    ret.push(result[key]);
+                if (!key.startsWith(path + "/")) {
+                    delete result[key];
                 }
             });
-
-            return ret;
+            console.log("ls cache:", result);
+            return result;
         });
     }
 

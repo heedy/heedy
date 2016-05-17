@@ -6,7 +6,7 @@ import storage from './storage';
 
 const NoQueryIfWithinMilliseconds = 1000;
 
-export default function connectStorage(Component) {
+export default function connectStorage(Component, lsdev, lsstream) {
     return React.createClass({
         propTypes: {
             user: PropTypes.string,
@@ -18,9 +18,9 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.user !== undefined) 
+            if (props.user !== undefined)
                 return props.user;
-            if (props.params.user !== undefined) 
+            if (props.params.user !== undefined)
                 return props.params.user;
             return "";
         },
@@ -28,9 +28,9 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.device !== undefined) 
+            if (props.device !== undefined)
                 return props.device;
-            if (props.params.device !== undefined) 
+            if (props.params.device !== undefined)
                 return props.params.device;
             return "";
         },
@@ -38,17 +38,24 @@ export default function connectStorage(Component) {
             if (props === undefined) {
                 props = this.props;
             }
-            if (props.stream !== undefined) 
+            if (props.stream !== undefined)
                 return props.stream;
-            if (props.params.stream !== undefined) 
+            if (props.params.stream !== undefined)
                 return props.params.stream;
             return "";
         },
         getInitialState: function() {
-            return {user: null, device: null, stream: null, error: null};
+            return {
+                user: null,
+                device: null,
+                stream: null,
+                error: null,
+                devarray: null,
+                streamarray: null
+            };
         },
         getData: function(nextProps) {
-            let thisUser = this.getUser(nextProps);
+            var thisUser = this.getUser(nextProps);
             // Get the user/device/stream from cache - this allows the app to feel fast in
             // slow internet, and enables working in offline mode
             storage.get(thisUser).then((response) => {
@@ -68,7 +75,7 @@ export default function connectStorage(Component) {
                 storage.query(thisUser).catch((err) => console.log(err));
             });
             if (this.getDevice(nextProps) != "") {
-                let thisDevice = thisUser + "/" + this.getDevice(nextProps);
+                var thisDevice = thisUser + "/" + this.getDevice(nextProps);
                 storage.get(thisDevice).then((response) => {
                     if (response != null) {
                         if (response.ref !== undefined) {
@@ -85,7 +92,7 @@ export default function connectStorage(Component) {
                     storage.query(thisDevice).catch((err) => console.log(err));
                 });
                 if (this.getStream(nextProps) != "") {
-                    let thisStream = thisDevice + "/" + this.getStream(nextProps);
+                    var thisStream = thisDevice + "/" + this.getStream(nextProps);
                     storage.get(thisStream).then((response) => {
                         if (response != null) {
                             if (response.ref !== undefined) {
@@ -102,6 +109,20 @@ export default function connectStorage(Component) {
                         storage.query(thisStream).catch((err) => console.log(err));
                     });
                 }
+
+            }
+            //Whether or not to add lists of children
+            if (lsdev) {
+                storage.ls(thisUser).then((response) => {
+                    if (response.ref !== undefined) {
+                        this.setState({error: response});
+                    } else {
+                        this.setState({devarray: response});
+
+                    }
+                    // The query will be caught by the callback
+                    storage.query_ls(thisUser).catch((err) => console.log(err));
+                })
             }
         },
         componentWillMount: function() {
@@ -129,6 +150,26 @@ export default function connectStorage(Component) {
                     } else {
                         this.setState({stream: obj});
                     }
+                } else if ((lsdev || lsstream) && obj.ref === undefined && path.startsWith(this.getUser() + "/")) {
+                    // We might want to update our arrays
+                    let p = path.split("/");
+                    switch (p.length) {
+                        case 2:
+                            if (lsdev) {
+                                let ndevarray = Object.assign({}, this.state.devarray);
+                                ndevarray[path] = obj;
+                                this.setState({devarray: ndevarray});
+                            }
+                            break;
+                        case 3:
+                            if (p[1] == this.getDevice() && lsstream) {
+
+                                let nsarray = Object.assign({}, this.state.streamarray);
+                                nsarray[path] = obj;
+                                this.setState({streamarray: nsarray});
+                            }
+                            break;
+                    }
                 }
             });
             this.getData(this.props);
@@ -138,13 +179,20 @@ export default function connectStorage(Component) {
         },
         componentWillReceiveProps(nextProps) {
             if (this.getUser() != this.getUser(nextProps) || this.getDevice() != this.getDevice(nextProps) || this.getStream() != this.getStream(nextProps)) {
-                this.setState({user: null, device: null, stream: null, error: null});
+                this.setState({
+                    user: null,
+                    device: null,
+                    stream: null,
+                    devarray: null,
+                    streamarray: null,
+                    error: null
+                });
 
                 this.getData(nextProps);
             }
         },
         render: function() {
-            return (<Component {...this.props} user={this.state.user} device={this.state.device} stream={this.state.stream} error={this.state.error}/>);
+            return (<Component {...this.props} user={this.state.user} device={this.state.device} stream={this.state.stream} error={this.state.error} devarray={this.state.devarray} streamarray={this.state.streamarray}/>);
         }
     });
 }
