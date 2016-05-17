@@ -9,10 +9,10 @@ import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import Checkbox from 'material-ui/Checkbox';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
-import Avatar from 'material-ui/Avatar';
 import Snackbar from 'material-ui/Snackbar';
 
 import storage from '../storage';
+import AvatarIcon from '../components/AvatarIcon';
 
 class UserEdit extends Component {
     static propTypes = {
@@ -103,7 +103,12 @@ class UserEdit extends Component {
             <Card style={{
                 textAlign: "left"
             }}>
-                <CardHeader title={nickname} subtitle={user.name} avatar={< Avatar > U < /Avatar>}/>
+                <CardHeader title={nickname} subtitle={user.name} avatar={< AvatarIcon name = {
+                    user.name
+                }
+                iconsrc = {
+                    user.icon
+                } />}/>
                 <CardText>
                     <TextField hintText="Nickname" floatingLabelText="Nickname" value={edits.nickname !== undefined
                         ? edits.nickname
