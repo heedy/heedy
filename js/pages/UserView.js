@@ -14,17 +14,15 @@ import {Card, CardText, CardHeader} from 'material-ui/Card';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import ReactMarkdown from 'react-markdown';
-import {List, ListItem} from 'material-ui/List';
+
 import Subheader from 'material-ui/Subheader';
-import Divider from 'material-ui/Divider';
-import Avatar from 'material-ui/Avatar';
 
 import storage from '../storage';
 import {go} from '../actions';
 import TimeDifference from '../components/TimeDifference';
 import AvatarIcon from '../components/AvatarIcon';
 
-import '../util';
+import ObjectList from '../components/ObjectList';
 
 class UserView extends Component {
 
@@ -114,32 +112,10 @@ class UserView extends Component {
                 <Subheader style={{
                     marginTop: "20px"
                 }}>Devices</Subheader>
-                <Card style={{
+                <ObjectList style={{
                     marginTop: "10px",
                     textAlign: "left"
-                }}>
-
-                    <List>
-                        {Object.keys(this.props.devarray).map((key) => {
-                            let dev = this.props.devarray[key];
-                            return (
-                                <div key={key}>
-                                    <ListItem primaryText={dev.nickname != ""
-                                        ? dev.nickname
-                                        : dev.name.capitalizeFirstLetter()} secondaryText={dev.description} leftAvatar={< AvatarIcon name = {
-                                        dev.name
-                                    }
-                                    iconsrc = {
-                                        dev.icon
-                                    } />}/>
-                                    <Divider inset={true}/>
-
-                                </div>
-                            );
-                        })}
-                        <ListItem primaryText={"Add Device"} secondaryText={"Create a new device"} leftAvatar={< Avatar icon = { < FontIcon className = "material-icons" > add < /FontIcon>} / >}/>
-                    </List>
-                </Card>
+                }} objects={this.props.devarray} addName="device"/>
             </div>
         );
     }
@@ -147,5 +123,5 @@ class UserView extends Component {
 
 export default connect(undefined, (dispatch, props) => ({
     onEditClick: () => dispatch(go(props.user.name + "#edit")),
-    onExpandClick: (val) => dispatch({type: 'USER_VIEW_EXPANDED', uname: props.user.name, value: val})
+    onExpandClick: (val) => dispatch({type: 'USER_VIEW_EXPANDED', name: props.user.name, value: val})
 }))(UserView);

@@ -5,3 +5,12 @@
 String.prototype.capitalizeFirstLetter = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
+
+
+export function setTitle(txt) {
+    if (txt == "" || txt === undefined || txt === null) {
+        document.title = "ConnectorDB";
+    } else {
+        document.title = txt + " - ConnectorDB";
+    }
+}

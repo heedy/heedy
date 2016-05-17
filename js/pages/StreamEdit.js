@@ -1,12 +1,12 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
-class DeviceCreate extends Component {
+class StreamEdit extends Component {
     render() {
         return (
-            <div>DeviceCreate</div>
+            <div>StreamEdit</div>
         );
     }
 }
 
-export default DeviceCreate;
+export default StreamEdit;

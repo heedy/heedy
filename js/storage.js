@@ -6,6 +6,8 @@
 // Also, while technically users/devices/streams can be held in redux state, I decided to have storage with its own callback
 // architecture, since the storage can have a lot of stuff cached - way too much for redux to handle.
 
+// TODO: This code should be cleaned up a bit...
+
 import {ConnectorDB} from 'connectordb';
 
 import localforage from 'localforage';
@@ -17,8 +19,15 @@ class Storage {
         // Since we are logged in with cookie, the ConnectorDB js client does not need other authentication
         this.cdb = new ConnectorDB(undefined, undefined, SiteURL, true);
 
-        // the cache where user/device/stream objects are stored
+        // the cache where user/device/stream objects are stored.
+
+        // TODO: Unfortunately, there need to be 2 instances of the storage, one for stream and one for user/device
+        // because localForage does not have good support for SELECT WHERE type clauses. We can only use startsWith,
+        // and that would return a user's devices, and all the devices' streams - when we only want a user's devices.
+        // to avoid this, we simply split into two storage areas - one for users/devices and the other for streams
         this.store = localforage.createInstance({name: "cdb_cache"});
+        this.streams = localforage.createInstance({name: "cdb_cache_stream"});
+
         // hotstore contains the user/device/streams that are currently being inserted into the store.
         // I ran into problems with store not containing objects that are being inserted in the background.
         // this fixes the issue by making objects available from a "hot" store until store contains them.
@@ -32,26 +41,28 @@ class Storage {
     // Just in case we want to log out - this clears all of the storage so that no data is left over
     clear() {
         console.log("Clearing storage...");
-        return this.store.clear();
+        return Promise.all([this.store.clear(), this.streams.clear()]);
     }
 
     // addContext adds the data returned with the page context when it is initially requested
     addContext(context) {
+        let inserter = {}
         if (context.ThisUser != null) {
-            this.set(context.ThisUser.name, context.ThisUser);
+            inserter[context.ThisUser.name] = context.ThisUser;
         }
         if (context.ThisDevice != null) {
-            this.set(context.ThisUser.name + "/" + context.ThisDevice.name, context.ThisDevice);
+            inserter[context.ThisUser.name + "/" + context.ThisDevice.name] = context.ThisDevice;
         }
-        if (context.User != null && context.ThisUser.name != context.User.name) {
-            this.set(context.User.name, context.User);
+        if (context.User != null) {
+            inserter[context.User.name] = context.User;
         }
-        if (context.Device != null && !(context.ThisUser.name == context.User.name && context.ThisDevice.name == context.Device.name)) {
-            this.set(context.User.name + "/" + context.Device.name, context.Device);
+        if (context.Device != null) {
+            inserter[context.User.name + "/" + context.Device.name] = context.Device;
         }
         if (context.Stream != null) {
-            this.set(context.User.name + "/" + context.Device.name + "/" + context.Stream.name, context.Stream);
+            inserter[context.User.name + "/" + context.Device.name + "/" + context.Stream.name] = context.Stream;
         }
+        this.setmany(inserter);
     }
 
     // set sets the given object at the given path. It also adds a timestamp
@@ -63,9 +74,14 @@ class Storage {
         }
         this.hotstore[path] = newval;
 
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 3
+            ? this.streams
+            : this.store);
+
         if (obj.ref !== undefined) {
             console.log("Removing from cache: " + path);
-            this.store.removeItem(path).then(() => {
+            store.removeItem(path).then(() => {
                 // remove from hotstore
                 delete this.hotstore[path];
 
@@ -78,7 +94,7 @@ class Storage {
         }
 
         console.log("Updating cache: " + path, newval);
-        this.store.setItem(path, newval).then(() => {
+        store.setItem(path, newval).then(() => {
 
             // remove from hotstore
             delete this.hotstore[path];
@@ -93,22 +109,50 @@ class Storage {
     }
 
     setmany(obj) {
+        console.log("Inserting multiple: ", obj);
+        // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
+        // and the other for streams.
+
+        let streams = {};
         Object.keys(obj).forEach((key) => {
             obj[key].timestamp = Date.now();
-        });
-        this.hotstore = Object.assign(this.hotstore, obj);
-        console.log("Inserting multiple: ", obj);
-        this.store.setItems(obj).then(() => {
-            Object.keys(obj).forEach((key) => {
-                delete this.hotstore[key];
 
-                for (let id in this.callbacks) {
-                    this.callbacks[id](key, obj[key]);
-                }
-            });
-        }).catch(function(err) {
-            console.log(err);
+            // We need to deal with storing in two places
+            if (key.split("/").length == 3) {
+                streams[key] = obj[key];
+                delete obj[key];
+            }
+
         });
+        this.hotstore = Object.assign(this.hotstore, obj, streams);
+
+        if (Object.keys(obj).length > 0) {
+            this.store.setItems(obj).then(() => {
+                Object.keys(obj).forEach((key) => {
+                    delete this.hotstore[key];
+
+                    for (let id in this.callbacks) {
+                        this.callbacks[id](key, obj[key]);
+                    }
+                });
+            }).catch(function(err) {
+                console.log(err);
+            });
+        }
+        if (Object.keys(streams).length > 0) {
+            this.streams.setItems(streams).then(() => {
+                Object.keys(streams).forEach((key) => {
+                    delete this.hotstore[key];
+
+                    for (let id in this.callbacks) {
+                        this.callbacks[id](key, streams[key]);
+                    }
+                });
+            }).catch(function(err) {
+                console.log(err);
+            });
+        }
+
     }
 
     // query gets the most recent value of the given path directly from the ConnectorDB server.
@@ -165,7 +209,12 @@ class Storage {
         // all that start with the name, and then remove the ones that are not relevant
         // TODO: fix this...
 
-        return this.store.startsWith(path).then((result) => {
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 2
+            ? this.streams
+            : this.store);
+
+        return store.startsWith(path).then((result) => {
             Object.keys(result).forEach((key) => {
                 if (!key.startsWith(path + "/")) {
                     delete result[key];
@@ -185,11 +234,16 @@ class Storage {
 
     // get returns the given object if it is in the local storage
     get(path) {
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 3
+            ? this.streams
+            : this.store);
+
         if (this.hotstore[path] !== undefined) {
             console.log("In hot cache: " + path);
             return Promise.resolve(this.hotstore[path]);
         }
-        return this.store.getItem(path).then(function(value) {
+        return store.getItem(path).then(function(value) {
             if (value != null) {
                 console.log("Cache hit: " + path, value);
             } else {

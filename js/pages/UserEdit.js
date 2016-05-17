@@ -165,13 +165,13 @@ class UserEdit extends Component {
 
 // It would be horrible to have all of these actions upstream - so we do them here.
 export default connect((store) => ({roles: store.site.roles.user}), (dispatch, props) => ({
-    nicknameChange: (e, txt) => dispatch({type: "USER_EDIT_NICKNAME", uname: props.user.name, value: txt}),
-    descriptionChange: (e, txt) => dispatch({type: "USER_EDIT_DESCRIPTION", uname: props.user.name, value: txt}),
-    passwordChange: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD", uname: props.user.name, value: txt}),
-    password2Change: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD2", uname: props.user.name, value: txt}),
-    roleChange: (e, role) => dispatch({type: "USER_EDIT_ROLE", uname: props.user.name, value: role}),
-    publicChange: (e, val) => dispatch({type: "USER_EDIT_PUBLIC", uname: props.user.name, value: val}),
-    emailChange: (e, val) => dispatch({type: "USER_EDIT_EMAIL", uname: props.user.name, value: val}),
+    nicknameChange: (e, txt) => dispatch({type: "USER_EDIT_NICKNAME", name: props.user.name, value: txt}),
+    descriptionChange: (e, txt) => dispatch({type: "USER_EDIT_DESCRIPTION", name: props.user.name, value: txt}),
+    passwordChange: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD", name: props.user.name, value: txt}),
+    password2Change: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD2", name: props.user.name, value: txt}),
+    roleChange: (e, role) => dispatch({type: "USER_EDIT_ROLE", name: props.user.name, value: role}),
+    publicChange: (e, val) => dispatch({type: "USER_EDIT_PUBLIC", name: props.user.name, value: val}),
+    emailChange: (e, val) => dispatch({type: "USER_EDIT_EMAIL", name: props.user.name, value: val}),
     onCancelClick: () => dispatch(editCancel("USER", props.user.name)),
     onSave: () => {
         dispatch(showMessage("Updated User"));

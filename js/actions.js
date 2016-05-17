@@ -7,13 +7,11 @@ export function setSearchText(text) {
 }
 
 // cancels an edit - and moves out of the edit screen
-export function editCancel(type, uname, dname, sname) {
+export function editCancel(type, path) {
     return (dispatch) => {
         dispatch({
             type: type + "_EDIT_CLEAR",
-            uname: uname,
-            dname: dname,
-            sname: sname
+            name: path
         });
         dispatch(goBack());
     }

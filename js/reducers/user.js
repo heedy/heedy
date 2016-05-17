@@ -26,21 +26,21 @@ export default function userReducer(state = InitialState, action) {
     };
 
     // If the user already has a state, copy the next level, otherwise, initialize the next level
-    if (state[action.uname] !== undefined) {
-        newState[action.uname] = {
-            ...state[action.uname]
+    if (state[action.name] !== undefined) {
+        newState[action.name] = {
+            ...state[action.name]
         }
     } else {
-        newState[action.uname] = Object.assign({}, UserInitialState);
+        newState[action.name] = Object.assign({}, UserInitialState);
     }
 
     // Now route to the appropriate reducer
     if (action.type.startsWith("USER_EDIT_"))
-        newState[action.uname].edit = userEditReducer(newState[action.uname].edit, action);
+        newState[action.name].edit = userEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("USER_VIEW_"))
-        newState[action.uname].view = userViewReducer(newState[action.uname].view, action);
+        newState[action.name].view = userViewReducer(newState[action.name].view, action);
     if (action.type.startsWith("USER_CREATEDEVICE_"))
-        newState[action.uname].create = deviceCreateReducer(newState[action.uname].create, action);
+        newState[action.name].create = deviceCreateReducer(newState[action.name].create, action);
 
     return newState;
 }

@@ -1,6 +1,10 @@
 // connectStorage performs the necessary work to connect the given params to actual user/device/stream
 // values. Ie, <ConnectStorage user="test"><User /></ConnectStorage> will give the value of user test
 // to the User component.
+
+// TODO: I cry when I see code like this. What makes it all the more horrible is that *I* am
+//  the person who wrote it... This really needs to be refactored... - dkumor
+
 import React, {Component, PropTypes} from 'react';
 import storage from './storage';
 
@@ -122,6 +126,18 @@ export default function connectStorage(Component, lsdev, lsstream) {
                     }
                     // The query will be caught by the callback
                     storage.query_ls(thisUser).catch((err) => console.log(err));
+                })
+            }
+            if (lsstream) {
+                storage.ls(thisDevice).then((response) => {
+                    if (response.ref !== undefined) {
+                        this.setState({error: response});
+                    } else {
+                        this.setState({streamarray: response});
+
+                    }
+                    // The query will be caught by the callback
+                    storage.query_ls(thisDevice).catch((err) => console.log(err));
                 })
             }
         },

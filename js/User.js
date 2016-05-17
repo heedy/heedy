@@ -11,6 +11,14 @@ import UserView from './pages/UserView';
 import UserEdit from './pages/UserEdit';
 import DeviceCreate from './pages/DeviceCreate';
 
+import {setTitle} from './util';
+
+function setUserTitle(user) {
+    setTitle(user == null
+        ? ""
+        : user.name);
+}
+
 class User extends Component {
     static propTypes = {
         user: PropTypes.object,
@@ -19,7 +27,14 @@ class User extends Component {
         location: PropTypes.object.isRequired,
         state: PropTypes.object
     };
-
+    componentDidMount() {
+        setUserTitle(this.props.user);
+    }
+    componentWillReceiveProps(newProps) {
+        if (newProps.user !== this.props.user) {
+            setUserTitle(newProps.user);
+        }
+    }
     render() {
         if (this.props.error != null) {
             return (<Error err={this.props.error}/>);
