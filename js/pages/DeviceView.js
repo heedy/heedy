@@ -2,9 +2,17 @@ import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
 import Subheader from 'material-ui/Subheader';
+import {
+    Table,
+    TableBody,
+    TableHeader,
+    TableHeaderColumn,
+    TableRow,
+    TableRowColumn
+} from 'material-ui/Table';
 
 import {go} from '../actions';
-
+import TimeDifference from '../components/TimeDifference';
 import ObjectCard from '../components/ObjectCard';
 import ObjectList from '../components/ObjectList';
 
@@ -28,7 +36,43 @@ class DeviceView extends Component {
             <div>
                 <ObjectCard expanded={state.expanded} onEditClick={this.props.onEditClick} onExpandClick={this.props.onExpandClick} style={{
                     textAlign: "left"
-                }} object={device} path={user.name + "/" + device.name}></ObjectCard>
+                }} object={device} path={user.name + "/" + device.name}>
+                    <Table selectable={false}>
+                        <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
+                            <TableRow>
+                                <TableHeaderColumn>Enabled</TableHeaderColumn>
+                                <TableHeaderColumn>Public</TableHeaderColumn>
+                                <TableHeaderColumn>Role</TableHeaderColumn>
+                                <TableHeaderColumn>Queried</TableHeaderColumn>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody displayRowCheckbox={false}>
+                            <TableRow>
+                                <TableRowColumn>{device.enabled
+                                        ? "true"
+                                        : "false"}</TableRowColumn>
+                                <TableRowColumn>{device.public
+                                        ? "true"
+                                        : "false"}</TableRowColumn>
+                                <TableRowColumn>{device.role}</TableRowColumn>
+                                <TableRowColumn><TimeDifference timestamp={device.timestamp}/></TableRowColumn>
+                            </TableRow>
+                        </TableBody>
+                    </Table >
+                    {device.apikey != ""
+                        ? (
+                            <div style={{
+                                marginTop: "20px",
+                                textAlign: "center",
+                                color: "rgba(0, 0, 0, 0.541176)"
+                            }}>
+                                <h4>API Key</h4>
+                                <p>{device.apikey}</p>
+                            </div>
+                        )
+                        : null}
+
+                </ObjectCard>
                 <Subheader style={{
                     marginTop: "20px"
                 }}>Streams</Subheader>

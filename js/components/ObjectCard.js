@@ -13,7 +13,8 @@ import IconButton from 'material-ui/IconButton';
 import storage from '../storage';
 
 import AvatarIcon from './AvatarIcon';
-import TimeDifference from './TimeDifference';
+
+import '../util';
 
 class ObjectCard extends Component {
     static propTypes = {
@@ -27,10 +28,11 @@ class ObjectCard extends Component {
 
     render() {
         let obj = this.props.object;
-        let nickname = obj.name;
+        let nickname = obj.name.capitalizeFirstLetter();
         if (obj.nickname !== undefined && obj.nickname != "") {
             nickname = obj.nickname;
         }
+        let showedit = (obj['user_editable'] === undefined || obj['user_editable']);
         return (
             <Card style={this.props.style} onExpandChange={this.props.onExpandClick} expanded={this.props.expanded}>
                 <CardHeader title={nickname} subtitle={this.props.path} showExpandableButton={true} avatar={< AvatarIcon name = {
@@ -46,11 +48,16 @@ class ObjectCard extends Component {
                                 marginRight: 35,
                                 marginTop: "-5px"
                             }}>
-                                <IconButton onTouchTap={() => this.props.onEditClick(true)} tooltip="edit">
-                                    <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                                        edit
-                                    </FontIcon>
-                                </IconButton>
+                                {showedit
+                                    ? (
+                                        <IconButton onTouchTap={() => this.props.onEditClick(true)} tooltip="edit">
+                                            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                                                edit
+                                            </FontIcon>
+                                        </IconButton>
+                                    )
+                                    : null}
+
                                 <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="reload">
                                     <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                         refresh
