@@ -84,34 +84,32 @@ class Storage {
             store.removeItem(path).then(() => {
                 // remove from hotstore
                 delete this.hotstore[path];
-
-                // Run all callbacks
-                for (let id in this.callbacks) {
-                    this.callbacks[id](path, newval);
-                }
             });
-            return;
+        } else {
+            console.log("Updating cache: " + path, newval);
+            store.setItem(path, newval).then(() => {
+                // remove from hotstore
+                delete this.hotstore[path];
+
+            }).catch(function(err) {
+                console.log(err);
+            });
         }
 
-        console.log("Updating cache: " + path, newval);
-        store.setItem(path, newval).then(() => {
-
-            // remove from hotstore
-            delete this.hotstore[path];
-
-            // Run all callbacks
-            for (let id in this.callbacks) {
-                this.callbacks[id](path, newval);
-            }
-        }).catch(function(err) {
-            console.log(err);
-        });
+        // Run all callbacks
+        for (let id in this.callbacks) {
+            this.callbacks[id](path, newval);
+        }
+        return;
     }
 
     setmany(obj) {
         console.log("Inserting multiple: ", obj);
         // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
         // and the other for streams.
+
+        if (obj.ref !== undefined) 
+            return;
 
         let streams = {};
         Object.keys(obj).forEach((key) => {
@@ -130,26 +128,29 @@ class Storage {
             this.store.setItems(obj).then(() => {
                 Object.keys(obj).forEach((key) => {
                     delete this.hotstore[key];
-
-                    for (let id in this.callbacks) {
-                        this.callbacks[id](key, obj[key]);
-                    }
                 });
             }).catch(function(err) {
                 console.log(err);
+            });
+
+            Object.keys(obj).forEach((key) => {
+                for (let id in this.callbacks) {
+                    this.callbacks[id](key, obj[key]);
+                }
             });
         }
         if (Object.keys(streams).length > 0) {
             this.streams.setItems(streams).then(() => {
                 Object.keys(streams).forEach((key) => {
                     delete this.hotstore[key];
-
-                    for (let id in this.callbacks) {
-                        this.callbacks[id](key, streams[key]);
-                    }
                 });
             }).catch(function(err) {
                 console.log(err);
+            });
+            Object.keys(streams).forEach((key) => {
+                for (let id in this.callbacks) {
+                    this.callbacks[id](key, streams[key]);
+                }
             });
         }
 

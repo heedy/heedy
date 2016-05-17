@@ -148,25 +148,28 @@ export default function connectStorage(Component, lsdev, lsstream) {
             // Add the callback for storage
             storage.addCallback(this.callbackID, (path, obj) => {
                 // If the current user/device/stream was updated, update the view
-                if (path == this.getUser()) {
+                let thisUser = this.getUser();
+                let thisDevice = thisUser + "/" + this.getDevice();
+                let thisStream = thisDevice + "/" + this.getStream();
+                if (path == thisUser) {
                     if (obj.ref !== undefined) {
                         this.setState({error: obj});
                     } else {
                         this.setState({user: obj});
                     }
-                } else if (path == this.getDevice()) {
+                } else if (path == thisDevice) {
                     if (obj.ref !== undefined) {
                         this.setState({error: obj});
                     } else {
                         this.setState({device: obj});
                     }
-                } else if (path == this.getStream()) {
+                } else if (path == thisStream) {
                     if (obj.ref !== undefined) {
                         this.setState({error: obj});
                     } else {
                         this.setState({stream: obj});
                     }
-                } else if ((lsdev || lsstream) && obj.ref === undefined && path.startsWith(this.getUser() + "/")) {
+                } else if ((lsdev || lsstream) && obj.ref === undefined && path.startsWith(thisUser + "/")) {
                     // We might want to update our arrays
                     let p = path.split("/");
                     switch (p.length) {
