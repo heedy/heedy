@@ -1,5 +1,5 @@
 export const UserViewInitialState = {
-    expanded: false
+    expanded: true
 };
 
 export default function userViewReducer(state, action) {

@@ -14,28 +14,39 @@ const InitialState = {
         },
         device: {
             user: {
-                description: "has all permissions that the owning user has"
+                description: "has all permissions that the owning user has (Create/Read/Update/Delete)"
+            },
+            writer: {
+                description: "can read and update basic properties of streams and devices"
+            },
+            reader: {
+                description: "can read properties of streams and devices, and read their data"
+            },
+            none: {
+                description: "the device is isolated - it only has access to itself and its own streams"
             }
         }
     },
 
     // navigation is displayed in the app's main nmenu
-    navigation: [{
-        title: "Progress Log",
-        subtitle: "Manually insert data",
-        icon: "star",
-        page: "/"
-    }, {
-        title: "Profile",
-        subtitle: "View your devices",
-        icon: "face",
-        page: "/{self}"
-    }, {
-        title: "Log Out",
-        subtitle: "Exit your session",
-        icon: "power_settings_new",
-        page: "/logout"
-    }],
+    navigation: [
+        {
+            title: "Progress Log",
+            subtitle: "Manually insert data",
+            icon: "star",
+            page: "/"
+        }, {
+            title: "Profile",
+            subtitle: "View your devices",
+            icon: "face",
+            page: "/{self}"
+        }, {
+            title: "Log Out",
+            subtitle: "Exit your session",
+            icon: "power_settings_new",
+            page: "/logout"
+        }
+    ],
 
     // The currently logged in user and device. This is set up immediately on app start.
     // even before the app is rendered. Note that these are NOT updated along with

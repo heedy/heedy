@@ -34,11 +34,17 @@ export default function deviceEditReducer(state, action) {
                 ...state,
                 public: action.value
             };
-        case 'DEVICE_EDIT_EMAIL':
-            return {
-                ...state,
-                email: action.value
+        case 'DEVICE_EDIT_APIKEY':
+            // The API key can be set or reset
+            let newval = {
+                ...state
             };
+            if (action.value) {
+                newval.apikey = "";
+            } else {
+                delete newval.apikey;
+            }
+            return newval
     }
     return state;
 }

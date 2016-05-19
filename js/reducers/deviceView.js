@@ -1,5 +1,5 @@
 export const DeviceViewInitialState = {
-    expanded: false
+    expanded: true
 };
 
 export default function deviceViewReducer(state, action) {
