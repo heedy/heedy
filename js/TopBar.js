@@ -35,7 +35,11 @@ class TopBar extends Component {
             <Toolbar style={{
                 height: `${spacing.desktopKeylineIncrement}px`,
                 background: "#009e42",
-                boxShadow: "0px 2px 5px #888888"
+                boxShadow: "0px 2px 5px #888888",
+                position: "fixed",
+                width: "100%",
+                top: "0px",
+                zIndex: 999
             }} zDepth={50}>
                 {this.props.navDocked
                     ? null

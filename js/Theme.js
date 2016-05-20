@@ -32,13 +32,13 @@ const styles = {
         paddingBottom: "20px"
     },
     mainStyle: {
-        marginTop: "20px",
+        marginTop: `${spacing.desktopKeylineIncrement + 20}px`,
         marginRight: "auto",
         marginLeft: "auto",
         maxWidth: "80%"
     },
     mainStyleFullWidth: {
-        marginTop: "20px",
+        marginTop: `${spacing.desktopKeylineIncrement + 20}px`,
         marginRight: "10px",
         marginLeft: "10px"
     }
