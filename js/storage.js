@@ -269,12 +269,11 @@ class Storage {
                 break;
         }
         return v.then((result) => {
-            return this.store.removeItem(path).then(() => {
-                // remove from hotstore
-                delete this.hotstore[path];
+            delete this.hotstore[path];
+            this.store.removeItem(path);
+            this.streams.removeItem(path);
 
-                return result;
-            });
+            return result;
         });
     }
     update(path, structure) {

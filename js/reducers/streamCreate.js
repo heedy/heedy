@@ -2,7 +2,7 @@ export const StreamCreateInitialState = {
     name: "",
     nickname: "",
     description: "",
-    schema: "",
+    schema: '{"type": "number"}',
     downlink: false,
     ephemeral: false,
     datatype: ""
