@@ -13,7 +13,60 @@
 
         <link rel="stylesheet" href="{{.SiteURL}}/app/css/normalize.css">
         <link rel="stylesheet" href="{{.SiteURL}}/app/css/main.css">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+        <!--<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        Switching to inline styles, so that the webapp works even with no internet.
+
+        The annoying thing is that it needs to load the fonts from local url, and we don't know the exact url used
+
+The above is taken directly from https://google.github.io/material-design-icons/
+      -->
+<style>
+
+@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+
+
+
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url({{.SiteURL}}/app/MaterialIcons-Regular.eot); /* For IE6-8 */
+  src: local('Material Icons'),
+       local('MaterialIcons-Regular'),
+       url({{.SiteURL}}/app/MaterialIcons-Regular.woff2) format('woff2'),
+       url({{.SiteURL}}/app/MaterialIcons-Regular.woff) format('woff'),
+       url({{.SiteURL}}/app/MaterialIcons-Regular.ttf) format('truetype');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+</style>
+
+
+
         <script src="{{.SiteURL}}/app/js/modernizr-2.8.3.min.js"></script>
     </head>
     <body>
