@@ -4,6 +4,9 @@ import {connect} from 'react-redux';
 import {editCancel, go, deleteObject, saveObject} from '../actions';
 import ObjectEdit from '../components/ObjectEdit';
 
+import DownlinkEditor from '../components/DownlinkEditor';
+import EphemeralEditor from '../components/EphemeralEditor';
+
 class StreamEdit extends Component {
     static propTypes = {
         stream: PropTypes.object.isRequired,
@@ -18,9 +21,16 @@ class StreamEdit extends Component {
     render() {
         let path = this.props.user.name + "/" + this.props.device.name + "/" + this.props.stream.name;
         let edits = this.props.state;
+        let callbacks = this.props.callbacks;
+        let stream = this.props.stream;
         return (
             <ObjectEdit object={this.props.stream} path={path} state={this.props.state} objectLabel={"device"} callbacks={this.props.callbacks} onCancel={this.props.onCancel} onSave={this.props.onSave} onDelete={this.props.onDelete}>
-                Hello
+                <DownlinkEditor value={edits.downlink !== undefined
+                    ? edits.downlink
+                    : stream.downlink} onChange={callbacks.downlinkChange}/>
+                <EphemeralEditor value={edits.ephemeral !== undefined
+                    ? edits.ephemeral
+                    : stream.ephemeral} onChange={callbacks.ephemeralChange}/>
             </ObjectEdit>
         );
     }
@@ -30,7 +40,10 @@ export default connect(undefined, (dispatch, props) => {
     return {
         callbacks: {
             nicknameChange: (e, txt) => dispatch({type: "STREAM_EDIT_NICKNAME", name: name, value: txt}),
-            descriptionChange: (e, txt) => dispatch({type: "STREAM_EDIT_DESCRIPTION", name: name, value: txt})
+            descriptionChange: (e, txt) => dispatch({type: "STREAM_EDIT_DESCRIPTION", name: name, value: txt}),
+            ephemeralChange: (e, txt) => dispatch({type: "STREAM_EDIT_EPHEMERAL", name: name, value: txt}),
+            downlinkChange: (e, txt) => dispatch({type: "STREAM_EDIT_DOWNLINK", name: name, value: txt}),
+            datatypeChange: (e, txt) => dispatch({type: "STREAM_EDIT_DATATYPE", name: name, value: txt})
         },
         onCancel: () => dispatch(editCancel("STREAM", name)),
         onSave: () => dispatch(saveObject("stream", name, props.stream, props.state)),

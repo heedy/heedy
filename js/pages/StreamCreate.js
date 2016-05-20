@@ -5,9 +5,8 @@ import {createCancel, createObject} from '../actions';
 
 import ObjectCreate from '../components/ObjectCreate';
 
-import RoleEditor from '../components/RoleEditor';
-
-import PublicEditor from '../components/PublicEditor';
+import DownlinkEditor from '../components/DownlinkEditor';
+import EphemeralEditor from '../components/EphemeralEditor';
 
 class StreamCreate extends Component {
     static propTypes = {
@@ -22,36 +21,29 @@ class StreamCreate extends Component {
     render() {
         let state = this.props.state;
         let callbacks = this.props.callbacks;
-        return (< ObjectCreate type = "stream" state = {
-            state
-        }
-        callbacks = {
-            callbacks
-        }
-        parentPath = {
-            this.props.user.name + "/" + this.props.device.name
-        }
-        onCancel = {
-            this.props.onCancel
-        }
-        onSave = {
-            this.props.onSave
-        } > < /ObjectCreate >
+        return (
+            <ObjectCreate type="stream" state={state} callbacks={callbacks} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
+                <DownlinkEditor value={state.downlink} onChange={callbacks.downlinkChange}/>
+                <EphemeralEditor value={state.ephemeral} onChange={callbacks.ephemeralChange}/>
+            </ObjectCreate >
 
         );
     }
 }
 
-export default connect((state) => ({
-    roles: state.site.roles.device
-}), (dispatch, props) => {
-    let name = props.user.name+"/"+props.device.name;
- return {
-            callbacks: {
-                nameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NAME", name: name, value: txt}),
-                nicknameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NICKNAME", name: name, value: txt}),
-                descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt})
-            },
-            onCancel: () => dispatch(createCancel("DEVICE", "STREAM", name)),
-            onSave: () => dispatch(createObject("device", "stream", name, props.state))
-        }})(StreamCreate);
+export default connect((state) => ({roles: state.site.roles.device}), (dispatch, props) => {
+    let name = props.user.name + "/" + props.device.name;
+    return {
+        callbacks: {
+            nameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NAME", name: name, value: txt}),
+            nicknameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NICKNAME", name: name, value: txt}),
+            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt}),
+            ephemeralChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_EPHEMERAL", name: name, value: txt}),
+            downlinkChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DOWNLINK", name: name, value: txt}),
+            datatypeChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DATATYPE", name: name, value: txt}),
+            schemaChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_SCHEMA", name: name, value: txt})
+        },
+        onCancel: () => dispatch(createCancel("DEVICE", "STREAM", name)),
+        onSave: () => dispatch(createObject("device", "stream", name, props.state))
+    }
+})(StreamCreate);

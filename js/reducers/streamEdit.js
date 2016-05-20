@@ -14,30 +14,20 @@ export default function streamEditReducer(state, action) {
                 ...state,
                 description: action.value
             };
-        case 'STREAM_EDIT_PASSWORD':
+        case 'STREAM_EDIT_DOWNLINK':
             return {
                 ...state,
-                password: action.value
+                downlink: action.value
             };
-        case 'STREAM_EDIT_PASSWORD2':
+        case 'STREAM_EDIT_EPHEMERAL':
             return {
                 ...state,
-                password2: action.value
+                ephemeral: action.value
             };
-        case 'STREAM_EDIT_ROLE':
+        case 'STREAM_EDIT_DATATYPE':
             return {
                 ...state,
-                role: action.value
-            };
-        case 'STREAM_EDIT_PUBLIC':
-            return {
-                ...state,
-                public: action.value
-            };
-        case 'STREAM_EDIT_EMAIL':
-            return {
-                ...state,
-                email: action.value
+                datatype: action.value
             };
     }
     return state;

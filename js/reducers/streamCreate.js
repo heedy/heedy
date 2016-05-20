@@ -16,6 +16,11 @@ export default function deviceCreateReducer(state, action) {
                 ...state,
                 name: action.value
             };
+        case 'DEVICE_CREATESTREAM_SCHEMA':
+            return {
+                ...state,
+                schema: action.value
+            };
         case 'DEVICE_CREATESTREAM_NICKNAME':
             return {
                 ...state,
@@ -25,6 +30,21 @@ export default function deviceCreateReducer(state, action) {
             return {
                 ...state,
                 description: action.value
+            };
+        case 'DEVICE_CREATESTREAM_DOWNLINK':
+            return {
+                ...state,
+                downlink: action.value
+            };
+        case 'DEVICE_CREATESTREAM_EPHEMERAL':
+            return {
+                ...state,
+                ephemeral: action.value
+            };
+        case 'DEVICE_CREATESTREAM_DATATYPE':
+            return {
+                ...state,
+                datatype: action.value
             };
 
     }
