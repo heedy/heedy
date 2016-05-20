@@ -43,12 +43,25 @@ export function deleteObject(type, path) {
     return (dispatch) => {
         dispatch(showMessage("Deleting " + type + " '" + path + "'..."));
         storage.del(path).then((result) => {
-            if (result == "ok")
+            if (result == "ok") {
                 dispatch(showMessage("Deleted " + type + " '" + path + "'..."));
-            else {
+
+                // After the delete, go to the parent
+                let p = path.split("/");
+                switch (p.length) {
+                    case 1:
+                        dispatch(go(""));
+                        break;
+                    case 2:
+                        dispatch(go(p[0]));
+                        break;
+                    case 3:
+                        dispatch(go(p[0] + "/" + p[1]));
+                        break;
+                }
+            } else {
                 dispatch(showMessage(result.msg));
             }
-
         }).catch((err) => {
             console.log(err);
             dispatch(showMessage("Failed to delete " + type + " '" + path + "''"));
@@ -73,14 +86,14 @@ export function createObject(ftype, type, path, object) {
 
         storage.create(path, object).then((result) => {
             if (result.ref === undefined) {
-                dispatch(showMessage("Created " + type + " '" + path + "'"));
+                dispatch(showMessage("Created " + type + " '" + path + "/" + object.name + "'"));
                 dispatch(createCancel(ftype.toUpperCase(), type.toUpperCase(), path));
                 return;
             }
             dispatch(showMessage(result.msg));
         }).catch((err) => {
             console.log(err);
-            dispatch(showMessage("Failed to create " + type + " '" + path + "''"));
+            dispatch(showMessage("Failed to create " + type + " '" + path + "/" + object.name + "''"));
         });
     }
 

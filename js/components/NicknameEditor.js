@@ -11,7 +11,9 @@ class NicknameEditor extends Component {
     render() {
         return (
             <div>
-                <TextField hintText="Nickname" floatingLabelText="Nickname" value={this.props.value} onChange={this.props.onChange}/><br/>
+                <TextField hintText="Nickname" floatingLabelText="Nickname" style={{
+                    marginTop: "-20px"
+                }} value={this.props.value} onChange={this.props.onChange}/><br/>
             </div>
         );
     }

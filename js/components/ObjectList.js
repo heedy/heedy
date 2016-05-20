@@ -6,6 +6,7 @@ import React, {Component, PropTypes} from 'react';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import {List, ListItem} from 'material-ui/List';
 import FontIcon from 'material-ui/FontIcon';
+import IconButton from 'material-ui/IconButton';
 import Divider from 'material-ui/Divider';
 import Avatar from 'material-ui/Avatar';
 
@@ -47,7 +48,10 @@ class ObjectList extends Component {
                                     obj.icon
                                 } />} rightIcon={obj.public
                                     ? (
-                                        <IconButton tooltip={"public"} disabled={true}>
+                                        <IconButton style={{
+                                            paddingRight: "30px",
+                                            marginTop: "0px"
+                                        }} tooltip={"public"} disabled={true}>
                                             <FontIcon className="material-icons">group</FontIcon>
                                         </IconButton>
                                     )

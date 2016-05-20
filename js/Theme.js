@@ -23,11 +23,13 @@ const styles = {
     container: {
         textAlign: 'center',
         paddingLeft: 256,
-        background: "#F0F0F0"
+        background: "#F0F0F0",
+        paddingBottom: "20px"
     },
     containerFullWidth: {
         textAlign: 'center',
-        background: "#F0F0F0"
+        background: "#F0F0F0",
+        paddingBottom: "20px"
     },
     mainStyle: {
         marginTop: "20px",

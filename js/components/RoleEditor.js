@@ -14,7 +14,9 @@ class RoleEditor extends Component {
             <div>
                 <h3>Role</h3>
                 <p>A {this.props.type}'s role determines the permissions given to operate upon ConnectorDB.</p>
-                <RadioButtonGroup name="role" valueSelected={this.props.role} onChange={this.props.onChange}>
+                <RadioButtonGroup name="role" valueSelected={this.props.role == ""
+                    ? "none"
+                    : this.props.role} onChange={this.props.onChange}>
                     {Object.keys(this.props.roles).map((key) => (<RadioButton value={key} key={key} label={key + " - " + this.props.roles[key].description}/>))}
                 </RadioButtonGroup>
             </div>

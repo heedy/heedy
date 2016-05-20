@@ -3,7 +3,8 @@ export const DeviceCreateInitialState = {
     nickname: "",
     description: "",
     role: "none",
-    public: false
+    public: false,
+    enabled: true
 };
 
 export default function deviceCreateReducer(state, action) {
@@ -34,6 +35,11 @@ export default function deviceCreateReducer(state, action) {
             return {
                 ...state,
                 public: action.value
+            };
+        case 'USER_CREATEDEVICE_ENABLED':
+            return {
+                ...state,
+                enabled: action.value
             };
 
     }

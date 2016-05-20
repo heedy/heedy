@@ -8,6 +8,7 @@ import ObjectEdit from '../components/ObjectEdit';
 import RoleEditor from '../components/RoleEditor';
 
 import PublicEditor from '../components/PublicEditor';
+import EnabledEditor from '../components/EnabledEditor';
 
 class DeviceEdit extends Component {
     static propTypes = {
@@ -29,6 +30,9 @@ class DeviceEdit extends Component {
                 <PublicEditor type="device" public={edits.public !== undefined
                     ? edits.public
                     : device.public} onChange={this.props.callbacks.publicChange}/>
+                <EnabledEditor type="device" value={edits.enabled !== undefined
+                    ? edits.enabled
+                    : device.enabled} onChange={this.props.callbacks.enabledChange}/>
 
                 <h3>API Key</h3>
                 <p>You can check the box below to reset this device's API key</p>
@@ -49,7 +53,8 @@ export default connect((state) => ({roles: state.site.roles.device}), (dispatch,
             descriptionChange: (e, txt) => dispatch({type: "DEVICE_EDIT_DESCRIPTION", name: name, value: txt}),
             roleChange: (e, role) => dispatch({type: "DEVICE_EDIT_ROLE", name: name, value: role}),
             publicChange: (e, val) => dispatch({type: "DEVICE_EDIT_PUBLIC", name: name, value: val}),
-            apikeyChange: (e, val) => dispatch({type: "DEVICE_EDIT_APIKEY", name: name, value: val})
+            apikeyChange: (e, val) => dispatch({type: "DEVICE_EDIT_APIKEY", name: name, value: val}),
+            enabledChange: (e, val) => dispatch({type: "DEVICE_EDIT_ENABLED", name: name, value: val})
         },
         onCancel: () => dispatch(editCancel("DEVICE", name)),
         onSave: () => dispatch(saveObject("device", name, props.device, props.state)),

@@ -45,6 +45,11 @@ export default function deviceEditReducer(state, action) {
                 delete newval.apikey;
             }
             return newval
+        case 'DEVICE_EDIT_ENABLED':
+            return {
+                ...state,
+                enabled: action.value
+            };
     }
     return state;
 }

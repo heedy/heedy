@@ -54,7 +54,9 @@ class DeviceView extends Component {
                                 <TableRowColumn>{device.public
                                         ? "true"
                                         : "false"}</TableRowColumn>
-                                <TableRowColumn>{device.role}</TableRowColumn>
+                                <TableRowColumn>{device.role == ""
+                                        ? "none"
+                                        : device.role}</TableRowColumn>
                                 <TableRowColumn><TimeDifference timestamp={device.timestamp}/></TableRowColumn>
                             </TableRow>
                         </TableBody>
