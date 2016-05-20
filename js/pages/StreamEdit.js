@@ -6,6 +6,7 @@ import ObjectEdit from '../components/ObjectEdit';
 
 import DownlinkEditor from '../components/DownlinkEditor';
 import EphemeralEditor from '../components/EphemeralEditor';
+import DatatypeEditor from '../components/DatatypeEditor';
 
 class StreamEdit extends Component {
     static propTypes = {
@@ -31,6 +32,9 @@ class StreamEdit extends Component {
                 <EphemeralEditor value={edits.ephemeral !== undefined
                     ? edits.ephemeral
                     : stream.ephemeral} onChange={callbacks.ephemeralChange}/>
+                <DatatypeEditor value={edits.datatype !== undefined
+                    ? edits.datatype
+                    : stream.datatype} schema={stream.schema} onChange={callbacks.datatypeChange}/>
             </ObjectEdit>
         );
     }

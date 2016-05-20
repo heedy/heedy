@@ -4,7 +4,8 @@ export const StreamCreateInitialState = {
     description: "",
     schema: "",
     downlink: false,
-    ephemeral: false
+    ephemeral: false,
+    datatype: ""
 };
 
 export default function deviceCreateReducer(state, action) {
