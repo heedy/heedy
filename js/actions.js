@@ -19,6 +19,17 @@ export function editCancel(type, path) {
     }
 }
 
+// cancels a create - and moves out of the create screen
+export function createCancel(type, type2, path) {
+    return (dispatch) => {
+        dispatch({
+            type: type + "_CREATE" + type2 + "_CLEAR",
+            name: path
+        });
+        dispatch(goBack());
+    }
+}
+
 export function go(loc) {
     return push("/" + loc);
 }
@@ -43,6 +54,36 @@ export function deleteObject(type, path) {
             dispatch(showMessage("Failed to delete " + type + " '" + path + "''"));
         });
     }
+}
+
+export function createObject(ftype, type, path, object) {
+    return (dispatch) => {
+        if (object.name == "") {
+            dispatch(showMessage("Must give a name"));
+            return;
+        }
+        if (object.name.toLowerCase() != object.name) {
+            dispatch(showMessage("name must be lowercase"));
+            return;
+        }
+        if (!/^[a-z0-9_]*$/.test(object.name)) {
+            dispatch(showMessage("Name must not contain special characters or spaces"));
+            return;
+        }
+
+        storage.create(path, object).then((result) => {
+            if (result.ref === undefined) {
+                dispatch(showMessage("Created " + type + " '" + path + "'"));
+                dispatch(createCancel(ftype.toUpperCase(), type.toUpperCase(), path));
+                return;
+            }
+            dispatch(showMessage(result.msg));
+        }).catch((err) => {
+            console.log(err);
+            dispatch(showMessage("Failed to create " + type + " '" + path + "''"));
+        });
+    }
+
 }
 
 export function saveObject(type, path, object, changes) {

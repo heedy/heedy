@@ -108,7 +108,7 @@ class Storage {
         // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
         // and the other for streams.
 
-        if (obj.ref !== undefined) 
+        if (obj.ref !== undefined)
             return;
 
         let streams = {};
@@ -281,6 +281,7 @@ class Storage {
         console.log("update: " + path, structure);
         let p = path.split("/");
         switch (p.length) {
+            case 0:
             case 1:
                 var v = this.cdb.updateUser(p[0], structure);
                 break;
@@ -294,6 +295,30 @@ class Storage {
         return v.then((result) => {
             if (result.ref === undefined) {
                 this.set(path, result);
+            }
+            return result;
+        });
+    }
+
+    create(path, structure) {
+        console.log("create: " + path, structure);
+        if (path == "") {
+            var v = this.cdb.createUser(p[0], structure);
+        } else {
+            let p = path.split("/");
+            switch (p.length) {
+                case 1:
+                    var v = this.cdb.createDevice(p[0], structure);
+                    break;
+                case 2:
+                    var v = this.cdb.createStream(p[0], p[1], structure);
+                    break;
+            }
+        }
+
+        return v.then((result) => {
+            if (result.ref === undefined) {
+                this.set(path + "/" + structure.name, result);
             }
             return result;
         });

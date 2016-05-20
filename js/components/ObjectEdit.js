@@ -6,7 +6,6 @@ import React, {Component, PropTypes} from 'react';
 import {Card, CardText, CardHeader, CardActions} from 'material-ui/Card';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
-import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import Checkbox from 'material-ui/Checkbox';
 
@@ -76,7 +75,7 @@ class ObjectEdit extends Component {
                 </CardText>
                 <CardActions>
                     <FlatButton primary={true} label="Save" onTouchTap={() => this.save()}/>
-                    <FlatButton label=" Cancel" onTouchTap={this.props.onCancel}/>
+                    <FlatButton label="Cancel" onTouchTap={this.props.onCancel}/>
                     <FlatButton label="Delete" style={{
                         color: "red",
                         float: "right"

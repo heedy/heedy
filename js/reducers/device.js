@@ -39,7 +39,7 @@ export default function deviceReducer(state = InitialState, action) {
         newState[action.name].edit = deviceEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("DEVICE_VIEW_"))
         newState[action.name].view = deviceViewReducer(newState[action.name].view, action);
-    if (action.type.startsWith("DEVICE_CREATEDEVICE_"))
+    if (action.type.startsWith("DEVICE_CREATESTREAM_")) 
         newState[action.name].create = streamCreateReducer(newState[action.name].create, action);
 
     return newState;
