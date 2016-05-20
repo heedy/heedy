@@ -8,6 +8,7 @@ import ObjectCreate from '../components/ObjectCreate';
 import DownlinkEditor from '../components/DownlinkEditor';
 import EphemeralEditor from '../components/EphemeralEditor';
 import DatatypeEditor from '../components/DatatypeEditor';
+import SchemaEditor from '../components/SchemaEditor';
 
 class StreamCreate extends Component {
     static propTypes = {
@@ -23,7 +24,12 @@ class StreamCreate extends Component {
         let state = this.props.state;
         let callbacks = this.props.callbacks;
         return (
-            <ObjectCreate type="stream" state={state} callbacks={callbacks} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
+            <ObjectCreate type="stream" state={state} callbacks={callbacks} required={< SchemaEditor value = {
+                state.schema
+            }
+            onChange = {
+                callbacks.schemaChange
+            } />} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
                 <DownlinkEditor value={state.downlink} onChange={callbacks.downlinkChange}/>
                 <EphemeralEditor value={state.ephemeral} onChange={callbacks.ephemeralChange}/>
                 <DatatypeEditor value={state.datatype} schema={state.schema} onChange={callbacks.datatypeChange}/>
