@@ -1,5 +1,6 @@
 var webpack = require('webpack');
 var path = require('path');
+require('es6-promise').polyfill();
 
 // Use the ConnectorDB bin directory to output files for easy debugging
 var BUILD_DIR = path.resolve(__dirname, '../../bin/app');
@@ -15,39 +16,37 @@ var config = {
     },
 
     module: {
-        loaders: [{
-            test: /\.jsx?/,
-            include: APP_DIR,
-            loader: 'babel'
-        }, {
-            test: /\.json$/,
-            loader: 'json'
-        }, {
-            test: /\.css$/,
-            loader: "style-loader!css-loader"
-        }, ]
+        loaders: [
+            {
+                test: /\.jsx?/,
+                include: APP_DIR,
+                loader: 'babel'
+            }, {
+                test: /\.json$/,
+                loader: 'json'
+            }, {
+                test: /\.css$/,
+                loader: "style-loader!css-loader"
+            }
+        ]
     },
 
     plugins: [
         new webpack.optimize.OccurenceOrderPlugin(),
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify(env)
-        })
+        new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify(env)})
     ]
 };
 
 if (env === 'production') {
-    config.plugins.push(
-        new webpack.optimize.UglifyJsPlugin({
-            compressor: {
-                pure_getters: true,
-                unsafe: true,
-                unsafe_comps: true,
-                screw_ie8: true,
-                warnings: false
-            }
-        })
-    )
+    config.plugins.push(new webpack.optimize.UglifyJsPlugin({
+        compressor: {
+            pure_getters: true,
+            unsafe: true,
+            unsafe_comps: true,
+            screw_ie8: true,
+            warnings: false
+        }
+    }))
 }
 
 module.exports = config;
