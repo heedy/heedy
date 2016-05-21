@@ -7,7 +7,7 @@ package dbutil
 import (
 	"database/sql"
 
-	"github.com/josephlewis42/sqlx"
+	"github.com/jmoiron/sqlx"
 )
 
 type SqlxMixin struct {

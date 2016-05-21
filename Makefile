@@ -42,7 +42,7 @@ go-dependencies:
 	# databases
 	$(GO) get -u github.com/lib/pq
 	$(GO) get -u github.com/connectordb/duck
-	$(GO) get -u github.com/josephlewis42/sqlx # our own so we don't depend on someone who claims the library will change in the future
+	$(GO) get -u github.com/jmoiron/sqlx
 
 	# utilities
 	$(GO) get -u github.com/xeipuuv/gojsonschema
