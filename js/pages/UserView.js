@@ -27,7 +27,8 @@ class UserView extends Component {
         onEditClick: PropTypes.func.isRequired,
         onExpandClick: PropTypes.func.isRequired,
         onAddClick: PropTypes.func.isRequired,
-        onDeviceClick: PropTypes.func.isRequired
+        onDeviceClick: PropTypes.func.isRequired,
+        onHiddenClick: PropTypes.func.isRequired
     }
 
     render() {
@@ -47,9 +48,7 @@ class UserView extends Component {
                 <ObjectCard expanded={state.expanded} onEditClick={this.props.onEditClick} onExpandClick={this.props.onExpandClick} style={{
                     textAlign: "left"
                 }} object={user} path={user.name}>
-                    <Table selectable={false} style={{
-                        width: "100%"
-                    }}>
+                    <Table selectable={false}>
                         <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
                             <TableRow>
                                 <TableHeaderColumn>Email</TableHeaderColumn>
@@ -73,7 +72,7 @@ class UserView extends Component {
                 <Subheader style={{
                     marginTop: "20px"
                 }}>Devices</Subheader>
-                <ObjectList style={{
+                <ObjectList showHidden={state.hidden} onHiddenClick={this.props.onHiddenClick} style={{
                     marginTop: "10px",
                     textAlign: "left"
                 }} objects={this.props.devarray} addName="device" onAddClick={this.props.onAddClick} onSelect={this.props.onDeviceClick}/>
@@ -86,5 +85,6 @@ export default connect(undefined, (dispatch, props) => ({
     onEditClick: () => dispatch(go(props.user.name + "#edit")),
     onExpandClick: (val) => dispatch({type: 'USER_VIEW_EXPANDED', name: props.user.name, value: val}),
     onAddClick: () => dispatch(go(props.user.name + "#create")),
-    onDeviceClick: (dev) => dispatch(go(dev))
+    onDeviceClick: (dev) => dispatch(go(dev)),
+    onHiddenClick: (v) => dispatch({type: 'USER_VIEW_HIDDEN', name: props.user.name, value: v})
 }))(UserView);

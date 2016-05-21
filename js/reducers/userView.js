@@ -1,5 +1,6 @@
 export const UserViewInitialState = {
-    expanded: true
+    expanded: true,
+    hiddel: true
 };
 
 export default function userViewReducer(state, action) {
@@ -8,6 +9,11 @@ export default function userViewReducer(state, action) {
             return {
                 ...state,
                 expanded: action.value
+            }
+        case 'USER_VIEW_HIDDEN':
+            return {
+                ...state,
+                hidden: action.value
             }
     }
     return state;

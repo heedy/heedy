@@ -38,7 +38,6 @@ class StreamView extends Component {
 
         // Check if stream schema is a default one
         let ds = this.props.defaultSchemas;
-        console.log(stream.schema, ds);
         for (let i = 0; i < ds.length; i++) {
             if (stream.schema == JSON.stringify(ds[i].schema)) {
                 var schematext = ds[i].name;

@@ -50,6 +50,11 @@ export default function deviceEditReducer(state, action) {
                 ...state,
                 enabled: action.value
             };
+        case 'DEVICE_EDIT_VISIBLE':
+            return {
+                ...state,
+                visible: action.value
+            };
     }
     return state;
 }

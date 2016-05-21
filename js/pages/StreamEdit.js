@@ -26,15 +26,16 @@ class StreamEdit extends Component {
         let stream = this.props.stream;
         return (
             <ObjectEdit object={this.props.stream} path={path} state={this.props.state} objectLabel={"device"} callbacks={this.props.callbacks} onCancel={this.props.onCancel} onSave={this.props.onSave} onDelete={this.props.onDelete}>
+                <DatatypeEditor value={edits.datatype !== undefined
+                    ? edits.datatype
+                    : stream.datatype} schema={stream.schema} onChange={callbacks.datatypeChange}/>
                 <DownlinkEditor value={edits.downlink !== undefined
                     ? edits.downlink
                     : stream.downlink} onChange={callbacks.downlinkChange}/>
                 <EphemeralEditor value={edits.ephemeral !== undefined
                     ? edits.ephemeral
                     : stream.ephemeral} onChange={callbacks.ephemeralChange}/>
-                <DatatypeEditor value={edits.datatype !== undefined
-                    ? edits.datatype
-                    : stream.datatype} schema={stream.schema} onChange={callbacks.datatypeChange}/>
+
             </ObjectEdit>
         );
     }

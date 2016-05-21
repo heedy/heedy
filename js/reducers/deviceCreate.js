@@ -4,7 +4,8 @@ export const DeviceCreateInitialState = {
     description: "",
     role: "none",
     public: false,
-    enabled: true
+    enabled: true,
+    visible: true
 };
 
 export default function deviceCreateReducer(state, action) {
@@ -40,6 +41,11 @@ export default function deviceCreateReducer(state, action) {
             return {
                 ...state,
                 enabled: action.value
+            };
+        case 'USER_CREATEDEVICE_VISIBLE':
+            return {
+                ...state,
+                visible: action.value
             };
 
     }

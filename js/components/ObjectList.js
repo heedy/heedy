@@ -19,17 +19,24 @@ class ObjectList extends Component {
         addName: PropTypes.string.isRequired,
         onAddClick: PropTypes.func,
         onSelect: PropTypes.func,
-        style: PropTypes.object
+        style: PropTypes.object,
+        showHidden: PropTypes.bool,
+        onHiddenClick: PropTypes.func
     }
 
     static defaultProps = {
         style: {},
         onSelect: () => {},
-        onAddClick: () => {}
+        onAddClick: () => {},
+        showHidden: false,
+        onHiddenClick: () => {
+            console.log("doesnt work")
+        }
     }
 
     render() {
         let addName = this.props.addName;
+        let hashidden = false;
         return (
             <Card style={this.props.style}>
                 <List>
@@ -38,6 +45,10 @@ class ObjectList extends Component {
                         let primaryText = (obj.nickname != ""
                             ? obj.nickname
                             : obj.name.capitalizeFirstLetter());
+                        if (obj.visible == false && !this.props.showHidden) {
+                            hashidden = true;
+                            return null;
+                        }
 
                         return (
                             <div key={key}>
@@ -60,8 +71,23 @@ class ObjectList extends Component {
                             </div>
                         );
                     })}
+
                     <ListItem primaryText={"Add " + addName.capitalizeFirstLetter()} secondaryText={"Create a new " + addName} onTouchTap={this.props.onAddClick} leftAvatar={< Avatar icon = { < FontIcon className = "material-icons" > add < /FontIcon>} / >}/>
                 </List>
+                {hashidden
+                    ? (
+                        <IconButton onTouchTap={() => {
+                            console.log("click");
+                            this.props.onHiddenClick(true)
+                        }} tooltip="show hidden" style={{
+                            float: "right"
+                        }}>
+                            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                                more_vert
+                            </FontIcon>
+                        </IconButton>
+                    )
+                    : null}
             </Card >
         );
     }
