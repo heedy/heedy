@@ -115,8 +115,38 @@ func (db *Database) DeleteUserByID(userID int64) error {
 		return err
 	}
 
+	userDeviceID := int64(-1)
+	metaDeviceID := int64(-1)
 	for i := range devices {
-		err := db.DeleteDeviceByID(devices[i].DeviceID)
+		if devices[i].Name == "meta" {
+			metaDeviceID = devices[i].DeviceID
+		} else if devices[i].Name == "user" {
+			userDeviceID = devices[i].DeviceID
+		} else {
+			err := db.DeleteDeviceByID(devices[i].DeviceID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Now manually delete the user and meta device if exist
+	if userDeviceID != -1 {
+		err = db.Userdb.DeleteDevice(userDeviceID)
+		if err != nil {
+			return err
+		}
+		err = db.DataStream.DeleteDevice(userDeviceID)
+		if err != nil {
+			return err
+		}
+	}
+	if metaDeviceID != -1 {
+		err = db.Userdb.DeleteDevice(metaDeviceID)
+		if err != nil {
+			return err
+		}
+		err = db.DataStream.DeleteDevice(metaDeviceID)
 		if err != nil {
 			return err
 		}
