@@ -39,7 +39,7 @@ type APIHandler func(o *authoperator.AuthOperator, writer http.ResponseWriter, r
 //WriteAccessControlHeaders writes the access control headers for the site
 func WriteAccessControlHeaders(writer http.ResponseWriter, request *http.Request) {
 	originheader := request.Header.Get("Origin")
-	if originheader == "" || originheader == SiteName {
+	if !AllowCrossOrigin || originheader == "" || originheader == SiteName {
 		//Only permit cookies if we are coming from our own origin
 		writer.Header().Set("Access-Control-Allow-Origin", originheader)
 		writer.Header().Set("Access-Control-Allow-Credentials", "true")

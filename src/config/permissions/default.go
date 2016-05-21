@@ -46,7 +46,7 @@ var Default = Permissions{
 			JoinRole:            "user",
 			JoinDisabledMessage: "You must be logged in as admin to add users",
 
-			CanBePrivate: false,
+			CanBePrivate: true,
 
 			// ... Not bad
 			DeviceRole: DeviceRole{
@@ -212,7 +212,7 @@ var Default = Permissions{
 			UserDescription:                 true,
 			UserIcon:                        true,
 			UserRole:                        false,
-			UserPublic:                      false,
+			UserPublic:                      true,
 			UserPassword:                    false,
 			DeviceName:                      true,
 			DeviceNickname:                  true,

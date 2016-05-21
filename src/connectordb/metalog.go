@@ -44,7 +44,10 @@ func AddMetaLog(userID int64, o operator.Operator) (MetaLog, error) {
 func (m MetaLog) checkcreate(path string) error {
 	_, err := m.AdminOperator().ReadStream(path)
 	if err != nil {
-		return m.AdminOperator().CreateStream(path, &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}`}})
+		return m.AdminOperator().CreateStream(path, &users.StreamMaker{Stream: users.Stream{
+			Description: "A log of all create update and delete operations done on this user",
+			Schema:      `{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}`,
+		}})
 
 	}
 	return nil

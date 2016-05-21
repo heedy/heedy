@@ -123,10 +123,11 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 			Description,
 			Icon,
 			Nickname,
-			Enabled
+			Enabled,
+			Role
 		)
-			VALUES (?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
-		d.Description, d.Icon, d.Nickname, d.Enabled)
+			VALUES (?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
+		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
 		return errors.New("Device with this name already exists")

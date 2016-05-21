@@ -140,7 +140,18 @@ func (db *Database) UpdateDeviceByID(deviceID int64, updates map[string]interfac
 
 // DeleteDeviceByID deletes the given device
 func (db *Database) DeleteDeviceByID(deviceID int64) error {
-	err := db.Userdb.DeleteDevice(deviceID)
+
+	d, err := db.ReadDeviceByID(deviceID)
+	if err != nil {
+		return err
+	}
+
+	// Disallow deleting the meta and user devices - they must always exist
+	if d.Name == "user" || d.Name == "meta" {
+		return errors.New(d.Name + " device cannot be deleted")
+	}
+
+	err = db.Userdb.DeleteDevice(deviceID)
 	if err == nil {
 		err = db.DataStream.DeleteDevice(deviceID)
 	}
