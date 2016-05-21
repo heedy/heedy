@@ -47,7 +47,9 @@ class UserView extends Component {
                 <ObjectCard expanded={state.expanded} onEditClick={this.props.onEditClick} onExpandClick={this.props.onExpandClick} style={{
                     textAlign: "left"
                 }} object={user} path={user.name}>
-                    <Table selectable={false}>
+                    <Table selectable={false} style={{
+                        width: "100%"
+                    }}>
                         <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
                             <TableRow>
                                 <TableHeaderColumn>Email</TableHeaderColumn>

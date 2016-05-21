@@ -27,13 +27,23 @@ class StreamView extends Component {
         stream: PropTypes.object.isRequired,
         state: PropTypes.shape({expanded: PropTypes.bool.isRequired}).isRequired,
         onEditClick: PropTypes.func.isRequired,
-        onExpandClick: PropTypes.func.isRequired
+        onExpandClick: PropTypes.func.isRequired,
+        defaultSchemas: PropTypes.arrayOf(PropTypes.object).isRequired
     }
     render() {
         let state = this.props.state;
         let user = this.props.user;
         let device = this.props.device;
         let stream = this.props.stream;
+
+        // Check if stream schema is a default one
+        let ds = this.props.defaultSchemas;
+        console.log(stream.schema, ds);
+        for (let i = 0; i < ds.length; i++) {
+            if (stream.schema == JSON.stringify(ds[i].schema)) {
+                var schematext = ds[i].name;
+            }
+        }
         return (
             <div>
                 <ObjectCard expanded={state.expanded} onEditClick={this.props.onEditClick} onExpandClick={this.props.onExpandClick} style={{
@@ -61,21 +71,28 @@ class StreamView extends Component {
                             </TableRow>
                         </TableBody>
                     </Table >
+
                     <h4 style={{
                         textAlign: "center"
-                    }}>JSON Schema</h4>
-                    <div style={{
-                        marginLeft: "auto",
-                        marginRight: "auto",
-                        border: "1px solid black",
-                        width: "80%"
-                    }}>
-                        <CodeMirror value={JSON.stringify(JSON.parse(stream.schema), null, 4)} options={{
-                            mode: "application/json",
-                            lineWrapping: true,
-                            readOnly: true
-                        }}/>
-                    </div>
+                    }}>JSON Schema{schematext !== undefined
+                            ? ": " + schematext
+                            : null}</h4>
+                    {schematext !== undefined
+                        ? null
+                        : (
+                            <div style={{
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                                border: "1px solid black",
+                                width: "80%"
+                            }}>
+                                <CodeMirror value={JSON.stringify(JSON.parse(stream.schema), null, 4)} options={{
+                                    mode: "application/json",
+                                    lineWrapping: true,
+                                    readOnly: true
+                                }}/>
+                            </div>
+                        )}
                 </ObjectCard>
 
             </div>
@@ -83,7 +100,7 @@ class StreamView extends Component {
     }
 }
 
-export default connect(undefined, (dispatch, props) => ({
+export default connect((state) => ({defaultSchemas: state.site.defaultschemas}), (dispatch, props) => ({
     onEditClick: () => dispatch(go(props.user.name + "/" + props.device.name + "/" + props.stream.name + "#edit")),
     onExpandClick: (val) => dispatch({
         type: 'STREAM_VIEW_EXPANDED',

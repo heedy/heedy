@@ -11,6 +11,8 @@ class NicknameEditor extends Component {
     render() {
         return (
             <div>
+                <h3>Nickname</h3>
+                <p>An easy to read title for your {this.props.type}</p>
                 <TextField hintText="Nickname" floatingLabelText="Nickname" style={{
                     marginTop: "-20px"
                 }} value={this.props.value} onChange={this.props.onChange}/><br/>

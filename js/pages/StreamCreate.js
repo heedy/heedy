@@ -30,9 +30,9 @@ class StreamCreate extends Component {
             onChange = {
                 callbacks.schemaChange
             } />} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
+                <DatatypeEditor value={state.datatype} schema={state.schema} onChange={callbacks.datatypeChange}/>
                 <DownlinkEditor value={state.downlink} onChange={callbacks.downlinkChange}/>
                 <EphemeralEditor value={state.ephemeral} onChange={callbacks.ephemeralChange}/>
-                <DatatypeEditor value={state.datatype} schema={state.schema} onChange={callbacks.datatypeChange}/>
             </ObjectCreate >
 
         );

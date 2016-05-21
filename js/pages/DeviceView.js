@@ -61,7 +61,7 @@ class DeviceView extends Component {
                             </TableRow>
                         </TableBody>
                     </Table >
-                    {device.apikey != ""
+                    {device.apikey !== undefined && device.apikey != ""
                         ? (
                             <div style={{
                                 marginTop: "20px",

@@ -28,6 +28,32 @@ const InitialState = {
         }
     },
 
+    defaultschemas: [
+        {
+            description: "no schema (can insert anything)",
+            name: "none",
+            schema: {}
+        }, {
+            description: "number",
+            name: "number",
+            schema: {
+                type: "number"
+            }
+        }, {
+            description: "boolean",
+            name: "boolean",
+            schema: {
+                type: "boolean"
+            }
+        }, {
+            description: "string",
+            name: "string",
+            schema: {
+                type: "string"
+            }
+        }
+    ],
+
     // navigation is displayed in the app's main nmenu
     navigation: [
         {
