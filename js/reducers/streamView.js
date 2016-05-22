@@ -1,5 +1,6 @@
 export const StreamViewInitialState = {
-    expanded: false
+    expanded: true,
+    data: []
 };
 
 export default function streamViewReducer(state, action) {

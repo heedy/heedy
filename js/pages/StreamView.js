@@ -19,6 +19,8 @@ import TimeDifference from '../components/TimeDifference';
 import {go} from '../actions';
 
 import ObjectCard from '../components/ObjectCard';
+import DataTable from '../components/DataTable';
+import DataInput from '../components/DataInput';
 
 class StreamView extends Component {
     static propTypes = {
@@ -93,7 +95,25 @@ class StreamView extends Component {
                             </div>
                         )}
                 </ObjectCard>
-
+                <div style={{
+                    marginLeft: "-15px",
+                    marginRight: "-15px"
+                }}>
+                    <div className="col-lg-6">
+                        <DataInput/>
+                    </div>
+                    <div className="col-lg-6">
+                        <DataTable data={[
+                            {
+                                timestamp: 34534,
+                                data: 45
+                            }, {
+                                timestamp: 435345345,
+                                data: 67
+                            }
+                        ]}/>
+                    </div>
+                </div>
             </div>
         );
     }

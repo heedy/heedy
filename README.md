@@ -41,7 +41,7 @@ git pull
 Now you can start live updates to the code, which will automatically be reflected in your ConnectorDB server:
 
 ```
-npm run watch
+npm run dev
 ```
 
 NOTE: npm scripts must be run in the `site/app` directory to work correctly.

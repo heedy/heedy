@@ -1,6 +1,9 @@
 var webpack = require('webpack');
 var path = require('path');
-require('es6-promise').polyfill();
+
+if (Promise === undefined) {
+    require('es6-promise').polyfill();
+}
 
 // Use the ConnectorDB bin directory to output files for easy debugging
 var BUILD_DIR = path.resolve(__dirname, '../../bin/app');
@@ -38,6 +41,7 @@ var config = {
 };
 
 if (env === 'production') {
+    config.plugins.push(new webpack.optimize.DedupePlugin())
     config.plugins.push(new webpack.optimize.UglifyJsPlugin({
         compressor: {
             pure_getters: true,
