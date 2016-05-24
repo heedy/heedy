@@ -21,12 +21,16 @@ class MainToolbar extends Component {
                         marginTop: "-5px",
                         marginLeft: "-100px"
                     }}>
+                        <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="add stream">
+                            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                                add
+                            </FontIcon>
+                        </IconButton>
                         <IconButton onTouchTap={() => this.props.onEditClick(true)} tooltip="add rating">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 star
                             </FontIcon>
                         </IconButton>
-
                         <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="reload">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 refresh

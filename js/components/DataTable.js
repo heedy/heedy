@@ -16,35 +16,37 @@ class DataTable extends Component {
 
     render() {
         return (
-            <Card style={{
-                marginTop: "20px",
-                textAlign: "left"
-            }}>
-                <CardHeader title={"Most Recent Data"}/>
-                <CardText>
-                    <Table selectable={false}>
-                        <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
-                            <TableRow>
-                                <TableHeaderColumn>Timestamp</TableHeaderColumn>
-                                <TableHeaderColumn>Data</TableHeaderColumn>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody displayRowCheckbox={false}>
-                            {this.props.data.map((d) => {
-                                let t = new Date(d.timestamp * 1000);
-                                let ts = t.getHours() + ":" + t.getMinutes() + ":" + t.getSeconds() + " - " + (t.getMonth() + 1) + "/" + t.getDate() + "/" + t.getFullYear();
-                                return (
-                                    <TableRow key={JSON.stringify(d)}>
-                                        <TableRowColumn>{ts}</TableRowColumn>
-                                        <TableRowColumn>{JSON.stringify(d.data)}</TableRowColumn>
-                                    </TableRow>
-                                );
-                            })}
+            <div className="col-lg-6">
+                <Card style={{
+                    marginTop: "20px",
+                    textAlign: "left"
+                }}>
+                    <CardHeader title={"Most Recent Data"}/>
+                    <CardText>
+                        <Table selectable={false}>
+                            <TableHeader enableSelectAll={false} displaySelectAll={false} adjustForCheckbox={false}>
+                                <TableRow>
+                                    <TableHeaderColumn>Timestamp</TableHeaderColumn>
+                                    <TableHeaderColumn>Data</TableHeaderColumn>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody displayRowCheckbox={false}>
+                                {this.props.data.map((d) => {
+                                    let t = new Date(d.timestamp * 1000);
+                                    let ts = t.getHours() + ":" + t.getMinutes() + ":" + t.getSeconds() + " - " + (t.getMonth() + 1) + "/" + t.getDate() + "/" + t.getFullYear();
+                                    return (
+                                        <TableRow key={JSON.stringify(d)}>
+                                            <TableRowColumn>{ts}</TableRowColumn>
+                                            <TableRowColumn>{JSON.stringify(d.data)}</TableRowColumn>
+                                        </TableRow>
+                                    );
+                                })}
 
-                        </TableBody>
-                    </Table >
-                </CardText>
-            </Card>
+                            </TableBody>
+                        </Table >
+                    </CardText>
+                </Card>
+            </div>
         );
     }
 }

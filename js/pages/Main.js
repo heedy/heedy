@@ -6,6 +6,7 @@ import {go} from '../actions';
 import MainToolbar from '../components/MainToolbar';
 
 import Welcome from '../components/Welcome';
+import DataInput from '../components/DataInput';
 
 class DeviceView extends Component {
     static propTypes = {
@@ -28,8 +29,23 @@ class DeviceView extends Component {
             <div style={{
                 textAlign: "left"
             }}>
-                <MainToolbar/>
-                <Welcome/>
+                <MainToolbar/> {streams != null && streams.length == 0
+                    ? (<Welcome/>)
+                    : Object.keys(streams).map((skey) => {
+                        let s = streams[skey];
+                        return (
+                            <div style={{
+                                marginLeft: "-15px",
+                                marginRight: "-15px"
+                            }}>
+                                <DataInput title={s.nickname == ""
+                                    ? s.name
+                                    : s.nickname} subtitle={user.name + "/" + device.name + "/" + s.name} user={user} device={device} stream={s}/>
+
+                            </div>
+                        );
+                    })}
+
             </div>
         );
     }

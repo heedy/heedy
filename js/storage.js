@@ -204,6 +204,14 @@ class Storage {
         });
     }
 
+    qls(path) {
+        // This is a combination of query and ls
+        this.query(path);
+        if (path.split("/").length <= 2) {
+            this.query_ls(path);
+        }
+    }
+
     ls(path) {
         console.log("ls " + path);
         // for some reason, startsWith can't handle paths ending with '/', so to work around it, we query
@@ -321,6 +329,11 @@ class Storage {
             }
             return result;
         });
+    }
+
+    insert(user, device, stream, structure) {
+        console.log("Inserting: " + user + "/" + device + "/" + stream + " data: " + JSON.stringify(structure));
+        return this.cdb.insertStream(user, device, stream, structure);
     }
 
 }

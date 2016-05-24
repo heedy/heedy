@@ -59,7 +59,7 @@ class ObjectCard extends Component {
                                     )
                                     : null}
 
-                                <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="reload">
+                                <IconButton onTouchTap= { () => storage.qls(this.props.path) } tooltip="reload">
                                     <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                         refresh
                                     </FontIcon>

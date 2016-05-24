@@ -145,5 +145,21 @@ export function saveObject(type, path, object, changes) {
             dispatch(showMessage("Failed to save " + type + " '" + path + "''"));
         });
 
-    }
+    };
+}
+
+export function dataInput(user, device, stream, data) {
+    console.log(data);
+    return (dispatch) => {
+        storage.insert(user.name, device.name, stream.name, data).then((result) => {
+            if (result.ref === undefined) {
+                dispatch(showMessage("Inserted: " + JSON.stringify(data)));
+                return;
+            }
+            dispatch(showMessage(result.msg));
+        }).catch((err) => {
+            console.log(err);
+            dispatch(showMessage("Failed to insert:" + err.toString()));
+        });
+    };
 }

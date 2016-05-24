@@ -7,8 +7,9 @@ import Snackbar from 'material-ui/Snackbar';
 import {spacing} from 'material-ui/styles';
 import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
 
-import Navigation from './Navigation'
-import TopBar from './TopBar'
+import Navigation from './Navigation';
+import TopBar from './TopBar';
+import Search from './Search';
 
 // muiTheme represents our color scheme for the material design UI
 const muiTheme = getMuiTheme({
@@ -70,7 +71,7 @@ class Theme extends Component {
                         <div style={isNavigationDocked
                             ? styles.mainStyle
                             : styles.mainStyleFullWidth}>
-                            {this.props.children}
+                            <Search/> {this.props.children}
                         </div>
                     </div>
                     <Snackbar autoHideDuration={4000} message={this.props.message} open={this.props.showmsg} onRequestClose={this.props.onMsgClose}/>
