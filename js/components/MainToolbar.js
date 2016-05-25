@@ -1,6 +1,8 @@
 // MainToolbar is the toolbar shown on the main page, from which you can create new rating streams,
 // and so forth
 import React, {Component, PropTypes} from 'react';
+import {connect} from 'react-redux';
+import {go} from '../actions';
 
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import FontIcon from 'material-ui/FontIcon';
@@ -9,7 +11,10 @@ import IconButton from 'material-ui/IconButton';
 import storage from '../storage';
 
 class MainToolbar extends Component {
-    static propTypes = {}
+    static propTypes = {
+        onAddClick: PropTypes.func.isRequired,
+        onRatingClick: PropTypes.func.isRequired
+    }
 
     render() {
         return (
@@ -21,17 +26,17 @@ class MainToolbar extends Component {
                         marginTop: "-5px",
                         marginLeft: "-100px"
                     }}>
-                        <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="add stream">
+                        <IconButton onTouchTap={this.props.onAddClick} tooltip="add stream">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 add
                             </FontIcon>
                         </IconButton>
-                        <IconButton onTouchTap={() => this.props.onEditClick(true)} tooltip="add rating">
+                        <IconButton onTouchTap={this.props.onRatingClick} tooltip="add rating">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 star
                             </FontIcon>
                         </IconButton>
-                        <IconButton onTouchTap= { () => storage.query(this.props.path) } tooltip="reload">
+                        <IconButton onTouchTap= { () => storage.qls(this.props.user.name+"/"+this.props.device.name) } tooltip="reload">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 refresh
                             </FontIcon>
@@ -43,3 +48,8 @@ class MainToolbar extends Component {
     }
 }
 export default MainToolbar;
+export default connect(undefined, (dispatch, props) => ({
+
+    onAddClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create")),
+    onRatingClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-rating"))
+}))(MainToolbar);

@@ -5,6 +5,7 @@ import {Card, CardText, CardHeader} from 'material-ui/Card';
 import Form from "react-jsonschema-form";
 
 import {dataInput, showMessage} from '../actions';
+import {go} from '../actions';
 
 const log = (type) => console.log.bind(console, type);
 
@@ -12,13 +13,11 @@ const log = (type) => console.log.bind(console, type);
 // we modify the schema
 function generateSchema(s) {
     let uiSchema = {};
-    console.log(s);
     switch (s.type) {
         case "object":
             let k = Object.keys(s.properties);
             for (let i in k) {
                 let key = k[i];
-                console.log(key);
                 let ret = generateSchema(s.properties[key]);
                 uiSchema[key] = ret.ui;
                 s.properties[key] = ret.s;
@@ -71,6 +70,12 @@ class DataInput extends Component {
         title: "Input Data to Downlink",
         subtitle: ""
     }
+
+    touch() {
+        if (this.props.touch !== undefined) {
+            this.props.touch();
+        }
+    }
     render() {
         let user = this.props.user;
         let device = this.props.device;
@@ -83,6 +88,9 @@ class DataInput extends Component {
         if (schema.type === undefined) {
             curschema = noSchema;
         } else if (schema.type != "object") {
+            if (curschema.title === undefined) {
+                curschema.title = "Input Data:"
+            }
             curschema = {
                 type: "object",
                 properties: {
@@ -92,7 +100,6 @@ class DataInput extends Component {
             };
         }
         let s = generateSchema(curschema);
-        console.log(s);
 
         return (
             <div className="col-lg-6">
@@ -100,12 +107,11 @@ class DataInput extends Component {
                     marginTop: "20px",
                     textAlign: "left"
                 }}>
-                    <CardHeader title={this.props.title} subtitle={this.props.subtitle}/>
+                    <CardHeader title={this.props.title} subtitle={this.props.subtitle}>{this.props.children}</CardHeader>
                     <CardText style={{
                         textAlign: "center"
                     }}>
                         <Form schema={s.s} uiSchema={s.ui} onSubmit={(data) => {
-                            console.log(data);
                             if (schema.type === undefined) {
                                 try {
                                     var parsedData = JSON.parse(data.formData.input);
