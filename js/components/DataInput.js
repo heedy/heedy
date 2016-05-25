@@ -8,6 +8,7 @@ import {dataInput, showMessage} from '../actions';
 import {go} from '../actions';
 
 import datatypes from '../datatypes/datatypes';
+import {getStreamState} from '../reducers/stream';
 
 const log = (type) => console.log.bind(console, type);
 
@@ -110,8 +111,18 @@ class DataInput extends Component {
         // Now check if the datatype allows for a custom input method
         if (stream.datatype != "") {
             var d = datatypes[stream.datatype];
-            var DatatypeInput = d.input.component;
-            size = d.input.size * this.props.size;
+            if (d !== undefined) {
+                var DatatypeInput = d.input.component;
+                size = d.input.size * this.props.size;
+            }
+
+        }
+
+        let state = this.props.state;
+        let fdata = {};
+
+        if (d === undefined && state.formData !== undefined) {
+            fdata = state.formData;
         }
 
         return (
@@ -124,8 +135,8 @@ class DataInput extends Component {
                     <CardText style={{
                         textAlign: "center"
                     }}>{DatatypeInput !== undefined && DatatypeInput != null
-                            ? (<DatatypeInput stream={stream} path={path} onSubmit={this.props.onSubmit}/>)
-                            : (<Form schema={s.s} uiSchema={s.ui} onSubmit={(data) => {
+                            ? (<DatatypeInput stream={stream} state={state} onChange={this.props.onChange} path={path} onSubmit={this.props.onSubmit}/>)
+                            : (<Form schema={s.s} uiSchema={s.ui} formData={fdata} onChange={this.props.onChange} onSubmit={(data) => {
                                 if (schema.type === undefined) {
                                     try {
                                         var parsedData = JSON.parse(data.formData.input);
@@ -147,7 +158,14 @@ class DataInput extends Component {
     }
 }
 
-export default connect((state) => ({}), (dispatch, props) => ({
+export default connect((state, props) => ({
+    state: getStreamState(props.user.name + "/" + props.device.name + "/" + props.stream.name, state).input
+}), (dispatch, props) => ({
     onSubmit: (val) => dispatch(dataInput(props.user, props.device, props.stream, val)),
-    showMessage: (val) => dispatch(showMessage(val))
+    showMessage: (val) => dispatch(showMessage(val)),
+    onChange: (v) => dispatch({
+        type: "STREAM_INPUT",
+        name: props.user.name + "/" + props.device.name + "/" + props.stream.name,
+        value: v
+    })
 }))(DataInput);

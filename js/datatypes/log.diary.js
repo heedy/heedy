@@ -2,8 +2,6 @@ import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 import datatypes from './datatypes'
 
-import {getStreamState} from '../reducers/stream';
-
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
@@ -27,29 +25,17 @@ class DataInput extends Component {
             <div>
                 <TextField name={this.props.path} multiLine={true} fullWidth={true} value={value} style={{
                     marginTop: "-20px"
-                }} onChange={this.props.onChange}/><br/>
+                }} onChange={(e, txt) => this.props.onChange({value: txt})}/><br/>
                 <RaisedButton primary={true} label="Submit" onTouchTap={() => this.props.onSubmit(value)}/>
             </div>
         );
     }
 }
 
-let DIConnected = connect((state, props) => ({
-    state: getStreamState(props.path, state).input
-}), (dispatch, props) => ({
-    onChange: (v, txt) => dispatch({
-        type: "STREAM_INPUT",
-        name: props.path,
-        value: {
-            value: txt
-        }
-    })
-}))(DataInput)
-
 // register the datatype
 datatypes["log.diary"] = {
     input: {
-        component: DIConnected,
+        component: DataInput,
         size: 2, // One of 1 or 2 meaning normal or double size of the data input card
     },
     create: {
