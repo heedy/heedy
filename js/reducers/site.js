@@ -63,7 +63,7 @@ const InitialState = {
     // navigation is displayed in the app's main nmenu
     navigation: [
         {
-            title: "Progress Log",
+            title: "Insert",
             subtitle: "Manually insert data",
             icon: "star",
             page: "/"

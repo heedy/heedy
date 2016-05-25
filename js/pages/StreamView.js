@@ -48,15 +48,7 @@ class StreamView extends Component {
                         ? (<DataInput user={user} device={device} stream={stream}/>)
                         : null}
 
-                    <DataTable data={[
-                        {
-                            timestamp: 34534,
-                            data: 45
-                        }, {
-                            timestamp: 435345345,
-                            data: 67
-                        }
-                    ]}/>
+                    <DataTable state={state} user={user} device={device} stream={stream}/>
                 </div>
             </div>
         );

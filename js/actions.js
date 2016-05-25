@@ -149,7 +149,6 @@ export function saveObject(type, path, object, changes) {
 }
 
 export function dataInput(user, device, stream, data) {
-    console.log(data);
     return (dispatch) => {
         storage.insert(user.name, device.name, stream.name, data).then((result) => {
             if (result.ref === undefined) {
@@ -168,4 +167,8 @@ export function dataInput(user, device, stream, data) {
             dispatch(showMessage("Failed to insert:" + err.toString()));
         });
     };
+}
+
+export function query(user, device, stream, state) {
+    return (dispatch) => {}
 }
