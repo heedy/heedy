@@ -148,16 +148,19 @@ export function saveObject(type, path, object, changes) {
     };
 }
 
-export function dataInput(user, device, stream, data) {
+export function dataInput(user, device, stream, data, clearinput) {
     return (dispatch) => {
         storage.insert(user.name, device.name, stream.name, data).then((result) => {
             if (result.ref === undefined) {
-                // Reset the input value
-                dispatch({
-                    type: "STREAM_INPUT",
-                    name: user.name + "/" + device.name + "/" + stream.name,
-                    value: {}
-                });
+                if (clearinput == true) {
+                    // Reset the input value
+                    dispatch({
+                        type: "STREAM_INPUT",
+                        name: user.name + "/" + device.name + "/" + stream.name,
+                        value: {}
+                    });
+                }
+
                 dispatch(showMessage("Inserted: " + JSON.stringify(data).substring(0, 15)));
                 return;
             }

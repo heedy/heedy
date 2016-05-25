@@ -64,6 +64,7 @@ class DataInput extends Component {
         device: PropTypes.object.isRequired,
         stream: PropTypes.object.isRequired,
         onSubmit: PropTypes.func.isRequired,
+        onChange: PropTypes.func.isRequired,
         showMessage: PropTypes.func.isRequired,
         title: PropTypes.string,
         subtitle: PropTypes.string,
@@ -161,11 +162,12 @@ class DataInput extends Component {
 export default connect((state, props) => ({
     state: getStreamState(props.user.name + "/" + props.device.name + "/" + props.stream.name, state).input
 }), (dispatch, props) => ({
-    onSubmit: (val) => dispatch(dataInput(props.user, props.device, props.stream, val)),
+    onSubmit: (val, cng) => dispatch(dataInput(props.user, props.device, props.stream, val, cng)),
     showMessage: (val) => dispatch(showMessage(val)),
     onChange: (v) => dispatch({
         type: "STREAM_INPUT",
         name: props.user.name + "/" + props.device.name + "/" + props.stream.name,
         value: v
     })
+
 }))(DataInput);

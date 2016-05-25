@@ -3,6 +3,8 @@ import {connect} from 'react-redux';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
+
+import FlatButton from 'material-ui/FlatButton';
 import {
     Table,
     TableBody,
@@ -11,6 +13,8 @@ import {
     TableRow,
     TableRowColumn
 } from 'material-ui/Table';
+import TimePicker from 'material-ui/TimePicker';
+import TextField from 'material-ui/TextField';
 
 import {query} from '../actions';
 
@@ -65,7 +69,17 @@ class DataTable extends Component {
                         </div>
                     </CardHeader>
                     <CardText expandable={true}>
-                        <p>Hi there</p>
+                        <TimePicker format="ampm" hintText="Start Time"/>
+                        <TimePicker format="ampm" hintText="End Time"/>
+                        <TextField fullWidth={true} hintText="PipeScript" floatingLabelText="Transform" style={{
+                            marginTop: "-20px"
+                        }} value={state.transform} onChange={(val, txt) => setState({
+                            ...state,
+                            transform: txt
+                        })}/>
+                        <FlatButton style={{
+                            float: "right"
+                        }} primary={true} label="Run Query" onTouchTap={() => this.query(state)}/>
                     </CardText>
                     <CardText>
                         <Table selectable={false}>

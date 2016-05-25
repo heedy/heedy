@@ -1,6 +1,14 @@
 import React, {Component, PropTypes} from 'react';
 import datatypes from './datatypes'
 
+// TEMPORARY HACK: react-star-rating package is outdated on npm with an old react version.
+// github has correct version, which needs to be compiled and stuff, so I just included the
+// compiled files while waiting for an update to npm
+//import StarRating from 'react-star-rating';
+//import 'react-star-rating/dist/css/react-star-rating.min.css';
+import StarRating from './react-star-rating/react-star-rating.min';
+import './react-star-rating/react-star-rating.min.css';
+
 export const ratingSchema = {
     type: "integer",
     minimum: 0,
@@ -20,13 +28,20 @@ class RatingCreate extends Component {
 class DataInput extends Component {
     static propTypes = {
         state: PropTypes.object,
-        onStateChange: PropTypes.func,
+        onChange: PropTypes.func,
         onSubmit: PropTypes.func
     }
     render() {
-        return (
-            <p>Rating!</p>
-        );
+        let value = this.props.state.value;
+        if (value === undefined || value == null)
+            value = 0;
+
+        // rating={value} messes up our ability to set the rating again in current version of react star rating. We therefore can't have it set :(
+        return (<StarRating name={this.props.path} totalStars={10} size={25} onRatingClick={(a, val) => {
+            console.log("Changing value:", val);
+            this.props.onChange({value: val["rating"]});
+            this.props.onSubmit(val["rating"], false);
+        }}/>);
     }
 }
 

@@ -55,10 +55,4 @@ class StreamView extends Component {
     }
 }
 
-export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice}), (dispatch, props) => ({
-    onInputSubmit: (val) => dispatch({
-        type: 'STREAM_INPUT_SUBMIT',
-        name: props.user.name + "/" + props.device.name + "/" + props.stream.name,
-        value: val
-    })
-}))(StreamView);
+export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice}), (dispatch, props) => ({}))(StreamView);

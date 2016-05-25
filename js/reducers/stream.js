@@ -38,7 +38,7 @@ export default function streamReducer(state = InitialState, action) {
         newState[action.name].edit = streamEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("STREAM_VIEW_"))
         newState[action.name].view = streamViewReducer(newState[action.name].view, action);
-    if (action.type = "STREAM_INPUT")
+    if (action.type == "STREAM_INPUT")
         newState[action.name].input = action.value;
     return newState;
 }
