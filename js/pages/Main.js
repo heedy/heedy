@@ -39,7 +39,7 @@ class DeviceView extends Component {
                                 marginLeft: "-15px",
                                 marginRight: "-15px"
                             }} key={s.name}>
-                                <DataInput title={s.nickname == ""
+                                <DataInput size={4} title={s.nickname == ""
                                     ? s.name
                                     : s.nickname} subtitle={path} user={user} device={device} stream={s}>
                                     <div style={{

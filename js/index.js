@@ -12,6 +12,8 @@ import App from './App';
 import {showPage} from './actions';
 import storage from './storage';
 
+import './datatypes/index';
+
 export var cache = storage;
 
 import injectTapEventPlugin from 'react-tap-event-plugin';

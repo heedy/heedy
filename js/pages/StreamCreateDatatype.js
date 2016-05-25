@@ -1,14 +1,15 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
-
-import {createCancel, createObject} from '../actions';
+import Error from '../components/Error';
+import {createCancel, createObject, go} from '../actions';
 
 import ObjectCreate from '../components/ObjectCreate';
 
 import DownlinkEditor from '../components/DownlinkEditor';
 import EphemeralEditor from '../components/EphemeralEditor';
 import DatatypeEditor from '../components/DatatypeEditor';
-import SchemaEditor from '../components/SchemaEditor';
+
+import datatypes from '../datatypes/datatypes';
 
 class StreamCreate extends Component {
     static propTypes = {
@@ -23,11 +24,17 @@ class StreamCreate extends Component {
     render() {
         let state = this.props.state;
         let callbacks = this.props.callbacks;
+        let d = datatypes[this.props.datatype];
+        if (d === undefined) {
+            return (<Error err={{
+                code: 500,
+                ref: "",
+                msg: "Datatype does not exist"
+            }}/>);
+        }
         return (
-            <ObjectCreate type="stream" state={state} callbacks={callbacks} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
-                <DatatypeEditor value={state.datatype} schema={state.schema} onChange={callbacks.datatypeChange}/>
-                <DownlinkEditor value={state.downlink} onChange={callbacks.downlinkChange}/>
-                <EphemeralEditor value={state.ephemeral} onChange={callbacks.ephemeralChange}/>
+            <ObjectCreate type={d.name} header={d.create.description} required={d.create.required} advanced={this.props.onAdvanced} state={state} callbacks={callbacks} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
+                {d.create.optional}
             </ObjectCreate >
 
         );
@@ -40,13 +47,17 @@ export default connect((state) => ({roles: state.site.roles.device}), (dispatch,
         callbacks: {
             nameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NAME", name: name, value: txt}),
             nicknameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NICKNAME", name: name, value: txt}),
-            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt}),
-            ephemeralChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_EPHEMERAL", name: name, value: txt}),
-            downlinkChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DOWNLINK", name: name, value: txt}),
-            datatypeChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DATATYPE", name: name, value: txt}),
-            schemaChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_SCHEMA", name: name, value: txt})
+            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt})
         },
         onCancel: () => dispatch(createCancel("DEVICE", "STREAM", name)),
-        onSave: () => dispatch(createObject("device", "stream", name, props.state))
+        onSave: () => dispatch(createObject("device", "stream", name, Object.assign({}, props.state, datatypes[props.datatype].create.default))),
+        onAdvanced: () => {
+            dispatch({
+                type: "DEVICE_CREATESTREAM_SET",
+                name: name,
+                value: datatypes[props.datatype].create.default
+            });
+            dispatch(go(name + "#create"))
+        }
     }
 })(StreamCreate);

@@ -11,7 +11,8 @@ import streamEditReducer, {StreamEditInitialState} from './streamEdit';
 // The initial state of a specific stream
 const StreamInitialState = {
     edit: StreamEditInitialState,
-    view: StreamViewInitialState
+    view: StreamViewInitialState,
+    input: {}
 };
 
 export default function streamReducer(state = InitialState, action) {
@@ -37,9 +38,8 @@ export default function streamReducer(state = InitialState, action) {
         newState[action.name].edit = streamEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("STREAM_VIEW_"))
         newState[action.name].view = streamViewReducer(newState[action.name].view, action);
-    if (action.type.startsWith("STREAM_CREATEDEVICE_"))
-        newState[action.name].create = deviceCreateReducer(newState[action.name].create, action);
-
+    if (action.type = "STREAM_INPUT")
+        newState[action.name].input = action.value;
     return newState;
 }
 

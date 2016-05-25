@@ -1,3 +1,5 @@
+import {ratingSchema} from '../datatypes/rating.stars';
+
 const InitialState = {
     // roles represents the possible permissions allowed by ConnectorDB.
     // Note that the values given here correspond to the default ConnectorDB settings.
@@ -51,6 +53,10 @@ const InitialState = {
             schema: {
                 type: "string"
             }
+        }, {
+            description: "rating",
+            name: "rating",
+            schema: ratingSchema
         }
     ],
 

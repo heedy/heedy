@@ -12,6 +12,8 @@ export default function deviceCreateReducer(state, action) {
     switch (action.type) {
         case 'DEVICE_CREATESTREAM_CLEAR':
             return StreamCreateInitialState;
+        case 'DEVICE_CREATESTREAM_SET':
+            return Object.assign({}, state, action.value);
         case 'DEVICE_CREATESTREAM_NAME':
             return {
                 ...state,

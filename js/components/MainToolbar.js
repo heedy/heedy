@@ -36,6 +36,11 @@ class MainToolbar extends Component {
                                 star
                             </FontIcon>
                         </IconButton>
+                        <IconButton onTouchTap={this.props.onLogClick} tooltip="add log (diary)">
+                            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                                library_books
+                            </FontIcon>
+                        </IconButton>
                         <IconButton onTouchTap= { () => storage.qls(this.props.user.name+"/"+this.props.device.name) } tooltip="reload">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                 refresh
@@ -51,5 +56,6 @@ export default MainToolbar;
 export default connect(undefined, (dispatch, props) => ({
 
     onAddClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create")),
-    onRatingClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-rating"))
+    onRatingClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-rating")),
+    onLogClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-log"))
 }))(MainToolbar);

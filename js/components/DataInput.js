@@ -7,6 +7,8 @@ import Form from "react-jsonschema-form";
 import {dataInput, showMessage} from '../actions';
 import {go} from '../actions';
 
+import datatypes from '../datatypes/datatypes';
+
 const log = (type) => console.log.bind(console, type);
 
 // Unfortunately the schema form generator is... kinda BS in that it has undefined for values. To fix that,
@@ -63,12 +65,14 @@ class DataInput extends Component {
         onSubmit: PropTypes.func.isRequired,
         showMessage: PropTypes.func.isRequired,
         title: PropTypes.string,
-        subtitle: PropTypes.string
+        subtitle: PropTypes.string,
+        size: PropTypes.number
     }
 
     static defaultProps = {
-        title: "Input Data to Downlink",
-        subtitle: ""
+        title: "Insert Into Stream",
+        subtitle: "",
+        size: 6
     }
 
     touch() {
@@ -80,6 +84,7 @@ class DataInput extends Component {
         let user = this.props.user;
         let device = this.props.device;
         let stream = this.props.stream;
+        let path = user.name + "/" + device.name + "/" + stream.name;
 
         let schema = JSON.parse(stream.schema);
         let curschema = Object.assign({}, schema);
@@ -100,9 +105,17 @@ class DataInput extends Component {
             };
         }
         let s = generateSchema(curschema);
+        let size = this.props.size;
+
+        // Now check if the datatype allows for a custom input method
+        if (stream.datatype != "") {
+            var d = datatypes[stream.datatype];
+            var DatatypeInput = d.input.component;
+            size = d.input.size * this.props.size;
+        }
 
         return (
-            <div className="col-lg-6">
+            <div className={`col-lg-${size}`}>
                 <Card style={{
                     marginTop: "20px",
                     textAlign: "left"
@@ -110,22 +123,23 @@ class DataInput extends Component {
                     <CardHeader title={this.props.title} subtitle={this.props.subtitle}>{this.props.children}</CardHeader>
                     <CardText style={{
                         textAlign: "center"
-                    }}>
-                        <Form schema={s.s} uiSchema={s.ui} onSubmit={(data) => {
-                            if (schema.type === undefined) {
-                                try {
-                                    var parsedData = JSON.parse(data.formData.input);
-                                } catch (e) {
-                                    this.props.showMessage(e.toString());
+                    }}>{DatatypeInput !== undefined && DatatypeInput != null
+                            ? (<DatatypeInput stream={stream} path={path} onSubmit={this.props.onSubmit}/>)
+                            : (<Form schema={s.s} uiSchema={s.ui} onSubmit={(data) => {
+                                if (schema.type === undefined) {
+                                    try {
+                                        var parsedData = JSON.parse(data.formData.input);
+                                    } catch (e) {
+                                        this.props.showMessage(e.toString());
+                                        return;
+                                    }
+                                    this.props.onSubmit(parsedData);
+                                } else if (schema.type != "object") {
+                                    this.props.onSubmit(data.formData.input);
                                     return;
                                 }
-                                this.props.onSubmit(parsedData);
-                            } else if (schema.type != "object") {
-                                this.props.onSubmit(data.formData.input);
-                                return;
-                            }
-                            this.props.onSubmit(data.formData);
-                        }} onError={log("errors")}/>
+                                this.props.onSubmit(data.formData);
+                            }} onError={log("errors")}/>)}
                     </CardText>
                 </Card>
             </div>

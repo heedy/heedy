@@ -10,6 +10,7 @@ import Loading from './components/Loading';
 import DeviceView from './pages/DeviceView';
 import DeviceEdit from './pages/DeviceEdit';
 import StreamCreate from './pages/StreamCreate';
+import StreamCreateDatatype from './pages/StreamCreateDatatype';
 
 import {setTitle} from './util';
 
@@ -53,6 +54,10 @@ class Device extends Component {
                 return (<StreamCreate user={this.props.user} device={this.props.device} state={this.props.state.create}/>);
             case "#edit":
                 return (<DeviceEdit user={this.props.user} device={this.props.device} state={this.props.state.edit}/>);
+            case "#create-rating":
+                return (<StreamCreateDatatype user={this.props.user} device={this.props.device} state={this.props.state.create} datatype="rating.stars"/>)
+            case "#create-log":
+                return (<StreamCreateDatatype user={this.props.user} device={this.props.device} state={this.props.state.create} datatype="log.diary"/>)
 
         }
 

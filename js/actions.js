@@ -153,7 +153,13 @@ export function dataInput(user, device, stream, data) {
     return (dispatch) => {
         storage.insert(user.name, device.name, stream.name, data).then((result) => {
             if (result.ref === undefined) {
-                dispatch(showMessage("Inserted: " + JSON.stringify(data)));
+                // Reset the input value
+                dispatch({
+                    type: "STREAM_INPUT",
+                    name: user.name + "/" + device.name + "/" + stream.name,
+                    value: {}
+                });
+                dispatch(showMessage("Inserted: " + JSON.stringify(data).substring(0, 15)));
                 return;
             }
             dispatch(showMessage(result.msg));

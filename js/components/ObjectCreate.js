@@ -27,7 +27,14 @@ class ObjectCreate extends Component {
         parentPath: PropTypes.string.isRequired,
         onCancel: PropTypes.func.isRequired,
         onSave: PropTypes.func.isRequired,
-        required: PropTypes.element
+        required: PropTypes.element,
+        advanced: PropTypes.func,
+        header: PropTypes.string
+    }
+
+    static defaultProps = {
+        advanced: null,
+        header: ""
     }
 
     render() {
@@ -48,6 +55,9 @@ class ObjectCreate extends Component {
                     state.icon
                 } />}/>
                 <CardText>
+                    {this.props.header != ""
+                        ? <p>{this.props.header}</p>
+                        : null}
                     <h2 style={styles.headers}>Required:</h2>
                     <h3>Name</h3>
                     <p>A name for your {this.props.type}. Try to make it all lowercase without any spaces.</p>
@@ -63,7 +73,12 @@ class ObjectCreate extends Component {
                 </CardText>
                 <CardActions>
                     <FlatButton primary={true} label="Create" onTouchTap={this.props.onSave}/>
-                    <FlatButton label="Cancel" onTouchTap={this.props.onCancel}/>
+                    <FlatButton label="Cancel" onTouchTap={this.props.onCancel}/> {this.props.advanced != null
+                        ? (<FlatButton label="Advanced" secondary={true} style={{
+                            float: "right"
+                        }} onTouchTap={this.props.advanced}/>)
+                        : null}
+
                 </CardActions>
             </Card>
         );
