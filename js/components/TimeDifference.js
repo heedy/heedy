@@ -1,7 +1,7 @@
 // Displays an element that shows the time elapsed form the gven timestamp
 import React, {Component, PropTypes} from 'react';
 
-import prettydate from 'pretty-date';
+import moment from 'moment';
 
 export default class TimeDifference extends Component {
     static propTypes = {
@@ -14,20 +14,20 @@ export default class TimeDifference extends Component {
         }
     }
     componentWillMount() {
-        this.timer = setInterval(() => this.tick(), 1000);
+        this.timer = setInterval(() => this.tick(), 60 * 1000);
         this.setState({
-            elapsed: prettydate.format(new Date(this.props.timestamp))
+            elapsed: moment(new Date(this.props.timestamp)).fromNow()
         });
     }
     componentWillReceiveProps(nextProps) {
         this.setState({
-            elapsed: prettydate.format(new Date(nextProps.timestamp))
+            elapsed: moment(new Date(nextProps.timestamp)).fromNow()
         });
     }
 
     tick() {
         this.setState({
-            elapsed: prettydate.format(new Date(this.props.timestamp))
+            elapsed: moment(new Date(this.props.timestamp)).fromNow()
         });
     }
     componentWillUnmount() {

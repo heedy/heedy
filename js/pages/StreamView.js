@@ -19,7 +19,7 @@ import TimeDifference from '../components/TimeDifference';
 import {go} from '../actions';
 
 import StreamCard from '../components/StreamCard';
-import DataTable from '../components/DataTable';
+import DataView from '../components/DataView';
 import DataInput from '../components/DataInput';
 
 class StreamView extends Component {
@@ -48,7 +48,7 @@ class StreamView extends Component {
                         ? (<DataInput user={user} device={device} stream={stream}/>)
                         : null}
 
-                    <DataTable state={state} user={user} device={device} stream={stream}/>
+                    <DataView state={state} user={user} device={device} stream={stream}/>
                 </div>
             </div>
         );

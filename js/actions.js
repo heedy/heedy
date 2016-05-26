@@ -152,7 +152,7 @@ export function dataInput(user, device, stream, data, clearinput) {
     return (dispatch) => {
         storage.insert(user.name, device.name, stream.name, data).then((result) => {
             if (result.ref === undefined) {
-                if (clearinput == true) {
+                if (clearinput != false) {
                     // Reset the input value
                     dispatch({
                         type: "STREAM_INPUT",
@@ -173,5 +173,23 @@ export function dataInput(user, device, stream, data, clearinput) {
 }
 
 export function query(user, device, stream, state) {
-    return (dispatch) => {}
+    let path = user.name + "/" + device.name + "/" + stream.name;
+    return (dispatch) => {
+        if (state.bytime) {
+            var d = storage.cdb.timeStream(user.name, device.name, stream.name, state.t1, state.t2, state.transform);
+        } else {
+            var d = storage.cdb.indexStream(user.name, device.name, stream.name, state.i1, state.i2, state.transform);
+        }
+        d.then((result) => {
+            if (result.ref !== undefined) {
+                dispatch({type: "STREAM_VIEW_ERROR", name: path, value: result});
+                return;
+            }
+            dispatch({type: "STREAM_VIEW_DATA", name: path, value: result});
+
+        }).catch((err) => {
+            console.log(err);
+
+        })
+    }
 }
