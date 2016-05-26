@@ -8,7 +8,6 @@ import (
 	"connectordb/datastream"
 	"testing"
 
-	"github.com/connectordb/pipescript"
 	"github.com/stretchr/testify/require"
 )
 
@@ -152,33 +151,33 @@ func TestYDatasetBasics(t *testing.T) {
 	require.NoError(t, err)
 
 	result := datastream.DatapointArray{
-		datastream.Datapoint{Timestamp: 1, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 1.1, Data: 1},
-			"x": &datastream.Datapoint{Timestamp: 1, Data: 1},
+		datastream.Datapoint{Timestamp: 1, Data: map[string]interface{}{
+			"y": 1,
+			"x": 1,
 		}},
-		datastream.Datapoint{Timestamp: 2, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 2.1, Data: 2},
-			"x": &datastream.Datapoint{Timestamp: 2, Data: 2},
+		datastream.Datapoint{Timestamp: 2, Data: map[string]interface{}{
+			"y": 2,
+			"x": 2,
 		}},
-		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"x": &datastream.Datapoint{Timestamp: 3, Data: 3},
+		datastream.Datapoint{Timestamp: 3, Data: map[string]interface{}{
+			"y": 3,
+			"x": 3,
 		}},
-		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"x": &datastream.Datapoint{Timestamp: 3, Data: 4},
+		datastream.Datapoint{Timestamp: 3, Data: map[string]interface{}{
+			"y": 3,
+			"x": 4,
 		}},
-		datastream.Datapoint{Timestamp: 3, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 2.9, Data: 3},
-			"x": &datastream.Datapoint{Timestamp: 3, Data: 5},
+		datastream.Datapoint{Timestamp: 3, Data: map[string]interface{}{
+			"y": 3,
+			"x": 5,
 		}},
-		datastream.Datapoint{Timestamp: 4, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
-			"x": &datastream.Datapoint{Timestamp: 4, Data: 6},
+		datastream.Datapoint{Timestamp: 4, Data: map[string]interface{}{
+			"y": 5,
+			"x": 6,
 		}},
-		datastream.Datapoint{Timestamp: 5, Data: map[string]*datastream.Datapoint{
-			"y": &datastream.Datapoint{Timestamp: 3.9, Data: 5},
-			"x": &datastream.Datapoint{Timestamp: 5, Data: 7},
+		datastream.Datapoint{Timestamp: 5, Data: map[string]interface{}{
+			"y": 5,
+			"x": 7,
 		}},
 	}
 	CompareRange(t, dr, result)
@@ -228,20 +227,20 @@ func TestTDatasetBasics(t *testing.T) {
 	require.NoError(t, err)
 
 	result := datastream.DatapointArray{
-		datastream.Datapoint{Timestamp: 0, Data: map[string]*pipescript.Datapoint{
-			"x": &pipescript.Datapoint{Timestamp: 1, Data: 1},
+		datastream.Datapoint{Timestamp: 0, Data: map[string]interface{}{
+			"x": 1,
 		}},
-		datastream.Datapoint{Timestamp: 1, Data: map[string]*pipescript.Datapoint{
-			"x": &pipescript.Datapoint{Timestamp: 1, Data: 1},
+		datastream.Datapoint{Timestamp: 1, Data: map[string]interface{}{
+			"x": 1,
 		}},
-		datastream.Datapoint{Timestamp: 2, Data: map[string]*pipescript.Datapoint{
-			"x": &pipescript.Datapoint{Timestamp: 2, Data: 2},
+		datastream.Datapoint{Timestamp: 2, Data: map[string]interface{}{
+			"x": 2,
 		}},
-		datastream.Datapoint{Timestamp: 3, Data: map[string]*pipescript.Datapoint{
-			"x": &pipescript.Datapoint{Timestamp: 3, Data: 5},
+		datastream.Datapoint{Timestamp: 3, Data: map[string]interface{}{
+			"x": 5,
 		}},
-		datastream.Datapoint{Timestamp: 4, Data: map[string]*pipescript.Datapoint{
-			"x": &pipescript.Datapoint{Timestamp: 4, Data: 6},
+		datastream.Datapoint{Timestamp: 4, Data: map[string]interface{}{
+			"x": 6,
 		}},
 	}
 	CompareRange(t, dr, result)

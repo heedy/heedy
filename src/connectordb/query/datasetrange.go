@@ -44,7 +44,7 @@ func (dr *DatasetRange) Next() (*datastream.Datapoint, error) {
 	}
 
 	// The datapoint exists. Now ensure that it is not nil
-	v, ok := dp.Data.(map[string]*pipescript.Datapoint)
+	v, ok := dp.Data.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("Invalid dataset type - PROGRAMMING ERROR")
 	}
