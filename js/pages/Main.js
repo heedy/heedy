@@ -10,8 +10,6 @@ import IconButton from 'material-ui/IconButton';
 import Welcome from '../components/Welcome';
 import DataInput from '../components/DataInput';
 
-import Masonry from 'react-masonry-component';
-
 class Main extends Component {
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,

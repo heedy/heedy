@@ -4,6 +4,7 @@ import datatypes from './datatypes'
 // TEMPORARY HACK: react-star-rating package is outdated on npm with an old react version.
 // github has correct version, which needs to be compiled and stuff, so I just included the
 // compiled files while waiting for an update to npm
+// Once this is fixed, should also delete dependency classnames
 //import StarRating from 'react-star-rating';
 //import 'react-star-rating/dist/css/react-star-rating.min.css';
 import StarRating from './react-star-rating/react-star-rating.min';
