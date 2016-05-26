@@ -59,8 +59,15 @@ type Frontend struct {
 	Websocket Websocket `json:"websocket"`
 
 	// Minify gives us whether ConnectorDB should minify the templates that are run.
-	// At this point, only the templates hav minify support - static files are not minifed
+	// At this point, only the templates have minify support - static files are not minifed
 	Minify bool `json:"minify"`
+
+	// Whether or not to cache static data
+	CacheStatic    bool `json:"cache_static"`
+	CacheStaticAge int  `json:"cache_static_maxage"`
+
+	// Whether or not to gzip static data
+	GzipStatic bool `json:"gzip_static"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend

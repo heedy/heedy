@@ -33,9 +33,15 @@ var (
 	ErrCantParse   = errors.New("The given query cannot be parsed, since the values could not be extracted")
 )
 
+// safetyHeaders ensures that everything in the rest interface returns no-cache
+func safetyHeaders(writer http.ResponseWriter) {
+	writer.Header().Set("Cache-Control", "no-store, must-revalidate")
+}
+
 //OK is a simplifying function that returns success
 func OK(writer http.ResponseWriter) error {
 	writer.Header().Set("Content-Length", "2")
+	safetyHeaders(writer)
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte("ok"))
 	return nil
@@ -54,6 +60,7 @@ func JSONWriter(writer http.ResponseWriter, data interface{}, logger *log.Entry,
 	}
 	writer.Header().Set("Content-Length", strconv.Itoa(len(res)))
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	safetyHeaders(writer)
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(res)
 	return webcore.DEBUG, ""
@@ -83,6 +90,7 @@ func UintWriter(writer http.ResponseWriter, i uint64, logger *log.Entry, err err
 
 func byteWriter(writer http.ResponseWriter, b []byte) {
 	writer.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	safetyHeaders(writer)
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(b)
 }
@@ -138,6 +146,7 @@ func WriteError(writer http.ResponseWriter, logger *log.Entry, errorCode int, er
 	atomic.AddUint32(&webcore.StatsErrors, 1)
 
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	safetyHeaders(writer)
 
 	u, err2 := uuid.NewV4()
 	if err2 != nil {
@@ -231,6 +240,7 @@ func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	jreader, err := datapoint.NewJsonArrayReader(dr)
 	if err != nil {
 		if err == io.EOF {
+			safetyHeaders(writer)
 			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 			writer.Header().Set("Content-Length", "2")
 			writer.WriteHeader(http.StatusOK)
@@ -241,6 +251,7 @@ func WriteJSONResult(writer http.ResponseWriter, dr datastream.DataRange, logger
 	}
 
 	defer jreader.Close()
+	safetyHeaders(writer)
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	_, err = io.Copy(writer, jreader)

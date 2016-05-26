@@ -6,14 +6,52 @@ package website
 
 //Router returns a fully formed Gorilla router given an optional prefix
 import (
+	"compress/gzip"
+	"config"
 	"connectordb"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
 // Screw it, let's just use a global database
 var Database *connectordb.Database
+
+// Handler middleware for statically served files
+// Set up both caching and gzip,since these files are public
+// https://gist.github.com/bryfry/09a650eb8aac0fb76c24
+// https://play.golang.org/p/fpETA9_1oo
+
+type gzipResponseWriter struct {
+	io.Writer
+	http.ResponseWriter
+}
+
+func (w gzipResponseWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
+}
+
+func staticFileHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg := config.Get()
+		if cfg.CacheStatic {
+			w.Header().Add("Cache-Control", fmt.Sprintf("max-age:%d, public", cfg.CacheStaticAge))
+		}
+
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || !cfg.GzipStatic {
+			h.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Content-Encoding", "gzip")
+		gz := gzip.NewWriter(w)
+		defer gz.Close()
+		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
+		h.ServeHTTP(gzw, r)
+	})
+}
 
 // Router handles the website
 func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
@@ -33,9 +71,9 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 
 	//The app and web prefixes are served directly from the correct directories
 	www := "/" + WWWPrefix
-	r.PathPrefix(www).Handler(http.StripPrefix(www, http.FileServer(http.Dir(WWWPath))))
+	r.PathPrefix(www).Handler(http.StripPrefix(www, staticFileHandler(http.FileServer(http.Dir(WWWPath)))))
 	app := "/" + AppPrefix
-	r.PathPrefix(app).Handler(http.StripPrefix(app, http.FileServer(http.Dir(AppPath))))
+	r.PathPrefix(app).Handler(http.StripPrefix(app, staticFileHandler(http.FileServer(http.Dir(AppPath)))))
 
 	//Handle the favicon
 	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusMovedPermanently))

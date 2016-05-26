@@ -105,6 +105,11 @@ func NewConfiguration() *Configuration {
 
 			// Why not minify? Turning it off is useful for debugging - but users outnumber coders by a large margin.
 			Minify: true,
+
+			// These files don't have any sensitive data, so it should be OK to send them compressed over https
+			CacheStatic:    true,
+			CacheStaticAge: 604800,
+			GzipStatic:     true,
 		},
 
 		//The defaults to use for the batch and chunks
