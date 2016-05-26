@@ -33,6 +33,11 @@ class DataView extends Component {
         this.props.query({i1: -5, i2: 0});
     }
 
+    query() {
+        // We now run the query
+        this.props.query({bytime: true, t1: 0, t2: 0, limit: 50, transform: this.props.state.transform});
+    }
+
     render() {
         let state = this.props.state;
         let setState = this.props.setState;
@@ -54,7 +59,7 @@ class DataView extends Component {
                             marginTop: "-15px",
                             marginLeft: "-100px"
                         }}>
-                            <IconButton onTouchTap= { (val) => this.getDefault() }>
+                            <IconButton onTouchTap= { (val) => this.getDefault() } tooltip="Get most recent 5 datapoints">
                                 <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                                     refresh
                                 </FontIcon>
@@ -80,8 +85,9 @@ class DataView extends Component {
                     </CardHeader>
                     <CardText expandable={true} style={{
                         backgroundColor: "rgba(0,179,74,0.05)",
-                        paddingBottom: "50px"
+                        paddingBottom: "30px"
                     }}>
+                        <p>Query the stream's data starting from the start time and ending at the end time. A maximum of 50 datapoints will be shown.</p>
                         <TimePicker format="ampm" hintText="Start Time"/>
                         <TimePicker format="ampm" hintText="End Time"/>
                         <TextField fullWidth={true} hintText="PipeScript" floatingLabelText="Transform" style={{
@@ -92,7 +98,19 @@ class DataView extends Component {
                         })}/>
                         <FlatButton style={{
                             float: "right"
-                        }} primary={true} label="Run Query" onTouchTap={() => this.query(state)}/>
+                        }} primary={true} label="Run Query" onTouchTap={() => this.query()}/> {state.error !== null
+                            ? (
+                                <p style={{
+                                    paddingTop: "10px"
+                                }}>{state.error.msg}</p>
+                            )
+                            : (
+                                <p style={{
+                                    paddingTop: "10px"
+                                }}>Learn about transforms
+                                    <a href="https://connectordb.github.io/pipescript/">{" "}here.</a>
+                                </p>
+                            )}
                     </CardText>
                     <CardText>
                         <DataTable data={state.data}/>

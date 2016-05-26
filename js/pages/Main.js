@@ -10,7 +10,9 @@ import IconButton from 'material-ui/IconButton';
 import Welcome from '../components/Welcome';
 import DataInput from '../components/DataInput';
 
-class DeviceView extends Component {
+import Masonry from 'react-masonry-component';
+
+class Main extends Component {
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
         device: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
@@ -31,33 +33,35 @@ class DeviceView extends Component {
             }}>
                 <MainToolbar user={user} device={device} state={state}/> {streams != null && streams.length == 0
                     ? (<Welcome/>)
-                    : Object.keys(streams).map((skey) => {
-                        let s = streams[skey];
-                        let path = user.name + "/" + device.name + "/" + s.name;
-                        return (
-                            <div style={{
-                                marginLeft: "-15px",
-                                marginRight: "-15px"
-                            }} key={s.name}>
-                                <DataInput size={4} title={s.nickname == ""
-                                    ? s.name
-                                    : s.nickname} subtitle={path} user={user} device={device} stream={s}>
+                    : (
+                        <Masonry>{Object.keys(streams).map((skey) => {
+                                let s = streams[skey];
+                                let path = user.name + "/" + device.name + "/" + s.name;
+                                return (
                                     <div style={{
-                                        float: "right",
-                                        marginTop: "-5px",
-                                        marginLeft: "-100px"
-                                    }}>
-                                        <IconButton onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
-                                            <FontIcon className="material-icons" color="rgba(0,0,0,0.5)">
-                                                list
-                                            </FontIcon>
-                                        </IconButton>
-                                    </div>
-                                </DataInput>
+                                        marginLeft: "-15px",
+                                        marginRight: "-15px"
+                                    }} key={s.name}>
+                                        <DataInput size={4} title={s.nickname == ""
+                                            ? s.name
+                                            : s.nickname} subtitle={path} user={user} device={device} stream={s}>
+                                            <div style={{
+                                                float: "right",
+                                                marginTop: "-5px",
+                                                marginLeft: "-100px"
+                                            }}>
+                                                <IconButton onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
+                                                    <FontIcon className="material-icons" color="rgba(0,0,0,0.5)">
+                                                        list
+                                                    </FontIcon>
+                                                </IconButton>
+                                            </div>
+                                        </DataInput>
 
-                            </div>
-                        );
-                    })}
+                                    </div>
+                                );
+                            })}</Masonry>
+                    )}
 
             </div>
         );
@@ -65,4 +69,4 @@ class DeviceView extends Component {
 }
 export default connect(undefined, (dispatch, props) => ({
     onStreamClick: (s) => dispatch(go(s))
-}))(DeviceView);
+}))(Main);

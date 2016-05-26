@@ -176,7 +176,7 @@ export function query(user, device, stream, state) {
     let path = user.name + "/" + device.name + "/" + stream.name;
     return (dispatch) => {
         if (state.bytime) {
-            var d = storage.cdb.timeStream(user.name, device.name, stream.name, state.t1, state.t2, state.transform);
+            var d = storage.cdb.timeStream(user.name, device.name, stream.name, state.t1, state.t2, state.limit, state.transform);
         } else {
             var d = storage.cdb.indexStream(user.name, device.name, stream.name, state.i1, state.i2, state.transform);
         }
