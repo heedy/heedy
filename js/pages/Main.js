@@ -34,33 +34,31 @@ class Main extends Component {
                 <MainToolbar user={user} device={device} state={state}/> {streams != null && streams.length == 0
                     ? (<Welcome/>)
                     : (
-                        <Masonry>{Object.keys(streams).map((skey) => {
+                        <div style={{
+                            marginLeft: "-15px",
+                            marginRight: "-15px"
+                        }}>{Object.keys(streams).map((skey) => {
                                 let s = streams[skey];
                                 let path = user.name + "/" + device.name + "/" + s.name;
                                 return (
-                                    <div style={{
-                                        marginLeft: "-15px",
-                                        marginRight: "-15px"
-                                    }} key={s.name}>
-                                        <DataInput size={4} title={s.nickname == ""
-                                            ? s.name
-                                            : s.nickname} subtitle={path} user={user} device={device} stream={s}>
-                                            <div style={{
-                                                float: "right",
-                                                marginTop: "-5px",
-                                                marginLeft: "-100px"
-                                            }}>
-                                                <IconButton onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
-                                                    <FontIcon className="material-icons" color="rgba(0,0,0,0.5)">
-                                                        list
-                                                    </FontIcon>
-                                                </IconButton>
-                                            </div>
-                                        </DataInput>
 
-                                    </div>
+                                    <DataInput key={s.name} size={4} title={s.nickname == ""
+                                        ? s.name
+                                        : s.nickname} subtitle={path} user={user} device={device} stream={s}>
+                                        <div style={{
+                                            float: "right",
+                                            marginTop: "-5px",
+                                            marginLeft: "-100px"
+                                        }}>
+                                            <IconButton onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
+                                                <FontIcon className="material-icons" color="rgba(0,0,0,0.5)">
+                                                    list
+                                                </FontIcon>
+                                            </IconButton>
+                                        </div>
+                                    </DataInput>
                                 );
-                            })}</Masonry>
+                            })}</div>
                     )}
 
             </div>
