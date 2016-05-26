@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/connectordb/connectordb-frontend.svg?branch=master)](https://travis-ci.org/connectordb/connectordb-frontend)
+
 # ConnectorDB Frontend App
 
 This is the web app used by default in ConnectorDB. It contains all of the relevant analysis, display and plotting code.
