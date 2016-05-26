@@ -42,7 +42,7 @@ class Main extends Component {
                                 let path = user.name + "/" + device.name + "/" + s.name;
                                 return (
 
-                                    <DataInput key={s.name} size={4} title={s.nickname == ""
+                                    <DataInput key={s.name} size={6} title={s.nickname == ""
                                         ? s.name
                                         : s.nickname} subtitle={path} user={user} device={device} stream={s}>
                                         <div style={{

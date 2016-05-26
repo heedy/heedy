@@ -37,7 +37,7 @@ class DataInput extends Component {
             value = 0;
 
         // rating={value} messes up our ability to set the rating again in current version of react star rating. We therefore can't have it set :(
-        return (<StarRating name={this.props.path} totalStars={10} size={25} onRatingClick={(a, val) => {
+        return (<StarRating name={this.props.path} totalStars={10} size={30} onRatingClick={(a, val) => {
             console.log("Changing value:", val);
             this.props.onChange({value: val["rating"]});
             this.props.onSubmit(val["rating"], false);

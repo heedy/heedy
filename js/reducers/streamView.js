@@ -1,11 +1,12 @@
+import moment from 'moment';
 export const StreamViewInitialState = {
     expanded: false,
     tExpanded: false,
     fullwidth: false,
     transform: "",
     last: 10,
-    t1: 0,
-    t2: 0,
+    t1: moment(new Date(0)),
+    t2: moment().add(5, 'years'),
     limit: 10,
     data: [],
     error: null,

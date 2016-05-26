@@ -41,6 +41,7 @@
     "parallelshell": "^2.0.0",
     "react": "^15.1.0",
     "react-codemirror": "^0.2.6",
+    "react-datetime": "^2.2.1",
     "react-dom": "^15.1.0",
     "react-jsonschema-form": "^0.30.1",
     "react-redux": "^4.4.5",
