@@ -29,7 +29,7 @@ class Main extends Component {
             <div style={{
                 textAlign: "left"
             }}>
-                <MainToolbar user={user} device={device} state={state}/> {streams != null && streams.length == 0
+                <MainToolbar user={user} device={device} state={state}/> {streams == null || Object.keys(streams).length == 0
                     ? (<Welcome/>)
                     : (
                         <div style={{
