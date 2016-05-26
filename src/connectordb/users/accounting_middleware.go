@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2015 The ConnectorDB Contributors (see AUTHORS)
+Copyright (c) 2016 The ConnectorDB Contributors
 Licensed under the MIT license.
 
 This is the a middleware that counts the number of calls to the database.
