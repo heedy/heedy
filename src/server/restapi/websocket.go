@@ -293,7 +293,10 @@ func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) erro
 
 		datapointArray, err := query.TransformArray(tf, &datapoint.Data)
 		logger.Debugf("<- send %s", transform)
-		if err != nil || datapointArray.Length() <= 0 {
+		if err != nil {
+			return err
+		}
+		if datapointArray.Length() <= 0 {
 			continue
 		}
 
@@ -307,8 +310,7 @@ func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) erro
 			return err
 		}
 	}
-
-	return c.write(datapoint)
+	return nil
 }
 
 //RunWriter writes the subscription data as well as the heartbeat pings.
@@ -327,9 +329,9 @@ func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan
 				c.updateDeadline(websocket.CloseMessage, "")
 				return
 			}
-
-			if c.processDatapoint(datapoint) != nil {
-				return
+			err := c.processDatapoint(datapoint)
+			if err != nil {
+				c.logger.Errorf("Writing failed: %s. Killing connection.", err.Error())
 			}
 
 		case <-ticker.C:
