@@ -54,6 +54,8 @@ func TestAuthSubscribe(t *testing.T) {
 	{
 		o, err := db.AsDevice("tst/tst2")
 		require.NoError(t, err)
+		o2, err := db.AsDevice("tst/tst")
+		require.NoError(t, err)
 
 		db.Messenger.Flush()
 
@@ -75,7 +77,7 @@ func TestAuthSubscribe(t *testing.T) {
 			Timestamp: 1.0,
 			Data:      "Hello World!",
 		}}
-		require.NoError(t, o.InsertStream("tst/tst/tst", data, false))
+		require.NoError(t, o2.InsertStream("tst/tst/tst", data, false))
 		//We bind a timeout to the channel, since we want the test to fail if no messages come through
 
 		go func() {
