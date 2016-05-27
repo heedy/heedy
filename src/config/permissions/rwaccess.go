@@ -10,7 +10,7 @@ var (
 	// NoneRWAccess is the RW permission to give a device when it does not have ANY permissions associated with an action
 	NoneRWAccess = RWAccess{}
 	// FullRWAccess is the RW permission to give a total administrator - everything is accessible
-	FullRWAccess = RWAccess{true, true, true, true,
+	FullRWAccess = RWAccess{true, true, true, true, true,
 		true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true,
 		true, true, true, true, true, true, true, true, true, true, nil}
@@ -23,8 +23,13 @@ type RWAccess struct {
 	CanAccessUser   bool `json:"can_access_user"`
 	CanAccessDevice bool `json:"can_access_device"`
 	CanAccessStream bool `json:"can_access_stream"`
-	// Read/write of streams
-	CanAccessStreamData bool `json:"can_access_stream_data"`
+
+	// On read, CanAccessStreamData allows you to read a stream's data
+	// On read, CanAccessStreamDownlink allows you to read a stream's downlink
+	// On write CanAccessStreamData allows you to write directly to non-downlink streams
+	// On write CanAccessStreamDownlink allows you to write to downlink streams
+	CanAccessStreamData     bool `json:"can_access_stream_data"`
+	CanAccessStreamDownlink bool `json:"can_access_stream_downlink"`
 
 	// Whether or not this is allowed to write non-user-editable devices
 	// For use in admin

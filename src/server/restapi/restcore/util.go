@@ -268,5 +268,12 @@ func GetStreamPath(request *http.Request) (username string, devicename string, s
 	devicename = mux.Vars(request)["device"]
 	streamname = mux.Vars(request)["stream"]
 	streampath = username + "/" + devicename + "/" + streamname
+
+	// Get the downlink substream if it is queried
+	v, err := strconv.ParseBool(request.URL.Query().Get("downlink"))
+	if err == nil && v {
+		streampath += "/downlink"
+	}
+
 	return username, devicename, streamname, streampath
 }

@@ -19,7 +19,7 @@ func (a *AuthOperator) SubscribeDeviceByID(deviceID int64, chn chan messenger.Me
 
 // SubscribeStreamByID subscribes to the given stream
 func (a *AuthOperator) SubscribeStreamByID(streamID int64, substream string, chn chan messenger.Message) (*nats.Subscription, error) {
-	err := a.ErrorIfNoIOReadAccess(streamID)
+	err := a.ErrorIfNoIOReadAccess(streamID, substream)
 	if err != nil {
 		return nil, err
 	}
