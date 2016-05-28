@@ -105,6 +105,13 @@ func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
 
+// Redirect80 Redirects port 80 to the given site url
+func Redirect80(siteURL string) {
+	log.Error(http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, siteURL+r.RequestURI, http.StatusMovedPermanently)
+	})))
+}
+
 //RunServer runs the ConnectorDB frontend server
 func RunServer() error {
 	SetFileLimit()
@@ -162,6 +169,10 @@ func RunServer() error {
 	//Run the dbwriter
 	go db.RunWriter()
 
+	if c.Redirect80 {
+		go Redirect80(c.GetSiteURL())
+	}
+
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
 	//Run an https server if we are given tls cert and key
@@ -207,5 +218,6 @@ func RunServer() error {
 	}
 	log.Infof("Running ConnectorDB v%s at %s (%s)", connectordb.Version, c.GetSiteURL(), listenhost)
 	http.Handle("/", handler)
+
 	return http.ListenAndServe(listenhost, nil)
 }

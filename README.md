@@ -21,6 +21,9 @@ make
 
 At that point, binaries are located in `bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.github.io/download.html).
 
+Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
+`sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.
+
 ## Testing
 This will run all tests, spawning the necessary servers in the process (make sure you don't have any running connectordb instances):
 

@@ -47,3 +47,5 @@ connectordb_python/
 # the test database ad debug database
 testdb/
 debugdb/
+
+src/config/test.conf

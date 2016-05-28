@@ -46,6 +46,8 @@ func NewConfiguration() *Configuration {
 			Hostname: "",   // Host on all interfaces by default
 			Port:     8000, // Port 8000 by default
 
+			Redirect80: false,
+
 			Enabled: true,
 
 			// Sets up the session cookie keys that are used

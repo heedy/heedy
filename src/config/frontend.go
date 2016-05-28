@@ -23,6 +23,9 @@ type Frontend struct {
 	Hostname string `json:"hostname"`
 	Port     uint16 `json:"port"`
 
+	// If running in https mode, we might want to redirect port 80 to SiteURL (presumably port 443)
+	Redirect80 bool `json:"redirect80"`
+
 	// Whether or not the frontend is enabled
 	Enabled bool `json:"frontend_enabled"`
 
