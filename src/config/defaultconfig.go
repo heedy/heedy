@@ -43,8 +43,8 @@ func NewConfiguration() *Configuration {
 		},
 
 		Frontend: Frontend{
-			Hostname: "0.0.0.0", // Host on all interfaces by default
-			Port:     8000,
+			Hostname: "",   // Host on all interfaces by default
+			Port:     8000, // Port 8000 by default
 
 			Enabled: true,
 

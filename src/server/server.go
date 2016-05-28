@@ -166,6 +166,9 @@ func RunServer() error {
 
 	//Run an https server if we are given tls cert and key
 	if c.TLSEnabled() {
+		if c.TLS.ACME.Enabled {
+			log.Debugf("Attempting to use ACME with host %s", listenhost)
+		}
 		// Enable http2 support &Let's Encrypt support
 		w, err := acmewrapper.New(acmewrapper.Config{
 			Address:          listenhost,

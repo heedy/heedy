@@ -7,7 +7,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"config/permissions"
@@ -29,21 +28,12 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 		return err
 	}
 
-	// Set up the optional configuration parameters
-
-	if f.Hostname == "" {
-		f.Hostname, err = os.Hostname()
-		if err != nil {
-			f.Hostname = "localhost"
-		}
-	}
-
 	if f.SiteURL == "" {
 		f.SiteURL = f.Hostname
 		// If serving to all, and site url is not set, we make the site url localhost
 		// This fixes CORS issues when debugging: your browser says you're at localhost,
 		// but ConnectorDB thinks it is at 0.0.0.0, so it doesn't send the correct CORS headers.
-		if f.SiteURL == "0.0.0.0" {
+		if f.SiteURL == "" {
 			f.SiteURL = "localhost"
 		}
 	}

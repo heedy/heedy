@@ -48,9 +48,6 @@ func getConfiguration(c *cli.Context) *config.Configuration {
 		log.Fatal(err.Error())
 	}
 
-	//Print out the configuration as we understand it
-	log.Debug(config.Get().String())
-
 	return config.Get()
 }
 
@@ -86,7 +83,10 @@ func runConnectorDBCallback(c *cli.Context) error {
 
 	//The run command allows to set the host and port to run server on
 	cfg.Hostname = c.String("host")
-	cfg.Port = uint16(c.Int("port"))
+	prt := uint16(c.Int("port"))
+	if prt != 0 {
+		cfg.Port = prt
+	}
 	// Enable random people to join
 	if c.Bool("join") {
 		pconfig.Get().UserRoles["nobody"].Join = true
@@ -97,6 +97,9 @@ func runConnectorDBCallback(c *cli.Context) error {
 		cfg.TLS.Cert = ""
 	}
 
+	//Print out the configuration as we understand it
+	log.Debug(cfg.String())
+
 	err := server.RunServer()
 	if err != nil {
 		log.Error(err.Error())
@@ -106,6 +109,8 @@ func runConnectorDBCallback(c *cli.Context) error {
 
 func runShellCallback(c *cli.Context) error {
 	cfg := getConfiguration(c)
+	//Print out the configuration as we understand it
+	log.Debug(cfg.String())
 	db, err := connectordb.Open(cfg.Options())
 	defer db.Close()
 	if err != nil {
@@ -248,7 +253,7 @@ func main() {
 				},
 				cli.IntFlag{
 					Name:  "port, p",
-					Value: 8000,
+					Value: 0,
 					Usage: "The port on which to run the ConnectorDB server",
 				},
 				cli.BoolFlag{
