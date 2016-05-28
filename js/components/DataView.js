@@ -69,7 +69,7 @@ class DataView extends Component {
                             float: "right",
                             marginRight: 25,
                             marginTop: "-15px",
-                            marginLeft: "-100px"
+                            marginLeft: "-300px"
                         }}>
                             <IconButton onTouchTap= { (val) => this.getDefault() } tooltip="Get most recent 5 datapoints">
                                 <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">

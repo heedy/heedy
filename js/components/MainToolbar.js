@@ -19,12 +19,12 @@ class MainToolbar extends Component {
     render() {
         return (
             <Card style={this.props.style}>
-                <CardHeader title={"Hi!"} subtitle={"Let's gather some data!"}>
+                <CardHeader title={"Hi!"} subtitle={"Let's Gather Data!"}>
 
                     <div style={{
                         float: "right",
                         marginTop: "-5px",
-                        marginLeft: "-100px"
+                        marginLeft: "-300px"
                     }}>
                         <IconButton onTouchTap={this.props.onAddClick} tooltip="add stream">
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">

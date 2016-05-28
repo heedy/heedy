@@ -28,6 +28,9 @@ After build completes, start the ConnectorDB server:
 
 Open `localhost:8000`, where you will see the login screen - create a new user.
 
+Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
+`sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.
+
 ### Setting up webapp development
 
 Once you have the server running, you will want to start on the app itself. Web portions of ConnectorDB (including alternate web frontends) should be developed from the `site` subdirectory.

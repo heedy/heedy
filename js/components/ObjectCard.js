@@ -47,7 +47,7 @@ class ObjectCard extends Component {
                                 float: "right",
                                 marginRight: 35,
                                 marginTop: "-5px",
-                                marginLeft: "-100px"
+                                marginLeft: "-300px"
                             }}>
                                 {showedit
                                     ? (
