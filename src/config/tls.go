@@ -43,7 +43,7 @@ func (t *TLS) Validate() (err error) {
 
 		if t.ACME.Enabled {
 
-			if t.ACME.PrivateKey == "" || t.ACME.Registration != "" {
+			if t.ACME.PrivateKey == "" || t.ACME.Registration == "" {
 				return errors.New("ACME registration and private key files not given")
 			}
 
