@@ -22,6 +22,9 @@ func (f *Frontend) Validate(c *Configuration) (err error) {
 	if err = f.TLS.Validate(); err != nil {
 		return err
 	}
+	if f.TLS.Enabled && f.TLS.ACME.Enabled && f.Port != 443 {
+		return errors.New("When running TLS with ACME, ConnectorDB must be run on port 443")
+	}
 
 	// Validate the Session
 	if err = f.CookieSession.Validate(); err != nil {

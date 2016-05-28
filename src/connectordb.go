@@ -98,9 +98,17 @@ func runConnectorDBCallback(c *cli.Context) error {
 	}
 
 	//Print out the configuration as we understand it
+	// Since it might have changed, we need to revalidate it.
+	// Note that we can't revalidate if file names have changed, since file names
+	// are queried from the config file's directory, and we don't have exact location
+	// at this point. Previous validation already changed old files to absolute paths.
+	err := cfg.Validate()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	log.Debug(cfg.String())
 
-	err := server.RunServer()
+	err = server.RunServer()
 	if err != nil {
 		log.Error(err.Error())
 	}
