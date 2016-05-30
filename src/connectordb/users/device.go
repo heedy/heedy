@@ -124,10 +124,12 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 			Icon,
 			Nickname,
 			Enabled,
-			Role
+			Role,
+			IsVisible,
+			UserEditable
 		)
 			VALUES (?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
-		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role)
+		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role, d.IsVisible, d.UserEditable)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
 		return errors.New("Device with this name already exists")
@@ -230,7 +232,8 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		Enabled = ?,
 		Role = ?,
 		IsVisible = ?,
-		UserEditable = ? WHERE DeviceID = ?;`,
+		UserEditable = ?,
+		Public = ? WHERE DeviceID = ?;`,
 		device.Name,
 		device.Nickname,
 		device.Description,
@@ -241,6 +244,7 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 		device.Role,
 		device.IsVisible,
 		device.UserEditable,
+		device.Public,
 		device.DeviceID)
 
 	return err
