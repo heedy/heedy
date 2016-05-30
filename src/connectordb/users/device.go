@@ -128,7 +128,7 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 			IsVisible,
 			UserEditable
 		)
-			VALUES (?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
+			VALUES (?,?,?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
 		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role, d.IsVisible, d.UserEditable)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
