@@ -6,7 +6,6 @@ package crud
 
 import (
 	"connectordb/authoperator"
-	"connectordb/users"
 	"net/http"
 	"server/restapi/restcore"
 	"server/webcore"
@@ -30,14 +29,17 @@ func CreateStream(o *authoperator.AuthOperator, writer http.ResponseWriter, requ
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	var sm users.StreamMaker
-	err = restcore.UnmarshalRequest(request, &sm)
+	sm, err := o.StreamMaker()
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
+	err = restcore.UnmarshalRequest(request, sm)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
 	sm.Name = streamname
-	if err = o.CreateStream(streampath, &sm); err != nil {
+	if err = o.CreateStream(streampath, sm); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 	}
 

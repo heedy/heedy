@@ -48,6 +48,13 @@ var Default = Permissions{
 
 			CanBePrivate: true,
 
+			CreateDeviceDefaults: DeviceDefaults{
+				Enabled:      true,
+				Public:       false,
+				IsVisible:    true,
+				UserEditable: true,
+			},
+
 			// ... Not bad
 			DeviceRole: DeviceRole{
 				PrivateAccessLevel: "none",
@@ -62,6 +69,18 @@ var Default = Permissions{
 			JoinDisabledMessage: "Join is disabled",
 
 			CanBePrivate: true,
+
+			CreateDeviceDefaults: DeviceDefaults{
+				Enabled:      true,
+				Role:         "none",
+				Public:       false,
+				IsVisible:    true,
+				UserEditable: true,
+			},
+			CreateUserDefaults: UserDefaults{
+				Role:   "user",
+				Public: true,
+			},
 
 			// ACCESS ALL THE THINGS
 			DeviceRole: DeviceRole{

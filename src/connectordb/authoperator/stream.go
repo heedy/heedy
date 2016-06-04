@@ -4,6 +4,7 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+	"fmt"
 
 	pconfig "config/permissions"
 )
@@ -74,6 +75,36 @@ func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]inte
 		}
 	}
 	return result, nil
+}
+
+// StreamMaker returns the StreamMaker prepopulated with default values
+// TODO: This is a hack - it does not set defaults for subdevices
+// and substreams. Furthermore, create allows setting ALL properties,
+// which is definitely not wanted
+func (a *AuthOperator) StreamMaker() (*users.StreamMaker, error) {
+	u, err := a.User()
+	if err != nil {
+		return nil, err
+	}
+	perm := pconfig.Get()
+	// Make sure that the given role exists
+	r, ok := perm.UserRoles[u.Role]
+	if !ok {
+		return nil, fmt.Errorf("The given role '%s' does not exist", u.Role)
+	}
+
+	d := r.CreateStreamDefaults
+	return &users.StreamMaker{
+		Stream: users.Stream{
+			Nickname:    d.Nickname,
+			Description: d.Description,
+			Icon:        d.Icon,
+			Schema:      d.Schema,
+			Datatype:    d.Datatype,
+			Ephemeral:   d.Ephemeral,
+			Downlink:    d.Downlink,
+		},
+	}, nil
 }
 
 // CreateStreamByDeviceID creates the given stream if permitted

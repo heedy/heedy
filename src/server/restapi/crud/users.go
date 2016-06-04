@@ -6,7 +6,6 @@ package crud
 
 import (
 	"connectordb/authoperator"
-	"connectordb/users"
 	"server/restapi/restcore"
 	"server/webcore"
 
@@ -32,13 +31,16 @@ func CreateUser(o *authoperator.AuthOperator, writer http.ResponseWriter, reques
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 
-	var um users.UserMaker
-	err = restcore.UnmarshalRequest(request, &um)
+	um, err := o.UserMaker()
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
+	}
+	err = restcore.UnmarshalRequest(request, um)
 	if err != nil {
 		return restcore.WriteError(writer, logger, http.StatusBadRequest, err, false)
 	}
 	um.Name = usrname
-	if err = o.CreateUser(&um); err != nil {
+	if err = o.CreateUser(um); err != nil {
 		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
 
 	}

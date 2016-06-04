@@ -4,6 +4,7 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+	"fmt"
 
 	pconfig "config/permissions"
 )
@@ -73,6 +74,34 @@ func (a *AuthOperator) ReadAllUsersToMap() ([]map[string]interface{}, error) {
 		}
 	}
 	return result, nil
+}
+
+// UserMaker returns the UserMaker prepopulated with default values
+// TODO: This is a hack - UserMaker does not set defaults for subdevices
+// and substreams. Furthermore, create allows setting ALL properties,
+// which is definitely not wanted
+func (a *AuthOperator) UserMaker() (*users.UserMaker, error) {
+	u, err := a.User()
+	if err != nil {
+		return nil, err
+	}
+	perm := pconfig.Get()
+	// Make sure that the given role exists
+	r, ok := perm.UserRoles[u.Role]
+	if !ok {
+		return nil, fmt.Errorf("The given role '%s' does not exist", u.Role)
+	}
+
+	d := r.CreateUserDefaults
+	return &users.UserMaker{
+		User: users.User{
+			Nickname:    d.Nickname,
+			Role:        d.Role,
+			Description: d.Description,
+			Icon:        d.Icon,
+			Public:      d.Public,
+		},
+	}, nil
 }
 
 // CreateUser creates the given user if the device has user creating permissions

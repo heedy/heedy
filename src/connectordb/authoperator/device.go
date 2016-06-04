@@ -4,6 +4,7 @@ import (
 	"connectordb/authoperator/permissions"
 	"connectordb/users"
 	"errors"
+	"fmt"
 
 	pconfig "config/permissions"
 )
@@ -77,6 +78,37 @@ func (a *AuthOperator) ReadUserDevicesToMap(uname string) ([]map[string]interfac
 		}
 	}
 	return result, nil
+}
+
+// DeviceMaker returns the DeviceMaker prepopulated with default values
+// TODO: This is a hack - it does not set defaults for subdevices
+// and substreams. Furthermore, create allows setting ALL properties,
+// which is definitely not wanted
+func (a *AuthOperator) DeviceMaker() (*users.DeviceMaker, error) {
+	u, err := a.User()
+	if err != nil {
+		return nil, err
+	}
+	perm := pconfig.Get()
+	// Make sure that the given role exists
+	r, ok := perm.UserRoles[u.Role]
+	if !ok {
+		return nil, fmt.Errorf("The given role '%s' does not exist", u.Role)
+	}
+
+	d := r.CreateDeviceDefaults
+	return &users.DeviceMaker{
+		Device: users.Device{
+			Nickname:     d.Nickname,
+			Role:         d.Role,
+			Description:  d.Description,
+			Icon:         d.Icon,
+			Public:       d.Public,
+			IsVisible:    d.IsVisible,
+			UserEditable: d.UserEditable,
+			Enabled:      d.Enabled,
+		},
+	}, nil
 }
 
 // CreateDeviceByUserID attempts to create a device for the given user
