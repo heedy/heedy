@@ -93,9 +93,7 @@ func (db *Database) GetStreamTimeRangeByID(streamID int64, substream string, t1 
 	}
 
 	dr, err := db.DataStream.TRange(strm.DeviceID, strm.StreamID, substream, t1, t2)
-	if limit > 0 {
-		dr = datastream.NewNumRange(dr, limit)
-	}
+
 	//Add a transform to the resulting data range if one is wanted
 	if transform != "" {
 		tr, err := query.NewExtendedTransformRange(dr, transform)
@@ -104,6 +102,10 @@ func (db *Database) GetStreamTimeRangeByID(streamID int64, substream string, t1 
 			return nil, err
 		}
 		dr = tr
+	}
+
+	if limit > 0 {
+		dr = datastream.NewNumRange(dr, limit)
 	}
 
 	return dr, err
@@ -121,9 +123,6 @@ func (db *Database) GetShiftedStreamTimeRangeByID(streamID int64, substream stri
 		return nil, err
 	}
 
-	if limit > 0 {
-		dr = datastream.NewNumRange(dr, limit)
-	}
 	//Add a transform to the resulting data range if one is wanted
 	if transform != "" {
 		tr, err := query.NewExtendedTransformRange(dr, transform)
@@ -132,6 +131,9 @@ func (db *Database) GetShiftedStreamTimeRangeByID(streamID int64, substream stri
 			return nil, err
 		}
 		dr = tr
+	}
+	if limit > 0 {
+		dr = datastream.NewNumRange(dr, limit)
 	}
 
 	return dr, err
