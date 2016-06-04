@@ -1,9 +1,0 @@
-/home/support/connectordb.log {
-    daily
-    missingok
-    rotate 52
-    compress
-    delaycompress
-    notifempty
-    create 0600 support support
-}
