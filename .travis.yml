@@ -6,18 +6,18 @@ go:
 
 virtualenv:
     system_site_packages: true
-    
+
 # All this because of https://github.com/travis-ci/travis-ci/issues/3130
 env:
     - TRAVIS_NODE_VERSION="4"
-    
+
 before_install:
     - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION #http://austinpray.com/ops/2015/09/20/change-travis-node-version.html
     - npm install -g npm@'>=3.9.2' # https://github.com/travis-ci/travis-ci/issues/2076
 
 # Here is the actual ConnectorDB script
 install:
-    - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/dkumor/connectordb
+    - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/connectordb/connectordb
     - export PATH=$HOME/.local/bin:$PATH
     - pip install --user nose requests jsonschema websocket-client coverage
     - make deps
