@@ -14,7 +14,7 @@ make deps
 ```
 
 ## Building
-The following will create all necessary binaries:
+To build ConnectorDB, you need to add the `src` directory to your gopath. After doing so, the following will create all necessary binaries:
 
 ```bash
 make
