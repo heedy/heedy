@@ -1,6 +1,8 @@
 [![Build Status](https://magnum.travis-ci.com/dkumor/connectordb.svg?token=wkfH9e4qB6qZhTstfRXR&branch=master)](https://magnum.travis-ci.com/dkumor/connectordb)
 
 # ConnectorDB
+
+[![Join the chat at https://gitter.im/connectordb/connectordb](https://badges.gitter.im/connectordb/connectordb.svg)](https://gitter.im/connectordb/connectordb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 An Open-Source database for Quantified Self and IoT. Please visit [the website](https://connectordb.github.io) for more information.
 
 ## Dependencies
