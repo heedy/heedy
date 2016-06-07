@@ -113,6 +113,9 @@ func NewConfiguration() *Configuration {
 			CacheStatic:    true,
 			CacheStaticAge: 604800,
 			GzipStatic:     true,
+
+			//wait a full second between authentication failures
+			FailedLoginDelay: 300,
 		},
 
 		//The defaults to use for the batch and chunks

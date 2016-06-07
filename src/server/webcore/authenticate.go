@@ -17,8 +17,6 @@ import (
 )
 
 var (
-	//UnsuccessfulLoginWait is the amount of time to wait between each unsuccessful login attempt
-	UnsuccessfulLoginWait = 300 * time.Millisecond
 
 	// ErrNoAuthentication is an error that is thrown when no authentication is given
 	ErrNoAuthentication = errors.New("No authentication given with request")
@@ -67,6 +65,11 @@ func Authenticate(db *connectordb.Database, request *http.Request) (o *authopera
 	}
 
 	if err != nil {
+		c := config.Get()
+		if c.FailedLoginDelay > 0 {
+			time.Sleep(c.FailedLoginDelay * time.Millisecond)
+		}
+
 		atomic.AddUint32(&StatsAuthFails, 1)
 	}
 	return o, err

@@ -7,6 +7,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Captcha allows using reCaptcha to ensure logins are real users
@@ -71,6 +72,9 @@ type Frontend struct {
 
 	// Whether or not to gzip static data
 	GzipStatic bool `json:"gzip_static"`
+
+	// Amount of time in millisencods to wait after a failed login attempt
+	FailedLoginDelay time.Duration `json:"failed_login_delay"`
 }
 
 // TLSEnabled returns whether or not TLS os enabled for the frontend
