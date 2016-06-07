@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrInvalidUsername = errors.New("Invalid Username, usernames may not contain / \\ ? or spaces")
+	ErrLoginFailed     = errors.New("Login Failed. Check your username or password")
 	ErrInvalidEmail    = errors.New("Invalid Email Address")
 	ErrEmailExists     = errors.New("A user already exists with this email")
 	ErrUsernameExists  = errors.New("A user already exists with this username")
@@ -276,7 +277,7 @@ Returns an error along with the user and device if something went wrong
 func (userdb *SqlUserDatabase) Login(Username, Password string) (*User, *Device, error) {
 	user, err := userdb.readByNameOrEmail(Username, Username)
 	if err != nil {
-		return nil, nil, ErrInvalidUsername
+		return nil, nil, ErrLoginFailed
 	}
 
 	if !user.ValidatePassword(Password) {
