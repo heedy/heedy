@@ -87,10 +87,10 @@ func (f *FileWatcher) Watch() {
 						if err == nil {
 							log.Infof("Reloading '%s'", f.FileName)
 							err = f.Reloader.Reload()
-							if err == nil {
-								break
+							if err != nil {
+								log.Warn(err.Error())
 							}
-							log.Warn(err.Error())
+							break
 						}
 
 					}
