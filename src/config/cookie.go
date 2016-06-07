@@ -12,6 +12,7 @@ type CookieSession struct {
 	AuthKey       string `json:"authkey"`       //The key used to sign sessions
 	EncryptionKey string `json:"encryptionkey"` //The key used to encrypt sessions in cookies
 	MaxAge        int    `json:"maxage"`        //The maximum age of a cookie in a session (seconds)
+	Remember      bool   `json:"remember"`      // Whether or not the cookie should last beyond the session
 }
 
 // GetAuthKey returns the bytes associated with the config string

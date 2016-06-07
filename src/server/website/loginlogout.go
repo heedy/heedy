@@ -15,6 +15,10 @@ import (
 
 // Login handles login to the system without the api call (direct web interface)
 func Login(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	if o.Name() == "nobody" {
+		// If the operator is a nobody, backtrack to the login page
+		return -1, ""
+	}
 	webcore.CreateSessionCookie(o, writer, request)
 	http.Redirect(writer, request, "/", http.StatusFound)
 

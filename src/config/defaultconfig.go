@@ -55,6 +55,7 @@ func NewConfiguration() *Configuration {
 				AuthKey:       base64.StdEncoding.EncodeToString(sessionAuthKey),
 				EncryptionKey: base64.StdEncoding.EncodeToString(sessionEncKey),
 				MaxAge:        60 * 60 * 24 * 30 * 4, //About 4 months is the default expiration time of a cookie
+				Remember:      true,
 			},
 
 			// By default, captcha is disabled

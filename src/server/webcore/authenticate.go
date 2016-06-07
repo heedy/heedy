@@ -5,6 +5,7 @@ Licensed under the MIT license.
 package webcore
 
 import (
+	"config"
 	"connectordb"
 	"connectordb/authoperator"
 	"errors"
@@ -24,9 +25,6 @@ var (
 
 	//CookieMonster is the handler for authentication based on cookies
 	CookieMonster *securecookie.SecureCookie
-
-	//The time in seconds to keep a cookie valid
-	CookieMaxAge = 60 * 60 * 24 * 30 * 4
 )
 
 // Authenticate gets the authenticated device Operator given an http.Request
@@ -101,11 +99,21 @@ func CreateSessionCookie(o *authoperator.AuthOperator, writer http.ResponseWrite
 		Path:  "/",
 	}
 
+	c := config.Get().CookieSession
+
+	if c.Remember {
+		cookie.MaxAge = c.MaxAge
+	}
+
 	//Check a remember me param
 	if request != nil {
 		val, ok := request.URL.Query()["remember"]
-		if ok && val[0] == "true" {
-			cookie.MaxAge = CookieMaxAge
+		if ok {
+			if val[0] == "true" {
+				cookie.MaxAge = c.MaxAge
+			} else {
+				cookie.MaxAge = 0
+			}
 		}
 	}
 
