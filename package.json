@@ -50,6 +50,7 @@
     "react-router-redux": "^4.0.4",
     "react-star-rating": "cameronroe/react-star-rating#88fac69ae29a0ff37bdd7aa33c23fb8a49d95e2e",
     "react-tap-event-plugin": "^1.0.0",
+    "react-textarea-autosize": "^4.0.2",
     "redux": "^3.5.2",
     "redux-thunk": "^2.1.0",
     "style-loader": "^0.13.1",

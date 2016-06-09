@@ -2,7 +2,7 @@ import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 import datatypes from './datatypes'
 
-import TextField from 'material-ui/TextField';
+import Textarea from 'react-textarea-autosize';
 import RaisedButton from 'material-ui/RaisedButton';
 
 export const diarySchema = {
@@ -23,7 +23,11 @@ class DataInput extends Component {
             value = "";
         return (
             <div>
-                <TextField name={this.props.path} multiLine={true} fullWidth={true} value={value} rows={1} onChange={(e, txt) => this.props.onChange({value: txt})}/><br/>
+                <Textarea style={{
+                    width: "100%",
+                    fontSize: 18,
+                    borderColor: "#ccc"
+                }} value={value} minRows={4} useCacheForDOMMeasurements name={this.props.path} multiLine={true} onChange={(e) => this.props.onChange({value: e.target.value})}/><br/>
                 <RaisedButton primary={true} label="Submit" onTouchTap={() => this.props.onSubmit(value)}/>
             </div>
         );
