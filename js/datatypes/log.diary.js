@@ -23,9 +23,7 @@ class DataInput extends Component {
             value = "";
         return (
             <div>
-                <TextField name={this.props.path} multiLine={true} fullWidth={true} value={value} style={{
-                    marginTop: "-20px"
-                }} onChange={(e, txt) => this.props.onChange({value: txt})}/><br/>
+                <TextField name={this.props.path} multiLine={true} fullWidth={true} value={value} rows={1} onChange={(e, txt) => this.props.onChange({value: txt})}/><br/>
                 <RaisedButton primary={true} label="Submit" onTouchTap={() => this.props.onSubmit(value)}/>
             </div>
         );
