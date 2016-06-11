@@ -25,6 +25,18 @@ injectTapEventPlugin();
 // Can always use some help!
 console.log("Hi! You can follow along in the source code at https://github.com/connectordb/connectordb-frontend - and perhaps you can help out?");
 
+// Set up the ServiceWorker. The javascript is available in ../app/js/serviceworker.js
+// http://www.html5rocks.com/en/tutorials/service-worker/introduction/
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
+        // Registration was successful
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }).catch(function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+    });
+}
+
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
 // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
 let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory));
