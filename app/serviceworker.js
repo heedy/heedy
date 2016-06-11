@@ -1,11 +1,20 @@
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 
+// Increment the version if there were changes
 var CACHE_NAME = 'v1';
 
 
 // getPath returns the server path of the resource being requested
 function getPath(request) {
-    return (new URL(request.url).pathname);
+    u = new URL(request.url);
+    if (request.referrer === "") {
+        return u.pathname;
+    }
+    uref = new URL(request.referrer)
+    if (u.host === uref.host) {
+        return u.pathname;
+    }
+    return request.url;
 }
 
 self.addEventListener('install', function(event) {
@@ -26,7 +35,7 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
     var rpath = getPath(event.request);
 
-    if (rpath == "/logout" || rpath == "/login") {
+    if (rpath == "/logout" || rpath == "/login" || rpath == "/api/v1/login") {
         console.log("uncache everything...");
         // On logout, uncache everything
         event.respondWith(caches.keys().then(function(keyList) {
@@ -34,6 +43,8 @@ self.addEventListener('fetch', function(event) {
                 return caches.delete(key);
             })).then(() => fetch(event.request));
         }));
+    } else if (rpath.startsWith("/api/")) {
+        event.respondWith(fetch(event.request));
     } else {
         // We're not logging out
 
@@ -50,8 +61,9 @@ self.addEventListener('fetch', function(event) {
             // to clone the response
             var fetchRequest = event.request.clone();
 
-
-            if (rpath.startsWith("/app/") || rpath.startsWith("/www/")) {
+            // TODO: Add special logic for /user/device/stream
+            // For now, we just cache all of the visited pages - which is suboptimal
+            if (rpath.startsWith("/app/") || rpath.startsWith("/www/") || rpath.startsWith("/")) {
                 console.log("Adding to cache:", rpath);
                 return fetch(fetchRequest).then(function(response) {
                     // Check if we received a valid responnp

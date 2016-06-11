@@ -28,9 +28,9 @@ console.log("Hi! You can follow along in the source code at https://github.com/c
 // Set up the ServiceWorker. The javascript is available in ../app/js/serviceworker.js
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
+    navigator.serviceWorker.register('/serviceworker.js', {scope: "/"}).then(function(registration) {
         // Registration was successful
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        console.log('ServiceWorker has scope: ', registration.scope);
     }).catch(function(err) {
         // registration failed :(
         console.log('ServiceWorker registration failed: ', err);

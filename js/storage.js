@@ -46,23 +46,34 @@ class Storage {
 
     // addContext adds the data returned with the page context when it is initially requested
     addContext(context) {
-        let inserter = {}
-        if (context.ThisUser != null) {
-            inserter[context.ThisUser.name] = context.ThisUser;
+
+        // The data returned might be from cache. This means that it is OLD. The context's
+        // timestamp will tell us whether this data is new or old.
+        // As a rule: if it is more than 5 seconds old, it is considered old
+        if (context.Timestamp * 1000 > Date.now() - 5000) {
+            let inserter = {}
+
+            if (context.ThisUser != null) {
+                inserter[context.ThisUser.name] = context.ThisUser;
+            }
+            if (context.ThisDevice != null) {
+                inserter[context.ThisUser.name + "/" + context.ThisDevice.name] = context.ThisDevice;
+            }
+            if (context.User != null) {
+                inserter[context.User.name] = context.User;
+            }
+            if (context.Device != null) {
+                inserter[context.User.name + "/" + context.Device.name] = context.Device;
+            }
+            if (context.Stream != null) {
+                inserter[context.User.name + "/" + context.Device.name + "/" + context.Stream.name] = context.Stream;
+            }
+
+            this.setmany(inserter);
+        } else {
+            console.log("old context detected. This is a cached page.", context);
         }
-        if (context.ThisDevice != null) {
-            inserter[context.ThisUser.name + "/" + context.ThisDevice.name] = context.ThisDevice;
-        }
-        if (context.User != null) {
-            inserter[context.User.name] = context.User;
-        }
-        if (context.Device != null) {
-            inserter[context.User.name + "/" + context.Device.name] = context.Device;
-        }
-        if (context.Stream != null) {
-            inserter[context.User.name + "/" + context.Device.name + "/" + context.Stream.name] = context.Stream;
-        }
-        this.setmany(inserter);
+
     }
 
     // set sets the given object at the given path. It also adds a timestamp
