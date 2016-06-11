@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"net/http"
 	"server/webcore"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -20,6 +21,9 @@ import (
 
 //TemplateData is the struct that is passed to the templates
 type TemplateData struct {
+	// Current unix timestamp in seconds since the epoch
+	Timestamp int64
+
 	//These are information about the device performing the query
 	ThisUser   *users.User
 	ThisDevice *users.Device
@@ -67,6 +71,7 @@ func GetTemplateData(o *authoperator.AuthOperator, request *http.Request) (*Temp
 
 	// Partially construct the data
 	td := &TemplateData{
+		Timestamp:  time.Now().UTC().Unix(),
 		ThisUser:   thisU,
 		ThisDevice: thisD,
 		Version:    connectordb.Version,

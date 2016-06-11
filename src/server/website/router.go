@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -53,6 +54,10 @@ func staticFileHandler(h http.Handler) http.Handler {
 	})
 }
 
+func specificFileHandler(filename string) {
+
+}
+
 // Router handles the website
 func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 	if r == nil {
@@ -77,8 +82,17 @@ func Router(db *connectordb.Database, r *mux.Router) (*mux.Router, error) {
 
 	//Handle the favicon
 	r.Handle("/favicon.ico", http.RedirectHandler(www+"/favicon.ico", http.StatusMovedPermanently))
+
+	// Robots and sitemap
 	r.Handle("/robots.txt", http.RedirectHandler(www+"/robots.txt", http.StatusMovedPermanently))
 	r.Handle("/sitemap.xml", http.RedirectHandler(www+"/sitemap.xml", http.StatusMovedPermanently))
+
+	// ServiceWorker needs to be at root of domain to handle all requests. The serviceworker js is assumed
+	// to be in /app/serviceworker.js.
+	// Unfortunately, chrome doesn't allow serviceworkers to use redirects... So we must specifically handle this file manually
+	r.Handle("/serviceworker.js", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, path.Join(AppPath, "serviceworker.js"))
+	}))
 
 	// These functions are actually fairly standard for login/logout across different apps
 	// so we make them work the same way here
