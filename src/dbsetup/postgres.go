@@ -38,7 +38,7 @@ func (s *PostgresService) Create() error {
 	}
 
 	//Initialize the database directory
-	err = util.RunCommand(err, dbutil.FindPostgresInit(), "-D", dbDir)
+	err = util.RunCommand(err, GetPostgresExecutablePath("initdb"), "-D", dbDir)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (s *PostgresService) Create() error {
 	}
 
 	port := strconv.Itoa(int(s.S.Port))
-	err = util.RunCommand(err, dbutil.FindPostgresPsql(), "-h", s.S.Hostname, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
+	err = util.RunCommand(err, GetPostgresExecutablePath("psql"), "-h", s.S.Hostname, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *PostgresService) Start() error {
 		return err
 	}
 
-	err = util.RunDaemon(err, dbutil.FindPostgres(), "-D", postgresDir)
+	err = util.RunDaemon(err, GetPostgresExecutablePath("postgres"), "-D", postgresDir)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {
@@ -89,10 +89,9 @@ func (s *PostgresService) Stop() error {
 		return nil
 	}
 	log.Print("Stopping Postgres...")
-	pgctl := dbutil.FindPostgresPgctl()
 	postgresDir := filepath.Join(s.ServiceDirectory, postgresDatabaseName)
 
-	return util.RunCommand(nil, pgctl, "-D", postgresDir, "-m", "fast", "stop")
+	return util.RunCommand(nil, GetPostgresExecutablePath("pg_ctl"), "-D", postgresDir, "-m", "fast", "stop")
 }
 
 //NewPostgresService creates a new service for Postgres

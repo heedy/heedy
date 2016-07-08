@@ -10,6 +10,7 @@ import (
 	"dbsetup"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/pprof"
 	"server"
 	"shell"
@@ -202,7 +203,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "ConnectorDB"
 	app.Usage = "Run and administer a ConnectorDB database."
-	app.Version = connectordb.Version
+	app.Version = connectordb.Version + " (" + runtime.GOOS + ")"
 
 	app.Copyright = "This software is available under the MIT license."
 	app.Authors = []cli.Author{{Name: "ConnectorDB team", Email: "support@connectordb.com"}}

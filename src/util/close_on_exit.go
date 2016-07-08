@@ -69,9 +69,3 @@ func CloseOnExit(closeable Closeable) {
 		closeWaiter.Done()
 	}()
 }
-
-// SendCloseSignal sends the program the terminate signal so all items waiting for a
-// CloseOnExit will complete.
-func SendCloseSignal() {
-	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-}

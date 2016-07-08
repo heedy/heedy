@@ -17,7 +17,6 @@ import (
 	"server/website"
 	"strings"
 	"sync/atomic"
-	"syscall"
 
 	"github.com/dkumor/acmewrapper"
 	"github.com/gorilla/mux"
@@ -27,35 +26,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 )
-
-var (
-	//PreferredFileLimit sets the preferred maximum number of open files
-	PreferredFileLimit = uint64(10000)
-)
-
-//SetFileLimit attempts to set the open file limits
-func SetFileLimit() {
-	var noFile syscall.Rlimit
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &noFile)
-	if err != nil {
-		log.Warn("Could not read file limit:", err)
-		return
-	}
-	if noFile.Cur < PreferredFileLimit {
-		change := uint64(0)
-		if noFile.Max < PreferredFileLimit {
-			change = noFile.Max
-			log.Warnf("User hard file limit (%d) is less than preferred %d", noFile.Max, PreferredFileLimit)
-		} else {
-			change = PreferredFileLimit
-		}
-		log.Warnf("Setting user file limit from %d to %d", noFile.Cur, change)
-		noFile.Cur = change
-		if err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &noFile); err != nil {
-			log.Error("Failed to set file limit: ", err)
-		}
-	}
-}
 
 //SecurityHeaderHandler provides a wrapper function for an http.Handler that sets several security headers for all sessions passing through
 func SecurityHeaderHandler(h http.Handler) http.Handler {
@@ -114,7 +84,7 @@ func Redirect80(siteURL string) {
 
 //RunServer runs the ConnectorDB frontend server
 func RunServer() error {
-	SetFileLimit()
+	OSSpecificSetup()
 
 	// ACME has a special logger, so set it
 	acme.Logger = stdlog.New(log.StandardLogger().Writer(), "", 0)

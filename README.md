@@ -55,3 +55,8 @@ make test
 ```
 
 Note that this must be run _after_ build is completed.
+
+
+### Windows
+
+You will need to download the raw executables for gnatsd, redis, and postgres, and put them in the bin/dep directory after build. You'll also need to manually build the frontend, and put it in the bin/app directory, as well as manually copying site/www to bin.

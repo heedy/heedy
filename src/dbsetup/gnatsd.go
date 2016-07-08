@@ -6,10 +6,7 @@ package dbsetup
 
 import (
 	"config"
-	"path/filepath"
 	"util"
-
-	"github.com/kardianos/osext"
 )
 
 //GnatsdService is a service for running Redis
@@ -24,15 +21,7 @@ func (s *GnatsdService) Start() error {
 		return err
 	}
 
-	execpath, err := osext.ExecutableFolder()
-	if err != nil {
-		return err
-	}
-
-	//We assume gnatsd is distributed with our binaries in the dep folder
-	gpath := filepath.Join(execpath, "dep/gnatsd")
-
-	err = util.RunDaemon(err, gpath, "-c", configfile)
+	err = util.RunDaemon(err, GetExecutablePath("gnatsd"), "-c", configfile)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {

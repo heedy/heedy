@@ -24,7 +24,7 @@ func (s *RedisService) Start() error {
 		return err
 	}
 
-	err = util.RunDaemon(err, "redis-server", configfile)
+	err = util.RunDaemon(err, GetExecutablePath("redis-server"), configfile)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {
@@ -44,7 +44,7 @@ func (s *RedisService) Stop() error {
 	log.Print("Stopping redis...")
 	portString := strconv.Itoa(int(s.S.Port))
 
-	return util.RunCommand(nil, "redis-cli", "-p", portString, "-a", s.S.Password, "shutdown")
+	return util.RunCommand(nil, GetExecutablePath("redis-cli"), "-p", portString, "-a", s.S.Password, "shutdown")
 }
 
 //NewRedisService creates a new service for Redis
