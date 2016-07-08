@@ -142,16 +142,58 @@ func GetPostgresExecutablePath(executableName string) string {
 	if util.PathExists(execpath) {
 		return execpath
 	}
-	return GetExecutablePath(executableName)
+	p, err := getExecutablePath(executableName)
+	if err == nil && p != "" {
+		return p
+	}
+
+	if runtime.GOOS == "windows" {
+		// NOPE - grep doesn't work in windows
+		panic(fmt.Sprintf("Could not find executable %s", executableName))
+	}
+
+	// On ubuntu, postgres seems not to be in path by default. We therefore use grep-find
+	p = findPostgresExecutableGrep(executableName)
+	if p == "" {
+		panic(fmt.Sprintf("Could not find executable %s", executableName))
+	}
+	return trimExecutablePath(p)
+}
+
+// Find a postgres utility e.g. initdb or postgres using the lame grep method, works on Ubuntu (for now)
+func findPostgresExecutableGrep(executableName string) string {
+
+	findCmd := fmt.Sprintf("find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/%v", executableName)
+
+	cmd := exec.Command("bash", "-c", findCmd)
+	out, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return ""
+	}
+
+	return string(out)
 }
 
 // GetExecutablePath gets the path for the executable. This is a general version of the functions used for getting postgres
 // executable
 func GetExecutablePath(executableName string) string {
+	s, err := getExecutablePath(executableName)
+	if err != nil {
+		panic(err.Error())
+	}
+	if s == "" {
+		panic(fmt.Sprintf("Could not find executable %s", executableName))
+	}
+	return s
+}
+
+// getExecutablePath returns a string and an error instead of panic on failure to find
+func getExecutablePath(executableName string) (string, error) {
 	// A version of the executable in the dep folder takes prescedence over everything else
 	execpath, err := osext.ExecutableFolder()
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
 	//Check if the binaries are given in our executable folder
@@ -163,9 +205,9 @@ func GetExecutablePath(executableName string) string {
 	log.Debugf("Checking for '%s'", execpath)
 
 	if util.PathExists(execpath) {
-		return execpath
+		return execpath, nil
 	} else if runtime.GOOS == "windows" {
-		panic(fmt.Sprintf("Could not find executable %s", executableName))
+		return "", fmt.Errorf("Could not find executable %s", executableName)
 	}
 	log.Debugf("Checking for %s in path...", executableName)
 	// Start with which because we prefer a PATH version
@@ -173,10 +215,10 @@ func GetExecutablePath(executableName string) string {
 
 	if out != "" {
 		log.Debugf("Using %s", out)
-		return trimExecutablePath(out)
+		return trimExecutablePath(out), nil
 	}
 
-	panic(fmt.Sprintf("Could not find executable %s", executableName))
+	return "", fmt.Errorf("Could not find executable %s", executableName)
 }
 
 // Finds a utility on $PATH
