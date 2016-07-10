@@ -28,7 +28,7 @@ go get -u github.com/connectordb/pipescript
 if not exist "bin" mkdir "bin"
 robocopy /s "./src/dbsetup/config" "./bin/config"
 
-go build -o bin/connectordb.exe src/connectordb.go
+go build -o bin/connectordb.exe src/main.go
 
 echo Now you must put all dependent executables in bin/dep
 echo you must also copy the site/www directory to bin
