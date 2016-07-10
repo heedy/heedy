@@ -114,7 +114,7 @@ func (s *Shell) execCommand(command ...string) uint8 {
 func CreateShell(sdb *connectordb.Database) *Shell {
 	var s Shell
 	s.VersionString = "ConnectorDB Shell v" + connectordb.Version
-	s.CopyrightString = "Copyright Joseph Lewis & Daniel Kumor 2015"
+	s.CopyrightString = "https://github.com/connectordb/connectordb"
 	s.running = true
 	s.host, _ = os.Hostname()
 	s.reader = bufio.NewReader(os.Stdin)

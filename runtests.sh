@@ -1,4 +1,7 @@
 #!/bin/bash
+
+./bin/connectordb --version
+
 echo "Waiting for servers to start..."
 
 DBDIR="database_test"
