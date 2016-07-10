@@ -138,7 +138,7 @@ start
 echo "==================================================="
 echo "Starting Server"
 echo "==================================================="
-./bin/connectordb -lvl=DEBUG run $DBDIR &
+./bin/connectordb -l=DEBUG run $DBDIR &
 cdb_server=$!
 
 echo "==================================================="
