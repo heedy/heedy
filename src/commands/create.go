@@ -36,12 +36,12 @@ configuration.`,
 
 		cfg := config.NewConfiguration()
 
-		cfg.DatabaseDirectory = args[0]
-
 		if testConfiguration {
 			log.Warn("Test flag is set: Using testing configuration!")
 			cfg = &config.TestConfiguration
 		}
+
+		cfg.DatabaseDirectory = args[0]
 
 		if user != "" {
 			usrpass := strings.Split(user, ":")
