@@ -55,7 +55,7 @@ go-dependencies:
 	$(GO) get -u github.com/Sirupsen/logrus
 	$(GO) get -u github.com/josephlewis42/multicache
 	$(GO) get -u github.com/connectordb/njson
-	$(GO) get -u https://github.com/spf13/cobra
+	$(GO) get -u github.com/spf13/cobra
 	$(GO) get -u github.com/tdewolff/minify
 	$(GO) get -u golang.org/x/crypto/bcrypt
 	$(GO) get -u github.com/dkumor/acmewrapper # Let's encrypt support
