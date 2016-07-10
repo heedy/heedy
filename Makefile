@@ -26,8 +26,9 @@ resources: bin
 
 
 # Rule to go from source go file to binary
-bin/connectordb: src/connectordb.go bin phony
-	$(GO) build -o bin/connectordb src/connectordb.go
+# http://www.atatus.com/blog/golang-auto-build-versioning/
+bin/connectordb: src/main.go bin phony
+	$(GO) build -o bin/connectordb -ldflags "-X commands.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X commands.GitHash=`git rev-parse HEAD`" src/main.go
 
 clean:
 	rm -rf bin
@@ -54,7 +55,7 @@ go-dependencies:
 	$(GO) get -u github.com/Sirupsen/logrus
 	$(GO) get -u github.com/josephlewis42/multicache
 	$(GO) get -u github.com/connectordb/njson
-	$(GO) get -u github.com/codegangsta/cli
+	$(GO) get -u https://github.com/spf13/cobra
 	$(GO) get -u github.com/tdewolff/minify
 	$(GO) get -u golang.org/x/crypto/bcrypt
 	$(GO) get -u github.com/dkumor/acmewrapper # Let's encrypt support

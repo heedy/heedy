@@ -30,8 +30,26 @@ func Get() *Configuration {
 	return globalConfiguration.Get()
 }
 
+// LoadConfig just runs SetPath and returns the resulting config
+func LoadConfig(location string) (*Configuration, error) {
+	if err := SetPath(location); err != nil {
+		return nil, err
+	}
+	return Get(), nil
+}
+
 // SetPath sets the global system configuration to the given file name, which will be watched for changes
 func SetPath(filename string) error {
+	//There are a few different situations that we handle here:
+	//1) A database folder is given
+	//		In this case we read the connectordb.conf file in the folder
+	//2) A config file is given
+	//		We read the file
+
+	if util.IsDirectory(filename) {
+		filename = filepath.Join(filename, "connectordb.conf")
+	}
+
 	cfg, err := NewConfigurationLoader(filename)
 	if err != nil {
 		return err
