@@ -38,6 +38,9 @@ var TestConfiguration = func() Configuration {
 	c.BatchSize = 250
 	c.ChunkSize = 1
 
+	// The debug log level shows ALL the messages :)
+	c.LogLevel = "debug"
+
 	return *c
 }()
 

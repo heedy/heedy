@@ -21,7 +21,7 @@ func (s *GnatsdService) Start() error {
 		return err
 	}
 
-	err = util.RunDaemon(err, GetExecutablePath("gnatsd"), "-c", configfile)
+	_, err = util.RunDaemon(err, GetExecutablePath("gnatsd"), "-c", configfile)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {

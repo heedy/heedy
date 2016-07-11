@@ -24,6 +24,8 @@ ConnectorDB database from the command line.`,
 			return err
 		}
 
+		setLogging(cfg)
+
 		// Open the ConnectorDB database
 		db, err := connectordb.Open(cfg.Options())
 		if err != nil {

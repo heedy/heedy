@@ -38,6 +38,8 @@ ConnectorDB API and web app.`,
 			return err
 		}
 
+		setLogging(cfg)
+
 		// Override the flag-based options if they are set
 		// WARNING: These overrides will NOT hold if the config file is reloaded
 		// during runtime.

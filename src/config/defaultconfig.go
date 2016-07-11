@@ -50,6 +50,9 @@ func NewConfiguration() *Configuration {
 
 			Enabled: true,
 
+			LogFile:  "",
+			LogLevel: "info",
+
 			// Sets up the session cookie keys that are used
 			CookieSession: CookieSession{
 				AuthKey:       base64.StdEncoding.EncodeToString(sessionAuthKey),

@@ -1,10 +1,12 @@
 package commands
 
 import (
+	"config"
 	"connectordb"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 
@@ -50,31 +52,9 @@ storing your quantified-self data.`,
 	// Set up logging and profiling - everything that is needed for all runs of ConnectorDB
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
-		// First, set up the log level
-		switch loglevel {
-		default:
-			return fmt.Errorf("Unrecognized log level %s. Must be one of debug,info,warn,error", loglevel)
-		case "INFO", "info":
-			log.SetLevel(log.InfoLevel)
-		case "WARN", "warn":
-			log.SetLevel(log.WarnLevel)
-		case "DEBUG", "debug":
-			log.SetLevel(log.DebugLevel)
-			log.Debug("Setting DEBUG log level")
-		case "ERROR", "error":
-			log.SetLevel(log.ErrorLevel)
-		}
-
-		//  Next set up the log file
-		if logfile != "" {
-			log.Infof("Writing logs to %s", logfile)
-			logf, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-			if err != nil {
-				return fmt.Errorf("Could not open file %s: %s", logfile, err.Error())
-			}
-			log.SetFormatter(new(log.JSONFormatter))
-			log.SetOutput(logf)
-		}
+		// We start by initializing logging using defaults.
+		// It will be overwritten if config-based later.
+		setLogging(nil)
 
 		//Set up CPU profiling if it is enabled
 		if cpuprofile != "" {
@@ -103,10 +83,28 @@ storing your quantified-self data.`,
 	},
 }
 
+// setLogging sets up logging using an optional configuration
+func setLogging(c *config.Configuration) (err error) {
+	if c == nil {
+		// Use default config's logging values
+		c = config.NewConfiguration()
+	}
+	if logfile != "" {
+		c.LogFile, err = filepath.Abs(logfile)
+		if err != nil {
+			return err
+		}
+	}
+	if loglevel != "" {
+		c.LogLevel = loglevel
+	}
+	return config.SetLoggingFromConfig(c)
+}
+
 func init() {
 
 	RootCmd.PersistentFlags().StringVar(&logfile, "log", "", "The file to which log output is written")
-	RootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "info", "The types of messages to show (debug,info,warn,error)")
+	RootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "", "The types of messages to show (debug,info,warn,error)")
 	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprof", "", "File to which a cpu profile of ConnectorDB will be written")
 
 	RootCmd.Flags().BoolVar(&version, "version", false, "Show ConnectorDB version and exit")

@@ -18,6 +18,21 @@ import (
 // correctly.
 func (f *Frontend) Validate(c *Configuration) (err error) {
 
+	switch f.LogLevel {
+	default:
+		return fmt.Errorf("Unrecognized log level %s. Must be one of debug,info,warn,error", f.LogLevel)
+	case "", "INFO", "info", "WARN", "warn", "DEBUG", "debug", "ERROR", "error":
+		// it is valid. Do nothing
+	}
+
+	// Set the log file's absolute path
+	if f.LogFile != "" {
+		f.LogFile, err = filepath.Abs(f.LogFile)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Validate the TLS config
 	if err = f.TLS.Validate(); err != nil {
 		return err

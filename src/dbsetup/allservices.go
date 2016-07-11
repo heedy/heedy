@@ -102,6 +102,8 @@ func Create(c *config.Configuration) error {
 		}
 	}
 
+	// The frontend server does not need any creation stuff - since we are IN the frontend server
+
 	return nil
 }
 
@@ -125,6 +127,7 @@ func Start(dbfolder string) error {
 
 	var r Service
 	var g Service
+	var p Service
 	if c.Redis.Enabled {
 		r = NewRedisService(c.DatabaseDirectory, &c.Redis)
 		if err := r.Start(); err != nil {
@@ -141,13 +144,29 @@ func Start(dbfolder string) error {
 		}
 	}
 	if c.Sql.Enabled {
-		p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
+		p = NewPostgresService(c.DatabaseDirectory, &c.Sql)
 		if err := p.Start(); err != nil {
 			if r != nil {
 				r.Stop()
 			}
 			if g != nil {
 				g.Stop()
+			}
+			return err
+		}
+	}
+
+	if c.Frontend.Enabled {
+		f := NewFrontendService(c.DatabaseDirectory, c)
+		if err := f.Start(); err != nil {
+			if r != nil {
+				r.Stop()
+			}
+			if g != nil {
+				g.Stop()
+			}
+			if p != nil {
+				p.Stop()
 			}
 			return err
 		}
@@ -178,6 +197,13 @@ func Stop(dbfolder string) error {
 	var errR error
 	var errG error
 	var errP error
+	var errF error
+
+	if c.Frontend.Enabled {
+		// We close the frontend First
+		errF = NewFrontendService(c.DatabaseDirectory, c).Stop()
+	}
+
 	if c.Redis.Enabled {
 		errR = NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
 	}
@@ -186,6 +212,9 @@ func Stop(dbfolder string) error {
 	}
 	if c.Sql.Enabled {
 		errP = NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	}
+	if errF != nil {
+		return errF
 	}
 	if errR != nil {
 		return errR
@@ -214,10 +243,13 @@ func Kill(dbfolder string) error {
 	if err != nil {
 		return err
 	}
-
+	errF := NewFrontendService(c.DatabaseDirectory, c).Stop()
 	errR := NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
 	errG := NewGnatsdService(c.DatabaseDirectory, &c.Nats).Stop()
 	errP := NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	if errF != nil {
+		return errF
+	}
 	if errR != nil {
 		return errR
 	}

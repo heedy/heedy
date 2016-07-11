@@ -14,8 +14,6 @@ type Service struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	//SSLPort uint16 `json:"sslport"` //The port on which to run Stunnel
-
 	Enabled bool `json:"enabled"` //Whether or not to run the service on "connectordb start"
 }
 

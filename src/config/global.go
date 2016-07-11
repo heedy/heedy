@@ -76,6 +76,14 @@ func SetPath(filename string) error {
 		return c.PipeScript.Set()
 	})
 
+	// Next, we set up global logging. This is pretty convoluted,
+	// but it turns out that due to some annoyance in putting together command
+	// line logging parameters and these, logging is set up outside of this
+	// method - but we still want logging to be set when the configuration changes
+	OnChangeCallback(func(c *Configuration) error {
+		return SetLoggingFromConfig(c)
+	})
+
 	if !Get().Watch {
 		// Closing it will keep the config valid
 		globalConfiguration.Close()

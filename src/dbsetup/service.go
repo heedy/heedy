@@ -6,6 +6,7 @@ package dbsetup
 
 import (
 	"config"
+	"os"
 	"runtime"
 	"syscall"
 	"util"
@@ -99,14 +100,18 @@ func (bs BaseService) Stop() error {
 	log.Debugf("%s has pid %d", bs.Name(), p.Pid)
 
 	if runtime.GOOS == "windows" {
-		p.Kill()
+		p.Signal(os.Interrupt)
 	} else {
-		// A lighter way to kill the process...
+		// On linux, sigterm is used
 		if err := p.Signal(syscall.SIGTERM); err != nil {
 			bs.Stat = StatusError
 			return err
 		}
 	}
+
+	p.Wait()
+
+	bs.Stat = StatusStopped
 
 	return nil
 }

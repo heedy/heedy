@@ -56,6 +56,9 @@ configuration.`,
 			}
 		}
 
+		// set up logging based on create config (this allows debug msgs in testing config)
+		setLogging(cfg)
+
 		return dbsetup.Create(cfg)
 
 	},
