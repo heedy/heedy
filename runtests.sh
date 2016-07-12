@@ -149,7 +149,6 @@ echo "==================================================="
 nosetests --with-coverage --cover-package=connectordb -s --nologcapture connectordb_python/connectordb_test.py connectordb_python/query_test.py
 test_status=$?
 
-./bin/connectordb -l=DEBUG stop $DBDIR
 stop
 
 check_pids
