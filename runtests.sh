@@ -81,9 +81,9 @@ force_stop () {
 
 start () {
 	echo "==================================================="
-	echo "Doing Start"
+	echo "Doing Backend Start"
 	echo "==================================================="
-	./bin/connectordb start $DBDIR
+	./bin/connectordb start $DBDIR --backend
 }
 
 create () {
@@ -125,7 +125,7 @@ if [ "$test_status" -ne 0 ]; then
 fi
 
 #go test --timeout 15s -p=1 -bench . connectordb/...
-test_status=$?
+#test_status=$?
 stop
 check_pids
 
@@ -135,14 +135,13 @@ fi
 
 
 create
-start
+
 #Now test the python stuff, while rebuilding the db to make sure that
 #the go tests didn't invalidate the db
 echo "==================================================="
 echo "Starting Server"
 echo "==================================================="
-./bin/connectordb -l=DEBUG run $DBDIR &
-cdb_server=$!
+./bin/connectordb -l=DEBUG start $DBDIR
 
 echo "==================================================="
 echo "Starting API Tests"
@@ -150,7 +149,7 @@ echo "==================================================="
 nosetests --with-coverage --cover-package=connectordb -s --nologcapture connectordb_python/connectordb_test.py connectordb_python/query_test.py
 test_status=$?
 
-kill $cdb_server
+./bin/connectordb -l=DEBUG stop $DBDIR
 stop
 
 check_pids
