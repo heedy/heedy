@@ -70,7 +70,7 @@ func (s *PostgresService) Start() error {
 		return err
 	}
 
-	err = util.RunDaemon(err, GetPostgresExecutablePath("postgres"), "-D", postgresDir)
+	_, err = util.RunDaemon(err, GetPostgresExecutablePath("postgres"), "-D", postgresDir)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {

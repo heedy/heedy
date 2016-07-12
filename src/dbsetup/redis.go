@@ -24,7 +24,7 @@ func (s *RedisService) Start() error {
 		return err
 	}
 
-	err = util.RunDaemon(err, GetExecutablePath("redis-server"), configfile)
+	_, err = util.RunDaemon(err, GetExecutablePath("redis-server"), configfile)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
 	if err == nil {

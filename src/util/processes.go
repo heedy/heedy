@@ -73,9 +73,9 @@ func RunCommand(err error, command string, args ...string) error {
 }
 
 //RunDaemon runs the given command as a daemon (in the background)
-func RunDaemon(err error, command string, args ...string) error {
+func RunDaemon(err error, command string, args ...string) (int, error) {
 	if err != nil {
-		return err
+		return 0, err
 	}
 	log.Debugf(cmd2Str(command, args...))
 
@@ -88,7 +88,11 @@ func RunDaemon(err error, command string, args ...string) error {
 	//I am not convinced at the moment that restarting postgres/other stuff will be a good idea
 	//especially since that is what happens when we want to kill them from another process.
 	//So, for the moment, just start the process
-	return cmd.Start()
+	err = cmd.Start()
+	if err != nil {
+		return 0, err
+	}
+	return cmd.Process.Pid, nil
 }
 
 //GetProcess gets the gven process using its process name

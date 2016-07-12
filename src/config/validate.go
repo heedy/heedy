@@ -18,6 +18,21 @@ import (
 // correctly.
 func (f *Frontend) Validate(c *Configuration) (err error) {
 
+	switch f.LogLevel {
+	default:
+		return fmt.Errorf("Unrecognized log level %s. Must be one of debug,info,warn,error", f.LogLevel)
+	case "", "INFO", "info", "WARN", "warn", "DEBUG", "debug", "ERROR", "error":
+		// it is valid. Do nothing
+	}
+
+	// Set the log file's absolute path
+	if f.LogFile != "" {
+		f.LogFile, err = filepath.Abs(f.LogFile)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Validate the TLS config
 	if err = f.TLS.Validate(); err != nil {
 		return err
@@ -89,7 +104,7 @@ func (c *Configuration) Validate() error {
 	}
 
 	// Try loading the permissions
-	p, err := permissions.Load(c.Permissions)
+	_, err := permissions.Load(c.Permissions)
 	if err != nil {
 		return err
 	}
@@ -98,13 +113,6 @@ func (c *Configuration) Validate() error {
 		c.Permissions, err = filepath.Abs(c.Permissions)
 		if err != nil {
 			return err
-		}
-	}
-
-	// Check that the initial user permissions exist if given
-	if c.InitialUser != nil && c.InitialUser.Role != "" {
-		if _, ok := p.UserRoles[c.InitialUser.Role]; !ok {
-			return fmt.Errorf("Could not find role of '%s' for the initial creation user", c.InitialUser.Role)
 		}
 	}
 

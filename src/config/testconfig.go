@@ -28,18 +28,22 @@ var TestConfiguration = func() Configuration {
 		Enabled: true,
 	}
 
-	c.InitialUser = &UserMaker{
-		Name:     "test",
-		Email:    "test@localhost",
-		Password: "test",
-		Role:     "admin",
-	}
-
 	c.BatchSize = 250
 	c.ChunkSize = 1
 
+	// The debug log level shows ALL the messages :)
+	c.LogLevel = "debug"
+
 	return *c
 }()
+
+// TestUser is the user generated for the testing configuration
+var TestUser = &UserMaker{
+	Name:     "test",
+	Email:    "test@localhost",
+	Password: "test",
+	Role:     "admin",
+}
 
 //TestOptions is the options of tests
 var TestOptions = TestConfiguration.Options()

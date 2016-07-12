@@ -99,14 +99,19 @@ func (bs BaseService) Stop() error {
 	log.Debugf("%s has pid %d", bs.Name(), p.Pid)
 
 	if runtime.GOOS == "windows" {
+		// Why does windows not have a nicer signal to stop a process?
 		p.Kill()
 	} else {
-		// A lighter way to kill the process...
+		// On linux, sigterm is used
 		if err := p.Signal(syscall.SIGTERM); err != nil {
 			bs.Stat = StatusError
 			return err
 		}
 	}
+
+	p.Wait()
+
+	bs.Stat = StatusStopped
 
 	return nil
 }

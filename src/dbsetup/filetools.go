@@ -162,6 +162,7 @@ func GetPostgresExecutablePath(executableName string) string {
 
 // Find a postgres utility e.g. initdb or postgres using the lame grep method, works on Ubuntu (for now)
 func findPostgresExecutableGrep(executableName string) string {
+	log.Debugf("Checking for %s by grep in /usr/lib/postgresql", executableName)
 
 	findCmd := fmt.Sprintf("find /usr/lib/postgresql/ | sort -r | grep -m 1 /bin/%v", executableName)
 
@@ -211,11 +212,10 @@ func getExecutablePath(executableName string) (string, error) {
 	}
 	log.Debugf("Checking for %s in path...", executableName)
 	// Start with which because we prefer a PATH version
-	out := findExecutableWhich(executableName)
-
+	out := trimExecutablePath(findExecutableWhich(executableName))
 	if out != "" {
 		log.Debugf("Using %s", out)
-		return trimExecutablePath(out), nil
+		return out, nil
 	}
 
 	return "", fmt.Errorf("Could not find executable %s", executableName)

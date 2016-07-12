@@ -30,6 +30,10 @@ type Frontend struct {
 	// Whether or not the frontend is enabled
 	Enabled bool `json:"frontend_enabled"`
 
+	// The log file to use & the Log Level
+	LogFile  string `json:"logfile"`
+	LogLevel string `json:"loglevel"`
+
 	// The domain name of the website at which connectordb is running.
 	// This enables Connectordb to be able to output links to itself.
 	// Leave blank if domain is the same as Hostname

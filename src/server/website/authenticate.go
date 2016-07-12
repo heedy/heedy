@@ -48,7 +48,7 @@ func Authenticator(www wwwtemplatebookmark, apifunc webcore.APIHandler, db *conn
 		//Access control to the website is blocked
 		//webcore.WriteAccessControlHeaders(writer, request)
 		if !webcore.IsActive && webcore.HasSession(request) {
-			WriteError(logger, writer, http.StatusServiceUnavailable, errors.New("ConnectorDB app is disabled for maintenance."), false, nil)
+			WriteError(logger, writer, http.StatusServiceUnavailable, errors.New("ConnectorDB app is disabled."), false, nil)
 			return
 		}
 
