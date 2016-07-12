@@ -73,6 +73,8 @@ ConnectorDB API and web app.`,
 		// Print out the configuration as we understand it
 		log.Debug(cfg.String())
 
+		// The configuration is loaded globally. We now start the server, which
+		// will use the config for its options.
 		return server.RunServer()
 
 	},

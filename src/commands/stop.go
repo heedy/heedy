@@ -29,7 +29,9 @@ These servers are started with the start command. This command stops the servers
 
 		log.Info("Stopping Database")
 
-		return dbsetup.Stop(args[0])
+		return dbsetup.Stop(&dbsetup.Options{
+			DatabaseDirectory: args[0],
+		})
 
 	},
 }

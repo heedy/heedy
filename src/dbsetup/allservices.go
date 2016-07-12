@@ -1,7 +1,3 @@
-/**
-Copyright (c) 2016 The ConnectorDB Contributors
-Licensed under the MIT license.
-**/
 package dbsetup
 
 import (
@@ -28,36 +24,34 @@ var (
 )
 
 //Create generates a new ConnectorDB database
-func Create(c *config.Configuration) error {
+func Create(o *Options) error {
+	c := o.Config
 
-	if util.PathExists(c.DatabaseDirectory) {
+	if util.PathExists(o.DatabaseDirectory) {
 		return ErrDirectoryExists
 	}
 
-	log.Infof("Creating new ConnectorDB database at '%s'", c.DatabaseDirectory)
-	if err := os.MkdirAll(c.DatabaseDirectory, FolderPermissions); err != nil {
+	log.Infof("Creating new ConnectorDB database at '%s'", o.DatabaseDirectory)
+	if err := os.MkdirAll(o.DatabaseDirectory, FolderPermissions); err != nil {
 		return err
 	}
 
 	var umaker *users.UserMaker
-	if c.InitialUser != nil && c.InitialUser.Name != "" {
+	if o.InitialUser != nil && o.InitialUser.Name != "" {
 		umaker = &users.UserMaker{User: users.User{
-			Name:        c.InitialUser.Name,
-			Email:       c.InitialUser.Email,
-			Password:    c.InitialUser.Password,
-			Description: c.InitialUser.Description,
-			Icon:        c.InitialUser.Icon,
-			Role:        c.InitialUser.Role,
-			Nickname:    c.InitialUser.Nickname,
-			Public:      c.InitialUser.Public,
+			Name:        o.InitialUser.Name,
+			Email:       o.InitialUser.Email,
+			Password:    o.InitialUser.Password,
+			Description: o.InitialUser.Description,
+			Icon:        o.InitialUser.Icon,
+			Role:        o.InitialUser.Role,
+			Nickname:    o.InitialUser.Nickname,
+			Public:      o.InitialUser.Public,
 		}}
-
-		// Remove the password so it doesn't show up in the configuration
-		c.InitialUser.Password = ""
 	}
 
 	//Now generate the conf file for the full configuration
-	dbconf := filepath.Join(c.DatabaseDirectory, "connectordb.conf")
+	dbconf := filepath.Join(o.DatabaseDirectory, "connectordb.conf")
 	err := c.Save(dbconf)
 	if err != nil {
 		return err
@@ -66,18 +60,18 @@ func Create(c *config.Configuration) error {
 	// Set that conf file as the globalConfiguration
 	config.SetPath(dbconf)
 
-	if c.Redis.Enabled {
-		if err = NewRedisService(c.DatabaseDirectory, &c.Redis).Create(); err != nil {
+	if c.Redis.Enabled && o.RedisEnabled {
+		if err = NewRedisService(o.DatabaseDirectory, &c.Redis).Create(); err != nil {
 			return err
 		}
 	}
-	if c.Nats.Enabled {
-		if err = NewGnatsdService(c.DatabaseDirectory, &c.Nats).Create(); err != nil {
+	if c.Nats.Enabled && o.GnatsdEnabled {
+		if err = NewGnatsdService(o.DatabaseDirectory, &c.Nats).Create(); err != nil {
 			return err
 		}
 	}
-	if c.Sql.Enabled {
-		p := NewPostgresService(c.DatabaseDirectory, &c.Sql)
+	if c.Sql.Enabled && o.PostgresEnabled {
+		p := NewPostgresService(o.DatabaseDirectory, &c.Sql)
 		if err = p.Create(); err != nil {
 			return err
 		}
@@ -86,7 +80,7 @@ func Create(c *config.Configuration) error {
 
 		//Now that the databases are all created (and postgres is running), we check if we are to create a default user
 		if umaker != nil {
-			log.Infof("Creating user %s (%s)", c.InitialUser.Name, c.InitialUser.Email)
+			log.Infof("Creating user %s (%s)", o.InitialUser.Name, o.InitialUser.Email)
 			db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
 			if err != nil {
 				return err
@@ -108,34 +102,34 @@ func Create(c *config.Configuration) error {
 }
 
 //Start starts a ConnectorDB database
-func Start(dbfolder string) error {
-	if !util.PathExists(dbfolder) {
+func Start(o *Options) error {
+	if !util.PathExists(o.DatabaseDirectory) {
 		return ErrDirectoryDNE
 	}
-	pidfile := filepath.Join(dbfolder, "connectordb.pid")
-	//Check if connectordb.pid exists - if it does, it means the servers are running
+	pidfile := filepath.Join(o.DatabaseDirectory, "connectordb.pid")
+	//Check if connectordb.pid exists - if it does, it means the servers are running.
 	if util.PathExists(pidfile) {
 		return ErrAlreadyRunning
 	}
 
-	c, err := config.Load(filepath.Join(dbfolder, "connectordb.conf"))
+	c, err := config.Load(filepath.Join(o.DatabaseDirectory, "connectordb.conf"))
 	if err != nil {
 		return err
 	}
-	//Overwrite the database directory
-	c.DatabaseDirectory = dbfolder
+	// Set the config
+	o.Config = c
 
 	var r Service
 	var g Service
 	var p Service
-	if c.Redis.Enabled {
-		r = NewRedisService(c.DatabaseDirectory, &c.Redis)
+	if c.Redis.Enabled && o.RedisEnabled {
+		r = NewRedisService(o.DatabaseDirectory, &c.Redis)
 		if err := r.Start(); err != nil {
 			return err
 		}
 	}
-	if c.Nats.Enabled {
-		g = NewGnatsdService(c.DatabaseDirectory, &c.Nats)
+	if c.Nats.Enabled && o.GnatsdEnabled {
+		g = NewGnatsdService(o.DatabaseDirectory, &c.Nats)
 		if err := g.Start(); err != nil {
 			if r != nil {
 				r.Stop()
@@ -143,8 +137,8 @@ func Start(dbfolder string) error {
 			return err
 		}
 	}
-	if c.Sql.Enabled {
-		p = NewPostgresService(c.DatabaseDirectory, &c.Sql)
+	if c.Sql.Enabled && o.PostgresEnabled {
+		p = NewPostgresService(o.DatabaseDirectory, &c.Sql)
 		if err := p.Start(); err != nil {
 			if r != nil {
 				r.Stop()
@@ -156,8 +150,8 @@ func Start(dbfolder string) error {
 		}
 	}
 
-	if c.Frontend.Enabled {
-		f := NewFrontendService(c.DatabaseDirectory, c)
+	if c.Frontend.Enabled && o.FrontendEnabled {
+		f := NewFrontendService(o.DatabaseDirectory, c)
 		if err := f.Start(); err != nil {
 			if r != nil {
 				r.Stop()
@@ -172,46 +166,46 @@ func Start(dbfolder string) error {
 		}
 	}
 
-	//Now we save the current config to the pid file
-	c.Save(pidfile)
+	//Now we save the current options to the pid file
+	o.Save(pidfile)
 	return nil
 }
 
 //Stop stops a ConnectorDB database
-func Stop(dbfolder string) error {
-	if !util.PathExists(dbfolder) {
+func Stop(opt *Options) error {
+	if !util.PathExists(opt.DatabaseDirectory) {
 		return ErrDirectoryDNE
 	}
-	pidfile := filepath.Join(dbfolder, "connectordb.pid")
+	pidfile := filepath.Join(opt.DatabaseDirectory, "connectordb.pid")
 	//Check if connectordb.pid exists - if it does, it means the servers are running
 	if !util.PathExists(pidfile) {
 		return ErrNotRunning
 	}
 
-	c, err := config.Load(pidfile)
+	o, err := LoadOptions(pidfile)
 	if err != nil {
 		return err
 	}
-	//Overwrite the database directory
-	c.DatabaseDirectory = dbfolder
+	c := o.Config
+
 	var errR error
 	var errG error
 	var errP error
 	var errF error
 
-	if c.Frontend.Enabled {
+	if c.Frontend.Enabled && o.FrontendEnabled {
 		// We close the frontend First
-		errF = NewFrontendService(c.DatabaseDirectory, c).Stop()
+		errF = NewFrontendService(o.DatabaseDirectory, c).Stop()
 	}
 
-	if c.Redis.Enabled {
-		errR = NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
+	if c.Redis.Enabled && o.RedisEnabled {
+		errR = NewRedisService(o.DatabaseDirectory, &c.Redis).Stop()
 	}
-	if c.Nats.Enabled {
-		errG = NewGnatsdService(c.DatabaseDirectory, &c.Nats).Stop()
+	if c.Nats.Enabled && o.GnatsdEnabled {
+		errG = NewGnatsdService(o.DatabaseDirectory, &c.Nats).Stop()
 	}
-	if c.Sql.Enabled {
-		errP = NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	if c.Sql.Enabled && o.RedisEnabled {
+		errP = NewPostgresService(o.DatabaseDirectory, &c.Sql).Stop()
 	}
 	if errF != nil {
 		return errF
@@ -228,6 +222,7 @@ func Stop(dbfolder string) error {
 	return errP
 }
 
+/*
 //Kill stops a ConnectorDB database
 func Kill(dbfolder string) error {
 	if !util.PathExists(dbfolder) {
@@ -243,10 +238,10 @@ func Kill(dbfolder string) error {
 	if err != nil {
 		return err
 	}
-	errF := NewFrontendService(c.DatabaseDirectory, c).Stop()
-	errR := NewRedisService(c.DatabaseDirectory, &c.Redis).Stop()
-	errG := NewGnatsdService(c.DatabaseDirectory, &c.Nats).Stop()
-	errP := NewPostgresService(c.DatabaseDirectory, &c.Sql).Stop()
+	errF := NewFrontendService(o.DatabaseDirectory, c).Stop()
+	errR := NewRedisService(o.DatabaseDirectory, &c.Redis).Stop()
+	errG := NewGnatsdService(o.DatabaseDirectory, &c.Nats).Stop()
+	errP := NewPostgresService(o.DatabaseDirectory, &c.Sql).Stop()
 	if errF != nil {
 		return errF
 	}
@@ -260,3 +255,4 @@ func Kill(dbfolder string) error {
 	os.Remove(pidfile)
 	return errP
 }
+*/

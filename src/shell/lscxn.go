@@ -25,9 +25,6 @@ func init() {
 		dbcxn := cfg.GetSqlConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
-		streamdb := cfg.DatabaseDirectory
-		fmt.Printf("Streamdb: %v\n", streamdb)
-
 		redis := cfg.Redis.GetRedisConnectionString()
 		fmt.Printf("Redis: %v\n", redis)
 

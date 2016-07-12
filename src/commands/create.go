@@ -16,6 +16,10 @@ var (
 	testConfiguration bool
 	user              string
 	email             string
+
+	mkredis    bool
+	mkpostgres bool
+	mkgnatsd   bool
 )
 
 // CreateCmd creates a new database
@@ -34,21 +38,43 @@ configuration.`,
 			return ErrTooManyArgs
 		}
 
-		cfg := config.NewConfiguration()
+		dboptions := &dbsetup.Options{
+			DatabaseDirectory: args[0],
+			Config:            config.NewConfiguration(),
+
+			RedisEnabled:    true,
+			GnatsdEnabled:   true,
+			PostgresEnabled: true,
+		}
 
 		if testConfiguration {
 			log.Warn("Test flag is set: Using testing configuration!")
-			cfg = &config.TestConfiguration
+			dboptions.Config = &config.TestConfiguration
+			dboptions.InitialUser = config.TestUser
 		}
 
-		cfg.DatabaseDirectory = args[0]
+		// If one of the create flags is given, we set enabled to the given values
+		if mkredis || mkgnatsd || mkpostgres {
+			log.Infof("Setting up: redis=%t nats=%t sql=%t (frontend is disabled)", mkredis, mkgnatsd, mkpostgres)
+			dboptions.RedisEnabled = mkredis
+			dboptions.GnatsdEnabled = mkgnatsd
+			dboptions.PostgresEnabled = mkpostgres
+
+			dboptions.Config.Redis.Enabled = mkredis
+			dboptions.Config.Sql.Enabled = mkpostgres
+			dboptions.Config.Nats.Enabled = mkgnatsd
+
+			// If the custom flags were given, we disable frontend, since it is assumed that
+			// this is a power user who wants to run the backend over a cluster.
+			dboptions.Config.Frontend.Enabled = false
+		}
 
 		if user != "" {
 			usrpass := strings.Split(user, ":")
 			if len(usrpass) != 2 {
 				return errors.New("User must be in username:password format")
 			}
-			cfg.InitialUser = &config.UserMaker{
+			dboptions.InitialUser = &config.UserMaker{
 				Name:     usrpass[0],
 				Password: usrpass[1],
 				Email:    email,
@@ -57,9 +83,9 @@ configuration.`,
 		}
 
 		// set up logging based on create config (this allows debug msgs in testing config)
-		setLogging(cfg)
+		setLogging(dboptions.Config)
 
-		return dbsetup.Create(cfg)
+		return dbsetup.Create(dboptions)
 
 	},
 }
@@ -68,6 +94,10 @@ func init() {
 	CreateCmd.Flags().BoolVar(&testConfiguration, "test", false, "Use testing configuration")
 	CreateCmd.Flags().StringVar(&user, "user", "", "Admin user to create by default in username:password format")
 	CreateCmd.Flags().StringVar(&email, "email", "root@localhost", "Email to use for the created admin user")
+
+	CreateCmd.Flags().BoolVar(&mkredis, "redis", false, "set up the backend redis server (if no flags given, all created)")
+	CreateCmd.Flags().BoolVar(&mkgnatsd, "nats", false, "set up the backend nats server (if no flags given, all created)")
+	CreateCmd.Flags().BoolVar(&mkpostgres, "sql", false, "set up the backend sql server (if no flags given, all created)")
 
 	RootCmd.AddCommand(CreateCmd)
 }
