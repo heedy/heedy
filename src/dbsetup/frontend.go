@@ -43,7 +43,8 @@ func (s *FrontendService) Start() error {
 	if s.o.FrontendPort != 0 {
 		port = s.o.FrontendPort
 	}
-	err = util.WaitPort(s.c.Hostname, int(port), err)
+	// Windows needs to know that we're on localhost
+	err = util.WaitPort("localhost", int(port), err)
 
 	if err == nil {
 		s.Stat = StatusRunning

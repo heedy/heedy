@@ -1,35 +1,20 @@
-:: These are basically explicit copies of the go get stuff in the makefile
-:: The linux version is source of truth.
-go get -u gopkg.in/redis.v3
-go get -u github.com/nats-io/nats
-go get -u github.com/lib/pq
-go get -u github.com/connectordb/duck
-go get -u github.com/jmoiron/sqlx
-go get -u github.com/xeipuuv/gojsonschema
-go get -u gopkg.in/vmihailenco/msgpack.v2
-go get -u gopkg.in/fsnotify.v1
-go get -u github.com/kardianos/osext
-go get -u github.com/nu7hatch/gouuid
-go get -u github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
-go get -u github.com/Sirupsen/logrus
-go get -u github.com/josephlewis42/multicache
-go get -u github.com/connectordb/njson
-go get -u github.com/codegangsta/cli
-go get -u github.com/tdewolff/minify
-go get -u golang.org/x/crypto/bcrypt
-go get -u github.com/dkumor/acmewrapper
-go get -u github.com/gernest/hot
-go get -u github.com/russross/blackfriday
-go get -u github.com/microcosm-cc/bluemonday
-go get -u github.com/stretchr/testify
-go get -u github.com/connectordb/pipescript
+@echo off
+:: This is JUST the build command. You must
+:: run dependencies.bat first to set up the folders
 
+:: https://stackoverflow.com/questions/6359820/how-to-set-commands-output-as-a-variable-in-a-batch-file
+FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-parse HEAD`) DO (
+SET gitsha=%%F
+)
+ECHO git sha: %gitsha%
 
-if not exist "bin" mkdir "bin"
-robocopy /s "./src/dbsetup/config" "./bin/config"
+:: https://stackoverflow.com/questions/203090/how-to-get-current-datetime-on-windows-command-line-in-a-suitable-format-for-us
+For /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set mydate=%%c-%%a-%%b)
+For /f "tokens=1-2 delims=/:" %%a in ("%TIME%") do (set mytime=%%a%%b)
+SET curtime=%mydate%
+ECHO build date: %curtime%
+:: TODO: The curtime command should be %mydate%_%mytime%, but mytime seems to have a space, which makes go unhappy
+:: Also... should make it utc.
 
-go build -o bin/connectordb.exe src/main.go
+go build -o bin/connectordb.exe  -ldflags "-X commands.BuildStamp=%curtime% -X commands.GitHash=%gitsha%" src/main.go 
 
-echo Now you must put all dependent executables in bin/dep
-echo you must also copy the site/www directory to bin
-echo Finally you must compile the frontend and put it in bin/app
