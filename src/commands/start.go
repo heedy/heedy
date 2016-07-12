@@ -26,7 +26,7 @@ var (
 // StartCmd starts the background servers
 var StartCmd = &cobra.Command{
 	Use:   "start [config file path or database directory]",
-	Short: "Starts ConnectorDB and its backend services as a daemon",
+	Short: "Starts ConnectorDB and its backend services as daemons",
 	Long: `ConnectorDB uses postgres, redis, and gnatsd in the background, and runs its own
 frontend server using these services. The start command allows you to start
 all of the services including the frontend as a daemon. You can also use the start command
@@ -45,7 +45,7 @@ connectordb stop.`,
 			return errors.New("Could not find the given directory")
 		}
 
-		log.Info("Starting Database")
+		log.Info("Starting ConnectorDB")
 
 		//force removes the pid file
 		if force {
@@ -59,6 +59,8 @@ connectordb stop.`,
 			GnatsdEnabled:     true,
 			PostgresEnabled:   true,
 			FrontendEnabled:   true,
+			FrontendFlags:     setRunFlags(),
+			FrontendPort:      port, // The port should be 0 by default. This is so waiting for port Open doesn't fail
 		}
 
 		// If any of the flags is given, we do manual start

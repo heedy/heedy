@@ -3,7 +3,9 @@ package commands
 import (
 	"config"
 	"config/permissions"
+	"path/filepath"
 	"server"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -80,11 +82,52 @@ ConnectorDB API and web app.`,
 	},
 }
 
+// setRunFlags is used to set up the flags used in start - it basically regenerates the flags so that
+// when start is called with these flags, the connectordb run command will have the flags passed directly
+// to it.
+// That is, if I run `connectordb start testdb --join`, when starting the frontend, start will run:
+// connectordb run testdb --join
+// as if the flag were passed directly
+func setRunFlags() []string {
+	ret := []string{}
+	// If there was a log file set, we set that up here
+	if loglevel != "" {
+		ret = append(ret, "--loglevel", loglevel)
+	}
+	if logfile != "" {
+		var err error
+		logfile, err = filepath.Abs(logfile)
+		if err != nil {
+			panic(err)
+		}
+		ret = append(ret, "--logfile", logfile)
+	}
+	if host != "" {
+		ret = append(ret, "--host", host)
+	}
+	if port != 0 {
+		ret = append(ret, "--port", strconv.Itoa(int(port)))
+	}
+	if http {
+		ret = append(ret, "--http")
+	}
+	if join {
+		ret = append(ret, "--join")
+	}
+	return ret
+}
+
 func init() {
 	RunCmd.Flags().StringVar(&host, "host", "", "Override the interface to which the ConnectorDB server should bind")
 	RunCmd.Flags().Uint16VarP(&port, "port", "p", 0, "Override the port on which to run frontend")
 	RunCmd.Flags().BoolVar(&http, "http", false, "forces server to run in http mode even when TLS cert/key are in conf")
 	RunCmd.Flags().BoolVar(&join, "join", false, "Enables free join on the server (anyone can join)")
+
+	// These commands are for mirroring join's flags in start. See setRunFlags
+	StartCmd.Flags().StringVar(&host, "host", "", "Override the interface to which the ConnectorDB server should bind")
+	StartCmd.Flags().Uint16VarP(&port, "port", "p", 0, "Override the port on which to run frontend")
+	StartCmd.Flags().BoolVar(&http, "http", false, "forces server to run in http mode even when TLS cert/key are in conf")
+	StartCmd.Flags().BoolVar(&join, "join", false, "Enables free join on the server (anyone can join)")
 
 	RootCmd.AddCommand(RunCmd)
 }

@@ -151,7 +151,7 @@ func Start(o *Options) error {
 	}
 
 	if c.Frontend.Enabled && o.FrontendEnabled {
-		f := NewFrontendService(o.DatabaseDirectory, c)
+		f := NewFrontendService(o.DatabaseDirectory, c, o)
 		if err := f.Start(); err != nil {
 			if r != nil {
 				r.Stop()
@@ -195,7 +195,7 @@ func Stop(opt *Options) error {
 
 	if c.Frontend.Enabled && o.FrontendEnabled {
 		// We close the frontend First
-		errF = NewFrontendService(o.DatabaseDirectory, c).Stop()
+		errF = NewFrontendService(o.DatabaseDirectory, c, o).Stop()
 	}
 
 	if c.Redis.Enabled && o.RedisEnabled {

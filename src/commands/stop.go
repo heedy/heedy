@@ -12,9 +12,8 @@ import (
 // StopCmd stops the background servers
 var StopCmd = &cobra.Command{
 	Use:   "stop [config file path or database directory]",
-	Short: "Stops ConnectorDB's backend databases",
-	Long: `ConnectorDB uses postgres, redis, and gnatsd in the background.
-These servers are started with the start command. This command stops the servers.`,
+	Short: "Stops ConnectorDB daemons",
+	Long:  `Stops the servers started with the start command`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return ErrConfig
@@ -27,7 +26,7 @@ These servers are started with the start command. This command stops the servers
 			return errors.New("Could not find the given directory")
 		}
 
-		log.Info("Stopping Database")
+		log.Info("Stopping ConnectorDB")
 
 		return dbsetup.Stop(&dbsetup.Options{
 			DatabaseDirectory: args[0],

@@ -14,6 +14,7 @@ import (
 type FrontendService struct {
 	BaseService
 	c *config.Configuration
+	o *Options
 }
 
 // The frontend doesn't need to be created.
@@ -29,15 +30,20 @@ func (s *FrontendService) Start() error {
 	// This is the base run string
 	flags := []string{"run", s.ServiceDirectory}
 
-	// The greatest difficulty now is to figure out how to send command line options
-	// from start. For now, we just use a hack: we manually set send ALL of the command line options.
-	// This should be fixed at some point, but for now it works, so fukkit.
-	flags = append(flags, "--loglevel", s.c.LogLevel)
-	flags = append(flags, "--log", s.c.LogFile)
+	// Set up the frontend's flags
+	if len(s.o.FrontendFlags) > 0 {
+		flags = append(flags, s.o.FrontendFlags...)
+	}
 
 	var pid int
 	pid, err = util.RunDaemon(err, connectordb, flags...)
-	err = util.WaitPort(s.c.Hostname, int(s.c.Port), err)
+
+	// The port might have been modified by flag. Check if that is the case
+	port := s.c.Port
+	if s.o.FrontendPort != 0 {
+		port = s.o.FrontendPort
+	}
+	err = util.WaitPort(s.c.Hostname, int(port), err)
 
 	if err == nil {
 		s.Stat = StatusRunning
@@ -54,6 +60,6 @@ func (s *FrontendService) Start() error {
 }
 
 //NewFrontendService creates a new service for the ConnectorDB frontend
-func NewFrontendService(serviceDirectory string, c *config.Configuration) *FrontendService {
-	return &FrontendService{BaseService{serviceDirectory, "frontend", StatusNone, nil}, c}
+func NewFrontendService(serviceDirectory string, c *config.Configuration, o *Options) *FrontendService {
+	return &FrontendService{BaseService{serviceDirectory, "frontend", StatusNone, nil}, c, o}
 }

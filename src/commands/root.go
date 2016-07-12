@@ -101,7 +101,7 @@ func setLogging(c *config.Configuration) (err error) {
 
 func init() {
 
-	RootCmd.PersistentFlags().StringVar(&logfile, "log", "", "The file to which log output is written")
+	RootCmd.PersistentFlags().StringVar(&logfile, "logfile", "", "The file to which log output is written")
 	RootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "", "The types of messages to show (debug,info,warn,error)")
 	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprof", "", "File to which a cpu profile of ConnectorDB will be written")
 
