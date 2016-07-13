@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 	"util"
 
 	log "github.com/Sirupsen/logrus"
@@ -70,15 +69,8 @@ func (s *PostgresService) Start() error {
 		return err
 	}
 
-	_, err = util.RunDaemon(err, GetPostgresExecutablePath("postgres"), "-D", postgresDir)
+	err = util.RunCommand(err, GetPostgresExecutablePath("pg_ctl"), "-D", postgresDir, "-w", "start")
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
-
-	if err == nil {
-		s.Stat = StatusRunning
-
-		//Sleep one second, since postgres is weird like that
-		time.Sleep(1 * time.Second)
-	}
 
 	return err
 }
