@@ -1,3 +1,16 @@
+/*
+  This is the main navigator shown for streams. This component chooses the correct page to set based upon the data
+  it is getting (shows loading page if the user/device/stream are not ready).
+
+  The component also performs further routing based upon the hash. This is because react-router does not
+  support both normal and hash-based routing at the same time.
+  All child pages are located in ./pages. This component can be throught of as an extension to the main app routing
+  done in App.js, with additional querying for the user/device/stream we want to view.
+
+  It also queries the user/device/stream-specific state from redux, so further children can just use the state without worrying
+  about which user/device/stream it belongs to.
+*/
+
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
@@ -18,7 +31,7 @@ function setStreamTitle(user, device, stream) {
         : user.name + "/" + device.name + "/" + stream.name);
 }
 
-class Device extends Component {
+class Stream extends Component {
     static propTypes = {
         user: PropTypes.object,
         device: PropTypes.object,
@@ -61,4 +74,4 @@ export default connectStorage(connect((store, props) => ({
     state: getStreamState((props.user != null && props.device != null && props.stream != null
         ? props.user.name + "/" + props.device.name + "/" + props.stream.name
         : ""), store)
-}))(Device), false, false);
+}))(Stream), false, false);

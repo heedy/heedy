@@ -1,26 +1,31 @@
+/**
+  The StreamView represents the main page shown when viewing a stream. It consists of 2 parts
+  parts:
+   - header card: the same as device/user cards - it is expandable to show stream details as well
+   as show icons to edit the stream
+   - The main bootstrap grid, which contains all visualization/querying of stream data.
+
+   The rest of this comment pertain to the bootstrap grid, which is this page's main event.
+
+   The grid is made up of 3 distinct parts:
+  - If the stream is a downlink stream, or the stream is the current device, show the data input control.
+      This corresponds to the default permissions structure where the owner alone can write streams unless
+      they are explicitly marked as downlink.
+  - The main data query control - allows you to query data from your stream however you want. The queried data
+      will be what is shown in the next part (the analysis cards)
+  - Analysis cards. These cards are given the data which is queried in the main query control, and plot/show
+      visualizations. Each analysis card specifies if it is to be full-width, half-width, or expandable and gives an optional
+      control area that drops down. Expandable cards can switch between full and half-width based on user input.
+
+  While there is no queried data, the analysis cards are replaced with a loading screen.
+**/
+
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 
-import {
-    Table,
-    TableBody,
-    TableHeader,
-    TableHeaderColumn,
-    TableRow,
-    TableRowColumn
-} from 'material-ui/Table';
-
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/monokai.css';
-import CodeMirror from 'react-codemirror';
-import 'codemirror/mode/javascript/javascript';
-
-import TimeDifference from '../components/TimeDifference';
-import {go} from '../actions';
-
 import StreamCard from '../components/StreamCard';
-import DataView from '../components/DataView';
 import DataInput from '../components/DataInput';
+import DataQuery from '../components/DataQuery';
 
 class StreamView extends Component {
     static propTypes = {
@@ -47,8 +52,7 @@ class StreamView extends Component {
                     {stream.downlink || this.props.thisUser.name == user.name && this.props.thisDevice.name == device.name
                         ? (<DataInput user={user} device={device} stream={stream}/>)
                         : null}
-
-                    <DataView state={state} user={user} device={device} stream={stream}/>
+                    <DataQuery state={state} user={user} device={device} stream={stream}/>
                 </div>
             </div>
         );

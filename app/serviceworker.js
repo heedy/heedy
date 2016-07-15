@@ -1,8 +1,7 @@
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 
 // Increment the version if there were changes
-var CACHE_NAME = 'v1';
-
+var CACHE_NAME = 'v2';
 
 // getPath returns the server path of the resource being requested
 function getPath(request) {
@@ -23,13 +22,11 @@ self.addEventListener('install', function(event) {
 
 // On activate, we reset the entire cache
 self.addEventListener('activate', function(event) {
-    event.waitUntil(
-        caches.keys().then(function(keyList) {
-            return Promise.all(keyList.map(function(key) {
-                return caches.delete(key);
-            }));
-        })
-    );
+    event.waitUntil(caches.keys().then(function(keyList) {
+        return Promise.all(keyList.map(function(key) {
+            return caches.delete(key);
+        }));
+    }));
 });
 
 self.addEventListener('fetch', function(event) {

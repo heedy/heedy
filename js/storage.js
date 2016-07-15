@@ -6,6 +6,8 @@
 // Also, while technically users/devices/streams can be held in redux state, I decided to have storage with its own callback
 // architecture, since the storage can have a lot of stuff cached - way too much for redux to handle.
 
+// Note: Most components don't need to call this code - they usually access users/devices/streams through connectStorage.js
+
 // TODO: This code should be cleaned up a bit...
 
 import {ConnectorDB} from 'connectordb';

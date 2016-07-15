@@ -1,3 +1,15 @@
+/*
+  The Theme component renders the main website (the navigation, notification box etc).
+  The theme's children are the actual content pages.
+
+  This component puts the entire theme together, including colors. It also sets up responsiveness - it
+  queries the browser width to determine whether the navigation is to be docked or not (ie, whether the app is
+  running on a phone or not).
+
+  Furthermore, this component renders the search results page directly, and it renders the snackbar directly (the
+  notification popup at bottom of screen).
+*/
+
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
@@ -9,7 +21,10 @@ import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
 
 import Navigation from './Navigation';
 import TopBar from './TopBar';
-import Search from './Search';
+
+// The search component is within the parent directory. It is rendered above whatever page contents
+// if there is text in the search box - and it is hidden when search box text is gone.
+import Search from '../Search';
 
 // muiTheme represents our color scheme for the material design UI
 const muiTheme = getMuiTheme({

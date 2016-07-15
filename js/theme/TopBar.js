@@ -1,3 +1,9 @@
+/*
+ The TopBar is the bar shown at the top of the app, and it includes a search box.
+ If on mobile, it also shows the hamburger menu (which activates the navigation). This component
+ is added to the app in Theme.js
+*/
+
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 
@@ -8,6 +14,7 @@ import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
 
+// setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
 import {setSearchText} from './actions'
 
 const styles = {

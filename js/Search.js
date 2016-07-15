@@ -1,3 +1,10 @@
+/*
+  This component is shown when there is text in the search box. Currently, search is unimplemented.
+  Neither the ConnectorDB server nor the frontend have search support right now.
+  TODO: Implement search support! This should probably be done in conjunction with support
+  in the server itself.
+*/
+
 import React, {Component, PropTypes} from 'react';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import {connect} from 'react-redux';

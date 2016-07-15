@@ -1,4 +1,8 @@
 // Actions are things that can happen... To make it happen, run store.dispatch(action())
+
+// TODO: This needs MAJOR cleanup. It needs to be split up into multiple files in an actions
+// folder, and needs documentation on where stuff is used.
+
 import {push, goBack} from 'react-router-redux'
 
 import storage from './storage';

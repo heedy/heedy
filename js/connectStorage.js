@@ -1,6 +1,20 @@
-// connectStorage performs the necessary work to connect the given params to actual user/device/stream
-// values. Ie, <ConnectStorage user="test"><User /></ConnectStorage> will give the value of user test
-// to the User component.
+/*
+  The frontend stores users/devices/streams locally in the browser, so that the app can be used offline.
+  We therefore need a method to simply access these values, without worrying about whether they are available,
+  or in our local storage, or if we are querying them, or whatever may be happening.
+
+  While storage.js implements the actual querying, connectStorage is a special wrapper element, which allows any
+  child component to go from user/device/stream names, to having actual component data.
+
+  For example, connectStorage will go from the STRINGS 'myuser' 'mydevice' 'mystream', and give to its child component
+  the actual myuser,mydevice, and mystream OBJECTS which contain the actual data.
+
+  Furthermore, connectStorage is subscribed to the storage itself, so whenever there are updates using the REST api,
+  the values are immediately reflected in the outputs, so all child components are always up to date.
+
+  Usage:
+    connectStorage(myComponent,false,false);
+*/
 
 // TODO: I cry when I see code like this. What makes it all the more horrible is that *I* am
 //  the person who wrote it... This really needs to be refactored... - dkumor

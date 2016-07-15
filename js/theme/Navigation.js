@@ -1,3 +1,12 @@
+/*
+  Navigation is included in Theme.js. It represents the nav drawer. It renders the main app menu,
+  which is embedded in the app state. On click, it navigates to the path given in the specific navigation
+  element.
+
+  If you want to change the menu contents itself, please go to ../reducers/site.js, where the navigation
+  is set up in json
+*/
+
 import React from 'react';
 import {connect} from 'react-redux';
 
