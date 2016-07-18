@@ -8,8 +8,8 @@ import Divider from 'material-ui/Divider';
 import FlatButton from 'material-ui/FlatButton';
 
 import AvatarIcon from './AvatarIcon';
-import NicknameEditor from './NicknameEditor';
-import DescriptionEditor from './DescriptionEditor';
+import NicknameEditor from './edit/NicknameEditor';
+import DescriptionEditor from './edit/DescriptionEditor';
 
 import '../util';
 

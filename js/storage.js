@@ -117,7 +117,7 @@ class Storage {
     }
 
     setmany(obj) {
-        console.log("Inserting multiple: ", obj);
+        console.log("Inserting multiple to cache: ", obj);
         // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
         // and the other for streams.
 

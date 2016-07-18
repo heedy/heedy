@@ -9,8 +9,8 @@ import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
 import Checkbox from 'material-ui/Checkbox';
 
-import NicknameEditor from './NicknameEditor';
-import DescriptionEditor from './DescriptionEditor';
+import NicknameEditor from './edit/NicknameEditor';
+import DescriptionEditor from './edit/DescriptionEditor';
 
 import AvatarIcon from './AvatarIcon';
 import '../util';

@@ -33,8 +33,8 @@ export function addInput(datatype, input) {
     inputdict[datatype] = input;
 }
 
-export function getInput(stream) {
-    return getFromDict(inputdict, stream);
+export function getInput(datatype) {
+    return getFromDict(inputdict, datatype);
 }
 
 // add and get creators are similar to inputs, as they are per datatype. The creators are
@@ -46,8 +46,8 @@ export function addCreator(datatype, creator) {
     createdict[datatype] = creator;
 }
 
-export function getCreator(stream) {
-    return getFromDict(createdict, stream);
+export function getCreator(datatype) {
+    return getFromDict(createdict, datatype);
 }
 
 // add and get views for a stream. Each view consists of a function that given a stream either returns a Component

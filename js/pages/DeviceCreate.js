@@ -5,11 +5,11 @@ import {createCancel, createObject} from '../actions';
 
 import ObjectCreate from '../components/ObjectCreate';
 
-import RoleEditor from '../components/RoleEditor';
+import RoleEditor from '../components/edit/RoleEditor';
 
-import PublicEditor from '../components/PublicEditor';
-import EnabledEditor from '../components/EnabledEditor';
-import VisibleEditor from '../components/VisibleEditor';
+import PublicEditor from '../components/edit/PublicEditor';
+import EnabledEditor from '../components/edit/EnabledEditor';
+import VisibleEditor from '../components/edit/VisibleEditor';
 
 class DeviceCreate extends Component {
     static propTypes = {

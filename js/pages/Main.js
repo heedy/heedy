@@ -1,3 +1,7 @@
+/*
+  Main is the index page shown after initially logging in to ConnectorDB
+*/
+
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 

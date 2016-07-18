@@ -5,9 +5,9 @@ import {createCancel, createObject, go} from '../actions';
 
 import ObjectCreate from '../components/ObjectCreate';
 
-import DownlinkEditor from '../components/DownlinkEditor';
-import EphemeralEditor from '../components/EphemeralEditor';
-import DatatypeEditor from '../components/DatatypeEditor';
+import DownlinkEditor from '../components/edit/DownlinkEditor';
+import EphemeralEditor from '../components/edit/EphemeralEditor';
+import DatatypeEditor from '../components/edit/DatatypeEditor';
 
 import datatypes from '../datatypes/datatypes';
 

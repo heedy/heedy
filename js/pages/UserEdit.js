@@ -14,9 +14,9 @@ import Snackbar from 'material-ui/Snackbar';
 import storage from '../storage';
 
 import ObjectEdit from '../components/ObjectEdit';
-import RoleEditor from '../components/RoleEditor';
-import PublicEditor from '../components/PublicEditor';
-import EmailEditor from '../components/EmailEditor';
+import RoleEditor from '../components/edit/RoleEditor';
+import PublicEditor from '../components/edit/PublicEditor';
+import EmailEditor from '../components/edit/EmailEditor';
 
 class UserEdit extends Component {
     static propTypes = {

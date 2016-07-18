@@ -5,11 +5,11 @@ import Checkbox from 'material-ui/Checkbox';
 
 import {editCancel, go, deleteObject, saveObject} from '../actions';
 import ObjectEdit from '../components/ObjectEdit';
-import RoleEditor from '../components/RoleEditor';
+import RoleEditor from '../components/edit/RoleEditor';
 
-import PublicEditor from '../components/PublicEditor';
-import EnabledEditor from '../components/EnabledEditor';
-import VisibleEditor from '../components/VisibleEditor';
+import PublicEditor from '../components/edit/PublicEditor';
+import EnabledEditor from '../components/edit/EnabledEditor';
+import VisibleEditor from '../components/edit/VisibleEditor';
 
 class DeviceEdit extends Component {
     static propTypes = {

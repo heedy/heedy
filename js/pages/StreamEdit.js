@@ -4,9 +4,9 @@ import {connect} from 'react-redux';
 import {editCancel, go, deleteObject, saveObject} from '../actions';
 import ObjectEdit from '../components/ObjectEdit';
 
-import DownlinkEditor from '../components/DownlinkEditor';
-import EphemeralEditor from '../components/EphemeralEditor';
-import DatatypeEditor from '../components/DatatypeEditor';
+import DownlinkEditor from '../components/edit/DownlinkEditor';
+import EphemeralEditor from '../components/edit/EphemeralEditor';
+import DatatypeEditor from '../components/edit/DatatypeEditor';
 
 class StreamEdit extends Component {
     static propTypes = {

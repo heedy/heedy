@@ -11,7 +11,9 @@ import React, {Component, PropTypes} from 'react';
 
 import Form from "react-jsonschema-form";
 
-import addInput from '../datatypes';
+import {addInput} from '../datatypes';
+
+const log = (type) => console.log.bind(console, type);
 
 // The schema to use for generating the form when no schema is specified
 // in the stream
@@ -72,7 +74,7 @@ function prepareSchema(s) {
         // root type is not object, we wrap the schema in an object
         if (schema.type != "object") {
             if (schema.title === undefined) {
-                curschema.title = "Input Data:"
+                schema.title = "Input Data:"
             }
             schema = {
                 type: "object",
@@ -91,6 +93,7 @@ class DefaultInput extends Component {
         user: PropTypes.object.isRequired,
         device: PropTypes.object.isRequired,
         stream: PropTypes.object.isRequired,
+        path: PropTypes.string.isRequired,
         schema: PropTypes.object.isRequired,
         state: PropTypes.object.isRequired,
         onSubmit: PropTypes.func.isRequired,
@@ -123,11 +126,17 @@ class DefaultInput extends Component {
         let user = this.props.user;
         let device = this.props.device;
         let stream = this.props.stream;
-        let path = user.name + "/" + device.name + "/" + stream.name;
+        let path = this.props.path;
 
         let preparedSchema = prepareSchema(this.props.schema);
-        let state = this.props.state;
-        return (<Form schema={preparedSchema.schema} uiSchema={preparedSchema.ui} formData={state} onChange={this.props.setState} onSubmit={(data) => this.submit(data)} onError={log("error in the input form")}/>);
+        let state = {};
+        if (this.props.state.json !== undefined) {
+            state = this.props.state.json.formData;
+        }
+        return (<Form schema={preparedSchema.schema} uiSchema={preparedSchema.ui} formData={state} onChange={(s) => this.props.setState({
+            ...this.props.state,
+            json: s
+        })} onSubmit={(data) => this.submit(data)} onError={log("error in the input form")}/>);
 
     }
 }

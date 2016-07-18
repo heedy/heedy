@@ -15,7 +15,7 @@ import IconButton from 'material-ui/IconButton';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
 
 // setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
-import {setSearchText} from './actions'
+import {setSearchText} from '../actions'
 
 const styles = {
     searchbar: {
