@@ -29,7 +29,7 @@ install:
   # Build the ConnectorDB executable
   - dependencies.bat
   - build.bat
-  - bin/connectordb.exe --version
+  - bin\connectordb.exe --version
 
 build: off
 
