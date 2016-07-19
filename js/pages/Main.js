@@ -46,7 +46,13 @@ class Main extends Component {
 
                                     <DataInput key={s.name} size={6} title={s.nickname == ""
                                         ? s.name
-                                        : s.nickname} subtitle={path} user={user} device={device} stream={s}>
+                                        : s.nickname} subtitle={path} user={user} device={device} stream={s} icons={[(
+                                            <IconButton key="showstream" onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
+                                                <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                                                    list
+                                                </FontIcon>
+                                            </IconButton>
+                                        )]}>
                                         <div style={{
                                             float: "right",
                                             marginTop: "-5px",

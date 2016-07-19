@@ -70,11 +70,11 @@ class ExpandableCard extends Component {
         // We therefore construct a large array of icons from the one we have
 
         let iconRightMargin = (hasDropdown
-            ? 25
+            ? 35
             : 0);
         let iconarray = [];
         if (this.props.icons !== undefined && this.props.icons != null) {
-            iconarray = this.props.icons;
+            iconarray = this.props.icons.slice(0);
         }
         // Now, if this card is expandable, add the expand icon/contract icon depending on which one is correct
         if (expandable) {
@@ -129,7 +129,9 @@ class ExpandableCard extends Component {
                         )
                         : null}
 
-                    <CardText>
+                    <CardText style={{
+                        textAlign: "center"
+                    }}>
                         {this.props.children}
                     </CardText>
                 </Card>

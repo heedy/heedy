@@ -16,6 +16,7 @@ class DataInput extends Component {
         onSubmit: PropTypes.func.isRequired,
         setState: PropTypes.func.isRequired,
         showMessage: PropTypes.func.isRequired,
+        icons: PropTypes.arrayOf(PropTypes.element),
         title: PropTypes.string,
         subtitle: PropTypes.string
     }
@@ -45,7 +46,7 @@ class DataInput extends Component {
         let datatype = getInput(stream.datatype);
 
         return (
-            <ExpandableCard state={state} width={datatype.width} setState={this.props.setState} width={datatype.width} title={this.props.title} subtitle={this.props.subtitle} dropdown={datatype.dropdown}>
+            <ExpandableCard state={state} width={datatype.width} setState={this.props.setState} width={datatype.width} title={this.props.title} subtitle={this.props.subtitle} dropdown={datatype.dropdown} icons={this.props.icons}>
                 <datatype.component {...this.props} schema={schema} path={path}/>
             </ExpandableCard>
         );

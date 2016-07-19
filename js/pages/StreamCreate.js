@@ -1,38 +1,45 @@
+/*
+  StreamCreate is the page to show when creating a stream. The form to show is based upon the specific datatype that we're creating.
+  This card renders the corresponding plugin from ../datatypes/creators.
+
+*/
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
-
-import {createCancel, createObject} from '../actions';
+import Error from '../components/Error';
+import {createCancel, createObject, go} from '../actions';
 
 import ObjectCreate from '../components/ObjectCreate';
 
 import DownlinkEditor from '../components/edit/DownlinkEditor';
 import EphemeralEditor from '../components/edit/EphemeralEditor';
 import DatatypeEditor from '../components/edit/DatatypeEditor';
-import SchemaEditor from '../components/edit/SchemaEditor';
+
+import {getCreator} from '../datatypes/datatypes';
 
 class StreamCreate extends Component {
     static propTypes = {
+        datatype: PropTypes.string.isRequired,
         user: PropTypes.object.isRequired,
         device: PropTypes.object.isRequired,
         state: PropTypes.object.isRequired,
         callbacks: PropTypes.object.isRequired,
         roles: PropTypes.object.isRequired,
         onCancel: PropTypes.func.isRequired,
-        onSave: PropTypes.func.isRequired
+        onSave: PropTypes.func.isRequired,
+        setState: PropTypes.func.isRequired
     }
     render() {
         let state = this.props.state;
         let callbacks = this.props.callbacks;
+        let d = getCreator(this.props.datatype);
+
         return (
-            <ObjectCreate type="stream" state={state} callbacks={callbacks} required={< SchemaEditor value = {
-                state.schema
-            }
-            onChange = {
-                callbacks.schemaChange
-            } />} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
-                <DatatypeEditor value={state.datatype} schema={state.schema} onChange={callbacks.datatypeChange}/>
-                <DownlinkEditor value={state.downlink} onChange={callbacks.downlinkChange}/>
-                <EphemeralEditor value={state.ephemeral} onChange={callbacks.ephemeralChange}/>
+            <ObjectCreate type={d.name} header={d.description} required={d.required !== null
+                ? (<d.required user={this.props.user} device={this.props.device} state={this.props.state} setState={this.props.setState}/>)
+                : null} state={state} callbacks={callbacks} parentPath={this.props.user.name + "/" + this.props.device.name} onCancel={this.props.onCancel} onSave={this.props.onSave}>
+                {d.optional !== null
+                    ? (<d.optional user={this.props.user} device={this.props.device} state={this.props.state} setState={this.props.setState}/>)
+                    : null}
             </ObjectCreate >
 
         );
@@ -42,16 +49,13 @@ class StreamCreate extends Component {
 export default connect((state) => ({roles: state.site.roles.device}), (dispatch, props) => {
     let name = props.user.name + "/" + props.device.name;
     return {
+        setState: (val) => dispatch({type: "DEVICE_CREATESTREAM_SET", name: name, value: val}),
         callbacks: {
             nameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NAME", name: name, value: txt}),
             nicknameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NICKNAME", name: name, value: txt}),
-            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt}),
-            ephemeralChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_EPHEMERAL", name: name, value: txt}),
-            downlinkChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DOWNLINK", name: name, value: txt}),
-            datatypeChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DATATYPE", name: name, value: txt}),
-            schemaChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_SCHEMA", name: name, value: txt})
+            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt})
         },
         onCancel: () => dispatch(createCancel("DEVICE", "STREAM", name)),
-        onSave: () => dispatch(createObject("device", "stream", name, props.state))
+        onSave: () => dispatch(createObject("device", "stream", name, Object.assign({}, props.state, getCreator(props.datatype).default)))
     }
 })(StreamCreate);

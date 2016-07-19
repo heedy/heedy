@@ -56,6 +56,6 @@ export default MainToolbar;
 export default connect(undefined, (dispatch, props) => ({
 
     onAddClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create")),
-    onRatingClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-rating")),
-    onLogClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create-log"))
+    onRatingClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create/rating.stars")),
+    onLogClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create/log.diary"))
 }))(MainToolbar);

@@ -4,23 +4,31 @@
 // In the case of views, given a stream, it returns an array of components: the visualizations/plots/tables
 // that will show cool stuff.
 
+// combine takes the given array, and combines it with dots
+function combine(arr) {
+    let res = "";
+    for (let i = 0; i < arr.length; i++) {
+        if (i != 0) {
+            res += ".";
+        }
+        res += arr[i];
+    }
+    return res;
+}
+
 // getFromDict is a helper function, used later in the file to correctly separate
 // datatypes by dots.
-function getFromDict(dict, datatype) {
+function getFromDict(dict, datatype, plugintype) {
     let datapath = datatype.split(".");
-    let returnvalue = dict[""]; // Start with the default item
     let currpath = "";
-    for (let i = 0; i < datapath.length; i++) {
-        if (i != 0) {
-            currpath += ".";
+    for (let i = datapath.length; i >= 0; i--) {
+        currpath = combine(datapath.slice(0, i));
+        if (dict[currpath] !== undefined) {
+            // console.log("Using " + plugintype + " plugin '" + currpath + "' for datatype '" + datatype + "'");
+            return dict[currpath];
         }
-        currpath += datapath[i];
-        if (dict[currpath] === undefined) {
-            break;
-        }
-        returnvalue = dict[currpath];
+
     }
-    return returnvalue
 }
 
 // add and get input - there can only be a single input component per stream. The inputs are set up by datatype.
@@ -34,7 +42,7 @@ export function addInput(datatype, input) {
 }
 
 export function getInput(datatype) {
-    return getFromDict(inputdict, datatype);
+    return getFromDict(inputdict, datatype, "input");
 }
 
 // add and get creators are similar to inputs, as they are per datatype. The creators are
@@ -47,7 +55,7 @@ export function addCreator(datatype, creator) {
 }
 
 export function getCreator(datatype) {
-    return getFromDict(createdict, datatype);
+    return getFromDict(createdict, datatype, "create");
 }
 
 // add and get views for a stream. Each view consists of a function that given a stream either returns a Component
