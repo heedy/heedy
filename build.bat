@@ -17,5 +17,3 @@ ECHO build date: %curtime%
 :: Also... should make it utc.
 
 go build -o bin/connectordb.exe  -ldflags "-X commands.BuildStamp=%curtime% -X commands.GitHash=%gitsha%" src/main.go
-
-exit /B

@@ -26,6 +26,8 @@ go get -u github.com/connectordb/pipescript
 
 
 if not exist "bin" mkdir "bin"
-robocopy /s "./src/dbsetup/config" "./bin/config"
 
-exit /B
+:: robocopy decided that returning 1 is TOTALLY a great way
+:: to signal success. So we need to change the result code to 0
+:: https://superuser.com/questions/280425/getting-robocopy-to-return-a-proper-exit-code
+(robocopy /s "./src/dbsetup/config" "./bin/config") ^& IF %ERRORLEVEL% LEQ 1 exit 0
