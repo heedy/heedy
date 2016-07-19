@@ -26,8 +26,10 @@ install:
   # Set up redis,node, postgres + add them to PATH
   - nuget install redis-64 -excludeversion
   - ps: Install-Product node 0
+  # Build the ConnectorDB executable
   - dependencies.bat
   - build.bat
+  - bin/connectordb.exe --version
 
 build: off
 

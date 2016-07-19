@@ -16,5 +16,6 @@ ECHO build date: %curtime%
 :: TODO: The curtime command should be %mydate%_%mytime%, but mytime seems to have a space, which makes go unhappy
 :: Also... should make it utc.
 
-go build -o bin/connectordb.exe  -ldflags "-X commands.BuildStamp=%curtime% -X commands.GitHash=%gitsha%" src/main.go 
+go build -o bin/connectordb.exe  -ldflags "-X commands.BuildStamp=%curtime% -X commands.GitHash=%gitsha%" src/main.go
 
+exit /B

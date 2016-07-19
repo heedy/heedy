@@ -27,3 +27,5 @@ go get -u github.com/connectordb/pipescript
 
 if not exist "bin" mkdir "bin"
 robocopy /s "./src/dbsetup/config" "./bin/config"
+
+exit /B
