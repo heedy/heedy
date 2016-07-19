@@ -13,7 +13,7 @@ clone_folder: c:\connectordb
 environment:
   GOPATH: c:\connectordb
   CGO_ENABLED: 0
-  
+
 
 install:
   - git submodule update --init --recursive
@@ -26,8 +26,8 @@ install:
   # Set up redis,node, postgres + add them to PATH
   - nuget install redis-64 -excludeversion
   - ps: Install-Product node 0
-  - "dependencies.bat"
-  - "build.bat"
+  - dependencies.bat
+  - build.bat
 
 build: off
 

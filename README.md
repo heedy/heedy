@@ -1,8 +1,8 @@
-<img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/>
+<a href="https://connectordb.github.io"><img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/></a>
 
 
-[![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?maxAge=2592000&style=flat-square&label=linux+build)](https://travis-ci.org/connectordb/connectordb)
-[![AppVeyor](https://img.shields.io/appveyor/ci/dkumor/connectordb.svg?maxAge=2592000&style=flat-square&label=windows+build)](https://ci.appveyor.com/project/dkumor/connectordb)
+[![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?style=flat-square&label=linux+build)](https://travis-ci.org/connectordb/connectordb)
+[![AppVeyor](https://img.shields.io/appveyor/ci/dkumor/connectordb.svg?style=flat-square&label=windows+build)](https://ci.appveyor.com/project/dkumor/connectordb)
 [![Gitter](https://img.shields.io/gitter/room/connectordb/connectordb.svg?maxAge=2592000&style=flat-square)](https://gitter.im/connectordb/connectordb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 A repository for all of your quantified-self data, and a control center for your IoT devices.
@@ -15,8 +15,9 @@ Please visit [the website](https://connectordb.github.io) for more information.
 
 This repository is just the backend server - to automatically gather data, you'll want to run the apps on your devices, which will automatically sync to ConnectorDB:
 
-- [LaptopLogger](https://github.com/connectordb/connectordb-laptoplogger) - an app that gathers data about your computer usage (such as keypresses and active application)
+- [LaptopLogger](https://github.com/connectordb/connectordb-laptoplogger) - an app that gathers data about your computer usage (such as keypresses and active application). It is included by default in the windows desktop version of ConnectorDB.
 - [Android App](https://github.com/connectordb/connectordb-android) - Gathers several metrics from your android phone in the background, including step count and current activity.
+- [Chrome Extension](https://github.com/connectordb/connectordb-chrome) - Gathers your web browsing history, allowing you to keep track of how much time you spend on various websites.
 - [Python API](https://github.com/connectordb/connectordb-python) - gives full access to ConnectorDB, and allows you to write your own data-gathering apps (such as integrating custom sensors and devices), as well as data-analysis or IoT apps, which make use of your data (make your thermostat turn on in response to your phone's location).
 
 ## Rate Your life
