@@ -1,7 +1,10 @@
-[![Build Status](https://travis-ci.org/connectordb/connectordb.svg?branch=master)](https://travis-ci.org/connectordb/connectordb)
-[![Gitter](https://badges.gitter.im/connectordb/connectordb.svg)](https://gitter.im/connectordb/connectordb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+<img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/>
 
-# ConnectorDB
+
+[![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?maxAge=2592000&style=flat-square&label=linux+build)](https://travis-ci.org/connectordb/connectordb)
+[![AppVeyor](https://img.shields.io/appveyor/ci/dkumor/connectordb.svg?maxAge=2592000&style=flat-square&label=windows+build)](https://ci.appveyor.com/project/dkumor/connectordb)
+[![Gitter](https://img.shields.io/gitter/room/connectordb/connectordb.svg?maxAge=2592000&style=flat-square)](https://gitter.im/connectordb/connectordb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 A repository for all of your quantified-self data, and a control center for your IoT devices.
 
 There already exist many apps and fitness trackers that gather and attempt to make sense of your data. Most of these services are isolated - your phone's fitness tracking software knows nothing about your browser's time-tracking extension. Furthermore, each app and service has its own method for downloading data (if they offer raw data at all!), which makes an all-encompassing analysis of life extremely tedious. ConnectorDB offers a self-hosted open-source alternative to these services. It allows every device you have to synchronize with one central database, which allows creating an in-depth picture of your life.

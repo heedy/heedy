@@ -1,0 +1,38 @@
+# This file is based on https://github.com/mholt/caddy/blob/master/appveyor.yml
+# Didn't realize that windows builds were possible before looking at caddy.
+#
+# In Windows, we have to be careful with the build process, since we need to
+# have all of the servers enabled and in path. TODO: right now it just builds connectordb executable
+
+version: "{build}"
+
+os: Windows Server 2012 R2
+
+clone_folder: c:\connectordb
+
+environment:
+  GOPATH: c:\connectordb
+  CGO_ENABLED: 0
+  
+
+install:
+  - git submodule update --init --recursive
+  # Set up golang
+  - rmdir c:\go /s /q
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.6.2.windows-amd64.zip
+  - 7z x go1.6.2.windows-amd64.zip -y -oC:\ > NUL
+  - go version
+  - go env
+  # Set up redis,node, postgres + add them to PATH
+  - nuget install redis-64 -excludeversion
+  - ps: Install-Product node 0
+  - "dependencies.bat"
+  - "build.bat"
+
+build: off
+
+test_script: off
+
+after_test: off
+
+deploy: off
