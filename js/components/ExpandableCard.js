@@ -31,7 +31,8 @@ class ExpandableCard extends Component {
         icons: PropTypes.arrayOf(PropTypes.element),
 
         title: PropTypes.string.isRequired,
-        subtitle: PropTypes.string.isRequired
+        subtitle: PropTypes.string.isRequired,
+        style: PropTypes.object
     }
 
     render() {
@@ -129,9 +130,7 @@ class ExpandableCard extends Component {
                         )
                         : null}
 
-                    <CardText style={{
-                        textAlign: "center"
-                    }}>
+                    <CardText style={this.props.style}>
                         {this.props.children}
                     </CardText>
                 </Card>

@@ -3,26 +3,54 @@ import {connect} from 'react-redux';
 import {Card, CardText, CardHeader} from 'material-ui/Card';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
-
 import FlatButton from 'material-ui/FlatButton';
-
 import TextField from 'material-ui/TextField';
 
-import DataTable from './DataTable';
+import 'bootstrap-daterangepicker/daterangepicker.css';
+import DateRangePicker from 'react-bootstrap-daterangepicker';
+import moment from 'moment';
 
-import DateTime from 'react-datetime';
-import 'react-datetime/css/react-datetime.css';
+import ExpandableCard from './ExpandableCard';
 
 import {query, showMessage} from '../actions';
 
-class DataView extends Component {
+class DataQuery extends Component {
     static propTypes = {
         state: PropTypes.object.isRequired,
         user: PropTypes.object.isRequired,
         device: PropTypes.object.isRequired,
         stream: PropTypes.object.isRequired,
         query: PropTypes.func.isRequired,
-        msg: PropTypes.func.isRequired
+        msg: PropTypes.func.isRequired,
+        timeranges: PropTypes.object
+    }
+
+    static defaultProps = {
+        timeranges: {
+            'Today': [
+                moment().startOf('day'), moment()
+            ],
+            'Yesterday': [
+                moment().subtract(1, 'days').startOf('day'),
+                moment().subtract(1, 'days').endOf('day')
+            ],
+            'Last 7 Days': [
+                moment().subtract(7, 'days'),
+                moment()
+            ],
+            'Last 30 Days': [
+                moment().subtract(30, 'days'),
+                moment()
+            ],
+            'This Month': [
+                moment().startOf('month'), moment().endOf('month')
+            ],
+            'Last Month': [
+                moment().subtract(1, 'month').startOf('month'),
+                moment().subtract(1, 'month').endOf('month')
+            ]
+        }
+
     }
 
     componentDidMount() {
@@ -33,7 +61,7 @@ class DataView extends Component {
     }
 
     getDefault() {
-        this.props.query({i1: -5, i2: 0});
+        this.props.query({i1: -50, i2: 0});
     }
 
     query() {
@@ -47,99 +75,54 @@ class DataView extends Component {
             return;
         }
         // We now run the query
-        this.props.query({bytime: true, t1: s.t1.unix(), t2: s.t2.unix(), limit: 50, transform: s.transform});
+        this.props.query({bytime: true, t1: s.t1.unix(), t2: s.t2.unix(), limit: s.limit, transform: s.transform});
     }
 
     render() {
         let state = this.props.state;
         let setState = this.props.setState;
+
+        var start = state.t1.format('YYYY-MM-DD hh:mm:ss a');
+        var end = state.t2.format('YYYY-MM-DD hh:mm:ss a');
+        var label = start + ' ➡ ' + end;
+
         return (
-            <div className={state.fullwidth
-                ? "col-lg-12"
-                : "col-lg-6"}>
-                <Card style={{
-                    marginTop: "20px",
-                    textAlign: "left"
-                }} onExpandChange={(val) => setState({
-                    ...state,
-                    tExpanded: val
-                })} expanded={state.tExpanded}>
-                    <CardHeader title={"Most Recent Data"} showExpandableButton={true}>
-                        <div style={{
-                            float: "right",
-                            marginRight: 25,
-                            marginTop: "-15px",
-                            marginLeft: "-300px"
-                        }}>
-                            <IconButton onTouchTap= { (val) => this.getDefault() } tooltip="Get most recent 5 datapoints">
-                                <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                                    refresh
-                                </FontIcon>
-                            </IconButton>
-                            {state.fullwidth
-                                ? (
-                                    <IconButton onTouchTap= { (val) => setState({ ...state, fullwidth: false }) }>
-                                        <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                                            call_received
-                                        </FontIcon>
-                                    </IconButton>
-
-                                )
-                                : (
-
-                                    <IconButton onTouchTap= { (val) => setState({ ...state, fullwidth: true }) }>
-                                        <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                                            call_made
-                                        </FontIcon >
-                                    </IconButton>
-                                )}
-                        </div>
-                    </CardHeader>
-                    <CardText expandable={true} style={{
-                        backgroundColor: "rgba(0,179,74,0.05)",
-                        paddingBottom: "30px"
+            <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed">
+                <h5>Time Range</h5>
+                <DateRangePicker startDate={state.t1} endDate={state.t2} ranges={this.props.timeranges} opens="left" timePicker={true} onEvent={(e, picker) => setState({t1: picker.startDate, t2: picker.endDate})}>
+                    <div id="reportrange" className="selected-date-range-btn" style={{
+                        background: "#fff",
+                        cursor: "pointer",
+                        padding: "5px 10px",
+                        border: "1px solid #ccc",
+                        width: "100%"
                     }}>
-                        <p>Query the stream's data starting from the start time and ending at the end time. A maximum of 50 datapoints will be shown.</p>
-                        <h5>Start Time</h5>
-                        <DateTime onChange={(d) => {
-                            setState({
-                                ...state,
-                                t1: d
-                            });
-                        }}/>
-                        <h5>End Time</h5>
-                        <DateTime onChange={(d) => {
-                            setState({
-                                ...state,
-                                t2: d
-                            });
-                        }}/>
-                        <h5>Transform</h5>
-                        <input type="text" className="form-control" value={state.transform} onChange={(event) => setState({
-                            ...state,
-                            transform: event.target.value
-                        })}/>
-                        <FlatButton style={{
-                            float: "right"
-                        }} primary={true} label="Run Query" onTouchTap={() => this.query()}/> {state.error !== null
-                            ? (
-                                <p style={{
-                                    paddingTop: "10px"
-                                }}>{state.error.msg}</p>
-                            )
-                            : (
-                                <p style={{
-                                    paddingTop: "10px"
-                                }}>Learn about transforms
-                                    <a href="https://connectordb.github.io/pipescript/">{" "}here.</a>
-                                </p>
-                            )}
-                    </CardText>
-                    <CardText>
-                        <DataTable data={state.data}/>
-                    </CardText>
-                </Card>
-            </div>
+                        <i className="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
+
+                        <span className="pull-right">{label}</span>
+                    </div>
+                </DateRangePicker>
+                <h5>Transform</h5>
+                <input type="text" className="form-control" value={state.transform} onChange={(event) => setState({
+                    ...state,
+                    transform: event.target.value
+                })}/>
+                <FlatButton style={{
+                    float: "right"
+                }} primary={true} label="Run Query" onTouchTap={() => this.query()}/> {state.error !== null
+                    ? (
+                        <p style={{
+                            paddingTop: "10px"
+                        }}>{state.error.msg}</p>
+                    )
+                    : (
+                        <p style={{
+                            paddingTop: "10px"
+                        }}>Learn about transforms
+                            <a href="https://connectordb.github.io/pipescript/">{" "}here.</a>
+                        </p>
+                    )}
+            </ExpandableCard>
         );
     }
 }
@@ -150,4 +133,4 @@ export default connect(undefined, (dispatch, props) => {
         setState: (s) => dispatch({type: "STREAM_VIEW_SET", name: path, value: s}),
         msg: (t) => dispatch(showMessage(t))
     };
-})(DataView);
+})(DataQuery);

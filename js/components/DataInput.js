@@ -46,7 +46,9 @@ class DataInput extends Component {
         let datatype = getInput(stream.datatype);
 
         return (
-            <ExpandableCard state={state} width={datatype.width} setState={this.props.setState} width={datatype.width} title={this.props.title} subtitle={this.props.subtitle} dropdown={datatype.dropdown} icons={this.props.icons}>
+            <ExpandableCard title={this.props.title} state={state} setState={this.props.setState} width={datatype.width} style={{
+                textAlign: "center"
+            }} subtitle={this.props.subtitle} dropdown={datatype.dropdown} icons={this.props.icons}>
                 <datatype.component {...this.props} schema={schema} path={path}/>
             </ExpandableCard>
         );
