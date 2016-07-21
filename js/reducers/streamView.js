@@ -1,16 +1,15 @@
 import moment from 'moment';
 export const StreamViewInitialState = {
     expanded: false,
-    tExpanded: false,
-    fullwidth: false,
     transform: "",
-    last: 10,
     t1: moment().subtract(7, 'days'),
     t2: moment(),
-    limit: 10,
+    i1: -50,
+    i2: 0,
+    limit: 0,
     data: [],
     error: null,
-    bytime: false
+    bytime: true
 };
 
 export default function streamViewReducer(state, action) {

@@ -57,26 +57,22 @@ class DataQuery extends Component {
     componentDidMount() {
         // Set up the data query if we don't have any data
         if (this.props.state.data.length <= 0) {
-            this.getDefault();
+            this.query();
         }
-    }
-
-    getDefault() {
-        this.props.query({i1: -50, i2: 0});
     }
 
     query() {
         let s = this.props.state;
-        if (typeof s.t1 === 'string' || s.t1 instanceof String) {
-            this.props.msg("Start Time Invalid");
-            return;
-        }
-        if (typeof s.t2 === 'string' || s.t2 instanceof String) {
-            this.props.msg("End Time Invalid");
-            return;
-        }
         // We now run the query
-        this.props.query({bytime: true, t1: s.t1.unix(), t2: s.t2.unix(), limit: s.limit, transform: s.transform});
+        this.props.query({
+            bytime: s.bytime,
+            i1: parseInt(s.i1),
+            i2: parseInt(s.i2),
+            t1: s.t1.unix(),
+            t2: s.t2.unix(),
+            limit: s.limit,
+            transform: s.transform
+        });
     }
 
     render() {
@@ -87,23 +83,58 @@ class DataQuery extends Component {
         var end = state.t2.format('YYYY-MM-DD hh:mm:ss a');
         var label = start + ' ➡ ' + end;
 
+        let rangepicker = null;
+
+        // Generate the time or index range picker
+        if (state.bytime) {
+            rangepicker = (
+                <div>
+                    <h5>Time Range
+                        <a className="pull-right" onClick={() => setState({bytime: false})}>Switch to index range</a>
+                    </h5>
+                    <DateRangePicker startDate={state.t1} endDate={state.t2} ranges={this.props.timeranges} opens="left" timePicker={true} onEvent={(e, picker) => setState({t1: picker.startDate, t2: picker.endDate})}>
+                        <div id="reportrange" className="selected-date-range-btn" style={{
+                            background: "#fff",
+                            cursor: "pointer",
+                            padding: "5px 10px",
+                            border: "1px solid #ccc",
+                            width: "100%",
+                            textAlign: "center"
+                        }}>
+                            <i className="glyphicon glyphicon-calendar fa fa-calendar pull-right"></i>&nbsp;
+
+                            <span>{start}&nbsp;&nbsp;&nbsp;&nbsp;{' ➡ '}&nbsp;&nbsp;&nbsp;&nbsp;{end}</span>
+                        </div>
+                    </DateRangePicker>
+                </div>
+            );
+        } else {
+            rangepicker = (
+                <div>
+                    <h5>Index Range<a className="pull-right" onClick={() => setState({bytime: true})}>Switch to time range</a>
+                    </h5>
+                    <h6>Remember that negative values represent values from the data's end: [-50,0) will give the most recent 50 datapoints.</h6>
+                    <div style={{
+                        textAlign: "center"
+                    }}>
+                        <input value={state.i1} type="number" className="pull-left" style={{
+                            textAlign: "center"
+                        }} onChange={(e) => setState({i1: e.target.value})}/>
+                        <input type="number" className="pull-right" style={{
+                            textAlign: "center"
+                        }} value={state.i2} onChange={(e) => setState({i2: e.target.value})}/>
+                        <span>{' ➡ '}</span>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed">
-                <h5>Time Range</h5>
-                <DateRangePicker startDate={state.t1} endDate={state.t2} ranges={this.props.timeranges} opens="left" timePicker={true} onEvent={(e, picker) => setState({t1: picker.startDate, t2: picker.endDate})}>
-                    <div id="reportrange" className="selected-date-range-btn" style={{
-                        background: "#fff",
-                        cursor: "pointer",
-                        padding: "5px 10px",
-                        border: "1px solid #ccc",
-                        width: "100%"
-                    }}>
-                        <i className="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
-
-                        <span className="pull-right">{label}</span>
-                    </div>
-                </DateRangePicker>
-                <h5>Transform</h5>
+                {rangepicker}
+                <h5 style={{
+                    paddingTop: "10px"
+                }}>Transform</h5>
                 <Textarea style={{
                     width: "100%",
                     borderColor: "#ccc",
