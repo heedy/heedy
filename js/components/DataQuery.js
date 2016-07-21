@@ -29,7 +29,7 @@ class DataQuery extends Component {
     static defaultProps = {
         timeranges: {
             'Today': [
-                moment().startOf('day'), moment()
+                moment().startOf('day'), moment().endOf('day')
             ],
             'Yesterday': [
                 moment().subtract(1, 'days').startOf('day'),
@@ -37,11 +37,11 @@ class DataQuery extends Component {
             ],
             'Last 7 Days': [
                 moment().subtract(7, 'days'),
-                moment()
+                moment().endOf('day')
             ],
             'Last 30 Days': [
                 moment().subtract(30, 'days'),
-                moment()
+                moment().endOf('day')
             ],
             'This Month': [
                 moment().startOf('month'), moment().endOf('month')

@@ -3,7 +3,7 @@ export const StreamViewInitialState = {
     expanded: false,
     transform: "",
     t1: moment().subtract(7, 'days'),
-    t2: moment(),
+    t2: moment().endOf('day'),
     i1: -50,
     i2: 0,
     limit: 0,
