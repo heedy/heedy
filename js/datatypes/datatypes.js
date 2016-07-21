@@ -66,7 +66,7 @@ export function getCreator(datatype) {
 var viewarray = [];
 
 export function addView(view) {
-    viewarray.append(view);
+    viewarray.push(view);
 }
 
 export function getViews(payload) {
@@ -74,7 +74,7 @@ export function getViews(payload) {
     for (let i = 0; i < viewarray.length; i++) {
         let res = viewarray[i](payload);
         if (res !== null) {
-            resultarray.append(res);
+            resultarray.push(res);
         }
     }
     return resultarray;

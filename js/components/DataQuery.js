@@ -90,7 +90,9 @@ class DataQuery extends Component {
             rangepicker = (
                 <div>
                     <h5>Time Range
-                        <a className="pull-right" onClick={() => setState({bytime: false})}>Switch to index range</a>
+                        <a className="pull-right" style={{
+                            cursor: "pointer"
+                        }} onClick={() => setState({bytime: false})}>Switch to index range</a>
                     </h5>
                     <DateRangePicker startDate={state.t1} endDate={state.t2} ranges={this.props.timeranges} opens="left" timePicker={true} onEvent={(e, picker) => setState({t1: picker.startDate, t2: picker.endDate})}>
                         <div id="reportrange" className="selected-date-range-btn" style={{
@@ -111,7 +113,9 @@ class DataQuery extends Component {
         } else {
             rangepicker = (
                 <div>
-                    <h5>Index Range<a className="pull-right" onClick={() => setState({bytime: true})}>Switch to time range</a>
+                    <h5>Index Range<a className="pull-right" style={{
+                    cursor: "pointer"
+                }} onClick={() => setState({bytime: true})}>Switch to time range</a>
                     </h5>
                     <h6>Remember that negative values represent values from the data's end: [-50,0) will give the most recent 50 datapoints.</h6>
                     <div style={{

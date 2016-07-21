@@ -178,6 +178,7 @@ export function dataInput(user, device, stream, data, clearinput) {
 
 export function query(user, device, stream, state) {
     let path = user.name + "/" + device.name + "/" + stream.name;
+    console.log("Querying data for " + path, state);
     return (dispatch) => {
         if (state.bytime) {
             var d = storage.cdb.timeStream(user.name, device.name, stream.name, state.t1, state.t2, state.limit, state.transform);
@@ -193,7 +194,6 @@ export function query(user, device, stream, state) {
 
         }).catch((err) => {
             console.log(err);
-
-        })
+        });
     }
 }

@@ -26,6 +26,9 @@ import {connect} from 'react-redux';
 import StreamCard from '../components/StreamCard';
 import DataInput from '../components/DataInput';
 import DataQuery from '../components/DataQuery';
+import DataViewCard from '../components/DataViewCard';
+
+import {getViews} from '../datatypes/datatypes';
 
 class StreamView extends Component {
     static propTypes = {
@@ -41,6 +44,10 @@ class StreamView extends Component {
         let user = this.props.user;
         let device = this.props.device;
         let stream = this.props.stream;
+
+        // Finally, we check what views to show
+        let views = getViews({data: state.data, user: user, device: device, stream: stream});
+
         return (
             <div>
                 <StreamCard user={user} device={device} stream={stream} state={state}/>
@@ -52,11 +59,13 @@ class StreamView extends Component {
                     {stream.downlink || this.props.thisUser.name == user.name && this.props.thisDevice.name == device.name
                         ? (<DataInput user={user} device={device} stream={stream}/>)
                         : null}
-                    <DataQuery state={state} user={user} device={device} stream={stream}/>
+                    <DataQuery state={state} user={user} device={device} stream={stream}/> {views.map((view) => {
+                        return (<DataViewCard key={view.key} view={view} user={user} device={device} stream={stream} state={state} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice}/>);
+                    })}
                 </div>
             </div>
         );
     }
 }
 
-export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice}), (dispatch, props) => ({}))(StreamView);
+export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice}))(StreamView);

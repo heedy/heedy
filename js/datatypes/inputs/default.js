@@ -115,6 +115,7 @@ class DefaultInput extends Component {
                 return;
             }
             this.props.onSubmit(parsedData);
+            return;
         } else if (schema.type != "object") {
             this.props.onSubmit(data.formData.input);
             return;
