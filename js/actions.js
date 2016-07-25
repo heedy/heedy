@@ -192,8 +192,8 @@ export function query(user, device, stream, state) {
             }
             dispatch({type: "STREAM_VIEW_DATA", name: path, value: result});
 
-        }).catch((err) => {
+        })/* .catch((err) => {
             console.log(err);
-        });
+        });*/
     }
 }

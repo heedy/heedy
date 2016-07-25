@@ -44,9 +44,18 @@ class StreamView extends Component {
         let user = this.props.user;
         let device = this.props.device;
         let stream = this.props.stream;
+        let streamschema = JSON.parse(stream.schema);
 
         // Finally, we check what views to show
-        let views = getViews({data: state.data, user: user, device: device, stream: stream});
+        let views = getViews({
+            data: state.data,
+            user: user,
+            device: device,
+            stream: stream,
+            schema: streamschema,
+            thisUser: this.props.thisUser,
+            thisDevice: this.props.thisDevice
+        });
 
         return (
             <div>
@@ -60,7 +69,7 @@ class StreamView extends Component {
                         ? (<DataInput user={user} device={device} stream={stream}/>)
                         : null}
                     <DataQuery state={state} user={user} device={device} stream={stream}/> {views.map((view) => {
-                        return (<DataViewCard key={view.key} view={view} user={user} device={device} stream={stream} state={state} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice}/>);
+                        return (<DataViewCard key={view.key} view={view} user={user} device={device} stream={stream} schema={streamschema} state={state} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice}/>);
                     })}
                 </div>
             </div>

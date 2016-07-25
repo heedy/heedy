@@ -7,3 +7,5 @@ so that they can be registered.
 */
 
 import './TableView/index';
+import './LineChart';
+import './SentimentLineChart';

@@ -86,7 +86,14 @@ class Theme extends Component {
                         <div style={isNavigationDocked
                             ? styles.mainStyle
                             : styles.mainStyleFullWidth}>
-                            <Search/> {this.props.children}
+                            <Search/>
+                            <div>{this.props.children}</div>
+                            <div className="col-lg-12" style={{
+                                textAlign: "center",
+                                font: "light grey",
+                                fontSize: "8px",
+                                marginTop: "20px"
+                            }}></div>
                         </div>
                     </div>
                     <Snackbar autoHideDuration={4000} message={this.props.message} open={this.props.showmsg} onRequestClose={this.props.onMsgClose}/>
