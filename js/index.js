@@ -83,3 +83,9 @@ export function run(context) {
         </Provider>
     ), document.getElementById('app'));
 }
+
+// We now asynchronously load PipeScript, which is used extensively for data analysis of downloaded data.
+require(["pipescript"], (p) => {
+    console.log("PipeScript Loaded");
+    store.dispatch({type: 'PIPESCRIPT', value: true});
+})

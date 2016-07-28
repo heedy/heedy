@@ -86,7 +86,10 @@ const InitialState = {
 
     // The status message to show in the snack bar
     status: "",
-    statusvisible: false
+    statusvisible: false,
+
+    // Whether pipescript is loaded or not
+    pipescript: false
 
 };
 
@@ -106,6 +109,11 @@ export default function siteReducer(state = InitialState, action) {
                 out.navigation[i].page = out.navigation[i].page.replace("{self}", out.thisUser.name);
             }
             return out;
+        case 'PIPESCRIPT':
+            return {
+                ...state,
+                pipescript: action.value
+            };
         case 'STATUS_HIDE':
             return {
                 ...state,

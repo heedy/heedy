@@ -15,10 +15,12 @@ var config = {
         path: BUILD_DIR,
         filename: 'bundle.js',
         libraryTarget: "var",
-        library: "App"
+        library: "App",
+        publicPath: "/app/"
     },
 
     module: {
+        noParse: [path.join(__dirname, "node_modules", "pipescript")],
         loaders: [
             {
                 test: /\.jsx?/,
