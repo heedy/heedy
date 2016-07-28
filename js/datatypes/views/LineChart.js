@@ -86,11 +86,10 @@ const LineView = {
 }
 
 function showLineChart(context) {
+    if (!context.pipescript) 
+        return null;
     if (context.data.length > 0) {
-        // Check the schema
-        if (context.schema.type !== undefined && context.schema.type == "numeric") {
-            return LineView;
-        }
+
         // We now check if the data is numeric
         if (isNumeric(context.data[0].d) && isNumeric(context.data[context.data.length - 1].d)) {
             return LineView;

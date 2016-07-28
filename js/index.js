@@ -39,7 +39,7 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 
 // Can always use some help!
-console.log("Hi! You can follow along in the source code at https://github.com/connectordb/connectordb-frontend - pull requests are welcome!");
+console.log("%cHi! You can follow along in the source code at https://github.com/connectordb/connectordb-frontend - pull requests are welcome!", "font-weight: bold;");
 
 // Set up the ServiceWorker. The javascript is available in ../app/js/serviceworker.js
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
@@ -85,7 +85,9 @@ export function run(context) {
 }
 
 // We now asynchronously load PipeScript, which is used extensively for data analysis of downloaded data.
-require(["pipescript"], (p) => {
+// While ConnectorDB has pipescript built-in, several visualizations perform further transforms of queried data.
+// Instead of querying again, the transforms are done entirely client-side.
+require.ensure(["pipescript"], (p) => {
     console.log("PipeScript Loaded");
     store.dispatch({type: 'PIPESCRIPT', value: true});
 })

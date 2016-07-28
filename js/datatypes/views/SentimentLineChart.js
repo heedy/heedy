@@ -3,7 +3,7 @@ This shows a line chart of the sentiment in text!
 
 This is a copy of LineChart.js with just changes to getting sentiment
 */
-
+/*
 import {addView} from '../datatypes';
 
 import React, {Component, PropTypes} from 'react';
@@ -100,3 +100,4 @@ function showLineChart(context) {
 }
 
 addView(showLineChart);
+*/

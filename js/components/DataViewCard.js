@@ -25,6 +25,7 @@ class DataViewCard extends Component {
         schema: PropTypes.object.isRequired,
         thisUser: PropTypes.object.isRequired,
         thisDevice: PropTypes.object.isRequired,
+        pipescript: PropTypes.bool.isRequired,
         msg: PropTypes.func.isRequired,
         setState: PropTypes.func.isRequired
     }
@@ -42,6 +43,7 @@ class DataViewCard extends Component {
             device: this.props.device,
             stream: this.props.stream,
             schema: this.props.schema,
+            pipescript: this.props.pipescript,
             state: curstate,
             thisUser: this.props.thisUser,
             thisDevice: this.props.thisDevice,
