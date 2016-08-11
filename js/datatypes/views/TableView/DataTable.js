@@ -21,7 +21,7 @@ class DataTable extends Component {
                 <tbody>
                     {this.props.data.map((s) => {
                         return (
-                            <tr key={s.t}>
+                            <tr key={JSON.stringify(s)}>
                                 <td>{moment(new Date(s.t * 1000)).calendar()}</td>
                                 <td>
                                     {JSON.stringify(s.d, null, 2)}

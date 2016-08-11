@@ -86,9 +86,9 @@ const LineView = {
 }
 
 function showLineChart(context) {
-    if (!context.pipescript) 
+    if (!context.pipescript)
         return null;
-    if (context.data.length > 0) {
+    if (context.data.length > 1) {
 
         // We now check if the data is numeric
         if (isNumeric(context.data[0].d) && isNumeric(context.data[context.data.length - 1].d)) {

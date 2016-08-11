@@ -43,14 +43,28 @@ console.log("%cHi! You can follow along in the source code at https://github.com
 
 // Set up the ServiceWorker. The javascript is available in ../app/js/serviceworker.js
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
-if ('serviceWorker' in navigator && false) {
-    navigator.serviceWorker.register('/serviceworker.js', {scope: "/"}).then(function(registration) {
-        // Registration was successful
-        console.log('ServiceWorker found: ', registration.scope);
-    }).catch(function(err) {
-        // registration failed :(
-        console.log('ServiceWorker registration failed: ', err);
-    });
+
+if ('serviceWorker' in navigator) {
+    if (process.env.NODE_ENV == "debug") {
+        console.log("%cRunning in debug mode", "font-weight: bold;");
+        // If we are in debug mode, delete the ServiceWorkers that might be registered
+        // https://stackoverflow.com/questions/33704791/how-do-i-uninstall-a-service-worker
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+                console.log("Unregistering ServiceWorker");
+                registration.unregister();
+            }
+        });
+    } else {
+        navigator.serviceWorker.register('/serviceworker.js', {scope: "/"}).then(function(registration) {
+            // Registration was successful
+            console.log('ServiceWorker has scope: ', registration.scope);
+        }).catch(function(err) {
+            // registration failed :(
+            console.log('ServiceWorker registration failed: ', err);
+        });
+    }
+
 }
 
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux

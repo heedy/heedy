@@ -15,6 +15,16 @@ import {showMessage} from '../actions';
 
 import ExpandableCard from './ExpandableCard';
 
+// Several properties in a view accept both a direct value OR a generator function that
+// takes in the current state, and sets the view's value. This function extracts the correct
+// value from these properties
+function extractValue(value, state) {
+    if (typeof(value) === 'function') {
+        return value(state);
+    }
+    return value;
+}
+
 class DataViewCard extends Component {
     static propTypes = {
         view: PropTypes.object.isRequired,
@@ -57,11 +67,12 @@ class DataViewCard extends Component {
         };
         let dropdown = null;
         if (view.dropdown !== undefined) {
-            dropdown = (<view.dropdown {...context}/>);
+            let dd = extractValue(view.dropdown, curstate);
+            dropdown = (<dd {...context}/>);
         }
 
         return (
-            <ExpandableCard width={view.width} state={curstate} setState={context.setState} dropdown={dropdown} title={view.title} subtitle={view.subtitle} style={view.style}>
+            <ExpandableCard width={view.width} state={curstate} setState={context.setState} dropdown={dropdown} title={extractValue(view.title, curstate)} subtitle={extractValue(view.subtitle, curstate)} style={extractValue(view.style, curstate)}>
                 <view.component {...context}/>
             </ExpandableCard>
         );

@@ -1,7 +1,7 @@
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 
 // Increment the version if there were changes
-var CACHE_NAME = 'v2';
+var CACHE_NAME = 'v3';
 
 // getPath returns the server path of the resource being requested
 function getPath(request) {

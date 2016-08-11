@@ -152,7 +152,8 @@ class DataQuery extends Component {
                 }} primary={true} label="Run Query" onTouchTap={() => this.query()}/> {state.error !== null
                     ? (
                         <p style={{
-                            paddingTop: "10px"
+                            paddingTop: "10px",
+                            color: "red"
                         }}>{state.error.msg}</p>
                     )
                     : (
