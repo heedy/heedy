@@ -103,5 +103,5 @@ export function run(context) {
 // Instead of querying again, the transforms are done entirely client-side.
 require.ensure(["pipescript"], (p) => {
     console.log("PipeScript Loaded");
-    store.dispatch({type: 'PIPESCRIPT', value: true});
+    store.dispatch({type: 'PIPESCRIPT', value: require("pipescript")});
 })

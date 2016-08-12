@@ -38,7 +38,7 @@ class StreamView extends Component {
         state: PropTypes.shape({expanded: PropTypes.bool.isRequired}).isRequired,
         thisUser: PropTypes.object.isRequired,
         thisDevice: PropTypes.object.isRequired,
-        pipescript: PropTypes.bool.isRequired
+        pipescript: PropTypes.object
     }
     render() {
         let state = this.props.state;

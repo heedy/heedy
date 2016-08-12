@@ -1,62 +1,75 @@
 /*
- This is the line chart component
+This shows a line chart of the data given
 */
 
-import React, {Component, PropTypes} from 'react';
+import React, {PropTypes} from 'react';
+import DataTransformUpdater from './DataUpdater';
+
 import {Line} from 'react-chartjs';
 import moment from 'moment';
 
-// generateDatasetFromData generates the dataset in the format used by chartjs
-// from an array of data. ConnectorDB uses the format:
-//  {t: unix floating point timestamp, d: data}
-// but chartjs uses:
-// {x: momentjs timestamp,y: data}
-// so we convert one to the other
-function generateDatasetFromData(name, d) {
-    let dataset = new Array(d.length);
-
-    for (let i = 0; i < d.length; i++) {
-        dataset[i] = {
-            x: moment.unix(d[i].t),
-            y: d[i].d
-        }
+class LineChart extends DataTransformUpdater {
+    static propTypes = {
+        data: PropTypes.arrayOf(PropTypes.object).isRequired,
+        transform: PropTypes.string
     }
 
-    return [
-        {
-            label: name,
-            data: dataset,
-            lineTension: 0
+    // transformDataset is required for DataUpdater to set up the modified state data
+    transformDataset(d) {
+        let dataset = new Array(d.length);
+
+        for (let i = 0; i < d.length; i++) {
+            dataset[i] = {
+                x: moment.unix(d[i].t),
+                y: d[i].d
+            }
         }
-    ];
+
+        // Now return the data necessary to use the line chart
+        return {
+            datasets: [
+                {
+                    label: name,
+                    data: dataset,
+                    lineTension: 0
+                }
+            ]
+        };
+    }
+
+    render() {
+
+        return (<Line data={this.state.data} options={{
+            legend: {
+                display: false
+            },
+            scales: {
+                xAxes: [
+                    {
+                        type: 'time',
+                        position: 'bottom'
+                    }
+                ]
+            }
+        }}/>);
+    }
 }
 
-// generateDatasetFromObject is the same idea as generateDatasetFromData.
-// The difference between the two is that this function expects each datapoint
-// to be an object. This means that the data is actually multiple "series", which
-// can be shown on a legend.
-function generateDatasetFromObject(d) {
-    var resultmap = {};
+export default LineChart;
 
-    // Loop through the array generating the datasets as we go
-    for (let i = 0; i < d.length; i++) {
-        let t = moment.unix(d[i].t);
-        Object.keys(d[i]).forEach((key) => {
-            if (resultmap[key] === undefined) {
-                resultmap[key] = [];
+// generate creates a new view that displays a line chart. The view object is set up
+// so that it is totally ready to be passed as a result of the shower function
+export function generateLineChart(transform) {
+    let component = LineChart;
+
+    // If we're given a transform, wrap the LineChart so that we can pass transform into the class.
+    if (transform != null) {
+        component = React.createClass({
+            render: function() {
+                return (<LineChart {...this.props} transform={transform}/>);
             }
-            resultmap[key].push({x: t, y: d[i].d[key]});
         });
     }
 
-    // We now have an object with the datapoints as arrays. We now split it into one
-    // large array of datasets
-    var result = [];
-    Object.keys(resultmap).forEach((key) => {
-        result.push({label: key, data: resultmap[key], lineTension: 0});
-    });
-
-    return result;
+    return {initialState: {}, component: component, width: "expandable-half"};
 }
-
-class LineChart extends Component {}

@@ -35,7 +35,7 @@ class DataViewCard extends Component {
         schema: PropTypes.object.isRequired,
         thisUser: PropTypes.object.isRequired,
         thisDevice: PropTypes.object.isRequired,
-        pipescript: PropTypes.bool.isRequired,
+        pipescript: PropTypes.object,
         msg: PropTypes.func.isRequired,
         setState: PropTypes.func.isRequired
     }
@@ -67,8 +67,7 @@ class DataViewCard extends Component {
         };
         let dropdown = null;
         if (view.dropdown !== undefined) {
-            let dd = extractValue(view.dropdown, curstate);
-            dropdown = (<dd {...context}/>);
+            dropdown = (<view.dropdown {...context}/>);
         }
 
         return (

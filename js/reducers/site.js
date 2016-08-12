@@ -88,8 +88,8 @@ const InitialState = {
     status: "",
     statusvisible: false,
 
-    // Whether pipescript is loaded or not
-    pipescript: false
+    // Whether pipescript is loaded or not - this contains the pipescript library
+    pipescript: null
 
 };
 

@@ -9,7 +9,7 @@ import TextField from 'material-ui/TextField';
 import 'bootstrap-daterangepicker/daterangepicker.css';
 import DateRangePicker from 'react-bootstrap-daterangepicker';
 import moment from 'moment';
-import Textarea from 'react-textarea-autosize';
+import TransformInput from './TransformInput';
 
 import ExpandableCard from './ExpandableCard';
 
@@ -139,13 +139,7 @@ class DataQuery extends Component {
                 <h5 style={{
                     paddingTop: "10px"
                 }}>Transform</h5>
-                <Textarea style={{
-                    width: "100%",
-                    borderColor: "#ccc",
-                    fontFamily: "Courier New",
-                    fontSize: "17px",
-                    padding: "3px"
-                }} value={state.transform} minRows={1} useCacheForDOMMeasurements name={this.props.path} multiLine={true} onChange={(event) => setState({transform: event.target.value})}/>
+                <TransformInput transform={state.transform} onChange={(txt) => setState({transform: txt})}/>
 
                 <FlatButton style={{
                     float: "right"
