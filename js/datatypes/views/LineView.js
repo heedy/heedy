@@ -23,7 +23,7 @@ function showLineChart(context) {
 
         // We now check if the data is numeric
         if (isNumeric(context.data[0].d) && isNumeric(context.data[context.data.length - 1].d)) {
-            return LineView;
+            return [LineView];
         }
 
     }

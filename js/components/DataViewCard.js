@@ -18,9 +18,9 @@ import ExpandableCard from './ExpandableCard';
 // Several properties in a view accept both a direct value OR a generator function that
 // takes in the current state, and sets the view's value. This function extracts the correct
 // value from these properties
-function extractValue(value, state) {
+function extractValue(value, context) {
     if (typeof(value) === 'function') {
-        return value(state);
+        return value(context);
     }
     return value;
 }
@@ -71,7 +71,7 @@ class DataViewCard extends Component {
         }
 
         return (
-            <ExpandableCard width={view.width} state={curstate} setState={context.setState} dropdown={dropdown} title={extractValue(view.title, curstate)} subtitle={extractValue(view.subtitle, curstate)} style={extractValue(view.style, curstate)}>
+            <ExpandableCard width={view.width} state={curstate} icons={extractValue(view.icons, context)} setState={context.setState} dropdown={dropdown} title={extractValue(view.title, context)} subtitle={extractValue(view.subtitle, context)} style={extractValue(view.style, context)}>
                 <view.component {...context}/>
             </ExpandableCard>
         );

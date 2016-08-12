@@ -74,7 +74,7 @@ export function getViews(payload) {
     for (let i = 0; i < viewarray.length; i++) {
         let res = viewarray[i](payload);
         if (res !== null) {
-            resultarray.push(res);
+            resultarray = resultarray.concat(res);
         }
     }
     return resultarray;

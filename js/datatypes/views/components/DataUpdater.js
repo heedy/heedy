@@ -2,25 +2,6 @@ import React, {Component, PropTypes} from 'react';
 
 class DataUpdater extends Component {
 
-    componentWillMount() {
-        this.setState({
-            data: this.transformDataset(this.props.data)
-        });
-    }
-
-    componentWillReceiveProps(p) {
-        // We only perform the dataset transform operation if the dataset
-        // was modified
-        if (p.data != this.props.data) {
-            this.setState({
-                data: this.transformDataset(this.props.data)
-            });
-        }
-    }
-}
-
-class DataTransformUpdater extends Component {
-
     // Sets up the transform for use in the component
     initTransform(t) {
         if (t !== undefined && t !== "") {
@@ -63,4 +44,4 @@ class DataTransformUpdater extends Component {
 }
 
 //export default DataUpdater;
-export default DataTransformUpdater;
+export default DataUpdater;
