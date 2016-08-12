@@ -33,7 +33,7 @@ class DataTable extends DataUpdater {
     render() {
         let expanded = this.props.state.tableExpanded;
 
-        let data = this.state.data;
+        let data = this.data;
         let expandedText = null;
 
         // If the table is not expanded, show only the last 10 if there are more than 20

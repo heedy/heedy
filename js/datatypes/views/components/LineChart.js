@@ -38,8 +38,7 @@ class LineChart extends DataTransformUpdater {
     }
 
     render() {
-
-        return (<Line data={this.state.data} options={{
+        return (<Line data={this.data} options={{
             legend: {
                 display: false
             },

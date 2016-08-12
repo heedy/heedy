@@ -23,22 +23,18 @@ class DataUpdater extends Component {
     // Generate the component's initial state
     componentWillMount() {
         this.initTransform(this.props.transform);
-        this.setState({
-            data: this.transformDataset(this.dataTransform(this.props.data))
-        });
+        this.data = this.transformDataset(this.dataTransform(this.props.data));
     }
 
     // Each time either the data or the transform changes, reload
     componentWillReceiveProps(p) {
         // We only perform the dataset transform operation if the dataset
         // was modified
-        if (p.data != this.props.data || this.props.transform !== p.transform) {
+        if (p.data !== this.props.data || this.props.transform !== p.transform) {
             if (this.props.transform !== p.transform) {
                 this.initTransform(p.transform);
             }
-            this.setState({
-                data: this.transformDataset(this.dataTransform(this.props.data))
-            });
+            this.data = this.transformDataset(this.dataTransform(p.data));
         }
     }
 }

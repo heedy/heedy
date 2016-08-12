@@ -26,7 +26,6 @@ export default function streamViewReducer(state, action) {
             return {
                 ...state,
                 data: action.value,
-                views: {}, // We reset view state when changing the data
                 error: null
             };
         case 'STREAM_VIEW_ERROR':

@@ -11,19 +11,21 @@ function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-const LineView = {
-    ...generateLineChart(),
-    key: "lineView",
-    title: "Line Plot",
-    subtitle: ""
-}
+const LineView = [
+    {
+        ...generateLineChart(),
+        key: "lineView",
+        title: "Line Plot",
+        subtitle: ""
+    }
+];
 
 function showLineChart(context) {
     if (context.data.length > 1) {
 
         // We now check if the data is numeric
         if (isNumeric(context.data[0].d) && isNumeric(context.data[context.data.length - 1].d)) {
-            return [LineView];
+            return LineView;
         }
 
     }

@@ -31,11 +31,11 @@ class CSVView extends DataUpdater {
     }
 
     render() {
-        return (<CodeMirror value={this.state.data} options={{
+        return (<CodeMirror value={this.data} options={{
             lineWrapping: true,
             readOnly: true
         }}/>);
     }
 
 }
-export default CSVView;
+export default CSVView;;
