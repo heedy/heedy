@@ -20,6 +20,8 @@ var (
 	mkredis    bool
 	mkpostgres bool
 	mkgnatsd   bool
+
+	sqltype string
 )
 
 // CreateCmd creates a new database
@@ -42,9 +44,9 @@ configuration.`,
 			DatabaseDirectory: args[0],
 			Config:            config.NewConfiguration(),
 
-			RedisEnabled:    true,
-			GnatsdEnabled:   true,
-			PostgresEnabled: true,
+			RedisEnabled:  true,
+			GnatsdEnabled: true,
+			SQLEnabled:    true,
 		}
 
 		if testConfiguration {
@@ -53,12 +55,17 @@ configuration.`,
 			dboptions.InitialUser = config.TestUser
 		}
 
+		// Set up the database type
+		if sqltype != "" {
+			dboptions.Config.Sql.Type = sqltype
+		}
+
 		// If one of the create flags is given, we set enabled to the given values
 		if mkredis || mkgnatsd || mkpostgres {
 			log.Infof("Setting up: redis=%t nats=%t sql=%t (frontend is disabled)", mkredis, mkgnatsd, mkpostgres)
 			dboptions.RedisEnabled = mkredis
 			dboptions.GnatsdEnabled = mkgnatsd
-			dboptions.PostgresEnabled = mkpostgres
+			dboptions.SQLEnabled = mkpostgres
 
 			dboptions.Config.Redis.Enabled = mkredis
 			dboptions.Config.Sql.Enabled = mkpostgres
@@ -98,6 +105,8 @@ func init() {
 	CreateCmd.Flags().BoolVar(&mkredis, "redis", false, "set up the backend redis server (if no flags given, all created)")
 	CreateCmd.Flags().BoolVar(&mkgnatsd, "nats", false, "set up the backend nats server (if no flags given, all created)")
 	CreateCmd.Flags().BoolVar(&mkpostgres, "sql", false, "set up the backend sql server (if no flags given, all created)")
+
+	CreateCmd.Flags().StringVar(&sqltype, "sqlbackend", "", "choose the backing server (postgres or sqlite3)")
 
 	RootCmd.AddCommand(CreateCmd)
 }

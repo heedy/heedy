@@ -198,17 +198,17 @@ func (userdb *SqlUserDatabase) CreateUser(um *UserMaker) error {
 		return err
 	}
 
-	_, err = userdb.Exec(`INSERT INTO Users (
-		Name,
-		Email,
-		Password,
-		PasswordSalt,
-		PasswordHashScheme,
-		Role,
-		Public,
-		Description,
-		Icon,
-		Nickname) VALUES (?,?,?,?,?,?,?,?,?,?);`,
+	_, err = userdb.Exec(`INSERT INTO users (
+		name,
+		email,
+		password,
+		passwordsalt,
+		passwordhashscheme,
+		role,
+		public,
+		description,
+		icon,
+		nickname) VALUES (?,?,?,?,?,?,?,?,?,?);`,
 		um.Name,
 		um.Email,
 		dbpass,
@@ -225,6 +225,44 @@ func (userdb *SqlUserDatabase) CreateUser(um *UserMaker) error {
 	}
 	if err != nil {
 		return err
+	}
+
+	if userdb.dbtype == "sqlite3" {
+		// If the database is sqlite, it doesn't support server-side functions, so we have to manually create the user device
+		// and the meta device. In other databases this is done automatically through triggers (see dbsetup/dbutil/setup.go)
+		var uid int64
+
+		uidr := userdb.DB.QueryRow("SELECT userid FROM users WHERE name=?;", um.Name)
+		err = uidr.Scan(&uid)
+		if err != nil {
+			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)
+			return err
+		}
+
+		tx, err := userdb.DB.Beginx()
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec("INSERT INTO devices (name,userid,apikey, role, description) VALUES ('user',?,?,'user','Holds manually inserted data for the user');", uid, salt)
+		if err != nil {
+			tx.Rollback()
+			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)
+			return err
+		}
+		_, err = tx.Exec("INSERT INTO devices (name, userid, apikey, description, usereditable, isvisible) VALUES ('meta', ?, '','The meta device holds automatically generated streams', 0, 0);", uid)
+		if err != nil {
+			tx.Rollback()
+			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)
+			return err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)
+			return err
+		}
+
 	}
 
 	if len(um.Streams) > 0 || len(um.Devices) > 0 {
@@ -303,7 +341,7 @@ func (userdb *SqlUserDatabase) ReadUserOperatingDevice(user *User) (*Device, err
 func (userdb *SqlUserDatabase) readByNameOrEmail(Name, Email string) (*User, error) {
 	var exists User
 
-	err := userdb.Get(&exists, "SELECT * FROM Users WHERE upper(Name) = upper(?) OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
+	err := userdb.Get(&exists, "SELECT * FROM users WHERE upper(name) = upper(?) OR upper(email) = upper(?) LIMIT 1;", Name, Email)
 
 	//err := userdb.Get(&exists, "SELECT * FROM Users WHERE Name = ? OR upper(Email) = upper(?) LIMIT 1;", Name, Email)
 	if err == sql.ErrNoRows {
@@ -318,7 +356,7 @@ func (userdb *SqlUserDatabase) readByNameOrEmail(Name, Email string) (*User, err
 func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 	var user User
 
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE Name = ? LIMIT 1;", Name)
+	err := userdb.Get(&user, "SELECT * FROM users WHERE name = ? LIMIT 1;", Name)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -331,7 +369,7 @@ func (userdb *SqlUserDatabase) ReadUserByName(Name string) (*User, error) {
 // id.
 func (userdb *SqlUserDatabase) ReadUserById(UserID int64) (*User, error) {
 	var user User
-	err := userdb.Get(&user, "SELECT * FROM Users WHERE UserID = ? LIMIT 1;", UserID)
+	err := userdb.Get(&user, "SELECT * FROM users WHERE userid = ? LIMIT 1;", UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -343,7 +381,7 @@ func (userdb *SqlUserDatabase) ReadUserById(UserID int64) (*User, error) {
 func (userdb *SqlUserDatabase) ReadAllUsers() ([]*User, error) {
 	var users []*User
 
-	err := userdb.Select(&users, "SELECT * FROM Users")
+	err := userdb.Select(&users, "SELECT * FROM users")
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -364,17 +402,17 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE users SET
-					Name=?,
-					Nickname=?,
-					Email=?,
-					Password=?,
-					PasswordSalt=?,
-					PasswordHashScheme=?,
-					Description=?,
-					Icon=?,
-					Public=?,
-					Role=?
-					WHERE UserID = ?`,
+					name=?,
+					nickname=?,
+					email=?,
+					password=?,
+					passwordsalt=?,
+					passwordhashscheme=?,
+					description=?,
+					icon=?,
+					public=?,
+					role=?
+					WHERE userid = ?`,
 		user.Name,
 		user.Nickname,
 		user.Email,
@@ -392,6 +430,6 @@ func (userdb *SqlUserDatabase) UpdateUser(user *User) error {
 
 // DeleteUser removes a user from the database
 func (userdb *SqlUserDatabase) DeleteUser(UserID int64) error {
-	result, err := userdb.Exec(`DELETE FROM Users WHERE UserID = ?;`, UserID)
+	result, err := userdb.Exec(`DELETE FROM users WHERE userid = ?;`, UserID)
 	return getDeleteError(result, err)
 }

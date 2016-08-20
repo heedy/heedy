@@ -123,16 +123,16 @@ func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 		}
 	}
 
-	_, err := userdb.Exec(`INSERT INTO Streams
-		(	Name,
-			Schema,
-			DeviceID,
-			Description,
-			DataType,
-			Icon,
-			Nickname,
-			Ephemeral,
-			Downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, s.Schema, s.DeviceID,
+	_, err := userdb.Exec(`INSERT INTO streams
+		(	name,
+			schema,
+			deviceid,
+			description,
+			datatype,
+			icon,
+			nickname,
+			ephemeral,
+			downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, s.Schema, s.DeviceID,
 		s.Description, s.Datatype, s.Icon, s.Nickname, s.Ephemeral, s.Downlink)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
@@ -146,7 +146,7 @@ func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 func (userdb *SqlUserDatabase) ReadStreamByID(StreamID int64) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE StreamID = ? LIMIT 1;", StreamID)
+	err := userdb.Get(&stream, "SELECT * FROM streams WHERE streamid = ? LIMIT 1;", StreamID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -160,7 +160,7 @@ func (userdb *SqlUserDatabase) ReadStreamByID(StreamID int64) (*Stream, error) {
 func (userdb *SqlUserDatabase) ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error) {
 	var stream Stream
 
-	err := userdb.Get(&stream, "SELECT * FROM Streams WHERE DeviceID = ? AND Name = ? LIMIT 1;", DeviceID, streamName)
+	err := userdb.Get(&stream, "SELECT * FROM streams WHERE deviceid = ? AND name = ? LIMIT 1;", DeviceID, streamName)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -172,7 +172,7 @@ func (userdb *SqlUserDatabase) ReadStreamByDeviceIDAndName(DeviceID int64, strea
 func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error) {
 	var streams []*Stream
 
-	err := userdb.Select(&streams, "SELECT * FROM Streams WHERE DeviceID = ?;", DeviceID)
+	err := userdb.Select(&streams, "SELECT * FROM streams WHERE deviceid = ?;", DeviceID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -184,11 +184,11 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]*Stream, e
 func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
 	var streams []*Stream
 
-	err := userdb.Select(&streams, `SELECT s.* FROM Streams s, devices d, users u
+	err := userdb.Select(&streams, `SELECT s.* FROM streams s, devices d, users u
 	WHERE
-		u.UserID = ? AND
-		d.UserID = u.UserID AND
-		s.DeviceID = d.DeviceID`, UserID)
+		u.userid = ? AND
+		d.userid = u.userid AND
+		s.deviceid = d.deviceid`, UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrStreamNotFound
@@ -209,16 +209,16 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE streams SET
-		Name = ?,
-		Nickname = ?,
-		Description = ?,
-		Icon = ?,
-		Schema = ?,
-		DataType= ?,
-		DeviceID = ?,
-		Ephemeral = ?,
-		Downlink = ?
-		WHERE StreamID = ?;`,
+		name = ?,
+		nickname = ?,
+		description = ?,
+		icon = ?,
+		schema = ?,
+		datatype= ?,
+		deviceid = ?,
+		ephemeral = ?,
+		downlink = ?
+		WHERE streamid= ?;`,
 		stream.Name,
 		stream.Nickname,
 		stream.Description,
@@ -235,6 +235,6 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 
 // DeleteStream removes a stream from the database
 func (userdb *SqlUserDatabase) DeleteStream(Id int64) error {
-	result, err := userdb.Exec(`DELETE FROM Streams WHERE StreamID = ?;`, Id)
+	result, err := userdb.Exec(`DELETE FROM streams WHERE streamid = ?;`, Id)
 	return getDeleteError(result, err)
 }

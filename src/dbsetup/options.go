@@ -24,7 +24,7 @@ type Options struct {
 	FrontendEnabled bool `json:"frontend_running"`
 	RedisEnabled    bool `json:"redis_running"`
 	GnatsdEnabled   bool `json:"gnatsd_running"`
-	PostgresEnabled bool `json:"postgres_running"`
+	SQLEnabled      bool `json:"sql_running"`
 
 	// FrontendFlags are flags to pass to the frontend when starting it.
 	// This allows using connectordb start with connectordb run's flags

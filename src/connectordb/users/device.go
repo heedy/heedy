@@ -115,18 +115,18 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 		}
 	}
 
-	_, err := userdb.Exec(`INSERT INTO Devices
-		(	Name,
-			APIKey,
-			UserID,
-			Public,
-			Description,
-			Icon,
-			Nickname,
-			Enabled,
-			Role,
-			IsVisible,
-			UserEditable
+	_, err := userdb.Exec(`INSERT INTO devices
+		(	name,
+			apikey,
+			userid,
+			public,
+			description,
+			icon,
+			nickname,
+			enabled,
+			role,
+			isvisible,
+			usereditable
 		)
 			VALUES (?,?,?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
 		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role, d.IsVisible, d.UserEditable)
@@ -157,7 +157,7 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 func (userdb *SqlUserDatabase) ReadDevicesForUserID(UserID int64) ([]*Device, error) {
 	var devices []*Device
 
-	err := userdb.Select(&devices, "SELECT * FROM Devices WHERE UserID = ?;", UserID)
+	err := userdb.Select(&devices, "SELECT * FROM devices WHERE userid = ?;", UserID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -170,7 +170,7 @@ func (userdb *SqlUserDatabase) ReadDevicesForUserID(UserID int64) ([]*Device, er
 func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename string) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE UserID = ? AND Name = ? LIMIT 1;", userid, devicename)
+	err := userdb.Get(&dev, "SELECT * FROM devices WHERE userid = ? AND name = ? LIMIT 1;", userid, devicename)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -183,7 +183,7 @@ func (userdb *SqlUserDatabase) ReadDeviceForUserByName(userid int64, devicename 
 func (userdb *SqlUserDatabase) ReadDeviceByID(DeviceID int64) (*Device, error) {
 	var dev Device
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE DeviceID = ? LIMIT 1", DeviceID)
+	err := userdb.Get(&dev, "SELECT * FROM devices WHERE deviceid = ? LIMIT 1", DeviceID)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -202,7 +202,7 @@ func (userdb *SqlUserDatabase) ReadDeviceByAPIKey(Key string) (*Device, error) {
 		return nil, errors.New("Must have non-empty api key")
 	}
 
-	err := userdb.Get(&dev, "SELECT * FROM Devices WHERE APIKey = ? LIMIT 1;", Key)
+	err := userdb.Get(&dev, "SELECT * FROM devices WHERE apikey = ? LIMIT 1;", Key)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrDeviceNotFound
@@ -223,17 +223,17 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 	}
 
 	_, err := userdb.Exec(`UPDATE devices SET
-		Name = ?,
-		Nickname = ?,
-		Description = ?,
-		Icon = ?,
-		UserID = ?,
-		APIKey = ?,
-		Enabled = ?,
-		Role = ?,
-		IsVisible = ?,
-		UserEditable = ?,
-		Public = ? WHERE DeviceID = ?;`,
+		name = ?,
+		nickname = ?,
+		description = ?,
+		icon = ?,
+		userid = ?,
+		apikey = ?,
+		enabled = ?,
+		role = ?,
+		isvisible = ?,
+		usereditable = ?,
+		public = ? WHERE deviceid = ?;`,
 		device.Name,
 		device.Nickname,
 		device.Description,
@@ -252,6 +252,6 @@ func (userdb *SqlUserDatabase) UpdateDevice(device *Device) error {
 
 // DeleteDevice removes a device from the system.
 func (userdb *SqlUserDatabase) DeleteDevice(ID int64) error {
-	result, err := userdb.Exec(`DELETE FROM Devices WHERE DeviceID = ?;`, ID)
+	result, err := userdb.Exec(`DELETE FROM devices WHERE deviceid = ?;`, ID)
 	return getDeleteError(result, err)
 }

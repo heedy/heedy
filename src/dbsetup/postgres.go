@@ -53,7 +53,7 @@ func (s *PostgresService) Create() error {
 		return err
 	}
 
-	return dbutil.UpgradeDatabase(s.S.GetSqlConnectionString(), true)
+	return dbutil.SetupDatabase("postgres", s.S.GetSqlConnectionString())
 }
 
 //Start starts the service

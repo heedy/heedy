@@ -21,8 +21,8 @@ func init() {
 	name := "dbinfo"
 
 	main := func(shell *Shell, args []string) uint8 {
-		dbcxn := config.Get().GetSqlConnectionString()
-		fmt.Printf("Database: %v\n", dbcxn)
+		dbcxn := config.Get().Sql.GetSqlConnectionString()
+		fmt.Printf("Database: %s %v\n", config.Get().Sql.Type, dbcxn)
 
 		users, _ := shell.operator.CountUsers()
 		fmt.Printf("UserCount: %v\n", users)

@@ -60,9 +60,9 @@ type Configuration struct {
 	Frontend
 
 	// Configuration options for a service
-	Redis Service `json:"redis"`
-	Nats  Service `json:"nats"`
-	Sql   Service `json:"sql"`
+	Redis Service     `json:"redis"`
+	Nats  Service     `json:"nats"`
+	Sql   *SQLService `json:"sql"`
 
 	// The size of batches and chunks to use with the database
 	BatchSize int `json:"batchsize"` // BatchSize is the number of datapoints per database entry
@@ -100,11 +100,6 @@ type UserMaker struct {
 	Public bool   `json:"public"`         // Whether the user is public or not
 
 	Password string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
-}
-
-// GetSqlConnectionString returns the string used to connect to postgres
-func (c *Configuration) GetSqlConnectionString() string {
-	return c.Sql.GetSqlConnectionString()
 }
 
 // String returns a string representation of the configuration

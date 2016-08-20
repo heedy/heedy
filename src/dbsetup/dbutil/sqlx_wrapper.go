@@ -11,16 +11,14 @@ import (
 )
 
 type SqlxMixin struct {
-	sqlxdb                *sqlx.DB
+	DB                    *sqlx.DB
 	sqlxPreparedStmtCache map[string]*sqlx.Stmt
-	sqlxdbtype            string
 }
 
 // Initializes a sqlx mixin
-func (db *SqlxMixin) InitSqlxMixin(sqldb *sql.DB, dbtype string) {
+func (db *SqlxMixin) InitSqlxMixin(sqldb *sqlx.DB) {
 	db.sqlxPreparedStmtCache = make(map[string]*sqlx.Stmt)
-	db.sqlxdb = sqlx.NewDb(sqldb, dbtype)
-	db.sqlxdbtype = dbtype
+	db.DB = sqldb
 }
 
 // This function returns a prepared statement, or prepares one for the given query
@@ -34,10 +32,10 @@ func (db *SqlxMixin) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 		return prepared, nil
 	}
 
-	// Convert to postgres or whatever
-	query = QueryConvert(query, db.sqlxdbtype)
+	// Convert to the correct binding type
+	query = db.DB.Rebind(query)
 
-	prepared, err = db.sqlxdb.Preparex(query)
+	prepared, err = db.DB.Preparex(query)
 
 	if err != nil {
 		return prepared, err

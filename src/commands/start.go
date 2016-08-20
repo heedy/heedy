@@ -57,7 +57,7 @@ connectordb stop.`,
 			DatabaseDirectory: args[0],
 			RedisEnabled:      true,
 			GnatsdEnabled:     true,
-			PostgresEnabled:   true,
+			SQLEnabled:        true,
 			FrontendEnabled:   true,
 			FrontendFlags:     setRunFlags(),
 			FrontendPort:      port, // The port should be 0 by default. This is so waiting for port Open doesn't fail
@@ -75,7 +75,7 @@ connectordb stop.`,
 
 			opt.RedisEnabled = runredis
 			opt.GnatsdEnabled = rungnatsd
-			opt.PostgresEnabled = runpostgres
+			opt.SQLEnabled = runpostgres
 			opt.FrontendEnabled = runfrontend
 		}
 

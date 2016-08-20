@@ -11,10 +11,10 @@ import (
 	"database/sql"
 	"dbsetup/dbutil"
 	"errors"
-	"strings"
+	"regexp"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/josephlewis42/multicache"
-	_ "github.com/lib/pq"
 )
 
 var (
@@ -29,28 +29,30 @@ var (
 	ErrUserNotFound    = errors.New("The requested user was not found.")
 	ErrDeviceNotFound  = errors.New("The requested device was not found.")
 	ErrStreamNotFound  = errors.New("The requested stream was not found.")
+
+	nameValidator = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]*$")
 )
 
 type SqlUserDatabase struct {
 	dbutil.SqlxMixin
-	sqldb *sql.DB
+	dbtype string
 }
 
-func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sql.DB, dbtype string) {
-	db.InitSqlxMixin(sqldb, dbtype)
-	db.sqldb = sqldb
+func (db *SqlUserDatabase) initSqlUserDatabase(sqldb *sqlx.DB) {
+	db.InitSqlxMixin(sqldb)
+	db.dbtype = sqldb.DriverName()
 }
 
 // Clear deletes all data stored in the userdb
 func (db *SqlUserDatabase) Clear() {
-	db.sqldb.Exec("DELETE FROM Users;")
-	db.sqldb.Exec("DELETE FROM Devices;")
-	db.sqldb.Exec("DELETE FROM Streams;")
+	db.Exec("DELETE FROM Users;")
+	db.Exec("DELETE FROM Devices;")
+	db.Exec("DELETE FROM Streams;")
 }
 
-func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
+func NewUserDatabase(sqldb *sqlx.DB, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
 	basedb := SqlUserDatabase{}
-	basedb.initSqlUserDatabase(sqldb, dbtype)
+	basedb.initSqlUserDatabase(sqldb)
 
 	if streamsize < 1 {
 		streamsize = 1
@@ -70,19 +72,7 @@ func NewUserDatabase(sqldb *sql.DB, dbtype string, cache bool, usersize int64, d
 
 // Checks to see if the name of a user/device/stream is legal.
 func IsValidName(n string) bool {
-	if strings.Contains(n, "/") ||
-		strings.Contains(n, "\\") ||
-		strings.Contains(n, " ") ||
-		strings.Contains(n, "?") ||
-		strings.Contains(n, "\t") ||
-		strings.Contains(n, "\n") ||
-		strings.Contains(n, "\r") ||
-		strings.Contains(n, "#") ||
-		len(n) == 0 {
-		return false
-	}
-
-	return true
+	return nameValidator.MatchString(n) && len(n) > 0 && len(n) < 30
 }
 
 // Performs a set of tests on the result and error of a

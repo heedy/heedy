@@ -17,7 +17,8 @@ type Options struct {
 	RedisOptions redis.Options
 	NatsOptions  nats.Options
 
-	SqlConnectionString string
+	SQLType string
+	SQLURI  string
 
 	UserCacheSize   int64
 	DeviceCacheSize int64
@@ -35,8 +36,8 @@ Chunk Size: %v
 
 Redis: %v (%v)
 Nats:  %v
-Sql:   %v
-`, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.RedisOptions.Password, o.NatsOptions.Url, o.SqlConnectionString)
+Sql:   %s %v
+`, o.BatchSize, o.ChunkSize, o.RedisOptions.Addr, o.RedisOptions.Password, o.NatsOptions.Url, o.SQLType, o.SQLURI)
 }
 
 //Options generates the ConnectorDB options based upon the given configuration
@@ -52,7 +53,8 @@ func (c *Configuration) Options() *Options {
 		DB:       0,
 	}
 
-	opt.SqlConnectionString = c.GetSqlConnectionString()
+	opt.SQLType = c.Sql.Type
+	opt.SQLURI = c.Sql.GetSqlConnectionString()
 
 	opt.BatchSize = c.BatchSize
 	opt.ChunkSize = c.ChunkSize

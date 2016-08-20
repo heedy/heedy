@@ -5,10 +5,10 @@ Licensed under the MIT license.
 package datastream
 
 import (
-	"database/sql"
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
 )
 
 /*
@@ -36,41 +36,40 @@ var (
 //The SqlStore stores and queries arrays of Datapoints in an SQL database. The table 'datastream' is assumed
 //to already exist and the correct indices are assumed to already exist.
 type SqlStore struct {
-	inserter     *sql.Stmt
-	timequery    *sql.Stmt
-	indexquery   *sql.Stmt
-	endindex     *sql.Stmt
-	delsubstream *sql.Stmt
-	delstream    *sql.Stmt
-	clearall     *sql.Stmt
+	inserter     *sqlx.Stmt
+	timequery    *sqlx.Stmt
+	indexquery   *sqlx.Stmt
+	endindex     *sqlx.Stmt
+	delsubstream *sqlx.Stmt
+	delstream    *sqlx.Stmt
+	clearall     *sqlx.Stmt
 
-	db *sql.DB
+	db *sqlx.DB
 
 	insertversion int
 }
 
 //This function is to allow daisy-chaining errors from statement creation
-func prepStatement(db *sql.DB, statement string, err error) (*sql.Stmt, error) {
+func prepStatement(db *sqlx.DB, statement string, err error) (*sqlx.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return db.Prepare(statement)
+	return db.Preparex(db.Rebind(statement))
 }
 
-//prepareSqlStore sets up the inserts (it assumes that the database was already prepared)
-func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexqueryStatement,
-	endindexStatement, delsubstreamStatement, delstreamStatement, clearallStatement string) (*SqlStore, error) {
+//OpenSqlStore initializes the database statements
+func OpenSqlStore(db *sqlx.DB) (*SqlStore, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 
-	inserter, err := prepStatement(db, insertStatement, nil)
-	timequery, err := prepStatement(db, timequeryStatement, err)
-	indexquery, err := prepStatement(db, indexqueryStatement, err)
-	endindex, err := prepStatement(db, endindexStatement, err)
-	delsubstream, err := prepStatement(db, delsubstreamStatement, err)
-	delstream, err := prepStatement(db, delstreamStatement, err)
-	clearall, err := prepStatement(db, clearallStatement, err)
+	inserter, err := prepStatement(db, "INSERT INTO datastream VALUES (?,?,?,?,?,?);", nil)
+	timequery, err := prepStatement(db, "SELECT version,endindex,data FROM datastream WHERE streamid=? AND substream=? AND endtime > ? ORDER BY endtime ASC;", err)
+	indexquery, err := prepStatement(db, "SELECT version,endindex,data FROM datastream WHERE streamid=? AND substream=? AND endindex > ? ORDER BY endindex ASC;", err)
+	endindex, err := prepStatement(db, "SELECT COALESCE(MAX(endindex),0) FROM datastream WHERE streamid=? AND substream=?;", err)
+	delsubstream, err := prepStatement(db, "DELETE FROM datastream WHERE streamid=? AND substream=?;", err)
+	delstream, err := prepStatement(db, "DELETE FROM datastream WHERE streamid=?;", err)
+	clearall, err := prepStatement(db, "DELETE FROM datastream;", err)
 
 	ss := &SqlStore{inserter, timequery, indexquery, endindex, delsubstream, delstream, clearall, db, 2}
 
@@ -80,22 +79,6 @@ func prepareSqlStore(db *sql.DB, insertStatement, timequeryStatement, indexquery
 	}
 
 	return ss, nil
-}
-
-//OpenPostgresStore initializes a postgres database to work with an SqlStore.
-func OpenPostgresStore(db *sql.DB) (*SqlStore, error) {
-	return prepareSqlStore(db, "INSERT INTO datastream VALUES ($1,$2,$3,$4,$5,$6);",
-		"SELECT Version,EndIndex,Data FROM datastream WHERE StreamID=$1 AND Substream=$2 AND EndTime > $3 ORDER BY EndTime ASC;",
-		"SELECT Version,EndIndex,Data FROM datastream WHERE StreamID=$1 AND Substream=$2 AND EndIndex > $3 ORDER BY EndIndex ASC;",
-		"SELECT COALESCE(MAX(EndIndex),0) FROM datastream WHERE StreamID=$1 AND Substream=$2;",
-		"DELETE FROM datastream WHERE StreamID=$1 AND Substream=$2;",
-		"DELETE FROM datastream WHERE StreamID=$1;",
-		"DELETE FROM datastream;")
-}
-
-//OpenSqlStore uses the correct initializer for the given database driver
-func OpenSqlStore(db *sql.DB) (*SqlStore, error) {
-	return OpenPostgresStore(db)
 }
 
 //Close all resources associated with the SqlStore.
@@ -148,7 +131,7 @@ func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da
 	return s.stmtInsert(s.inserter, streamID, substream, startindex, da)
 }
 
-func (s *SqlStore) stmtInsert(stmt *sql.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
+func (s *SqlStore) stmtInsert(stmt *sqlx.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
 	dbytes, err := da.Encode(s.insertversion)
 	if err != nil {
 		return err
@@ -160,7 +143,7 @@ func (s *SqlStore) stmtInsert(stmt *sql.Stmt, streamID int64, substream string, 
 
 //WriteBatches writes the given batch array
 func (s *SqlStore) WriteBatches(b []Batch) error {
-	t, err := s.db.Begin()
+	t, err := s.db.Beginx()
 	if err != nil {
 		return err
 	}
@@ -174,7 +157,7 @@ func (s *SqlStore) WriteBatches(b []Batch) error {
 		}
 
 		//Now the transaction-specific insert statement
-		err = s.stmtInsert(t.Stmt(s.inserter), streamID, b[i].Substream, b[i].StartIndex, b[i].Data)
+		err = s.stmtInsert(t.Stmtx(s.inserter), streamID, b[i].Substream, b[i].StartIndex, b[i].Data)
 		if err != nil {
 			t.Rollback()
 			return err

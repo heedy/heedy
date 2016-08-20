@@ -12,12 +12,12 @@ import (
 	"connectordb/operator"
 	"connectordb/pathwrapper"
 	"connectordb/users"
-	"database/sql"
 	"dbsetup/dbutil"
 	"errors"
 	"util"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
 )
 
 //The StreamDB version string
@@ -40,7 +40,7 @@ type Database struct {
 	DataStream *datastream.DataStream //datastream holds methods for inserting datapoints into streams
 	Messenger  *messenger.Messenger   //messenger is a connection to the messaging client
 
-	Sqldb *sql.DB //We only need the sql object here to close it properly, since it is used everywhere.
+	Sqldb *sqlx.DB //We only need the sql object here to close it properly, since it is used everywhere.
 }
 
 // Open ConnectorDB is given an Options object, which holds the information necessary to connect to the database
@@ -56,13 +56,13 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	log.Debugln("Opening ConnectorDB")
 
 	//Dbutil prints the sqluri to log, so no need to do it here
-	db.Sqldb, _, err = dbutil.OpenSqlDatabase(opt.SqlConnectionString)
+	db.Sqldb, err = dbutil.OpenDatabase(opt.SQLType, opt.SQLURI)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debugln("Opening User database")
-	db.Userdb = users.NewUserDatabase(db.Sqldb, config.SqlType, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
+	db.Userdb = users.NewUserDatabase(db.Sqldb, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
 
 	log.Debugln("Opening messenger")
 	db.Messenger, err = messenger.ConnectMessenger(&opt.NatsOptions, err)

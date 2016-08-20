@@ -105,7 +105,7 @@ echo "==================================================="
 echo "Running coverage tests"
 echo "==================================================="
 #go test --timeout 15s -p=1 -v -cover connectordb/...
-go test --timeout 15s -p=1 -cover connectordb/...
+go test --timeout 500s -p=1 -cover connectordb/...
 test_status=$?
 if [ "$test_status" -ne 0 ]; then
     stop
@@ -153,9 +153,21 @@ stop
 
 check_pids
 
-#delete dir if tests succeeded
+#delete dir if tests succeeded, and then redo the api tests on sqlite
 if [ "$test_status" -eq 0 ]; then
     rm -rf $DBDIR
+
+    ./bin/connectordb -l=DEBUG create $DBDIR --test --sqlbackend=sqlite3
+    ./bin/connectordb -l=DEBUG start $DBDIR
+    nosetests --with-coverage --cover-package=connectordb -s --nologcapture connectordb_python/connectordb_test.py connectordb_python/query_test.py
+    test_status=$?
+    stop
+    check_pids
+
+    if [ "$test_status" -eq 0 ]; then
+        rm -rf $DBDIR
+    fi
+
 fi
 
 exit $test_status

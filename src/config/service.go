@@ -4,7 +4,11 @@ Licensed under the MIT license.
 **/
 package config
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"path/filepath"
+)
 
 type Service struct {
 	Hostname string `json:"hostname"`
@@ -17,12 +21,6 @@ type Service struct {
 	Enabled bool `json:"enabled"` //Whether or not to run the service on "connectordb start"
 }
 
-// GetSqlConnectionString assumes that the service is a postgres server, and returns the string url that can
-// be used to connect to the server.
-func (s *Service) GetSqlConnectionString() string {
-	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
-}
-
 // GetRedisConnectionString returns the string used to connect to redis
 func (s *Service) GetRedisConnectionString() string {
 	return fmt.Sprintf("%s:%d", s.Hostname, s.Port)
@@ -31,4 +29,47 @@ func (s *Service) GetRedisConnectionString() string {
 // GetNatsConnectionString returns the string used to connect to NATS
 func (s *Service) GetNatsConnectionString() string {
 	return fmt.Sprintf("nats://%s:%s@%s:%d", s.Username, s.Password, s.Hostname, s.Port)
+}
+
+// GetSqlConnectionString checks server type and returns either the filename or postgres url
+func (s *Service) GetSqlConnectionString() string {
+	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
+}
+
+type SQLService struct {
+	URI  string `json:"uri"`
+	Type string `json:"type"` // The sql database type
+
+	Service
+}
+
+// GetSqlConnectionString checks server type and returns either the filename or postgres url
+func (s *SQLService) GetSqlConnectionString() string {
+	// If there is a uri given, use that
+	if s.URI != "" {
+		return s.URI
+	}
+	return s.Service.GetSqlConnectionString()
+}
+
+func (s *SQLService) Validate() (err error) {
+	if s.Type == "" {
+		s.Type = "sqlite3"
+	}
+	if s.Type != "postgres" && s.Type != "sqlite3" {
+		return errors.New("Unrecognized sql database type")
+	}
+	if s.Type == "sqlite3" {
+		// If the database is sqlite, we have to set the filename up
+		if s.URI == "" {
+			s.URI = "db.sqlite3"
+		}
+
+		s.URI, err = filepath.Abs(s.URI)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
 }

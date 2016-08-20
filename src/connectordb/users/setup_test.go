@@ -10,10 +10,7 @@ package users
 import (
 	"config"
 	"dbsetup/dbutil"
-	"os"
 	"strconv"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -37,26 +34,31 @@ func GetNextEmail() string {
 }
 
 func init() {
-	testPostgres := initDB(config.TestOptions.SqlConnectionString)
-	testdatabases = []UserDatabase{testPostgres}
-	testdatabasesNames = []string{"postgres"}
+	testPostgres := initDB("postgres", config.TestOptions.SQLURI)
+	testSqlite := initDB("sqlite3", "test.db")
+	testdatabases = []UserDatabase{testPostgres, testSqlite}
+	testdatabasesNames = []string{"postgres", "sqlite"}
 }
 
-func initDB(dbName string) UserDatabase {
-	_ = os.Remove(dbName) // may fail if postgres
+func initDB(name, uri string) UserDatabase {
+	err := dbutil.ClearDatabase(name, uri)
+	if err != nil {
+		if err.Error() != "remove test.db: no such file or directory" {
+			panic(err.Error())
+		}
 
-	// Init the db
-	err := dbutil.UpgradeDatabase(dbName, true)
+	}
+
+	err = dbutil.SetupDatabase(name, uri)
+	if err != nil {
+		panic(err.Error())
+	}
+	sql, err := dbutil.OpenDatabase(name, uri)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	sql, dbtype, err := dbutil.OpenSqlDatabase(dbName)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	db := NewUserDatabase(sql, dbtype, false, 1, 1, 1)
+	db := NewUserDatabase(sql, false, 1, 1, 1)
 
 	return db
 }

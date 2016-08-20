@@ -20,12 +20,15 @@ var TestConfiguration = func() Configuration {
 		Password: "nats",
 		Enabled:  true,
 	}
-	c.Sql = Service{
-		Hostname: "localhost",
-		Port:     52592,
-		//Username: "connectordb",
-		//Password: sqlpassword,
-		Enabled: true,
+	c.Sql = &SQLService{
+		Type: "postgres",
+		Service: Service{
+			Hostname: "localhost",
+			Port:     52592,
+			//Username: "connectordb",
+			//Password: sqlpassword,
+			Enabled: true,
+		},
 	}
 
 	c.BatchSize = 250

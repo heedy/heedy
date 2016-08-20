@@ -35,11 +35,15 @@ func NewConfiguration() *Configuration {
 			Password: natspassword.String(),
 			Enabled:  true,
 		},
-		Sql: Service{
-			Hostname: "localhost",
-			Port:     52593,
-			//TODO: Have SQL accedd be auth'd
-			Enabled: true,
+		Sql: &SQLService{
+			Type: "postgres",
+			URI:  "", // connectordb generates a postgres uri if not given
+			Service: Service{
+				Hostname: "localhost",
+				Port:     52593,
+				//TODO: Have SQL access be auth'd
+				Enabled: true,
+			},
 		},
 
 		Frontend: Frontend{

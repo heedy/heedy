@@ -42,6 +42,7 @@ go-dependencies:
 
 	# databases
 	$(GO) get -u github.com/lib/pq
+	$(GO) get -u github.com/mattn/go-sqlite3
 	$(GO) get -u github.com/connectordb/duck
 	$(GO) get -u github.com/jmoiron/sqlx
 

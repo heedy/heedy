@@ -5,6 +5,7 @@ import (
 	"connectordb/users"
 	"dbsetup/dbutil"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"util"
@@ -70,24 +71,34 @@ func Create(o *Options) error {
 			return err
 		}
 	}
-	if c.Sql.Enabled && o.PostgresEnabled {
-		p := NewPostgresService(o.DatabaseDirectory, &c.Sql)
+	if c.Sql.Enabled && o.SQLEnabled {
+		var p Service
+
+		if c.Sql.Type == "postgres" {
+			p = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service)
+		} else if c.Sql.Type == "sqlite3" {
+			c.Sql.URI = filepath.Join(o.DatabaseDirectory, "db.sqlite3")
+			p = NewSqliteService(c.Sql)
+		} else {
+			return fmt.Errorf("Unrecognized sql database type %s", c.Sql.Type)
+		}
+
 		if err = p.Create(); err != nil {
 			return err
 		}
 		//Stop the database once finished with it
 		defer p.Stop()
 
-		//Now that the databases are all created (and postgres is running), we check if we are to create a default user
+		//Now that the databases are all created, and postgres is running, we check if we are to create a default user
 		if umaker != nil {
 			log.Infof("Creating user %s (%s)", o.InitialUser.Name, o.InitialUser.Email)
-			db, driver, err := dbutil.OpenSqlDatabase(c.GetSqlConnectionString())
+			db, err := dbutil.OpenDatabase(c.Sql.Type, c.Sql.GetSqlConnectionString())
 			if err != nil {
 				return err
 			}
 			defer db.Close()
 
-			udb := users.NewUserDatabase(db, driver, false, 0, 0, 0)
+			udb := users.NewUserDatabase(db, false, 0, 0, 0)
 
 			err = udb.CreateUser(umaker)
 			if err != nil {
@@ -137,17 +148,20 @@ func Start(o *Options) error {
 			return err
 		}
 	}
-	if c.Sql.Enabled && o.PostgresEnabled {
-		p = NewPostgresService(o.DatabaseDirectory, &c.Sql)
-		if err := p.Start(); err != nil {
-			if r != nil {
-				r.Stop()
+	if c.Sql.Enabled && o.SQLEnabled {
+		if c.Sql.Type == "postgres" {
+			p = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service)
+			if err := p.Start(); err != nil {
+				if r != nil {
+					r.Stop()
+				}
+				if g != nil {
+					g.Stop()
+				}
+				return err
 			}
-			if g != nil {
-				g.Stop()
-			}
-			return err
 		}
+
 	}
 
 	if c.Frontend.Enabled && o.FrontendEnabled {
@@ -204,8 +218,8 @@ func Stop(opt *Options) error {
 	if c.Nats.Enabled && o.GnatsdEnabled {
 		errG = NewGnatsdService(o.DatabaseDirectory, &c.Nats).Stop()
 	}
-	if c.Sql.Enabled && o.RedisEnabled {
-		errP = NewPostgresService(o.DatabaseDirectory, &c.Sql).Stop()
+	if c.Sql.Enabled && o.SQLEnabled && c.Sql.Type == "postgres" {
+		errP = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service).Stop()
 	}
 	if errF != nil {
 		return errF

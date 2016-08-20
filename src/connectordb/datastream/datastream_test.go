@@ -5,8 +5,7 @@ Licensed under the MIT license.
 package datastream
 
 import (
-	"database/sql"
-
+	"dbsetup/dbutil"
 	"os"
 	"testing"
 
@@ -85,27 +84,11 @@ func (m *MockCache) Clear() error {
 
 func TestMain(m *testing.M) {
 	mc = &MockCache{}
-	sqldb, err := sql.Open(config.SqlType, config.TestConfiguration.GetSqlConnectionString())
+	sqldb, err := dbutil.OpenDatabase(config.TestConfiguration.Sql.Type, config.TestConfiguration.Sql.GetSqlConnectionString())
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
-	/*
-		_, err = sqldb.Exec(`CREATE TABLE IF NOT EXISTS datastream (
-		    StreamID BIGINT NOT NULL,
-			Substream VARCHAR,
-		    EndTime DOUBLE PRECISION,
-		    EndIndex BIGINT,
-			Version INTEGER,
-		    Data BYTEA,
-		    UNIQUE (StreamID, Substream, EndIndex),
-		    PRIMARY KEY (StreamID, Substream, EndIndex)
-		    );`)
-
-		if err != nil {
-			log.Error(err)
-			os.Exit(2)
-		}*/
 
 	ds, err = OpenDataStream(mc, sqldb, 2)
 	if err != nil {
@@ -124,6 +107,46 @@ func TestMain(m *testing.M) {
 	res := m.Run()
 
 	ds.Close()
+
+	// Once the tests with postgres pass, check sqlite
+	if res == 0 {
+		mc = &MockCache{}
+		err = dbutil.ClearDatabase("sqlite3", "test.db")
+		if err != nil {
+			if err.Error() != "remove test.db: no such file or directory" {
+				panic(err.Error())
+			}
+
+		}
+
+		err = dbutil.SetupDatabase("sqlite3", "test.db")
+		if err != nil {
+			panic(err.Error())
+		}
+		sqldb, err = dbutil.OpenDatabase("sqlite3", "test.db")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		ds, err = OpenDataStream(mc, sqldb, 2)
+		if err != nil {
+			log.Error(err)
+			os.Exit(3)
+		}
+		ds.Close()
+
+		ds, err = OpenDataStream(mc, sqldb, 2)
+		if err != nil {
+			log.Error(err)
+			os.Exit(4)
+		}
+		sdb = ds.sqls
+
+		res = m.Run()
+
+		ds.Close()
+	}
+
 	os.Exit(res)
 }
 

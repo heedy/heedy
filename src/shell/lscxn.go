@@ -22,7 +22,7 @@ func init() {
 
 	main := func(shell *Shell, args []string) uint8 {
 		cfg := config.Get()
-		dbcxn := cfg.GetSqlConnectionString()
+		dbcxn := cfg.Sql.GetSqlConnectionString()
 		fmt.Printf("Database: %v\n", dbcxn)
 
 		redis := cfg.Redis.GetRedisConnectionString()

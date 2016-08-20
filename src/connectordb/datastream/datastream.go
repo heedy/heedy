@@ -5,10 +5,10 @@ Licensed under the MIT license.
 package datastream
 
 import (
-	"database/sql"
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
@@ -26,7 +26,7 @@ type DataStream struct {
 }
 
 //OpenDataStream does just that - it opens the DataStream
-func OpenDataStream(c Cache, sd *sql.DB, chunksize int) (ds *DataStream, err error) {
+func OpenDataStream(c Cache, sd *sqlx.DB, chunksize int) (ds *DataStream, err error) {
 	sqls, err := OpenSqlStore(sd)
 	if err != nil {
 		return nil, err

@@ -102,6 +102,9 @@ func (c *Configuration) Validate() error {
 	if err := c.PipeScript.Validate(); err != nil {
 		return err
 	}
+	if err := c.Sql.Validate(); err != nil {
+		return err
+	}
 
 	// Try loading the permissions
 	_, err := permissions.Load(c.Permissions)

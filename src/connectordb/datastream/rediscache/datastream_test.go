@@ -7,7 +7,7 @@ package rediscache
 import (
 	"config"
 	"connectordb/datastream"
-	"database/sql"
+	"dbsetup/dbutil"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -17,7 +17,7 @@ import (
 
 func TestDataStream(t *testing.T) {
 	rc.BatchSize = 2
-	sqldb, err := sql.Open(config.SqlType, config.TestConfiguration.GetSqlConnectionString())
+	sqldb, err := dbutil.OpenDatabase(config.TestConfiguration.Sql.Type, config.TestConfiguration.Sql.GetSqlConnectionString())
 	require.NoError(t, err)
 
 	ds, err := datastream.OpenDataStream(RedisCache{rc}, sqldb, 2)
@@ -99,7 +99,7 @@ func TestDataStream(t *testing.T) {
 
 func TestTimePlusIndexRange(t *testing.T) {
 	rc.BatchSize = 2
-	sqldb, err := sql.Open(config.SqlType, "sslmode=disable dbname=connectordb port=52592")
+	sqldb, err := dbutil.OpenDatabase(config.TestConfiguration.Sql.Type, config.TestConfiguration.Sql.GetSqlConnectionString())
 	require.NoError(t, err)
 
 	ds, err := datastream.OpenDataStream(RedisCache{rc}, sqldb, 2)
