@@ -22,8 +22,7 @@ After build completes, start the ConnectorDB server:
 
 ```bash
 ./bin/connectordb create testdb
-./bin/connectordb start testdb
-./bin/connectordb run testdb --join
+./bin/connectordb start testdb --join
 ```
 
 Open `localhost:8000`, where you will see the login screen - create a new user.
