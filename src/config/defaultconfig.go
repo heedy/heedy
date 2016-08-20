@@ -24,20 +24,20 @@ func NewConfiguration() *Configuration {
 		Permissions: "default",
 		Redis: Service{
 			Hostname: "localhost",
-			Port:     6379,
+			Port:     6380,
 			Password: redispassword.String(),
 			Enabled:  true,
 		},
 		Nats: Service{
 			Hostname: "localhost",
-			Port:     4222,
+			Port:     4223,
 			Username: "connectordb",
 			Password: natspassword.String(),
 			Enabled:  true,
 		},
 		Sql: Service{
 			Hostname: "localhost",
-			Port:     52592,
+			Port:     52593,
 			//TODO: Have SQL accedd be auth'd
 			Enabled: true,
 		},
