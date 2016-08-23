@@ -74,11 +74,6 @@ type Configuration struct {
 	DeviceCacheSize int64 `json:"device_cache_size"`
 	StreamCacheSize int64 `json:"stream_cache_size"`
 
-	// The prime number to use for scrambling IDs in the database.
-	// WARNING: This must be CONSTANT! It should NEVER change after creating the database
-	// http://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
-	IDScramblePrime int64 `json:"database_id_scramble_prime"`
-
 	// The default algorithm to use for hashing passwords. Options are SHA512 and bcrypt
 	// This can be changed during runtime, and the user passwords will upgrade when they log in
 	PasswordHash string `json:"password_hash"`

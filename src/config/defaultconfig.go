@@ -134,10 +134,6 @@ func NewConfiguration() *Configuration {
 		DeviceCacheSize: 10000,
 		StreamCacheSize: 10000,
 
-		// This is the CONSTANT default. The database will explode if this is ever changed.
-		// You have been warned.
-		IDScramblePrime: 2147483423,
-
 		// No reason not to use bcrypt
 		PasswordHash: "bcrypt",
 

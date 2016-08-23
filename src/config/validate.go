@@ -119,10 +119,6 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
-	if c.IDScramblePrime <= 0 {
-		return errors.New("The ID Scramble prime must be a prime > 0.")
-	}
-
 	// Now see if we have a valid hashing algorithm
 	if c.PasswordHash != "bcrypt" && c.PasswordHash != "SHA512" {
 		return errors.New("The password hashing algorithm must be one of 'SHA512' or 'bcrypt'")

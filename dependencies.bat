@@ -3,6 +3,7 @@
 go get -u gopkg.in/redis.v3
 go get -u github.com/nats-io/nats
 go get -u github.com/lib/pq
+go get -u github.com/mattn/go-sqlite3
 go get -u github.com/connectordb/duck
 go get -u github.com/jmoiron/sqlx
 go get -u github.com/xeipuuv/gojsonschema
