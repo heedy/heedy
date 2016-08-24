@@ -16,7 +16,7 @@ export default function generateDropdownTransformDisplay(description, transform)
                     <h4 style={{
                         paddingTop: "10px"
                     }}>Transform</h4>
-                    <p>This is the transform used to generate your visualization:</p>
+                    <p>This is the transform used to generate this visualization:</p>
                     <TransformInput transform={transform} onChange= { (txt) => null }/>
                 </div>
             );

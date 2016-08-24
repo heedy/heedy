@@ -8,5 +8,5 @@ so that they can be registered.
 
 import './TableView/index';
 import './LineView';
-//import './SentimentLineChart';
+import './SentimentLineChart';
 //import './Map';

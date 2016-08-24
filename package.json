@@ -43,7 +43,7 @@
     "moment": "^2.13.0",
     "parallelshell": "^2.0.0",
     "pipescript": "^0.2.0",
-    "react": "^15.1.0",
+    "react": "^15.3.0",
     "react-bootstrap-daterangepicker": "^3.1.0",
     "react-chartjs": "git://github.com/reactjs/react-chartjs.git#chartjs-v2",
     "react-codemirror": "^0.2.6",

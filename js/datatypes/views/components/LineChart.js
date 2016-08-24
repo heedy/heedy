@@ -25,13 +25,16 @@ class LineChart extends DataTransformUpdater {
             }
         }
 
-        // Now return the data necessary to use the line chart
         return {
             datasets: [
                 {
                     label: name,
                     data: dataset,
-                    lineTension: 0
+                    lineTension: 0,
+                    // For nicer displaying, we don't add a fill color when we have enough datapoints,
+                    // and when we have a lot of data, we turn into a scatter chart
+                    fill: (d.length < 50),
+                    showLine: (d.length < 500)
                 }
             ]
         };
