@@ -27,14 +27,17 @@ class AvatarIcon extends Component {
         iconsrc: PropTypes.string
     }
     render() {
-        let icon = this.props.iconsrc;
-        let name = this.props.name;
-        if (icon !== undefined && icon != "") {
+        const {
+            iconsrc,
+            name,
+            ...rest
+        } = this.props;
+        if (iconsrc !== undefined && iconsrc != "") {
             // Show the icon image if it exists
             return (<Avatar {...this.props} src={iconsrc} size={size}/>);
         }
         return (
-            <Avatar {...this.props} backgroundColor={stringToColor(name)}>{name.substring(0, 1).toUpperCase()}</Avatar>
+            <Avatar {...rest} backgroundColor={stringToColor(name)}>{name.substring(0, 1).toUpperCase()}</Avatar>
         );
     }
 }

@@ -87,9 +87,7 @@ class Navigation extends React.Component {
                 </div>
                 <SelectableList value={this.props.selected} onChange={(e, v) => this.onClick(e, v)}>
                     {this.props.links.map((link) => (
-                        <ListItem key={link.page} value={link.page} focusState={link.focused
-                            ? 'focused'
-                            : 'none'} leftIcon={< FontIcon className = "material-icons" style = {{color: "black"}} > {
+                        <ListItem key={link.page} value={link.page} leftIcon={< FontIcon className = "material-icons" style = {{color: "black"}} > {
                             link.icon
                         } < /FontIcon>} innerDivStyle={styles.menuInnerDivStyle} style={styles.menuStyle}>
                             <div>

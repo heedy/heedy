@@ -31,7 +31,7 @@
     "classnames": "^2.2.5",
     "codemirror": "^5.15.2",
     "connectordb": "0.0.7",
-    "cross-env": "^1.0.8",
+    "cross-env": "^2.0.0",
     "css-loader": "^0.23.1",
     "es6-promise": "^3.2.1",
     "json-loader": "^0.5.4",
@@ -42,13 +42,13 @@
     "material-ui": "^0.15.0",
     "moment": "^2.13.0",
     "parallelshell": "^2.0.0",
-    "pipescript": "^0.2.0-a2",
+    "pipescript": "^0.2.0",
     "react": "^15.1.0",
     "react-bootstrap-daterangepicker": "^3.1.0",
     "react-chartjs": "git://github.com/reactjs/react-chartjs.git#chartjs-v2",
     "react-codemirror": "^0.2.6",
     "react-dom": "^15.1.0",
-    "react-jsonschema-form": "^0.30.1",
+    "react-jsonschema-form": "^0.39.0",
     "react-leaflet": "^0.12.1",
     "react-redux": "^4.4.5",
     "react-router": "^2.4.0",
@@ -58,7 +58,7 @@
     "redux": "^3.5.2",
     "redux-thunk": "^2.1.0",
     "style-loader": "^0.13.1",
-    "watch": "^0.18.0",
+    "watch": "^0.19.2",
     "webpack": "^1.13.0"
   }
 }

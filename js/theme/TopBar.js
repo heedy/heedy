@@ -47,7 +47,7 @@ class TopBar extends Component {
                 width: "100%",
                 top: "0px",
                 zIndex: 999
-            }} zDepth={50}>
+            }}>
                 {this.props.navDocked
                     ? null
                     : (
