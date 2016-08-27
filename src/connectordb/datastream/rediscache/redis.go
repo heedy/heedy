@@ -362,6 +362,12 @@ func (rc *RedisConnection) Get(hash, stream, substream string) (dpa datastream.D
 
 //Insert datapoint array, writing batches to batchkey
 func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa datastream.DatapointArray, restamp bool, maxDeviceSize, maxStreamSize int64) (streamlength int64, err error) {
+	// Make sure that the datapointarray is not empty (it panics otherwise)
+	if len(dpa) == 0 {
+		// Run StreamLength instead
+		return rc.StreamLength(hash, stream, substream)
+	}
+
 	//remember the number of args here
 	args := make([]string, 8+len(dpa))
 

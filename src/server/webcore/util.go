@@ -94,7 +94,6 @@ func GetFuncName(apifunc APIHandler) string {
 //It is assumed that the connection is active
 func HandlePanic(logger *log.Entry) {
 	if r := recover(); r != nil {
-		atomic.AddInt32(&StatsActive, -1)
 		atomic.AddUint32(&StatsPanics, 1)
 		logger.Errorf("PANIC: %s\n\n%s\n\n", r.(error).Error(), debug.Stack())
 	}
