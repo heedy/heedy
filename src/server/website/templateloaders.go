@@ -12,7 +12,7 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/dkumor/hot"
+	"github.com/gernest/hot"
 	"github.com/kardianos/osext"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
