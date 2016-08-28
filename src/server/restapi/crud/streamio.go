@@ -14,6 +14,7 @@ import (
 	"server/webcore"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -45,19 +46,29 @@ func WriteStream(o *authoperator.AuthOperator, writer http.ResponseWriter, reque
 	}
 	restamp := request.Method == "PUT"
 
+	tins := time.Now()
+
+	err = o.InsertStream(streampath, datapoints, restamp)
+	if err != nil {
+		return restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
+	}
+
 	querylog := fmt.Sprintf("Insert %d", len(datapoints))
 	if restamp {
 		querylog += " (restamp)"
 	}
 
-	err = o.InsertStream(streampath, datapoints, restamp)
-	if err != nil {
-		lvl, _ := restcore.WriteError(writer, logger, http.StatusForbidden, err, false)
-		return lvl, querylog
+	lvl := webcore.DEBUG
+	// We keep track of the actual insert time
+	insertTime := time.Since(tins)
+	if insertTime.Seconds() > 0.1 {
+		querylog += fmt.Sprintf(" - INSERT_TIME: %s!", insertTime.String())
+		lvl = webcore.WARNING
 	}
+
 	atomic.AddUint32(&webcore.StatsInserts, uint32(len(datapoints)))
 	restcore.OK(writer)
-	return webcore.DEBUG, querylog
+	return lvl, querylog
 }
 
 //StreamRange gets a range of data from a stream

@@ -104,7 +104,7 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVar(&logfile, "logfile", "", "The file to which log output is written")
 	RootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "", "The types of messages to show (debug,info,warn,error)")
-	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprof", "", "File to which a cpu profile of ConnectorDB will be written")
+	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprofile", "", "File to which a cpu profile of ConnectorDB will be written")
 
 	RootCmd.Flags().BoolVar(&version, "version", false, "Show ConnectorDB version and exit")
 }

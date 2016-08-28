@@ -6,6 +6,7 @@ package datastream
 
 import (
 	"errors"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
@@ -104,7 +105,25 @@ func (ds *DataStream) WriteQueue() error {
 	}
 	if len(b) > 0 {
 		if err = ds.sqls.WriteBatches(b); err != nil {
-			return err
+			if !strings.Contains(strings.ToUpper(err.Error()), "UNIQUE") {
+				return err
+			}
+			// OH SHIT, we just came across a unique contraint failure! It means ConnectorDB was shut off
+			// after writing the batch to sql database, but before removing the batch from redis!
+			// We have to be careful here! We will try writing all the batches, and we will just skip the ones
+			// that trigger the unique constraints
+			log.Warnf("DBWriter: %s\n\nThis means that ConnectorDB was in the middle of writing from redis to sql when shut down. ConnectorDB will now complete the interrupted write.\n", err.Error())
+			for i := range b {
+				if err = ds.sqls.WriteBatches(b[i : i+1]); err != nil {
+					if !strings.Contains(strings.ToUpper(err.Error()), "UNIQUE") {
+						// The error is NOT a unique constraint. We crash.
+						return err
+					}
+					log.Warnf("DBwriter: constraint triggered on %s/%s i=%d #=%d. This batch was already written. Ignoring.", b[i].Stream, b[i].Substream, b[i].StartIndex, len(b[i].Data))
+				}
+			}
+			log.Info("DBWriter: database should now be consistent.")
+
 		}
 	}
 	return ds.cache.ClearBatches(b)

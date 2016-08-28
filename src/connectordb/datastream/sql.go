@@ -6,6 +6,7 @@ package datastream
 
 import (
 	"errors"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
@@ -143,6 +144,8 @@ func (s *SqlStore) stmtInsert(stmt *sqlx.Stmt, streamID int64, substream string,
 
 //WriteBatches writes the given batch array
 func (s *SqlStore) WriteBatches(b []Batch) error {
+	tstart := time.Now()
+
 	t, err := s.db.Beginx()
 	if err != nil {
 		return err
@@ -165,7 +168,7 @@ func (s *SqlStore) WriteBatches(b []Batch) error {
 	}
 	err = t.Commit()
 	if err == nil && len(b) > 1 {
-		log.Debugf("...successfully wrote %d batches", len(b))
+		log.Debugf("...successfully wrote %d batches in %s", len(b), time.Since(tstart))
 	}
 	return err
 }
