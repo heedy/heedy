@@ -27,7 +27,7 @@ var (
 var StartCmd = &cobra.Command{
 	Use:   "start [config file path or database directory]",
 	Short: "Starts ConnectorDB and its backend services as daemons",
-	Long: `ConnectorDB uses postgres, redis, and gnatsd in the background, and runs its own
+	Long: `ConnectorDB uses postgres (or sqlite3), redis, and gnatsd in the background, and runs its own
 frontend server using these services. The start command allows you to start
 all of the services including the frontend as a daemon. You can also use the start command
 with the --backend flag to start only the background servers, and can use connectordb run to

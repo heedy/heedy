@@ -28,6 +28,7 @@ are started with the start command. The frontend is
 the main server that is exposed to the internet and runs the
 ConnectorDB API and web app.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		if len(args) == 0 {
 			return ErrConfig
 		}

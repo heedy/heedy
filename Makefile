@@ -62,7 +62,7 @@ go-dependencies:
 	$(GO) get -u github.com/dkumor/acmewrapper # Let's encrypt support
 
 	# web services
-	$(GO) get -u github.com/gernest/hot				# hot template reloading
+	$(GO) get -u github.com/dkumor/hot				# hot template reloading
 	$(GO) get -u github.com/russross/blackfriday		# markdown processing
 	$(GO) get -u github.com/microcosm-cc/bluemonday	# unsafe html stripper
 

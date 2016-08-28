@@ -5,9 +5,10 @@ Licensed under the MIT license.
 package util
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/debug"
 	"sync"
 	"syscall"
 
@@ -15,8 +16,10 @@ import (
 )
 
 var (
-	closeWaiter = sync.WaitGroup{}
+	closeMutex  = sync.Mutex{}
 	closeExiter = sync.Once{}
+	closers     = []Closeable{}
+	closeWaiter = sync.WaitGroup{}
 )
 
 //CloseCall calls a custom function on close
@@ -36,36 +39,55 @@ type Closeable interface {
 
 // CloseOnExit closes a resource when the program is exiting.
 func CloseOnExit(closeable Closeable) {
-	closeWaiter.Add(1)
-	closeExiter.Do(func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	closeExiter.Do(setupCloseOnExit)
 
-		go func() {
-			<-c
-			log.Warn("Exiting...")
-			closeWaiter.Wait()
-			log.Debug("bye!")
-			os.Exit(0)
-		}()
-	})
+	closeMutex.Lock()
+	closers = append(closers, closeable)
+	closeMutex.Unlock()
+}
+
+// SetupCloseOnExit sets up the close on exit code
+func setupCloseOnExit() {
+	c := make(chan os.Signal, 3)
+
+	if runtime.GOOS == "windows" {
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	} else {
+		signal.Notify(c, os.Interrupt)
+	}
 
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Printf("close error for %v\n", closeable)
-			}
-		}()
+		for {
+			s := <-c
+			switch s {
+			case syscall.SIGINT, syscall.SIGTERM, os.Interrupt:
+				log.Warn("Exiting...")
+				closeMutex.Lock()
+				closeWaiter.Add(len(closers))
+				log.Debugf("Running %d cleanup tasks", len(closers))
+				for i := range closers {
+					curnum := i
 
-		if closeable == nil {
-			return
+					go func() {
+						defer func() {
+							if r := recover(); r != nil {
+								log.Errorf("Cleanup task panic: %s", debug.Stack())
+							}
+						}()
+						closers[curnum].Close()
+						log.Debugf("Done with cleanup task #%d", curnum+1)
+						closeWaiter.Done()
+					}()
+
+				}
+				closeMutex.Unlock()
+				closeWaiter.Wait()
+				log.Warn("bye!")
+				os.Exit(0)
+			case syscall.SIGHUP:
+				log.Warn("Caught SIGHUP - ignoring")
+			}
 		}
 
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-
-		<-c
-		closeable.Close()
-		closeWaiter.Done()
 	}()
 }

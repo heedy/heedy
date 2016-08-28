@@ -56,7 +56,7 @@ var RootCmd = &cobra.Command{
 
 		//Set up CPU profiling if it is enabled
 		if cpuprofile != "" {
-			log.Debug("Writing CPU profile to ", cpuprofile)
+			log.Info("Writing CPU profile to ", cpuprofile)
 
 			cpufile, err := os.Create(cpuprofile)
 			if err != nil {
@@ -70,9 +70,10 @@ var RootCmd = &cobra.Command{
 			// TODO: CloseOnExit only is called on sigint/sigterm. It isn't called
 			// on normal exit.
 			util.CloseOnExit(util.CloseCall{Callme: func() {
-				log.Debug("Writing CPU profile...")
+				log.Infof("Writing CPU profile %s...", cpuprofile)
 				pprof.StopCPUProfile()
 				cpufile.Close()
+				log.Info("Finished writing CPU profile.")
 			}})
 
 		}

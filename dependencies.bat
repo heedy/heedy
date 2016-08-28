@@ -19,7 +19,7 @@ go get -u github.com/spf13/cobra
 go get -u github.com/tdewolff/minify
 go get -u golang.org/x/crypto/bcrypt
 go get -u github.com/dkumor/acmewrapper
-go get -u github.com/gernest/hot
+go get -u github.com/dkumor/hot
 go get -u github.com/russross/blackfriday
 go get -u github.com/microcosm-cc/bluemonday
 go get -u github.com/stretchr/testify
