@@ -5,7 +5,7 @@ This shows a line chart of the data given
 import React, {PropTypes} from 'react';
 import DataTransformUpdater from './DataUpdater';
 
-import {Line} from 'react-chartjs';
+import {Line} from 'react-chartjs-2';
 import moment from 'moment';
 
 class LineChart extends DataTransformUpdater {

@@ -52,7 +52,6 @@ class MainToolbar extends Component {
         );
     }
 }
-export default MainToolbar;
 export default connect(undefined, (dispatch, props) => ({
 
     onAddClick: () => dispatch(go(props.user.name + "/" + props.device.name + "#create")),

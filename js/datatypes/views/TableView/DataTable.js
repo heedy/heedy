@@ -44,7 +44,7 @@ class DataTable extends DataUpdater {
                     width: "100%",
                     textAlign: "center"
                 }}>
-                    <a class="pull-center" style={{
+                    <a className="pull-center" style={{
                         cursor: "pointer"
                     }} onClick={() => this.props.setState({tableExpanded: true})}>
                         Show {(data.length - 10).toString() + " "}

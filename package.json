@@ -45,7 +45,7 @@
     "pipescript": "^0.2.0",
     "react": "^15.3.0",
     "react-bootstrap-daterangepicker": "^3.1.0",
-    "react-chartjs": "git://github.com/reactjs/react-chartjs.git#chartjs-v2",
+    "react-chartjs-2": "^1.2.4",
     "react-codemirror": "^0.2.6",
     "react-dom": "^15.1.0",
     "react-jsonschema-form": "^0.39.0",
