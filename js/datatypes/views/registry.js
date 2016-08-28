@@ -9,4 +9,4 @@ so that they can be registered.
 import './TableView/index';
 import './LineView';
 import './SentimentLineChart';
-//import './Map';
+import './Map';

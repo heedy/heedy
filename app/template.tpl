@@ -15,6 +15,7 @@
 
         <link rel="stylesheet" href="{{.SiteURL}}/app/css/bootstrap.min.css">
         <link rel="stylesheet" href="{{.SiteURL}}/app/css/main.css">
+        <link rel="stylesheet" href="{{.SiteURL}}/app/css/leaflet.css">
         <!--<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         Switching to inline styles, so that the webapp works even with no internet.
 
