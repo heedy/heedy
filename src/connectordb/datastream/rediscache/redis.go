@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/redis.v3"
+	redis "gopkg.in/redis.v4"
 
 	"connectordb/datastream"
 )
@@ -283,8 +283,8 @@ type redisConnection interface {
 	FlushDb() *redis.StatusCmd
 
 	//This enables us to use a redis.Script object
-	Eval(script string, keys []string, args []string) *redis.Cmd
-	EvalSha(sha1 string, keys []string, args []string) *redis.Cmd
+	Eval(script string, keys []string, args ...interface{}) *redis.Cmd
+	EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd
 	ScriptExists(scripts ...string) *redis.BoolSliceCmd
 	ScriptLoad(script string) *redis.StringCmd
 
@@ -369,7 +369,7 @@ func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa 
 	}
 
 	//remember the number of args here
-	args := make([]string, 8+len(dpa))
+	args := make([]interface{}, 8+len(dpa))
 
 	args[0] = stream + ":" + substream
 	args[1] = strconv.FormatFloat(dpa[0].Timestamp, 'G', -1, 64)
@@ -396,7 +396,7 @@ func (rc *RedisConnection) Insert(batchkey, hash, stream, substream string, dpa 
 
 	args[5] = strconv.FormatInt(datasize, 10)
 
-	r, err := rc.insertScript.Run(rc.Redis, []string{streamKey(hash, stream, substream), "{" + hash + "}", batchkey}, args).Result()
+	r, err := rc.insertScript.Run(rc.Redis, []string{streamKey(hash, stream, substream), "{" + hash + "}", batchkey}, args...).Result()
 
 	if err != nil {
 		return 0, err
@@ -424,7 +424,7 @@ func (rc *RedisConnection) StreamSize(hash, stream, substream string) (int64, er
 //DeleteSubstream deletes the given substream from the stream
 func (rc *RedisConnection) DeleteSubstream(hash, stream, substream string) error {
 	return wrapNil(rc.subdeleteScript.Run(rc.Redis, scriptkeys(hash, stream, substream),
-		[]string{stream + ":" + substream}).Err())
+		stream+":"+substream).Err())
 }
 
 //DeleteStream removes an entire stream and all substreams from redis
@@ -479,7 +479,7 @@ func (rc *RedisConnection) HashSize(hash string) (int64, error) {
 //TrimStream clears all datapoints up to the index from redis, after they are written
 //to long term storage, so that they don't take up space.
 func (rc *RedisConnection) TrimStream(hash, stream, substream string, index int64) error {
-	return wrapNil(rc.trimScript.Run(rc.Redis, scriptkeys(hash, stream, substream), []string{stream + ":" + substream, strconv.FormatInt(index, 10)}).Err())
+	return wrapNil(rc.trimScript.Run(rc.Redis, scriptkeys(hash, stream, substream), stream+":"+substream, index).Err())
 }
 
 //NextBatch waits for the next batch, and pushes it into the "in progress queue"
@@ -541,7 +541,7 @@ func (rc *RedisConnection) ReadBatch(batchstring string) (b *datastream.Batch, e
 //so a range of -1,0 returns the most recent datapoint, -3,-1 returns 2 of the 3 most recent datapoints, 5,-1 returns index 5 to the
 //second to last, and so forth. It is python-like indexing.
 func (rc *RedisConnection) Range(hash, stream, substream string, index1, index2 int64) (dpa datastream.DatapointArray, i1, i2 int64, err error) {
-	res, err := rc.rangeScript.Run(rc.Redis, scriptkeys(hash, stream, substream), []string{stream + ":" + substream, strconv.FormatInt(index1, 10), strconv.FormatInt(index2, 10)}).Result()
+	res, err := rc.rangeScript.Run(rc.Redis, scriptkeys(hash, stream, substream), stream+":"+substream, index1, index2).Result()
 	if err != nil {
 		return nil, 0, 0, err
 	}

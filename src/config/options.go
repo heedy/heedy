@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
 // Options are the struct which gives ConnectorDB core the necessary information

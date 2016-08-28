@@ -1,6 +1,6 @@
 :: These are basically explicit copies of the go get stuff in the makefile
 :: The linux version is source of truth.
-go get -u gopkg.in/redis.v3
+go get -u gopkg.in/redis.v4
 go get -u github.com/nats-io/nats
 go get -u github.com/lib/pq
 go get -u github.com/mattn/go-sqlite3

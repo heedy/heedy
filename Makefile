@@ -38,7 +38,7 @@ clean:
 go-dependencies:
 	# services
 	$(GO) get -u github.com/nats-io/nats github.com/nats-io/gnatsd
-	$(GO) get -u gopkg.in/redis.v3
+	$(GO) get -u gopkg.in/redis.v4
 
 	# databases
 	$(GO) get -u github.com/lib/pq
