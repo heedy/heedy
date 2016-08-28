@@ -28,20 +28,13 @@ install:
   # Set up redis,node, postgres + add them to PATH
   - nuget install redis-64 -excludeversion
   - ps: Install-Product node 0
-  - C:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
-  - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Sy"
-  - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -S gcc
   # Build the ConnectorDB executable
   - dependencies.bat
   - build.bat
 
-
 build: off
 
 test_script:
-  - bin\connectordb.exe --version
-
-after_test:
   - bin\connectordb.exe --version
 
 deploy: off
