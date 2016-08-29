@@ -23,7 +23,7 @@ class DataTable extends DataUpdater {
             dataset[i] = {
                 key: JSON.stringify(d[i]),
                 t: moment.unix(d[i].t).calendar(),
-                d: JSON.stringify(d[i].d)
+                d: JSON.stringify(d[i].d, undefined, 2)
             };
         }
 
@@ -36,8 +36,8 @@ class DataTable extends DataUpdater {
         let data = this.data;
         let expandedText = null;
 
-        // If the table is not expanded, show only the last 10 if there are more than 20
-        if (!expanded && data.length > 20) {
+        // If the table is not expanded, show only the last 5 if there are more than 10
+        if (!expanded && data.length > 10) {
 
             expandedText = (
                 <div style={{
@@ -47,12 +47,12 @@ class DataTable extends DataUpdater {
                     <a className="pull-center" style={{
                         cursor: "pointer"
                     }} onClick={() => this.props.setState({tableExpanded: true})}>
-                        Show {(data.length - 10).toString() + " "}
+                        Show {(data.length - 5).toString() + " "}
                         hidden datapoints
                     </a>
                 </div>
             );
-            data = data.slice(data.length - 10, data.length);
+            data = data.slice(data.length - 5, data.length);
         }
         return (
             <div>

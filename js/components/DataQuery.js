@@ -35,20 +35,24 @@ class DataQuery extends Component {
                 moment().subtract(1, 'days').startOf('day'),
                 moment().subtract(1, 'days').endOf('day')
             ],
-            'Last 7 Days': [
+            'Last 7 days': [
                 moment().subtract(7, 'days'),
-                moment().endOf('day')
-            ],
-            'Last 30 Days': [
-                moment().subtract(30, 'days'),
                 moment().endOf('day')
             ],
             'This Month': [
                 moment().startOf('month'), moment().endOf('month')
             ],
-            'Last Month': [
-                moment().subtract(1, 'month').startOf('month'),
-                moment().subtract(1, 'month').endOf('month')
+            'Last 30 Days': [
+                moment().subtract(30, 'days'),
+                moment().endOf('day')
+            ],
+            'Last 3 Months': [
+                moment().subtract(3, 'months'),
+                moment().endOf('day')
+            ],
+            'Last Year': [
+                moment().subtract(1, 'year'),
+                moment().endOf('day')
             ]
         }
 

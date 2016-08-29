@@ -72,7 +72,7 @@ class MapViewComponent extends DataTransformUpdater {
         return dataset.slice(0, j);
     }
     render() {
-        var markers = [(<TileLayer key="tileLayer" url='http://{s}.tile.osm.org/{z}/{x}/{y}.png' attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'/>)].concat(this.data.map((d) => (
+        var markers = [(<TileLayer key="tileLayer" url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'/>)].concat(this.data.map((d) => (
             <Marker key={d.key} icon={mapdot} position={[d.latitude, d.longitude]} opacity={0.7}>
                 <Popup>
                     <p>{d.popup}</p>
