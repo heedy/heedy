@@ -50,8 +50,8 @@ func CloseOnExit(closeable Closeable) {
 func setupCloseOnExit() {
 	c := make(chan os.Signal, 3)
 
-	if runtime.GOOS == "windows" {
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	if runtime.GOOS != "windows" {
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	} else {
 		signal.Notify(c, os.Interrupt)
 	}
@@ -60,7 +60,7 @@ func setupCloseOnExit() {
 		for {
 			s := <-c
 			switch s {
-			case syscall.SIGINT, syscall.SIGTERM, os.Interrupt:
+			case syscall.SIGTERM, os.Interrupt:
 				log.Warn("Exiting...")
 				closeMutex.Lock()
 				closeWaiter.Add(len(closers))
