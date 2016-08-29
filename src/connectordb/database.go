@@ -22,7 +22,7 @@ import (
 
 //The StreamDB version string
 const (
-	Version = "0.3.0a2"
+	Version = "0.3.0b1"
 	Name    = "ConnectorDB"
 )
 
