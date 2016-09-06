@@ -14,6 +14,7 @@ import (
 func NewConfiguration() *Configuration {
 	redispassword, _ := uuid.NewV4()
 	natspassword, _ := uuid.NewV4()
+	postgrespassword, _ := uuid.NewV4()
 
 	sessionAuthKey := securecookie.GenerateRandomKey(64)
 	sessionEncKey := securecookie.GenerateRandomKey(32)
@@ -41,8 +42,9 @@ func NewConfiguration() *Configuration {
 			Service: Service{
 				Hostname: "localhost",
 				Port:     52593,
-				//TODO: Have SQL access be auth'd
-				Enabled: true,
+				Username: "postgres",
+				Password: postgrespassword.String(),
+				Enabled:  true,
 			},
 		},
 

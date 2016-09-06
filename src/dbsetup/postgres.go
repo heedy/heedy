@@ -7,9 +7,10 @@ package dbsetup
 import (
 	"config"
 	"dbsetup/dbutil"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"util"
 
 	log "github.com/Sirupsen/logrus"
@@ -36,19 +37,33 @@ func (s *PostgresService) Create() error {
 		return err
 	}
 
-	//Initialize the database directory
-	err = util.RunCommand(err, GetPostgresExecutablePath("initdb"), "-D", dbDir)
+	// In order for Postgres to work with our configured username and password,
+	// we need to create a temporary password file for postgres to read while
+	// Initializing
+
+	pwfile := filepath.Join(s.ServiceDirectory, "POSTGRES_TEMP_PASS.tmp")
+
+	err = ioutil.WriteFile(pwfile, []byte(s.S.Password), 0644)
 	if err != nil {
 		return err
 	}
+
+	// Run postgres initdb
+	err = util.RunCommand(err, GetPostgresExecutablePath("initdb"), "-U", s.S.Username, "--pwfile", pwfile, "-D", dbDir, "--auth", "md5")
+
+	if err != nil {
+		return err
+	}
+
+	// Now remove the temporary password file
+	os.Remove(pwfile)
 
 	//Now we need to start postgres so that we can create all the necessary tables
 	if err = s.Start(); err != nil {
 		return err
 	}
 
-	port := strconv.Itoa(int(s.S.Port))
-	err = util.RunCommand(err, GetPostgresExecutablePath("psql"), "-h", s.S.Hostname, "-p", port, "-d", "postgres", "-c", "CREATE DATABASE connectordb;")
+	err = util.RunCommand(err, GetPostgresExecutablePath("psql"), fmt.Sprintf("postgres://%v:%v@%v:%v/postgres?sslmode=disable", s.S.Username, s.S.Password, s.S.Hostname, s.S.Port), "-c", "CREATE DATABASE connectordb;")
 	if err != nil {
 		return err
 	}

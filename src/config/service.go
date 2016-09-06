@@ -33,7 +33,11 @@ func (s *Service) GetNatsConnectionString() string {
 
 // GetSqlConnectionString checks server type and returns either the filename or postgres url
 func (s *Service) GetSqlConnectionString() string {
-	return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
+	if s.Password == "" {
+		return fmt.Sprintf("postgres://%v:%v/connectordb?sslmode=disable", s.Hostname, s.Port)
+	}
+	return fmt.Sprintf("postgres://%v:%v@%v:%v/connectordb?sslmode=disable", s.Username, s.Password, s.Hostname, s.Port)
+
 }
 
 type SQLService struct {
@@ -54,7 +58,7 @@ func (s *SQLService) GetSqlConnectionString() string {
 
 func (s *SQLService) Validate() (err error) {
 	if s.Type == "" {
-		s.Type = "sqlite3"
+		s.Type = "postgres"
 	}
 	if s.Type != "postgres" && s.Type != "sqlite3" {
 		return errors.New("Unrecognized sql database type")
@@ -68,6 +72,11 @@ func (s *SQLService) Validate() (err error) {
 		s.URI, err = filepath.Abs(s.URI)
 		if err != nil {
 			return err
+		}
+	} else {
+		// The default postgres user is postgres
+		if s.Username == "" {
+			s.Username = "postgres"
 		}
 	}
 	return nil
