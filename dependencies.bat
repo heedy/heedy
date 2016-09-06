@@ -25,6 +25,9 @@ go get -u github.com/microcosm-cc/bluemonday
 go get -u github.com/stretchr/testify
 go get -u github.com/connectordb/pipescript
 
+:: We must run go install on go-sqlite3
+go install github.com/mattn/go-sqlite3
+
 
 if not exist "bin" mkdir "bin"
 
