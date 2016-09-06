@@ -1,11 +1,17 @@
 GO:=go
 COPY:=rsync -r --exclude=.git
 
-.PHONY: all clean build test submodules resources deps phony
+.PHONY: all clean build test submodules resources deps phony testbuild
 
 all: bin/dep/gnatsd bin/connectordb resources
 deps: go-dependencies submodules app
 build: resources bin/connectordb
+
+# A special build for testing purposes: It avoids building the full frontend javascript, which
+# is EXTREMELY expensive (several minutes).
+testbuild: bin/dep/gnatsd bin/connectordb
+	$(COPY) site/www bin/
+	cd site/app;npm run build:html
 
 #Empty rule for forcing rebuilds
 phony:

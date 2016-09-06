@@ -23,5 +23,5 @@ install:
     - make deps
 
 script:
-    - make
+    - make testbuild
     - make test
