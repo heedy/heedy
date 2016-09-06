@@ -25,9 +25,9 @@ var TestConfiguration = func() Configuration {
 		Service: Service{
 			Hostname: "localhost",
 			Port:     52592,
-			//Username: "connectordb",
-			//Password: sqlpassword,
-			Enabled: true,
+			Username: "postgres",
+			Password: "sqlpassword",
+			Enabled:  true,
 		},
 	}
 
