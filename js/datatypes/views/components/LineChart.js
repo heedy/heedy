@@ -18,10 +18,23 @@ class LineChart extends DataTransformUpdater {
     transformDataset(d) {
         let dataset = new Array(d.length);
 
+        // We check if the dataset is boolean - in which case we draw a stepped line
+        let isbool = true;
+
         for (let i = 0; i < d.length; i++) {
+            let data = d[i].d;
+            if (typeof(data) === "boolean") {
+                if (data === false) {
+                    data = 0;
+                } else {
+                    data = 1;
+                }
+            } else {
+                isbool = false;
+            }
             dataset[i] = {
                 x: moment.unix(d[i].t),
-                y: d[i].d
+                y: data
             }
         }
 
@@ -33,8 +46,11 @@ class LineChart extends DataTransformUpdater {
                     lineTension: 0,
                     // For nicer displaying, we don't add a fill color when we have enough datapoints,
                     // and when we have a lot of data, we turn into a scatter chart
-                    fill: (d.length < 50),
-                    showLine: (d.length < 500)
+                    fill: (isbool
+                        ? d.length < 500
+                        : d.length < 50),
+                    showLine: (d.length < 500),
+                    steppedLine: isbool
                 }
             ]
         };
