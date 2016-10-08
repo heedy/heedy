@@ -36,35 +36,35 @@ const noSchema = {
 function prepareSchema(s) {
     let uiSchema = {};
     let schema = Object.assign({}, s); // We'll be modifying the object, so copy it
-    if (s.type === undefined) {
+    if (schema.type === undefined) {
         schema = noSchema;
     } else {
         // The schema is valid - set up the default values and uiSchema
-        switch (s.type) {
+        switch (schema.type) {
             case "object":
-                let k = Object.keys(s.properties);
+                let k = Object.keys(schema.properties);
                 for (let i in k) {
                     let key = k[i];
-                    let ret = generateSchema(s.properties[key]);
+                    let ret = prepareSchema(schema.properties[key]);
                     uiSchema[key] = ret.ui;
-                    s.properties[key] = ret.s;
+                    schema.properties[key] = ret.s;
                 }
                 break;
             case "string":
-                if (s.default === undefined) {
-                    s["default"] = "";
+                if (schema.default === undefined) {
+                    schema["default"] = "";
                 }
 
                 break;
             case "boolean":
-                if (s.default === undefined) {
-                    s["default"] = false;
+                if (schema.default === undefined) {
+                    schema["default"] = false;
                 }
                 uiSchema["ui:widget"] = "radio";
                 break;
             case "number":
-                if (s.default === undefined) {
-                    s["default"] = 0;
+                if (schema.default === undefined) {
+                    schema["default"] = 0;
                 }
                 break;
 
@@ -82,6 +82,9 @@ function prepareSchema(s) {
                     input: schema
                 }
             };
+            uiSchema = {
+                input: uiSchema
+            }
         }
     }
 
