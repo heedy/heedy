@@ -12,11 +12,11 @@ import {connect} from 'react-redux';
 
 import {spacing} from 'material-ui/styles';
 import Drawer from 'material-ui/Drawer';
-import {List, ListItem, MakeSelectable} from 'material-ui/List';
+import {List, ListItem, makeSelectable} from 'material-ui/List';
 import FontIcon from 'material-ui/FontIcon';
 
 // This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
-const SelectableList = MakeSelectable(List);
+const SelectableList = makeSelectable(List);
 
 import {push} from 'react-router-redux'
 

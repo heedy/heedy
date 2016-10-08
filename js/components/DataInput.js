@@ -7,11 +7,23 @@ import {dataInput, showMessage} from '../actions';
 import {getInput} from '../datatypes/datatypes';
 import {getStreamState} from '../reducers/stream';
 
+// Several properties in a view accept both a direct value OR a generator function that
+// takes in the current state, and sets the view's value. This function extracts the correct
+// value from these properties
+function extractValue(value, context) {
+    if (typeof(value) === 'function') {
+        return value(context);
+    }
+    return value;
+}
+
 class DataInput extends Component {
     static propTypes = {
         state: PropTypes.object.isRequired,
         user: PropTypes.object.isRequired,
         device: PropTypes.object.isRequired,
+        thisUser: PropTypes.object.isRequired,
+        thisDevice: PropTypes.object.isRequired,
         stream: PropTypes.object.isRequired,
         onSubmit: PropTypes.func.isRequired,
         setState: PropTypes.func.isRequired,
@@ -45,11 +57,47 @@ class DataInput extends Component {
         // a standard form, but based on the datatype, it can be stars, or whatever is desired.
         let datatype = getInput(stream.datatype);
 
+        let context = {
+            path: path,
+            schema: schema,
+            showMessage: this.props.showMessage,
+
+            // user/device/stream
+            user: this.props.user,
+            device: this.props.device,
+            stream: this.props.stream,
+            // currently logged in user/device
+            thisUser: this.props.thisUser,
+            thisDevice: this.props.thisDevice,
+            // The input state, and setState
+            state: state,
+            setState: (v) => {
+                this.props.setState({
+                    ...state,
+                    ...v
+                });
+            },
+            // Insert the datapoint
+            insert: this.props.onSubmit
+        };
+
+        let dropdown = null;
+        if (datatype.dropdown !== undefined) {
+            dropdown = (<datatype.dropdown {...context}/>);
+        }
+
+        // Finally, we append the icons sent in as props to our current icons
+        let icons = extractValue(datatype.icons, context);
+        if (icons === undefined) {
+            icons = [];
+        }
+        if (this.props.icons !== undefined) {
+            icons = icons.concat(this.props.icons);
+        }
+
         return (
-            <ExpandableCard title={this.props.title} state={state} setState={this.props.setState} width={datatype.width} style={{
-                textAlign: "center"
-            }} subtitle={this.props.subtitle} dropdown={datatype.dropdown} icons={this.props.icons}>
-                <datatype.component {...this.props} schema={schema} path={path}/>
+            <ExpandableCard title={this.props.title} state={state} setState={this.props.setState} width={datatype.width} style={extractValue(datatype.style, context)} subtitle={this.props.subtitle} dropdown={dropdown} icons={icons}>
+                <datatype.component {...context}/>
             </ExpandableCard>
         );
     }
@@ -58,7 +106,7 @@ class DataInput extends Component {
 export default connect((state, props) => ({
     state: getStreamState(props.user.name + "/" + props.device.name + "/" + props.stream.name, state).input
 }), (dispatch, props) => ({
-    onSubmit: (val, cng) => dispatch(dataInput(props.user, props.device, props.stream, val, cng)),
+    onSubmit: (ts, val, cng) => dispatch(dataInput(props.user, props.device, props.stream, ts, val, cng)),
     showMessage: (val) => dispatch(showMessage(val)),
     setState: (v) => dispatch({
         type: "STREAM_INPUT",

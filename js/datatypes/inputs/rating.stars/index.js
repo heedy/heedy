@@ -10,11 +10,13 @@ import StarRating from './react-star-rating/react-star-rating.min';
 import './react-star-rating/react-star-rating.min.css';
 import {addInput} from '../../datatypes';
 
+import TimeChooser, {getTimestamp} from '../TimeChooser';
+
 class StarInput extends Component {
     static propTypes = {
         state: PropTypes.object,
         setState: PropTypes.func,
-        onSubmit: PropTypes.func
+        insert: PropTypes.func
     }
     render() {
         let value = this.props.state.value;
@@ -25,7 +27,7 @@ class StarInput extends Component {
         return (<StarRating name={this.props.path} totalStars={10} size={30} onRatingClick={(a, val) => {
             console.log("Changing value:", val);
             this.props.setState({value: val["rating"]});
-            this.props.onSubmit(val["rating"], false);
+            this.props.insert(getTimestamp(this.props.state), val["rating"], false);
         }}/>);
     }
 }
@@ -33,5 +35,9 @@ class StarInput extends Component {
 // add the input to the input registry.
 addInput("rating.stars", {
     width: "half",
-    component: StarInput
+    component: StarInput,
+    style: {
+        textAlign: "center"
+    },
+    dropdown: TimeChooser
 });

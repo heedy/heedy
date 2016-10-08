@@ -10,6 +10,7 @@ type in arbitrary JSON.
 import React, {Component, PropTypes} from 'react';
 
 import Form from "react-jsonschema-form";
+import TimeChooser, {getTimestamp} from './TimeChooser';
 
 import {addInput} from '../datatypes';
 
@@ -99,7 +100,7 @@ class DefaultInput extends Component {
         path: PropTypes.string.isRequired,
         schema: PropTypes.object.isRequired,
         state: PropTypes.object.isRequired,
-        onSubmit: PropTypes.func.isRequired,
+        insert: PropTypes.func.isRequired,
         setState: PropTypes.func.isRequired,
         showMessage: PropTypes.func.isRequired
     }
@@ -120,10 +121,10 @@ class DefaultInput extends Component {
             this.props.onSubmit(parsedData);
             return;
         } else if (schema.type != "object") {
-            this.props.onSubmit(data.formData.input);
+            this.props.insert(getTimestamp(this.props.state), data.formData.input);
             return;
         }
-        this.props.onSubmit(data.formData);
+        this.props.insert(getTimestamp(this.props.state), data.formData);
     }
 
     render() {
@@ -148,5 +149,9 @@ class DefaultInput extends Component {
 // add the input to the input registry. The empty string makes it default
 addInput("", {
     width: "expandable-half",
-    component: DefaultInput
+    component: DefaultInput,
+    dropdown: TimeChooser,
+    style: {
+        textAlign: "center"
+    }
 });

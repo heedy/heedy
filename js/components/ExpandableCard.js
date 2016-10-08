@@ -113,7 +113,9 @@ class ExpandableCard extends Component {
                         <div style={{
                             float: "right",
                             marginRight: iconRightMargin,
-                            marginTop: "-15px",
+                            marginTop: (this.props.subtitle == ""
+                                ? "-15px"
+                                : "-5px"),
                             marginLeft: "-300px"
                         }}>
                             {iconarray}

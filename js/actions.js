@@ -7,6 +7,8 @@ import {push, goBack} from 'react-router-redux'
 
 import storage from './storage';
 
+import {StreamInputInitialState} from './reducers/stream';
+
 // set the search bar text
 export function setSearchText(text) {
     return {type: 'SET_QUERY_TEXT', value: text};
@@ -46,6 +48,10 @@ export function showMessage(msg) {
 export function deleteObject(type, path) {
     return (dispatch) => {
         dispatch(showMessage("Deleting " + type + " '" + path + "'..."));
+        // If the object is a stream, reset the state
+        if (type === "stream") {
+            dispatch({type: "STREAM_CLEAR_STATE", name: path});
+        }
         storage.del(path).then((result) => {
             if (result == "ok") {
                 dispatch(showMessage("Deleted " + type + " '" + path + "'..."));
@@ -86,6 +92,11 @@ export function createObject(ftype, type, path, object) {
         if (!/^[a-z0-9_]*$/.test(object.name)) {
             dispatch(showMessage("Name must not contain special characters or spaces"));
             return;
+        }
+
+        // If the object is a stream, reset the state
+        if (type === "stream") {
+            dispatch({type: "STREAM_CLEAR_STATE", name: path});
         }
 
         storage.create(path, object).then((result) => {
@@ -136,6 +147,11 @@ export function saveObject(type, path, object, changes) {
             return;
         }
 
+        // If the object is a stream, reset the state
+        if (type === "stream") {
+            dispatch({type: "STREAM_CLEAR_STATE", name: path});
+        }
+
         // Finally, update the object
         storage.update(path, changes).then((result) => {
             if (result.ref === undefined) {
@@ -152,16 +168,16 @@ export function saveObject(type, path, object, changes) {
     };
 }
 
-export function dataInput(user, device, stream, data, clearinput) {
+export function dataInput(user, device, stream, timestamp, data, clearinput) {
     return (dispatch) => {
-        storage.insert(user.name, device.name, stream.name, data).then((result) => {
+        storage.insert(user.name, device.name, stream.name, timestamp, data).then((result) => {
             if (result.ref === undefined) {
                 if (clearinput != false) {
                     // Reset the input value
                     dispatch({
                         type: "STREAM_INPUT",
                         name: user.name + "/" + device.name + "/" + stream.name,
-                        value: {}
+                        value: StreamInputInitialState
                     });
                 }
 

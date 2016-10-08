@@ -344,9 +344,14 @@ class Storage {
         });
     }
 
-    insert(user, device, stream, structure) {
-        console.log("Inserting: " + user + "/" + device + "/" + stream + " data: " + JSON.stringify(structure));
-        return this.cdb.insertStream(user, device, stream, structure);
+    insert(user, device, stream, timestamp, data) {
+        console.log("Inserting: " + user + "/" + device + "/" + stream + " data: " + JSON.stringify(data));
+        return this.cdb.insertStream(user, device, stream, [
+            {
+                t: timestamp.unix(),
+                d: data
+            }
+        ]);
     }
 
 }

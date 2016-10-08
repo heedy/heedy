@@ -8,11 +8,15 @@ const InitialState = {};
 import streamViewReducer, {StreamViewInitialState} from './streamView';
 import streamEditReducer, {StreamEditInitialState} from './streamEdit';
 
+export const StreamInputInitialState = {
+    expanded: false
+}
+
 // The initial state of a specific stream
 const StreamInitialState = {
     edit: StreamEditInitialState,
     view: StreamViewInitialState,
-    input: {}
+    input: StreamInputInitialState
 };
 
 export default function streamReducer(state = InitialState, action) {
@@ -34,12 +38,15 @@ export default function streamReducer(state = InitialState, action) {
     }
 
     // Now route to the appropriate reducer
-    if (action.type.startsWith("STREAM_EDIT_"))
+    if (action.type.startsWith("STREAM_EDIT_")) {
         newState[action.name].edit = streamEditReducer(newState[action.name].edit, action);
-    if (action.type.startsWith("STREAM_VIEW_"))
+    } else if (action.type.startsWith("STREAM_VIEW_")) {
         newState[action.name].view = streamViewReducer(newState[action.name].view, action);
-    if (action.type == "STREAM_INPUT")
+    } else if (action.type == "STREAM_INPUT") {
         newState[action.name].input = action.value;
+    } else if (action.type == "STREAM_CLEAR_STATE") {
+        return StreamInitialState;
+    }
     return newState;
 }
 

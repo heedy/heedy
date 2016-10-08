@@ -44,7 +44,7 @@ class Main extends Component {
                                 let path = user.name + "/" + device.name + "/" + s.name;
                                 return (
 
-                                    <DataInput key={s.name} size={6} title={s.nickname == ""
+                                    <DataInput key={s.name} size={6} thisUser={user} thisDevice={device} title={s.nickname == ""
                                         ? s.name
                                         : s.nickname} subtitle={path} user={user} device={device} stream={s} icons={[(
                                             <IconButton key="showstream" onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">

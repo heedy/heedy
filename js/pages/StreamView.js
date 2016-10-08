@@ -68,7 +68,7 @@ class StreamView extends Component {
                     marginRight: "-15px"
                 }}>
                     {stream.downlink || this.props.thisUser.name == user.name && this.props.thisDevice.name == device.name
-                        ? (<DataInput user={user} device={device} stream={stream}/>)
+                        ? (<DataInput user={user} device={device} stream={stream} schema={streamschema} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice}/>)
                         : null}
                     <DataQuery state={state} user={user} device={device} stream={stream}/> {views.map((view) => {
                         return (<DataViewCard key={view.key} view={view} user={user} device={device} stream={stream} schema={streamschema} state={state} pipescript={this.props.pipescript} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice}/>);
