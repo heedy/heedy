@@ -12,6 +12,9 @@ import FontIcon from 'material-ui/FontIcon';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
+import IconMenu from 'material-ui/IconMenu';
+import MenuItem from 'material-ui/MenuItem';
+import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
 
 // setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
@@ -92,12 +95,32 @@ class TopBar extends Component {
                                 close
                             </FontIcon>
                         )}
+
+                </ToolbarGroup>
+                <ToolbarGroup style={{
+                    marginTop: "7px",
+                    marginLeft: "10px"
+                }}>
+                    <IconMenu iconButtonElement={< IconButton > <MoreVertIcon/> < /IconButton>} anchorOrigin={{
+                        horizontal: 'right',
+                        vertical: 'top'
+                    }} targetOrigin={{
+                        horizontal: 'left',
+                        vertical: 'bottom'
+                    }}>
+                        {this.props.menu.map((link) => {
+                            return (<MenuItem key={link.title} primaryText={link.title} leftIcon={< FontIcon className = "material-icons" > {
+                                link.icon
+                            } < /FontIcon>} onTouchTap={() => link.action(this.props.dispatch)}/>)
+                        })}
+                    </IconMenu>
                 </ToolbarGroup>
             </Toolbar>
         );
     }
 }
 
-export default connect((state) => ({searchText: state.query.queryText}), (dispatch) => ({
-    searchTextChanged: (e, txt) => dispatch(setSearchText(txt))
+export default connect((state) => ({searchText: state.query.queryText, menu: state.site.dropdownMenu}), (dispatch) => ({
+    searchTextChanged: (e, txt) => dispatch(setSearchText(txt)),
+    dispatch: dispatch
 }))(TopBar);

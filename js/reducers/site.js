@@ -1,3 +1,5 @@
+import {go} from '../actions';
+
 const InitialState = {
     // roles represents the possible permissions allowed by ConnectorDB.
     // Note that the values given here correspond to the default ConnectorDB settings.
@@ -62,15 +64,32 @@ const InitialState = {
             icon: "star",
             page: "/"
         }, {
-            title: "Profile",
-            subtitle: "View your devices",
-            icon: "face",
+            title: "Devices",
+            subtitle: "View your profile",
+            icon: "devices",
             page: "/{self}"
+        }
+    ],
+
+    dropdownMenu: [
+        {
+            title: "Documentation",
+            icon: "help",
+            action: (dispatch) => {
+                window.location.href = "https://connectordb.github.io/docs/";
+            }
         }, {
-            title: "Log Out",
-            subtitle: "Exit your session",
+            title: "Submit Issue",
+            icon: "bug_report",
+            action: (dispatch) => {
+                window.location.href = "https://github.com/connectordb/connectordb/issues";
+            }
+        }, {
+            title: "Sign Out",
             icon: "power_settings_new",
-            page: "/logout"
+            action: (dispatch) => {
+                dispatch(go("logout"));
+            }
         }
     ],
 

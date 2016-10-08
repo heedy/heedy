@@ -28,7 +28,7 @@ class Logout extends Component {
                 <h1>
                     Logging Out ...
                 </h1>
-                <p>Clearing local data...</p>
+                <p>Clearing local cached data...</p>
             </div>
         );
     }
