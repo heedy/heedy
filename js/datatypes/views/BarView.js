@@ -10,7 +10,7 @@ const BarView = [
     {
         ...generateBarChart("map($,count)", "Counts the occurences of the given values"),
         key: "barView",
-        title: "Aggregation",
+        title: "Value Counts",
         subtitle: ""
     }
 ];
@@ -25,7 +25,7 @@ function isValidKey(n) {
 }
 
 function showBarChart(context) {
-    if (context.data.length < 10 || context.pipescript === null) {
+    if (context.data.length < 5 || context.pipescript === null) {
         return null;
     }
 

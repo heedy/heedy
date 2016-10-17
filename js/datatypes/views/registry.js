@@ -10,5 +10,6 @@ import './TableView/index';
 import './LineView';
 import './BoolView';
 import './BarView';
+import './SingleObjectView';
 import './SentimentLineChart';
 import './Map';

@@ -41,8 +41,6 @@ class BarChart extends DataTransformUpdater {
         let data = keys.map((k) => d[0].d[k]);
         let colors = keys.map((k) => getRandomColor());
 
-        console.log(keys, data);
-
         return {
             labels: keys,
             datasets: [
@@ -115,11 +113,14 @@ export function generateBarChart(transform, description) {
         });
     }
 
-    return {
+    let result = {
         initialState: {},
         component: component,
         width: "expandable-half",
-        dropdown: dropdownTransformDisplay(description, transform),
         icons: getIcons
     };
+    if (transform != null) {
+        result.dropdown = dropdownTransformDisplay(description, transform);
+    }
+    return result;
 }
