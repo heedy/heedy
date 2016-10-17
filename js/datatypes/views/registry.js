@@ -9,5 +9,6 @@ so that they can be registered.
 import './TableView/index';
 import './LineView';
 import './BoolView';
+import './BarView';
 import './SentimentLineChart';
 import './Map';
