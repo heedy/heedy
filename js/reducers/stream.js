@@ -7,7 +7,6 @@ const InitialState = {};
 
 import streamViewReducer, {StreamViewInitialState} from './streamView';
 import streamEditReducer, {StreamEditInitialState} from './streamEdit';
-import {StreamSearchInitialState, streamSearchReducer} from './search';
 
 export const StreamInputInitialState = {
     expanded: false
@@ -17,8 +16,7 @@ export const StreamInputInitialState = {
 const StreamInitialState = {
     edit: StreamEditInitialState,
     view: StreamViewInitialState,
-    input: StreamInputInitialState,
-    search: StreamSearchInitialState
+    input: StreamInputInitialState
 };
 
 export default function streamReducer(state = InitialState, action) {
@@ -48,8 +46,6 @@ export default function streamReducer(state = InitialState, action) {
         newState[action.name].input = action.value;
     } else if (action.type == "STREAM_CLEAR_STATE") {
         newState[action.name] = StreamInitialState;
-    } else if (action.type.startsWith("STREAM_SEARCH_")) {
-        newState[action.name].search = streamSearchReducer(newState[action.name].search, action);
     }
     return newState;
 }

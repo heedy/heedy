@@ -10,13 +10,13 @@ import {connect} from 'react-redux';
 import {spacing} from 'material-ui/styles';
 import FontIcon from 'material-ui/FontIcon';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
-import TextField from 'material-ui/TextField';
+import AutoComplete from 'material-ui/AutoComplete';
 import IconButton from 'material-ui/IconButton';
 import IconMenu from 'material-ui/IconMenu';
 import MenuItem from 'material-ui/MenuItem';
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
-import {getSearchState} from '../reducers/search';
+import {getSearchState, getSearchActionContext} from '../reducers/search';
 
 // setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
 import {setSearchText} from '../actions'
@@ -39,13 +39,38 @@ class TopBar extends Component {
         search: React.PropTypes.object.isRequired,
         hamburgerClick: React.PropTypes.func,
         searchTextChanged: React.PropTypes.func,
-        router: React.PropTypes.object
+        submit: React.PropTypes.func
     };
+
+    keypress(txt, idx) {
+        if (idx == -1) {
+            this.props.submit();
+        }
+    }
 
     render() {
 
         // The search bar can have
         let search = this.props.search;
+
+        let autocomplete = search.autocomplete;
+
+        if (search.error != "") {
+            // We need to show an error
+            autocomplete = [
+                {
+                    text: search.text,
+                    value: (<MenuItem key={"errortext"} primaryText={search.error} style={{
+                        fontWeight: "bold",
+                        color: "yellow"
+                    }} leftIcon={(
+                        <FontIcon className="material-icons" color="red">
+                            error_outline
+                        </FontIcon>
+                    )} onTouchTap={() => this.props.clearError()}/>)
+                }
+            ];
+        }
 
         return (
             <Toolbar style={{
@@ -86,18 +111,22 @@ class TopBar extends Component {
                     }}>
                         {search.icon}
                     </FontIcon>
-                    <TextField hintText={search.hint} style={{
+                    <AutoComplete disabled={!search.enabled} hintText={search.hint} filter={AutoComplete.noFilter} textFieldStyle={{
                         paddingLeft: "10px",
                         fontWeight: "bold"
+                    }} menuStyle={{
+                        background: "#009e42"
+                    }} listStyle={{
+                        color: "white"
                     }} inputStyle={{
                         color: "white"
-                    }} fullWidth={true} underlineShow={false} value={search.text} onChange={this.props.searchTextChanged}/> {search.text == ""
+                    }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)}/> {search.text == ""
                         ? null
                         : (
                             <FontIcon className="material-icons" style={{
                                 marginTop: "-5px",
                                 paddingRight: "10px"
-                            }} onTouchTap={() => this.props.searchTextChanged(null, "")}>
+                            }} onTouchTap={() => this.props.searchTextChanged("", null)}>
                                 close
                             </FontIcon>
                         )}
@@ -109,10 +138,10 @@ class TopBar extends Component {
                 }}>
                     <IconMenu iconButtonElement={< IconButton > <MoreVertIcon/> < /IconButton>} anchorOrigin={{
                         horizontal: 'right',
-                        vertical: 'top'
-                    }} targetOrigin={{
-                        horizontal: 'left',
                         vertical: 'bottom'
+                    }} targetOrigin={{
+                        horizontal: 'right',
+                        vertical: 'top'
                     }}>
                         {this.props.menu.map((link) => {
                             return (<MenuItem key={link.title} primaryText={link.title} leftIcon={< FontIcon className = "material-icons" > {
@@ -127,6 +156,8 @@ class TopBar extends Component {
 }
 
 export default connect((state) => ({search: getSearchState(state), menu: state.site.dropdownMenu}), (dispatch, props) => ({
-    searchTextChanged: (e, txt) => dispatch(setSearchText(txt)),
+    searchTextChanged: (txt, e) => dispatch(setSearchText(txt)),
+    submit: () => dispatch(getSearchActionContext({type: 'SUBMIT'})),
+    clearError: () => dispatch(getSearchActionContext({type: 'SET_ERROR', value: ""})),
     dispatch: dispatch
 }))(TopBar);

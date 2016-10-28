@@ -16,6 +16,8 @@ import TimeDifference from '../components/TimeDifference';
 import ObjectCard from '../components/ObjectCard';
 import ObjectList from '../components/ObjectList';
 
+import {objectFilter} from '../util';
+
 class DeviceView extends Component {
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
@@ -32,6 +34,7 @@ class DeviceView extends Component {
         let state = this.props.state;
         let user = this.props.user;
         let device = this.props.device;
+
         return (
             <div>
                 <ObjectCard expanded={state.expanded} onEditClick={this.props.onEditClick} onExpandClick={this.props.onExpandClick} style={{
@@ -81,7 +84,7 @@ class DeviceView extends Component {
                 <ObjectList style={{
                     marginTop: "10px",
                     textAlign: "left"
-                }} objects={this.props.streamarray} addName="stream" onAddClick={this.props.onAddClick} onSelect={this.props.onStreamClick}/>
+                }} objects={objectFilter(state.search.text, this.props.streamarray)} addName="stream" onAddClick={this.props.onAddClick} onSelect={this.props.onStreamClick}/>
             </div>
         );
     }

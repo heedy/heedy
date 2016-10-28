@@ -22,10 +22,6 @@ import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
 import Navigation from './Navigation';
 import TopBar from './TopBar';
 
-// The search component is within the parent directory. It is rendered above whatever page contents
-// if there is text in the search box - and it is hidden when search box text is gone.
-import Search from '../Search';
-
 // muiTheme represents our color scheme for the material design UI
 const muiTheme = getMuiTheme({
     palette: {
@@ -76,10 +72,11 @@ class Theme extends Component {
 
     render() {
         let isNavigationDocked = this.props.width === MEDIUM || this.props.width === LARGE;
+        let curloc = this.props.location.pathname;
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
-                    <Navigation docked={isNavigationDocked} selected={this.props.location.pathname} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
+                    <Navigation docked={isNavigationDocked} selected={curloc.substring(1, curloc.length)} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
                     <TopBar navDocked={isNavigationDocked} router={this.props.router} hamburgerClick={() => this.setState({drawerOpen: true})}/>
                     <div style={isNavigationDocked
                         ? styles.container

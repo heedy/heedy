@@ -27,8 +27,11 @@ import StreamCard from '../components/StreamCard';
 import DataInput from '../components/DataInput';
 import DataQuery from '../components/DataQuery';
 import DataViewCard from '../components/DataViewCard';
+import SearchCard from '../components/SearchCard';
 
 import {getViews} from '../datatypes/datatypes';
+
+import {setSearchSubmit} from '../actions';
 
 class StreamView extends Component {
     static propTypes = {
@@ -61,6 +64,9 @@ class StreamView extends Component {
 
         return (
             <div>
+                {state.search.submitted != ""
+                    ? (<SearchCard title={state.search.submitted} subtitle={"Transform applied to data"} onClose={() => this.props.clearTransform()}/>)
+                    : null}
                 <StreamCard user={user} device={device} stream={stream} state={state}/>
 
                 <div style={{
@@ -79,4 +85,6 @@ class StreamView extends Component {
     }
 }
 
-export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice, pipescript: state.site.pipescript}))(StreamView);
+export default connect((state) => ({thisUser: state.site.thisUser, thisDevice: state.site.thisDevice, pipescript: state.site.pipescript}), (dispatch) => ({
+    clearTransform: () => dispatch(setSearchSubmit(""))
+}))(StreamView);

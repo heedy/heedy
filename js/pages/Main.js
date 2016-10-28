@@ -14,12 +14,15 @@ import IconButton from 'material-ui/IconButton';
 import Welcome from '../components/Welcome';
 import DataInput from '../components/DataInput';
 
+import {objectFilter} from '../util';
+
 class Main extends Component {
     static propTypes = {
         user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
         device: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
         streamarray: PropTypes.object.isRequired,
         state: PropTypes.object.isRequired,
+        indexState: PropTypes.object.isRequired,
 
         onStreamClick: PropTypes.func.isRequired
     }
@@ -29,6 +32,7 @@ class Main extends Component {
         let user = this.props.user;
         let device = this.props.device;
         let streams = this.props.streamarray;
+        let indexState = this.props.indexState;
         return (
             <div style={{
                 textAlign: "left"
@@ -39,7 +43,7 @@ class Main extends Component {
                         <div style={{
                             marginLeft: "-15px",
                             marginRight: "-15px"
-                        }}>{Object.keys(streams).map((skey) => {
+                        }}>{Object.keys(objectFilter(indexState.search.text, streams)).map((skey) => {
                                 let s = streams[skey];
                                 let path = user.name + "/" + device.name + "/" + s.name;
                                 return (
@@ -73,6 +77,6 @@ class Main extends Component {
         );
     }
 }
-export default connect(undefined, (dispatch, props) => ({
+export default connect((state) => ({indexState: state.pages.index}), (dispatch, props) => ({
     onStreamClick: (s) => dispatch(go(s))
 }))(Main);

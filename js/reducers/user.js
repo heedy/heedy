@@ -8,14 +8,12 @@ const InitialState = {};
 import userViewReducer, {UserViewInitialState} from './userView';
 import userEditReducer, {UserEditInitialState} from './userEdit';
 import deviceCreateReducer, {DeviceCreateInitialState} from './deviceCreate';
-import {UserSearchInitialState, userSearchReducer} from './search';
 
 // The initial state of a specific user
 const UserInitialState = {
     edit: UserEditInitialState,
     view: UserViewInitialState,
-    create: DeviceCreateInitialState,
-    search: UserSearchInitialState
+    create: DeviceCreateInitialState
 };
 
 export default function userReducer(state = InitialState, action) {
@@ -43,8 +41,6 @@ export default function userReducer(state = InitialState, action) {
         newState[action.name].view = userViewReducer(newState[action.name].view, action);
     if (action.type.startsWith("USER_CREATEDEVICE_"))
         newState[action.name].create = deviceCreateReducer(newState[action.name].create, action);
-    if (action.type.startsWith("USER_SEARCH_"))
-        newState[action.name].search = userSearchReducer(newState[action.name].search, action);
 
     return newState;
 }

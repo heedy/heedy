@@ -1,3 +1,5 @@
+import {StreamSearchInitialState, streamSearchReducer} from './search';
+
 import moment from 'moment';
 export const StreamViewInitialState = {
     expanded: false,
@@ -10,10 +12,18 @@ export const StreamViewInitialState = {
     data: [],
     error: null,
     bytime: true,
-    views: {}
+    views: {},
+
+    search: StreamSearchInitialState
 };
 
 export default function streamViewReducer(state, action) {
+    if (action.type.startsWith("STREAM_VIEW_SEARCH_"))
+        return {
+            ...state,
+            search: streamSearchReducer(state.search, action)
+        };
+
     switch (action.type) {
         case 'STREAM_VIEW_EXPANDED':
             return {

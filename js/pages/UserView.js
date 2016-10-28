@@ -18,6 +18,8 @@ import TimeDifference from '../components/TimeDifference';
 import ObjectCard from '../components/ObjectCard';
 import ObjectList from '../components/ObjectList';
 
+import {objectFilter} from '../util';
+
 class UserView extends Component {
 
     static propTypes = {
@@ -72,10 +74,10 @@ class UserView extends Component {
                 <Subheader style={{
                     marginTop: "20px"
                 }}>Devices</Subheader>
-                <ObjectList showHidden={state.hidden} onHiddenClick={this.props.onHiddenClick} style={{
+                <ObjectList showHidden={!state.hidden} onHiddenClick={this.props.onHiddenClick} style={{
                     marginTop: "10px",
                     textAlign: "left"
-                }} objects={this.props.devarray} addName="device" onAddClick={this.props.onAddClick} onSelect={this.props.onDeviceClick}/>
+                }} objects={objectFilter(state.search.text, this.props.devarray)} addName="device" onAddClick={this.props.onAddClick} onSelect={this.props.onDeviceClick}/>
             </div>
         );
     }

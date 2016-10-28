@@ -62,12 +62,12 @@ const InitialState = {
             title: "Insert",
             subtitle: "Manually insert data",
             icon: "star",
-            page: "/"
+            page: ""
         }, {
             title: "Devices",
             subtitle: "View your profile",
             icon: "devices",
-            page: "/{self}"
+            page: "{self}"
         }
     ],
 

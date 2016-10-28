@@ -6,6 +6,7 @@
 import {push, goBack} from 'react-router-redux'
 
 import storage from './storage';
+import {getCurrentPath} from './util';
 
 import {StreamInputInitialState} from './reducers/stream';
 import {getSearchActionContext} from './reducers/search';
@@ -13,6 +14,15 @@ import {getSearchActionContext} from './reducers/search';
 // set the search bar text
 export function setSearchText(text) {
     return getSearchActionContext({type: 'SET', value: text});
+}
+// set the search bar submitted value
+export function setSearchSubmit(text) {
+    return getSearchActionContext({type: 'SETSUBMIT', value: text});
+}
+
+// Allows to set values directly
+export function setSearchState(val) {
+    return getSearchActionContext({type: 'SET_STATE', value: val});
 }
 
 // cancels an edit - and moves out of the edit screen
@@ -38,7 +48,23 @@ export function createCancel(type, type2, path) {
 }
 
 export function go(loc) {
-    return push("/" + loc);
+    console.log("GO");
+    return (dispatch) => {
+        // When leaving user/device pages, we want to forget the search box contents.
+        // But before we do that, let's make sure we get the CURRENT text
+        let searchClear = setSearchText("");
+        let path = getCurrentPath().split("/");
+
+        dispatch(push("/" + loc));
+
+        /*
+        if (path.length == 1 || path.length == 2 ) {
+            dispatch(searchClear);
+        }
+        */
+        // For now, we clear all searches on leave page
+        dispatch(searchClear);
+    }
 }
 
 // Show a message in the snack bar

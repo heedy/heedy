@@ -8,14 +8,12 @@ const InitialState = {};
 import deviceViewReducer, {DeviceViewInitialState} from './deviceView';
 import deviceEditReducer, {DeviceEditInitialState} from './deviceEdit';
 import streamCreateReducer, {StreamCreateInitialState} from './streamCreate';
-import {DeviceSearchInitialState, deviceSearchReducer} from './search';
 
 // The initial state of a specific device
 const DeviceInitialState = {
     edit: DeviceEditInitialState,
     view: DeviceViewInitialState,
-    create: StreamCreateInitialState,
-    search: DeviceSearchInitialState
+    create: StreamCreateInitialState
 };
 
 export default function deviceReducer(state = InitialState, action) {
@@ -43,8 +41,6 @@ export default function deviceReducer(state = InitialState, action) {
         newState[action.name].view = deviceViewReducer(newState[action.name].view, action);
     if (action.type.startsWith("DEVICE_CREATESTREAM_"))
         newState[action.name].create = streamCreateReducer(newState[action.name].create, action);
-    if (action.type.startsWith("DEVICE_SEARCH_"))
-        newState[action.name].search = deviceSearchReducer(newState[action.name].search, action);
 
     return newState;
 }

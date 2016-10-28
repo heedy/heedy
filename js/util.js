@@ -22,3 +22,36 @@ export function setTitle(txt) {
         document.title = txt + " - ConnectorDB";
     }
 }
+
+// Strips the beginning / and end / from the path
+export function getCurrentPath() {
+    let p = location.pathname.substring(1, location.pathname.length);
+    if (p.endsWith("/")) {
+        p = p.substring(0, p.length - 1);
+    }
+    return p;
+}
+
+function keepElement(t, elem) {
+    if (elem.name.toLowerCase().indexOf(t) != -1) {
+        return true;
+    }
+    if (elem.nickname.toLowerCase().indexOf(t) != -1) {
+        return true;
+    }
+    if (elem.description.toLowerCase().indexOf(t) != -1) {
+        return true;
+    }
+    return false;
+}
+
+// This filters by keepElement - makes search really easy
+// http://stackoverflow.com/a/37616104
+export function objectFilter(text, obj) {
+    let t = text.trim().toLowerCase();
+    if (t.length == 0) {
+        return obj;
+    }
+
+    return Object.keys(obj).filter(key => keepElement(t, obj[key])).reduce((res, key) => (res[key] = obj[key], res), {});
+}

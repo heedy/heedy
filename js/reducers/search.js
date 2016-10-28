@@ -3,25 +3,33 @@ This file defines all of the manipulations of redux state necessary to implement
 has its own search context, which is saved independently
 */
 
-import {location} from '../util';
+import {location, getCurrentPath} from '../util';
 
 const DefaultInitialState = {
     enabled: true,
     text: "",
-    contextMenu: [],
+    submitted: "", // The text that was submitted
+    autocomplete: [],
     icon: "search",
-    hint: "Search"
+    hint: "Search",
+    error: ""
 }
 
 const InvalidState = {
     ...DefaultInitialState,
     enabled: false,
     icon: "error",
-    hint: "Search not Available..."
+    hint: "Search not Available"
 }
 
-export const UserSearchInitialState = DefaultInitialState;
-export const DeviceSearchInitialState = DefaultInitialState;
+export const UserSearchInitialState = {
+    ...DefaultInitialState,
+    hint: "Search Devices"
+};
+export const DeviceSearchInitialState = {
+    ...DefaultInitialState,
+    hint: "Search Streams"
+};
 export const StreamSearchInitialState = {
     ...DefaultInitialState,
     icon: "keyboard_arrow_right",
@@ -30,44 +38,54 @@ export const StreamSearchInitialState = {
 export const IndexSearchInitialState = DefaultInitialState;
 
 function basicSearchReducer(state, action, atype) {
-    console.log(atype);
     switch (atype) {
         case 'SET':
             return {
                 ...state,
                 text: action.value
             };
+        case 'SUBMIT':
+            return {
+                ...state,
+                submitted: state.text
+            };
+        case 'SETSUBMIT':
+            return {
+                ...state,
+                submitted: action.value
+            };
+        case 'SET_ERROR':
+            return {
+                ...state,
+                error: action.value
+            };
+        case 'SET_STATE':
+            return {
+                ...state,
+                ...action.value
+            };
     }
     return state;
 }
 export function userSearchReducer(state, action) {
     let type = action.type;
-    type = type.substring("USER_SEARCH_".length, type.length);
+    type = type.substring("USER_VIEW_SEARCH_".length, type.length);
     return basicSearchReducer(state, action, type);
 }
 export function deviceSearchReducer(state, action) {
     let type = action.type;
-    type = type.substring("DEVICE_SEARCH_".length, type.length);
+    type = type.substring("DEVICE_VIEW_SEARCH_".length, type.length);
     return basicSearchReducer(state, action, type);
 }
 export function streamSearchReducer(state, action) {
     let type = action.type;
-    type = type.substring("STREAM_SEARCH_".length, type.length);
+    type = type.substring("STREAM_VIEW_SEARCH_".length, type.length);
     return basicSearchReducer(state, action, type);
 }
 export function indexSearchReducer(state, action) {
     let type = action.type;
     type = type.substring("PAGE_INDEX_SEARCH_".length, type.length);
     return basicSearchReducer(state, action, type);
-}
-
-// Strips the beginning / and end / from the path
-function getCurrentPath() {
-    let p = location.pathname.substring(1, location.pathname.length);
-    if (p.endsWith("/")) {
-        p = p.substring(0, p.length - 1);
-    }
-    return p;
 }
 
 // getSearchActionContext returns the necessary context to an action, including a prefix to
@@ -77,31 +95,27 @@ export function getSearchActionContext(action) {
 
     let p = getCurrentPath();
     let path = p.split("/");
-    console.log("PATH", path);
     if (p.length == 0) {
         // Later we can add the specific page hashes here
         actionPrefix = "PAGE_INDEX_SEARCH_";
     } else if (path.length == 1 && location.hash === "") {
-        actionPrefix = "USER_SEARCH_";
+        actionPrefix = "USER_VIEW_SEARCH_";
     } else if (path.length == 2 && location.hash === "") {
-        actionPrefix = "DEVICE_SEARCH_";
+        actionPrefix = "DEVICE_VIEW_SEARCH_";
     } else if (path.length == 3 && location.hash === "") {
-        actionPrefix = "STREAM_SEARCH_";
+        actionPrefix = "STREAM_VIEW_SEARCH_";
     }
 
     action.name = p // Gives the specific device to use
     action.type = actionPrefix + action.type;
-    console.log("GETCONTEXT", location, action);
     return action;
 }
 
 // getSearchState returns the state of search given a location
-export function getSearchState_(state) {
-    console.log("GETSTATE", location, state);
+export function getSearchState(state) {
 
     let p = getCurrentPath();
     let path = p.split("/");
-    console.log("PATH", p, path);
     if (p.length == 0) {
         // Later we can add the specific page hashes here
         return state.pages.index.search;
@@ -109,23 +123,17 @@ export function getSearchState_(state) {
         if (state.user[p] === undefined) {
             return UserSearchInitialState;
         }
-        return state.user[p].search;
+        return state.user[p].view.search;
     } else if (path.length == 2 && location.hash === "") {
         if (state.device[p] === undefined) {
             return DeviceSearchInitialState;
         }
-        return state.user[p].search;
+        return state.device[p].view.search;
     } else if (path.length == 3 && location.hash === "") {
         if (state.stream[p] === undefined) {
             return StreamSearchInitialState;
         }
-        return state.stream[p].search;
+        return state.stream[p].view.search;
     }
     return InvalidState;
-}
-
-export function getSearchState(state) {
-    let x = getSearchState_(state);
-    console.log("SEarchSTATE", x);
-    return x;
 }
