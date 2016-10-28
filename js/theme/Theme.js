@@ -63,7 +63,8 @@ const styles = {
 class Theme extends Component {
     static propTypes = {
         width: PropTypes.number.isRequired,
-        location: PropTypes.object.isRequired
+        location: PropTypes.object.isRequired,
+        router: PropTypes.object
     };
 
     constructor(props) {
@@ -79,14 +80,13 @@ class Theme extends Component {
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
                     <Navigation docked={isNavigationDocked} selected={this.props.location.pathname} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
-                    <TopBar navDocked={isNavigationDocked} hamburgerClick={() => this.setState({drawerOpen: true})}/>
+                    <TopBar navDocked={isNavigationDocked} router={this.props.router} hamburgerClick={() => this.setState({drawerOpen: true})}/>
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>
                         <div style={isNavigationDocked
                             ? styles.mainStyle
                             : styles.mainStyleFullWidth}>
-                            <Search/>
                             <div>{this.props.children}</div>
                             <div className="col-lg-12" style={{
                                 textAlign: "center",

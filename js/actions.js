@@ -8,10 +8,11 @@ import {push, goBack} from 'react-router-redux'
 import storage from './storage';
 
 import {StreamInputInitialState} from './reducers/stream';
+import {getSearchActionContext} from './reducers/search';
 
 // set the search bar text
 export function setSearchText(text) {
-    return {type: 'SET_QUERY_TEXT', value: text};
+    return getSearchActionContext({type: 'SET', value: text});
 }
 
 // cancels an edit - and moves out of the edit screen

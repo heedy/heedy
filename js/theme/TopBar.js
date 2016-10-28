@@ -16,6 +16,7 @@ import IconMenu from 'material-ui/IconMenu';
 import MenuItem from 'material-ui/MenuItem';
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
+import {getSearchState} from '../reducers/search';
 
 // setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
 import {setSearchText} from '../actions'
@@ -35,12 +36,17 @@ const styles = {
 class TopBar extends Component {
     static propTypes = {
         navDocked: React.PropTypes.bool.isRequired,
-        searchText: React.PropTypes.string.isRequired,
+        search: React.PropTypes.object.isRequired,
         hamburgerClick: React.PropTypes.func,
-        searchTextChanged: React.PropTypes.func
+        searchTextChanged: React.PropTypes.func,
+        router: React.PropTypes.object
     };
 
     render() {
+
+        // The search bar can have
+        let search = this.props.search;
+
         return (
             <Toolbar style={{
                 height: `${spacing.desktopKeylineIncrement}px`,
@@ -78,14 +84,14 @@ class TopBar extends Component {
                     <FontIcon className="material-icons" style={{
                         marginTop: "-5px"
                     }}>
-                        search
+                        {search.icon}
                     </FontIcon>
-                    <TextField hintText="Search" style={{
+                    <TextField hintText={search.hint} style={{
                         paddingLeft: "10px",
                         fontWeight: "bold"
                     }} inputStyle={{
                         color: "white"
-                    }} fullWidth={true} underlineShow={false} value={this.props.searchText} onChange={this.props.searchTextChanged}/> {this.props.searchText == ""
+                    }} fullWidth={true} underlineShow={false} value={search.text} onChange={this.props.searchTextChanged}/> {search.text == ""
                         ? null
                         : (
                             <FontIcon className="material-icons" style={{
@@ -120,7 +126,7 @@ class TopBar extends Component {
     }
 }
 
-export default connect((state) => ({searchText: state.query.queryText, menu: state.site.dropdownMenu}), (dispatch) => ({
+export default connect((state) => ({search: getSearchState(state), menu: state.site.dropdownMenu}), (dispatch, props) => ({
     searchTextChanged: (e, txt) => dispatch(setSearchText(txt)),
     dispatch: dispatch
 }))(TopBar);
