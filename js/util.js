@@ -9,6 +9,12 @@ function updateLocation(loc) {
 }
 browserHistory.listen(updateLocation);
 
+// Allows us to get the redux store as "app"
+export var app = null;
+export function setApp(store) {
+    app = store;
+}
+
 // https://stackoverflow.com/questions/1026069/capitalize-the-first-letter-of-string-in-javascript
 String.prototype.capitalizeFirstLetter = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);

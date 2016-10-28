@@ -142,7 +142,7 @@ class DataQuery extends Component {
                 {rangepicker}
                 <h5 style={{
                     paddingTop: "10px"
-                }}>Transform</h5>
+                }}>Server-Side Transform</h5>
                 <TransformInput transform={state.transform} onChange={(txt) => setState({transform: txt})}/>
 
                 <FlatButton style={{

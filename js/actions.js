@@ -48,7 +48,6 @@ export function createCancel(type, type2, path) {
 }
 
 export function go(loc) {
-    console.log("GO");
     return (dispatch) => {
         // When leaving user/device pages, we want to forget the search box contents.
         // But before we do that, let's make sure we get the CURRENT text

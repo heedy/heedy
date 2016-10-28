@@ -5,17 +5,27 @@ class DataUpdater extends Component {
     // Sets up the transform for use in the component
     initTransform(t) {
         if (t !== undefined && t !== "") {
-            this.transform = this.props.pipescript.Script(t);
-        } else {
-            this.transform = null;
+            try {
+
+                this.transform = this.props.pipescript.Script(t);
+            } catch (e) {
+                console.error("TRANSFORM ERROR: ", t, e.toString());
+            }
         }
+        this.transform = null;
+
     }
 
     // Returns the data transformed if there is a transform
     // in the props, and the original data if it is not
     dataTransform(data) {
         if (this.transform != null) {
-            return this.transform.Transform(data);
+            try {
+                return this.transform.Transform(data);
+            } catch (e) {
+                console.error("DATA ERROR: ", t, e.toString());
+            }
+
         }
         return data;
     }

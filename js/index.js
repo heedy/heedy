@@ -26,6 +26,7 @@ import {reducers} from './reducers/index';
 import App from './App';
 import {showPage} from './actions';
 import storage from './storage';
+import {setApp} from './util';
 
 // Register all of the available creators/inputs/views. All of ConnectorDB's visualizations are here.
 import './datatypes/register';
@@ -79,6 +80,9 @@ export var store = finalCreateStore(combineReducers({
     routing: routerReducer
 }));
 
+// Makes the store available to outside this class
+setApp(store);
+
 // Set up the history through react-router-redux
 let history = syncHistoryWithStore(browserHistory, store);
 
@@ -104,4 +108,4 @@ export function run(context) {
 require.ensure(["pipescript"], (p) => {
     console.log("PipeScript Loaded");
     store.dispatch({type: 'PIPESCRIPT', value: require("pipescript")});
-})
+});

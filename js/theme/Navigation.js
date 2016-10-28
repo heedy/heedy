@@ -78,7 +78,7 @@ class Navigation extends React.Component {
             <Drawer docked={this.props.docked} open={this.props.docked
                 ? true
                 : this.props.open} onRequestChange={this.props.onRequestChange} style={{
-                zIndex: 9999
+                zIndex: 9900
             }}>
                 <div style={styles.logo}>
                     <img src={SiteURL + "/app/title_logo_light.png"} style={{

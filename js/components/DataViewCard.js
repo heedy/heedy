@@ -37,7 +37,8 @@ class DataViewCard extends Component {
         thisDevice: PropTypes.object.isRequired,
         pipescript: PropTypes.object,
         msg: PropTypes.func.isRequired,
-        setState: PropTypes.func.isRequired
+        setState: PropTypes.func.isRequired,
+        data: PropTypes.arrayOf(PropTypes.object).isRequired
     }
 
     render() {
@@ -58,7 +59,7 @@ class DataViewCard extends Component {
             thisUser: this.props.thisUser,
             thisDevice: this.props.thisDevice,
             msg: this.props.msg,
-            data: state.data,
+            data: this.props.data,
             setState: (v) => {
                 let newViews = Object.assign({}, state.views);
                 newViews[view.key] = Object.assign({}, curstate, v);

@@ -53,23 +53,19 @@ class TopBar extends Component {
         // The search bar can have
         let search = this.props.search;
 
-        let autocomplete = search.autocomplete;
-
+        let erropts = {
+            color: "rgba(0,0,0,0.3)"
+        };
+        let erropts2 = {};
         if (search.error != "") {
-            // We need to show an error
-            autocomplete = [
-                {
-                    text: search.text,
-                    value: (<MenuItem key={"errortext"} primaryText={search.error} style={{
-                        fontWeight: "bold",
-                        color: "yellow"
-                    }} leftIcon={(
-                        <FontIcon className="material-icons" color="red">
-                            error_outline
-                        </FontIcon>
-                    )} onTouchTap={() => this.props.clearError()}/>)
-                }
-            ];
+            erropts = {
+                color: "yellow"
+            };
+            erropts2 = {
+                tooltip: search.error,
+                tooltipPosition: 'bottom-right',
+                touch: true
+            };
         }
 
         return (
@@ -106,11 +102,15 @@ class TopBar extends Component {
                     : {
                         marginLeft: "10px"
                     })}>
-                    <FontIcon className="material-icons" style={{
-                        marginTop: "-5px"
-                    }}>
-                        {search.icon}
-                    </FontIcon>
+                    <IconButton {...erropts2}>
+                        <FontIcon {...erropts} className="material-icons" style={{
+                            marginTop: "-5px"
+                        }}>
+                            {search.error
+                                ? "error_outline"
+                                : search.icon}
+                        </FontIcon>
+                    </IconButton>
                     <AutoComplete disabled={!search.enabled} hintText={search.hint} filter={AutoComplete.noFilter} textFieldStyle={{
                         paddingLeft: "10px",
                         fontWeight: "bold"
@@ -120,7 +120,7 @@ class TopBar extends Component {
                         color: "white"
                     }} inputStyle={{
                         color: "white"
-                    }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)}/> {search.text == ""
+                    }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={search.autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)}/> {search.text == ""
                         ? null
                         : (
                             <FontIcon className="material-icons" style={{

@@ -15,8 +15,9 @@ class TransformInput extends Component {
             borderColor: "#ccc",
             fontFamily: "Courier New",
             fontSize: "17px",
-            padding: "3px"
-        }} multiLine={true} onChange={(event) => this.props.onChange(event.target.value)}/>);
+            padding: "3px",
+            background: "#d5fccf"
+        }} multiLine={true} onChange={(event) => this.props.onChange(event.target.value)} onClick={this.props.onClick}/>);
     }
 }
 

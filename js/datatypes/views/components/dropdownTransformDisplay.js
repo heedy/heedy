@@ -7,6 +7,9 @@ import React, {PropTypes} from 'react';
 
 import TransformInput from '../../../components/TransformInput';
 
+import {app} from '../../../util';
+import {setSearchText} from '../../../actions';
+
 export default function generateDropdownTransformDisplay(description, transform) {
     return React.createClass({
         render: function() {
@@ -25,7 +28,7 @@ export default function generateDropdownTransformDisplay(description, transform)
                         paddingTop: "10px"
                     }}>Transform</h4>
                     <p>This is the transform used to generate this visualization:</p>
-                    <TransformInput transform={tf} onChange= { (txt) => null }/>
+                    <TransformInput transform={tf} onChange= { (txt) => null } onClick={() => app.dispatch(setSearchText(tf))}/>
                 </div>
             );
         }

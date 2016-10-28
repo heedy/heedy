@@ -28,6 +28,9 @@ const muiTheme = getMuiTheme({
         primary1Color: "#005c9e",
         primary2Color: "#009e91",
         primary3Color: "#009e42"
+    },
+    zIndex: {
+        tooltip: 9999
     }
 });
 
