@@ -21,6 +21,36 @@ function getRandomColor() {
     return color;
 }
 
+// This is a custom comparison function used to sort the keys in increasing order.
+// We order things as follows:
+//  - If we think that both keys are in a similar format, and have floats in them, sort by the float.
+//  - Otherwise, perform a normal compare
+var floatmatcher = /[+-]?\d+(\.\d+)?/g;
+function dataKeyCompare(a, b) {
+    // We first try to extract a number from both strings
+    // http://stackoverflow.com/questions/17374893/how-to-extract-floating-numbers-from-strings-in-javascript
+    let numa = a.match(floatmatcher).map(parseFloat);
+    if (numa.length > 0) {
+        let numb = b.match(floatmatcher).map(parseFloat);
+        if (numa.length == numb.length) {
+            let na = numa[0];
+            let nb = numb[0];
+            return (na < nb
+                ? -1
+                : (na == nb
+                    ? 0
+                    : 1));
+        }
+    }
+
+    // Otherwise, return just normal string compare
+    return (a < b
+        ? -1
+        : (a == b
+            ? 0
+            : 1));
+}
+
 class BarChart extends DataTransformUpdater {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -37,7 +67,7 @@ class BarChart extends DataTransformUpdater {
             return {};
         }
 
-        let keys = Object.keys(d[0].d);
+        let keys = Object.keys(d[0].d).sort(dataKeyCompare);
         let data = keys.map((k) => d[0].d[k]);
         let colors = keys.map((k) => getRandomColor());
 
@@ -80,10 +110,10 @@ class BarChart extends DataTransformUpdater {
 
 export default BarChart;
 
-function getIcons(context) {
+export function getBarChartIcons(context) {
     if (context.state.piechart !== undefined && context.state.piechart === true) {
         return [(
-                <IconButton key="csv" onTouchTap={() => context.setState({piechart: false})} tooltip="Bar Chart">
+                <IconButton key="charttype" onTouchTap={() => context.setState({piechart: false})} tooltip="Bar Chart">
                     <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                         insert_chart
                     </FontIcon>
@@ -91,7 +121,7 @@ function getIcons(context) {
             )];
     }
     return [(
-            <IconButton key="csv" onTouchTap={() => context.setState({piechart: true})} tooltip="Pie Chart">
+            <IconButton key="charttype" onTouchTap={() => context.setState({piechart: true})} tooltip="Pie Chart">
                 <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                     pie_chart
                 </FontIcon>
@@ -117,7 +147,7 @@ export function generateBarChart(transform, description) {
         initialState: {},
         component: component,
         width: "expandable-half",
-        icons: getIcons
+        icons: getBarChartIcons
     };
     if (transform != null) {
         result.dropdown = dropdownTransformDisplay(description, transform);
