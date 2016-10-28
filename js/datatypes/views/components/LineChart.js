@@ -45,11 +45,14 @@ class LineChart extends DataTransformUpdater {
                     data: dataset,
                     lineTension: 0,
                     // For nicer displaying, we don't add a fill color when we have enough datapoints,
-                    // and when we have a lot of data, we turn into a scatter chart
+                    // and when we have a lot of data, we turn into a scatter chart. For booleans, though,
+                    // we always use a fill, so that they are more visible.
                     fill: (isbool
-                        ? d.length < 500
+                        ? true
                         : d.length < 50),
-                    showLine: (d.length < 500),
+                    showLine: (isbool
+                        ? true
+                        : d.length < 500),
                     steppedLine: isbool
                 }
             ]
