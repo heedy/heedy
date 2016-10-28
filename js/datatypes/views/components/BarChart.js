@@ -29,12 +29,12 @@ var floatmatcher = /[+-]?\d+(\.\d+)?/g;
 function dataKeyCompare(a, b) {
     // We first try to extract a number from both strings
     // http://stackoverflow.com/questions/17374893/how-to-extract-floating-numbers-from-strings-in-javascript
-    let numa = a.match(floatmatcher).map(parseFloat);
-    if (numa.length > 0) {
-        let numb = b.match(floatmatcher).map(parseFloat);
-        if (numa.length == numb.length) {
-            let na = numa[0];
-            let nb = numb[0];
+    let numa = a.match(floatmatcher)
+    if (numa != null && numa.length > 0) {
+        let numb = b.match(floatmatcher)
+        if (numb != null && numa.length == numb.length) {
+            let na = parseFloat(numa[0]);
+            let nb = parseFloat(numb[0]);
             return (na < nb
                 ? -1
                 : (na == nb

@@ -8,6 +8,7 @@ class DataUpdater extends Component {
             try {
 
                 this.transform = this.props.pipescript.Script(t);
+                return;
             } catch (e) {
                 console.error("TRANSFORM ERROR: ", t, e.toString());
             }

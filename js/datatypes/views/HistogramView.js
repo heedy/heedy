@@ -23,6 +23,12 @@ const HistView = [
             }, {
                 name: "Bar Size: 100",
                 transform: "map(bucket(100),count)"
+            }, {
+                name: "Bar Size: 500",
+                transform: "map(bucket(500),count)"
+            }, {
+                name: "Bar Size: 1000",
+                transform: "map(bucket(1000),count)"
             }
         ], 1),
         key: "histView",
@@ -48,7 +54,7 @@ function showHistogramView(context) {
             return null;
         }
     }
-    for (let i = d.length - 1; i >= 20 && i > d.length - 20; i++) {
+    for (let i = d.length - 1; i >= 20 && i > d.length - 20; i--) {
         if (!isNumeric(d[i].d)) {
             return null;
         }
