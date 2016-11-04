@@ -2,14 +2,14 @@
 
 ./bin/connectordb --version
 
-echo "Waiting for servers to start..."
-
-DBDIR="database_test"
-
 if [ "$EUID" -eq 0 ]
   then echo "Do not run this script as root!"
   exit 1
 fi
+
+echo "Waiting for servers to start..."
+
+DBDIR="database_test"
 
 
 if [ -d "$DBDIR" ]; then

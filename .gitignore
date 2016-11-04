@@ -49,3 +49,8 @@ testdb/
 debugdb/
 
 src/config/test.conf
+src/config/permissions/permissions.conf
+src/util/testfile.txt
+
+# Ignore the pushbundle code
+pushbundle

@@ -1,7 +1,4 @@
-/**
-Copyright (c) 2016 The ConnectorDB Contributors
-Licensed under the MIT license.
-**/
+// Package connectordb provides the core ConnectorDB interface and authentication mechanisms
 package connectordb
 
 import (
@@ -20,7 +17,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//The StreamDB version string
+//The ConnectorDB version string
 const (
 	Version = "0.3.0b1"
 	Name    = "ConnectorDB"
@@ -31,7 +28,7 @@ var (
 	ErrAdmin = errors.New("The ConnectorDB database has no operating user nor device")
 )
 
-//Database is a StreamDB database object which holds the methods
+//Database is a ConnectorDB database object which holds the methods
 type Database struct {
 	pathwrapper.Wrapper
 
@@ -60,11 +57,10 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Debugln("Opening User database")
+	log.Debugln("Opening SQL database")
 	db.Userdb = users.NewUserDatabase(db.Sqldb, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
 
-	log.Debugln("Opening messenger")
+	log.Debugln("Opening NATS messenger")
 	db.Messenger, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
 	if err != nil {
 		return nil, err
@@ -107,7 +103,7 @@ func (db *Database) Close() {
 	}
 }
 
-/*RunWriter exists because StreamDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
+/*RunWriter exists because ConnectorDB uses a batching mechanism for writing timestamps, where data is first written to redis, and then committed to
 an sql database in batches of size BatchSize (in config). This allows great insert speed as well as fantastic read speed on large
 ranges of data. RunWriter runs this 'batching' process, which happens in the background.
 When running a single instance with posgres, you need to call RunWriter once manually (as a goroutine).
@@ -115,13 +111,13 @@ If running as a cluster, then it is probably a good idea to have RunWriter be ru
 
 For example:
   db,_ := connectordb.Open("postgres://...",...)
-  go db.RunWriter()   //Run this right after starting StreamDB
+  go db.RunWriter()   //Run this right after starting ConnectorDB
   ...
   db.Close()
 
 If unsure as to whether you should call RunWriter, this is a good way to decide:
-Are you running StreamDB manually by yourself using postgres, and this is the only process? If so then yes.
-If you are just connecting to an already-running StreamDB and RunWriter is already running somewhere on
+Are you running ConnectorDB manually by yourself using postgres, and this is the only process? If so then yes.
+If you are just connecting to an already-running ConnectorDB and RunWriter is already running somewhere on
 this database, then Ndb.
 
 PS: RunWriter will be entirely eliminated fairly soon, since it is the main thing stopping usage of Redis cluster
