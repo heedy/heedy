@@ -91,6 +91,9 @@ func NewConfiguration() *Configuration {
 			QueryDisplayTimer: 60,
 			StatsDisplayTimer: 60 * 60 * 24,
 
+			// The read timeout in seconds - we use a fairly arbitrary value.
+			HTTPReadTimeout: 5,
+
 			// A limit of 10MB of data per insert is reasonable to me
 			InsertLimitBytes: 1024 * 1024 * 10,
 

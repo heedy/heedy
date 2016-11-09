@@ -63,6 +63,9 @@ type Frontend struct {
 	// The limit in bytes per REST insert
 	InsertLimitBytes int64 `json:"insert_limit_bytes"`
 
+	// The read timeout used for the http connection in seconds. A value of 0 means infinite
+	HTTPReadTimeout int64 `json:"http_read_timeout"`
+
 	// Options for websocket connections
 	Websocket Websocket `json:"websocket"`
 

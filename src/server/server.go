@@ -17,6 +17,7 @@ import (
 	"server/website"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/dkumor/acmewrapper"
 	"github.com/gorilla/mux"
@@ -173,9 +174,10 @@ func RunServer() error {
 		}
 
 		server := &http.Server{
-			Addr:      listenhost,
-			Handler:   handler,
-			TLSConfig: tlsconfig,
+			Addr:        listenhost,
+			Handler:     handler,
+			TLSConfig:   tlsconfig,
+			ReadTimeout: time.Duration(c.HTTPReadTimeout) * time.Second,
 		}
 		acmestring := ""
 		if c.TLS.ACME.Enabled {
