@@ -75,4 +75,12 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.Error(t, err)
 	_, err = o.ReadStreamByDeviceID(dev.DeviceID, "testme")
 	require.Error(t, err)
+
+	require.NoError(t, o.CreateStream("tst/testdevice/mystreamnoschema", &users.StreamMaker{}))
+
+	s, err = o.ReadStream("tst/testdevice/mystreamnoschema")
+
+	require.NoError(t, err)
+	require.Equal(t, "{}", s.Schema)
+
 }

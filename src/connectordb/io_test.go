@@ -7,7 +7,6 @@ package connectordb
 import (
 	"connectordb/datastream"
 	"connectordb/users"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -52,7 +51,6 @@ func TestStreamTransform(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < len(tdata); i++ {
-		fmt.Println(i)
 		dp, err := tr.Next()
 		require.NotNil(t, dp, dp.String())
 		require.NoError(t, err)

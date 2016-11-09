@@ -16,6 +16,7 @@ func TestValidate(t *testing.T) {
 
 	cfg.Permissions = "boo"
 	require.Error(t, cfg.Validate())
+	cfg.Permissions = "default"
 }
 
 func TestSave(t *testing.T) {

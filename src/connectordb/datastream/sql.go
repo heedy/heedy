@@ -133,6 +133,10 @@ func (s *SqlStore) Insert(streamID int64, substream string, startindex int64, da
 }
 
 func (s *SqlStore) stmtInsert(stmt *sqlx.Stmt, streamID int64, substream string, startindex int64, da DatapointArray) error {
+	if len(da) == 0 {
+		return nil
+	}
+
 	dbytes, err := da.Encode(s.insertversion)
 	if err != nil {
 		return err
@@ -152,6 +156,9 @@ func (s *SqlStore) WriteBatches(b []Batch) error {
 	}
 
 	for i := 0; i < len(b); i++ {
+		if len(b[i].Data) == 0 {
+			return errors.New("Inconsistent Database State - batch does not contain data!")
+		}
 		log.Debugf("Writing batch %s/%s i=%d #=%d", b[i].Stream, b[i].Substream, b[i].StartIndex, len(b[i].Data))
 		streamID, err := b[i].GetStreamID()
 		if err != nil {

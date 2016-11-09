@@ -58,7 +58,7 @@ func NewUserDatabase(sqldb *sqlx.DB, cache bool, usersize int64, devsize int64, 
 		streamsize = 1
 	}
 
-	streamCache, _ = multicache.NewDefaultMulticache(uint64(streamsize))
+	schemaCache, _ = multicache.NewDefaultMulticache(uint64(streamsize))
 
 	if cache == false {
 		return &basedb

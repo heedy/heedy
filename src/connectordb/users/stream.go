@@ -13,16 +13,14 @@ import (
 	"strings"
 
 	"github.com/josephlewis42/multicache"
-)
-
-const (
-	schemaCacheSize = 1000
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/json"
 )
 
 var (
 	ErrSchema        = errors.New("The datapoints did not match the stream's schema")
 	ErrInvalidSchema = errors.New("The provided schema is not a valid JSONSchema")
-	streamCache      *multicache.Multicache
+	schemaCache      *multicache.Multicache
 )
 
 type Stream struct {
@@ -43,6 +41,37 @@ type StreamMaker struct {
 	Stream
 
 	Streamlimit int64 `json:"-"`
+}
+
+// minifyAndValidateSchema minifies the schema, and makes sure that it is valid.
+// The function also adds the schema to the cache if it is not there already.
+func minifyAndValidateSchema(s string) (string, error) {
+	if s == "" {
+		s = "{}"
+	}
+
+	m := minify.New()
+	m.AddFunc("text/json", json.Minify)
+
+	minified, err := m.String("text/json", s)
+	if err != nil {
+		return "", err
+	}
+
+	// Now check the validity of the schema - if it is in the cache, it must be valid.
+	// If not, make sure it is valid, and cache the result
+	_, ok := schemaCache.Get(minified)
+	if ok {
+		return minified, nil
+	}
+
+	computedSchema, err := schema.NewSchema(minified)
+	if err != nil {
+		return minified, err
+	}
+	schemaCache.Add(minified, *computedSchema)
+
+	return minified, nil
 }
 
 // Validate ensures that the maker holds allowed values
@@ -89,7 +118,10 @@ func (s *Stream) Validate(data datastream.DatapointArray) bool {
 
 // GetSchema gets the jsonschema associated with this stream
 func (s *Stream) GetSchema() (schema.Schema, error) {
-	strmschema, ok := streamCache.Get(s.Schema)
+	if s.Schema == "" {
+		s.Schema = "{}"
+	}
+	strmschema, ok := schemaCache.Get(s.Schema)
 	if ok {
 		return strmschema.(schema.Schema), nil
 	}
@@ -99,18 +131,13 @@ func (s *Stream) GetSchema() (schema.Schema, error) {
 		return schema.Schema{}, err
 	}
 
-	streamCache.Add(s.Schema, *computedSchema)
+	schemaCache.Add(s.Schema, *computedSchema)
 	return *computedSchema, nil
 }
 
 // CreateStream creates a new stream for a given device with the given name, schema and default values
 // It is assumed that streammaker.Validate() has already been run on the stream
 func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
-
-	// Validate that the schema is correct
-	if _, err := schema.NewSchema(s.Schema); err != nil {
-		return ErrInvalidSchema
-	}
 
 	if s.Streamlimit > 0 {
 		// TODO: This should be done in an SQL transaction due to possible timing bugs
@@ -123,7 +150,13 @@ func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 		}
 	}
 
-	_, err := userdb.Exec(`INSERT INTO streams
+	// Validate that the schema is correct
+	minSchema, err := minifyAndValidateSchema(s.Schema)
+	if err != nil {
+		return err
+	}
+
+	_, err = userdb.Exec(`INSERT INTO streams
 		(	name,
 			schema,
 			deviceid,
@@ -132,7 +165,7 @@ func (userdb *SqlUserDatabase) CreateStream(s *StreamMaker) error {
 			icon,
 			nickname,
 			ephemeral,
-			downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, s.Schema, s.DeviceID,
+			downlink) VALUES (?,?,?,?,?,?,?,?,?);`, s.Name, minSchema, s.DeviceID,
 		s.Description, s.Datatype, s.Icon, s.Nickname, s.Ephemeral, s.Downlink)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
@@ -204,11 +237,13 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 		return InvalidPointerError
 	}
 
-	if err := stream.ValidityCheck(); err != nil {
+	// Validate that the schema is correct
+	minSchema, err := minifyAndValidateSchema(stream.Schema)
+	if err != nil {
 		return err
 	}
 
-	_, err := userdb.Exec(`UPDATE streams SET
+	_, err = userdb.Exec(`UPDATE streams SET
 		name = ?,
 		nickname = ?,
 		description = ?,
@@ -223,7 +258,7 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 		stream.Nickname,
 		stream.Description,
 		stream.Icon,
-		stream.Schema,
+		minSchema,
 		stream.Datatype,
 		stream.DeviceID,
 		stream.Ephemeral,

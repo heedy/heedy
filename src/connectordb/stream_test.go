@@ -58,7 +58,7 @@ func TestStreamUpdate(t *testing.T) {
 	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type":"number"}`}}))
 
 	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"name": "lol"}))
-	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"schema": `{"type": "string"}`}))
+	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"schema": `{"type": "str    ing"}`}))
 	require.Error(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"foobar": "blah"}))
 
 	require.NoError(t, db.UpdateStream("myuser/mydevice/mystream", map[string]interface{}{"nickname": "hi"}))

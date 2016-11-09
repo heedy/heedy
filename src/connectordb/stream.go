@@ -57,7 +57,6 @@ func (db *Database) UpdateStreamByID(streamID int64, updates map[string]interfac
 	}
 
 	oldname := s.Name
-	oldschema := s.Schema
 	olddownlink := s.Downlink
 
 	err = WriteObjectFromMap(s, updates)
@@ -67,9 +66,6 @@ func (db *Database) UpdateStreamByID(streamID int64, updates map[string]interfac
 
 	if s.Name != oldname {
 		return errors.New("ConnectorDB does not support modification of stream names")
-	}
-	if s.Schema != oldschema {
-		return errors.New("ConnectorDB does not support modification of stream schemas")
 	}
 
 	// The stream schema is validated in users

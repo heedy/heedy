@@ -29,7 +29,12 @@ func TestSave(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	cfg := &Default
+	// We don't want to modify the original default structure, since other tests require it.
+	require.NoError(t, Default.Save("permissions.conf"))
+
+	cfg, err := Load("permissions.conf")
+	require.NoError(t, err)
+
 	require.NoError(t, cfg.Validate())
 
 	p := cfg.UserRoles["user"]
@@ -37,8 +42,16 @@ func TestValidate(t *testing.T) {
 	cfg.UserRoles["user"] = p
 	require.Error(t, cfg.Validate())
 
-	delete(cfg.UserRoles, "user")
+	p.PublicAccessLevel = "none"
+	cfg.UserRoles["user"] = p
 	require.NoError(t, cfg.Validate())
+
+	delete(cfg.UserRoles, "user")
+	require.Error(t, cfg.Validate())
+
+	cfg.UserRoles["user"] = p
+	require.NoError(t, cfg.Validate())
+
 	delete(cfg.UserRoles, "nobody")
 	require.Error(t, cfg.Validate())
 }

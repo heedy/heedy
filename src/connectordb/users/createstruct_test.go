@@ -18,7 +18,7 @@ func TestCreateStruct(t *testing.T) {
 			Devices: map[string]*DeviceMaker{
 				"dev1": &DeviceMaker{Streams: map[string]*StreamMaker{
 					"devstream": &StreamMaker{Stream: Stream{
-						Schema: `{"type": "number"}`,
+						Schema: `{"type": "number"}`, // Notice the space in type number: we are making sure it is minified!
 					}},
 				}},
 			},
@@ -34,7 +34,7 @@ func TestCreateStruct(t *testing.T) {
 		s, err := testdb.ReadStreamByDeviceIDAndName(d.DeviceID, "devstream")
 		require.NoError(t, err)
 
-		require.Equal(t, s.Schema, `{"type": "number"}`)
+		require.Equal(t, s.Schema, `{"type":"number"}`)
 
 		d, err = testdb.ReadDeviceForUserByName(u.UserID, "user")
 		require.NoError(t, err)

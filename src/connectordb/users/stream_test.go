@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	// Note: The schema here must be same as the minified version
 	streamtestType = "{\"type\":\"string\"}"
 )
 
