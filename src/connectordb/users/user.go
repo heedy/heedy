@@ -101,9 +101,17 @@ func (u *User) String() string {
 		u.UserID, u.Name, u.Email, u.Nickname, u.Password, u.PasswordSalt, u.PasswordHashScheme)
 }
 
-// Ensures that the icon is a base64 encoded image
+// Ensures that the icon is in a valid format
 func validateIcon(icon string) error {
 	if icon == "" {
+		return nil
+	}
+	// We permit special icon prefixes to be used. The first one is material:, which represents material icons
+	// that are assumed to be bundled with all applications that display ConnectorDB data.
+	if strings.HasPrefix(icon, "material:") {
+		if len(icon) > 30 {
+			return errors.New("Material icon name can't be more than 30 characters.")
+		}
 		return nil
 	}
 	_, err := base64.URLEncoding.DecodeString(icon)
@@ -244,13 +252,13 @@ func (userdb *SqlUserDatabase) CreateUser(um *UserMaker) error {
 			return err
 		}
 
-		_, err = tx.Exec("INSERT INTO devices (name,userid,apikey, role, description) VALUES ('user',?,?,'user','Holds manually inserted data for the user');", uid, salt)
+		_, err = tx.Exec("INSERT INTO devices (name,userid,apikey, role, description, icon) VALUES ('user',?,?,'user','Holds manually inserted data for the user','material:person');", uid, salt)
 		if err != nil {
 			tx.Rollback()
 			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO devices (name, userid, apikey, description, usereditable, isvisible) VALUES ('meta', ?, '','The meta device holds automatically generated streams', 0, 0);", uid)
+		_, err = tx.Exec("INSERT INTO devices (name, userid, apikey, description, usereditable, isvisible, icon) VALUES ('meta', ?, '','The meta device holds automatically generated streams', 0, 0,'material:bug_report');", uid)
 		if err != nil {
 			tx.Rollback()
 			userdb.Exec("DELETE FROM users WHERE name=?;", um.Name)

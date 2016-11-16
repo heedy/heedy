@@ -47,6 +47,7 @@ func (m MetaLog) checkcreate(path string) error {
 		return m.AdminOperator().CreateStream(path, &users.StreamMaker{Stream: users.Stream{
 			Description: "A log of all create update and delete operations done on this user",
 			Schema:      `{"type": "object", "properties": {"cmd": {"type": "string"},"arg": {"type": "string"}},"required": ["cmd","arg"]}`,
+			Icon:        "material:assignment",
 		}})
 
 	}

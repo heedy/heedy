@@ -106,10 +106,10 @@ CREATE FUNCTION initial_user_setup() RETURNS TRIGGER AS $_$
 DECLARE
 	var_deviceid INTEGER;
 BEGIN
-	INSERT INTO Devices (Name, UserID, APIKey,Role, Description)
-		VALUES ('user', NEW.UserID, NEW.PasswordSalt, 'user', 'Holds manually inserted data for the user');
+	INSERT INTO Devices (Name, UserID, APIKey,Role, Description, Icon)
+		VALUES ('user', NEW.UserID, NEW.PasswordSalt, 'user', 'Holds manually inserted data for the user','material:person');
 
-	INSERT INTO Devices (Name, UserID, APIKey, Description, UserEditable, IsVisible) VALUES ('meta', NEW.UserID, '','The meta device holds automatically generated streams', FALSE, FALSE);
+	INSERT INTO Devices (Name, UserID, APIKey, Description, UserEditable, IsVisible, Icon) VALUES ('meta', NEW.UserID, '','The meta device holds automatically generated streams', FALSE, FALSE, 'material:bug_report');
 
 	RETURN NEW;
 END $_$ LANGUAGE 'plpgsql';
