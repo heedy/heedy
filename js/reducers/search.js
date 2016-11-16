@@ -33,7 +33,7 @@ export const DeviceSearchInitialState = {
 export const StreamSearchInitialState = {
     ...DefaultInitialState,
     icon: "keyboard_arrow_right",
-    hint: "Filter and Transform Data"
+    hint: "Filter & Transform Data"
 };
 export const IndexSearchInitialState = DefaultInitialState;
 

@@ -14,6 +14,7 @@ addCreator("rating.stars", {
     default: {
         schema: JSON.stringify(ratingSchema),
         datatype: "rating.stars",
+        icon: "material:star",
         ephemeral: false,
         downlink: false
     }

@@ -1,5 +1,6 @@
 import React, {Component, PropTypes} from 'react';
 import Avatar from 'material-ui/Avatar';
+import FontIcon from 'material-ui/FontIcon';
 
 // The following code is used to generate icon colors for users/devices/streams
 // https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
@@ -34,7 +35,14 @@ class AvatarIcon extends Component {
         } = this.props;
         if (iconsrc !== undefined && iconsrc != "") {
             // Show the icon image if it exists
-            return (<Avatar {...this.props} src={iconsrc} size={size}/>);
+
+            //If the image starts with material: it means that we want to show the material icon
+            if (iconsrc.startsWith("material:")) {
+                return (<Avatar {...rest} backgroundColor={stringToColor(name)}  icon={<FontIcon className="material-icons">{iconsrc.substring("material:".length,iconsrc.length)}</FontIcon>} />);
+            }
+
+            // Otherwise, we use assume the image is URL encoded
+            return (<Avatar {...rest} backgroundColor={stringToColor(name)} src={iconsrc} />);
         }
         return (
             <Avatar {...rest} backgroundColor={stringToColor(name)}>{name.substring(0, 1).toUpperCase()}</Avatar>

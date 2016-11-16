@@ -13,6 +13,7 @@ addCreator("log.diary", {
     default: {
         schema: JSON.stringify(diarySchema),
         datatype: "log.diary",
+        icon: "material:library_books",
         ephemeral: false,
         downlink: false
     }

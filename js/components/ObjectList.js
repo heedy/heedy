@@ -76,7 +76,7 @@ class ObjectList extends Component {
                 </List>
                 {hashidden
                     ? (
-                        <IconButton onTouchTap={() => this.props.onHiddenClick(true)} tooltip="show hidden" style={{
+                        <IconButton onTouchTap={() => this.props.onHiddenClick(false)} tooltip="show hidden" style={{
                             float: "right"
                         }}>
                             <FontIcon className="material-icons" color="rgba(0,0,0,0.1)">
