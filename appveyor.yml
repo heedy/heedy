@@ -12,22 +12,29 @@ clone_folder: c:\connectordb
 
 environment:
   GOPATH: c:\connectordb
-  CGO_ENABLED: 0
 
 
 install:
-  - set PATH=C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin;%PATH%
+  - set PATH=C:\msys64\mingw64\bin;%PATH%;%GOPATH%\bin
   - set CC=gcc
   - git submodule update --init --recursive
-  # Set up golang
+  # Set up golang - based on https://github.com/joefitzgerald/go-plus/blob/master/appveyor.yml
   - rmdir c:\go /s /q
   - appveyor DownloadFile https://storage.googleapis.com/golang/go1.7.windows-amd64.zip
   - 7z x go1.7.windows-amd64.zip -y -oC:\ > NUL
-  - go version
-  - go env
-  # Set up redis,node, postgres + add them to PATH
+   # Set up redis,node, gnatsd
   - nuget install redis-64 -excludeversion
   - ps: Install-Product node 0
+  - appveyor DownloadFile https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-windows-amd64.zip
+  - 7z x gnatsd-v0.9.4-windows-amd64.zip -y -oC:\connectordb\ > NUL
+  - if not exist "C:\connectordb\bin" mkdir C:\connectordb\bin
+  - move C:\connectordb\gnatsd-v0.9.4-windows-amd64 C:\connectordb\bin\dep
+  # Print dependencies and versions
+  - go version
+  - go env
+  - where gcc
+  - where mingw32-make
+ 
   # Build the ConnectorDB executable
   - dependencies.bat
   - build.bat
@@ -36,5 +43,6 @@ build: off
 
 test_script:
   - bin\connectordb.exe --version
+  - bin\connectordb.exe -l=DEBUG create testdb --sqlbackend=sqlite3
 
 deploy: off
