@@ -29,20 +29,36 @@ install:
   - 7z x gnatsd-v0.9.4-windows-amd64.zip -y -oC:\connectordb\ > NUL
   - if not exist "C:\connectordb\bin" mkdir C:\connectordb\bin
   - move C:\connectordb\gnatsd-v0.9.4-windows-amd64 C:\connectordb\bin\dep
+  # Get the required web portion
+  - xcopy /s C:\connectordb\site\www C:\connectordb\bin\www
+  - xcopy /s C:\connectordb\site\app\app C:\connectordb\bin\app
   # Print dependencies and versions
   - go version
   - go env
   - where gcc
   - where mingw32-make
+  - where redis-server
+  - where python
+  - where pip
  
   # Build the ConnectorDB executable
   - dependencies.bat
   - build.bat
+  
+  # Get the python API tests
+  - git clone https://github.com/connectordb/connectordb-python
+  - "pip install --disable-pip-version-check --user --upgrade pip"
+  - pip install -r connectordb-python/requirements.txt
+  - pip install nose
 
 build: off
 
 test_script:
   - bin\connectordb.exe --version
   - bin\connectordb.exe -l=DEBUG create testdb --sqlbackend=sqlite3
+  - bin\connectordb.exe start testdb
+  - ps: cd connectordb-python
+  - nosetests
+  
 
 deploy: off
