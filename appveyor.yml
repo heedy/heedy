@@ -53,12 +53,7 @@ build: off
 
 test_script:
   - bin\connectordb.exe --version
-  - bin\connectordb.exe -l=DEBUG create testdb --sqlbackend=sqlite3
-  - bin\connectordb.exe start testdb
-  - ps: cd connectordb-python
-  # Can't test logger, because I don't want to deal with the difficulty of building apsw
-  - nosetests connectordb_test.py
-  - nosetests query_test.py
+  - test.cmd
   
 
 deploy: off
