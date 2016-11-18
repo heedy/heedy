@@ -29,9 +29,9 @@ install:
   - 7z x gnatsd-v0.9.4-windows-amd64.zip -y -oC:\connectordb\ > NUL
   - if not exist "C:\connectordb\bin" mkdir C:\connectordb\bin
   - move C:\connectordb\gnatsd-v0.9.4-windows-amd64 C:\connectordb\bin\dep
-  # Get the required web portion
-  - xcopy /s C:\connectordb\site\www C:\connectordb\bin\www
-  - xcopy /s C:\connectordb\site\app\app C:\connectordb\bin\app
+  # Get the required web portion - using move not to deal with robocopy/xcopy BS
+  - move C:\connectordb\site\www C:\connectordb\bin\www
+  - move C:\connectordb\site\app\app C:\connectordb\bin\app
   # Print dependencies and versions
   - go version
   - go env
