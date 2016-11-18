@@ -28,8 +28,7 @@ install:
   - if not exist "C:\connectordb\bin" mkdir C:\connectordb\bin
   - move C:\connectordb\gnatsd-v0.9.4-windows-amd64 C:\connectordb\bin\dep
   - nuget install redis-64 -excludeversion
-  - dir /b /s
-  - move C:\connectordb\redis-64\redis-server.exe C:\connectordb\bin\dep\redis-server.exe
+  - move C:\connectordb\redis-64\tools\redis-server.exe C:\connectordb\bin\dep\redis-server.exe
   # Get the required web portion - using move not to deal with robocopy/xcopy BS
   - move C:\connectordb\site\www C:\connectordb\bin\www
   - move C:\connectordb\site\app\app C:\connectordb\bin\app
