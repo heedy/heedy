@@ -47,8 +47,7 @@ install:
   # Get the python API tests
   - git clone https://github.com/connectordb/connectordb-python
   - "pip install --disable-pip-version-check --user --upgrade pip"
-  - pip install -r connectordb-python/requirements.txt
-  - pip install nose
+  - pip install nose requests jsonschema websocket-client
 
 build: off
 
@@ -57,7 +56,9 @@ test_script:
   - bin\connectordb.exe -l=DEBUG create testdb --sqlbackend=sqlite3
   - bin\connectordb.exe start testdb
   - ps: cd connectordb-python
-  - nosetests
+  # Can't test logger, because I don't want to deal with the difficulty of building apsw
+  - nosetests connectordb_test.py
+  - nosetests query_test.py
   
 
 deploy: off
