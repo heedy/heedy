@@ -59,7 +59,8 @@ export default connect((state) => ({roles: state.site.roles.device}), (dispatch,
             publicChange: (e, val) => dispatch({type: "DEVICE_EDIT_PUBLIC", name: name, value: val}),
             apikeyChange: (e, val) => dispatch({type: "DEVICE_EDIT_APIKEY", name: name, value: val}),
             enabledChange: (e, val) => dispatch({type: "DEVICE_EDIT_ENABLED", name: name, value: val}),
-            visibleChange: (e, val) => dispatch({type: "DEVICE_EDIT_VISIBLE", name: name, value: val})
+            visibleChange: (e, val) => dispatch({type: "DEVICE_EDIT_VISIBLE", name: name, value: val}),
+            iconChange: (e,val) => dispatch({type: "DEVICE_EDIT", name: name, value: {icon:val}})
         },
         onCancel: () => dispatch(editCancel("DEVICE", name)),
         onSave: () => dispatch(saveObject("device", name, props.device, props.state)),

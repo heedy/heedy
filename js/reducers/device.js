@@ -35,7 +35,7 @@ export default function deviceReducer(state = InitialState, action) {
     }
 
     // Now route to the appropriate reducer
-    if (action.type.startsWith("DEVICE_EDIT_"))
+    if (action.type.startsWith("DEVICE_EDIT"))
         newState[action.name].edit = deviceEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("DEVICE_VIEW_"))
         newState[action.name].view = deviceViewReducer(newState[action.name].view, action);

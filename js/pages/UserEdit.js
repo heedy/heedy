@@ -71,13 +71,14 @@ class UserEdit extends Component {
 // It would be horrible to have all of these actions upstream - so we do them here.
 export default connect((store) => ({roles: store.site.roles.user}), (dispatch, props) => ({
     callbacks: {
-        nicknameChange: (e, txt) => dispatch({type: "USER_EDIT_NICKNAME", name: props.user.name, value: txt}),
-        descriptionChange: (e, txt) => dispatch({type: "USER_EDIT_DESCRIPTION", name: props.user.name, value: txt}),
-        passwordChange: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD", name: props.user.name, value: txt}),
-        password2Change: (e, txt) => dispatch({type: "USER_EDIT_PASSWORD2", name: props.user.name, value: txt}),
-        roleChange: (e, role) => dispatch({type: "USER_EDIT_ROLE", name: props.user.name, value: role}),
-        publicChange: (e, val) => dispatch({type: "USER_EDIT_PUBLIC", name: props.user.name, value: val}),
-        emailChange: (e, val) => dispatch({type: "USER_EDIT_EMAIL", name: props.user.name, value: val})
+        nicknameChange: (e, txt) => dispatch({type: "USER_EDIT", name: props.user.name, value: {nickname: txt}}),
+        descriptionChange: (e, txt) => dispatch({type: "USER_EDIT", name: props.user.name, value: {description:txt}}),
+        passwordChange: (e, txt) => dispatch({type: "USER_EDIT", name: props.user.name, value: {password: txt}}),
+        password2Change: (e, txt) => dispatch({type: "USER_EDIT", name: props.user.name, value: {password2: txt}}),
+        roleChange: (e, role) => dispatch({type: "USER_EDIT", name: props.user.name, value: {role: role}}),
+        publicChange: (e, val) => dispatch({type: "USER_EDIT", name: props.user.name, value: {public: val}}),
+        emailChange: (e, val) => dispatch({type: "USER_EDIT", name: props.user.name, value: {email: val}}),
+        iconChange: (e,val) => dispatch({type: "USER_EDIT", name: name, value: {icon:val}})
     },
     onCancel: () => dispatch(editCancel("USER", props.user.name)),
     onSave: () => dispatch(saveObject("user", props.user.name, props.user, props.state)),

@@ -44,7 +44,8 @@ export default connect((state) => ({roles: state.site.roles.device}), (dispatch,
             roleChange: (e, role) => dispatch({type: "USER_CREATEDEVICE_ROLE", name: name, value: role}),
             publicChange: (e, val) => dispatch({type: "USER_CREATEDEVICE_PUBLIC", name: name, value: val}),
             enabledChange: (e, val) => dispatch({type: "USER_CREATEDEVICE_ENABLED", name: name, value: val}),
-            visibleChange: (e, val) => dispatch({type: "USER_CREATEDEVICE_VISIBLE", name: name, value: val})
+            visibleChange: (e, val) => dispatch({type: "USER_CREATEDEVICE_VISIBLE", name: name, value: val}),
+            iconChange: (e,val) => dispatch({type: "USER_CREATEDEVICE_SET", name: name, value: {icon:val}})
         },
         onCancel: () => dispatch(createCancel("USER", "DEVICE", name)),
         onSave: () => dispatch(createObject("user", "device", name, props.state))

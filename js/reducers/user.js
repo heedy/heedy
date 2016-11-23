@@ -35,7 +35,7 @@ export default function userReducer(state = InitialState, action) {
     }
 
     // Now route to the appropriate reducer
-    if (action.type.startsWith("USER_EDIT_"))
+    if (action.type.startsWith("USER_EDIT"))
         newState[action.name].edit = userEditReducer(newState[action.name].edit, action);
     if (action.type.startsWith("USER_VIEW_"))
         newState[action.name].view = userViewReducer(newState[action.name].view, action);

@@ -7,6 +7,7 @@ import ObjectEdit from '../components/ObjectEdit';
 import DownlinkEditor from '../components/edit/DownlinkEditor';
 import EphemeralEditor from '../components/edit/EphemeralEditor';
 import DatatypeEditor from '../components/edit/DatatypeEditor';
+import SchemaEditor from '../components/edit/SchemaEditor';
 
 class StreamEdit extends Component {
     static propTypes = {
@@ -26,6 +27,9 @@ class StreamEdit extends Component {
         let stream = this.props.stream;
         return (
             <ObjectEdit object={this.props.stream} path={path} state={this.props.state} objectLabel={"device"} callbacks={this.props.callbacks} onCancel={this.props.onCancel} onSave={this.props.onSave} onDelete={this.props.onDelete}>
+                <SchemaEditor value={edits.schema !== undefined
+                    ? edits.schema
+                    : stream.schema} onChange={callbacks.schemaChange}/>
                 <DatatypeEditor value={edits.datatype !== undefined
                     ? edits.datatype
                     : stream.datatype} schema={stream.schema} onChange={callbacks.datatypeChange}/>
@@ -48,7 +52,9 @@ export default connect(undefined, (dispatch, props) => {
             descriptionChange: (e, txt) => dispatch({type: "STREAM_EDIT_DESCRIPTION", name: name, value: txt}),
             ephemeralChange: (e, txt) => dispatch({type: "STREAM_EDIT_EPHEMERAL", name: name, value: txt}),
             downlinkChange: (e, txt) => dispatch({type: "STREAM_EDIT_DOWNLINK", name: name, value: txt}),
-            datatypeChange: (e, txt) => dispatch({type: "STREAM_EDIT_DATATYPE", name: name, value: txt})
+            datatypeChange: (e, txt) => dispatch({type: "STREAM_EDIT_DATATYPE", name: name, value: txt}),
+            iconChange: (e,val) => dispatch({type: "STREAM_EDIT", name: name, value: {icon:val}}),
+            schemaChange: (e,val) => dispatch({type: "STREAM_EDIT", name: name, value: {schema:val}})
         },
         onCancel: () => dispatch(editCancel("STREAM", name)),
         onSave: () => dispatch(saveObject("stream", name, props.stream, props.state)),

@@ -10,6 +10,7 @@ import FlatButton from 'material-ui/FlatButton';
 import AvatarIcon from './AvatarIcon';
 import NicknameEditor from './edit/NicknameEditor';
 import DescriptionEditor from './edit/DescriptionEditor';
+import IconEditor from './edit/IconEditor';
 
 import '../util';
 
@@ -46,7 +47,7 @@ class ObjectCreate extends Component {
             <Card style={{
                 textAlign: "left"
             }}>
-                <CardHeader title={title} subtitle={subtitle} avatar={< AvatarIcon name = {
+                <CardHeader title={title} subtitle={subtitle} avatar={<AvatarIcon name = {
                     state.name == ""
                         ? "?"
                         : state.name
@@ -69,7 +70,8 @@ class ObjectCreate extends Component {
                     }}/>
                     <h2 style={styles.headers}>Optional:</h2>
                     <NicknameEditor type={this.props.type} value={state.nickname} onChange={callbacks.nicknameChange}/>
-                    <DescriptionEditor type={this.props.type} value={state.description} onChange={callbacks.descriptionChange}/> {this.props.children}
+                    <DescriptionEditor type={this.props.type} value={state.description} onChange={callbacks.descriptionChange}/>
+                    <IconEditor type={this.props.type} value={state.icon} onChange={callbacks.iconChange} /> {this.props.children}
                 </CardText>
                 <CardActions>
                     <FlatButton primary={true} label="Create" onTouchTap={this.props.onSave}/>

@@ -38,7 +38,7 @@ export default function streamReducer(state = InitialState, action) {
     }
 
     // Now route to the appropriate reducer
-    if (action.type.startsWith("STREAM_EDIT_")) {
+    if (action.type.startsWith("STREAM_EDIT")) {
         newState[action.name].edit = streamEditReducer(newState[action.name].edit, action);
     } else if (action.type.startsWith("STREAM_VIEW_")) {
         newState[action.name].view = streamViewReducer(newState[action.name].view, action);

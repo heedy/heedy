@@ -29,7 +29,7 @@ class StreamCreate extends Component {
         setState: PropTypes.func.isRequired
     }
     render() {
-        let state = this.props.state;
+        let state = Object.assign({},this.props.defaults,this.props.state);
         let callbacks = this.props.callbacks;
         let d = getCreator(this.props.datatype);
 
@@ -46,16 +46,17 @@ class StreamCreate extends Component {
     }
 }
 
-export default connect((state) => ({roles: state.site.roles.device}), (dispatch, props) => {
+export default connect((state,props) => ({roles: state.site.roles.device,defaults: getCreator(props.datatype).default}), (dispatch, props) => {
     let name = props.user.name + "/" + props.device.name;
     return {
         setState: (val) => dispatch({type: "DEVICE_CREATESTREAM_SET", name: name, value: val}),
         callbacks: {
             nameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NAME", name: name, value: txt}),
             nicknameChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_NICKNAME", name: name, value: txt}),
-            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt})
+            descriptionChange: (e, txt) => dispatch({type: "DEVICE_CREATESTREAM_DESCRIPTION", name: name, value: txt}),
+            iconChange: (e,val) => dispatch({type: "DEVICE_CREATESTREAM_SET", name: name, value: {icon:val}})
         },
         onCancel: () => dispatch(createCancel("DEVICE", "STREAM", name)),
-        onSave: () => dispatch(createObject("device", "stream", name, Object.assign({}, props.state, getCreator(props.datatype).default)))
+        onSave: () => dispatch(createObject("device", "stream", name, Object.assign({}, getCreator(props.datatype).default,props.state)))
     }
 })(StreamCreate);

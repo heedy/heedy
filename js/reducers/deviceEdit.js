@@ -4,6 +4,11 @@ export default function deviceEditReducer(state, action) {
     switch (action.type) {
         case 'DEVICE_EDIT_CLEAR':
             return DeviceEditInitialState;
+        case 'DEVICE_EDIT':
+            return {
+                ...state,
+                ...action.value
+            };
         case 'DEVICE_EDIT_NICKNAME':
             return {
                 ...state,

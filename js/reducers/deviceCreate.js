@@ -12,6 +12,11 @@ export default function deviceCreateReducer(state, action) {
     switch (action.type) {
         case 'USER_CREATEDEVICE_CLEAR':
             return DeviceCreateInitialState;
+        case 'USER_CREATEDEVICE_SET':
+            return {
+                ...state,
+                ...action.value
+            };
         case 'USER_CREATEDEVICE_NAME':
             return {
                 ...state,

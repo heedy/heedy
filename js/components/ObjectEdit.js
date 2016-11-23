@@ -11,6 +11,7 @@ import Checkbox from 'material-ui/Checkbox';
 
 import NicknameEditor from './edit/NicknameEditor';
 import DescriptionEditor from './edit/DescriptionEditor';
+import IconEditor from './edit/IconEditor';
 
 import AvatarIcon from './AvatarIcon';
 import '../util';
@@ -62,8 +63,9 @@ class ObjectEdit extends Component {
                 <CardHeader title={nickname} subtitle={this.props.path} avatar={< AvatarIcon name = {
                     obj.name
                 }
-                iconsrc = {
-                    obj.icon
+                iconsrc = {edits.icon !== undefined
+                        ? edits.icon
+                        : obj.icon
                 } />}/>
                 <CardText>
                     <NicknameEditor type={this.props.objectLabel} value={edits.nickname !== undefined
@@ -71,7 +73,11 @@ class ObjectEdit extends Component {
                         : obj.nickname} onChange={this.props.callbacks.nicknameChange}/>
                     <DescriptionEditor type={this.props.objectLabel} value={edits.description !== undefined
                         ? edits.description
-                        : obj.description} onChange={this.props.callbacks.descriptionChange}/> {this.props.children}
+                        : obj.description} onChange={this.props.callbacks.descriptionChange}/>
+                    <IconEditor type={this.props.objectLabel} value={edits.icon !== undefined
+                        ? edits.icon
+                        : obj.icon} onChange={this.props.callbacks.iconChange}/>
+                         {this.props.children}
                 </CardText>
                 <CardActions>
                     <FlatButton primary={true} label="Save" onTouchTap={() => this.save()}/>

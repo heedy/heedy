@@ -4,6 +4,11 @@ export default function streamEditReducer(state, action) {
     switch (action.type) {
         case 'STREAM_EDIT_CLEAR':
             return StreamEditInitialState;
+        case 'STREAM_EDIT':
+            return {
+                ...state,
+                ...action.value
+            };
         case 'STREAM_EDIT_NICKNAME':
             return {
                 ...state,

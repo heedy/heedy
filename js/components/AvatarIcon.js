@@ -41,8 +41,11 @@ class AvatarIcon extends Component {
                 return (<Avatar {...rest} backgroundColor={stringToColor(name)}  icon={<FontIcon className="material-icons">{iconsrc.substring("material:".length,iconsrc.length)}</FontIcon>} />);
             }
 
-            // Otherwise, we use assume the image is URL encoded
-            return (<Avatar {...rest} backgroundColor={stringToColor(name)} src={iconsrc} />);
+            if (iconsrc.startsWith("data:image/")) {
+                // We use assume the image is URL encoded
+                return (<Avatar {...rest} backgroundColor={stringToColor(name)} src={iconsrc} />);
+            }
+            
         }
         return (
             <Avatar {...rest} backgroundColor={stringToColor(name)}>{name.substring(0, 1).toUpperCase()}</Avatar>
