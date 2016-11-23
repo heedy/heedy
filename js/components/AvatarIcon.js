@@ -3,23 +3,30 @@ import Avatar from 'material-ui/Avatar';
 import FontIcon from 'material-ui/FontIcon';
 
 // The following code is used to generate icon colors for users/devices/streams
-// https://stackoverflow.com/questions/3426404/create-a-hexadecimal-colour-based-on-a-string-with-javascript
-function hashString(str) { // java String#hashCode
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+// Originally, comors were generated completely at random, but that was not perfect.
+// See: http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+// Fortunately, HSL is supported directly in browsers these days.
+
+//http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+function hashFnv32a(str) {
+    /*jshint bitwise:false */
+    var i, l;
+    let hval =  0x811c9dc5;
+
+    for (i = 0, l = str.length; i < l; i++) {
+        hval ^= str.charCodeAt(i);
+        hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
     }
-    return hash;
+    return hval >>> 0;
 }
 
-function intToRGB(i) {
-    var c = (i & 0x00FFFFFF).toString(16).toUpperCase();
-
-    return "#00000".substring(0, 7 - c.length) + c;
+function intToHSL(i) {
+    i = i % 360;
+    return "hsl("+i.toString()+",53%,45%)";
 }
 
 function stringToColor(str) {
-    return intToRGB(hashString(str + str + str));
+    return intToHSL(hashFnv32a(str));
 }
 
 class AvatarIcon extends Component {
@@ -38,12 +45,12 @@ class AvatarIcon extends Component {
 
             //If the image starts with material: it means that we want to show the material icon
             if (iconsrc.startsWith("material:")) {
-                return (<Avatar {...rest} backgroundColor={stringToColor(name)}  icon={<FontIcon className="material-icons">{iconsrc.substring("material:".length,iconsrc.length)}</FontIcon>} />);
+                return (<Avatar {...rest} backgroundColor={stringToColor(iconsrc+name)}  icon={<FontIcon className="material-icons">{iconsrc.substring("material:".length,iconsrc.length)}</FontIcon>} />);
             }
 
             if (iconsrc.startsWith("data:image/")) {
                 // We use assume the image is URL encoded
-                return (<Avatar {...rest} backgroundColor={stringToColor(name)} src={iconsrc} />);
+                return (<Avatar {...rest} backgroundColor={stringToColor(iconsrc+name)} src={iconsrc} />);
             }
             
         }
