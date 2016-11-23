@@ -26,7 +26,7 @@ class StreamEdit extends Component {
         let callbacks = this.props.callbacks;
         let stream = this.props.stream;
         return (
-            <ObjectEdit object={this.props.stream} path={path} state={this.props.state} objectLabel={"device"} callbacks={this.props.callbacks} onCancel={this.props.onCancel} onSave={this.props.onSave} onDelete={this.props.onDelete}>
+            <ObjectEdit object={this.props.stream} path={path} state={this.props.state} objectLabel={"stream"} callbacks={this.props.callbacks} onCancel={this.props.onCancel} onSave={this.props.onSave} onDelete={this.props.onDelete}>
                 <SchemaEditor value={edits.schema !== undefined
                     ? edits.schema
                     : stream.schema} onChange={callbacks.schemaChange}/>
