@@ -60,6 +60,7 @@ go-dependencies:
 	$(GO) get -u github.com/nu7hatch/gouuid
 	$(GO) get -u github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
 	$(GO) get -u github.com/Sirupsen/logrus
+	$(GO) get -u github.com/inconshreveable/mousetrap	# A dependency for compiling windows version
 	$(GO) get -u github.com/josephlewis42/multicache
 	$(GO) get -u github.com/connectordb/njson
 	$(GO) get -u github.com/spf13/cobra
