@@ -59,6 +59,11 @@ function build {
     NAME=connectordb_server_${VERSION}_$1_$2
     mkdir ./release/${NAME}
     cp -r ./bin/* ./release/${NAME}
+}
+
+# finalizebuild compresses and signs  the archive
+function finalize {
+    # USES MOST-RECENT-BUILD's NAME
     # Finally, generate the tar.gz of the package
     cd ./release
     tar -czf ${NAME}.tar.gz ${NAME}
@@ -67,30 +72,60 @@ function build {
     gpg --armor --detach-sig -o ./release/${NAME}.tar.gz.asc ./release/${NAME}.tar.gz
 }
 
-build linux amd64 $LINUX_CC
+# --------------------------------------------------
+# WINDOWS amd64
+# We bundle in a windows build of redis, and compress as zip instead of tar.gz
+# 
 build windows amd64 $WINDOWS_CC
-build linux arm $ARM_CC
-
-echo -e "\033[1m-----> Windows-Specific Build Patches...\033[0m"
 
 #SPECIAL WINDOWS-SPECIFIC BUILD MODIFICATIONS
 
 # Modify the executable names for windows to include .exe 
-WNAME=connectordb_server_${VERSION}_windows_amd64
-mv ./release/${WNAME}/connectordb ./release/${WNAME}/connectordb.exe
-mv ./release/${WNAME}/dep/gnatsd ./release/${WNAME}/gnatsd.exe
+mv ./release/${NAME}/connectordb ./release/${NAME}/connectordb.exe
+mv ./release/${NAME}/dep/gnatsd ./release/${NAME}/gnatsd.exe
 
 # Download redis binaries, and put them in dep folder of windows build since windows is... windows
 wget --quiet -O release/redis.zip https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip
 unzip -qq release/redis.zip -d release/redis
-cp release/redis/redis-cli.exe release/${WNAME}/dep
-cp release/redis/redis-server.exe release/${WNAME}/dep
+cp release/redis/redis-cli.exe release/${NAME}/dep
+cp release/redis/redis-server.exe release/${NAME}/dep
 rm -rf ./release/redis
 rm release/redis.zip
 
 # Finally, remove the old tar.gz, signature, and generate a new zip file for windows
-rm release/${WNAME}.tar.gz release/${WNAME}.tar.gz.asc
 cd ./release
-zip -qq -r ${WNAME}.zip ${WNAME}
+zip -qq -r ${NAME}.zip ${NAME}
 cd ..
-gpg --armor --detach-sig -o ./release/${WNAME}.zip.asc ./release/${WNAME}.zip
+gpg --armor --detach-sig -o ./release/${NAME}.zip.asc ./release/${NAME}.zip
+
+# --------------------------------------------------
+# RASPI arm
+# The raspberry pi version of redis is ancient, so we bundle a recent version
+#
+
+build linux arm $ARM_CC
+
+# cross-compile redis for the raspberry pi
+wget --quiet -O release/redis.tar.gz http://download.redis.io/releases/redis-3.2.5.tar.gz
+tar -xzf release/redis.tar.gz -C release
+cd release/redis-3.2.5
+make CC=$ARM_CC MALLOC=libc # I had issues using jemalloc when cross-compiling
+cp src/redis-cli ../${NAME}/dep
+cp src/redis-server ../${NAME}/dep
+cd ..
+rm -rf redis-3.2.5
+rm redis.tar.gz
+cd ..
+
+finalize
+
+
+# --------------------------------------------------
+# LINUX amd64 
+# Just works.
+#
+build linux amd64 $LINUX_CC
+finalize
+
+
+echo -e "\033[1m-----> Release Build Complete\033[0m"
