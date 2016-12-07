@@ -37,12 +37,12 @@ mkdir ./release
 
 echo -e "\033[1m-----> Updating Dependencies...\033[0m"
 # The first thing that is done is a make clean, and an update of all dependencies
-#make clean
-#make deps
+make clean
+make deps
 
 echo -e "\033[1m-----> Building Frontend...\033[0m"
 # Next, we set up resources (such as frontend). This is done only once for all OS.
-#make resources
+make resources
 
 # Next, we start building for all supported architectures.
 # This builds only the server versions. The desktop versions
@@ -53,7 +53,7 @@ function build {
     # Clear the binaries from previous builds
     rm bin/connectordb 2> /dev/null
     rm bin/dep/gnatsd 2> /dev/null
-    make bin/connectordb GO="GOOS=$1 GOARCH=$2 CC=$3 CGO_ENABLED=1 go"
+    make bin/connectordb VERSION=${VERSION} GO="GOOS=$1 GOARCH=$2 CC=$3 CGO_ENABLED=1 go"
     make bin/dep/gnatsd GO="GOOS=$1 GOARCH=$2 go"
     # Now generate the package
     NAME=connectordb_server_${VERSION}_$1_$2

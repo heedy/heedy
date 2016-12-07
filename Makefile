@@ -1,6 +1,9 @@
 GO:=go
 COPY:=rsync -r --exclude=.git
 
+
+VERSION:=git$(shell git rev-parse HEAD | cut -c 1-7)
+
 .PHONY: all clean build test submodules resources deps phony testbuild
 
 all: bin/dep/gnatsd bin/connectordb resources
@@ -34,7 +37,7 @@ resources: bin
 # Rule to go from source go file to binary
 # http://www.atatus.com/blog/golang-auto-build-versioning/
 bin/connectordb: src/main.go bin phony
-	$(GO) build -o bin/connectordb -ldflags "-X commands.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X commands.GitHash=`git rev-parse HEAD`" src/main.go
+	$(GO) build -o bin/connectordb -ldflags "-X commands.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X commands.GitHash=`git rev-parse HEAD` -X connectordb.Version=$(VERSION)" src/main.go
 
 clean:
 	rm -rf bin

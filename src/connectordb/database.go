@@ -18,10 +18,13 @@ import (
 )
 
 //The ConnectorDB version string
-const (
-	Version = "0.3.0b1"
-	Name    = "ConnectorDB"
-)
+
+// The version is inserted into the build during link time
+// http://www.atatus.com/blog/golang-auto-build-versioning/
+// It can't be const
+var Version = "v???"
+
+const Name = "ConnectorDB"
 
 var (
 	//ErrAdmin is thrown when trying to get the user or device of the Admin operator
