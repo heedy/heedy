@@ -25,9 +25,9 @@ WINDOWS_CC=x86_64-w64-mingw32-gcc
 ARM_CC=arm-linux-gnueabihf-gcc
 MAC_CC=
 
-GITVERSION=`git rev-parse HEAD | cut -c 1-7`
 GITCOUNT=`git rev-list --count HEAD`
-VERSION=${1:-c${GITCOUNT}_git$GITVERSION}
+VERSIONCODE=`cat version`
+VERSION=${1:-v${VERSIONCODE}git${GITCOUNT}}
 
 echo -e "\033[1mBuilding ConnectorDB ${VERSION}\033[0m"
 
