@@ -27,9 +27,9 @@ MAC_CC=
 
 GITCOUNT=`git rev-list --count HEAD`
 VERSIONCODE=`cat version`
-VERSION=${1:-v${VERSIONCODE}git${GITCOUNT}}
+VERSION=${1:-${VERSIONCODE}git${GITCOUNT}}
 
-echo -e "\033[1mBuilding ConnectorDB ${VERSION}\033[0m"
+echo -e "\033[1mBuilding ConnectorDB v${VERSION}\033[0m"
 
 # Clear out the releaes directory
 rm -rf ./release

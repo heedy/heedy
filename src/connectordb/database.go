@@ -22,7 +22,7 @@ import (
 // The version is inserted into the build during link time
 // http://www.atatus.com/blog/golang-auto-build-versioning/
 // It can't be const
-var Version = "v???"
+var Version = "???"
 
 const Name = "ConnectorDB"
 

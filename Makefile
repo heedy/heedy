@@ -2,7 +2,7 @@ GO:=go
 COPY:=rsync -r --exclude=.git
 
 
-VERSION:=v$(shell cat version)git$(shell git rev-list --count HEAD)
+VERSION:=$(shell cat version)git$(shell git rev-list --count HEAD)
 
 .PHONY: all clean build test submodules resources deps phony testbuild
 

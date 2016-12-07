@@ -41,7 +41,7 @@ var RootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if version {
-			fmt.Printf("ConnectorDB %s\n\narch: %s/%s\ngo: %s\ngit: %s\nbuild: %s\n", connectordb.Version, runtime.GOOS, runtime.GOARCH, runtime.Version(), GitHash, BuildStamp)
+			fmt.Printf("ConnectorDB v%s\n\narch: %s/%s\ngo: %s\ngit: %s\nbuild: %s\n", connectordb.Version, runtime.GOOS, runtime.GOARCH, runtime.Version(), GitHash, BuildStamp)
 		} else {
 			cmd.HelpFunc()(cmd, args)
 		}
