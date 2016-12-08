@@ -35,8 +35,7 @@ Development builds are available [here](https://keybase.pub/dkumor/connectordb).
 
 To perform a full build of ConnectorDB you will need a linux machine, preferably arch or a recent version of ubuntu, and corresponding cross-compilers.
 
-While technically builds can be performed on windows/OSX/Raspberry Pi, they are not officially supported. OSX/Raspberry Pi builds should "just work" with the below
-instructions, with the following caveats:
+While technically builds can be performed on windows/OSX/Raspberry Pi, they are not officially supported. OSX/Raspberry Pi builds should "just work", with the following caveats:
 
 - Raspbian has an old version of Redis, so you will need to download the source of Redis >3.0 and compile, putting redis-server and redis-cli in `bin/dep` folder. Look at the arm portion of `makerelease` for specific instructions.
 - Windows has issues setting up NPM. If building on Windows, it is recommended that you use a precompiled version of the frontend, put in `bin/app`.
@@ -52,7 +51,7 @@ To install the other necessary go dependencies, run:
 make deps
 ```
 
-To build ConnectorDB, you need to add the `src` directory to your gopath. After doing so, the following will create all necessary binaries:
+To build ConnectorDB, you need to add the `connectordb` directory to your gopath. After doing so, the following will create all necessary binaries:
 
 ```bash
 make
