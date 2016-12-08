@@ -1,7 +1,7 @@
 <a href="https://connectordb.github.io"><img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/></a>
 
 
-[![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?style=flat-square&label=linux+build)](https://travis-ci.org/connectordb/connectordb)
+[![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?style=flat-square&label=linux%2fdarwin+build)](https://travis-ci.org/connectordb/connectordb)
 [![AppVeyor](https://img.shields.io/appveyor/ci/dkumor/connectordb.svg?style=flat-square&label=windows+build)](https://ci.appveyor.com/project/dkumor/connectordb)
 [![Gitter](https://img.shields.io/gitter/room/connectordb/connectordb.svg?maxAge=2592000&style=flat-square)](https://gitter.im/connectordb/connectordb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
@@ -27,12 +27,24 @@ ConnectorDB also has built-in support for manual data input - the [server's fron
 ![Ratings](https://raw.githubusercontent.com/connectordb/connectordb/master/screenshot.png)
 
 ## Installing
-Installation instructions, and precompiled binaries are [are available on the website](https://connectordb.github.io/download.html). You'll need a linux server, and if you want to use the android app, you will also need a domain name.
+Installation instructions, and precompiled binaries are [are available on the website](https://connectordb.github.io/download.html).
+
+Development builds are available [here](https://keybase.pub/dkumor/connectordb). These are usually direct builds of master, and as such might be less stable.
 
 ## Building
 
+To perform a full build of ConnectorDB you will need a linux machine, preferably arch or a recent version of ubuntu, and corresponding cross-compilers.
+
+While technically builds can be performed on windows/OSX/Raspberry Pi, they are not officially supported. OSX/Raspberry Pi builds should "just work" with the below
+instructions, with the following caveats:
+
+- Raspbian has an old version of Redis, so you will need to download the source of Redis >3.0 and compile, putting redis-server and redis-cli in `bin/dep` folder. Look at the arm portion of `makerelease` for specific instructions.
+- Windows has issues setting up NPM. If building on Windows, it is recommended that you use a precompiled version of the frontend, put in `bin/app`.
+
+
+
 ### Compile
-You must have redis and postgres installed (and *not* running). ConnectorDB also requires at least golang 1.5, and needs 1.6 for http2.
+You must have redis and postgres installed (and *not* running). ConnectorDB also requires golang 1.7.
 
 To install the other necessary go dependencies, run:
 
@@ -59,8 +71,3 @@ make test
 ```
 
 Note that this must be run _after_ build is completed.
-
-
-### Windows
-
-You will need to download the raw executables for gnatsd, redis, and postgres, and put them in the bin/dep directory after build. You'll also need to manually build the frontend, and put it in the bin/app directory, as well as manually copying site/www to bin.
