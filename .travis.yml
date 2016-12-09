@@ -8,6 +8,10 @@ language:
 go:
     - 1.7
 
+# travis clones 50 deep - we only need 1
+git:
+    depth: 1
+
 virtualenv:
     system_site_packages: true
 
@@ -24,6 +28,7 @@ before_install:
 install:
     - export GOPATH=$GOPATH:$HOME/gopath/src/github.com/connectordb/connectordb
     - export PATH=$HOME/.local/bin:$PATH
+    - if [ "$TRAVIS_OS_NAME" == "osx" ] ; then export PATH=$HOME/Library/Python/2.7/bin/:$PATH;fi   # OSX uses different directory for local install of python libs
     - pip install --user nose requests jsonschema websocket-client coverage
     - make deps
 
