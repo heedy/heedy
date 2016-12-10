@@ -2,12 +2,6 @@
 
 // react-router uses an old version of history that doesn't have a way to extract location... so we have to listen
 // to the locations, and export current location
-import {browserHistory} from 'react-router';
-export var location = {};
-function updateLocation(loc) {
-    location = loc;
-}
-browserHistory.listen(updateLocation);
 
 // Allows us to get the redux store as "app"
 export var app = null;
@@ -15,8 +9,9 @@ export function setApp(store) {
     app = store;
 }
 
+
 // https://stackoverflow.com/questions/1026069/capitalize-the-first-letter-of-string-in-javascript
-String.prototype.capitalizeFirstLetter = function() {
+String.prototype.capitalizeFirstLetter = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
 
@@ -31,7 +26,7 @@ export function setTitle(txt) {
 
 // Strips the beginning / and end / from the path
 export function getCurrentPath() {
-    let p = location.pathname.substring(1, location.pathname.length);
+    let p = window.location.pathname.substring(1, location.pathname.length);
     if (p.endsWith("/")) {
         p = p.substring(0, p.length - 1);
     }

@@ -3,7 +3,7 @@ This file defines all of the manipulations of redux state necessary to implement
 has its own search context, which is saved independently
 */
 
-import {location, getCurrentPath} from '../util';
+import { location, getCurrentPath } from '../util';
 
 const DefaultInitialState = {
     enabled: true,
@@ -18,8 +18,8 @@ const DefaultInitialState = {
 const InvalidState = {
     ...DefaultInitialState,
     enabled: false,
-    icon: "error",
-    hint: "Search not Available"
+        icon: "error",
+            hint: "Search not Available"
 }
 
 export const UserSearchInitialState = {
@@ -33,7 +33,7 @@ export const DeviceSearchInitialState = {
 export const StreamSearchInitialState = {
     ...DefaultInitialState,
     icon: "keyboard_arrow_right",
-    hint: "Filter & Transform Data"
+        hint: "Filter & Transform Data"
 };
 export const IndexSearchInitialState = DefaultInitialState;
 
@@ -98,11 +98,11 @@ export function getSearchActionContext(action) {
     if (p.length == 0) {
         // Later we can add the specific page hashes here
         actionPrefix = "PAGE_INDEX_SEARCH_";
-    } else if (path.length == 1 && location.hash === "") {
+    } else if (path.length == 1 && window.location.hash === "") {
         actionPrefix = "USER_VIEW_SEARCH_";
-    } else if (path.length == 2 && location.hash === "") {
+    } else if (path.length == 2 && window.location.hash === "") {
         actionPrefix = "DEVICE_VIEW_SEARCH_";
-    } else if (path.length == 3 && location.hash === "") {
+    } else if (path.length == 3 && window.location.hash === "") {
         actionPrefix = "STREAM_VIEW_SEARCH_";
     }
 
@@ -119,17 +119,17 @@ export function getSearchState(state) {
     if (p.length == 0) {
         // Later we can add the specific page hashes here
         return state.pages.index.search;
-    } else if (path.length == 1 && location.hash === "") {
+    } else if (path.length == 1 && window.location.hash === "") {
         if (state.user[p] === undefined) {
             return UserSearchInitialState;
         }
         return state.user[p].view.search;
-    } else if (path.length == 2 && location.hash === "") {
+    } else if (path.length == 2 && window.location.hash === "") {
         if (state.device[p] === undefined) {
             return DeviceSearchInitialState;
         }
         return state.device[p].view.search;
-    } else if (path.length == 3 && location.hash === "") {
+    } else if (path.length == 3 && window.location.hash === "") {
         if (state.stream[p] === undefined) {
             return StreamSearchInitialState;
         }

@@ -4,22 +4,22 @@
  is added to the app in Theme.js
 */
 
-import React, {Component} from 'react';
-import {connect} from 'react-redux';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-import {spacing} from 'material-ui/styles';
+import { spacing } from 'material-ui/styles';
 import FontIcon from 'material-ui/FontIcon';
-import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
+import { Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle } from 'material-ui/Toolbar';
 import AutoComplete from 'material-ui/AutoComplete';
 import IconButton from 'material-ui/IconButton';
 import IconMenu from 'material-ui/IconMenu';
 import MenuItem from 'material-ui/MenuItem';
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
-import {getSearchState, getSearchActionContext} from '../reducers/search';
+import { getSearchState, getSearchActionContext } from '../reducers/search';
 
 // setSearchText is called whenever the user changes the search box text. All actions happen through setSearchText
-import {setSearchText} from '../actions'
+import { setSearchText } from '../actions'
 
 const styles = {
     searchbar: {
@@ -71,7 +71,7 @@ class TopBar extends Component {
         return (
             <Toolbar style={{
                 height: `${spacing.desktopKeylineIncrement}px`,
-                background: "#009e42",
+                backgroundColor: "#009e42",
                 boxShadow: "0px 2px 5px #888888",
                 position: "fixed",
                 width: "100%",
@@ -120,7 +120,7 @@ class TopBar extends Component {
                         color: "white"
                     }} inputStyle={{
                         color: "white"
-                    }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={search.autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)}/> {search.text == ""
+                    }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={search.autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)} /> {search.text == ""
                         ? null
                         : (
                             <FontIcon className="material-icons" style={{
@@ -133,10 +133,9 @@ class TopBar extends Component {
 
                 </ToolbarGroup>
                 <ToolbarGroup style={{
-                    marginTop: "7px",
                     marginLeft: "10px"
                 }}>
-                    <IconMenu iconButtonElement={< IconButton > <MoreVertIcon/> < /IconButton>} anchorOrigin={{
+                    <IconMenu iconButtonElement={<IconButton> <MoreVertIcon /> </IconButton>} anchorOrigin={{
                         horizontal: 'right',
                         vertical: 'bottom'
                     }} targetOrigin={{
@@ -144,9 +143,9 @@ class TopBar extends Component {
                         vertical: 'top'
                     }}>
                         {this.props.menu.map((link) => {
-                            return (<MenuItem key={link.title} primaryText={link.title} leftIcon={< FontIcon className = "material-icons" > {
+                            return (<MenuItem key={link.title} primaryText={link.title} leftIcon={< FontIcon className="material-icons" > {
                                 link.icon
-                            } < /FontIcon>} onTouchTap={() => link.action(this.props.dispatch)}/>)
+                            } </FontIcon>} onTouchTap={() => link.action(this.props.dispatch)} />)
                         })}
                     </IconMenu>
                 </ToolbarGroup>
@@ -155,9 +154,9 @@ class TopBar extends Component {
     }
 }
 
-export default connect((state) => ({search: getSearchState(state), menu: state.site.dropdownMenu}), (dispatch, props) => ({
+export default connect((state) => ({ search: getSearchState(state), menu: state.site.dropdownMenu }), (dispatch, props) => ({
     searchTextChanged: (txt, e) => dispatch(setSearchText(txt)),
-    submit: () => dispatch(getSearchActionContext({type: 'SUBMIT'})),
-    clearError: () => dispatch(getSearchActionContext({type: 'SET_ERROR', value: ""})),
+    submit: () => dispatch(getSearchActionContext({ type: 'SUBMIT' })),
+    clearError: () => dispatch(getSearchActionContext({ type: 'SET_ERROR', value: "" })),
     dispatch: dispatch
 }))(TopBar);
