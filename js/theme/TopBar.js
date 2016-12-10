@@ -120,6 +120,9 @@ class TopBar extends Component {
                         color: "white"
                     }} inputStyle={{
                         color: "white"
+                    }} hintStyle={{
+                        overflow: "hidden",
+                        height: "25px"
                     }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={search.autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)} /> {search.text == ""
                         ? null
                         : (
