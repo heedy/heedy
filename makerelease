@@ -31,14 +31,15 @@ VERSION=${1:-${VERSIONCODE}git${GITCOUNT}}
 
 echo -e "\033[1mBuilding ConnectorDB v${VERSION}\033[0m"
 
-# Clear out the releaes directory
+# Clear out the release directory
 rm -rf ./release
 mkdir ./release
 
 echo -e "\033[1m-----> Updating Dependencies...\033[0m"
 # The first thing that is done is a make clean, and an update of all dependencies
 make clean
-make deps
+# make deps
+echo "--> NOT DOING MAKE DEPS. UNCOMMENT MAKE DEPS BEFORE RELEASE BUILD"
 
 echo -e "\033[1m-----> Building Frontend...\033[0m"
 # Next, we set up resources (such as frontend). This is done only once for all OS.
