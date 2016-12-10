@@ -3,26 +3,26 @@
 // TODO: This needs MAJOR cleanup. It needs to be split up into multiple files in an actions
 // folder, and needs documentation on where stuff is used.
 
-import {push, goBack} from 'react-router-redux'
+import { push, goBack } from 'react-router-redux'
 
 import storage from './storage';
-import {getCurrentPath} from './util';
+import { getCurrentPath } from './util';
 
-import {StreamInputInitialState} from './reducers/stream';
-import {getSearchActionContext} from './reducers/search';
+import { StreamInputInitialState } from './reducers/stream';
+import { getSearchActionContext } from './reducers/search';
 
 // set the search bar text
 export function setSearchText(text) {
-    return getSearchActionContext({type: 'SET', value: text});
+    return getSearchActionContext({ type: 'SET', value: text });
 }
 // set the search bar submitted value
 export function setSearchSubmit(text) {
-    return getSearchActionContext({type: 'SETSUBMIT', value: text});
+    return getSearchActionContext({ type: 'SETSUBMIT', value: text });
 }
 
 // Allows to set values directly
 export function setSearchState(val) {
-    return getSearchActionContext({type: 'SET_STATE', value: val});
+    return getSearchActionContext({ type: 'SET_STATE', value: val });
 }
 
 // cancels an edit - and moves out of the edit screen
@@ -68,15 +68,16 @@ export function go(loc) {
 
 // Show a message in the snack bar
 export function showMessage(msg) {
-    return {type: 'SHOW_STATUS', value: msg};
+    return { type: 'SHOW_STATUS', value: msg };
 }
 
 export function deleteObject(type, path) {
+    console.log("Deleting Object", type, path);
     return (dispatch) => {
         dispatch(showMessage("Deleting " + type + " '" + path + "'..."));
         // If the object is a stream, reset the state
         if (type === "stream") {
-            dispatch({type: "STREAM_CLEAR_STATE", name: path});
+            dispatch({ type: "STREAM_CLEAR_STATE", name: path });
         }
         storage.del(path).then((result) => {
             if (result == "ok") {
@@ -106,6 +107,7 @@ export function deleteObject(type, path) {
 }
 
 export function createObject(ftype, type, path, object) {
+    console.log("Creating Object", ftype, type, path, object);
     return (dispatch) => {
         if (object.name == "") {
             dispatch(showMessage("Must give a name"));
@@ -122,7 +124,7 @@ export function createObject(ftype, type, path, object) {
 
         // If the object is a stream, reset the state
         if (type === "stream") {
-            dispatch({type: "STREAM_CLEAR_STATE", name: path});
+            dispatch({ type: "STREAM_CLEAR_STATE", name: path });
         }
 
         storage.create(path, object).then((result) => {
@@ -141,6 +143,7 @@ export function createObject(ftype, type, path, object) {
 }
 
 export function saveObject(type, path, object, changes) {
+    console.log("Saving Object", type, path, objec, changes);
     return (dispatch) => {
         dispatch(showMessage("Saving " + type + " '" + path + "'..."));
 
@@ -175,7 +178,7 @@ export function saveObject(type, path, object, changes) {
 
         // If the object is a stream, reset the state
         if (type === "stream") {
-            dispatch({type: "STREAM_CLEAR_STATE", name: path});
+            dispatch({ type: "STREAM_CLEAR_STATE", name: path });
         }
 
         // Finally, update the object
@@ -229,10 +232,10 @@ export function query(user, device, stream, state) {
         }
         d.then((result) => {
             if (result.ref !== undefined) {
-                dispatch({type: "STREAM_VIEW_ERROR", name: path, value: result});
+                dispatch({ type: "STREAM_VIEW_ERROR", name: path, value: result });
                 return;
             }
-            dispatch({type: "STREAM_VIEW_DATA", name: path, value: result});
+            dispatch({ type: "STREAM_VIEW_DATA", name: path, value: result });
 
         })/* .catch((err) => {
             console.log(err);
