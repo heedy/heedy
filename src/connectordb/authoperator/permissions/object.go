@@ -67,8 +67,8 @@ func DeleteDisallowedFields(perm *pconfig.Permissions, useraccess *pconfig.Acces
 		t := otype.Field(i)
 		v := oval.Field(i)
 
-		// The json tag can have commas in it (like omitempty)
-		tags := strings.Split(t.Tag.Get("json"), ",")
+		// The permissions tag can have commas in it (like omitempty)
+		tags := strings.Split(t.Tag.Get("permissions"), ",")
 		if len(tags) > 0 && tags[0] != "-" {
 			p, ok = ua[prefix+tags[0]]
 			if !ok {
@@ -120,8 +120,8 @@ func ReadObjectToMap(perm *pconfig.Permissions, useraccess *pconfig.AccessLevel,
 		t := otype.Field(i)
 		v := oval.Field(i)
 
-		// The json tag can have commas in it (like omitempty)
-		tags := strings.Split(t.Tag.Get("json"), ",")
+		// The permissions tag can have commas in it (like omitempty)
+		tags := strings.Split(t.Tag.Get("permissions"), ",")
 		if len(tags) > 0 && tags[0] != "-" {
 			p, ok = ua[prefix+tags[0]]
 			if !ok {

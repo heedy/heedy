@@ -18,21 +18,21 @@ import (
 
 // Devices are general purposed external and internal data users,
 type Device struct {
-	DeviceID    int64  `json:"-"`           // The primary key of this device
-	Name        string `json:"name"`        // The registered name of this device, should be universally unique like "Devicename_serialnum"
-	Nickname    string `json:"nickname"`    // The human readable name of this device
-	Description string `json:"description"` // A public description
-	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
-	UserID      int64  `json:"-"`           // the user that owns this device
-	APIKey      string `json:"apikey"`      // A uuid used as an api key to verify against
-	Enabled     bool   `json:"enabled"`     // Whether or not this device considers itself online (working/gathering)
-	Public      bool   `json:"public"`      // Whether the device is accessible from public
+	DeviceID    int64  `json:"-" permissions:"-"`                     // The primary key of this device
+	Name        string `json:"name" permissions:"name"`               // The registered name of this device, should be universally unique like "Devicename_serialnum"
+	Nickname    string `json:"nickname" permissions:"nickname"`       // The human readable name of this device
+	Description string `json:"description" permissions:"description"` // A public description
+	Icon        string `json:"icon" permissions:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
+	UserID      int64  `json:"-" permissions:"-"`                     // the user that owns this device
+	APIKey      string `json:"apikey" permissions:"apikey"`           // A uuid used as an api key to verify against
+	Enabled     bool   `json:"enabled" permissions:"enabled"`         // Whether or not this device considers itself online (working/gathering)
+	Public      bool   `json:"public" permissions:"public"`           // Whether the device is accessible from public
 
 	// The permissions allotted to this device
-	Role string `json:"role"`
+	Role string `json:"role" permissions:"role"`
 
-	IsVisible    bool `json:"visible"`
-	UserEditable bool `json:"user_editable"`
+	IsVisible    bool `json:"visible" permissions:"visible"`
+	UserEditable bool `json:"user_editable" permissions:"user_editable"`
 }
 
 // DeviceMaker is the structure used to create a device

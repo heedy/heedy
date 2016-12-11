@@ -24,16 +24,16 @@ var (
 )
 
 type Stream struct {
-	StreamID    int64  `json:"-"`
-	Name        string `json:"name"`
-	Nickname    string `json:"nickname"`
-	Description string `json:"description"` // A public description
-	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
-	Schema      string `json:"schema"`
-	Datatype    string `json:"datatype"`
-	DeviceID    int64  `json:"-"`
-	Ephemeral   bool   `json:"ephemeral"`
-	Downlink    bool   `json:"downlink"`
+	StreamID    int64  `json:"-" permissions:"-"`
+	Name        string `json:"name" permissions:"name"`
+	Nickname    string `json:"nickname" permissions:"nickname"`
+	Description string `json:"description" permissions:"description"` // A public description
+	Icon        string `json:"icon" permissions:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
+	Schema      string `json:"schema" permissions:"schema"`
+	Datatype    string `json:"datatype" permissions:"datatype"`
+	DeviceID    int64  `json:"-" permissions:"-"`
+	Ephemeral   bool   `json:"ephemeral" permissions:"ephemeral"`
+	Downlink    bool   `json:"downlink" permissions:"downlink"`
 }
 
 // The struct passed in to create a stream

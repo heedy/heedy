@@ -25,20 +25,22 @@ var (
 
 // User is the storage type for rows of the database.
 type User struct {
-	UserID int64 `json:"-"` // The primary key
+	UserID int64 `json:"-" permissions:"-"` // The primary key
 
-	Name        string `json:"name"`        // The public username of the user
-	Nickname    string `json:"nickname"`    // The nickname of the user
-	Email       string `json:"email"`       // The user's email address
-	Description string `json:"description"` // A public description
-	Icon        string `json:"icon"`        // A public icon in a data URI format, should be smallish 100x100?
+	Name        string `json:"name" permissions:"name"`               // The public username of the user
+	Nickname    string `json:"nickname" permissions:"nickname"`       // The nickname of the user
+	Email       string `json:"email" permissions:"email"`             // The user's email address
+	Description string `json:"description" permissions:"description"` // A public description
+	Icon        string `json:"icon" permissions:"icon"`               // A public icon in a data URI format, should be smallish 100x100?
 
-	Role   string `json:"role"`   // The user type (permissions level)
-	Public bool   `json:"public"` // Whether the user is public or not
+	Role   string `json:"role" permissions:"role"`     // The user type (permissions level)
+	Public bool   `json:"public" permissions:"public"` // Whether the user is public or not
 
-	Password           string `json:"password,omitempty"` // A hash of the user's password - it is never actually returned - the json params are used internally
-	PasswordSalt       string `json:"-"`                  // The password salt to be attached to the end of the password
-	PasswordHashScheme string `json:"-"`                  // A string representing the hashing scheme used
+	Password string `json:"password" permissions:"password"` // A hash of the user's password - it is never actually returned - the json params are used internally
+	// password salf and scheme are json-marshallable, but not accessible from connectordb, so that they can
+	// be exported
+	PasswordSalt       string `json:"password_salt" permissions:"-"`   // The password salt to be attached to the end of the password
+	PasswordHashScheme string `json:"password_scheme" permissions:"-"` // A string representing the hashing scheme used
 
 }
 
@@ -107,10 +109,11 @@ func validateIcon(icon string) error {
 		return nil
 	}
 	// We permit special icon prefixes to be used. The first one is material:, which represents material icons
-	// that are assumed to be bundled with all applications that display ConnectorDB data.
-	if strings.HasPrefix(icon, "material:") {
+	// that are assumed to be bundled with all applications that display ConnectorDB data. The second is fa: which
+	// will represent fontawesome icons in the future
+	if strings.HasPrefix(icon, "material:") || strings.HasPrefix(icon, "fa:") {
 		if len(icon) > 30 {
-			return errors.New("Material icon name can't be more than 30 characters.")
+			return errors.New("icon name can't be more than 30 characters.")
 		}
 		return nil
 	}
