@@ -183,7 +183,7 @@ and to move ConnectorDB data between computers.`,
 		// Everything is done. Now finally write the export struct to a file, so that import knows the
 		// exporter version
 		b, err := json.MarshalIndent(ExportInfo{
-			Version:     1,
+			Version:     2,
 			ConnectorDB: connectordb.Version,
 		}, "", "\t")
 		if err != nil {

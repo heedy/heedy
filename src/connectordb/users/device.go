@@ -102,7 +102,10 @@ func (d *Device) ValidityCheck() error {
 // returns the last inserted id. It is assumed that the DeviceMaker was already validated.
 // This means that DeviceMaker.Validate() had already been called, and returned nil
 func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
-	APIKey, _ := uuid.NewV4()
+	if d.APIKey == "" {
+		apikey, _ := uuid.NewV4()
+		d.APIKey = apikey.String()
+	}
 
 	if d.Devicelimit > 0 {
 		// TODO: This check should happen in a transaction, since the way it is done now enables timing attacks
@@ -128,7 +131,7 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 			isvisible,
 			usereditable
 		)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?)`, d.Name, APIKey.String(), d.UserID, d.Public,
+			VALUES (?,?,?,?,?,?,?,?,?,?,?)`, d.Name, d.APIKey, d.UserID, d.Public,
 		d.Description, d.Icon, d.Nickname, d.Enabled, d.Role, d.IsVisible, d.UserEditable)
 
 	if err != nil && strings.HasPrefix(err.Error(), "pq: duplicate key value violates unique constraint ") {
@@ -136,7 +139,7 @@ func (userdb *SqlUserDatabase) CreateDevice(d *DeviceMaker) error {
 	}
 
 	if len(d.Streams) > 0 {
-		dev, err := userdb.ReadDeviceByAPIKey(APIKey.String())
+		dev, err := userdb.ReadDeviceByAPIKey(d.APIKey)
 		if err != nil {
 			return err
 		}
