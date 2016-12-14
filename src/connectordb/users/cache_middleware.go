@@ -13,6 +13,8 @@ import (
 	"fmt"
 
 	"github.com/josephlewis42/multicache"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type CacheMiddleware struct {
@@ -24,22 +26,28 @@ type CacheMiddleware struct {
 	streamCache *multicache.Multicache
 }
 
-/** Creates and instantiates a new Caching middleware with the given parent and
+/** NewCacheMiddleware creates and instantiates a new Caching middleware with the given parent and
 cache sizes. Returns an error if the cache sizes are invalid (0)
 **/
-func NewCacheMiddleware(parent UserDatabase, userCacheSize, deviceCacheSize, streamCacheSize uint64) (UserDatabase, error) {
+func NewCacheMiddleware(parent UserDatabase, userCacheSize, deviceCacheSize, streamCacheSize uint64, cacheTimeout int64) (UserDatabase, error) {
+	log.Debugf("Using caching layer (usr %v, dev %v, strm %v, timeout %v)", userCacheSize, deviceCacheSize, streamCacheSize, cacheTimeout)
+	var alg multicache.ReplacementAlgorithm
+	alg = &multicache.SecondChance{}
+	if cacheTimeout > 0 {
+		alg = multicache.CreateTimeExpireAlgorithm(cacheTimeout)
+	}
 
-	userCache, err := multicache.NewDefaultMulticache(userCacheSize)
+	userCache, err := multicache.NewMulticache(userCacheSize, alg)
 	if err != nil {
 		return nil, err
 	}
 
-	deviceCache, err := multicache.NewDefaultMulticache(deviceCacheSize)
+	deviceCache, err := multicache.NewMulticache(deviceCacheSize, alg)
 	if err != nil {
 		return nil, err
 	}
 
-	streamCache, err := multicache.NewDefaultMulticache(streamCacheSize)
+	streamCache, err := multicache.NewMulticache(streamCacheSize, alg)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +217,7 @@ func (userdb *CacheMiddleware) ReadAllUsers() ([]*User, error) {
 }
 
 func (userdb *CacheMiddleware) ReadDeviceByAPIKey(Key string) (*Device, error) {
-	cacheDev, ok := userdb.readDevice("api:" + Key)
+	cacheDev, ok := userdb.readDevice("apikey:" + Key)
 	if ok {
 		return &cacheDev, nil
 	}

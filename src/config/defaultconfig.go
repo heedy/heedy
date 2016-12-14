@@ -135,6 +135,7 @@ func NewConfiguration() *Configuration {
 		ChunkSize: 10,
 
 		UseCache:        true,
+		CacheTimeout:    30 * 1000, // Seems like a reasonable timeout to me
 		UserCacheSize:   1000,
 		DeviceCacheSize: 10000,
 		StreamCacheSize: 10000,

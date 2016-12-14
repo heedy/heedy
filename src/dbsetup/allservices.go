@@ -98,7 +98,7 @@ func Create(o *Options) error {
 			}
 			defer db.Close()
 
-			udb := users.NewUserDatabase(db, false, 0, 0, 0)
+			udb := users.NewUserDatabase(db, false, 0, 0, 0, 0)
 
 			err = udb.CreateUser(umaker)
 			if err != nil {

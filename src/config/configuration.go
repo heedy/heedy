@@ -69,7 +69,8 @@ type Configuration struct {
 	ChunkSize int `json:"chunksize"` // ChunkSize is number of batches per database insert transaction
 
 	// The cache sizes for users/devices/streams
-	UseCache        bool  `json:"cache"` // Whether or not to enable caching
+	UseCache        bool  `json:"cache"`         // Whether or not to enable caching
+	CacheTimeout    int64 `json:"cache_timeout"` // Whether the cache times out in seconds
 	UserCacheSize   int64 `json:"user_cache_size"`
 	DeviceCacheSize int64 `json:"device_cache_size"`
 	StreamCacheSize int64 `json:"stream_cache_size"`

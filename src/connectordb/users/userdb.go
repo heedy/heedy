@@ -50,7 +50,7 @@ func (db *SqlUserDatabase) Clear() {
 	db.Exec("DELETE FROM Streams;")
 }
 
-func NewUserDatabase(sqldb *sqlx.DB, cache bool, usersize int64, devsize int64, streamsize int64) UserDatabase {
+func NewUserDatabase(sqldb *sqlx.DB, cache bool, cache_timeout int64, usersize int64, devsize int64, streamsize int64) UserDatabase {
 	basedb := SqlUserDatabase{}
 	basedb.initSqlUserDatabase(sqldb)
 
@@ -65,7 +65,7 @@ func NewUserDatabase(sqldb *sqlx.DB, cache bool, usersize int64, devsize int64, 
 	}
 
 	// The cache sizes were already validated
-	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize))
+	cached, _ := NewCacheMiddleware(&basedb, uint64(usersize), uint64(devsize), uint64(streamsize), cache_timeout)
 
 	return cached
 }

@@ -61,7 +61,7 @@ func Open(opt *config.Options) (dbp *Database, err error) {
 		return nil, err
 	}
 	log.Debugln("Opening SQL database")
-	db.Userdb = users.NewUserDatabase(db.Sqldb, opt.CacheEnabled, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
+	db.Userdb = users.NewUserDatabase(db.Sqldb, opt.CacheEnabled, opt.CacheTimeout, opt.UserCacheSize, opt.DeviceCacheSize, opt.StreamCacheSize)
 
 	log.Debugln("Opening NATS messenger")
 	db.Messenger, err = messenger.ConnectMessenger(&opt.NatsOptions, err)
