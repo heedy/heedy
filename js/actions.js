@@ -143,7 +143,8 @@ export function createObject(ftype, type, path, object) {
 }
 
 export function saveObject(type, path, object, changes) {
-    console.log("Saving Object", type, path, objec, changes);
+    console.log("Saving Object", type, path, object, changes);
+
     return (dispatch) => {
         dispatch(showMessage("Saving " + type + " '" + path + "'..."));
 
