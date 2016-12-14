@@ -134,6 +134,21 @@ if [[ $1 == "coveronly" ]]; then
 fi
 
 
+# Now check if import/export works
+rm -rf $DBDIR
+./bin/connectordb create $DBDIR --sqlbackend=sqlite3
+./bin/connectordb start $DBDIR --backend
+./bin/connectordb import $DBDIR export_test
+./bin/connectordb export $DBDIR exported
+./bin/connectordb stop $DBDIR
+DIFFRESULT=$(diff -r --exclude=meta --exclude=connectordb.json exported export_test)
+if [ "$DIFFRESULT" != "" ]; then
+    echo "Import Diff Failed"
+    echo "$DIFFRESULT"
+    exit 1
+fi
+
+
 create
 
 #Now test the python stuff, while rebuilding the db to make sure that

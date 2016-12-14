@@ -1,0 +1,10 @@
+{
+	"name": "ertert",
+	"nickname": "",
+	"description": "",
+	"icon": "material:star",
+	"schema": "{\"type\":\"integer\",\"minimum\":0,\"maximum\":10}",
+	"datatype": "rating.stars",
+	"ephemeral": false,
+	"downlink": false
+}

@@ -1,0 +1,12 @@
+{
+	"name": "meta",
+	"nickname": "",
+	"description": "The meta device holds automatically generated streams",
+	"icon": "material:bug_report",
+	"apikey": "",
+	"enabled": true,
+	"public": false,
+	"role": "",
+	"visible": false,
+	"user_editable": false
+}

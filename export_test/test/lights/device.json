@@ -1,0 +1,12 @@
+{
+	"name": "lights",
+	"nickname": "",
+	"description": "Control the lights in my house",
+	"icon": "material:lightbulb_outline",
+	"apikey": "ffb2b2f3-6fc5-4fa2-478a-7c5765085f73",
+	"enabled": true,
+	"public": false,
+	"role": "none",
+	"visible": true,
+	"user_editable": true
+}

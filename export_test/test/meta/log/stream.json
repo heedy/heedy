@@ -1,0 +1,10 @@
+{
+	"name": "log",
+	"nickname": "",
+	"description": "A log of all create update and delete operations done on this user",
+	"icon": "material:assignment",
+	"schema": "{\"type\":\"object\",\"properties\":{\"cmd\":{\"type\":\"string\"},\"arg\":{\"type\":\"string\"}},\"required\":[\"cmd\",\"arg\"]}",
+	"datatype": "",
+	"ephemeral": false,
+	"downlink": false
+}

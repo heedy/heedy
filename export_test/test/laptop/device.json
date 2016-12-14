@@ -1,0 +1,12 @@
+{
+	"name": "laptop",
+	"nickname": "",
+	"description": "Tracks your computer usage",
+	"icon": "material:computer",
+	"apikey": "94b7918f-8c67-4c70-78b3-90d4e74b4760",
+	"enabled": true,
+	"public": false,
+	"role": "none",
+	"visible": true,
+	"user_editable": true
+}

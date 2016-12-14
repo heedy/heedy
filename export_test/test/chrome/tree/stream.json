@@ -1,0 +1,10 @@
+{
+	"name": "tree",
+	"nickname": "",
+	"description": "",
+	"icon": "",
+	"schema": "{\"type\":\"number\"}",
+	"datatype": "",
+	"ephemeral": false,
+	"downlink": true
+}

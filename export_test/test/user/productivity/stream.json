@@ -1,0 +1,10 @@
+{
+	"name": "productivity",
+	"nickname": "Productivity",
+	"description": "",
+	"icon": "material:star",
+	"schema": "{}",
+	"datatype": "rating.stars",
+	"ephemeral": false,
+	"downlink": false
+}

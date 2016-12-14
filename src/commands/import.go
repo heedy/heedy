@@ -5,11 +5,14 @@ import (
 	"connectordb"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"util"
 
+	"connectordb/datastream"
 	"connectordb/users"
 
 	log "github.com/Sirupsen/logrus"
@@ -21,8 +24,91 @@ type importContext struct {
 	db *connectordb.Database
 }
 
+//DatapointReader
+type DatapointReader struct {
+	dec *json.Decoder
+}
+
+// Next allows us to conform to the DatapointIterator interface
+func (r *DatapointReader) Next() (*datastream.Datapoint, error) {
+	if r.dec.More() {
+		// There is another datapoint
+		dp := &datastream.Datapoint{}
+		err := r.dec.Decode(dp)
+		return dp, err
+	}
+	return nil, nil
+}
+
+// Returns a datapoint reader that reads the json from file
+// Copied from pipescript's code
+func NewDatapointReader(r io.Reader) (*DatapointReader, error) {
+	dec := json.NewDecoder(r)
+	_, err := dec.Token() // Read starting value
+	if err != nil {
+		return nil, err
+	}
+	return &DatapointReader{dec}, nil
+}
+
 // Given a filename, imports a stream's data from the file
 func importStreamData(c *importContext, dbpath string, streamID int64, substream string, filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	dr, err := NewDatapointReader(f)
+	if err != nil {
+		return err
+	}
+
+	var dpa []datastream.Datapoint
+	size := 0
+	totalpoints := 0
+	dp, err := dr.Next()
+	for err == nil && dp != nil {
+		totalpoints += 1
+		dpa = append(dpa, *dp)
+
+		// We want to make sure that we insert less than 10MB at a time
+		dpb, err := dp.Bytes()
+		if err != nil {
+			return err
+		}
+		size += len(dpb)
+
+		if size > 10000000 || len(dpa) > 10000 {
+			// We insert the data batch
+			if err = c.db.InsertStreamByID(streamID, substream, dpa, false); err != nil {
+				return err
+			}
+			size = 0
+			dpa = nil
+			if substream == "" {
+				log.Debug("................ ", totalpoints, " points inserted")
+			} else {
+				log.Debug("................ ", totalpoints, " points inserted to ", substream)
+			}
+
+		}
+		dp, err = dr.Next()
+
+	}
+	if err != nil {
+		return err
+	}
+	if len(dpa) > 0 {
+		if err = c.db.InsertStreamByID(streamID, substream, dpa, false); err != nil {
+			return err
+		}
+		if substream == "" {
+			log.Debug("................ ", totalpoints, " points inserted")
+		} else {
+			log.Debug("................ ", totalpoints, " points inserted to ", substream)
+		}
+	}
 
 	return nil
 }
@@ -45,6 +131,11 @@ func importStream(c *importContext, dbpath string, deviceID int64, dir string) e
 
 	log.Debug("............. ", dbpath)
 
+	// We need to temporarily disable the stream schema, so that we can insert data even if
+	// the schema was changed earlier by the user, so that older datapoints are incompatible
+	schema := sm.Schema
+	sm.Schema = "{}"
+
 	// Create the stream
 	if err = c.db.CreateStreamByDeviceID(&sm); err != nil {
 		return err
@@ -63,7 +154,14 @@ func importStream(c *importContext, dbpath string, deviceID int64, dir string) e
 
 	// If the stream is a downlink, import the downlink also
 	if s.Downlink {
-		if err = importStreamData(c, dbpath, s.StreamID, "", path.Join(dir, "downlink.json")); err != nil {
+		if err = importStreamData(c, dbpath, s.StreamID, "downlink", path.Join(dir, "downlink.json")); err != nil {
+			return err
+		}
+	}
+
+	// Now finally set the stream schema again if it isn't {}
+	if schema != "{}" {
+		if err = c.db.UpdateStreamByID(s.StreamID, map[string]interface{}{"schema": schema}); err != nil {
 			return err
 		}
 	}

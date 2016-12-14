@@ -99,7 +99,7 @@ and to move ConnectorDB data between computers.`,
 			return err
 		}
 		for u := range usr {
-			log.Info("...Exporting ", usr[u].Name)
+			log.Info("... Exporting ", usr[u].Name)
 			usrdir := path.Join(dir, usr[u].Name)
 
 			if err = os.Mkdir(usrdir, 0700); err != nil {
@@ -119,7 +119,7 @@ and to move ConnectorDB data between computers.`,
 				return err
 			}
 			for d := range dev {
-				log.Info("............ ", usr[u].Name, "/", dev[d].Name)
+				log.Info("............. ", usr[u].Name, "/", dev[d].Name)
 				devdir := path.Join(usrdir, dev[d].Name)
 
 				if err = os.Mkdir(devdir, 0700); err != nil {
@@ -139,7 +139,7 @@ and to move ConnectorDB data between computers.`,
 					return err
 				}
 				for s := range strm {
-					log.Debug("............ ", usr[u].Name, "/", dev[d].Name, "/", strm[s].Name)
+					log.Debug("............. ", usr[u].Name, "/", dev[d].Name, "/", strm[s].Name)
 					sdir := path.Join(devdir, strm[s].Name)
 
 					if err = os.Mkdir(sdir, 0700); err != nil {

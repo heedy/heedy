@@ -1,0 +1,12 @@
+{
+	"name": "user",
+	"nickname": "",
+	"description": "Holds manually inserted data for the user",
+	"icon": "material:person",
+	"apikey": "75b35372-bfcb-4b4d-66db-97825a5f835c",
+	"enabled": true,
+	"public": false,
+	"role": "user",
+	"visible": true,
+	"user_editable": true
+}

@@ -1,0 +1,10 @@
+{
+	"name": "mood",
+	"nickname": "Mood",
+	"description": "",
+	"icon": "material:star",
+	"schema": "{}",
+	"datatype": "rating.stars",
+	"ephemeral": false,
+	"downlink": false
+}
