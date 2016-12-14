@@ -102,6 +102,6 @@ func (s *PostgresService) Stop() error {
 }
 
 //NewPostgresService creates a new service for Postgres
-func NewPostgresService(serviceDirectory string, s *config.Service) *PostgresService {
-	return &PostgresService{BaseService{serviceDirectory, "postgres", StatusNone, s}}
+func NewPostgresService(serviceDirectory string, c *config.Configuration) *PostgresService {
+	return &PostgresService{BaseService{serviceDirectory, "postgres", StatusNone, &c.Sql.Service, c}}
 }

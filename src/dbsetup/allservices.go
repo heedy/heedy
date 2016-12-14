@@ -62,12 +62,12 @@ func Create(o *Options) error {
 	config.SetPath(dbconf)
 
 	if c.Redis.Enabled && o.RedisEnabled {
-		if err = NewRedisService(o.DatabaseDirectory, &c.Redis).Create(); err != nil {
+		if err = NewRedisService(o.DatabaseDirectory, c).Create(); err != nil {
 			return err
 		}
 	}
 	if c.Nats.Enabled && o.GnatsdEnabled {
-		if err = NewGnatsdService(o.DatabaseDirectory, &c.Nats).Create(); err != nil {
+		if err = NewGnatsdService(o.DatabaseDirectory, c).Create(); err != nil {
 			return err
 		}
 	}
@@ -75,7 +75,7 @@ func Create(o *Options) error {
 		var p Service
 
 		if c.Sql.Type == "postgres" {
-			p = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service)
+			p = NewPostgresService(o.DatabaseDirectory, c)
 		} else if c.Sql.Type == "sqlite3" {
 			c.Sql.URI = filepath.Join(o.DatabaseDirectory, "db.sqlite3")
 			p = NewSqliteService(c.Sql)
@@ -134,13 +134,13 @@ func Start(o *Options) error {
 	var g Service
 	var p Service
 	if c.Redis.Enabled && o.RedisEnabled {
-		r = NewRedisService(o.DatabaseDirectory, &c.Redis)
+		r = NewRedisService(o.DatabaseDirectory, c)
 		if err := r.Start(); err != nil {
 			return err
 		}
 	}
 	if c.Nats.Enabled && o.GnatsdEnabled {
-		g = NewGnatsdService(o.DatabaseDirectory, &c.Nats)
+		g = NewGnatsdService(o.DatabaseDirectory, c)
 		if err := g.Start(); err != nil {
 			if r != nil {
 				r.Stop()
@@ -150,7 +150,7 @@ func Start(o *Options) error {
 	}
 	if c.Sql.Enabled && o.SQLEnabled {
 		if c.Sql.Type == "postgres" {
-			p = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service)
+			p = NewPostgresService(o.DatabaseDirectory, c)
 			if err := p.Start(); err != nil {
 				if r != nil {
 					r.Stop()
@@ -213,13 +213,13 @@ func Stop(opt *Options) error {
 	}
 
 	if c.Redis.Enabled && o.RedisEnabled {
-		errR = NewRedisService(o.DatabaseDirectory, &c.Redis).Stop()
+		errR = NewRedisService(o.DatabaseDirectory, c).Stop()
 	}
 	if c.Nats.Enabled && o.GnatsdEnabled {
-		errG = NewGnatsdService(o.DatabaseDirectory, &c.Nats).Stop()
+		errG = NewGnatsdService(o.DatabaseDirectory, c).Stop()
 	}
 	if c.Sql.Enabled && o.SQLEnabled && c.Sql.Type == "postgres" {
-		errP = NewPostgresService(o.DatabaseDirectory, &c.Sql.Service).Stop()
+		errP = NewPostgresService(o.DatabaseDirectory, c).Stop()
 	}
 	if errF != nil {
 		return errF

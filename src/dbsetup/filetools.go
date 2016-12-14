@@ -8,12 +8,12 @@ import (
 	"config"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"util"
 
@@ -33,37 +33,41 @@ var (
 	FilePermissions = os.FileMode(0755)
 )
 
+var funcMap = template.FuncMap{
+	"add": func(a, b int64) int64 {
+		return a + b
+	},
+	"mul": func(a, b int64) int64 {
+		return a * b
+	},
+}
+
 //GenerateConfigReplacements generates the replacement variables to use within configuration files
-func GenerateConfigReplacements(serviceDirectory, procname string, s *config.Service) map[string]string {
-	m := make(map[string]string)
+func GenerateConfigReplacements(serviceDirectory, procname string, c *config.Configuration) map[string]interface{} {
+	m := make(map[string]interface{})
 
 	serviceDirectory2, err := filepath.Abs(serviceDirectory)
 	if err == nil {
 		serviceDirectory = serviceDirectory2
 	}
 
-	if len(s.Hostname) == 0 {
-		s.Hostname = "localhost"
-	}
-
 	// The _slash variants are because sometimes the config files require unix style slashes even on windows
 	// This means that we use the slash variant in those files.
 
 	m["dbdir"] = serviceDirectory
-	m["dbdir_slash"] = filepath.ToSlash(m["dbdir"])
-	m["port"] = strconv.Itoa(int(s.Port))
-	m["interface"] = s.Hostname
-	m["logfilepath"] = filepath.Join(serviceDirectory, procname+".log")
-	m["logfilepath_slash"] = filepath.ToSlash(m["logfilepath"])
+	m["procname"] = procname
+	m["dbdir_slash"] = filepath.ToSlash(serviceDirectory)
+
+	lfp := filepath.Join(serviceDirectory, procname+".log")
+	m["logfilepath"] = lfp
+	m["logfilepath_slash"] = filepath.ToSlash(lfp)
 	m["logfile"] = procname + ".log"
-	m["pidfilepath"] = filepath.Join(serviceDirectory, procname+".pid")
-	m["pidfilepath_slash"] = filepath.ToSlash(m["pidfilepath"])
+	pidf := filepath.Join(serviceDirectory, procname+".pid")
+	m["pidfilepath"] = pidf
+	m["pidfilepath_slash"] = filepath.ToSlash(pidf)
 	m["pidfile"] = procname + ".pid"
 
-	m["username"] = s.Username
-	m["password"] = s.Password
-
-	// Some config files might require linux-style path names
+	m["cdb"] = c
 
 	return m
 }
@@ -91,9 +95,9 @@ func CopyConfig(servicePath, configname string, err error) error {
 	return util.CopyFileContents(defaultTemplate, templatepath, err)
 }
 
-//SetConfig sets up the given config file with the setting replacements. If a config template is
+//SetConfig sets up the given config file template. If the configuration file is
 //not present in the servicePath, it looks in the root executable config directory for templates
-func SetConfig(servicePath, configname string, replacements map[string]string, err error) (string, error) {
+func SetConfig(servicePath, configname string, replacements map[string]interface{}, err error) (string, error) {
 	if err != nil {
 		return "", err
 	}
@@ -111,13 +115,20 @@ func SetConfig(servicePath, configname string, replacements map[string]string, e
 		return "", err
 	}
 
-	//Replace stuff in the config file
-	for key, value := range replacements {
-		configfilecontents = []byte(strings.Replace(string(configfilecontents), "{{"+key+"}}", value, -1))
+	t, err := template.New(templatepath).Funcs(funcMap).Parse(string(configfilecontents))
+	if err != nil {
+		return "", err
 	}
 
+	// Open the file to write
 	outfile := templatepath + ".tmp"
-	err = ioutil.WriteFile(outfile, configfilecontents, FilePermissions)
+	f, err := os.Create(outfile)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	t.Execute(f, replacements)
 
 	log.Debugf("wrote config file %s", outfile)
 	return outfile, err

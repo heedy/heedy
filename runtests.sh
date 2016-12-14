@@ -135,6 +135,9 @@ fi
 
 
 # Now check if import/export works
+echo "==================================================="
+echo "Checking Import/Export"
+echo "==================================================="
 rm -rf $DBDIR
 ./bin/connectordb create $DBDIR --sqlbackend=sqlite3
 ./bin/connectordb start $DBDIR --backend

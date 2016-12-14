@@ -34,6 +34,6 @@ func (s *GnatsdService) Start() error {
 }
 
 //NewGnatsdService creates a new service for gNatsd
-func NewGnatsdService(serviceDirectory string, s *config.Service) *GnatsdService {
-	return &GnatsdService{BaseService{serviceDirectory, "gnatsd", StatusNone, s}}
+func NewGnatsdService(serviceDirectory string, c *config.Configuration) *GnatsdService {
+	return &GnatsdService{BaseService{serviceDirectory, "gnatsd", StatusNone, &c.Nats, c}}
 }

@@ -13,7 +13,6 @@ import (
 //FrontendService is a service for running the ConnectorDB frontend
 type FrontendService struct {
 	BaseService
-	c *config.Configuration
 	o *Options
 }
 
@@ -39,7 +38,7 @@ func (s *FrontendService) Start() error {
 	pid, err = util.RunDaemon(err, connectordb, flags...)
 
 	// The port might have been modified by flag. Check if that is the case
-	port := s.c.Port
+	port := s.C.Port
 	if s.o.FrontendPort != 0 {
 		port = s.o.FrontendPort
 	}
@@ -62,5 +61,5 @@ func (s *FrontendService) Start() error {
 
 //NewFrontendService creates a new service for the ConnectorDB frontend
 func NewFrontendService(serviceDirectory string, c *config.Configuration, o *Options) *FrontendService {
-	return &FrontendService{BaseService{serviceDirectory, "frontend", StatusNone, nil}, c, o}
+	return &FrontendService{BaseService{serviceDirectory, "frontend", StatusNone, nil, c}, o}
 }

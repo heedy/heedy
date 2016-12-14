@@ -71,6 +71,6 @@ func (s *RedisService) Stop() error {
 }
 
 //NewRedisService creates a new service for Redis
-func NewRedisService(serviceDirectory string, s *config.Service) *RedisService {
-	return &RedisService{BaseService{serviceDirectory, "redis", StatusNone, s}}
+func NewRedisService(serviceDirectory string, c *config.Configuration) *RedisService {
+	return &RedisService{BaseService{serviceDirectory, "redis", StatusNone, &c.Redis, c}}
 }

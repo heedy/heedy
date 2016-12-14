@@ -58,6 +58,7 @@ type BaseService struct {
 	ServiceName      string
 	Stat             Status
 	S                *config.Service
+	C                *config.Configuration
 }
 
 //Name returns the name of the service
@@ -76,7 +77,11 @@ func (bs BaseService) start() (string, error) {
 	}
 	log.Infof("Staring %s on port %d", bs.Name(), bs.S.Port)
 
-	configReplacements := GenerateConfigReplacements(bs.ServiceDirectory, bs.Name(), bs.S)
+	if bs.S.Hostname == "" {
+		bs.S.Hostname = "localhost"
+	}
+
+	configReplacements := GenerateConfigReplacements(bs.ServiceDirectory, bs.Name(), bs.C)
 	return SetConfig(bs.ServiceDirectory, bs.Name()+".conf", configReplacements, nil)
 }
 
