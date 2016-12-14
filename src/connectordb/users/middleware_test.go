@@ -33,8 +33,8 @@ func AssertEqMiddlewareTest(t *testing.T, testResult, expectedResult interface{}
 }
 
 func GetCommonTestcases() []MiddlewareTestcase {
-	cacheTest1, _ := NewCacheMiddleware(&ErrBackend, 100, 100, 100)
-	cacheTest2, _ := NewCacheMiddleware(&KnownBackend, 100, 100, 100)
+	cacheTest1, _ := NewCacheMiddleware(&ErrBackend, 100, 100, 100, 0)
+	cacheTest2, _ := NewCacheMiddleware(&KnownBackend, 100, 100, 100, 0)
 	return []MiddlewareTestcase{
 		{&ErrBackend, &IdentityMiddleware{&ErrBackend}, 1},
 		{&KnownBackend, &IdentityMiddleware{&KnownBackend}, 1},

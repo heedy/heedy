@@ -58,7 +58,7 @@ func initDB(name, uri string) UserDatabase {
 		panic(err.Error())
 	}
 
-	db := NewUserDatabase(sql, false, 1, 1, 1)
+	db := NewUserDatabase(sql, false, 0, 1, 1, 1)
 
 	return db
 }

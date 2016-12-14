@@ -34,6 +34,9 @@ var TestConfiguration = func() Configuration {
 	c.BatchSize = 250
 	c.ChunkSize = 1
 
+	// Time out the cache in one second
+	c.CacheTimeout = 1000
+
 	// The debug log level shows ALL the messages :)
 	c.LogLevel = "debug"
 
