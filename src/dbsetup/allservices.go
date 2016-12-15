@@ -51,6 +51,13 @@ func Create(o *Options) error {
 		}}
 	}
 
+	// Creating sqlite3 databases in a custom location is not supported - we set the URI
+	// to empty string if the database is sqlite. This fixes a bug where validation fills in
+	// a location for the sqlite file when passing in config - despite the config being copied!
+	if c.Sql.Type == "sqlite3" {
+		c.Sql.URI = ""
+	}
+
 	//Now generate the conf file for the full configuration
 	dbconf := filepath.Join(o.DatabaseDirectory, "connectordb.conf")
 	err := c.Save(dbconf)

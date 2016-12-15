@@ -25,25 +25,14 @@ const SqlType = "postgres"
 // The header that is written to all config files
 var configHeader = `/* ConnectorDB Configuration File
 
-To see an explanation of the configuration, please see:
-
-http://connectordb.io/docs/config.html
-
 For an explanation of default values:
 https://github.com/connectordb/connectordb/blob/master/src/config/defaultconfig.go
-	Look at NewConfiguration() which explains defaults.
-
-Particular configuration options:
-frontend options: https://github.com/connectordb/connectordb/blob/master/src/config/frontend.go
-	These are the options that pertain to the ConnectorDB server (REST API, web, request logging)
-permissions: https://github.com/connectordb/connectordb/blob/master/src/config/permissions/permissions.go
-	The permissions and access levels for each user type. All user types in the database are required.
-	"default" is the built in permission - a separate permissions file is optional
+	Look at NewConfiguration()
 
 The configuration file supports javascript style comments.
 
 Several options support live reload. Changing them in the configuration file will automatically update the corresponding setting
-in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any message).
+in ConnectorDB. The ones that are not live-reloadable will not be reloaded (changing these options will not give any error message).
 */
 `
 
