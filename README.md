@@ -1,4 +1,4 @@
-<a href="https://connectordb.github.io"><img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/></a>
+<a href="https://connectordb.io"><img src="https://raw.githubusercontent.com/connectordb/branding/master/title_logo_dark.png" width="500"/></a>
 
 
 [![Build Status](https://img.shields.io/travis/connectordb/connectordb.svg?style=flat-square&label=linux%2fdarwin+build)](https://travis-ci.org/connectordb/connectordb)
@@ -9,7 +9,7 @@ A repository for all of your quantified-self data, and a control center for your
 
 There already exist many apps and fitness trackers that gather and attempt to make sense of your data. Most of these services are isolated - your phone's fitness tracking software knows nothing about your browser's time-tracking extension. Furthermore, each app and service has its own method for downloading data (if they offer raw data at all!), which makes an all-encompassing analysis of life extremely tedious. ConnectorDB offers a self-hosted open-source alternative to these services. It allows every device you have to synchronize with one central database, which allows creating an in-depth picture of your life.
 
-Please visit [the website](https://connectordb.github.io) for more information.
+Please visit [the website](https://connectordb.io) for more information.
 
 ## Gather Data
 
@@ -27,7 +27,7 @@ ConnectorDB also has built-in support for manual data input - the [server's fron
 ![Ratings](https://raw.githubusercontent.com/connectordb/connectordb/master/screenshot.png)
 
 ## Installing
-Installation instructions, and precompiled binaries are [are available on the website](https://connectordb.github.io/download.html).
+Installation instructions, and precompiled binaries are [are available on the website](https://connectordb.io/download/).
 
 Development builds are available [here](https://keybase.pub/dkumor/connectordb). These are usually direct builds of master, and as such might be less stable.
 
@@ -57,7 +57,7 @@ To build ConnectorDB, you need to add the `connectordb` directory to your gopath
 make
 ```
 
-At that point, binaries are located in `bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.github.io/download.html).
+At that point, binaries are located in `bin`. Using the binaries in this folder, you can continue from the [setup tutorial](https://connectordb.io/download.html).
 
 Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
 `sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.

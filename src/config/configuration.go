@@ -27,7 +27,7 @@ var configHeader = `/* ConnectorDB Configuration File
 
 To see an explanation of the configuration, please see:
 
-http://connectordb.github.io/docs/config.html
+http://connectordb.io/docs/config.html
 
 For an explanation of default values:
 https://github.com/connectordb/connectordb/blob/master/src/config/defaultconfig.go
