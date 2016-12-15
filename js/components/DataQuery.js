@@ -158,7 +158,7 @@ class DataQuery extends Component {
                         <p style={{
                             paddingTop: "10px"
                         }}>Learn about transforms
-                            <a href="https://connectordb.github.io/pipescript/">{" "}here.</a>
+                            <a href="https://connectordb.io/pipescript/">{" "}here.</a>
                         </p>
                     )}
             </ExpandableCard>

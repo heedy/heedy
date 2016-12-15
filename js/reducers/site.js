@@ -76,7 +76,7 @@ const InitialState = {
             title: "Documentation",
             icon: "help",
             action: (dispatch) => {
-                window.location.href = "https://connectordb.github.io/docs/";
+                window.location.href = "https://connectordb.io/docs/";
             }
         }, {
             title: "Submit Issue",
