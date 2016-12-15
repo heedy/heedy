@@ -21,7 +21,8 @@ var (
 	mkpostgres bool
 	mkgnatsd   bool
 
-	sqltype string
+	sqltype          string
+	customconfigfile string
 )
 
 // CreateCmd creates a new database
@@ -47,6 +48,15 @@ configuration.`,
 			RedisEnabled:  true,
 			GnatsdEnabled: true,
 			SQLEnabled:    true,
+		}
+
+		if customconfigfile != "" {
+			log.Info("Copying configuration from ", customconfigfile)
+			cfg, err := config.Load(customconfigfile)
+			if err != nil {
+				return err
+			}
+			dboptions.Config = cfg
 		}
 
 		if testConfiguration {
@@ -98,6 +108,7 @@ configuration.`,
 }
 
 func init() {
+	CreateCmd.Flags().StringVarP(&customconfigfile, "config", "c", "", "Use custom configuration file")
 	CreateCmd.Flags().BoolVar(&testConfiguration, "test", false, "Use testing configuration")
 	CreateCmd.Flags().StringVar(&user, "user", "", "Admin user to create by default in username:password format")
 	CreateCmd.Flags().StringVar(&email, "email", "root@localhost", "Email to use for the created admin user")
