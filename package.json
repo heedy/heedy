@@ -42,7 +42,7 @@
     "material-ui": "^0.16.5",
     "moment": "^2.15.2",
     "parallelshell": "^2.0.0",
-    "pipescript": "^0.2.1",
+    "pipescript": "^0.2.2",
     "react": "^15.4.1",
     "react-bootstrap-daterangepicker": "^3.1.0",
     "react-chartjs-2": "^1.6.0",

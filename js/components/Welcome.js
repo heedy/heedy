@@ -25,7 +25,7 @@ class Welcome extends Component {
                         <a href="https://connectordb-python.readthedocs.io/en/latest/">{" "}python client{" "}</a>. If you ever get lost, please refer to the
                         <a href="https://connectordb.io/docs/">{" "}documentation{" "}</a>.
                     </p>
-                    <p>Despite the automatic data gathering, it is very difficult to gain insight without having a supervision signal. This is where your manual input is useful. By creating ratings, you can rate your productivity, mood, or log other things, such as progress towards goals or a diary. By consistently doing this every day, over time, you will gain enough data to be able to perform in-depth analysis on what exactly influences your abilities.
+                    <p>Despite the automatic data gathering, it is very difficult to gain insight without having a supervision signal. This is where your manual input is useful. By creating ratings, you can rate your productivity, mood, or log other things, such as progress towards goals or a diary. By consistently doing this every day, over time, you will gain enough data to be able to perform in-depth analysis on what exactly correlates with your abilities.
                     </p>
 
                 </CardText>

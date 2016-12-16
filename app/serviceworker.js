@@ -1,7 +1,7 @@
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 
 // Increment the version if there were changes
-var CACHE_NAME = 'v3';
+var CACHE_NAME = 'v4';
 
 // getPath returns the server path of the resource being requested
 function getPath(request) {
@@ -16,27 +16,27 @@ function getPath(request) {
     return request.url;
 }
 
-self.addEventListener('install', function(event) {
+self.addEventListener('install', function (event) {
     console.log("Installing ServiceWorker...");
 });
 
 // On activate, we reset the entire cache
-self.addEventListener('activate', function(event) {
-    event.waitUntil(caches.keys().then(function(keyList) {
-        return Promise.all(keyList.map(function(key) {
+self.addEventListener('activate', function (event) {
+    event.waitUntil(caches.keys().then(function (keyList) {
+        return Promise.all(keyList.map(function (key) {
             return caches.delete(key);
         }));
     }));
 });
 
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', function (event) {
     var rpath = getPath(event.request);
 
     if (rpath == "/logout" || rpath == "/login" || rpath == "/api/v1/login") {
         console.log("uncache everything...");
         // On logout, uncache everything
-        event.respondWith(caches.keys().then(function(keyList) {
-            return Promise.all(keyList.map(function(key) {
+        event.respondWith(caches.keys().then(function (keyList) {
+            return Promise.all(keyList.map(function (key) {
                 return caches.delete(key);
             })).then(() => fetch(event.request));
         }));
@@ -45,7 +45,7 @@ self.addEventListener('fetch', function(event) {
     } else {
         // We're not logging out
 
-        event.respondWith(caches.match(event.request).then(function(response) {
+        event.respondWith(caches.match(event.request).then(function (response) {
             // Cache hit - return response
             if (response) {
                 //console.log("Using Cached:", rpath);
@@ -62,7 +62,7 @@ self.addEventListener('fetch', function(event) {
             // For now, we just cache all of the visited pages - which is suboptimal
             if (rpath.startsWith("/app/") || rpath.startsWith("/www/") || rpath.startsWith("/")) {
                 console.log("Adding to cache:", rpath);
-                return fetch(fetchRequest).then(function(response) {
+                return fetch(fetchRequest).then(function (response) {
                     // Check if we received a valid responnp
                     if (!response || response.status !== 200 || response.type !== 'basic') {
                         return response;
@@ -74,7 +74,7 @@ self.addEventListener('fetch', function(event) {
                     // to clone it so we have 2 stream.
                     var responseToCache = response.clone();
 
-                    caches.open(CACHE_NAME).then(function(cache) {
+                    caches.open(CACHE_NAME).then(function (cache) {
                         cache.put(event.request, responseToCache);
                     });
 

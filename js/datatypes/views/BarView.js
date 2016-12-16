@@ -3,12 +3,12 @@ This shows a bar chart if we deem the data to be amenable to bar-chart-plotting.
 The exact conditions are in the function showBarChart below
 */
 
-import {addView} from '../datatypes';
-import {generateBarChart} from './components/BarChart';
+import { addView } from '../datatypes';
+import { generateBarChart } from './components/BarChart';
 
 const BarView = [
     {
-        ...generateBarChart("map($,count)", "Counts the occurences of the given values"),
+        ...generateBarChart("map($,count) | top(20)", "Counts the occurences of the given values"),
         key: "barView",
         title: "Value Counts",
         subtitle: ""

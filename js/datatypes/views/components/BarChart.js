@@ -2,11 +2,11 @@
 This shows a bar chart, with the option of showing a pie chart
 */
 
-import React, {PropTypes} from 'react';
+import React, { PropTypes } from 'react';
 import DataTransformUpdater from './DataUpdater';
 import dropdownTransformDisplay from './dropdownTransformDisplay';
 
-import {Bar, Pie} from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import moment from 'moment';
@@ -19,6 +19,12 @@ function getRandomColor() {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
+}
+
+
+// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
+function isNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
 // This is a custom comparison function used to sort the keys in increasing order.
@@ -43,8 +49,14 @@ function dataKeyCompare(a, b) {
         }
     }
 
+    // Since we couldn't extract a number, try to match the data values
+    if (isNumeric(this[a]) && isNumeric(this[b])) {
+        a = this[a];
+        b = this[b];
+    }
+
     // Otherwise, return just normal string compare
-    return (a < b
+    return (a > b
         ? -1
         : (a == b
             ? 0
@@ -67,7 +79,7 @@ class BarChart extends DataTransformUpdater {
             return {};
         }
 
-        let keys = Object.keys(d[0].d).sort(dataKeyCompare);
+        let keys = Object.keys(d[0].d).sort(dataKeyCompare.bind(d[0].d));
         let data = keys.map((k) => d[0].d[k]);
         let colors = keys.map((k) => getRandomColor());
 
@@ -88,7 +100,7 @@ class BarChart extends DataTransformUpdater {
         let ispiechart = (this.props.state.piechart !== undefined && this.props.state.piechart === true);
 
         if (ispiechart) {
-            return (<Pie data={this.data} options={{}}/>);
+            return (<Pie data={this.data} options={{}} />);
         }
 
         return (<Bar data={this.data} options={{
@@ -104,7 +116,7 @@ class BarChart extends DataTransformUpdater {
             legend: {
                 display: false
             }
-        }}/>);
+        }} />);
     }
 }
 
@@ -113,20 +125,20 @@ export default BarChart;
 export function getBarChartIcons(context) {
     if (context.state.piechart !== undefined && context.state.piechart === true) {
         return [(
-                <IconButton key="charttype" onTouchTap={() => context.setState({piechart: false})} tooltip="Bar Chart">
-                    <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                        insert_chart
-                    </FontIcon>
-                </IconButton>
-            )];
-    }
-    return [(
-            <IconButton key="charttype" onTouchTap={() => context.setState({piechart: true})} tooltip="Pie Chart">
+            <IconButton key="charttype" onTouchTap={() => context.setState({ piechart: false })} tooltip="Bar Chart">
                 <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                    pie_chart
-                </FontIcon>
+                    insert_chart
+                    </FontIcon>
             </IconButton>
         )];
+    }
+    return [(
+        <IconButton key="charttype" onTouchTap={() => context.setState({ piechart: true })} tooltip="Pie Chart">
+            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                pie_chart
+                </FontIcon>
+        </IconButton>
+    )];
 }
 
 // generate creates a new view that displays a bar chart. The view object is set up
@@ -137,8 +149,8 @@ export function generateBarChart(transform, description) {
     // If we're given a transform, wrap the BarChart so that we can pass transform into the class.
     if (transform != null) {
         component = React.createClass({
-            render: function() {
-                return (<BarChart {...this.props} transform={transform}/>);
+            render: function () {
+                return (<BarChart {...this.props} transform={transform} />);
             }
         });
     }

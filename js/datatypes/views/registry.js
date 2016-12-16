@@ -14,3 +14,4 @@ import './BarView';
 import './SingleObjectView';
 import './SentimentLineChart';
 import './Map';
+import './WebHistoryView';
