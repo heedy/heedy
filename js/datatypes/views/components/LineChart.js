@@ -2,10 +2,10 @@
 This shows a line chart of the data given
 */
 
-import React, {PropTypes} from 'react';
+import React, { PropTypes } from 'react';
 import DataTransformUpdater from './DataUpdater';
 
-import {Line} from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import moment from 'moment';
 
 class LineChart extends DataTransformUpdater {
@@ -23,7 +23,7 @@ class LineChart extends DataTransformUpdater {
 
         for (let i = 0; i < d.length; i++) {
             let data = d[i].d;
-            if (typeof(data) === "boolean") {
+            if (typeof (data) === "boolean") {
                 if (data === false) {
                     data = 0;
                 } else {
@@ -37,6 +37,8 @@ class LineChart extends DataTransformUpdater {
                 y: data
             }
         }
+
+        let pointColor = (d.length > 500 ? "rgba(0,0,0,0.1)" : "rgba(0,92,158,0.6)");
 
         return {
             datasets: [
@@ -53,7 +55,12 @@ class LineChart extends DataTransformUpdater {
                     showLine: (isbool
                         ? true
                         : d.length < 500),
-                    steppedLine: isbool
+                    steppedLine: isbool,
+                    backgroundColor: "rgba(66,134,244,0.4)",
+                    borderColor: "rgba(0,92,158,0.4)",
+                    pointBackgroundColor: pointColor,
+                    pointBorderColor: pointColor,
+                    pointRadius: (d.length > 500 ? 2 : 3)
                 }
             ]
         };
@@ -71,8 +78,10 @@ class LineChart extends DataTransformUpdater {
                         position: 'bottom'
                     }
                 ]
-            }
-        }}/>);
+            },
+            animation: false,
+            pointColor: "blue"
+        }} />);
     }
 }
 
@@ -86,11 +95,11 @@ export function generateLineChart(transform) {
     // If we're given a transform, wrap the LineChart so that we can pass transform into the class.
     if (transform != null) {
         component = React.createClass({
-            render: function() {
-                return (<LineChart {...this.props} transform={transform}/>);
+            render: function () {
+                return (<LineChart {...this.props} transform={transform} />);
             }
         });
     }
 
-    return {initialState: {}, component: component, width: "expandable-half"};
+    return { initialState: {}, component: component, width: "expandable-half" };
 }
