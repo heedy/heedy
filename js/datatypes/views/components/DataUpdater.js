@@ -4,7 +4,6 @@ class DataUpdater extends Component {
 
     // Sets up the transform for use in the component
     initTransform(t) {
-        console.log("initTransform");
         if (t !== undefined && t !== "") {
             try {
 
@@ -21,12 +20,11 @@ class DataUpdater extends Component {
     // Returns the data transformed if there is a transform
     // in the props, and the original data if it is not
     dataTransform(data) {
-        console.log("runTransform");
         if (this.transform != null) {
             try {
                 return this.transform.Transform(data);
             } catch (e) {
-                console.error("DATA ERROR: ", t, e.toString());
+                console.error("DATA ERROR: ", data, e.toString());
             }
 
         }
@@ -44,7 +42,6 @@ class DataUpdater extends Component {
         // We only perform the dataset transform operation if the dataset
         // was modified
         if (p.data !== this.props.data || this.props.transform !== p.transform) {
-            console.log("changing");
             if (this.props.transform !== p.transform) {
                 this.initTransform(p.transform);
             }

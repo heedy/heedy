@@ -6,6 +6,7 @@ mainly to interact with the chrome extension.
 import { addView } from '../datatypes';
 import { generateBarChart } from './components/BarChart';
 import { generateLineChart } from './components/LineChart';
+import { generateDropdownLineChart, generateTimeOptions } from './components/DropdownLineChart';
 
 // http://stackoverflow.com/questions/5717093/check-if-a-javascript-string-is-a-url
 var urlchecker = new RegExp('^(https?:\\/\\/)?' + // protocol
@@ -37,20 +38,50 @@ function showHistoryView(context) {
     // we add a bar chart of the URLs. We only check 5 points on each side
     if (d.length < 10) {
         for (let i = 0; i < d.length; i++) {
-            if (!("url" in d[i].d)) hasUrlProperty = false;
-            if (!("title" in d[i].d)) hasTitle = false;
-            if (typeof d[i].d !== "string" || !urlchecker.test(d[i].d)) isUrl = false;
+            if (typeof d[i].d === "string") {
+                hasUrlProperty = false;
+                hasTitle = false;
+                if (!urlchecker.test(d[i].d)) isUrl = false;
+            } else if (typeof d[i].d === "object") {
+                isUrl = false;
+                if (!("url" in d[i].d)) hasUrlProperty = false;
+                if (!("title" in d[i].d)) hasTitle = false;
+            } else {
+                isUrl = false;
+                hasUrlProperty = false;
+                hasTitle = false;
+            }
         }
     } else {
         for (let i = 0; i < 5; i++) {
-            if (!("url" in d[i].d)) hasUrlProperty = false;
-            if (!("title" in d[i].d)) hasTitle = false;
-            if (typeof d[i].d !== "string" || !urlchecker.test(d[i].d)) isUrl = false;
+            if (typeof d[i].d === "string") {
+                hasUrlProperty = false;
+                hasTitle = false;
+                if (!urlchecker.test(d[i].d)) isUrl = false;
+            } else if (typeof d[i].d === "object") {
+                isUrl = false;
+                if (!("url" in d[i].d)) hasUrlProperty = false;
+                if (!("title" in d[i].d)) hasTitle = false;
+            } else {
+                isUrl = false;
+                hasUrlProperty = false;
+                hasTitle = false;
+            }
         }
         for (let i = d.length - 5; i < d.length; i++) {
-            if (!("url" in d[i].d)) hasUrlProperty = false;
-            if (!("title" in d[i].d)) hasTitle = false;
-            if (typeof d[i].d !== "string" || !urlchecker.test(d[i].d)) isUrl = false;
+            if (typeof d[i].d === "string") {
+                hasUrlProperty = false;
+                hasTitle = false;
+                if (!urlchecker.test(d[i].d)) isUrl = false;
+            } else if (typeof d[i].d === "object") {
+                isUrl = false;
+                if (!("url" in d[i].d)) hasUrlProperty = false;
+                if (!("title" in d[i].d)) hasTitle = false;
+            } else {
+                isUrl = false;
+                hasUrlProperty = false;
+                hasTitle = false;
+            }
         }
     }
 
@@ -72,6 +103,13 @@ function showHistoryView(context) {
             ...generateLineChart("$('title') | sentiment"),
             key: "urlTitleSentiment",
             title: "Website Titlebar Sentiment",
+            subtitle: ""
+        });
+
+        view.push({
+            ...generateDropdownLineChart("This view averages the sentiment values over the chosen time period.", generateTimeOptions("Average", "$('title') | sentiment", "mean"), 1),
+            key: "averagedSentimentViewTitlebar",
+            title: "Averaged Sentiment",
             subtitle: ""
         });
     }
