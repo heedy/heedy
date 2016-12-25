@@ -96,21 +96,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-#robotart {
-    display: none;
-}
-
-@media only screen and (min-width: 1900px) and (min-height: 800px) {
-    body {
-      background-image: url("/www/img/robot_mountain.png"), linear-gradient(to left, #182447, #215D85);
-      background-position: right bottom;
-      background-repeat: no-repeat;
-    }
-    #robotart {
-        display: inline;
-    }
-}
-
 @media only screen and (max-width: 600px) {
     body {
       background: linear-gradient(to bottom, #182447, #215D85);
