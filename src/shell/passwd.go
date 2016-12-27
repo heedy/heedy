@@ -26,10 +26,16 @@ func init() {
 		operator := shell.operator
 		username := args[1]
 
-		fmt.Println("Enter password or blank to cancel:")
-		passwd := shell.ReadRepeatPassword()
-		if passwd == "" {
-			return 1
+		var passwd string
+
+		if len(args) == 3 {
+			passwd = args[2]
+		} else {
+			fmt.Println("Enter password or blank to cancel:")
+			passwd = shell.ReadRepeatPassword()
+			if passwd == "" {
+				return 1
+			}
 		}
 
 		err := operator.UpdateUser(username, map[string]interface{}{"password": passwd})
