@@ -30,6 +30,7 @@ var (
 	logfile    string
 	cpuprofile string
 	version    bool
+	semver     bool
 )
 
 // RootCmd is the root command under which all other commands are placed.
@@ -40,7 +41,9 @@ var RootCmd = &cobra.Command{
 	Long:  `ConnectorDB is a database built for interacting with your IoT devices and for storing your quantified-self data.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if version {
+		if semver {
+			fmt.Printf("%s\n", connectordb.Version)
+		} else if version {
 			fmt.Printf("ConnectorDB v%s\n\narch: %s/%s\ngo: %s\ngit: %s\nbuild: %s\n", connectordb.Version, runtime.GOOS, runtime.GOARCH, runtime.Version(), GitHash, BuildStamp)
 		} else {
 			cmd.HelpFunc()(cmd, args)
@@ -106,5 +109,6 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "", "The types of messages to show (debug,info,warn,error)")
 	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprofile", "", "File to which a cpu profile of ConnectorDB will be written")
 
-	RootCmd.Flags().BoolVar(&version, "version", false, "Show ConnectorDB version and exit")
+	RootCmd.Flags().BoolVar(&version, "version", false, "Show detailed ConnectorDB version and exit")
+	RootCmd.Flags().BoolVar(&semver, "semver", false, "Show just ConnectorDB version number")
 }
