@@ -10,7 +10,6 @@ package users
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/nu7hatch/gouuid"
@@ -68,24 +67,6 @@ func (dm *DeviceMaker) Validate(streamLimit int) error {
 	}
 
 	return nil
-}
-
-func (d *Device) String() string {
-	return fmt.Sprintf(`[users.Device |
-	Id: %v,
-	Name: %v,
-	Nick: %v,
-	Api: %v,
-	Enabled: %v,
-	Visible: %v,
-	UserEdit: %v]`,
-		d.DeviceID,
-		d.Name,
-		d.Nickname,
-		d.APIKey,
-		d.Enabled,
-		d.IsVisible,
-		d.UserEditable)
 }
 
 // ValidityCheck ensures valid name

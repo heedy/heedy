@@ -14,6 +14,15 @@ func (w Wrapper) ReadDeviceStreams(devicepath string) ([]*users.Stream, error) {
 	return w.ReadAllStreamsByDeviceID(dev.DeviceID)
 }
 
+// ReadUserStreams reads all streams belonging to the user, optionally filtering by public/downlink/visible
+func (w Wrapper) ReadUserStreams(username string, public, downlink, hidden bool) ([]*users.DevStream, error) {
+	u, err := w.AdminOperator().ReadUser(username)
+	if err != nil {
+		return nil, err
+	}
+	return w.ReadAllStreamsByUserID(u.UserID, public, downlink, hidden)
+}
+
 //CreateStream makes a new stream
 func (w Wrapper) CreateStream(streampath string, s *users.StreamMaker) error {
 	_, devicepath, _, streamname, _, err := util.SplitStreamPath(streampath)

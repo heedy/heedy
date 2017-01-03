@@ -17,6 +17,11 @@ func (db *Database) ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream, e
 	return db.Userdb.ReadStreamsByDevice(deviceID)
 }
 
+// ReadAllStreamsByDeviceID reads all of a device's streams
+func (db *Database) ReadAllStreamsByUserID(userID int64, public, downlink, hidden bool) ([]*users.DevStream, error) {
+	return db.Userdb.ReadStreamsByUser(userID, public, downlink, hidden)
+}
+
 //CreateStreamByDeviceID creates the stream given a jsonschema as a string.
 // It also enforces the max stream limit for the user
 func (db *Database) CreateStreamByDeviceID(s *users.StreamMaker) error {

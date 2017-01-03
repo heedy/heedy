@@ -100,7 +100,6 @@ func TestReadStreamByDevice(t *testing.T) {
 
 func TestReadStreamsByUser(t *testing.T) {
 	for _, testdb := range testdatabases {
-		inserted := map[Stream]bool{}
 
 		user, _, stream, err := CreateUDS(testdb)
 		require.Nil(t, err)
@@ -108,8 +107,6 @@ func TestReadStreamsByUser(t *testing.T) {
 		require.NotNil(t, stream)
 
 		fmt.Printf("User Id: %v\n", user.UserID)
-
-		inserted[*stream] = true
 
 		// create a bunch of devices
 		for i := 0; i < 10; i++ {
@@ -121,17 +118,30 @@ func TestReadStreamsByUser(t *testing.T) {
 
 			// create a bunch of streams
 			for j := 0; j < 10; j++ {
-				stream, err := CreateTestStream(testdb, device)
+				name := GetNextName()
+				err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: name, Schema: "{\"type\":\"number\"}", DeviceID: device.DeviceID}})
 				require.Nil(t, err)
-				inserted[*stream] = true
+			}
+
+			// And create 2 special downlink streams
+			for j := 0; j < 2; j++ {
+				name := GetNextName()
+				err = testdb.CreateStream(&StreamMaker{Stream: Stream{Name: name, Schema: "{\"type\":\"number\"}", DeviceID: device.DeviceID, Downlink: true}})
+				require.Nil(t, err)
 			}
 		}
 
 		// Test selecting them
-		streams, err := testdb.ReadStreamsByUser(user.UserID)
+		streams, err := testdb.ReadStreamsByUser(user.UserID, false, false, false)
 		require.Nil(t, err, "Retrieved streams was nil")
 
-		// We need to add in the other missing log stream. - The log stream is deferred
-		require.Equal(t, len(inserted), len(streams), "Wrong number of streams returned")
+		// We need to add in the other missing stream
+		require.Equal(t, 120+1, len(streams), "Wrong number of streams returned")
+
+		// Now get the downlink streams
+		streams, err = testdb.ReadStreamsByUser(user.UserID, false, true, false)
+		require.Nil(t, err, "Retrieved streams was nil")
+
+		require.Equal(t, 20, len(streams), "Wrong number of streams returned")
 	}
 }

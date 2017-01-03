@@ -16,8 +16,8 @@ type UserDatabase interface {
 	CreateDevice(dm *DeviceMaker) error
 	CreateStream(sm *StreamMaker) error
 	CreateUser(um *UserMaker) error
-	DeleteDevice(Id int64) error
-	DeleteStream(Id int64) error
+	DeleteDevice(ID int64) error
+	DeleteStream(ID int64) error
 	DeleteUser(UserID int64) error
 	Login(Username, Password string) (*User, *Device, error)
 	ReadAllUsers() ([]*User, error)
@@ -28,7 +28,7 @@ type UserDatabase interface {
 	ReadStreamByDeviceIDAndName(DeviceID int64, streamName string) (*Stream, error)
 	ReadStreamByID(StreamID int64) (*Stream, error)
 	ReadStreamsByDevice(DeviceID int64) ([]*Stream, error)
-	ReadStreamsByUser(UserID int64) ([]*Stream, error)
+	ReadStreamsByUser(UserID int64, public, downlink, hidehidden bool) ([]*DevStream, error)
 	ReadUserById(UserID int64) (*User, error)
 	ReadUserByName(Name string) (*User, error)
 	ReadUserOperatingDevice(user *User) (*Device, error)

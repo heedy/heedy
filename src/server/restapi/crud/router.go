@@ -24,6 +24,8 @@ func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 
 	//User CRUD
 	prefix.HandleFunc("/{user}", restcore.Authenticator(ListDevices, db)).Methods("GET").Queries("q", "ls")
+	prefix.HandleFunc("/{user}", restcore.Authenticator(ListDevices, db)).Methods("GET").Queries("q", "devices")
+	prefix.HandleFunc("/{user}", restcore.Authenticator(ListUserStreams, db)).Methods("GET").Queries("q", "streams")
 	prefix.HandleFunc("/{user}", restcore.Authenticator(ReadUser, db)).Methods("GET")
 	prefix.HandleFunc("/{user}", restcore.Authenticator(CreateUser, db)).Methods("POST")
 	prefix.HandleFunc("/{user}", restcore.Authenticator(UpdateUser, db)).Methods("PUT")
@@ -31,6 +33,7 @@ func Router(db *connectordb.Database, prefix *mux.Router) *mux.Router {
 
 	//Device CRUD
 	prefix.HandleFunc("/{user}/{device}", restcore.Authenticator(ListStreams, db)).Methods("GET").Queries("q", "ls")
+	prefix.HandleFunc("/{user}/{device}", restcore.Authenticator(ListStreams, db)).Methods("GET").Queries("q", "streams")
 	prefix.HandleFunc("/{user}/{device}", restcore.Authenticator(ReadDevice, db)).Methods("GET")
 	prefix.HandleFunc("/{user}/{device}", restcore.Authenticator(CreateDevice, db)).Methods("POST")
 	prefix.HandleFunc("/{user}/{device}", restcore.Authenticator(UpdateDevice, db)).Methods("PUT")

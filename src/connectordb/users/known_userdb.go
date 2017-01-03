@@ -71,8 +71,8 @@ func (userdb *KnownUserdb) ReadStreamByDeviceIDAndName(DeviceID int64, streamNam
 	return &KnownStream, nil
 }
 
-func (userdb *KnownUserdb) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
-	return []*Stream{&KnownStream}, nil
+func (userdb *KnownUserdb) ReadStreamsByUser(UserID int64, downlink, public, hidden bool) ([]*DevStream, error) {
+	return []*DevStream{&DevStream{Stream: KnownStream}}, nil
 }
 
 func (userdb *KnownUserdb) ReadStreamByID(StreamID int64) (*Stream, error) {

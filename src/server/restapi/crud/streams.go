@@ -11,12 +11,24 @@ import (
 	"server/webcore"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 )
 
 //ListStreams lists the streams that the given device has
 func ListStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
 	_, _, devpath := getDevicePath(request)
 	d, err := o.ReadDeviceStreamsToMap(devpath)
+	return restcore.JSONWriter(writer, d, logger, err)
+}
+
+//ListUserStreams lists the streams of the given user, optionally filtering by public, downlink and visible
+func ListUserStreams(o *authoperator.AuthOperator, writer http.ResponseWriter, request *http.Request, logger *log.Entry) (int, string) {
+	usrname := mux.Vars(request)["user"]
+	q := request.URL.Query()
+	public := q.Get("public") == "true"
+	downlink := q.Get("downlink") == "true"
+	visible := q.Get("visible") == "true"
+	d, err := o.ReadUserStreamsToMap(usrname, public, downlink, visible)
 	return restcore.JSONWriter(writer, d, logger, err)
 }
 

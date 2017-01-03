@@ -69,7 +69,7 @@ func (userdb *CacheMiddleware) Clear() {
 func (userdb *CacheMiddleware) clearCachedUser(UserID int64) {
 
 	// Grab the streams we're supposed to remove.
-	streams, err := userdb.ReadStreamsByUser(UserID)
+	streams, err := userdb.ReadStreamsByUser(UserID, false, false, false)
 
 	// Something bad happened, dump everything
 	if err != nil {
@@ -249,9 +249,7 @@ func (userdb *CacheMiddleware) ReadDevicesForUserID(UserID int64) ([]*Device, er
 	}
 	// Cache the devices, since they will be used soon (listing devices uses cached)
 	for i := range devs {
-		if _, ok := userdb.readDevice(fmt.Sprintf("id:%d", devs[i].DeviceID)); !ok {
-			userdb.cacheDevice(devs[i], nil)
-		}
+		userdb.cacheDevice(devs[i], nil)
 	}
 	return devs, err
 }
@@ -302,9 +300,19 @@ func (userdb *CacheMiddleware) ReadStreamsByDevice(DeviceID int64) ([]*Stream, e
 	}
 	// Cache the streams, since they will be used soon (listing streams uses cached)
 	for i := range streams {
-		if _, ok := userdb.readStream(fmt.Sprintf("id:%d", streams[i].StreamID)); !ok {
-			userdb.cacheStream(streams[i], nil)
-		}
+		userdb.cacheStream(streams[i], nil)
+	}
+	return streams, err
+}
+
+func (userdb *CacheMiddleware) ReadStreamsByUser(UserID int64, public, downlink, hidehidden bool) ([]*DevStream, error) {
+	streams, err := userdb.UserDatabase.ReadStreamsByUser(UserID, public, downlink, hidehidden)
+	if err != nil {
+		return nil, err
+	}
+	// Cache the streams, since they will be used soon (listing streams uses cached)
+	for i := range streams {
+		userdb.cacheStream(&streams[i].Stream, nil)
 	}
 	return streams, err
 }

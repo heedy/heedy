@@ -15,7 +15,7 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "tst", Email: "root@localhost", Password: "mypass", Role: "user", Public: true}}))
 	require.NoError(t, db.CreateDevice("tst/testdevice", &users.DeviceMaker{}))
 
-	require.NoError(t, db.CreateDevice("tst/testdevice2", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateDevice("tst/testdevice2", &users.DeviceMaker{Device: users.Device{Role: "reader"}}))
 	require.NoError(t, db.CreateStream("tst/testdevice2/teststream", &users.StreamMaker{Stream: users.Stream{Schema: `{"type": "string"}`}}))
 
 	o, err := db.AsDevice("tst/testdevice")
@@ -27,6 +27,10 @@ func TestAuthStreamCrud(t *testing.T) {
 	require.Error(t, err)
 
 	_, err = o.ReadDeviceStreams("tst/testdevice2")
+	require.Error(t, err)
+
+	// Can't list user streams if not reader
+	ss, err := o.ReadUserStreamsToMap("tst", false, false, false)
 	require.Error(t, err)
 
 	dev, err = o.Device()
@@ -82,5 +86,13 @@ func TestAuthStreamCrud(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, "{}", s.Schema)
+
+	// Now make sure that the reader device can actually list streams from the user
+	o, err = db.AsDevice("tst/testdevice2")
+	require.NoError(t, err)
+
+	ss, err = o.ReadUserStreamsToMap("tst", false, false, false)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(ss))
 
 }

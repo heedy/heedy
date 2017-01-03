@@ -46,6 +46,7 @@ type Operator interface {
 	DeleteDeviceByID(deviceID int64) error
 
 	ReadAllStreamsByDeviceID(deviceID int64) ([]*users.Stream, error)
+	ReadAllStreamsByUserID(userID int64, public, downlink, hidden bool) ([]*users.DevStream, error)
 	CreateStreamByDeviceID(*users.StreamMaker) error
 	ReadStreamByID(streamID int64) (*users.Stream, error)
 	ReadStreamByDeviceID(deviceID int64, streamname string) (*users.Stream, error)

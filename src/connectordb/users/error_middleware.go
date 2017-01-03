@@ -79,7 +79,7 @@ func (userdb *ErrorUserdb) ReadStreamsByDevice(DeviceID int64) ([]*Stream, error
 	return nil, ErrorUserdbError
 }
 
-func (userdb *ErrorUserdb) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
+func (userdb *ErrorUserdb) ReadStreamsByUser(UserID int64, downlink, public, hidden bool) ([]*DevStream, error) {
 	return nil, ErrorUserdbError
 }
 

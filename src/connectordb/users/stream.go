@@ -79,11 +79,6 @@ func (s *StreamMaker) Validate() error {
 	return s.ValidityCheck()
 }
 
-func (s *Stream) String() string {
-	return fmt.Sprintf("[users.Stream | Id: %v, Name: %v, Nick: %v, Device: %v, Ephem: %v, Downlink: %v, Schema: %v]",
-		s.StreamID, s.Name, s.Nickname, s.DeviceID, s.Ephemeral, s.Downlink, s.Schema)
-}
-
 // ValidityCheck checks if the fields are valid, e.g. we're not trying to change the name to blank.
 func (s *Stream) ValidityCheck() error {
 
@@ -214,22 +209,6 @@ func (userdb *SqlUserDatabase) ReadStreamsByDevice(DeviceID int64) ([]*Stream, e
 	return streams, err
 }
 
-func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64) ([]*Stream, error) {
-	var streams []*Stream
-
-	err := userdb.Select(&streams, `SELECT s.* FROM streams s, devices d, users u
-	WHERE
-		u.userid = ? AND
-		d.userid = u.userid AND
-		s.deviceid = d.deviceid`, UserID)
-
-	if err == sql.ErrNoRows {
-		return nil, ErrStreamNotFound
-	}
-
-	return streams, err
-}
-
 // UpdateStream updates the stream with the given ID with the provided data
 // replacing all prior contents.
 func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
@@ -269,7 +248,52 @@ func (userdb *SqlUserDatabase) UpdateStream(stream *Stream) error {
 }
 
 // DeleteStream removes a stream from the database
-func (userdb *SqlUserDatabase) DeleteStream(Id int64) error {
-	result, err := userdb.Exec(`DELETE FROM streams WHERE streamid = ?;`, Id)
+func (userdb *SqlUserDatabase) DeleteStream(ID int64) error {
+	result, err := userdb.Exec(`DELETE FROM streams WHERE streamid = ?;`, ID)
 	return getDeleteError(result, err)
+}
+
+// DevStream includes the device name for use when querying directly from a user
+type DevStream struct {
+	Stream
+	Device string `json:"device" permissions:"device"`
+}
+
+// ReadStreamsByUser returns a user's streams along with parent device name.
+// If downlink is true, returns only streams that are downlinks
+// If public is true, only returns streams of public devices.
+// If hidehidden is true, only returns the streams that belong to visible devices
+func (userdb *SqlUserDatabase) ReadStreamsByUser(UserID int64, public, downlink, hidehidden bool) ([]*DevStream, error) {
+	var streams []*DevStream
+
+	query := `SELECT s.*, d.name AS device FROM streams s
+		INNER JOIN devices d ON s.deviceid = d.deviceid
+		WHERE d.userid = ?`
+
+	// sqlite has issues with TRUE/FALSE, so we let sqlx take care of converting
+	// things into the correct variable types: we send booleans in as parameters
+	params := []interface{}{UserID}
+
+	if downlink {
+		query += " AND s.downlink = ?"
+		params = append(params, true)
+	}
+
+	if public {
+		query += " AND d.public = ?"
+		params = append(params, true)
+	}
+
+	if hidehidden {
+		query += " AND d.isvisible = ?"
+		params = append(params, true)
+	}
+
+	err := userdb.Select(&streams, query, params...)
+
+	if err == sql.ErrNoRows {
+		err = nil
+	}
+
+	return streams, err
 }

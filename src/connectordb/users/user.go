@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"net/mail"
 	"strings"
 )
@@ -96,11 +95,6 @@ func (um *UserMaker) Validate(deviceLimit int, streamLimit int) error {
 		}
 	}
 	return nil
-}
-
-func (u *User) String() string {
-	return fmt.Sprintf("[users.User | Id: %v, Name: %v, Email: %v, Nick: %v, Passwd: %v|%v|%v ]",
-		u.UserID, u.Name, u.Email, u.Nickname, u.Password, u.PasswordSalt, u.PasswordHashScheme)
 }
 
 // Ensures that the icon is in a valid format

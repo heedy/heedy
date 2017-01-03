@@ -27,6 +27,7 @@ type PathOperator interface {
 	DeleteDevice(devicepath string) error
 
 	ReadDeviceStreams(devicepath string) ([]*users.Stream, error)
+	ReadUserStreams(username string, public, downlink, hidden bool) ([]*users.DevStream, error)
 	CreateStream(streampath string, s *users.StreamMaker) error
 	ReadStream(streampath string) (*users.Stream, error)
 	UpdateStream(streampath string, updates map[string]interface{}) error

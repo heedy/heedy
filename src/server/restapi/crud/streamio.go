@@ -81,6 +81,9 @@ func StreamRange(o *authoperator.AuthOperator, writer http.ResponseWriter, reque
 	if err == nil {
 		querylog := fmt.Sprintf("irange [%d,%d)", i1, i2)
 		dr, err := o.GetStreamIndexRange(streampath, i1, i2, transform)
+		if err == nil {
+			defer dr.Close()
+		}
 		lvl, _ := restcore.WriteJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	} else if err != restcore.ErrCantParse {
@@ -93,6 +96,9 @@ func StreamRange(o *authoperator.AuthOperator, writer http.ResponseWriter, reque
 	if err == nil {
 		querylog := fmt.Sprintf("trange [%.1f,%.1f) limit=%d", t1, t2, lim)
 		dr, err := o.GetStreamTimeRange(streampath, t1, t2, lim, transform)
+		if err == nil {
+			defer dr.Close()
+		}
 		lvl, _ := restcore.WriteJSONResult(writer, dr, logger, err)
 		return lvl, querylog
 	}

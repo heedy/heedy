@@ -68,3 +68,39 @@ func TestStreamUpdate(t *testing.T) {
 	require.Equal(t, "hi", u.Nickname)
 
 }
+
+func TestReadUserStreams(t *testing.T) {
+	Tdb.Clear()
+	db := Tdb
+
+	require.NoError(t, db.CreateUser(&users.UserMaker{User: users.User{Name: "myuser", Email: "email@email", Password: "test", Role: "user", Public: true}}))
+	require.NoError(t, db.CreateDevice("myuser/mydevice", &users.DeviceMaker{Device: users.Device{IsVisible: true}}))
+	require.NoError(t, db.CreateStream("myuser/mydevice/mystream", &users.StreamMaker{}))
+
+	require.NoError(t, db.CreateDevice("myuser/mydevice2", &users.DeviceMaker{}))
+	require.NoError(t, db.CreateStream("myuser/mydevice2/mystream", &users.StreamMaker{Stream: users.Stream{Downlink: true}}))
+
+	require.NoError(t, db.CreateDevice("myuser/mydevice3", &users.DeviceMaker{Device: users.Device{Public: true}}))
+	require.NoError(t, db.CreateStream("myuser/mydevice3/mystream", &users.StreamMaker{Stream: users.Stream{Downlink: true}}))
+
+	s, err := db.ReadUserStreams("myuser", false, false, false)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(s))
+
+	s, err = db.ReadUserStreams("myuser", true, false, false)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(s))
+
+	s, err = db.ReadUserStreams("myuser", false, true, false)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(s))
+
+	s, err = db.ReadUserStreams("myuser", false, false, true)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(s))
+
+	s, err = db.ReadUserStreams("myuser", true, true, true)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(s))
+
+}

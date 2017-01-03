@@ -77,6 +77,45 @@ func (a *AuthOperator) ReadDeviceStreamsToMap(devname string) ([]map[string]inte
 	return result, nil
 }
 
+// ReadUserStreamsToMap reads all of the streams who this device has permissions to read to a map,
+// optionally filtering by the given three filters
+func (a *AuthOperator) ReadUserStreamsToMap(username string, public, downlink, hidden bool) ([]map[string]interface{}, error) {
+	usr, err := a.Operator.ReadUser(username)
+	if err != nil {
+		return nil, permissions.ErrNoAccess
+	}
+	_, _, _, ua, da, err := a.getAccessLevels(usr.UserID, usr.Public, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ua.CanListStreams || !da.CanListStreams {
+		return nil, permissions.ErrNoAccess
+	}
+
+	// See ReadAllUsers
+	ss, err := a.Operator.ReadAllStreamsByUserID(usr.UserID, public, downlink, hidden)
+	if err != nil {
+		return nil, permissions.ErrNoAccess
+	}
+
+	// This is a cheap hack to avoid a separate query for every single device of the user:
+	// we read all the user's devices, which will cache all the devices, and make ReadStreamToMap
+	// very efficient.
+	a.AdminOperator().ReadAllDevicesByUserID(usr.UserID)
+
+	result := make([]map[string]interface{}, 0, len(ss))
+	for i := range ss {
+		u, err := a.ReadStreamToMap(usr.Name + "/" + ss[i].Device + "/" + ss[i].Name)
+		if err == nil {
+			// Add the device name
+			u["device"] = ss[i].Device
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
 // StreamMaker returns the StreamMaker prepopulated with default values
 // TODO: This is a hack - it does not set defaults for subdevices
 // and substreams. Furthermore, create allows setting ALL properties,
