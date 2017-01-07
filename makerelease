@@ -83,7 +83,7 @@ build windows amd64 $WINDOWS_CC
 
 # Modify the executable names for windows to include .exe 
 mv ./release/${NAME}/connectordb ./release/${NAME}/connectordb.exe
-mv ./release/${NAME}/dep/gnatsd ./release/${NAME}/gnatsd.exe
+mv ./release/${NAME}/dep/gnatsd ./release/${NAME}/dep/gnatsd.exe
 
 # Download redis binaries, and put them in dep folder of windows build since windows is... windows
 wget --quiet -O release/redis.zip https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip
