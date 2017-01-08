@@ -12,7 +12,7 @@ class Logout extends Component {
         storage.clear().then(() => {
             console.log("Cleared local storage");
             // Navigate to the logout of the ConnectorDB server, which will remove cookies
-            window.location = "/logout"
+            window.location = "/logout";
         }).catch((err) => {
             alert("Failed to clear local storage: " + err);
             window.location = "/logout";
