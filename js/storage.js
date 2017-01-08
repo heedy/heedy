@@ -19,7 +19,7 @@ import 'localforage-setitems';
 class Storage {
     constructor() {
         // Since we are logged in with cookie, the ConnectorDB js client does not need other authentication
-        this.cdb = new ConnectorDB(undefined, undefined, SiteURL, true);
+        this.cdb = new ConnectorDB(undefined, undefined, "//" + window.location.host, true);
 
         // the cache where user/device/stream objects are stored.
 
@@ -84,275 +84,275 @@ class Storage {
         let newval = {
             ...obj,
             timestamp: Date.now()
-    }
+        }
         this.hotstore[path] = newval;
 
-// Dealing with multiple storage locations
-let store = (path.split("/").length == 3
-    ? this.streams
-    : this.store);
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 3
+            ? this.streams
+            : this.store);
 
-if (obj.ref !== undefined) {
-    //console.log("Removing from cache: " + path);
-    store.removeItem(path).then(() => {
-        // remove from hotstore
-        delete this.hotstore[path];
-    });
-} else {
-    //console.log("Updating cache: " + path, newval);
-    store.setItem(path, newval).then(() => {
-        // remove from hotstore
-        delete this.hotstore[path];
-
-    }).catch(function (err) {
-        console.log(err);
-    });
-}
-
-// Run all callbacks
-for (let id in this.callbacks) {
-    this.callbacks[id](path, newval);
-}
-return;
-    }
-
-setmany(obj) {
-    //console.log("Inserting multiple to cache: ", obj);
-    // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
-    // and the other for streams.
-
-    if (obj.ref !== undefined)
-        return;
-
-    let streams = {};
-    Object.keys(obj).forEach((key) => {
-        obj[key].timestamp = Date.now();
-
-        // We need to deal with storing in two places
-        if (key.split("/").length == 3) {
-            streams[key] = obj[key];
-            delete obj[key];
-        }
-
-    });
-    this.hotstore = Object.assign(this.hotstore, obj, streams);
-
-    if (Object.keys(obj).length > 0) {
-        this.store.setItems(obj).then(() => {
-            Object.keys(obj).forEach((key) => {
-                delete this.hotstore[key];
+        if (obj.ref !== undefined) {
+            //console.log("Removing from cache: " + path);
+            store.removeItem(path).then(() => {
+                // remove from hotstore
+                delete this.hotstore[path];
             });
-        }).catch(function (err) {
-            console.log(err);
-        });
-
-        Object.keys(obj).forEach((key) => {
-            for (let id in this.callbacks) {
-                this.callbacks[id](key, obj[key]);
-            }
-        });
-    }
-    if (Object.keys(streams).length > 0) {
-        this.streams.setItems(streams).then(() => {
-            Object.keys(streams).forEach((key) => {
-                delete this.hotstore[key];
-            });
-        }).catch(function (err) {
-            console.log(err);
-        });
-        Object.keys(streams).forEach((key) => {
-            for (let id in this.callbacks) {
-                this.callbacks[id](key, streams[key]);
-            }
-        });
-    }
-
-}
-
-// query gets the most recent value of the given path directly from the ConnectorDB server.
-// this allows using new values, bypassing the cache completely
-query(path) {
-    console.log("query: " + path);
-    let p = path.split("/");
-    switch (p.length) {
-        case 1:
-            var v = this.cdb.readUser(p[0]);
-            break;
-        case 2:
-            var v = this.cdb.readDevice(p[0], p[1]);
-            break;
-        case 3:
-            var v = this.cdb.readStream(p[0], p[1], p[2]);
-            break;
-    }
-    return v.then((result) => {
-        // If a result is returned, add to cache
-        this.set(path, result);
-        return result;
-    });
-}
-// lsquery
-query_ls(path) {
-    console.log("query_ls: " + path);
-    let p = path.split("/");
-    switch (p.length) {
-        case 1:
-            var v = this.cdb.listDevices(p[0]);
-            break;
-        case 2:
-            var v = this.cdb.listStreams(p[0], p[1]);
-            break;
-    }
-    return v.then((result) => {
-        let res = {};
-        // If the query was successful, add all of the devices to cache
-        if (result.ref === undefined) {
-            for (let i = 0; i < result.length; i++) {
-                res[path + "/" + result[i].name] = result[i];
-            }
-        }
-        this.setmany(res);
-
-        return res;
-    });
-}
-
-qls(path) {
-    // This is a combination of query and ls
-    this.query(path);
-    if (path.split("/").length <= 2) {
-        this.query_ls(path);
-    }
-}
-
-ls(path) {
-    console.log("ls " + path);
-    // for some reason, startsWith can't handle paths ending with '/', so to work around it, we query
-    // all that start with the name, and then remove the ones that are not relevant
-    // TODO: fix this...
-
-    // Dealing with multiple storage locations
-    let store = (path.split("/").length == 2
-        ? this.streams
-        : this.store);
-
-    return store.startsWith(path).then((result) => {
-        Object.keys(result).forEach((key) => {
-            if (!key.startsWith(path + "/")) {
-                delete result[key];
-            }
-        });
-        //console.log("ls cache:", result);
-        return result;
-    });
-}
-
-addCallback(id, cb) {
-    this.callbacks[id] = cb;
-}
-remCallback(id) {
-    delete this.callbacks[id];
-}
-
-// get returns the given object if it is in the local storage
-get(path) {
-    // Dealing with multiple storage locations
-    let store = (path.split("/").length == 3
-        ? this.streams
-        : this.store);
-
-    if (this.hotstore[path] !== undefined) {
-        console.log("In hot cache: " + path);
-        return Promise.resolve(this.hotstore[path]);
-    }
-    return store.getItem(path).then(function (value) {
-        if (value != null) {
-            //console.log("Cache hit: " + path, value);
         } else {
-            //console.log("Cache miss: " + path);
+            //console.log("Updating cache: " + path, newval);
+            store.setItem(path, newval).then(() => {
+                // remove from hotstore
+                delete this.hotstore[path];
+
+            }).catch(function (err) {
+                console.log(err);
+            });
         }
-        return value;
-    });
-}
 
-del(path) {
-    console.log("delete: " + path);
-    let p = path.split("/");
-    switch (p.length) {
-        case 1:
-            var v = this.cdb.deleteUser(p[0]);
-            break;
-        case 2:
-            var v = this.cdb.deleteDevice(p[0], p[1]);
-            break;
-        case 3:
-            var v = this.cdb.deleteStream(p[0], p[1], p[2]);
-            break;
-    }
-    return v.then((result) => {
-        delete this.hotstore[path];
-        this.store.removeItem(path);
-        this.streams.removeItem(path);
-
-        return result;
-    });
-}
-update(path, structure) {
-    console.log("update: " + path, structure);
-    let p = path.split("/");
-    switch (p.length) {
-        case 0:
-        case 1:
-            var v = this.cdb.updateUser(p[0], structure);
-            break;
-        case 2:
-            var v = this.cdb.updateDevice(p[0], p[1], structure);
-            break;
-        case 3:
-            var v = this.cdb.updateStream(p[0], p[1], p[2], structure);
-            break;
-    }
-    return v.then((result) => {
-        if (result.ref === undefined) {
-            this.set(path, result);
+        // Run all callbacks
+        for (let id in this.callbacks) {
+            this.callbacks[id](path, newval);
         }
-        return result;
-    });
-}
+        return;
+    }
 
-create(path, structure) {
-    console.log("create: " + path, structure);
-    if (path == "") {
-        var v = this.cdb.createUser(p[0], structure);
-    } else {
+    setmany(obj) {
+        //console.log("Inserting multiple to cache: ", obj);
+        // The main annoyance here is having to deal with multiple storage locations - one for users/Devices
+        // and the other for streams.
+
+        if (obj.ref !== undefined)
+            return;
+
+        let streams = {};
+        Object.keys(obj).forEach((key) => {
+            obj[key].timestamp = Date.now();
+
+            // We need to deal with storing in two places
+            if (key.split("/").length == 3) {
+                streams[key] = obj[key];
+                delete obj[key];
+            }
+
+        });
+        this.hotstore = Object.assign(this.hotstore, obj, streams);
+
+        if (Object.keys(obj).length > 0) {
+            this.store.setItems(obj).then(() => {
+                Object.keys(obj).forEach((key) => {
+                    delete this.hotstore[key];
+                });
+            }).catch(function (err) {
+                console.log(err);
+            });
+
+            Object.keys(obj).forEach((key) => {
+                for (let id in this.callbacks) {
+                    this.callbacks[id](key, obj[key]);
+                }
+            });
+        }
+        if (Object.keys(streams).length > 0) {
+            this.streams.setItems(streams).then(() => {
+                Object.keys(streams).forEach((key) => {
+                    delete this.hotstore[key];
+                });
+            }).catch(function (err) {
+                console.log(err);
+            });
+            Object.keys(streams).forEach((key) => {
+                for (let id in this.callbacks) {
+                    this.callbacks[id](key, streams[key]);
+                }
+            });
+        }
+
+    }
+
+    // query gets the most recent value of the given path directly from the ConnectorDB server.
+    // this allows using new values, bypassing the cache completely
+    query(path) {
+        console.log("query: " + path);
         let p = path.split("/");
         switch (p.length) {
             case 1:
-                var v = this.cdb.createDevice(p[0], structure);
+                var v = this.cdb.readUser(p[0]);
                 break;
             case 2:
-                var v = this.cdb.createStream(p[0], p[1], structure);
+                var v = this.cdb.readDevice(p[0], p[1]);
                 break;
+            case 3:
+                var v = this.cdb.readStream(p[0], p[1], p[2]);
+                break;
+        }
+        return v.then((result) => {
+            // If a result is returned, add to cache
+            this.set(path, result);
+            return result;
+        });
+    }
+    // lsquery
+    query_ls(path) {
+        console.log("query_ls: " + path);
+        let p = path.split("/");
+        switch (p.length) {
+            case 1:
+                var v = this.cdb.listDevices(p[0]);
+                break;
+            case 2:
+                var v = this.cdb.listStreams(p[0], p[1]);
+                break;
+        }
+        return v.then((result) => {
+            let res = {};
+            // If the query was successful, add all of the devices to cache
+            if (result.ref === undefined) {
+                for (let i = 0; i < result.length; i++) {
+                    res[path + "/" + result[i].name] = result[i];
+                }
+            }
+            this.setmany(res);
+
+            return res;
+        });
+    }
+
+    qls(path) {
+        // This is a combination of query and ls
+        this.query(path);
+        if (path.split("/").length <= 2) {
+            this.query_ls(path);
         }
     }
 
-    return v.then((result) => {
-        if (result.ref === undefined) {
-            this.set(path + "/" + structure.name, result);
-        }
-        return result;
-    });
-}
+    ls(path) {
+        console.log("ls " + path);
+        // for some reason, startsWith can't handle paths ending with '/', so to work around it, we query
+        // all that start with the name, and then remove the ones that are not relevant
+        // TODO: fix this...
 
-insert(user, device, stream, timestamp, data) {
-    console.log("Inserting: " + user + "/" + device + "/" + stream + " data: " + JSON.stringify(data));
-    return this.cdb.insertStream(user, device, stream, [
-        {
-            t: timestamp.unix(),
-            d: data
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 2
+            ? this.streams
+            : this.store);
+
+        return store.startsWith(path).then((result) => {
+            Object.keys(result).forEach((key) => {
+                if (!key.startsWith(path + "/")) {
+                    delete result[key];
+                }
+            });
+            //console.log("ls cache:", result);
+            return result;
+        });
+    }
+
+    addCallback(id, cb) {
+        this.callbacks[id] = cb;
+    }
+    remCallback(id) {
+        delete this.callbacks[id];
+    }
+
+    // get returns the given object if it is in the local storage
+    get(path) {
+        // Dealing with multiple storage locations
+        let store = (path.split("/").length == 3
+            ? this.streams
+            : this.store);
+
+        if (this.hotstore[path] !== undefined) {
+            console.log("In hot cache: " + path);
+            return Promise.resolve(this.hotstore[path]);
         }
-    ]);
-}
+        return store.getItem(path).then(function (value) {
+            if (value != null) {
+                //console.log("Cache hit: " + path, value);
+            } else {
+                //console.log("Cache miss: " + path);
+            }
+            return value;
+        });
+    }
+
+    del(path) {
+        console.log("delete: " + path);
+        let p = path.split("/");
+        switch (p.length) {
+            case 1:
+                var v = this.cdb.deleteUser(p[0]);
+                break;
+            case 2:
+                var v = this.cdb.deleteDevice(p[0], p[1]);
+                break;
+            case 3:
+                var v = this.cdb.deleteStream(p[0], p[1], p[2]);
+                break;
+        }
+        return v.then((result) => {
+            delete this.hotstore[path];
+            this.store.removeItem(path);
+            this.streams.removeItem(path);
+
+            return result;
+        });
+    }
+    update(path, structure) {
+        console.log("update: " + path, structure);
+        let p = path.split("/");
+        switch (p.length) {
+            case 0:
+            case 1:
+                var v = this.cdb.updateUser(p[0], structure);
+                break;
+            case 2:
+                var v = this.cdb.updateDevice(p[0], p[1], structure);
+                break;
+            case 3:
+                var v = this.cdb.updateStream(p[0], p[1], p[2], structure);
+                break;
+        }
+        return v.then((result) => {
+            if (result.ref === undefined) {
+                this.set(path, result);
+            }
+            return result;
+        });
+    }
+
+    create(path, structure) {
+        console.log("create: " + path, structure);
+        if (path == "") {
+            var v = this.cdb.createUser(p[0], structure);
+        } else {
+            let p = path.split("/");
+            switch (p.length) {
+                case 1:
+                    var v = this.cdb.createDevice(p[0], structure);
+                    break;
+                case 2:
+                    var v = this.cdb.createStream(p[0], p[1], structure);
+                    break;
+            }
+        }
+
+        return v.then((result) => {
+            if (result.ref === undefined) {
+                this.set(path + "/" + structure.name, result);
+            }
+            return result;
+        });
+    }
+
+    insert(user, device, stream, timestamp, data) {
+        console.log("Inserting: " + user + "/" + device + "/" + stream + " data: " + JSON.stringify(data));
+        return this.cdb.insertStream(user, device, stream, [
+            {
+                t: timestamp.unix(),
+                d: data
+            }
+        ]);
+    }
 
 }
 var storage = new Storage();

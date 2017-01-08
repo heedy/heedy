@@ -8,17 +8,17 @@
 */
 
 import React from 'react';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 
-import {spacing} from 'material-ui/styles';
+import { spacing } from 'material-ui/styles';
 import Drawer from 'material-ui/Drawer';
-import {List, ListItem, makeSelectable} from 'material-ui/List';
+import { List, ListItem, makeSelectable } from 'material-ui/List';
 import FontIcon from 'material-ui/FontIcon';
 
 // This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
 const SelectableList = makeSelectable(List);
 
-import {go} from '../actions';
+import { go } from '../actions';
 
 // styles are all of the colors and sizes for the underlying website theme
 const styles = {
@@ -78,16 +78,16 @@ class Navigation extends React.Component {
             <Drawer docked={this.props.docked} open={this.props.docked
                 ? true
                 : this.props.open} onRequestChange={this.props.onRequestChange} style={{
-                zIndex: 9900
-            }}>
+                    zIndex: 9900
+                }}>
                 <div style={styles.logo}>
-                    <img src={SiteURL + "/app/title_logo_light.png"} style={{
+                    <img src={"/app/title_logo_light.png"} style={{
                         height: "24px"
-                    }}/>
+                    }} />
                 </div>
                 <SelectableList value={this.props.selected} onChange={(e, v) => this.onClick(e, v)}>
                     {this.props.links.map((link) => (
-                        <ListItem key={link.page} value={link.page} leftIcon={< FontIcon className = "material-icons" style = {{color: "black"}} > {
+                        <ListItem key={link.page} value={link.page} leftIcon={< FontIcon className="material-icons" style={{ color: "black" }} > {
                             link.icon
                         } < /FontIcon>} innerDivStyle={styles.menuInnerDivStyle} style={styles.menuStyle}>
                             <div>
@@ -108,7 +108,7 @@ class Navigation extends React.Component {
     }
 }
 
-export default connect((state) => ({links: state.site.navigation}), (dispatch) => ({
+export default connect((state) => ({ links: state.site.navigation }), (dispatch) => ({
     onClick: (e, id) => {
         dispatch(go(id));
     }

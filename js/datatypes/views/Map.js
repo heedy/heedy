@@ -2,14 +2,14 @@
 Map shows a map with
 */
 
-import {addView} from '../datatypes';
+import { addView } from '../datatypes';
 
-import React, {Component, PropTypes} from 'react';
+import React, { Component, PropTypes } from 'react';
 
 import DataTransformUpdater from './components/DataUpdater';
 
 import L from 'leaflet';
-import {Map, Marker, Popup, TileLayer} from 'react-leaflet';
+import { Map, Marker, Popup, TileLayer } from 'react-leaflet';
 
 // The loader fails on leaflet css, so it is included manually in the template
 //import 'leaflet/dist/leaflet.css';
@@ -27,7 +27,7 @@ function isLatLong(point) {
 }
 
 var mapdot = L.icon({
-    iconUrl: SiteURL + '/app/css/red_dot.png',
+    iconUrl: '/app/css/red_dot.png',
     iconSize: [
         10, 10
     ],
@@ -72,7 +72,7 @@ class MapViewComponent extends DataTransformUpdater {
         return dataset.slice(0, j);
     }
     render() {
-        var markers = [(<TileLayer key="tileLayer" url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'/>)].concat(this.data.map((d) => (
+        var markers = [(<TileLayer key="tileLayer" url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' />)].concat(this.data.map((d) => (
             <Marker key={d.key} icon={mapdot} position={[d.latitude, d.longitude]} opacity={0.7}>
                 <Popup>
                     <p>{d.popup}</p>

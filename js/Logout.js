@@ -4,7 +4,7 @@
   information.
 */
 
-import React, {Component, PropTypes} from 'react';
+import React, { Component, PropTypes } from 'react';
 import storage from './storage'
 
 class Logout extends Component {
@@ -12,10 +12,10 @@ class Logout extends Component {
         storage.clear().then(() => {
             console.log("Cleared local storage");
             // Navigate to the logout of the ConnectorDB server, which will remove cookies
-            window.location = SiteURL + "/logout";
+            window.location = "/logout"
         }).catch((err) => {
             alert("Failed to clear local storage: " + err);
-            window.location = SiteURL + "/logout";
+            window.location = "/logout";
         });
         super(props);
     }

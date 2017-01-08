@@ -11,11 +11,11 @@
         <!--<link rel="apple-touch-icon" href="apple-touch-icon.png">-->
         <!-- Place favicon.ico in the root directory -->
 
-        <link rel="stylesheet" href="{{.SiteURL}}/app/css/normalize.css">
+        <link rel="stylesheet" href="/app/css/normalize.css">
 
-        <link rel="stylesheet" href="{{.SiteURL}}/app/css/bootstrap.min.css">
-        <link rel="stylesheet" href="{{.SiteURL}}/app/css/main.css">
-        <link rel="stylesheet" href="{{.SiteURL}}/app/css/leaflet.css">
+        <link rel="stylesheet" href="/app/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/app/css/main.css">
+        <link rel="stylesheet" href="/app/css/leaflet.css">
         <!--<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         Switching to inline styles, so that the webapp works even with no internet.
 
@@ -33,8 +33,8 @@ The above is taken directly from https://google.github.io/material-design-icons/
   font-style: normal;
   font-weight: 300;
   src: local('Roboto Light'), local('Roboto-Light'),
-       url('{{.SiteURL}}/app/fonts/roboto-v15-latin-300.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-       url('{{.SiteURL}}/app/fonts/roboto-v15-latin-300.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+       url('/app/fonts/roboto-v15-latin-300.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/app/fonts/roboto-v15-latin-300.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 
@@ -43,12 +43,12 @@ The above is taken directly from https://google.github.io/material-design-icons/
         font-family: 'Material Icons';
         font-style: normal;
         font-weight: 400;
-        src: url({{.SiteURL}}/app/MaterialIcons-Regular.eot); /* For IE6-8 */
+        src: url(/app/MaterialIcons-Regular.eot); /* For IE6-8 */
         src: local('Material Icons'),
              local('MaterialIcons-Regular'),
-             url({{.SiteURL}}/app/fonts/MaterialIcons-Regular.woff2) format('woff2'),
-             url({{.SiteURL}}/app/fonts/MaterialIcons-Regular.woff) format('woff'),
-             url({{.SiteURL}}/app/fonts/MaterialIcons-Regular.ttf) format('truetype');
+             url(/app/fonts/MaterialIcons-Regular.woff2) format('woff2'),
+             url(/app/fonts/MaterialIcons-Regular.woff) format('woff'),
+             url(/app/fonts/MaterialIcons-Regular.ttf) format('truetype');
       }
 
       .material-icons {
@@ -80,7 +80,7 @@ The above is taken directly from https://google.github.io/material-design-icons/
 
 
 
-        <script src="{{.SiteURL}}/app/js/modernizr-2.8.3.min.js"></script>
+        <script src="/app/js/modernizr-2.8.3.min.js"></script>
     </head>
     <body>
         <div id="app"></div>
