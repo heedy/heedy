@@ -1,4 +1,8 @@
-import {go} from '../actions';
+import React, { Component, PropTypes } from 'react';
+import QRCode from 'qrcode.react';
+
+import { go } from '../actions';
+import { app } from '../util';
 
 const InitialState = {
     // roles represents the possible permissions allowed by ConnectorDB.
@@ -73,6 +77,33 @@ const InitialState = {
 
     dropdownMenu: [
         {
+            title: "Server Info",
+            icon: "info_outline",
+            action: (dispatch) => {
+                dispatch({
+                    type: "SHOW_DIALOG",
+                    value: {
+                        title: "Server Info",
+                        open: true,
+                        contents: (
+                            <div>
+                                <div className="col-sm-8">
+                                    <h6>Server:</h6>
+                                    <h3>{SiteURL}</h3>
+                                    <br />
+                                    <h6>Version:</h6>
+                                    <h3>{ConnectorDBVersion}</h3>
+                                </div>
+                                <div className="col-sm-4" style={{ textAlign: "right" }}>
+                                    <QRCode value={SiteURL} />
+                                </div>
+                            </div>
+                        )
+                    }
+                });
+            }
+        },
+        {
             title: "Documentation",
             icon: "help",
             action: (dispatch) => {
@@ -106,6 +137,13 @@ const InitialState = {
     // The status message to show in the snack bar
     status: "",
     statusvisible: false,
+
+    // Show a modal dialog
+    dialog: {
+        title: "",
+        contents: null,
+        open: false
+    },
 
     // Whether pipescript is loaded or not - this contains the pipescript library
     pipescript: null
@@ -143,7 +181,21 @@ export default function siteReducer(state = InitialState, action) {
                 ...state,
                 statusvisible: true,
                 status: action.value
-            }
+            };
+        case 'SHOW_DIALOG':
+            return {
+                ...state,
+                dialog: action.value
+            };
+        case 'DIALOG_HIDE':
+            return {
+                ...state,
+                dialog: {
+                    title: "",
+                    contents: null,
+                    open: false
+                }
+            };
     }
     return state
 }

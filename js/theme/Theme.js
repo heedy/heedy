@@ -10,14 +10,16 @@
   notification popup at bottom of screen).
 */
 
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import Snackbar from 'material-ui/Snackbar';
+import Dialog from 'material-ui/Dialog';
+import FlatButton from 'material-ui/FlatButton';
 
-import {spacing} from 'material-ui/styles';
-import withWidth, {MEDIUM, LARGE} from 'material-ui/utils/withWidth';
+import { spacing } from 'material-ui/styles';
+import withWidth, { MEDIUM, LARGE } from 'material-ui/utils/withWidth';
 
 import Navigation from './Navigation';
 import TopBar from './TopBar';
@@ -79,8 +81,8 @@ class Theme extends Component {
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
-                    <Navigation docked={isNavigationDocked} selected={curloc.substring(1, curloc.length)} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({drawerOpen: open})}/>
-                    <TopBar navDocked={isNavigationDocked} router={this.props.router} hamburgerClick={() => this.setState({drawerOpen: true})}/>
+                    <Navigation docked={isNavigationDocked} selected={curloc.substring(1, curloc.length)} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({ drawerOpen: open })} />
+                    <TopBar navDocked={isNavigationDocked} router={this.props.router} hamburgerClick={() => this.setState({ drawerOpen: true })} />
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>
@@ -96,13 +98,18 @@ class Theme extends Component {
                             }}></div>
                         </div>
                     </div>
-                    <Snackbar autoHideDuration={4000} message={this.props.message} open={this.props.showmsg} onRequestClose={this.props.onMsgClose}/>
+                    <Dialog title={this.props.dialog.title} onRequestClose={this.props.dialogClose} actions={[(<FlatButton label="OK" onTouchTap={() => this.props.dialogClose()} keyboardFocused={true} />)]} modal={false} open={this.props.dialog.open}>
+                        {this.props.dialog.contents}
+                    </Dialog>
+                    <Snackbar autoHideDuration={4000} message={this.props.message} open={this.props.showmsg} onRequestClose={this.props.onMsgClose} />
                 </div>
             </MuiThemeProvider>
         );
     }
 }
 
-export default connect((state) => ({message: state.site.status, showmsg: state.site.statusvisible}), (dispatch) => ({
-    onMsgClose: () => dispatch({type: 'STATUS_HIDE'})
+export default connect((state) => ({ message: state.site.status, showmsg: state.site.statusvisible, dialog: state.site.dialog }), (dispatch) => ({
+    onMsgClose: () => dispatch({ type: 'STATUS_HIDE' }),
+    dialogClose: () => dispatch({ type: "DIALOG_HIDE" })
+
 }))(withWidth()(Theme));

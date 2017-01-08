@@ -84,9 +84,12 @@ The above is taken directly from https://google.github.io/material-design-icons/
     </head>
     <body>
         <div id="app"></div>
+        <!-- Used for obtaining IP https://github.com/diafygi/webrtc-ips -->
+        <iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
         <script>
         // We define the site URL as a global variable
         var SiteURL = "{{.SiteURL}}";
+        var ConnectorDBVersion = "{{ Version }}";
         </script>
         <script src="/app/bundle.js" type="text/javascript"></script>
         <script>

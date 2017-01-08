@@ -1,4 +1,4 @@
-import {DeviceSearchInitialState, deviceSearchReducer} from './search';
+import { DeviceSearchInitialState, deviceSearchReducer } from './search';
 
 export const DeviceViewInitialState = {
     expanded: true,
@@ -11,7 +11,7 @@ export default function deviceViewReducer(state, action) {
             ...state,
             search: deviceSearchReducer(state.search, action)
         };
-    
+
     switch (action.type) {
         case 'DEVICE_VIEW_EXPANDED':
             return {

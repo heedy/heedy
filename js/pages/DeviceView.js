@@ -1,5 +1,5 @@
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
 import Subheader from 'material-ui/Subheader';
 import {
@@ -10,24 +10,33 @@ import {
     TableRow,
     TableRowColumn
 } from 'material-ui/Table';
+import FlatButton from 'material-ui/FlatButton';
+import FontIcon from 'material-ui/FontIcon';
+import IconButton from 'material-ui/IconButton';
 
-import {go} from '../actions';
+import { go } from '../actions';
 import TimeDifference from '../components/TimeDifference';
 import ObjectCard from '../components/ObjectCard';
 import ObjectList from '../components/ObjectList';
 
-import {objectFilter} from '../util';
+import { objectFilter } from '../util';
 
 class DeviceView extends Component {
     static propTypes = {
-        user: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
-        device: PropTypes.shape({name: PropTypes.string.isRequired}).isRequired,
+        user: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
+        device: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
         streamarray: PropTypes.object.isRequired,
-        state: PropTypes.shape({expanded: PropTypes.bool.isRequired}).isRequired,
+        state: PropTypes.shape({ expanded: PropTypes.bool.isRequired }).isRequired,
         onEditClick: PropTypes.func.isRequired,
         onExpandClick: PropTypes.func.isRequired,
         onAddClick: PropTypes.func.isRequired,
         onStreamClick: PropTypes.func.isRequired
+    }
+    constructor(props) {
+        super(props);
+        this.state = {
+            apikey: false
+        };
     }
 
     render() {
@@ -52,15 +61,15 @@ class DeviceView extends Component {
                         <TableBody displayRowCheckbox={false}>
                             <TableRow>
                                 <TableRowColumn>{device.enabled
-                                        ? "true"
-                                        : "false"}</TableRowColumn>
+                                    ? "true"
+                                    : "false"}</TableRowColumn>
                                 <TableRowColumn>{device.public
-                                        ? "true"
-                                        : "false"}</TableRowColumn>
+                                    ? "true"
+                                    : "false"}</TableRowColumn>
                                 <TableRowColumn>{device.role == ""
-                                        ? "none"
-                                        : device.role}</TableRowColumn>
-                                <TableRowColumn><TimeDifference timestamp={device.timestamp}/></TableRowColumn>
+                                    ? "none"
+                                    : device.role}</TableRowColumn>
+                                <TableRowColumn><TimeDifference timestamp={device.timestamp} /></TableRowColumn>
                             </TableRow>
                         </TableBody>
                     </Table >
@@ -70,9 +79,19 @@ class DeviceView extends Component {
                                 marginTop: "20px",
                                 textAlign: "center",
                                 color: "rgba(0, 0, 0, 0.541176)"
-                            }}>
+                            }}>{this.state.apikey ? (<div>
                                 <h4>API Key</h4>
                                 <p>{device.apikey}</p>
+                                <IconButton tooltip="Hide API Key" onTouchTap={() => this.setState({ apikey: false })}>
+                                    <FontIcon className="material-icons" >
+                                        lock_outline
+                                    </FontIcon>
+                                </IconButton>
+                            </div>
+                            ) : (
+                                    <FlatButton label="Show API Key" labelStyle={{ textTransform: "none" }} onTouchTap={() => this.setState({ apikey: true })} icon={<FontIcon className="material-icons">lock_open</FontIcon>} />
+                                )
+                                }
                             </div>
                         )
                         : null}
@@ -84,7 +103,7 @@ class DeviceView extends Component {
                 <ObjectList style={{
                     marginTop: "10px",
                     textAlign: "left"
-                }} objects={objectFilter(state.search.text, this.props.streamarray)} addName="stream" onAddClick={this.props.onAddClick} onSelect={this.props.onStreamClick}/>
+                }} objects={objectFilter(state.search.text, this.props.streamarray)} addName="stream" onAddClick={this.props.onAddClick} onSelect={this.props.onStreamClick} />
             </div>
         );
     }

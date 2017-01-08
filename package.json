@@ -44,6 +44,7 @@
     "moment": "^2.15.2",
     "parallelshell": "^2.0.0",
     "pipescript": "^0.2.4",
+    "qrcode.react": "^0.6.1",
     "react": "^15.4.1",
     "react-bootstrap-daterangepicker": "^3.1.0",
     "react-chartjs-2": "^1.6.0",
