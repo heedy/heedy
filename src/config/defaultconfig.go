@@ -50,7 +50,7 @@ func NewConfiguration() *Configuration {
 
 		Frontend: Frontend{
 			Hostname: "",   // Host on all interfaces by default
-			Port:     8000, // Port 8000 by default
+			Port:     3124, // Port 3124 is used by default for ConnectorDB
 
 			Redirect80: false,
 
