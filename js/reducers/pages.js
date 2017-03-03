@@ -1,10 +1,14 @@
 // The pages reducer holds the state for all of the non- user/device/stream pages,
 // such as the insert page, the explore page, etc.
 
-import indexPageReducer, {IndexPageInitialState} from './indexPage';
+import indexPageReducer, { IndexPageInitialState } from './indexPage';
+import downlinkPageReducer, { DownlinkPageInitialState } from './downlinksPage';
+import analysisPageReducer, { AnalysisPageInitialState } from './analysisPage';
 
 const InitialState = {
-    index: IndexPageInitialState
+    index: IndexPageInitialState,
+    downlinks: DownlinkPageInitialState,
+    analysis: AnalysisPageInitialState
 }
 
 export default function pageReducer(state = InitialState, action) {
@@ -12,13 +16,9 @@ export default function pageReducer(state = InitialState, action) {
         return state;
 
     // Set up the new state
-    let newState = {
-        ...state
+    return {
+        index: indexPageReducer(state.index, action),
+        downlinks: downlinkPageReducer(state.downlinks, action),
+        analysis: analysisPageReducer(state.analysis, action)
     };
-
-    // Now route to the appropriate reducers
-    if (action.type.startsWith("PAGE_INDEX_"))
-        newState.index = indexPageReducer(newState.index, action);
-
-    return newState;
 }

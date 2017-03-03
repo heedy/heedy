@@ -5,11 +5,11 @@
 
 import { push, goBack } from 'react-router-redux'
 
-import storage from './storage';
-import { getCurrentPath } from './util';
+import storage from '../storage';
+import { getCurrentPath } from '../util';
 
-import { StreamInputInitialState } from './reducers/stream';
-import { getSearchActionContext } from './reducers/search';
+import { StreamInputInitialState } from '../reducers/stream';
+import { getSearchActionContext } from '../reducers/search';
 
 // set the search bar text
 export function setSearchText(text) {

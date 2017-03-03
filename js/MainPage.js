@@ -11,10 +11,10 @@
   about which user/device/stream it belongs to.
 */
 
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
-import {getDeviceState} from './reducers/device';
+import { getDeviceState } from './reducers/device';
 import connectStorage from './connectStorage';
 
 import Error from './components/Error';
@@ -22,8 +22,10 @@ import Loading from './components/Loading';
 
 import Main from './pages/Main';
 import StreamCreate from './pages/StreamCreate';
+import Downlinks from './pages/Downlinks';
+import Analysis from './pages/Analysis';
 
-import {setTitle} from './util';
+import { setTitle } from './util';
 
 class MainPage extends Component {
     static propTypes = {
@@ -43,21 +45,25 @@ class MainPage extends Component {
     render() {
 
         if (this.props.error != null) {
-            return (<Error err={this.props.error}/>);
+            return (<Error err={this.props.error} />);
         }
 
         if (this.props.user == null || this.props.device == null || this.props.streamarray == null) {
             // Currently querying
-            return (<Loading/>);
+            return (<Loading />);
         }
 
         // React router does not allow using hash routing, so we route by hash here
         switch (this.props.location.hash) {
             case "#addrating":
-                return (<StreamCreate user={this.props.user} device={this.props.device} state={this.props.state.create}/>);
+                return (<StreamCreate user={this.props.user} device={this.props.device} state={this.props.state.create} />);
+            case "#downlinks":
+                return (<Downlinks />);
+            case "#analysis":
+                return (<Analysis />);
         }
 
-        return (<Main user={this.props.user} device={this.props.device} state={this.props.state.view} streamarray={this.props.streamarray}/>);
+        return (<Main user={this.props.user} device={this.props.device} state={this.props.state.view} streamarray={this.props.streamarray} />);
 
     }
 }

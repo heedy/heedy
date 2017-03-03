@@ -77,7 +77,7 @@ class Theme extends Component {
 
     render() {
         let isNavigationDocked = this.props.width === MEDIUM || this.props.width === LARGE;
-        let curloc = this.props.location.pathname;
+        let curloc = this.props.location.pathname + this.props.location.hash;
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>

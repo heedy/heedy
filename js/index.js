@@ -21,6 +21,10 @@ import { Provider } from 'react-redux';
 import thunk from 'redux-thunk'
 import { Router, Route, browserHistory } from 'react-router';
 import { syncHistoryWithStore, routerReducer, routerMiddleware } from 'react-router-redux';
+import createLogger from 'redux-logger';
+
+import createSagaMiddleware from 'redux-saga';
+import sagas from './sagas';
 
 import { reducers } from './reducers/index';
 import App from './App';
@@ -68,9 +72,12 @@ if ('serviceWorker' in navigator) {
 
 }
 
+// Set up the Saga middleware, which will be used for dispatching actions.
+const sagaMiddleware = createSagaMiddleware();
+
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
 // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
-let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory));
+let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory), sagaMiddleware, createLogger());
 let finalCreateStore = compose(appMiddleware, window.devToolsExtension
     ? window.devToolsExtension()
     : f => f)(createStore);
@@ -79,6 +86,8 @@ export var store = finalCreateStore(combineReducers({
     ...reducers,
     routing: routerReducer
 }));
+
+sagaMiddleware.run(sagas);
 
 // Makes the store available to outside this class
 setApp(store);

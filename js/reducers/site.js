@@ -72,6 +72,18 @@ const InitialState = {
             subtitle: "View your profile",
             icon: "devices",
             page: "{self}"
+        },
+        {
+            title: "Downlinks",
+            subtitle: "Control connected devices",
+            icon: "input",
+            page: "#downlinks"
+        },
+        {
+            title: "Analysis",
+            subtitle: "Correlate data streams",
+            icon: "timeline",
+            page: "#analysis"
         }
     ],
 
