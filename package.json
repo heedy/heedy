@@ -30,6 +30,7 @@
     "babel-preset-latest": "^6.22.0",
     "babel-preset-react": "^6.23.0",
     "babel-preset-stage-0": "^6.22.0",
+    "babel-runtime": "^6.23.0",
     "bootstrap-daterangepicker": "^2.1.25",
     "chart.js": "^2.5.0",
     "classnames": "^2.2.5",
