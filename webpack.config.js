@@ -20,24 +20,20 @@ var config = {
     },
 
     module: {
-        noParse: [path.join(__dirname, "node_modules", "pipescript")],
-        loaders: [
+        //noParse: [path.join(__dirname, "node_modules", "pipescript")],
+        rules: [
             {
                 test: /\.jsx?/,
                 include: APP_DIR,
-                loader: 'babel'
-            }, {
-                test: /\.json$/,
-                loader: 'json'
+                loader: 'babel-loader'
             }, {
                 test: /\.css$/,
-                loader: "style-loader!css-loader"
+                use: ["style-loader","css-loader"]
             }
         ]
     },
 
     plugins: [
-        new webpack.optimize.OccurenceOrderPlugin(),
         new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify(env)})
     ]
 };
