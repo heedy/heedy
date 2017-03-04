@@ -1,13 +1,18 @@
 // The downlinks page is where you can control devices connected to ConnectorDB
 
-export const DownlinksPageInitialState = {
-
+export const DownlinkPageInitialState = {
+    loaded: false,
+    downlinks: []
 };
 
-export default function DownlinksPageReducer(state, action) {
+export default function downlinkPageReducer(state, action) {
     switch (action.type) {
-        case "PAGE_INDEX_SEARCH_":
-            break;
+        case "UPDATE_DOWNLINKS":
+            return {
+                ...state,
+                loaded: true,
+                downlinks: action.value
+            };
     }
     return state;
 }

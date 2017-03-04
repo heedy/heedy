@@ -12,9 +12,6 @@ const InitialState = {
 }
 
 export default function pageReducer(state = InitialState, action) {
-    if (!action.type.startsWith("PAGE_"))
-        return state;
-
     // Set up the new state
     return {
         index: indexPageReducer(state.index, action),

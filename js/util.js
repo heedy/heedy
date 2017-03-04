@@ -134,3 +134,33 @@ export function getIPs(callback) {
         });
     }, 1000);
 }
+
+
+// https://github.com/github/fetch/issues/175 - copied from comment by nodkz
+export function timeoutPromise(promise, ms = 5000) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error("Could not connect to ConnectorDB"))
+        }, ms);
+        promise.then(
+            (res) => {
+                clearTimeout(timeoutId);
+                resolve(res);
+            },
+            (err) => {
+                clearTimeout(timeoutId);
+                reject(err);
+            }
+        );
+    })
+}
+
+// This function wraps the promises of connectordb so that a failed login attempt gives the correct error message.
+export function cdbPromise(promise, ms = 5000) {
+    return timeoutPromise(promise, ms).then(function (res) {
+        if (res.ref !== undefined) {
+            throw new Error(res.msg);
+        }
+        return res;
+    });
+}

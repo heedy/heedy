@@ -14,10 +14,12 @@ and other code being... not.
 */
 import downlinkSaga from './downlinks';
 import analysisSaga from './analysis';
+import navigationSaga from './navigation';
 
 export default function* sagas() {
     yield [
         downlinkSaga(),
-        analysisSaga()
+        analysisSaga(),
+        navigationSaga()
     ];
 }

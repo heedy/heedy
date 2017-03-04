@@ -55,19 +55,7 @@ class Main extends Component {
                                                 list
                                                 </FontIcon>
                                         </IconButton>
-                                    )]}>
-                                    <div style={{
-                                        float: "right",
-                                        marginTop: "-5px",
-                                        marginLeft: "-100px"
-                                    }}>
-                                        <IconButton onTouchTap={() => this.props.onStreamClick(path)} tooltip="view stream">
-                                            <FontIcon className="material-icons" color="rgba(0,0,0,0.5)">
-                                                list
-                                                </FontIcon>
-                                        </IconButton>
-                                    </div>
-                                </DataInput>
+                                    )]} />
                             );
                         })}</div>
                     )}

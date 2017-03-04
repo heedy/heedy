@@ -11,6 +11,7 @@ import { Card, CardText, CardHeader } from 'material-ui/Card';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 
+
 class ExpandableCard extends Component {
     static propTypes = {
         // The size to show the card. One of:
@@ -32,7 +33,9 @@ class ExpandableCard extends Component {
 
         title: PropTypes.string.isRequired,
         subtitle: PropTypes.string.isRequired,
-        style: PropTypes.object
+        style: PropTypes.object,
+
+        avatar: PropTypes.element
     }
 
     render() {
@@ -81,60 +84,60 @@ class ExpandableCard extends Component {
         if (expandable) {
             if (width === "full") {
                 iconarray.push((
-                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "half" }) } tooltip = "make this card smaller" >
+                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "half" })} tooltip="make this card smaller" >
                         <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                             call_received
                         </FontIcon>
                     </IconButton >
                 ));
-        } else {
-            iconarray.push((
-                <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "full"}) } tooltip = "expand to full width" >
-                    <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                        call_made
+            } else {
+                iconarray.push((
+                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "full" })} tooltip="expand to full width" >
+                        <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                            call_made
                         </FontIcon >
                     </IconButton >
                 ))
-    }
-}
+            }
+        }
 
-return (
-    <div className={width === "full"
-        ? "col-lg-12"
-        : "col-lg-6"}>
-        <Card style={{
-            marginTop: "20px",
-            textAlign: "left"
-        }} onExpandChange={(val) => setState({
+        return (
+            <div className={width === "full"
+                ? "col-lg-12"
+                : "col-lg-6"}>
+                <Card style={{
+                    marginTop: "20px",
+                    textAlign: "left"
+                }} onExpandChange={(val) => setState({
                     ...state,
-            expanded: val
+                    expanded: val
                 })} expanded={state.expanded}>
-                    <CardHeader title={this.props.title} subtitle={this.props.subtitle} showExpandableButton={hasDropdown}>
-            <div style={{
-                float: "right",
-                marginRight: iconRightMargin,
-                marginTop: (this.props.subtitle == ""
-                    ? "-15px"
-                    : "-3px"),
-                marginLeft: "-300px"
-            }}>
-                {iconarray}
-            </div>
-        </CardHeader>
-        {hasDropdown
-            ? (
-                <CardText expandable={true} style={{
-                    backgroundColor: "rgba(0,179,74,0.05)",
-                    paddingBottom: "30px"
-                }}>
-                    {this.props.dropdown}
-                </CardText>
-            )
-            : null}
+                    <CardHeader title={this.props.title} subtitle={this.props.subtitle} showExpandableButton={hasDropdown} avatar={this.props.avatar}>
+                        <div style={{
+                            float: "right",
+                            marginRight: iconRightMargin,
+                            marginTop: (this.props.subtitle == ""
+                                ? "-15px"
+                                : "-3px"),
+                            marginLeft: "-300px"
+                        }}>
+                            {iconarray}
+                        </div>
+                    </CardHeader>
+                    {hasDropdown
+                        ? (
+                            <CardText expandable={true} style={{
+                                backgroundColor: "rgba(0,179,74,0.05)",
+                                paddingBottom: "30px"
+                            }}>
+                                {this.props.dropdown}
+                            </CardText>
+                        )
+                        : null}
 
-        <CardText style={this.props.style}>
-            {this.props.children}
-        </CardText>
+                    <CardText style={this.props.style}>
+                        {this.props.children}
+                    </CardText>
                 </Card>
             </div >
         );

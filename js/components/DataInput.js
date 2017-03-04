@@ -1,17 +1,18 @@
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
 import ExpandableCard from './ExpandableCard';
+import AvatarIcon from './AvatarIcon';
 
-import {dataInput, showMessage} from '../actions';
-import {getInput} from '../datatypes/datatypes';
-import {getStreamState} from '../reducers/stream';
+import { dataInput, showMessage } from '../actions';
+import { getInput } from '../datatypes/datatypes';
+import { getStreamState } from '../reducers/stream';
 
 // Several properties in a view accept both a direct value OR a generator function that
 // takes in the current state, and sets the view's value. This function extracts the correct
 // value from these properties
 function extractValue(value, context) {
-    if (typeof(value) === 'function') {
+    if (typeof (value) === 'function') {
         return value(context);
     }
     return value;
@@ -30,12 +31,14 @@ class DataInput extends Component {
         showMessage: PropTypes.func.isRequired,
         icons: PropTypes.arrayOf(PropTypes.element),
         title: PropTypes.string,
-        subtitle: PropTypes.string
+        subtitle: PropTypes.string,
+        showIcon: PropTypes.bool
     }
 
     static defaultProps = {
         title: "Insert Into Stream",
-        subtitle: ""
+        subtitle: "",
+        showIcon: false
     }
 
     touch() {
@@ -83,7 +86,7 @@ class DataInput extends Component {
 
         let dropdown = null;
         if (datatype.dropdown !== undefined) {
-            dropdown = (<datatype.dropdown {...context}/>);
+            dropdown = (<datatype.dropdown {...context} />);
         }
 
         // Finally, we append the icons sent in as props to our current icons
@@ -96,8 +99,13 @@ class DataInput extends Component {
         }
 
         return (
-            <ExpandableCard title={this.props.title} state={state} setState={this.props.setState} width={datatype.width} style={extractValue(datatype.style, context)} subtitle={this.props.subtitle} dropdown={dropdown} icons={icons}>
-                <datatype.component {...context}/>
+            <ExpandableCard avatar={this.props.showIcon ? (<AvatarIcon name={
+                stream.name
+            }
+                iconsrc={
+                    stream.icon
+                } />) : null} title={this.props.title} state={state} setState={this.props.setState} width={datatype.width} style={extractValue(datatype.style, context)} subtitle={this.props.subtitle} dropdown={dropdown} icons={icons}>
+                <datatype.component {...context} />
             </ExpandableCard>
         );
     }

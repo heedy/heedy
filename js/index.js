@@ -92,9 +92,6 @@ sagaMiddleware.run(sagas);
 // Makes the store available to outside this class
 setApp(store);
 
-// Set up the history through react-router-redux
-let history = syncHistoryWithStore(browserHistory, store);
-
 // run renders the app. The context is passed in as json directly from ConnectorDB.
 // The context has a timestamp, so the pages can be cached (have old context), and there
 // shouldn't be a reason to worry
@@ -103,6 +100,11 @@ export function run(context) {
     storage.addContext(context);
     // add context to state
     store.dispatch({ type: 'LOAD_CONTEXT', value: context });
+
+    // Set up the history through react-router-redux
+    // This needs to happen after load context, since it runs a LOCATION_CHANGE event,
+    // which is used in sagas for background-loading resources, which need to know current context
+    let history = syncHistoryWithStore(browserHistory, store);
 
     render((
         <Provider store={store}>
