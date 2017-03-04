@@ -3,7 +3,7 @@ The DataTable displays a table of the currently queried data. It initially only 
 but can be set to the "expanded" state, where it shows the entire dataset
 */
 
-import React, {Component, PropTypes} from 'react';
+import React, { Component, PropTypes } from 'react';
 import moment from 'moment';
 
 import DataUpdater from '../components/DataUpdater';
@@ -19,13 +19,55 @@ class DataTable extends DataUpdater {
     transformDataset(d) {
         let dataset = new Array(d.length);
 
-        for (let i = 0; i < d.length; i++) {
-            dataset[i] = {
-                key: JSON.stringify(d[i]),
-                t: moment.unix(d[i].t).calendar(),
-                d: JSON.stringify(d[i].d, undefined, 2)
-            };
+        if (d.length > 0) {
+            // In order to show columns in the data table, we first check if the datapoints are objects...
+            // If they are, then we generate the table so that the object is the columns
+            if (d.length == 1 && d[0].d !== null && typeof d[0].d === 'object' && Object.keys(d[0].d).length > 4) {
+                // It is a single datapoint. We render it as a special data table of key-values
+                let t = d[0].t;
+                d = d[0].d;
+                let keys = Object.keys(d);
+                dataset = new Array(keys.length);
+
+                for (let i = 0; i < keys.length; i++) {
+                    dataset[i] = {
+                        key: keys[i],
+                        t: "",
+                        d: {
+                            Key: keys[i],
+                            Value: d[keys[i]]
+                        }
+                    };
+                }
+                dataset[0].t = moment.unix(t).calendar();
+            }
+            else if (d[0].d !== null && typeof d[0].d === 'object' && Object.keys(d[0].d).length < 10) {
+                for (let i = 0; i < d.length; i++) {
+                    let data = {};
+                    Object.keys(d[i].d).map((key) => {
+                        data[key.capitalizeFirstLetter()] = JSON.stringify(d[i].d[key], undefined, 2);
+                    });
+                    dataset[i] = {
+                        key: JSON.stringify(d[i]),
+                        t: moment.unix(d[i].t).calendar(),
+                        d: data
+                    };
+                }
+            } else {
+                for (let i = 0; i < d.length; i++) {
+                    dataset[i] = {
+                        key: JSON.stringify(d[i]),
+                        t: moment.unix(d[i].t).calendar(),
+                        d: {
+                            Data: JSON.stringify(d[i].d, undefined, 2)
+                        }
+                    };
+                }
+            }
         }
+
+
+
 
         return dataset;
     }
@@ -46,7 +88,7 @@ class DataTable extends DataUpdater {
                 }}>
                     <a className="pull-center" style={{
                         cursor: "pointer"
-                    }} onClick={() => this.props.setState({tableExpanded: true})}>
+                    }} onClick={() => this.props.setState({ tableExpanded: true })}>
                         Show {(data.length - 5).toString() + " "}
                         hidden datapoints
                     </a>
@@ -63,7 +105,7 @@ class DataTable extends DataUpdater {
                     <thead>
                         <tr>
                             <th>Timestamp</th>
-                            <th>Data</th>
+                            {data.length === 0 ? (<th>Data</th>) : Object.keys(data[0].d).map((k) => (<th key={k}>{k}</th>))}
                         </tr>
                     </thead>
                     <tbody>
@@ -71,9 +113,7 @@ class DataTable extends DataUpdater {
                             return (
                                 <tr key={s.key}>
                                     <td>{s.t}</td>
-                                    <td>
-                                        {s.d}
-                                    </td>
+                                    {Object.keys(s.d).map((k) => (<td key={k}>{s.d[k]}</td>))}
                                 </tr>
                             );
                         })}
