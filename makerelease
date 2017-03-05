@@ -27,7 +27,7 @@ MAC_CC=
 
 GITCOUNT=`git rev-list --count HEAD`
 VERSIONCODE=`cat version`
-VERSION=${1:-${VERSIONCODE}git${GITCOUNT}}
+VERSION=${1:-${VERSIONCODE}-git.${GITCOUNT}}
 
 echo -e "\033[1mBuilding ConnectorDB v${VERSION}\033[0m"
 
