@@ -27,7 +27,7 @@ const Interpolator = ({ value, onChange }) => (
         <MenuItem value={"before"} primaryText="before" />
         <MenuItem value={"after"} primaryText="after" />
         <MenuItem value={"count"} primaryText="count" />
-        <MenuItem value={"count"} primaryText="mean" />
+        <MenuItem value={"mean"} primaryText="mean" />
         <MenuItem value={"sum"} primaryText="sum" />
     </SelectField>
 )
@@ -42,17 +42,17 @@ const DatasetStream = ({ name, state, setState }) => (
             <TextField style={{ width: "100%" }} id={name + "_dataset_text_field"} hintText="user/device/stream"
                 value={state.stream} onChange={(e) => setState({ stream: e.target.value })} />
         </div>
-        <div className="col-lg-3">
-            <h5 style={{
-                paddingTop: "10px"
-            }}>Interpolator</h5>
-            <Interpolator value={state.interpolator} onChange={(v) => setState({ interpolator: v })} />
-        </div>
         <div className="col-lg-5">
             <h5 style={{
                 paddingTop: "10px"
             }}>Transform</h5>
             <TransformInput transform={state.transform} onChange={(txt) => setState({ transform: txt })} />
+        </div>
+        <div className="col-lg-3">
+            <h5 style={{
+                paddingTop: "10px"
+            }}>Interpolator</h5>
+            <Interpolator value={state.interpolator} onChange={(v) => setState({ interpolator: v })} />
         </div>
     </div>
 );

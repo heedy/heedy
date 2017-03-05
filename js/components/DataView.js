@@ -33,8 +33,6 @@ class DataView extends Component {
 
         // These are automatically extracted from the store
         pipescript: PropTypes.object,
-        thisUser: PropTypes.object.isRequired,
-        thisDevice: PropTypes.object.isRequired,
         showMessage: PropTypes.func.isRequired
     }
 
@@ -57,16 +55,12 @@ class DataView extends Component {
             if (this.props.pipescript != null) {
                 try {
                     this.transform = this.props.pipescript.Script(t);
-                    this.props.transformError("");
                     return;
                 } catch (e) {
                     this.props.transformError(e.toString());
                 }
 
             }
-        }
-        if (t === "") {
-            this.props.transformError("");
         }
         this.transform = null;
     }
@@ -92,9 +86,7 @@ class DataView extends Component {
             data: p.data,
             datatype: p.datatype,
             schema: p.schema,
-            pipescript: p.pipescript,
-            thisUser: p.thisUser,
-            thisDevice: p.thisDevice
+            pipescript: p.pipescript
         });
         console.log("Showing Views: ", this.views);
     }
@@ -153,16 +145,13 @@ class DataView extends Component {
                 {this.views.map((view) => (<DataViewCard key={view.key} view={view} data={this.data}
                     schema={this.props.schema} datatype={this.props.datatype}
                     state={this.getViewState(view)} setState={(s) => this.setViewState(view, s)}
-                    pipescript={this.props.pipescript} msg={this.props.showMessage}
-                    thisUser={this.props.thisUser} thisDevice={this.props.thisDevice} />))}
+                    pipescript={this.props.pipescript} msg={this.props.showMessage} />))}
             </div>
         );
     }
 }
 
 export default connect((state) => ({
-    thisUser: state.site.thisUser,
-    thisDevice: state.site.thisDevice,
     pipescript: state.site.pipescript
 }), (dispatch) => ({
     showMessage: (t) => dispatch(showMessage(t))

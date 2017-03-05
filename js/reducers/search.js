@@ -18,8 +18,8 @@ const DefaultInitialState = {
 const InvalidState = {
     ...DefaultInitialState,
     enabled: false,
-        icon: "error",
-            hint: "Search not Available"
+    icon: "error",
+    hint: "Search not Available"
 }
 
 export const UserSearchInitialState = {
@@ -33,7 +33,7 @@ export const DeviceSearchInitialState = {
 export const StreamSearchInitialState = {
     ...DefaultInitialState,
     icon: "keyboard_arrow_right",
-        hint: "Filter & Transform Data"
+    hint: "Filter & Transform Data"
 };
 export const IndexSearchInitialState = DefaultInitialState;
 
@@ -42,7 +42,8 @@ function basicSearchReducer(state, action, atype) {
         case 'SET':
             return {
                 ...state,
-                text: action.value
+                text: action.value,
+                error: ""
             };
         case 'SUBMIT':
             return {

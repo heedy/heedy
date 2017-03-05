@@ -38,7 +38,7 @@ const StreamView = ({ user, device, stream, state, thisUser, thisDevice, clearTr
             : null}
         <StreamCard user={user} device={device} stream={stream} state={state} />
 
-        <DataView data={state.data} transform={state.search.submitted} transfromError={transformError} datatype={stream.datatype} schema={JSON.parse(stream.schema)} >
+        <DataView data={state.data} transform={state.search.submitted} transformError={transformError} datatype={stream.datatype} schema={JSON.parse(stream.schema)} >
             {stream.downlink || thisUser.name == user.name && thisDevice.name == device.name
                 ? (<DataInput user={user} device={device} stream={stream} schema={JSON.parse(stream.schema)} thisUser={thisUser} thisDevice={thisDevice} />)
                 : null}
