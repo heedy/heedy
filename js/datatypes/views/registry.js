@@ -13,5 +13,6 @@ import './HistogramView';
 import './BarView';
 import './SingleObjectView';
 import './SentimentLineChart';
+import './ScatterView';
 import './Map';
 import './WebHistoryView';

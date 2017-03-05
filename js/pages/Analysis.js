@@ -79,7 +79,7 @@ const AnalysisQuery = ({ state, actions }) => (
                 <h5 style={{
                     paddingTop: "10px",
                     fontWeight: "bold"
-                }}>Correlation Stream (X)</h5>
+                }}>Reference Stream (X)</h5>
                 <TextField id={"X_dataset_text_field"} hintText="user/device/stream" style={{ width: "100%" }}
                     value={state.stream} onChange={(e) => actions.setState({ stream: e.target.value })} />
             </div>
