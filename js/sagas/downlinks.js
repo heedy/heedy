@@ -4,11 +4,6 @@ import { put, select, takeLatest } from 'redux-saga/effects'
 import storage from '../storage';
 import { cdbPromise } from '../util';
 
-function* showError(action) {
-    yield put({ type: 'SET_ERROR_VALUE', value: action.value });
-    yield delay(5000);
-    yield put({ type: 'SET_ERROR_VALUE', value: null });
-}
 
 function* navigate(action) {
     if (action.payload.hash !== "#downlinks" || action.payload.pathname !== "/") {

@@ -26,136 +26,29 @@ import { connect } from 'react-redux';
 import StreamCard from '../components/StreamCard';
 import DataInput from '../components/DataInput';
 import DataQuery from '../components/DataQuery';
-import DataViewCard from '../components/DataViewCard';
+import DataView from '../components/DataView';
 import SearchCard from '../components/SearchCard';
-
-import { getViews } from '../datatypes/datatypes';
 
 import { setSearchSubmit, setSearchState } from '../actions';
 
-class StreamView extends Component {
-    static propTypes = {
-        user: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
-        device: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
-        stream: PropTypes.object.isRequired,
-        state: PropTypes.shape({ expanded: PropTypes.bool.isRequired }).isRequired,
-        thisUser: PropTypes.object.isRequired,
-        thisDevice: PropTypes.object.isRequired,
-        pipescript: PropTypes.object
-    }
+const StreamView = ({ user, device, stream, state, thisUser, thisDevice, clearTransform, transformError }) => (
+    <div>
+        {state.search.submitted != null && state.search.submitted != ""
+            ? (<SearchCard title={state.search.submitted} subtitle={"Transform applied to data"} onClose={clearTransform} />)
+            : null}
+        <StreamCard user={user} device={device} stream={stream} state={state} />
 
-    // Sets up the transform (if any) so that we're good to go with pipescript
-    initTransform(t) {
-        if (t !== undefined && t !== "") {
-            if (this.props.pipescript != null) {
-                try {
-                    this.transform = this.props.pipescript.Script(t);
-                    this.props.transformError("");
-                    return;
-                } catch (e) {
-                    this.props.transformError(e.toString());
-                }
+        <DataView data={state.data} transform={state.search.submitted} transfromError={transformError} datatype={stream.datatype} schema={JSON.parse(stream.schema)} >
+            {stream.downlink || thisUser.name == user.name && thisDevice.name == device.name
+                ? (<DataInput user={user} device={device} stream={stream} schema={JSON.parse(stream.schema)} thisUser={thisUser} thisDevice={thisDevice} />)
+                : null}
+            <DataQuery state={state} user={user} device={device} stream={stream} />
+        </DataView>
+    </div>
+);
 
-            }
-        }
-        if (t === "") {
-            this.props.transformError("");
-        }
-        this.transform = null;
-    }
 
-    // Returns the data transformed if there is a transform
-    // in the props, and the original data if it is not
-    dataTransform(data) {
-        if (this.transform != null) {
-            try {
-                return this.transform.Transform(data);
-            } catch (e) {
-                this.transform = null;
-                this.props.transformError(e.toString());
-            }
-        }
-        return data;
-    }
-
-    generateViews(p) {
-        let user = p.user;
-        let device = p.device;
-        let stream = p.stream;
-        this.streamschema = JSON.parse(stream.schema);
-
-        // Finally, we check what views to show
-        this.views = getViews({
-            data: this.data,
-            user: user,
-            device: device,
-            stream: stream,
-            schema: this.streamschema,
-            pipescript: p.pipescript,
-            thisUser: p.thisUser,
-            thisDevice: p.thisDevice
-        });
-        console.log("Showing Views: ", this.views);
-    }
-
-    // Generate the component's initial state
-    componentWillMount() {
-        // We use the value of the submitted search to define our transform
-        this.initTransform(this.props.state.search.submitted);
-
-        this.data = this.dataTransform(this.props.state.data);
-
-        this.generateViews(this.props);
-    }
-
-    // Each time either the data or the transform changes, reload
-    componentWillReceiveProps(p) {
-        // We only perform the dataset transform operation if the dataset
-        // was modified
-        if (p.state.data !== this.props.state.data || this.props.state.search.submitted !== p.state.search.submitted) {
-            if (this.props.state.search.submitted !== p.state.search.submitted) {
-                this.initTransform(p.state.search.submitted);
-            }
-            this.data = this.dataTransform(p.state.data);
-        }
-        // If any of the properties relevant to views have changed, regenerate the views.
-        if (p.state.data !== this.props.state.data || p.user !== this.props.user || p.device !== this.props.device ||
-            p.stream !== this.props.stream || p.thisUser !== this.props.thisUser || p.thisDevice !== this.props.thisDevice ||
-            p.pipescript !== this.props.pipescript || this.props.state.search.submitted !== p.state.search.submitted) {
-            this.generateViews(p);
-        }
-    }
-
-    render() {
-        let state = this.props.state;
-        let user = this.props.user;
-        let device = this.props.device;
-        let stream = this.props.stream;
-
-        return (
-            <div>
-                {this.transform != null
-                    ? (<SearchCard title={state.search.submitted} subtitle={"Transform applied to data"} onClose={() => this.props.clearTransform()} />)
-                    : null}
-                <StreamCard user={user} device={device} stream={stream} state={state} />
-
-                <div style={{
-                    marginLeft: "-15px",
-                    marginRight: "-15px"
-                }}>
-                    {stream.downlink || this.props.thisUser.name == user.name && this.props.thisDevice.name == device.name
-                        ? (<DataInput user={user} device={device} stream={stream} schema={this.streamschema} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice} />)
-                        : null}
-                    <DataQuery state={state} user={user} device={device} stream={stream} /> {this.views.map((view) => {
-                        return (<DataViewCard key={view.key} view={view} data={this.data} user={user} device={device} stream={stream} schema={this.streamschema} state={state} pipescript={this.props.pipescript} thisUser={this.props.thisUser} thisDevice={this.props.thisDevice} />);
-                    })}
-                </div>
-            </div>
-        );
-    }
-}
-
-export default connect((state) => ({ thisUser: state.site.thisUser, thisDevice: state.site.thisDevice, pipescript: state.site.pipescript }), (dispatch) => ({
+export default connect((state) => ({ thisUser: state.site.thisUser, thisDevice: state.site.thisDevice }), (dispatch) => ({
     clearTransform: () => dispatch(setSearchSubmit("")),
     transformError: (txt) => dispatch(setSearchState({ error: txt }))
 }))(StreamView);

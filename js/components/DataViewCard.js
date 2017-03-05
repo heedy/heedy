@@ -9,9 +9,7 @@
   the repeated code used in each view.
 **/
 
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
-import {showMessage} from '../actions';
+import React, { Component, PropTypes } from 'react';
 
 import ExpandableCard from './ExpandableCard';
 
@@ -19,7 +17,7 @@ import ExpandableCard from './ExpandableCard';
 // takes in the current state, and sets the view's value. This function extracts the correct
 // value from these properties
 function extractValue(value, context) {
-    if (typeof(value) === 'function') {
+    if (typeof (value) === 'function') {
         return value(context);
     }
     return value;
@@ -29,59 +27,40 @@ class DataViewCard extends Component {
     static propTypes = {
         view: PropTypes.object.isRequired,
         state: PropTypes.object.isRequired,
-        user: PropTypes.object.isRequired,
-        device: PropTypes.object.isRequired,
-        stream: PropTypes.object.isRequired,
+        setState: PropTypes.func.isRequired,
         schema: PropTypes.object.isRequired,
+        datatype: PropTypes.string.isRequired,
         thisUser: PropTypes.object.isRequired,
         thisDevice: PropTypes.object.isRequired,
         pipescript: PropTypes.object,
         msg: PropTypes.func.isRequired,
-        setState: PropTypes.func.isRequired,
         data: PropTypes.arrayOf(PropTypes.object).isRequired
     }
 
     render() {
         let view = this.props.view;
-        let state = this.props.state;
-        let setState = this.props.setState;
-        let curstate = (state.views[view.key] !== undefined
-            ? state.views[view.key]
-            : view.initialState);
 
         let context = {
-            user: this.props.user,
-            device: this.props.device,
-            stream: this.props.stream,
             schema: this.props.schema,
+            datatype: this.props.datatype,
             pipescript: this.props.pipescript,
-            state: curstate,
+            state: this.props.state,
             thisUser: this.props.thisUser,
             thisDevice: this.props.thisDevice,
             msg: this.props.msg,
             data: this.props.data,
-            setState: (v) => {
-                let newViews = Object.assign({}, state.views);
-                newViews[view.key] = Object.assign({}, curstate, v);
-                setState({views: newViews});
-            }
+            setState: this.props.setState
         };
         let dropdown = null;
         if (view.dropdown !== undefined) {
-            dropdown = (<view.dropdown {...context}/>);
+            dropdown = (<view.dropdown {...context} />);
         }
 
         return (
-            <ExpandableCard width={view.width} state={curstate} icons={extractValue(view.icons, context)} setState={context.setState} dropdown={dropdown} title={extractValue(view.title, context)} subtitle={extractValue(view.subtitle, context)} style={extractValue(view.style, context)}>
-                <view.component {...context}/>
+            <ExpandableCard width={view.width} state={this.props.state} icons={extractValue(view.icons, context)} setState={context.setState} dropdown={dropdown} title={extractValue(view.title, context)} subtitle={extractValue(view.subtitle, context)} style={extractValue(view.style, context)}>
+                <view.component {...context} />
             </ExpandableCard>
         );
     }
 }
-export default connect(undefined, (dispatch, props) => {
-    let path = props.user.name + "/" + props.device.name + "/" + props.stream.name;
-    return {
-        setState: (s) => dispatch({type: "STREAM_VIEW_SET", name: path, value: s}),
-        msg: (t) => dispatch(showMessage(t))
-    };
-})(DataViewCard);
+export default DataViewCard;
