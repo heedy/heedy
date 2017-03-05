@@ -51,7 +51,7 @@ export const TimePicker = ({ state, setState }) => (
                 textAlign: "center"
             }}>
                 <i className="glyphicon glyphicon-calendar fa fa-calendar pull-right"></i>&nbsp;
-                <span>{state.t2.format(timeformat)}&nbsp;&nbsp;&nbsp;&nbsp;{' ➡ '}&nbsp;&nbsp;&nbsp;&nbsp;{state.t1.format(timeformat)}</span>
+                <span>{state.t1.format(timeformat)}&nbsp;&nbsp;&nbsp;&nbsp;{' ➡ '}&nbsp;&nbsp;&nbsp;&nbsp;{state.t2.format(timeformat)}</span>
             </div>
         </DateRangePicker>
     </div>
