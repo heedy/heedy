@@ -133,8 +133,6 @@ export class LineChart extends DataTransformUpdater {
         };
     }
 
-
-
     render() {
         return (<Line data={this.data} options={{
             legend: {
@@ -148,8 +146,7 @@ export class LineChart extends DataTransformUpdater {
                     }
                 ]
             },
-            animation: false,
-            pointColor: "blue"
+            animation: false
         }} />);
     }
 }

@@ -59,7 +59,8 @@ export default function AnalysisPageReducer(state, action) {
             return {
                 ...state,
                 data: action.value,
-                loading: false
+                loading: false,
+                error: null
             };
     }
     return state;
