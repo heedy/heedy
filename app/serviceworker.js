@@ -1,7 +1,8 @@
 // http://www.html5rocks.com/en/tutorials/service-worker/introduction/
 
-// Increment the version if there were changes
-var CACHE_NAME = 'v4';
+// The GITHASH variable is automatically replaced with the hash of the git commit
+// in the frontend upon build. Look at package.json build:serviceworker
+var CACHE_NAME = 'GITHASH';
 
 // getPath returns the server path of the resource being requested
 function getPath(request) {
@@ -18,6 +19,7 @@ function getPath(request) {
 
 self.addEventListener('install', function (event) {
     console.log("Installing ServiceWorker...");
+    self.skipWaiting();
 });
 
 // On activate, we reset the entire cache
