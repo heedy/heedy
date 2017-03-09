@@ -13,10 +13,11 @@ import (
 
 var (
 	// Look at the flag declarations below for explanation of these variables
-	host string
-	port uint16
-	http bool
-	join bool
+	host    string
+	port    uint16
+	http    bool
+	join    bool
+	verbose bool
 )
 
 // RunCmd runs the ConnectorDB server.
@@ -78,7 +79,7 @@ ConnectorDB API and web app.`,
 
 		// The configuration is loaded globally. We now start the server, which
 		// will use the config for its options.
-		return server.RunServer()
+		return server.RunServer(verbose)
 
 	},
 }
@@ -115,6 +116,9 @@ func setRunFlags() []string {
 	if join {
 		ret = append(ret, "--join")
 	}
+	if verbose {
+		ret = append(ret, "--vvv")
+	}
 	return ret
 }
 
@@ -123,12 +127,14 @@ func init() {
 	RunCmd.Flags().Uint16VarP(&port, "port", "p", 0, "Override the port on which to run frontend")
 	RunCmd.Flags().BoolVar(&http, "http", false, "forces server to run in http mode even when TLS cert/key are in conf")
 	RunCmd.Flags().BoolVar(&join, "join", false, "Enables free join on the server (anyone can join)")
+	RunCmd.Flags().BoolVar(&verbose, "vvv", false, "Extremely verbose logging")
 
 	// These commands are for mirroring join's flags in start. See setRunFlags
 	StartCmd.Flags().StringVar(&host, "host", "", "Override the interface to which the ConnectorDB server should bind")
 	StartCmd.Flags().Uint16VarP(&port, "port", "p", 0, "Override the port on which to run frontend")
 	StartCmd.Flags().BoolVar(&http, "http", false, "forces server to run in http mode even when TLS cert/key are in conf")
 	StartCmd.Flags().BoolVar(&join, "join", false, "Enables free join on the server (anyone can join)")
+	StartCmd.Flags().BoolVar(&verbose, "vvv", false, "Extremely verbose logging of server")
 
 	RootCmd.AddCommand(RunCmd)
 }

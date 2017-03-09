@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 	"server/restapi"
 	"server/restapi/restcore"
 	"server/webcore"
@@ -83,9 +85,62 @@ func Redirect80(siteURL string) {
 	})))
 }
 
+// VerboseLoggingHandler performs extremely verbose logging - including all incoming requests and responses.
+// This can be activated using --vvv on the server
+func VerboseLoggingHandler(h http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		logger := webcore.GetRequestLogger(request, "VERBOSE")
+
+		// We don't want to mess with websocket connections
+		if request.Header.Get("Upgrade") == "WebSocket" {
+			logger.Warn("Can't log websocket connections in verbose mode")
+			h.ServeHTTP(writer, request)
+			return
+		}
+
+		req, err := httputil.DumpRequest(request, true)
+		if err != nil {
+			logger.Error(err)
+			http.Error(writer, fmt.Sprint(err), http.StatusInternalServerError)
+			return
+		}
+		logger.WithField("server", "REQUEST").Debugf("Full request:\n\n%s\n\n", string(req))
+
+		rec := httptest.NewRecorder()
+
+		h.ServeHTTP(rec, request)
+
+		// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
+		response := rec.Body.Bytes()
+		logger.WithField("server", "RESPONSE").Debugf("Response: %d\n\n%s\n\n", rec.Code, string(response))
+
+		// Now copy everything from response recorder to actual response writer
+		// http://stackoverflow.com/questions/29319783/go-logging-responses-to-incoming-http-requests-inside-http-handlefunc
+		for k, v := range rec.HeaderMap {
+			writer.Header()[k] = v
+		}
+		writer.WriteHeader(rec.Code)
+		writer.Write(response)
+
+	})
+}
+
+// MakeHandler generates the handler for the server. It adds the verbose middleware if it is needed
+func MakeHandler(h http.Handler, verbose bool) http.Handler {
+	if verbose {
+		return VerboseLoggingHandler(h)
+	}
+	return h
+}
+
 //RunServer runs the ConnectorDB frontend server
-func RunServer() error {
+func RunServer(verbose bool) error {
 	OSSpecificSetup()
+
+	if verbose {
+		log.Warn("Running in verbose mode. Use this for debugging only!")
+	}
 
 	// ACME has a special logger, so set it
 	acme.Logger = stdlog.New(log.StandardLogger().Writer(), "", 0)
@@ -113,9 +168,9 @@ func RunServer() error {
 	r.StrictSlash(true)
 
 	//Setup the 404 handler
-	r.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
+	r.NotFoundHandler = MakeHandler(http.HandlerFunc(NotFoundHandler), verbose)
 
-	r.Methods("OPTIONS").Handler(http.HandlerFunc(OptionsHandler))
+	r.Methods("OPTIONS").Handler(MakeHandler(http.HandlerFunc(OptionsHandler), verbose))
 
 	//The rest api has its own versioned url
 	s := r.PathPrefix("/api/v1").Subrouter()
@@ -131,7 +186,7 @@ func RunServer() error {
 	}
 
 	//Set up the web server
-	handler := SecurityHeaderHandler(r)
+	handler := MakeHandler(SecurityHeaderHandler(r), verbose)
 
 	//Show the statistics
 	go webcore.RunStats()
