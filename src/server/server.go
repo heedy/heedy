@@ -105,7 +105,7 @@ func VerboseLoggingHandler(h http.Handler) http.Handler {
 			http.Error(writer, fmt.Sprint(err), http.StatusInternalServerError)
 			return
 		}
-		logger.WithField("server", "REQUEST").Debugf("Full request:\n\n%s\n\n", string(req))
+		logger.WithField("type", "REQUEST").Debugf("Request:\n\n%s\n\n", string(req))
 
 		rec := httptest.NewRecorder()
 
@@ -113,7 +113,7 @@ func VerboseLoggingHandler(h http.Handler) http.Handler {
 
 		// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
 		response := rec.Body.Bytes()
-		logger.WithField("server", "RESPONSE").Debugf("Response: %d\n\n%s\n\n", rec.Code, string(response))
+		logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n\n", rec.Code, string(response))
 
 		// Now copy everything from response recorder to actual response writer
 		// http://stackoverflow.com/questions/29319783/go-logging-responses-to-incoming-http-requests-inside-http-handlefunc
