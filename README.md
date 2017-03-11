@@ -90,4 +90,4 @@ connectordb start mydatabase -l=DEBUG --vvv
 
 The `--vvv` command will log the request and response content for each query to the server. When posting server logs in bug reports, please make sure your logs are in extremely verbose mode, so we know exactly what is going on.
 
-*Note: Do not run ConnectorDB in verbose mode by default - it is meant only for debugging.*
+*Note: Do not run ConnectorDB in extremely verbose mode by default - it is meant only for debugging.*

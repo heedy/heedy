@@ -104,7 +104,7 @@ const (
 				return {["err"]="Greater timestamp already exists for the stream. Insert Failed."}
 			end
 
-			-- Restamp is ON. Go backwards from the end of the array while the timestamp
+			-- Restamp is ON. Loop through the array while the timestamp
 			-- is less than stream_endtime, and repack the msgpack with stream_endtime
 
 			-- First, we work around an annoyance in lua's implementation of msgpack
@@ -113,7 +113,7 @@ const (
 				stream_endtime = stream_endtime + 0.00001
 			end
 
-			for i=#ARGV,9,-1 do
+			for i=9,#ARGV,1 do
 				local val = cmsgpack.unpack(ARGV[i])
 				if (val['t'] > stream_endtime) then
 					break

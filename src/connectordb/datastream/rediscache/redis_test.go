@@ -171,6 +171,75 @@ func TestRedisRestamp(t *testing.T) {
 	require.Equal(t, restampedDpa1.String(), dpatest[5:].String())
 }
 
+func TestRedisRestamp2(t *testing.T) {
+	require.NoError(t, rc.Clear())
+
+	// Test for restamp bug when inserting data arrays.
+	// This bug was found when exporting data - when running restamp,
+	// sequences would sometimes be out of order
+	restampdata1 := datastream.DatapointArray{
+		datastream.Datapoint{Timestamp: 1475225948.271, Data: 1},
+		datastream.Datapoint{Timestamp: 1475225958.321, Data: 2},
+		datastream.Datapoint{Timestamp: 1475226246.804, Data: 3},
+		datastream.Datapoint{Timestamp: 1475226547.021, Data: 4},
+		datastream.Datapoint{Timestamp: 1475226586.902, Data: 5},
+		datastream.Datapoint{Timestamp: 1475226847.204, Data: 6},
+		datastream.Datapoint{Timestamp: 1475227150.149, Data: 7},
+		datastream.Datapoint{Timestamp: 1475227376.229, Data: 8},
+		datastream.Datapoint{Timestamp: 1475227449.013, Data: 9},
+		datastream.Datapoint{Timestamp: 1475227450.149, Data: 10},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 11},
+	}
+	restampdata2 := datastream.DatapointArray{
+		datastream.Datapoint{Timestamp: 1475226246.804, Data: 3},
+		datastream.Datapoint{Timestamp: 1475226547.021, Data: 4},
+		datastream.Datapoint{Timestamp: 1475226586.902, Data: 5},
+		datastream.Datapoint{Timestamp: 1475226847.204, Data: 6},
+		datastream.Datapoint{Timestamp: 1475227150.149, Data: 7},
+		datastream.Datapoint{Timestamp: 1475227376.229, Data: 8},
+		datastream.Datapoint{Timestamp: 1475227449.013, Data: 9},
+		datastream.Datapoint{Timestamp: 1475227450.149, Data: 10},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 11},
+		datastream.Datapoint{Timestamp: 1475228101.206, Data: 12},
+		datastream.Datapoint{Timestamp: 1475228413.858, Data: 13},
+	}
+
+	correctSequence := datastream.DatapointArray{
+		datastream.Datapoint{Timestamp: 1475225948.271, Data: 1},
+		datastream.Datapoint{Timestamp: 1475225958.321, Data: 2},
+		datastream.Datapoint{Timestamp: 1475226246.804, Data: 3},
+		datastream.Datapoint{Timestamp: 1475226547.021, Data: 4},
+		datastream.Datapoint{Timestamp: 1475226586.902, Data: 5},
+		datastream.Datapoint{Timestamp: 1475226847.204, Data: 6},
+		datastream.Datapoint{Timestamp: 1475227150.149, Data: 7},
+		datastream.Datapoint{Timestamp: 1475227376.229, Data: 8},
+		datastream.Datapoint{Timestamp: 1475227449.013, Data: 9},
+		datastream.Datapoint{Timestamp: 1475227450.149, Data: 10},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 11},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 3},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 4},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 5},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 6},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 7},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 8},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 9},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 10},
+		datastream.Datapoint{Timestamp: 1475227784.936, Data: 11},
+		datastream.Datapoint{Timestamp: 1475228101.206, Data: 12},
+		datastream.Datapoint{Timestamp: 1475228413.858, Data: 13},
+	}
+	_, err := rc.Insert("mybatcher", "", "mystream", "", restampdata1, false, 0, 0)
+	require.NoError(t, err)
+	_, err = rc.Insert("mybatcher", "", "mystream", "", restampdata2, true, 0, 0)
+	require.NoError(t, err)
+
+	dpatest, err := rc.Get("", "mystream", "")
+	require.NoError(t, err)
+
+	require.Equal(t, correctSequence.String(), dpatest.String())
+
+}
+
 func TestRedisBatchWait(t *testing.T) {
 	require.NoError(t, rc.Clear())
 
