@@ -25,7 +25,7 @@ After build completes, start the ConnectorDB server:
 ./bin/connectordb start testdb --join
 ```
 
-Open `localhost:8000`, where you will see the login screen - create a new user.
+Open `localhost:3124`, where you will see the login screen - create a new user.
 
 Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
 `sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.
