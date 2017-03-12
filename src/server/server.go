@@ -93,8 +93,8 @@ func VerboseLoggingHandler(h http.Handler) http.Handler {
 		logger := webcore.GetRequestLogger(request, "VERBOSE")
 
 		// We don't want to mess with websocket connections
-		if request.Header.Get("Upgrade") == "WebSocket" {
-			logger.Warn("Can't log websocket connections in verbose mode")
+		if request.Header.Get("Connection") == "Upgrade" {
+			logger.Debug("Got Upgrade Header (probably starting a websocket connection)")
 			h.ServeHTTP(writer, request)
 			return
 		}
@@ -154,6 +154,7 @@ func RunServer(verbose bool) error {
 
 	if verbose {
 		log.Warn("Running in verbose mode. Use this for debugging only!")
+		restapi.VerboseWebsocket = true // Set websockets to verbose mode too
 	}
 
 	// ACME has a special logger, so set it

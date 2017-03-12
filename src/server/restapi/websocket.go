@@ -10,6 +10,7 @@ import (
 	"connectordb/datastream"
 	"connectordb/messenger"
 	"connectordb/query"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -23,6 +24,11 @@ import (
 	"github.com/nats-io/nats"
 
 	log "github.com/Sirupsen/logrus"
+)
+
+// Whether the websocket should be run in verbose mode
+var (
+	VerboseWebsocket = false
 )
 
 const (
@@ -127,6 +133,15 @@ func NewWebsocketConnection(o *authoperator.AuthOperator, writer http.ResponseWr
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {
+	if VerboseWebsocket {
+		b, err := json.Marshal(obj)
+		if err != nil {
+			c.logger.WithField("type", "WEBSOCKET_SEND").Debug(obj)
+		} else {
+			c.logger.WithField("type", "WEBSOCKET_SEND").Debug(string(b))
+		}
+	}
+
 	c.ws.SetWriteDeadline(time.Now().Add(config.Get().Websocket.WriteWait * time.Second))
 	return c.ws.WriteJSON(obj)
 }
@@ -216,11 +231,11 @@ func (c *WebsocketConnection) UnsubscribeAll() {
 
 //A command is a cmd and the arg operation
 type websocketCommand struct {
-	Cmd       string
-	Arg       string
-	Transform string //Allows subscribing with a transform
+	Cmd       string `json:"cmd"`
+	Arg       string `json:"arg"`
+	Transform string `json:"transform"` //Allows subscribing with a transform
 
-	D []datastream.Datapoint //If the command is "insert", it needs an additional datapoint
+	D []datastream.Datapoint `json:"d"` //If the command is "insert", it needs an additional datapoint
 }
 
 //RunReader runs the reading routine. It also maps the commands to actual subscriptions
@@ -229,7 +244,9 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 	//Set up the heartbeat reader(makes sure that sockets are alive)
 	c.ws.SetReadDeadline(time.Now().Add(config.Get().Websocket.PongWait * time.Second))
 	c.ws.SetPongHandler(func(string) error {
-		//c.logger.WithField("cmd", "PingPong").Debugln()
+		if VerboseWebsocket {
+			c.logger.Debug("PONG")
+		}
 		c.ws.SetReadDeadline(time.Now().Add(config.Get().Websocket.PongWait * time.Second))
 		return nil
 	})
@@ -244,6 +261,14 @@ func (c *WebsocketConnection) RunReader(readmessenger chan string) {
 			}
 			c.logger.Warningln(err)
 			break
+		}
+		if VerboseWebsocket {
+			b, err := json.Marshal(cmd)
+			if err != nil {
+				c.logger.WithField("type", "WEBSOCKET_RECEIVE").Debug(cmd)
+			} else {
+				c.logger.WithField("type", "WEBSOCKET_RECEIVE").Debug(string(b))
+			}
 		}
 		switch cmd.Cmd {
 		default:
@@ -335,6 +360,10 @@ func (c *WebsocketConnection) RunWriter(readmessenger chan string, exitchan chan
 			}
 
 		case <-ticker.C:
+			if VerboseWebsocket {
+				c.logger.Debug("PING")
+			}
+
 			//This is the ping timer - ping messages are sent here
 			if c.updateDeadline(websocket.PingMessage, "") != nil {
 				return
