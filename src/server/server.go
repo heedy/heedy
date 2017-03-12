@@ -111,9 +111,23 @@ func VerboseLoggingHandler(h http.Handler) http.Handler {
 
 		h.ServeHTTP(rec, request)
 
-		// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
 		response := rec.Body.Bytes()
-		logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n\n", rec.Code, string(response))
+
+		headers := ""
+		for k, v := range rec.HeaderMap {
+			curheader := k + ":"
+			for s := range v {
+				curheader += " " + v[s]
+			}
+			headers += curheader + "\n"
+		}
+
+		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] == "gzip" {
+			logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n\nRESPONSE BODY GZIPPED - NOT LOGGING (length: %d)\nIf you want to log response content, disable gzip_static in connectordb.conf\n\n", rec.Code, headers, len(response))
+		} else {
+			// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
+			logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))
+		}
 
 		// Now copy everything from response recorder to actual response writer
 		// http://stackoverflow.com/questions/29319783/go-logging-responses-to-incoming-http-requests-inside-http-handlefunc

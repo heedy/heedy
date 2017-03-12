@@ -182,6 +182,34 @@ func TestYDatasetBasics(t *testing.T) {
 	}
 	CompareRange(t, dr, result)
 	dr.Close()
+
+	mq = NewMockOperator(map[string]datastream.DatapointArray{"a/b/c": dpa1, "d/e/f": dpa2})
+
+	dr, err = DatasetQuery{
+		StreamQuery: StreamQuery{
+			Stream: "a/b/c",
+		},
+		Dataset: map[string]*DatasetQueryElement{
+			"y": &DatasetQueryElement{
+				StreamQuery:  StreamQuery{Stream: "d/e/f"},
+				Interpolator: "closest",
+			},
+		},
+		PostTransform: "$('x')==$('y')",
+	}.Run(mq)
+	require.NoError(t, err)
+
+	result = datastream.DatapointArray{
+		datastream.Datapoint{Timestamp: 1, Data: true},
+		datastream.Datapoint{Timestamp: 2, Data: true},
+		datastream.Datapoint{Timestamp: 3, Data: true},
+		datastream.Datapoint{Timestamp: 3, Data: false},
+		datastream.Datapoint{Timestamp: 3, Data: false},
+		datastream.Datapoint{Timestamp: 4, Data: false},
+		datastream.Datapoint{Timestamp: 5, Data: false},
+	}
+	CompareRange(t, dr, result)
+	dr.Close()
 }
 
 func TestTDatasetBasics(t *testing.T) {

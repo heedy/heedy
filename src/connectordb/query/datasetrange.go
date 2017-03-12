@@ -6,7 +6,6 @@ package query
 
 import (
 	"connectordb/datastream"
-	"errors"
 
 	"github.com/connectordb/pipescript"
 	"github.com/connectordb/pipescript/interpolator"
@@ -46,7 +45,8 @@ func (dr *DatasetRange) Next() (*datastream.Datapoint, error) {
 	// The datapoint exists. Now ensure that it is not nil
 	v, ok := dp.Data.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Invalid dataset type - PROGRAMMING ERROR")
+		// if it is not OK, it means that there was a transform that was used to generate the final values
+		return &datastream.Datapoint{Timestamp: dp.Timestamp, Data: dp.Data}, nil
 	}
 
 	for key := range dr.Data {
