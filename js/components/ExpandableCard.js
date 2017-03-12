@@ -84,7 +84,7 @@ class ExpandableCard extends Component {
         if (expandable) {
             if (width === "full") {
                 iconarray.push((
-                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "half" })} tooltip="make this card smaller" >
+                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "half" })} tooltip="Make This Card Smaller" >
                         <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                             call_received
                         </FontIcon>
@@ -92,7 +92,7 @@ class ExpandableCard extends Component {
                 ));
             } else {
                 iconarray.push((
-                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "full" })} tooltip="expand to full width" >
+                    <IconButton key="expand" onTouchTap={(val) => setState({ ...state, width: "full" })} tooltip="Expand to Full Width" >
                         <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
                             call_made
                         </FontIcon >

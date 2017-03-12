@@ -22,3 +22,7 @@ export function addDatasetStream() {
 export function removeDatasetStream(key,state) {
     return {type: "REMOVE_DATASET_STREAM"};
 }
+
+export function showPython() {
+    return {type: "SHOW_ANALYSIS_CODE"};
+}

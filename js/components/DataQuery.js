@@ -54,7 +54,14 @@ class DataQuery extends Component {
         var label = start + ' ➡ ' + end;
 
         return (
-            <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed">
+            <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed"
+            icons={[(
+                <IconButton key="pythoncode" onTouchTap={this.props.showPython} tooltip="Show Python Code">
+                    <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                        code
+                    </FontIcon>
+                </IconButton>
+            )]}>
                 <QueryRange state={state} setState={setState} />
                 <h5 style={{
                     paddingTop: "10px"
@@ -86,6 +93,7 @@ export default connect(undefined, (dispatch, props) => {
     return {
         query: (q) => dispatch(query(props.user, props.device, props.stream, q)),
         setState: (s) => dispatch({ type: "STREAM_VIEW_SET", name: path, value: s }),
-        msg: (t) => dispatch(showMessage(t))
+        msg: (t) => dispatch(showMessage(t)),
+        showPython: () => dispatch({type: "SHOW_QUERY_CODE",value: path})
     };
 })(DataQuery);

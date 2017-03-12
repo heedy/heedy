@@ -48,7 +48,113 @@ function* query(action) {
     }
 }
 
+import React from 'react';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/monokai.css';
+import CodeMirror from 'react-codemirror';
+import 'codemirror/mode/python/python';
+
+function* showPython(action) {
+    let analysis = yield select((state) => state.pages.analysis);
+    let username = yield select((state) => state.site.thisUser.name);
+
+    let interpolations = ""
+    let datasetKeys = Object.keys(analysis.dataset);
+    for (let i = 0; i < datasetKeys.length; i++) {
+        let currentdataset = analysis.dataset[datasetKeys[i]]
+        interpolations = interpolations + `d.addStream("${currentdataset.stream}","${currentdataset.interpolator}",`
+                            + (currentdataset.transform!=""?`transform=${JSON.stringify(currentdataset.transform)},`:"")
+                            + `colname="${datasetKeys[i]}")`
+                            + "\n";
+    }
+
+    let pythoncode = `import connectordb
+from connectordb.query import Dataset
+
+import getpass
+p = getpass.getpass()
+
+cdb = connectordb.ConnectorDB("${username}",p,url="${SiteURL}")
+
+d = Dataset(cdb,"${analysis.stream}",t1=${analysis.t1.unix()},t2=${analysis.t2.unix()}`
+    + (analysis.transform==""?"":`,
+        transform=${JSON.stringify(analysis.transform)}`)
+    + (analysis.posttransform==""?"":`,
+        posttransform=${JSON.stringify(analysis.posttransform)}`)
+    + ")\n"
+    + interpolations
+    + `
+data = d.run()
+`;
+
+    yield put({
+            type: "SHOW_DIALOG",
+            value: {
+                title: "Python Code",
+                open: true,
+                contents: (
+                    <div>
+                        <CodeMirror value={pythoncode}  options={{
+        mode: "text/x-python",
+        lineWrapping: true,
+        readOnly: true
+    }}/>
+                    <a style={{float:"right"}} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
+                    </div>
+                )
+            }
+        });
+}
+
+// This should move to a different file at some point
+function* showPythonQuery(action) {
+    let stream = yield select((state) => state.stream[action.value].view);
+    let username = yield select((state) => state.site.thisUser.name);
+    let varname = action.value.split("/")[2];
+    let pythoncode = `import connectordb
+
+import getpass
+p = getpass.getpass()
+
+cdb = connectordb.ConnectorDB("${username}",p,url="${SiteURL}")
+
+${varname} = cdb("${action.value}")
+
+`
+    if (!stream.bytime && stream.transform=="") {
+        pythoncode += `data = ${varname}[${stream.i1}:${stream.i2}]`;
+    } else if (!stream.bytime && stream.transform!="") {
+        pythoncode += `data = ${varname}(i1=${stream.i1},i2=${stream.i2},transform=${JSON.stringify(stream.transform)})`;
+    } else {
+        // by time
+        pythoncode += `data = ${varname}(t1=${stream.t1.unix()},t2=${stream.t2.unix()}`
+                +(stream.transform!=""?`,transform=${JSON.stringify(stream.transform)}`:"")
+                +")";
+    }
+
+    yield put({
+            type: "SHOW_DIALOG",
+            value: {
+                title: "Python Code",
+                open: true,
+                contents: (
+                    <div>
+                        <CodeMirror value={pythoncode}  options={{
+        mode: "text/x-python",
+        lineWrapping: true,
+        readOnly: true
+    }}/>
+        <a style={{float:"right"}} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
+                    </div>
+                )
+            }
+        });
+
+}
+
 // Our watcher Saga: spawn a new incrementAsync task on each INCREMENT_ASYNC
 export default function* analysisSaga() {
     yield takeLatest('DATASET_QUERY', query);
+    yield takeLatest('SHOW_ANALYSIS_CODE', showPython);
+    yield takeLatest('SHOW_QUERY_CODE', showPythonQuery);
 }

@@ -71,6 +71,12 @@ const AnalysisQuery = ({ state, actions }) => (
                     clear_all
                 </FontIcon>
             </IconButton>
+        ), (
+            <IconButton key="pythoncode" onTouchTap={actions.showPython} tooltip="Show Python Code">
+                <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                    code
+                </FontIcon>
+            </IconButton>
         )]}>
         <TimePicker state={state} setState={actions.setState} />
 
