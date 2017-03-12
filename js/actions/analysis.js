@@ -14,3 +14,11 @@ export function clear() {
 export function query() {
     return { type: "DATASET_QUERY" };  // This triggers the analysis saga, which will query for dataset.
 }
+
+export function addDatasetStream() {
+    return {type: "ADD_DATASET_STREAM"};
+}
+
+export function removeDatasetStream(key,state) {
+    return {type: "REMOVE_DATASET_STREAM"};
+}

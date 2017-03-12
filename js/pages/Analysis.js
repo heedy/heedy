@@ -90,7 +90,15 @@ const AnalysisQuery = ({ state, actions }) => (
                 <TransformInput transform={state.transform} onChange={(txt) => actions.setState({ transform: txt })} />
             </div>
         </div>
-        <DatasetStream name="Y" state={state.dataset.y} setState={(v) => actions.setDatasetState("y", v)} />
+        {Object.keys(state.dataset).map((k) => (<DatasetStream key={k} name={k.toUpperCase()} state={state.dataset[k]} setState={(v) => actions.setDatasetState(k, v)} />))}
+        <div>
+            <IconButton tooltip="Add Stream" onTouchTap={actions.addDatasetStream}>
+                <FontIcon className="material-icons" color={Object.keys(state.dataset).length >= 10 ? "grey" : "black"}>add</FontIcon>
+            </IconButton>
+            <IconButton tooltip="Remove Stream" onTouchTap={actions.removeDatasetStream}>
+                <FontIcon className="material-icons" color={Object.keys(state.dataset).length == 1 ? "grey" : "black"}>remove</FontIcon>
+            </IconButton>
+        </div>
         <h5 style={{
             paddingTop: "10px"
         }}>Server-Side Transform to Run After Generating Dataset</h5>

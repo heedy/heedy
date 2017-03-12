@@ -27,8 +27,10 @@ function* query(action) {
     // Alright, validation complete. Let's query for the dataset
     yield put({ type: 'ANALYSIS_LOADING', value: true });
 
+    // This is the format in which the ConnectorDB server expects a query
     let query = {
         posttransform: analysis.posttransform,
+        transform: analysis.transform,
         dataset: analysis.dataset,
         t1: analysis.t1.unix(),
         t2: analysis.t2.unix(),
@@ -42,6 +44,7 @@ function* query(action) {
     } catch (err) {
         console.log(err);
         yield put({ type: "ANALYSIS_ERROR", value: err.toString() });
+        yield put({ type: 'ANALYSIS_LOADING', value: false });
     }
 }
 
