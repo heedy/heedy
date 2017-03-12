@@ -26,17 +26,6 @@ function isLatLong(point) {
     return (point.latitude !== undefined && isNumeric(point.latitude) && point.longitude !== undefined && isNumeric(point.longitude));
 }
 
-var mapdot = L.icon({
-    iconUrl: '/app/css/red_dot.png',
-    iconSize: [
-        10, 10
-    ],
-    iconAnchor: [
-        5, 5
-    ],
-    popupAnchor: [0, 0]
-});
-
 class MapViewComponent extends DataTransformUpdater {
 
     preprocessData(d) {
