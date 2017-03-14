@@ -83,7 +83,7 @@ class DataView extends Component {
 
         // Check which views of data to show
         this.views = getViews({
-            data: p.data,
+            data: this.data,    // data was already set earlier
             datatype: p.datatype,
             schema: p.schema,
             pipescript: p.pipescript
