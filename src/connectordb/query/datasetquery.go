@@ -185,10 +185,12 @@ func (d DatasetQuery) Run(o Operator) (dr datastream.DataRange, err error) {
 		return nil, err
 	}
 
+	dnc := &DatasetNullChecker{dsetrange, iiter}
+
 	if posttransform != nil {
-		posttransform.SetInput(iiter)
+		posttransform.SetInput(dnc)
 		iiter = posttransform
 	}
-	return &DatasetRange{dsetrange, iiter}, nil
+	return &DatasetRange{dnc, iiter}, nil
 
 }
