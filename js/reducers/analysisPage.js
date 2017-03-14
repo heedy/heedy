@@ -25,6 +25,8 @@ export const AnalysisPageInitialState = {
     views: {},
     loading: false,
     data: [],
+    xdataset: true,
+    dt: "3600",
 
     search: AnalysisSearchInitialState
 };

@@ -59,6 +59,67 @@ const DatasetStream = ({ name, state, setState }) => (
     </div>
 );
 
+const XDataset = ({ state, actions }) => (
+    <div className="row">
+        <div className="col-md-4">
+            <h5 style={{
+                paddingTop: "10px",
+                fontWeight: "bold"
+            }}>Reference Stream (X)</h5>
+            <TextField id={"X_dataset_text_field"} hintText="user/device/stream" style={{ width: "100%" }}
+                value={state.stream} onChange={(e) => actions.setState({ stream: e.target.value })} />
+        </div>
+        <div className="col-md-8">
+            <h5 style={{
+                paddingTop: "10px"
+            }}>Transform<a className="pull-right" style={{
+                cursor: "pointer"
+            }} onClick={() => actions.setState({ xdataset: false })}>Switch to T-Dataset</a></h5>
+            <TransformInput transform={state.transform} onChange={(txt) => actions.setState({ transform: txt })} />
+        </div>
+    </div>
+);
+
+const TDataset = ({ state, actions }) => (
+    <div className="row" style={{ paddingTop: "10px" }}>
+        <div className="col-md-2">
+            <h5 style={{
+                paddingTop: "10px",
+                fontWeight: "bold"
+            }}>Time Delta</h5>
+        </div>
+        <div className="col-md-4">
+            <TextField id={"DT"} style={{ width: "100%" }}
+                value={state.dt} onChange={(e) => actions.setState({ dt: e.target.value })} />
+        </div>
+        <div className="col-md-3">
+            <SelectField
+                value={state.dt}
+                onChange={(e, i, v) => actions.setState({ dt: v })}
+                style={{ width: "100%" }}
+            >
+                <MenuItem value={"1"} primaryText="1 second" />
+                <MenuItem value={"60"} primaryText="1 minute" />
+                <MenuItem value={"1800"} primaryText="30 minutes" />
+                <MenuItem value={"3600"} primaryText="1 hour" />
+                <MenuItem value={"21600"} primaryText="6 hours" />
+                <MenuItem value={"43200"} primaryText="12 hours" />
+                <MenuItem value={"86400"} primaryText="1 day" />
+                <MenuItem value={"604800"} primaryText="1 week" />
+                <MenuItem value={"1296000"} primaryText="15 days" />
+                <MenuItem value={"2592000"} primaryText="30 days" />
+                <MenuItem value={"31536000"} primaryText="1 year" />
+            </SelectField>
+        </div>
+        <div className="col-md-3">
+            <h5><a className="pull-right" style={{
+                cursor: "pointer"
+            }} onClick={() => actions.setState({ xdataset: true })}>Switch to X-Dataset</a></h5>
+        </div>
+    </div>
+);
+
+
 /**
  * Component to display the analysis form, from which you can generate a query for analysis,
  * and run the query
@@ -81,23 +142,7 @@ const AnalysisQuery = ({ state, actions }) => (
             </IconButton>
         )]}>
         <TimePicker state={state} setState={actions.setState} />
-
-        <div className="row">
-            <div className="col-md-4">
-                <h5 style={{
-                    paddingTop: "10px",
-                    fontWeight: "bold"
-                }}>Reference Stream (X)</h5>
-                <TextField id={"X_dataset_text_field"} hintText="user/device/stream" style={{ width: "100%" }}
-                    value={state.stream} onChange={(e) => actions.setState({ stream: e.target.value })} />
-            </div>
-            <div className="col-md-8">
-                <h5 style={{
-                    paddingTop: "10px"
-                }}>Transform</h5>
-                <TransformInput transform={state.transform} onChange={(txt) => actions.setState({ transform: txt })} />
-            </div>
-        </div>
+        {state.xdataset ? (<XDataset state={state} actions={actions} />) : (<TDataset state={state} actions={actions} />)}
         {Object.keys(state.dataset).map((k) => (<DatasetStream key={k} name={k.toUpperCase()} state={state.dataset[k]} setState={(v) => actions.setDatasetState(k, v)} />))}
         <div>
             <IconButton tooltip="Add Stream" onTouchTap={actions.addDatasetStream}>
