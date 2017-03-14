@@ -91,8 +91,8 @@ p = getpass.getpass()
 
 cdb = connectordb.ConnectorDB("${username}",p,url="${SiteURL}")
 
-d = Dataset(cdb,"${analysis.stream}",t1=${analysis.t1.unix()},t2=${analysis.t2.unix()}`
-        + (analysis.transform == "" ? "" : `,
+d = Dataset(cdb,${analysis.xdataset ? '"' + analysis.stream + '"' : "dt=" + analysis.dt},t1=${analysis.t1.unix()},t2=${analysis.t2.unix()}`
+        + (analysis.transform == "" || !analysis.xdataset ? "" : `,
         transform=${JSON.stringify(analysis.transform)}`)
         + (analysis.posttransform == "" ? "" : `,
         posttransform=${JSON.stringify(analysis.posttransform)}`)
