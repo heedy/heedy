@@ -12,24 +12,28 @@ function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-const LineView = [
-    {
-        ...generateLineChart(),
-        key: "lineView",
-        title: "Line Plot",
-        subtitle: ""
-    }, {
-        ...generateDropdownLineChart("This view averages the datapoint values over the chosen time period", generateTimeOptions("Average", "", "mean"), 1),
-        key: "averagedLineView",
-        title: "Averaged Values",
-        subtitle: ""
-    }, {
-        ...generateDropdownLineChart("This view sums the datapoint values over the chosen time period", generateTimeOptions("Sum", "", "sum"), 1),
-        key: "summedLineView",
-        title: "Summed Values",
-        subtitle: ""
-    }
-];
+function lineViewGenerator(pretransform) {
+    return [
+        {
+            ...generateLineChart(),
+            key: "lineView",
+            title: "Line Plot",
+            subtitle: ""
+        }, {
+            ...generateDropdownLineChart("This view averages the datapoint values over the chosen time period", generateTimeOptions("Average", "", pretransform + "mean"), 1),
+            key: "averagedLineView",
+            title: "Averaged Values",
+            subtitle: ""
+        }, {
+            ...generateDropdownLineChart("This view sums the datapoint values over the chosen time period", generateTimeOptions("Sum", "", pretransform + "sum"), 1),
+            key: "summedLineView",
+            title: "Summed Values",
+            subtitle: ""
+        }
+    ];
+}
+
+const LineView = lineViewGenerator("");
 
 // We can visualize objects if their components are numeric
 const ObjectLineView = [LineView[0]];
@@ -62,7 +66,13 @@ function showLineChart(context) {
                     }
                 }
                 // Return a object line view if the keys are OK, AND it it isn't a GPS datapoint (latitude/longitude)
-                if (keysok && context.data[0].d["latitude"] === undefined) return ObjectLineView;
+                if (keysok && context.data[0].d["latitude"] === undefined) {
+                    if (d0keys.length == 1) {
+                        // If there is only one key, then we can show this easily
+                        return lineViewGenerator(`$('${d0keys[0]}'):`);
+                    }
+                    return ObjectLineView;
+                }
             }
         }
 
