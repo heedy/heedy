@@ -16,6 +16,8 @@ import IconButton from 'material-ui/IconButton';
 import DataView from '../components/DataView';
 
 import * as Actions from '../actions/analysis';
+import SearchCard from '../components/SearchCard';
+import { setSearchSubmit, setSearchState } from '../actions';
 
 const Interpolator = ({ value, onChange }) => (
     <SelectField
@@ -134,14 +136,23 @@ const AnalysisQuery = ({ state, actions }) => (
  * The associated reducer and saga are in their corresponding directories
  * 
  */
-const Render = ({ state, actions }) => (
-    <DataView data={state.data}>
-        <AnalysisQuery state={state} actions={actions} />
-        {state.loading ? (<div className="col-lg-12"><Loading /></div>) : null}
-    </DataView>
+const Render = ({ state, actions, transformError, clearTransform }) => (
+    <div>
+        {state.search.submitted != null && state.search.submitted != ""
+            ? (<SearchCard title={state.search.submitted} subtitle={"Transform applied to data"} onClose={clearTransform} />)
+            : null}
+        <DataView data={state.data} transform={state.search.submitted} transformError={transformError} >
+            <AnalysisQuery state={state} actions={actions} />
+            {state.loading ? (<div className="col-lg-12"><Loading /></div>) : null}
+        </DataView>
+    </div>
 );
 
 export default connect(
     (state) => ({ state: state.pages.analysis }),
-    (dispatch) => ({ actions: bindActionCreators(Actions, dispatch) })
+    (dispatch) => ({
+        actions: bindActionCreators(Actions, dispatch),
+        clearTransform: () => dispatch(setSearchSubmit("")),
+        transformError: (txt) => dispatch(setSearchState({ error: txt }))
+    }),
 )(Render);

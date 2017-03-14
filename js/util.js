@@ -57,6 +57,15 @@ export function objectFilter(text, obj) {
     return Object.keys(obj).filter(key => keepElement(t, obj[key])).reduce((res, key) => (res[key] = obj[key], res), {});
 }
 
+export function arrayFilter(text, arr) {
+    let t = text.trim().toLowerCase();
+    if (t.length == 0) {
+        return arr;
+    }
+
+    return arr.filter(e => keepElement(t, e));
+}
+
 // Uses a WebRTC hack to get the local IP. It is used when we only hae "localhost" as a server identifier
 // https://github.com/diafygi/webrtc-ips
 export function getIPs(callback) {

@@ -1,6 +1,9 @@
 // The analysis page is where you generate visualizations of datasets from your data
 import moment from 'moment';
 
+import { AnalysisSearchInitialState, analysisSearchReducer } from './search';
+
+
 const DatasetStreamInitialState = {
     stream: "",
     transform: "",
@@ -21,10 +24,18 @@ export const AnalysisPageInitialState = {
     error: null,
     views: {},
     loading: false,
-    data: []
+    data: [],
+
+    search: AnalysisSearchInitialState
 };
 
 export default function AnalysisPageReducer(state, action) {
+    if (action.type.startsWith("ANALYSIS_SEARCH_"))
+        return {
+            ...state,
+            search: analysisSearchReducer(state.search, action)
+        };
+
     let k = Object.keys(state.dataset).length;
     let d = {
         ...state.dataset

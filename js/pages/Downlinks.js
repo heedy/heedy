@@ -11,6 +11,8 @@ import DataInput from '../components/DataInput';
 import * as Actions from '../actions/downlinks';
 import { go } from '../actions';
 
+import { arrayFilter } from '../util';
+
 const Welcome = () => (
     <Card style={{
         marginTop: "20px"
@@ -46,7 +48,7 @@ const Render = ({ state, appstate, actions, go }) => (
                 marginLeft: "-15px",
                 marginRight: "-15px"
             }}>
-                {state.downlinks.map((d) => DownlinkInput(appstate, actions, d, appstate.site.thisUser.name + "/" + d.device + "/" + d.name, go))}
+                {arrayFilter(state.search.text, state.downlinks).map((d) => DownlinkInput(appstate, actions, d, appstate.site.thisUser.name + "/" + d.device + "/" + d.name, go))}
             </div>
         ))}
     </div>

@@ -25,7 +25,8 @@ function* query(action) {
     }
 
     // Alright, validation complete. Let's query for the dataset
-    yield put({ type: 'ANALYSIS_LOADING', value: true });
+    yield put({ type: "SHOW_DATASET", value: [] });    // First clear any data that might be there
+    yield put({ type: 'ANALYSIS_LOADING', value: true });   // Next turn loading on
 
     // This is the format in which the ConnectorDB server expects a query
     let query = {
@@ -63,9 +64,9 @@ function* showPython(action) {
     for (let i = 0; i < datasetKeys.length; i++) {
         let currentdataset = analysis.dataset[datasetKeys[i]]
         interpolations = interpolations + `d.addStream("${currentdataset.stream}","${currentdataset.interpolator}",`
-                            + (currentdataset.transform!=""?`transform=${JSON.stringify(currentdataset.transform)},`:"")
-                            + `colname="${datasetKeys[i]}")`
-                            + "\n";
+            + (currentdataset.transform != "" ? `transform=${JSON.stringify(currentdataset.transform)},` : "")
+            + `colname="${datasetKeys[i]}")`
+            + "\n";
     }
 
     let pythoncode = `import connectordb
@@ -77,33 +78,33 @@ p = getpass.getpass()
 cdb = connectordb.ConnectorDB("${username}",p,url="${SiteURL}")
 
 d = Dataset(cdb,"${analysis.stream}",t1=${analysis.t1.unix()},t2=${analysis.t2.unix()}`
-    + (analysis.transform==""?"":`,
+        + (analysis.transform == "" ? "" : `,
         transform=${JSON.stringify(analysis.transform)}`)
-    + (analysis.posttransform==""?"":`,
+        + (analysis.posttransform == "" ? "" : `,
         posttransform=${JSON.stringify(analysis.posttransform)}`)
-    + ")\n"
-    + interpolations
-    + `
+        + ")\n"
+        + interpolations
+        + `
 data = d.run()
 `;
 
     yield put({
-            type: "SHOW_DIALOG",
-            value: {
-                title: "Python Code",
-                open: true,
-                contents: (
-                    <div>
-                        <CodeMirror value={pythoncode}  options={{
-        mode: "text/x-python",
-        lineWrapping: true,
-        readOnly: true
-    }}/>
-                    <a style={{float:"right"}} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
-                    </div>
-                )
-            }
-        });
+        type: "SHOW_DIALOG",
+        value: {
+            title: "Python Code",
+            open: true,
+            contents: (
+                <div>
+                    <CodeMirror value={pythoncode} options={{
+                        mode: "text/x-python",
+                        lineWrapping: true,
+                        readOnly: true
+                    }} />
+                    <a style={{ float: "right" }} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
+                </div>
+            )
+        }
+    });
 }
 
 // This should move to a different file at some point
@@ -121,34 +122,34 @@ cdb = connectordb.ConnectorDB("${username}",p,url="${SiteURL}")
 ${varname} = cdb("${action.value}")
 
 `
-    if (!stream.bytime && stream.transform=="") {
+    if (!stream.bytime && stream.transform == "") {
         pythoncode += `data = ${varname}[${stream.i1}:${stream.i2}]`;
-    } else if (!stream.bytime && stream.transform!="") {
+    } else if (!stream.bytime && stream.transform != "") {
         pythoncode += `data = ${varname}(i1=${stream.i1},i2=${stream.i2},transform=${JSON.stringify(stream.transform)})`;
     } else {
         // by time
         pythoncode += `data = ${varname}(t1=${stream.t1.unix()},t2=${stream.t2.unix()}`
-                +(stream.transform!=""?`,transform=${JSON.stringify(stream.transform)}`:"")
-                +")";
+            + (stream.transform != "" ? `,transform=${JSON.stringify(stream.transform)}` : "")
+            + ")";
     }
 
     yield put({
-            type: "SHOW_DIALOG",
-            value: {
-                title: "Python Code",
-                open: true,
-                contents: (
-                    <div>
-                        <CodeMirror value={pythoncode}  options={{
-        mode: "text/x-python",
-        lineWrapping: true,
-        readOnly: true
-    }}/>
-        <a style={{float:"right"}} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
-                    </div>
-                )
-            }
-        });
+        type: "SHOW_DIALOG",
+        value: {
+            title: "Python Code",
+            open: true,
+            contents: (
+                <div>
+                    <CodeMirror value={pythoncode} options={{
+                        mode: "text/x-python",
+                        lineWrapping: true,
+                        readOnly: true
+                    }} />
+                    <a style={{ float: "right" }} href="http://connectordb-python.readthedocs.io/en/latest/">Python API Docs</a>
+                </div>
+            )
+        }
+    });
 
 }
 

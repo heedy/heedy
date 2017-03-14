@@ -37,6 +37,10 @@ export const StreamSearchInitialState = {
 };
 export const IndexSearchInitialState = DefaultInitialState;
 
+export const DownlinkSearchInitialState = DefaultInitialState;
+
+export const AnalysisSearchInitialState = StreamSearchInitialState;
+
 function basicSearchReducer(state, action, atype) {
     switch (atype) {
         case 'SET':
@@ -89,6 +93,18 @@ export function indexSearchReducer(state, action) {
     return basicSearchReducer(state, action, type);
 }
 
+export function downlinkSearchReducer(state, action) {
+    let type = action.type;
+    type = type.substring("DOWNLINK_SEARCH_".length, type.length);
+    return basicSearchReducer(state, action, type);
+}
+
+export function analysisSearchReducer(state, action) {
+    let type = action.type;
+    type = type.substring("ANALYSIS_SEARCH_".length, type.length);
+    return basicSearchReducer(state, action, type);
+}
+
 // getSearchActionContext returns the necessary context to an action, including a prefix to
 // use, to get search working with current page. Remember that each page has its own search context.
 export function getSearchActionContext(action) {
@@ -97,8 +113,17 @@ export function getSearchActionContext(action) {
     let p = getCurrentPath();
     let path = p.split("/");
     if (p.length == 0) {
-        // Later we can add the specific page hashes here
-        actionPrefix = "PAGE_INDEX_SEARCH_";
+        // We can add the specific page hashes here
+        switch (window.location.hash) {
+            case "#analysis":
+                actionPrefix = "ANALYSIS_SEARCH_";
+                break;
+            case "#downlinks":
+                actionPrefix = "DOWNLINK_SEARCH_";
+                break;
+            default:
+                actionPrefix = "PAGE_INDEX_SEARCH_";
+        }
     } else if (path.length == 1 && window.location.hash === "") {
         actionPrefix = "USER_VIEW_SEARCH_";
     } else if (path.length == 2 && window.location.hash === "") {
@@ -119,6 +144,12 @@ export function getSearchState(state) {
     let path = p.split("/");
     if (p.length == 0) {
         // Later we can add the specific page hashes here
+        switch (window.location.hash) {
+            case "#analysis":
+                return state.pages.analysis.search;
+            case "#downlinks":
+                return state.pages.downlinks.search;
+        }
         return state.pages.index.search;
     } else if (path.length == 1 && window.location.hash === "") {
         if (state.user[p] === undefined) {
