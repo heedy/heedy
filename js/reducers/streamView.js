@@ -1,4 +1,4 @@
-import {StreamSearchInitialState, streamSearchReducer} from './search';
+import { StreamSearchInitialState, streamSearchReducer } from './search';
 
 import moment from 'moment';
 export const StreamViewInitialState = {
@@ -8,7 +8,7 @@ export const StreamViewInitialState = {
     t2: moment().endOf('day'),
     i1: -50,
     i2: 0,
-    limit: 0,
+    limit: 100000,
     data: [],
     error: null,
     bytime: true,

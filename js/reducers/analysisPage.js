@@ -14,9 +14,9 @@ const DatasetStreamInitialState = {
 export const AnalysisPageInitialState = {
     posttransform: "",
     transform: "",
-    t1: moment().subtract(7, 'days'),
+    t1: moment().subtract(30, 'days'),
     t2: moment().endOf('day'),
-    limit: 0,
+    limit: 100000,
     stream: "",
     dataset: {
         y: DatasetStreamInitialState
@@ -26,7 +26,7 @@ export const AnalysisPageInitialState = {
     loading: false,
     data: [],
     xdataset: true,
-    dt: "3600",
+    dt: "86400",
 
     search: AnalysisSearchInitialState
 };

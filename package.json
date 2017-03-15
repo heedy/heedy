@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "webpack": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jasmine",
     "build:js": "cross-env NODE_ENV=production webpack -p",
     "build:serviceworker": "sed -i -e \"s/GITHASH/$(git rev-parse HEAD)/g\" ../../bin/app/serviceworker.js",
     "build:html": "rsync -r ./app ../../bin && npm run build:serviceworker",
@@ -66,8 +66,12 @@
     "redux-logger": "^2.8.2",
     "redux-saga": "^0.14.3",
     "redux-thunk": "^2.2.0",
+    "regression": "^1.4.0",
     "style-loader": "^0.13.2",
     "watch": "^1.0.2",
     "webpack": "^2.2.1"
+  },
+  "devDependencies": {
+    "jasmine-es6": "^0.4.0"
   }
 }

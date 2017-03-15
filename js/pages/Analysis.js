@@ -65,7 +65,7 @@ const XDataset = ({ state, actions }) => (
             <h5 style={{
                 paddingTop: "10px",
                 fontWeight: "bold"
-            }}>Reference Stream (X)</h5>
+            }}>Reference Stream (x)</h5>
             <TextField id={"X_dataset_text_field"} hintText="user/device/stream" style={{ width: "100%" }}
                 value={state.stream} onChange={(e) => actions.setState({ stream: e.target.value })} />
         </div>
@@ -143,7 +143,7 @@ const AnalysisQuery = ({ state, actions }) => (
         )]}>
         <TimePicker state={state} setState={actions.setState} />
         {state.xdataset ? (<XDataset state={state} actions={actions} />) : (<TDataset state={state} actions={actions} />)}
-        {Object.keys(state.dataset).map((k) => (<DatasetStream key={k} name={k.toUpperCase()} state={state.dataset[k]} setState={(v) => actions.setDatasetState(k, v)} />))}
+        {Object.keys(state.dataset).map((k) => (<DatasetStream key={k} name={k} state={state.dataset[k]} setState={(v) => actions.setDatasetState(k, v)} />))}
         <div>
             <IconButton tooltip="Add Stream" onTouchTap={actions.addDatasetStream}>
                 <FontIcon className="material-icons" color={Object.keys(state.dataset).length >= 10 ? "grey" : "black"}>add</FontIcon>

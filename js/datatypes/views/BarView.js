@@ -5,6 +5,7 @@ The exact conditions are in the function showBarChart below
 
 import { addView } from '../datatypes';
 import { generateBarChart } from './components/BarChart';
+import { categorical, objectvalues } from './typecheck';
 
 const BarView = [
     {
@@ -15,69 +16,34 @@ const BarView = [
     }
 ];
 
-// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
-function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-}
-
-function isValidKey(n) {
-    return (isNumeric(n) || (typeof n) === "string");
+function meanBarChart(key1, key2) {
+    return [
+        {
+            ...generateBarChart(`map($('${key1}'),$('${key2}'):mean)`, "Finds the mean of " + key2 + " for each " + key1 + " value.", key1, "Mean of " + key2),
+            key: "meanBarChart",
+            title: `Mean of ${key2} for all ${key1}`,
+            subtitle: ""
+        }
+    ]
 }
 
 function showBarChart(context) {
     if (context.data.length < 5 || context.pipescript === null) {
         return null;
     }
-
-    // We unfortunately have to guess whether the data is in a format
-    // that can be directly exploited in terms of a bar Chart
-    // We use a simple heuristic:
-    //    Check the first and last 100 datapoints. Compute the ratio of repetitions/points
-    //    If the ratio is greater than a chosen number, and the total percentage of independent (1s)
-    //    values is not too high, we display the bar chart.
-    let totalpoints = 0;
-    let uniquepoints = 0;
-    let d = context.data;
-    if (d.length < 200) {
-        let kv = {};
-        for (let i = 0; i < d.length; i++) {
-            if (!isValidKey(d[i].d)) {
-                return null;
-            }
-            if (kv[d[i].d] === undefined) {
-                uniquepoints += 1;
-                kv[d[i].d] = 1;
-            }
-
-        }
-        totalpoints = d.length;
-    } else {
-        totalpoints = 200;
-        let kv = {}
-        for (let i = 0; i < 100; i++) {
-            if (!isValidKey(d[i].d)) {
-                return null;
-            }
-            if (kv[d[i].d] === undefined) {
-                uniquepoints += 1;
-                kv[d[i].d] = 1;
-            }
-        }
-        for (let i = d.length - 100; i < d.length; i++) {
-            if (!isValidKey(d[i].d)) {
-                return null;
-            }
-            if (kv[d[i].d] === undefined) {
-                uniquepoints += 1;
-                kv[d[i].d] = 1;
-            }
-        }
-    }
-
-    if (uniquepoints < totalpoints && uniquepoints < 20 || uniquepoints < 100 && uniquepoints / totalpoints < 0.5) {
+    if (categorical(context.data) !== null) {
         return BarView;
     }
-
+    let o = objectvalues(context.data);
+    if (o !== null && Object.keys(o).length == 2) {
+        let k = Object.keys(o);
+        if (o[k[0]].categorical !== null && o[k[1]].numeric !== null && o[k[0]].categorical.categories < 50) {
+            return meanBarChart(k[0], k[1]);
+        }
+        if (o[k[1]].categorical !== null && o[k[0]].numeric !== null && o[k[1]].categorical.categories < 50) {
+            return meanBarChart(k[1], k[0]);
+        }
+    }
     return null;
 }
 

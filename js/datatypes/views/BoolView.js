@@ -1,10 +1,12 @@
 /*
 This shows a line chart of the booleans
 */
-import {addView} from '../datatypes';
-import {generateLineChart} from './components/LineChart';
-import {generateDropdownLineChart, generateTimeOptions} from './components/DropdownLineChart';
+import { addView } from '../datatypes';
+import { generateLineChart } from './components/LineChart';
+import { generateDropdownLineChart, generateTimeOptions } from './components/DropdownLineChart';
 import dropdownTransformDisplay from './components/dropdownTransformDisplay';
+
+import { numeric } from './typecheck';
 
 const BoolView = [
     {
@@ -19,7 +21,9 @@ function showBoolView(context) {
     if (context.data.length > 1) {
 
         // We now check if the data is booleans
-        if (typeof(context.data[0].d) === "boolean" && typeof(context.data[context.data.length - 1].d) === "boolean") {
+        let n = numeric(context.data);
+
+        if (n !== null && n.allbool) {
             return BoolView;
         }
 

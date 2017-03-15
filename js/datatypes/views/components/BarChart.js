@@ -105,13 +105,21 @@ class BarChart extends DataTransformUpdater {
 
         return (<Bar data={this.data} options={{
             scales: {
-                yAxes: [
-                    {
-                        ticks: {
-                            beginAtZero: true
-                        }
+                xAxes: [{
+                    scaleLabel: {
+                        display: this.props.xlabel != "",
+                        labelString: this.props.xlabel
                     }
-                ]
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    },
+                    scaleLabel: {
+                        display: this.props.ylabel != "",
+                        labelString: this.props.ylabel
+                    }
+                }]
             },
             legend: {
                 display: false
@@ -143,14 +151,14 @@ export function getBarChartIcons(context) {
 
 // generate creates a new view that displays a bar chart. The view object is set up
 // so that it is totally ready to be passed as a result of the shower function
-export function generateBarChart(transform, description) {
+export function generateBarChart(transform, description, xlabel = "", ylabel = "") {
     let component = BarChart;
 
     // If we're given a transform, wrap the BarChart so that we can pass transform into the class.
     if (transform != null) {
         component = React.createClass({
             render: function () {
-                return (<BarChart {...this.props} transform={transform} />);
+                return (<BarChart {...this.props} transform={transform} xlabel={xlabel} ylabel={ylabel} />);
             }
         });
     }

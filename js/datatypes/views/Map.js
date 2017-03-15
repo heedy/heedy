@@ -16,15 +16,7 @@ import { Map, Circle, Popup, TileLayer } from 'react-leaflet';
 
 import moment from 'moment';
 
-// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
-function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-}
-
-// Checks if the given datapoint is latitude/longitude
-function isLatLong(point) {
-    return (point.latitude !== undefined && isNumeric(point.latitude) && point.longitude !== undefined && isNumeric(point.longitude));
-}
+import { location, objectvalues } from './typecheck';
 
 class MapViewComponent extends DataTransformUpdater {
 
@@ -40,10 +32,11 @@ class MapViewComponent extends DataTransformUpdater {
         // option that allows us to set a magnitude
         let latlong = (d) => d;
         let color = (d) => 0;
-        if (!isLatLong(d[0].d)) {
+        if (location(d) === null) {
             // We need to find which key is latitude and longitude
-            let keys = Object.keys(d[0].d);
-            if (isLatLong(d[0].d[keys[0]])) {
+            let v = objectvalues(d);
+            let keys = Object.keys(v);
+            if (v[keys[0]].location !== null) {
                 latlong = (d) => d[keys[0]];
                 color = (d) => d[keys[1]];
             } else {
@@ -58,7 +51,7 @@ class MapViewComponent extends DataTransformUpdater {
         let maxColor = -minColor;
         for (let i = 0; i < d.length; i++) {
             let dp = latlong(d[i].d);
-            if (!isLatLong(dp) || dp.accuracy !== undefined && dp.accuracy > 50) {
+            if (dp.accuracy !== undefined && dp.accuracy > 50) {
                 // Ignore the datapoint, since it is either invalid or inaccurate
                 //console.log("ignoring", dp);
             } else {
@@ -145,7 +138,7 @@ const MapView = {
 function showMap(context) {
     if (context.data.length > 0) {
         // We now check if the data is the correct type
-        if (isLatLong(context.data[0].d) && isLatLong(context.data[context.data.length - 1].d)) {
+        if (location(context.data) !== null) {
             return MapView;
         }
 
@@ -153,14 +146,16 @@ function showMap(context) {
         // we can display a map with color-coded magnitude of the second key located
         // on the map. This is especially useful for datasets where one of 2 streams
         // is location!
-        let keys = Object.keys(context.data[0].d);
-        if (keys.length == 2) {
-            if (isLatLong(context.data[0].d[keys[0]]) && isLatLong(context.data[context.data.length - 1].d[keys[0]])
-                && isNumeric(context.data[0].d[keys[1]]) && isNumeric(context.data[context.data.length - 1].d[keys[1]])) {
-                return MapView;
-            } else if (isLatLong(context.data[0].d[keys[1]]) && isLatLong(context.data[context.data.length - 1].d[keys[1]])
-                && isNumeric(context.data[0].d[keys[0]]) && isNumeric(context.data[context.data.length - 1].d[keys[0]])) {
-                return MapView;
+        let v = objectvalues(context.data);
+        if (v !== null) {
+            let keys = Object.keys(v);
+
+            if (keys.length == 2) {
+                if (v[keys[0]].location && v[keys[1]].numeric) {
+                    return MapView;
+                } else if (v[keys[1]].location && v[keys[0]].numeric) {
+                    return MapView;
+                }
             }
         }
 
