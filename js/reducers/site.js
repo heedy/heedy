@@ -130,9 +130,7 @@ const InitialState = {
         }, {
             title: "Sign Out",
             icon: "power_settings_new",
-            action: (dispatch) => {
-                dispatch(go("logout"));
-            }
+            action: (dispatch) => dispatch(go("logout"))
         }
     ],
 

@@ -21,6 +21,8 @@ import FlatButton from 'material-ui/FlatButton';
 import { spacing } from 'material-ui/styles';
 import withWidth, { MEDIUM, LARGE } from 'material-ui/utils/withWidth';
 
+import { Route } from 'react-router';
+
 import Navigation from './Navigation';
 import TopBar from './TopBar';
 
@@ -64,8 +66,6 @@ const styles = {
 class Theme extends Component {
     static propTypes = {
         width: PropTypes.number.isRequired,
-        location: PropTypes.object.isRequired,
-        router: PropTypes.object
     };
 
     constructor(props) {
@@ -77,12 +77,11 @@ class Theme extends Component {
 
     render() {
         let isNavigationDocked = this.props.width === MEDIUM || this.props.width === LARGE;
-        let curloc = this.props.location.pathname + this.props.location.hash;
         return (
             <MuiThemeProvider muiTheme={muiTheme}>
                 <div>
-                    <Navigation docked={isNavigationDocked} selected={curloc.substring(1, curloc.length)} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({ drawerOpen: open })} />
-                    <TopBar navDocked={isNavigationDocked} router={this.props.router} hamburgerClick={() => this.setState({ drawerOpen: true })} />
+                    <Route render={({ location }) => (<Navigation docked={isNavigationDocked} location={location} open={this.state.drawerOpen} onRequestChange={(open) => this.setState({ drawerOpen: open })} />)} />
+                    <TopBar navDocked={isNavigationDocked} hamburgerClick={() => this.setState({ drawerOpen: true })} />
                     <div style={isNavigationDocked
                         ? styles.container
                         : styles.containerFullWidth}>

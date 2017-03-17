@@ -19,7 +19,7 @@
 // TODO: I cry when I see code like this. What makes it all the more horrible is that *I* am
 //  the person who wrote it... This really needs to be refactored... - dkumor
 
-import React, {Component, PropTypes} from 'react';
+import React, { Component, PropTypes } from 'react';
 import storage from './storage';
 
 const NoQueryIfWithinMilliseconds = 1000;
@@ -30,7 +30,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
             user: PropTypes.string,
             device: PropTypes.string,
             stream: PropTypes.string,
-            params: PropTypes.shape({user: PropTypes.string, device: PropTypes.string, stream: PropTypes.string})
+            match: PropTypes.shape({ params: PropTypes.shape({ user: PropTypes.string, device: PropTypes.string, stream: PropTypes.string }) })
         },
         getUser(props) {
             if (props === undefined) {
@@ -38,8 +38,8 @@ export default function connectStorage(Component, lsdev, lsstream) {
             }
             if (props.user !== undefined)
                 return props.user;
-            if (props.params.user !== undefined)
-                return props.params.user;
+            if (props.match.params.user !== undefined)
+                return props.match.params.user;
             return "";
         },
         getDevice(props) {
@@ -48,8 +48,8 @@ export default function connectStorage(Component, lsdev, lsstream) {
             }
             if (props.device !== undefined)
                 return props.device;
-            if (props.params.device !== undefined)
-                return props.params.device;
+            if (props.match.params.device !== undefined)
+                return props.match.params.device;
             return "";
         },
         getStream(props) {
@@ -58,11 +58,11 @@ export default function connectStorage(Component, lsdev, lsstream) {
             }
             if (props.stream !== undefined)
                 return props.stream;
-            if (props.params.stream !== undefined)
-                return props.params.stream;
+            if (props.match.params.stream !== undefined)
+                return props.match.params.stream;
             return "";
         },
-        getInitialState: function() {
+        getInitialState: function () {
             return {
                 user: null,
                 device: null,
@@ -72,7 +72,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 streamarray: null
             };
         },
-        getData: function(nextProps) {
+        getData: function (nextProps) {
             var thisUser = this.getUser(nextProps);
             // Get the user/device/stream from cache - this allows the app to feel fast in
             // slow internet, and enables working in offline mode
@@ -80,9 +80,9 @@ export default function connectStorage(Component, lsdev, lsstream) {
 
                 if (response != null) {
                     if (response.ref !== undefined) {
-                        this.setState({error: response});
+                        this.setState({ error: response });
                     } else if (response.name !== undefined) {
-                        this.setState({user: response});
+                        this.setState({ user: response });
                         // If the user was recently queried, don't query it again needlessly
                         if (response.timestamp > Date.now() - NoQueryIfWithinMilliseconds) {
                             return;
@@ -97,9 +97,9 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 storage.get(thisDevice).then((response) => {
                     if (response != null) {
                         if (response.ref !== undefined) {
-                            this.setState({error: response});
+                            this.setState({ error: response });
                         } else if (response.name !== undefined) {
-                            this.setState({device: response});
+                            this.setState({ device: response });
                             // If the user was recently queried, don't query it again needlessly
                             if (response.timestamp > Date.now() - NoQueryIfWithinMilliseconds) {
                                 return;
@@ -114,9 +114,9 @@ export default function connectStorage(Component, lsdev, lsstream) {
                     storage.get(thisStream).then((response) => {
                         if (response != null) {
                             if (response.ref !== undefined) {
-                                this.setState({error: response});
+                                this.setState({ error: response });
                             } else if (response.name !== undefined) {
-                                this.setState({stream: response});
+                                this.setState({ stream: response });
                                 // If the user was recently queried, don't query it again needlessly
                                 if (response.timestamp > Date.now() - NoQueryIfWithinMilliseconds) {
                                     return;
@@ -133,9 +133,9 @@ export default function connectStorage(Component, lsdev, lsstream) {
             if (lsdev) {
                 storage.ls(thisUser).then((response) => {
                     if (response.ref !== undefined) {
-                        this.setState({error: response});
+                        this.setState({ error: response });
                     } else {
-                        this.setState({devarray: response});
+                        this.setState({ devarray: response });
 
                     }
                     // The query will be caught by the callback
@@ -145,9 +145,9 @@ export default function connectStorage(Component, lsdev, lsstream) {
             if (lsstream) {
                 storage.ls(thisDevice).then((response) => {
                     if (response.ref !== undefined) {
-                        this.setState({error: response});
+                        this.setState({ error: response });
                     } else {
-                        this.setState({streamarray: response});
+                        this.setState({ streamarray: response });
 
                     }
                     // The query will be caught by the callback
@@ -155,7 +155,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 })
             }
         },
-        componentWillMount: function() {
+        componentWillMount: function () {
             // https://stackoverflow.com/questions/1349404/generate-a-string-of-5-random-characters-in-javascript
             this.callbackID = Math.random().toString(36).substring(7);
 
@@ -167,21 +167,21 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 let thisStream = thisDevice + "/" + this.getStream();
                 if (path == thisUser) {
                     if (obj.ref !== undefined) {
-                        this.setState({error: obj});
+                        this.setState({ error: obj });
                     } else {
-                        this.setState({user: obj});
+                        this.setState({ user: obj });
                     }
                 } else if (path == thisDevice) {
                     if (obj.ref !== undefined) {
-                        this.setState({error: obj});
+                        this.setState({ error: obj });
                     } else {
-                        this.setState({device: obj});
+                        this.setState({ device: obj });
                     }
                 } else if (path == thisStream) {
                     if (obj.ref !== undefined) {
-                        this.setState({error: obj});
+                        this.setState({ error: obj });
                     } else {
-                        this.setState({stream: obj});
+                        this.setState({ stream: obj });
                     }
                 } else if ((lsdev || lsstream) && obj.ref === undefined && path.startsWith(thisUser + "/")) {
                     // We might want to update our arrays
@@ -191,7 +191,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
                             if (lsdev) {
                                 let ndevarray = Object.assign({}, this.state.devarray);
                                 ndevarray[path] = obj;
-                                this.setState({devarray: ndevarray});
+                                this.setState({ devarray: ndevarray });
                             }
                             break;
                         case 3:
@@ -199,7 +199,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
 
                                 let nsarray = Object.assign({}, this.state.streamarray);
                                 nsarray[path] = obj;
-                                this.setState({streamarray: nsarray});
+                                this.setState({ streamarray: nsarray });
                             }
                             break;
                     }
@@ -224,8 +224,8 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 this.getData(nextProps);
             }
         },
-        render: function() {
-            return (<Component {...this.props} user={this.state.user} device={this.state.device} stream={this.state.stream} error={this.state.error} devarray={this.state.devarray} streamarray={this.state.streamarray}/>);
+        render: function () {
+            return (<Component {...this.props} user={this.state.user} device={this.state.device} stream={this.state.stream} error={this.state.error} devarray={this.state.devarray} streamarray={this.state.streamarray} />);
         }
     });
 }

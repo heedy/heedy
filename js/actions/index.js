@@ -52,7 +52,6 @@ export function go(loc) {
         // When leaving user/device pages, we want to forget the search box contents.
         // But before we do that, let's make sure we get the CURRENT text
         let searchClear = setSearchText("");
-        let path = getCurrentPath().split("/");
 
         dispatch(push("/" + loc));
 

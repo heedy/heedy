@@ -19,8 +19,11 @@ import { render } from 'react-dom';
 import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
 import thunk from 'redux-thunk'
-import { Router, Route, browserHistory } from 'react-router';
-import { syncHistoryWithStore, routerReducer, routerMiddleware } from 'react-router-redux';
+
+import createHistory from 'history/createBrowserHistory';
+import { Router, Route } from 'react-router';
+import { ConnectedRouter, routerReducer, routerMiddleware } from 'react-router-redux';
+
 import createLogger from 'redux-logger';
 
 import createSagaMiddleware from 'redux-saga';
@@ -75,9 +78,12 @@ if ('serviceWorker' in navigator) {
 // Set up the Saga middleware, which will be used for dispatching actions.
 const sagaMiddleware = createSagaMiddleware();
 
+// The history
+const history = createHistory();
+
 // Set up the browser history redux middleware and the optional chrome dev tools extension for redux
 // https://github.com/zalmoxisus/redux-devtools-extension/commit/6c146a2e16da79fefdc0e3e33f188d4ee6667341
-let appMiddleware = applyMiddleware(thunk, routerMiddleware(browserHistory), sagaMiddleware, createLogger());
+let appMiddleware = applyMiddleware(thunk, routerMiddleware(history), sagaMiddleware, createLogger());
 let finalCreateStore = compose(appMiddleware, window.devToolsExtension
     ? window.devToolsExtension()
     : f => f)(createStore);
@@ -101,14 +107,11 @@ export function run(context) {
     // add context to state
     store.dispatch({ type: 'LOAD_CONTEXT', value: context });
 
-    // Set up the history through react-router-redux
-    // This needs to happen after load context, since it runs a LOCATION_CHANGE event,
-    // which is used in sagas for background-loading resources, which need to know current context
-    let history = syncHistoryWithStore(browserHistory, store);
-
     render((
         <Provider store={store}>
-            <App history={history} />
+            <ConnectedRouter history={history}>
+                <App />
+            </ConnectedRouter>
         </Provider>
     ), document.getElementById('app'));
 }

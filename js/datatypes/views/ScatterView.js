@@ -31,7 +31,7 @@ class ScatterComponent extends DataTransformUpdater {
 
         let keys = Object.keys(d[0].d);
         let dataset = new Array(d.length);
-        
+
         let minColor = 9999999999999;
         let maxColor = -minColor;
 
@@ -50,11 +50,11 @@ class ScatterComponent extends DataTransformUpdater {
 
         let pointColor = (d.length > 500 ? ScatterComponent.pointColor.high : ScatterComponent.pointColor.low);
 
-        if (keys.length == 3 && minColor!=maxColor) {
+        if (keys.length == 3 && minColor != maxColor) {
             pointColor = new Array(d.length);
-            for (let i=0; i < d.length; i++) {
+            for (let i = 0; i < d.length; i++) {
                 let dp = fixData(d[i].d[keys[2]]);
-                pointColor[i] = `hsla(${Math.floor(120 * (dp-minColor)/(maxColor - minColor))},100%,50%,0.4)`;
+                pointColor[i] = `hsla(${Math.floor(120 * (dp - minColor) / (maxColor - minColor))},100%,50%,0.4)`;
             }
         }
 
@@ -119,7 +119,6 @@ function isNumeric(n) {
 }
 
 function showScatterView(context) {
-    console.log("Checking ScatterView");
     if (context.data.length > 1
         && context.data[0].d !== null && typeof context.data[0].d === 'object'
         && (Object.keys(context.data[0].d).length == 2 || Object.keys(context.data[0].d).length == 3)

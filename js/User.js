@@ -11,10 +11,10 @@
   about which user/device/stream it belongs to.
 */
 
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
-import {getUserState} from './reducers/user';
+import { getUserState } from './reducers/user';
 import connectStorage from './connectStorage';
 
 import Error from './components/Error';
@@ -24,7 +24,7 @@ import UserView from './pages/UserView';
 import UserEdit from './pages/UserEdit';
 import DeviceCreate from './pages/DeviceCreate';
 
-import {setTitle} from './util';
+import { setTitle } from './util';
 
 function setUserTitle(user) {
     setTitle(user == null
@@ -49,24 +49,27 @@ class User extends Component {
         }
     }
     render() {
+        if (this.props.location.pathname == "/logout") {
+            return null;
+        }
         if (this.props.error != null) {
-            return (<Error err={this.props.error}/>);
+            return (<Error err={this.props.error} />);
         }
         if (this.props.user == null || this.props.devarray == null) {
             // Currently querying
-            return (<Loading/>);
+            return (<Loading />);
         }
 
         // React router does not allow using hash routing, so we route by hash here
         switch (this.props.location.hash) {
             case "#create":
-                return (<DeviceCreate user={this.props.user} state={this.props.state.create}/>);
+                return (<DeviceCreate user={this.props.user} state={this.props.state.create} />);
             case "#edit":
-                return (<UserEdit user={this.props.user} state={this.props.state.edit}/>);
+                return (<UserEdit user={this.props.user} state={this.props.state.edit} />);
 
         }
 
-        return (<UserView user={this.props.user} state={this.props.state.view} devarray={this.props.devarray}/>);
+        return (<UserView user={this.props.user} state={this.props.state.view} devarray={this.props.devarray} />);
     }
 }
 export default connectStorage(connect((store, props) => ({

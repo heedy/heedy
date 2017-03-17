@@ -10,10 +10,10 @@
   The App component is initialized in index.js. It is react's main entry point.
 */
 
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
-import {Router, Route, IndexRoute, browserHistory} from 'react-router'
+import { Route } from 'react-router'
 
 import Theme from './theme/Theme';
 
@@ -27,23 +27,14 @@ import Stream from './Stream';
 // should be deleted on logout.
 import Logout from './Logout';
 
-class App extends Component {
-    static propTypes = {
-        history: PropTypes.object.isRequired
-    };
-    render() {
-        return (
-            <Router history={this.props.history}>
-                <Route path="/" component={Theme}>
-                    <IndexRoute component={MainPage}/>
-                    <Route path="/logout" component={Logout}/>
-                    <Route path="/:user" component={User}/>
-                    <Route path="/:user/:device" component={Device}/>
-                    <Route path="/:user/:device/:stream" component={Stream}/>
-                </Route>
-            </Router>
-        );
-    }
-}
+const App = () => (
+    <Theme>
+        <Route exact path="/" component={MainPage} />
+        <Route exact path="/logout" component={Logout} />
+        <Route exact path="/:user" component={User} />
+        <Route exact path="/:user/:device" component={Device} />
+        <Route exact path="/:user/:device/:stream" component={Stream} />
+    </Theme>
+);
 
 export default App;

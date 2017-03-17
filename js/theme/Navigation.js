@@ -58,9 +58,9 @@ class Navigation extends React.Component {
         docked: React.PropTypes.bool.isRequired,
         open: React.PropTypes.bool.isRequired,
         links: React.PropTypes.arrayOf(React.PropTypes.object),
-        selected: React.PropTypes.string.isRequired,
         onClick: React.PropTypes.func.isRequired,
-        onRequestChange: React.PropTypes.func
+        onRequestChange: React.PropTypes.func,
+        location: React.PropTypes.object.isRequired
     };
 
     // The navigation does not close itself when in mobile mode when clicked
@@ -74,6 +74,8 @@ class Navigation extends React.Component {
     }
 
     render() {
+        let curloc = this.props.location.pathname + this.props.location.hash;
+        let selected = curloc.substring(1, curloc.length);
         return (
             <Drawer docked={this.props.docked} open={this.props.docked
                 ? true
@@ -85,11 +87,11 @@ class Navigation extends React.Component {
                         height: "24px"
                     }} />
                 </div>
-                <SelectableList value={this.props.selected} onChange={(e, v) => this.onClick(e, v)}>
+                <SelectableList value={selected} onChange={(e, v) => this.onClick(e, v)}>
                     {this.props.links.map((link) => (
                         <ListItem key={link.page} value={link.page} leftIcon={< FontIcon className="material-icons" style={{ color: "black" }} > {
                             link.icon
-                        } < /FontIcon>} innerDivStyle={styles.menuInnerDivStyle} style={styles.menuStyle}>
+                        } </FontIcon>} innerDivStyle={styles.menuInnerDivStyle} style={styles.menuStyle}>
                             <div>
                                 <div style={styles.menuMainText}>{link.title}</div>
                                 {link.subtitle == ""
@@ -109,7 +111,5 @@ class Navigation extends React.Component {
 }
 
 export default connect((state) => ({ links: state.site.navigation }), (dispatch) => ({
-    onClick: (e, id) => {
-        dispatch(go(id));
-    }
+    onClick: (e, id) => dispatch(go(id))
 }))(Navigation);

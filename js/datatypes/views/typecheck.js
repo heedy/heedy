@@ -85,11 +85,10 @@ function setCache(d, f, v) {
  * @param {function} fn the function that computes the data
  */
 function cacheWrapper(key, fn) {
-    return function (d, f = I) {
+    return function (d, f = I, nolog = false) {
         // if we already computed on this object, just return it.
         let c = getCache(d, f);
         if (c[key] !== undefined) {
-            console.log("typecheck", key, "from cache", c[key]);
             return c[key];
         }
 
@@ -98,8 +97,7 @@ function cacheWrapper(key, fn) {
         v[key] = ret;
 
         setCache(d, f, v);
-
-        console.log("TYPECHECK", key, ret);
+        if (!nolog) console.log("TYPECHECK", key, ret);
 
         return ret;
     }
@@ -255,9 +253,9 @@ export const objectvalues = cacheWrapper('object', function (d, f) {
     Object.keys(k.min).map(function (k) {
         let f2 = (x) => f(x)[k];
         v[k] = {
-            numeric: numeric(d, f2),
-            categorical: categorical(d, f2),
-            location: location(d, f2)
+            numeric: numeric(d, f2, true),
+            categorical: categorical(d, f2, true),
+            location: location(d, f2, true)
         };
     });
     return v;
