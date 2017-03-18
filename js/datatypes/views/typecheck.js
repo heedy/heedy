@@ -32,6 +32,48 @@ export function getNumber(d) {
 export const I = (d) => d.d;
 
 
+// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
+function isOnlyNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+// This is a custom comparison function used to sort the keys in increasing order.
+// We order things as follows:
+//  - If we think that both keys are in a similar format, and have floats in them, sort by the float.
+//  - Otherwise, perform a normal compare
+var floatmatcher = /[+-]?\d+(\.\d+)?/g;
+export function dataKeyCompare(a, b) {
+    // We first try to extract a number from both strings
+    // http://stackoverflow.com/questions/17374893/how-to-extract-floating-numbers-from-strings-in-javascript
+    let numa = a.match(floatmatcher)
+    if (numa != null && numa.length > 0) {
+        let numb = b.match(floatmatcher)
+        if (numb != null && numa.length == numb.length) {
+            let na = parseFloat(numa[0]);
+            let nb = parseFloat(numb[0]);
+            return (na < nb
+                ? -1
+                : (na == nb
+                    ? 0
+                    : 1));
+        }
+    }
+
+    // Since we couldn't extract a number, try to match the data values
+    if (isOnlyNumeric(this[a]) && isOnlyNumeric(this[b])) {
+        a = this[a];
+        b = this[b];
+    }
+
+    // Otherwise, return just normal string compare
+    return (a > b
+        ? -1
+        : (a == b
+            ? 0
+            : 1));
+}
+
+
 /**
  * The cache allows us to do expensive type checking. Each check is only done ONCE for
  * each datapoint array, with given transform function.
@@ -215,16 +257,16 @@ export const categorical = cacheWrapper('categorical', function (d, f) {
         let dp = f(d[i]);
         if (!isKey(dp)) return null;
         if (!kv.has(dp)) {
-            kv.set(dp, true);
+            kv.set(dp, 0);
             unique++;
             if (unique > 200) return null;
         }
-
-
+        kv.set(dp,kv.get(dp)+1);
     }
     let v = {
         categories: unique,
-        total: d.length
+        total: d.length,
+        categorymap: kv
     };
     let c = (v.categories / v.total < 0.5 || v.categories < v.total && v.categories < 20);
     return c ? v : null;

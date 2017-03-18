@@ -16,3 +16,4 @@ import './SentimentLineChart';
 import './ScatterView';
 import './Map';
 import './WebHistoryView';
+import './HeatmapView';

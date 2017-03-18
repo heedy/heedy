@@ -107,9 +107,13 @@ body {
 
 
 
-
-
-
+/* reactochart needs this... */
+.chart-background {
+  fill-opacity: 0;
+}
+.plot-background {
+  fill-opacity: 0;
+}
 
 /* ==========================================================================
    Helper classes

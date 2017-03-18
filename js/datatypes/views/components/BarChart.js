@@ -5,11 +5,13 @@ This shows a bar chart, with the option of showing a pie chart
 import React, { PropTypes } from 'react';
 import DataTransformUpdater from './DataUpdater';
 import dropdownTransformDisplay from './dropdownTransformDisplay';
+import {dataKeyCompare} from '../typecheck';
 
 import { Bar, Pie } from 'react-chartjs-2';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import moment from 'moment';
+
 
 // http://stackoverflow.com/questions/25594478/different-color-for-each-bar-in-a-bar-chart-chartjs
 function getRandomColor() {
@@ -21,47 +23,6 @@ function getRandomColor() {
     return color;
 }
 
-
-// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
-function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-}
-
-// This is a custom comparison function used to sort the keys in increasing order.
-// We order things as follows:
-//  - If we think that both keys are in a similar format, and have floats in them, sort by the float.
-//  - Otherwise, perform a normal compare
-var floatmatcher = /[+-]?\d+(\.\d+)?/g;
-function dataKeyCompare(a, b) {
-    // We first try to extract a number from both strings
-    // http://stackoverflow.com/questions/17374893/how-to-extract-floating-numbers-from-strings-in-javascript
-    let numa = a.match(floatmatcher)
-    if (numa != null && numa.length > 0) {
-        let numb = b.match(floatmatcher)
-        if (numb != null && numa.length == numb.length) {
-            let na = parseFloat(numa[0]);
-            let nb = parseFloat(numb[0]);
-            return (na < nb
-                ? -1
-                : (na == nb
-                    ? 0
-                    : 1));
-        }
-    }
-
-    // Since we couldn't extract a number, try to match the data values
-    if (isNumeric(this[a]) && isNumeric(this[b])) {
-        a = this[a];
-        b = this[b];
-    }
-
-    // Otherwise, return just normal string compare
-    return (a > b
-        ? -1
-        : (a == b
-            ? 0
-            : 1));
-}
 
 class BarChart extends DataTransformUpdater {
     static propTypes = {
