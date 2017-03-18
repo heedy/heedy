@@ -47,6 +47,7 @@
     "localforage-setitems": "^1.3.1",
     "localforage-startswith": "^1.2.0",
     "material-ui": "^0.17.1",
+    "mathjs": "^3.10.0",
     "moment": "^2.17.1",
     "parallelshell": "^2.0.0",
     "pipescript": "^0.2.6",

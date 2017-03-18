@@ -26,7 +26,7 @@ export const AnalysisPageInitialState = {
     loading: false,
     data: [],
     xdataset: true,
-    dt: "86400",
+    dt: "60*60*24",
 
     search: AnalysisSearchInitialState
 };

@@ -100,15 +100,15 @@ const TDataset = ({ state, actions }) => (
             >
                 <MenuItem value={"1"} primaryText="1 second" />
                 <MenuItem value={"60"} primaryText="1 minute" />
-                <MenuItem value={"1800"} primaryText="30 minutes" />
-                <MenuItem value={"3600"} primaryText="1 hour" />
-                <MenuItem value={"21600"} primaryText="6 hours" />
-                <MenuItem value={"43200"} primaryText="12 hours" />
-                <MenuItem value={"86400"} primaryText="1 day" />
-                <MenuItem value={"604800"} primaryText="1 week" />
-                <MenuItem value={"1296000"} primaryText="15 days" />
-                <MenuItem value={"2592000"} primaryText="30 days" />
-                <MenuItem value={"31536000"} primaryText="1 year" />
+                <MenuItem value={"60*30"} primaryText="30 minutes" />
+                <MenuItem value={"60*60"} primaryText="1 hour" />
+                <MenuItem value={"60*60*6"} primaryText="6 hours" />
+                <MenuItem value={"60*60*12"} primaryText="12 hours" />
+                <MenuItem value={"60*60*24"} primaryText="1 day" />
+                <MenuItem value={"60*60*24*7"} primaryText="1 week" />
+                <MenuItem value={"60*60*24*15"} primaryText="15 days" />
+                <MenuItem value={"60*60*24*30"} primaryText="30 days" />
+                <MenuItem value={"60*60*24*365"} primaryText="1 year" />
             </SelectField>
         </div>
         <div className="col-md-3">

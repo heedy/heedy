@@ -42,11 +42,6 @@ function HistView(key) {
     ];
 }
 
-// https://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
-function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-}
-
 function showHistogramView(context) {
     let d = context.data;
     if (d.length < 7 || context.pipescript === null) {

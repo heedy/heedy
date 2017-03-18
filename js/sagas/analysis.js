@@ -3,6 +3,8 @@ import { put, select, takeLatest } from 'redux-saga/effects'
 import storage from '../storage';
 import { cdbPromise } from '../util';
 
+import math from 'mathjs';
+
 /**
  * Validates and queries ConnectorDB for a dataset. Shows errors if necessary.
  */
@@ -39,12 +41,18 @@ function* query(action) {
         query.transform = analysis.transform;
     } else {
         // Make sure that dt is a number
-        let dt = parseFloat(analysis.dt);
-        if (isNaN(dt) || dt < 0.001) {
-            yield put({ type: "ANALYSIS_ERROR", value: "Invalid time delta (" + analysis.dt + ")" });
-            return;
-        }
-        query.dt = dt;
+        try {
+            let dt = math.eval(analysis.dt)
+            if (isNaN(dt) || dt < 0.001) {
+                yield put({ type: "ANALYSIS_ERROR", value: "Invalid time delta (" + analysis.dt + ")" });
+                return;
+            }
+            query.dt = dt;
+        } catch (e) {
+                yield put({ type: "ANALYSIS_ERROR", value: "Invalid time delta (" + analysis.dt + ")" });
+                return;
+        }       
+        
     }
 
     // Alright, validation complete. Let's query for the dataset

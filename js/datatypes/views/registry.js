@@ -7,6 +7,7 @@ so that they can be registered.
 */
 
 import './TableView/index';
+import './InfoView';
 import './BoolView';
 import './LineView';
 import './HistogramView';
