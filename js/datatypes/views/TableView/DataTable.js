@@ -16,9 +16,9 @@ class DataTable extends DataUpdater {
     }
 
     // transformDataset is required for DataUpdater to set up the modified state data
-    transformDataset(d) {
+    transformDataset(d, state) {
         let dataset = new Array(d.length);
-
+        let istime = state.timeon;
         if (d.length > 0) {
             // In order to show columns in the data table, we first check if the datapoints are objects...
             // If they are, then we generate the table so that the object is the columns
@@ -35,17 +35,25 @@ class DataTable extends DataUpdater {
                         t: "",
                         d: {
                             Key: keys[i],
-                            Value: d[keys[i]]
+                            Value: istime ? moment.duration(d[keys[i]], 'seconds').humanize() : d[keys[i]]
                         }
                     };
                 }
                 dataset[0].t = moment.unix(t).calendar();
+            } else if (d.length == 1 && d[0].d !== null && typeof d[0].d !== 'object') {
+                // This is a single datapoint with a single value. Show an alternate view
+                // That highlights the value
+                dataset[0] = {
+                    key: "singleDP",
+                    t: moment.unix(d[0].t).calendar(),
+                    d: istime ? moment.duration(d[0].d, 'seconds').humanize() : JSON.stringify(d[0].d, undefined, 2)
+                };
             }
             else if (d[0].d !== null && typeof d[0].d === 'object' && Object.keys(d[0].d).length < 10) {
                 for (let i = 0; i < d.length; i++) {
                     let data = {};
                     Object.keys(d[i].d).map((key) => {
-                        data[key.capitalizeFirstLetter()] = JSON.stringify(d[i].d[key], undefined, 2);
+                        data[key.capitalizeFirstLetter()] = istime ? moment.duration(d[i].d[key], 'seconds').humanize() : JSON.stringify(d[i].d[key], undefined, 2);
                     });
                     dataset[i] = {
                         key: JSON.stringify(d[i]),
@@ -59,7 +67,7 @@ class DataTable extends DataUpdater {
                         key: JSON.stringify(d[i]),
                         t: moment.unix(d[i].t).calendar(),
                         d: {
-                            Data: JSON.stringify(d[i].d, undefined, 2)
+                            Data: istime ? moment.duration(d[i].d, 'seconds').humanize() : JSON.stringify(d[i].d, undefined, 2)
                         }
                     };
                 }
@@ -77,6 +85,15 @@ class DataTable extends DataUpdater {
 
         let data = this.data;
         let expandedText = null;
+
+        if (data.length == 1 && data[0].key === "singleDP") {
+            return (
+                <div style={{ textAlign: "center" }}>
+                    <h6>{data[0].t}</h6>
+                    {data[0].d.length <= 15 ? (<h1>{data[0].d}</h1>) : (<h3>{data[0].d}</h3>)}
+                </div>
+            );
+        }
 
         // If the table is not expanded, show only the last 5 if there are more than 10
         if (!expanded && data.length > 10) {

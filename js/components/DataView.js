@@ -27,7 +27,7 @@ class DataView extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object),
         datatype: PropTypes.string,
-        schema: PropTypes.object,   //
+        schema: PropTypes.string,   //
         transform: PropTypes.string, // An optional transform to apply to the data
         transformError: PropTypes.func,
 
@@ -38,7 +38,7 @@ class DataView extends Component {
 
     static defaultProps = {
         data: [],
-        schema: {},
+        schema: "",
         datatype: "",
         transform: "",
         transformError: (err) => console.log(err)
@@ -80,12 +80,12 @@ class DataView extends Component {
     }
 
     generateViews(p) {
-
+        this.schema = JSON.parse(p.schema);
         // Check which views of data to show
         this.views = getViews({
             data: this.data,    // data was already set earlier
             datatype: p.datatype,
-            schema: p.schema,
+            schema: this.schema,
             pipescript: p.pipescript
         });
         console.log("Showing Views: ", this.views);
@@ -110,7 +110,11 @@ class DataView extends Component {
             }
             this.data = this.dataTransform(p.data);
         }
-        this.generateViews(p);
+        if (p.data !== this.props.data || this.props.transform !== p.transform
+            || p.schema !== this.props.schema || p.pipescript !== this.props.pipescript || p.datatype !== this.props.datatype) {
+            this.generateViews(p);
+        }
+
     }
 
     /**
@@ -143,7 +147,7 @@ class DataView extends Component {
             }}>
                 {this.props.children}
                 {this.views.map((view) => (<DataViewCard key={view.key} view={view} data={this.data}
-                    schema={this.props.schema} datatype={this.props.datatype}
+                    schema={this.schema} datatype={this.props.datatype}
                     state={this.getViewState(view)} setState={(s) => this.setViewState(view, s)}
                     pipescript={this.props.pipescript} msg={this.props.showMessage} />))}
             </div>
