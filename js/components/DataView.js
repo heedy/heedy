@@ -38,7 +38,7 @@ class DataView extends Component {
 
     static defaultProps = {
         data: [],
-        schema: "",
+        schema: "{}",
         datatype: "",
         transform: "",
         transformError: (err) => console.log(err)
@@ -80,7 +80,7 @@ class DataView extends Component {
     }
 
     generateViews(p) {
-        this.schema = JSON.parse(p.schema);
+        this.schema = JSON.parse(p.schema !== "" ? p.schema : "{}");
         // Check which views of data to show
         this.views = getViews({
             data: this.data,    // data was already set earlier

@@ -155,11 +155,11 @@ export default LineChart;
 
 // generate creates a new view that displays a line chart. The view object is set up
 // so that it is totally ready to be passed as a result of the shower function
-export function generateLineChart(transform) {
+export function generateLineChart(transform = "") {
     let component = LineChart;
 
     // If we're given a transform, wrap the LineChart so that we can pass transform into the class.
-    if (transform != null) {
+    if (transform !== "") {
         component = React.createClass({
             render: function () {
                 return (<LineChart {...this.props} transform={transform} />);

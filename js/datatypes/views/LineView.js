@@ -12,20 +12,25 @@ import { numeric, objectvalues } from './typecheck';
 const BasicLineView = {
     ...generateLineChart(),
     key: "lineView",
-    title: "Line Plot",
+    title: "Basic Plot",
     subtitle: ""
 };
 
-function lineViewGenerator(key) {
-    let pretransform = (key !== "" ? "$('" + key + "'):" : "");
+function lineViewGenerator(pretransform = "", within = "") {
     return [
-        BasicLineView, {
-            ...generateDropdownLineChart("This view averages the datapoint values over the chosen time period", generateTimeOptions("Average", "", pretransform + "mean"), 1),
+        {
+            ...generateLineChart(pretransform),
+            key: "lineView",
+            title: "Basic Plot",
+            subtitle: "",
+            dropdown: pretransform !== "" ? dropdownTransformDisplay("", pretransform) : undefined
+        }, {
+            ...generateDropdownLineChart("This view averages the datapoint values over the chosen time period", generateTimeOptions("Average", pretransform, within + "mean"), 1),
             key: "averagedLineView",
             title: "Averaged Values",
             subtitle: ""
         }, {
-            ...generateDropdownLineChart("This view sums the datapoint values over the chosen time period", generateTimeOptions("Sum", "", pretransform + "sum"), 1),
+            ...generateDropdownLineChart("This view sums the datapoint values over the chosen time period", generateTimeOptions("Sum", pretransform, within + "sum"), 1),
             key: "summedLineView",
             title: "Summed Values",
             subtitle: ""
@@ -41,7 +46,10 @@ function showLineChart(context) {
 
         let n = numeric(context.data);
         if (n !== null && !n.allbool) {
-            return lineViewGenerator(n.key);
+            return lineViewGenerator(n.key !== "" ? "$('" + n.key + "')" : "");
+        }
+        if (n !== null && n.allbool) {
+            return lineViewGenerator(n.key !== "" ? "$('" + n.key + "') | ttrue" : "ttrue");
         }
 
         let o = objectvalues(context.data);

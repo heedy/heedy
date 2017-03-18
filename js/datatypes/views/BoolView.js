@@ -11,8 +11,8 @@ import { numeric } from './typecheck';
 const BoolView = [
     {
         ...generateLineChart(),
-        key: "lineView",
-        title: "Plot",
+        key: "boolView",
+        title: "Boolean View",
         subtitle: ""
     }
 ];

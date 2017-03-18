@@ -108,7 +108,7 @@ class BarChart extends DataTransformUpdater {
                 xAxes: [{
                     scaleLabel: {
                         display: this.props.xlabel != "",
-                        labelString: this.props.xlabel
+                        labelString: this.props.xlabel !== undefined ? this.props.xlabel : ""
                     }
                 }],
                 yAxes: [{
@@ -117,7 +117,7 @@ class BarChart extends DataTransformUpdater {
                     },
                     scaleLabel: {
                         display: this.props.ylabel != "",
-                        labelString: this.props.ylabel
+                        labelString: this.props.ylabel !== undefined ? this.props.ylabel : ""
                     }
                 }]
             },
@@ -153,9 +153,8 @@ export function getBarChartIcons(context) {
 // so that it is totally ready to be passed as a result of the shower function
 export function generateBarChart(transform, description, xlabel = "", ylabel = "") {
     let component = BarChart;
-
     // If we're given a transform, wrap the BarChart so that we can pass transform into the class.
-    if (transform != null) {
+    if (transform != null && transform !== undefined) {
         component = React.createClass({
             render: function () {
                 return (<BarChart {...this.props} transform={transform} xlabel={xlabel} ylabel={ylabel} />);
@@ -169,7 +168,7 @@ export function generateBarChart(transform, description, xlabel = "", ylabel = "
         width: "expandable-half",
         icons: getBarChartIcons
     };
-    if (transform != null) {
+    if (transform != null && transform !== undefined) {
         result.dropdown = dropdownTransformDisplay(description, transform);
     }
     return result;
