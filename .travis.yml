@@ -6,7 +6,7 @@ language:
     - go
 
 go:
-    - 1.7
+    - 1.8
 
 # travis clones 50 deep - we only need 1
 git:
