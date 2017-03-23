@@ -90,10 +90,29 @@ The above is taken directly from https://google.github.io/material-design-icons/
         // We define the site URL as a global variable
         var SiteURL = "{{.SiteURL}}";
         var ConnectorDBVersion = "{{ Version }}";
+        
+        function loadPipescriptIntoApp() {
+            console.log("PipeScript Loaded");
+            App.store.dispatch({ type: 'PIPESCRIPT', value: pipescript });
+        }
+        var AppReady = false;
+        function pipescriptLoaded() {
+            if (AppReady) {
+                // If the app is loaded, we add pipescript now
+                loadPipescriptIntoApp();
+            }
+        }
         </script>
-        <script src="/app/bundle.js" type="text/javascript"></script>
+        <script async src="/app/pipescript.js" type="text/javascript" onload="pipescriptLoaded()"></script> <!-- copied to folder on build -->
+        <script src="/app/bundle.js" type="text/javascript"></script> <!-- Generated on app build -->
         <script>
           App.run({{json .}});
+          AppReady = true;
+          if (typeof pipescript !== 'undefined') {
+            // We load pipescript, since it already loaded
+            loadPipescriptIntoApp();
+          }
+          
         </script>
 </body>
 </html>

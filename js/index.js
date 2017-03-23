@@ -24,7 +24,7 @@ import createHistory from 'history/createBrowserHistory';
 import { Router, Route } from 'react-router';
 import { ConnectedRouter, routerReducer, routerMiddleware } from 'react-router-redux';
 
-import createLogger from 'redux-logger';
+import { createLogger } from 'redux-logger';
 
 import createSagaMiddleware from 'redux-saga';
 import sagas from './sagas';
@@ -119,10 +119,18 @@ export function run(context) {
 // We now asynchronously load PipeScript, which is used extensively for data analysis of downloaded data.
 // While ConnectorDB has pipescript built-in, several visualizations perform further transforms of queried data.
 // Instead of querying again, the transforms are done entirely client-side.
+/*
+Webpack has serious problems with the new version of PipeScript when building in production mode.
+We therefore just load pipescript directly as an external library, from the html template.
+
+TODO: Figure out wtf was wrong here...
+
 require.ensure(["pipescript"], (p) => {
     console.log("PipeScript Loaded");
     store.dispatch({ type: 'PIPESCRIPT', value: require("pipescript") });
 });
+*/
+
 
 // Finally, we correct the SiteURL if it is invalid.
 // The issue stems from the fact that SiteURL is frequently localhost, 

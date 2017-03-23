@@ -20,7 +20,7 @@ var config = {
     },
 
     module: {
-        //noParse: [path.join(__dirname, "node_modules", "pipescript")],
+        noParse: /node_modules\/pipescript/,
         rules: [
             {
                 test: /\.jsx?/,
@@ -28,20 +28,19 @@ var config = {
                 loader: 'babel-loader'
             }, {
                 test: /\.css$/,
-                use: ["style-loader","css-loader"]
+                use: ["style-loader", "css-loader"]
             }
-        ]
-    },
+        ],
 
+    },
     plugins: [
-        new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify(env)})
+        new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify(env) })
     ]
 };
 
 if (env === 'production') {
-    config.plugins.push(new webpack.optimize.DedupePlugin())
     config.plugins.push(new webpack.optimize.UglifyJsPlugin({
-        compressor: {
+        compress: {
             pure_getters: true,
             unsafe: true,
             unsafe_comps: true,
