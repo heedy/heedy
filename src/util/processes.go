@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -29,27 +30,30 @@ var (
 	PortTimeoutLoops = 100
 )
 
+// PortOpen checks if it can connect to the port using TCP
+func PortOpen(host string, port int) bool {
+	hostPort := fmt.Sprintf("%s:%d", host, port)
+	_, err := net.Dial("tcp", hostPort)
+	return err == nil
+}
+
 //WaitPort waits for a port to open
 func WaitPort(host string, port int, err error) error {
 	if err != nil {
 		return err
 	}
 
-	hostPort := fmt.Sprintf("%s:%d", host, port)
+	log.Debugf("Waiting for %s:%d to open...", host, port)
 
-	log.Debugf("Waiting for %v to open...", hostPort)
-
-	_, err = net.Dial("tcp", hostPort)
 	i := 0
-	for ; err != nil && i < PortTimeoutLoops; i++ {
-		_, err = net.Dial("tcp", hostPort)
+	for ; !PortOpen(host, port) && i < PortTimeoutLoops; i++ {
 		time.Sleep(100 * time.Millisecond)
 	}
 	if i >= PortTimeoutLoops {
 		return ErrTimeout
 	}
 
-	log.Debugf("...%v is now open.", hostPort)
+	log.Debugf("...%s:%d is now open.", host, port)
 	return nil
 }
 
@@ -95,7 +99,7 @@ func RunDaemon(err error, command string, args ...string) (int, error) {
 	return cmd.Process.Pid, nil
 }
 
-//GetProcess gets the gven process using its process name
+//GetProcess gets the given process using its process name
 func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, error) {
 	if err != nil {
 		return nil, err
@@ -103,7 +107,7 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 
 	pidfile := filepath.Join(streamdbDirectory, procname+".pid")
 	if !PathExists(pidfile) {
-		log.Errorf("Pid Not Found For: %s", procname)
+		log.Debugf("Pid Not Found For: %s", procname)
 		return nil, ErrProcessNotFound
 	}
 
@@ -124,5 +128,14 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 		return nil, err
 	}
 
-	return os.FindProcess(pid)
+	p, err := os.FindProcess(pid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// In unix systems, this always succeeds, so we need to explicitly check
+	// if the process exists
+	// http://stackoverflow.com/questions/15204162/check-if-a-process-exists-in-go-way
+	return p, p.Signal(syscall.Signal(0))
 }

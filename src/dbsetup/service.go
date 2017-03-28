@@ -17,14 +17,14 @@ import (
 type Status int
 
 const (
-	// The service hasn't had a call to init yet.
-	StatusNone    = iota
+	// When there is no status to speak of
+	StatusNone = iota
+	// The service is not running
 	StatusStopped = iota
 	// The service is running
 	StatusRunning = iota
-	// The service is not running
-	StatusError   = iota
-	StatusCrashed = iota
+	// When the service encountered an error
+	StatusError = iota
 )
 
 type Service interface {
@@ -56,7 +56,6 @@ type Service interface {
 type BaseService struct {
 	ServiceDirectory string
 	ServiceName      string
-	Stat             Status
 	S                *config.Service
 	C                *config.Configuration
 }
@@ -68,7 +67,11 @@ func (bs BaseService) Name() string {
 
 //Status returns the status of the service
 func (bs BaseService) Status() Status {
-	return bs.Stat
+	_, err := util.GetProcess(bs.ServiceDirectory, bs.ServiceName, nil)
+	if err != nil {
+		return StatusStopped
+	}
+	return StatusRunning
 }
 
 func (bs BaseService) start() (string, error) {
@@ -109,14 +112,11 @@ func (bs BaseService) Stop() error {
 	} else {
 		// On linux, sigterm is used
 		if err := p.Signal(syscall.SIGTERM); err != nil {
-			bs.Stat = StatusError
 			return err
 		}
 	}
 
 	p.Wait()
-
-	bs.Stat = StatusStopped
 
 	return nil
 }
@@ -125,10 +125,9 @@ func (bs BaseService) Stop() error {
 func (bs *BaseService) Kill() error {
 	log.Warnf("Killing %s server", bs.Name())
 
-	if bs.Stat != StatusRunning {
+	if bs.Status() != StatusRunning {
 		return nil
 	}
-	bs.Stat = StatusStopped
 
 	p, err := util.GetProcess(bs.ServiceDirectory, bs.ServiceName, nil)
 	if err != nil {
@@ -136,7 +135,6 @@ func (bs *BaseService) Kill() error {
 	}
 
 	if err := p.Kill(); err != nil {
-		bs.Stat = StatusError
 		return err
 	}
 

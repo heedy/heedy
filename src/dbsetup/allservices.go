@@ -124,11 +124,6 @@ func Start(o *Options) error {
 	if !util.PathExists(o.DatabaseDirectory) {
 		return ErrDirectoryDNE
 	}
-	pidfile := filepath.Join(o.DatabaseDirectory, "connectordb.pid")
-	//Check if connectordb.pid exists - if it does, it means the servers are running.
-	if util.PathExists(pidfile) {
-		return ErrAlreadyRunning
-	}
 
 	c, err := config.Load(filepath.Join(o.DatabaseDirectory, "connectordb.conf"))
 	if err != nil {
@@ -188,6 +183,12 @@ func Start(o *Options) error {
 	}
 
 	//Now we save the current options to the pid file
+	pidfile := filepath.Join(o.DatabaseDirectory, "connectordb.pid")
+	//Check if connectordb.pid exists - if it does, it means that we should check if the PIDs inside it are still running
+	if util.PathExists(pidfile) {
+		log.Warn("It looks like ConnectorDB was not shut down cleanly! Started anyways.")
+		os.Remove(pidfile)
+	}
 	o.Save(pidfile)
 	return nil
 }
@@ -242,38 +243,3 @@ func Stop(opt *Options) error {
 
 	return errP
 }
-
-/*
-//Kill stops a ConnectorDB database
-func Kill(dbfolder string) error {
-	if !util.PathExists(dbfolder) {
-		return ErrDirectoryDNE
-	}
-	pidfile := filepath.Join(dbfolder, "connectordb.pid")
-	//Check if connectordb.pid exists - if it does, it means the servers are running
-	if !util.PathExists(pidfile) {
-		return ErrNotRunning
-	}
-
-	c, err := config.Load(pidfile)
-	if err != nil {
-		return err
-	}
-	errF := NewFrontendService(o.DatabaseDirectory, c).Stop()
-	errR := NewRedisService(o.DatabaseDirectory, &c.Redis).Stop()
-	errG := NewGnatsdService(o.DatabaseDirectory, &c.Nats).Stop()
-	errP := NewPostgresService(o.DatabaseDirectory, &c.Sql).Stop()
-	if errF != nil {
-		return errF
-	}
-	if errR != nil {
-		return errR
-	}
-	if errG != nil {
-		return errG
-	}
-
-	os.Remove(pidfile)
-	return errP
-}
-*/

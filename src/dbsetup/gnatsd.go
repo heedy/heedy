@@ -24,16 +24,10 @@ func (s *GnatsdService) Start() error {
 	_, err = util.RunDaemon(err, GetExecutablePath("gnatsd"), "-c", configfile)
 	err = util.WaitPort(s.S.Hostname, int(s.S.Port), err)
 
-	if err == nil {
-		s.Stat = StatusRunning
-	} else {
-		s.Stat = StatusError
-	}
-
 	return err
 }
 
 //NewGnatsdService creates a new service for gNatsd
 func NewGnatsdService(serviceDirectory string, c *config.Configuration) *GnatsdService {
-	return &GnatsdService{BaseService{serviceDirectory, "gnatsd", StatusNone, &c.Nats, c}}
+	return &GnatsdService{BaseService{serviceDirectory, "gnatsd", &c.Nats, c}}
 }

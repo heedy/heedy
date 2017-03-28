@@ -47,10 +47,13 @@ connectordb stop.`,
 
 		log.Info("Starting ConnectorDB")
 
-		//force removes the pid file
+		//force removes the pid files of all services that use them
 		if force {
-			log.Warn("Force Flag: removing connectordb.pid")
+			log.Warn("Force Flag: removing PID files")
 			os.Remove(filepath.Join(args[0], "connectordb.pid"))
+			os.Remove(filepath.Join(args[0], "gnatsd.pid"))
+			os.Remove(filepath.Join(args[0], "frontend.pid"))
+			os.Remove(filepath.Join(args[0], "postgres.pid"))
 		}
 
 		opt := &dbsetup.Options{

@@ -23,6 +23,11 @@ func (s *FrontendService) Create() error {
 
 //Start starts the service
 func (s *FrontendService) Start() error {
+	// First make sure that ConnectorDB is not running already
+	if s.Status() != StatusStopped {
+		return ErrAlreadyRunning
+	}
+
 	// We just call our own executable with different options to start up frontend
 	connectordb, err := osext.Executable()
 
@@ -45,11 +50,6 @@ func (s *FrontendService) Start() error {
 	// Windows needs to know that we're on localhost
 	err = util.WaitPort("localhost", int(port), err)
 
-	if err == nil {
-		s.Stat = StatusRunning
-	} else {
-		s.Stat = StatusError
-	}
 	if err != nil {
 		return err
 	}
@@ -61,5 +61,5 @@ func (s *FrontendService) Start() error {
 
 //NewFrontendService creates a new service for the ConnectorDB frontend
 func NewFrontendService(serviceDirectory string, c *config.Configuration, o *Options) *FrontendService {
-	return &FrontendService{BaseService{serviceDirectory, "frontend", StatusNone, nil, c}, o}
+	return &FrontendService{BaseService{serviceDirectory, "frontend", nil, c}, o}
 }
