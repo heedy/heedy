@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -130,8 +131,8 @@ func GetProcess(streamdbDirectory, procname string, err error) (*os.Process, err
 
 	p, err := os.FindProcess(pid)
 
-	if err != nil {
-		return nil, err
+	if err != nil || runtime.GOOS == "windows" {
+		return p, err
 	}
 
 	// In unix systems, this always succeeds, so we need to explicitly check

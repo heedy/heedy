@@ -4,6 +4,7 @@ Pull requests and bug reports are welcome! Before posting your issue, make sure 
 
 ConnectorDB is split into several repositories:
 to your problem:
+- https://github.com/connectordb/connectordb-desktop - the default PC interface for ConnectorDB
 - https://github.com/connectordb/connectordb-frontend - the web interface (the thing you see in your browser)
 - https://github.com/connectordb/pipescript - datasets and transforms
 - https://github.com/connectordb/connectordb - the connectordb server itself, and questions that do not fit elsewhere.
