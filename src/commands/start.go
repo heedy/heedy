@@ -88,6 +88,16 @@ connectordb stop.`,
 			log.Error(err.Error())
 			return errors.New("Use the --force flag if you know that it is not.")
 		}
+		if err == nil {
+			if runredis || rungnatsd || runpostgres || runfrontend || runbackend {
+				log.Info("The chosen services are now running in the background.")
+				if !runfrontend {
+					log.Infof("You can start the frontend with 'connectordb start \"%s\" --frontend'", args[0])
+				}
+			} else {
+				log.Info("ConnectorDB is now running in the background.")
+			}
+		}
 		return err
 	},
 }
