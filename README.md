@@ -63,6 +63,17 @@ At that point, binaries are located in `bin`. Using the binaries in this folder,
 Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
 `sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.
 
+#### Updating
+
+A git pull is not enough to update ConnectorDB, since submodules are used. You will need to re-run `make deps` to update the necessary dependencies.
+
+```
+make clean
+git pull
+make deps
+make
+```
+
 #### Quick Recompile
 
 When testing modifications to the server, you can recompile just the `connectordb` binary by running:
