@@ -63,7 +63,7 @@ At that point, binaries are located in `bin`. Using the binaries in this folder,
 Note: On ubuntu your build might fail on npm step. This is because node is installed as nodejs.
 `sudo ln -s /usr/bin/nodejs /usr/bin/node` should fix the issue.
 
-#### Updating
+#### Update
 
 A git pull is not enough to update ConnectorDB, since submodules are used. You will need to re-run `make deps` to update the necessary dependencies.
 
@@ -73,6 +73,9 @@ git pull
 make deps
 make
 ```
+
+To make sure that the newest version of the frontend is used, you will need
+to log out and log back in (in the browser).
 
 #### Quick Recompile
 
