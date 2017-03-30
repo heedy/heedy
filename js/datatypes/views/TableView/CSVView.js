@@ -30,7 +30,7 @@ class CSVView extends DataUpdater {
             if (d[0].d !== null && typeof d[0].d === 'object') {
                 dataset = "Timestamp"
                 Object.keys(d[0].d).map((key) => {
-                    dataset += ", " + key.capitalizeFirstLetter();
+                    dataset += "," + key.capitalizeFirstLetter();
                 });
                 dataset += "\n";
 
@@ -42,9 +42,9 @@ class CSVView extends DataUpdater {
                     dataset += "\n";
                 }
             } else {
-                dataset = "Timestamp, Data\n";
+                dataset = "Timestamp,Data\n";
                 for (let i = 0; i < d.length; i++) {
-                    dataset += moment.unix(d[i].t).format(dateFormat) + ", " + JSON.stringify(d[i].d) + "\n";
+                    dataset += moment.unix(d[i].t).format(dateFormat) + "," + JSON.stringify(d[i].d) + "\n";
                 }
             }
         }

@@ -103,6 +103,8 @@ The above is taken directly from https://google.github.io/material-design-icons/
             }
         }
         </script>
+        <script async src="/app/js/papaparse.min.js" type="text/javascript"></script> <!-- For some reason, it has no web-npm package -->
+        
         <script async src="/app/pipescript.js" type="text/javascript" onload="pipescriptLoaded()"></script> <!-- copied to folder on build -->
         <script src="/app/bundle.js" type="text/javascript"></script> <!-- Generated on app build -->
         <script>

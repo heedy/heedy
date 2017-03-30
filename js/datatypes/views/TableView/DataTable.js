@@ -114,7 +114,7 @@ class DataTable extends DataUpdater {
             data = data.slice(data.length - 5, data.length);
         }
         return (
-            <div>
+            <div style={{ maxHeight: 600, overflowY: "auto" }}>
                 <table className="table table-striped" style={{
                     width: "100%",
                     overflow: "auto"

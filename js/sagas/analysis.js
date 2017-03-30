@@ -49,10 +49,10 @@ function* query(action) {
             }
             query.dt = dt;
         } catch (e) {
-                yield put({ type: "ANALYSIS_ERROR", value: "Invalid time delta (" + analysis.dt + ")" });
-                return;
-        }       
-        
+            yield put({ type: "ANALYSIS_ERROR", value: "Invalid time delta (" + analysis.dt + ")" });
+            return;
+        }
+
     }
 
     // Alright, validation complete. Let's query for the dataset

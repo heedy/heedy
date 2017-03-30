@@ -24,6 +24,7 @@ import Main from './pages/Main';
 import StreamCreate from './pages/StreamCreate';
 import Downlinks from './pages/Downlinks';
 import Analysis from './pages/Analysis';
+import Uploader from './pages/Uploader';
 
 import { setTitle } from './util';
 
@@ -61,6 +62,8 @@ class MainPage extends Component {
                 return (<Downlinks />);
             case "#analysis":
                 return (<Analysis />);
+            case "#upload":
+                return (<Uploader />);
         }
 
         return (<Main user={this.props.user} device={this.props.device} state={this.props.state.view} streamarray={this.props.streamarray} />);

@@ -36,10 +36,10 @@ export const StreamSearchInitialState = {
     hint: "Filter & Transform Data"
 };
 export const IndexSearchInitialState = DefaultInitialState;
-
 export const DownlinkSearchInitialState = DefaultInitialState;
 
 export const AnalysisSearchInitialState = StreamSearchInitialState;
+export const UploaderSearchInitialState = StreamSearchInitialState;
 
 function basicSearchReducer(state, action, atype) {
     switch (atype) {
@@ -105,6 +105,12 @@ export function analysisSearchReducer(state, action) {
     return basicSearchReducer(state, action, type);
 }
 
+export function uploaderSearchReducer(state, action) {
+    let type = action.type;
+    type = type.substring("UPLOADER_SEARCH_".length, type.length);
+    return basicSearchReducer(state, action, type);
+}
+
 // getSearchActionContext returns the necessary context to an action, including a prefix to
 // use, to get search working with current page. Remember that each page has its own search context.
 export function getSearchActionContext(action) {
@@ -120,6 +126,9 @@ export function getSearchActionContext(action) {
                 break;
             case "#downlinks":
                 actionPrefix = "DOWNLINK_SEARCH_";
+                break;
+            case "#upload":
+                actionPrefix = "UPLOADER_SEARCH_";
                 break;
             default:
                 actionPrefix = "PAGE_INDEX_SEARCH_";
@@ -149,6 +158,8 @@ export function getSearchState(state) {
                 return state.pages.analysis.search;
             case "#downlinks":
                 return state.pages.downlinks.search;
+            case "#upload":
+                return state.pages.uploader.search;
         }
         return state.pages.index.search;
     } else if (path.length == 1 && window.location.hash === "") {

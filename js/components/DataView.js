@@ -150,6 +150,7 @@ class DataView extends Component {
                     schema={this.schema} datatype={this.props.datatype}
                     state={this.getViewState(view)} setState={(s) => this.setViewState(view, s)}
                     pipescript={this.props.pipescript} msg={this.props.showMessage} />))}
+                {this.props.after !== undefined ? this.props.after : null}
             </div>
         );
     }

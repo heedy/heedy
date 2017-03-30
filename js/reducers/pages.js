@@ -4,11 +4,13 @@
 import indexPageReducer, { IndexPageInitialState } from './indexPage';
 import downlinkPageReducer, { DownlinkPageInitialState } from './downlinksPage';
 import analysisPageReducer, { AnalysisPageInitialState } from './analysisPage';
+import uploaderPageReducer, { UploaderPageInitialState } from './uploaderPage';
 
 const InitialState = {
     index: IndexPageInitialState,
     downlinks: DownlinkPageInitialState,
-    analysis: AnalysisPageInitialState
+    analysis: AnalysisPageInitialState,
+    uploader: UploaderPageInitialState
 }
 
 export default function pageReducer(state = InitialState, action) {
@@ -16,6 +18,7 @@ export default function pageReducer(state = InitialState, action) {
     return {
         index: indexPageReducer(state.index, action),
         downlinks: downlinkPageReducer(state.downlinks, action),
-        analysis: analysisPageReducer(state.analysis, action)
+        analysis: analysisPageReducer(state.analysis, action),
+        uploader: uploaderPageReducer(state.uploader, action)
     };
 }

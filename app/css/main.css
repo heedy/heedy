@@ -103,7 +103,13 @@ body {
 }
 
 
-.CodeMirror { height: auto !important}
+.CodeMirror { 
+    height: auto !important;
+}
+
+.CodeMirror-scroll {
+    max-height: 600px !important;
+}
 
 
 

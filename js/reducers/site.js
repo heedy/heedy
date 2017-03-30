@@ -84,6 +84,12 @@ const InitialState = {
             subtitle: "Correlate data streams",
             icon: "timeline",
             page: "#analysis"
+        },
+        {
+            title: "Upload",
+            subtitle: "Upload data into ConnectorDB",
+            icon: "publish",
+            page: "#upload"
         }
     ],
 
