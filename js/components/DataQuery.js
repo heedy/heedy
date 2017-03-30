@@ -24,13 +24,6 @@ class DataQuery extends Component {
         timeranges: PropTypes.object
     }
 
-    componentDidMount() {
-        // Set up the data query if we don't have any data
-        if (this.props.state.data.length <= 0) {
-            this.query();
-        }
-    }
-
     query() {
         let s = this.props.state;
         // We now run the query
@@ -55,13 +48,13 @@ class DataQuery extends Component {
 
         return (
             <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed"
-            icons={[(
-                <IconButton key="pythoncode" onTouchTap={this.props.showPython} tooltip="Show Python Code">
-                    <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                        code
+                icons={[(
+                    <IconButton key="pythoncode" onTouchTap={this.props.showPython} tooltip="Show Python Code">
+                        <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                            code
                     </FontIcon>
-                </IconButton>
-            )]}>
+                    </IconButton>
+                )]}>
                 <QueryRange state={state} setState={setState} />
                 <h5 style={{
                     paddingTop: "10px"
@@ -94,6 +87,6 @@ export default connect(undefined, (dispatch, props) => {
         query: (q) => dispatch(query(props.user, props.device, props.stream, q)),
         setState: (s) => dispatch({ type: "STREAM_VIEW_SET", name: path, value: s }),
         msg: (t) => dispatch(showMessage(t)),
-        showPython: () => dispatch({type: "SHOW_QUERY_CODE",value: path})
+        showPython: () => dispatch({ type: "SHOW_QUERY_CODE", value: path })
     };
 })(DataQuery);

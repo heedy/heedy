@@ -29,6 +29,8 @@ import DataQuery from '../components/DataQuery';
 import DataView from '../components/DataView';
 import SearchCard from '../components/SearchCard';
 
+import Loading from '../components/Loading';
+
 import { setSearchSubmit, setSearchState } from '../actions';
 
 const StreamView = ({ user, device, stream, state, thisUser, thisDevice, clearTransform, transformError }) => (
@@ -43,6 +45,8 @@ const StreamView = ({ user, device, stream, state, thisUser, thisDevice, clearTr
                 ? (<DataInput user={user} device={device} stream={stream} schema={JSON.parse(stream.schema)} thisUser={thisUser} thisDevice={thisDevice} />)
                 : null}
             <DataQuery state={state} user={user} device={device} stream={stream} />
+            {state.loading ? (<div className="col-lg-12"><Loading /></div>) :
+                (state.data.length === 0 ? (<div className="col-lg-12" style={{ textAlign: "center", paddingTop: 100, color: "#c2c2c2" }}><h3>No Data</h3></div>) : null)}
         </DataView>
     </div>
 );

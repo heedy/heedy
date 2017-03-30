@@ -16,12 +16,14 @@ import downlinkSaga from './downlinks';
 import analysisSaga from './analysis';
 import navigationSaga from './navigation';
 import uploaderSaga from './uploader';
+import streamSaga from './stream';
 
 export default function* sagas() {
     yield [
         downlinkSaga(),
         analysisSaga(),
         navigationSaga(),
-        uploaderSaga()
+        uploaderSaga(),
+        streamSaga()
     ];
 }

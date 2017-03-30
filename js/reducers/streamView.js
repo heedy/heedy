@@ -13,7 +13,7 @@ export const StreamViewInitialState = {
     error: null,
     bytime: true,
     views: {},
-
+    loading: true,
     search: StreamSearchInitialState
 };
 
@@ -36,12 +36,19 @@ export default function streamViewReducer(state, action) {
             return {
                 ...state,
                 data: action.value,
-                error: null
+                error: null,
+                loading: false
             };
         case 'STREAM_VIEW_ERROR':
             return {
                 ...state,
-                error: action.value
+                error: action.value,
+                loading: false
+            };
+        case 'STREAM_VIEW_LOADING':
+            return {
+                ...state,
+                loading: action.value
             };
     }
     return state;
