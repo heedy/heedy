@@ -57,7 +57,8 @@ class CSVView extends DataUpdater {
     render() {
         return (<CodeMirror value={this.data} options={{
             lineWrapping: true,
-            readOnly: true
+            readOnly: true,
+            mode: "text/plain"
         }} />);
     }
 

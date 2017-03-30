@@ -25,6 +25,9 @@ import DataView from '../components/DataView';
 import SearchCard from '../components/SearchCard';
 import { setSearchSubmit, setSearchState } from '../actions';
 
+// We want to clear 
+import { UploaderPageInitialState } from '../reducers/uploaderPage';
+
 
 const Part1 = ({ state, actions }) => (
     <ExpandableCard width="expandable-half" state={state.part1} setState={actions.setPart1}
@@ -38,7 +41,11 @@ const Part1 = ({ state, actions }) => (
         )]}>
         <CodeMirror value={state.part1.rawdata} options={{
             lineWrapping: true,
-        }} onChange={(txt) => actions.setPart1({ rawdata: txt })} />
+            mode: "text/plain",
+        }} onChange={(txt) => actions.setPart1({ rawdata: txt })} onFocusChange={(f) => (f ? (
+            state.part1.rawdata === UploaderPageInitialState.part1.rawdata ? actions.setPart1({ rawdata: "" }) : null) : (
+                state.part1.rawdata.trim() === "" ? actions.setPart1({ rawdata: UploaderPageInitialState.part1.rawdata }) : null
+            ))} />
     </ExpandableCard>
 
 );
