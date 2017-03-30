@@ -6,6 +6,7 @@ package dbutil
 
 import (
 	"database/sql"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -13,6 +14,7 @@ import (
 type SqlxMixin struct {
 	DB                    *sqlx.DB
 	sqlxPreparedStmtCache map[string]*sqlx.Stmt
+	lock                  sync.RWMutex
 }
 
 // Initializes a sqlx mixin
@@ -26,8 +28,9 @@ func (db *SqlxMixin) InitSqlxMixin(sqldb *sqlx.DB) {
 func (db *SqlxMixin) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 	var err error
 
+	db.lock.RLock()
 	prepared, ok := db.sqlxPreparedStmtCache[query]
-
+	db.lock.RUnlock()
 	if ok {
 		return prepared, nil
 	}
@@ -40,8 +43,9 @@ func (db *SqlxMixin) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 	if err != nil {
 		return prepared, err
 	}
-
+	db.lock.Lock()
 	db.sqlxPreparedStmtCache[query] = prepared
+	db.lock.Unlock()
 	return prepared, nil
 }
 

@@ -76,6 +76,8 @@ func (s *Subscription) Size() int {
 
 //Add a transform subscription to the string
 func (s *Subscription) AddTransform(transform string) (err error) {
+	s.Lock()
+	defer s.Unlock()
 	if _, ok := s.transform[transform]; ok {
 		return errors.New("Subscription to the transform already exists")
 	}
@@ -89,9 +91,7 @@ func (s *Subscription) AddTransform(transform string) (err error) {
 		}
 	}
 
-	s.Lock()
 	s.transform[transform] = t
-	s.Unlock()
 
 	return nil
 }
@@ -108,6 +108,8 @@ func (s *Subscription) RemTransform(transform string) (err error) {
 //Loosely based on github.com/gorilla/websocket/blob/master/examples/chat/conn.go
 //No need for mutex because only reader reads and implements commands
 type WebsocketConnection struct {
+	sync.RWMutex
+
 	ws *websocket.Conn
 
 	subscriptions map[string]*Subscription
@@ -129,7 +131,7 @@ func NewWebsocketConnection(o *authoperator.AuthOperator, writer http.ResponseWr
 
 	ws.SetReadLimit(config.Get().Websocket.MessageLimitBytes)
 
-	return &WebsocketConnection{ws, make(map[string]*Subscription), make(chan messenger.Message, config.Get().Websocket.MessageBuffer), logger, o}, nil
+	return &WebsocketConnection{sync.RWMutex{}, ws, make(map[string]*Subscription), make(chan messenger.Message, config.Get().Websocket.MessageBuffer), logger, o}, nil
 }
 
 func (c *WebsocketConnection) write(obj interface{}) error {
@@ -157,6 +159,7 @@ func (c *WebsocketConnection) Close() {
 //CheckSubscriptions checks the current subscriptions, making sure that there are no issues (such as lost permissions or deleted streams)
 //which trigger unsubscribes
 func (c *WebsocketConnection) CheckSubscriptions() error {
+	c.Lock()
 	for stream, val := range c.subscriptions {
 		if _, err := c.o.ReadStream(stream); err != nil {
 			c.logger.Warnf("Invalidated: %s", stream)
@@ -164,6 +167,7 @@ func (c *WebsocketConnection) CheckSubscriptions() error {
 			delete(c.subscriptions, stream)
 		}
 	}
+	c.Unlock()
 	return nil
 }
 
@@ -185,18 +189,23 @@ func (c *WebsocketConnection) Subscribe(s, transform string) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "subscribe", "arg": s})
 
 	//Next check if nats is subscribed
-	if _, ok := c.subscriptions[s]; !ok {
+	c.RLock()
+	_, ok := c.subscriptions[s]
+	c.RUnlock()
+	if !ok {
 		subs, err := c.o.Subscribe(s, c.c)
 		if err != nil {
 			logger.Warningln(err)
 		} else {
-
 			logger.Debugln("Initializing subscription")
+			c.Lock()
 			c.subscriptions[s] = NewSubscription(subs)
+			c.Unlock()
 		}
 	}
-
+	c.Lock()
 	err := c.subscriptions[s].AddTransform(transform)
+	c.Unlock()
 	if err != nil {
 		logger.Warningln(err)
 	}
@@ -205,7 +214,11 @@ func (c *WebsocketConnection) Subscribe(s, transform string) {
 //Unsubscribe from the given data stream
 func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 	logger := c.logger.WithFields(log.Fields{"cmd": "unsubscribe", "arg": s})
-	if val, ok := c.subscriptions[s]; ok {
+	c.RLock()
+	val, ok := c.subscriptions[s]
+	c.RUnlock()
+	if ok {
+		c.Lock()
 		val.RemTransform(transform)
 		if val.Size() == 0 {
 			logger.Debugln("stop subscription")
@@ -214,7 +227,7 @@ func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 		} else {
 			logger.Debugln()
 		}
-
+		c.Unlock()
 	} else {
 		logger.Warningln("subscription DNE")
 	}
@@ -222,11 +235,13 @@ func (c *WebsocketConnection) Unsubscribe(s, transform string) {
 
 //UnsubscribeAll from all streams of data
 func (c *WebsocketConnection) UnsubscribeAll() {
+	c.Lock()
 	for key, val := range c.subscriptions {
 		c.logger.Debugf("Unsubscribe: %s", key)
 		val.Close()
 	}
 	c.subscriptions = make(map[string]*Subscription)
+	c.Unlock()
 }
 
 //A command is a cmd and the arg operation
@@ -299,7 +314,9 @@ func (c *WebsocketConnection) processDatapoint(datapoint messenger.Message) erro
 	logger := c.logger.WithFields(log.Fields{"stream": datapoint.Stream})
 
 	//Now loop through all transforms for the datapoint array
+	c.RLock()
 	subs, ok := c.subscriptions[datapoint.Stream]
+	c.RUnlock()
 	if !ok {
 		return c.write(datapoint)
 	}
