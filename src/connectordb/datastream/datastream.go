@@ -137,8 +137,6 @@ func (ds *DataStream) RunWriter() error {
 	for err == nil {
 		err = ds.WriteChunk()
 	}
-	//This error display interferes with benchmarks which is annoying.
-	log.Errorf("DBWriter error: %v", err.Error())
 	return err
 }
 

@@ -11,6 +11,7 @@ import (
 	"connectordb/users"
 	"dbsetup/dbutil"
 	"errors"
+	"time"
 	"util"
 
 	log "github.com/Sirupsen/logrus"
@@ -125,8 +126,14 @@ this database, then Ndb.
 
 PS: RunWriter will be entirely eliminated fairly soon, since it is the main thing stopping usage of Redis cluster
 */
-func (db *Database) RunWriter() error {
-	return db.DataStream.RunWriter()
+func (db *Database) RunWriter() {
+	// We try to keey the writer running no matter what happens.
+	for {
+		err := db.DataStream.RunWriter()
+		//This error display interferes with benchmarks which is annoying.
+		log.Errorf("DBWriter error: %v", err.Error())
+		time.Sleep(time.Second) // Sleep for one second, and see if we can restart the writer.
+	}
 }
 
 // Clear clears the database (to be used for debugging purposes - NEVER in production)
