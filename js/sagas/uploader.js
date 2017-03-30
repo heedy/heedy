@@ -348,11 +348,7 @@ function* upload(action) {
     yield put(go(path));
 
     // Clear the loading bar
-    yield put({ type: "UPLOADER_PART3", value: { loading: false, percentdone: 0 } });
-
-
-
-
+    yield put({ type: "UPLOADER_PART3", value: { loading: false, percentdone: 0, stream: "" } });
 }
 
 // We automatically preset the stream name to use the uploads device

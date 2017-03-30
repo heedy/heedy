@@ -62,6 +62,8 @@ export default function downlinkPageReducer(state, action) {
                 ...state,
                 ...action.value
             };
+        case "UPLOADER_CLEAR":
+            return UploaderPageInitialState;
     }
     return state;
 }

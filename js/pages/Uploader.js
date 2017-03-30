@@ -10,6 +10,8 @@ import { Card, CardText, CardHeader } from 'material-ui/Card';
 import RaisedButton from 'material-ui/RaisedButton';
 import Checkbox from 'material-ui/Checkbox';
 import LinearProgress from 'material-ui/LinearProgress';
+import FontIcon from 'material-ui/FontIcon';
+import IconButton from 'material-ui/IconButton';
 
 import ExpandableCard from '../components/ExpandableCard';
 import AvatarIcon from '../components/AvatarIcon';
@@ -26,7 +28,14 @@ import { setSearchSubmit, setSearchState } from '../actions';
 
 const Part1 = ({ state, actions }) => (
     <ExpandableCard width="expandable-half" state={state.part1} setState={actions.setPart1}
-        title={"Step 1"} subtitle={"Add your Data"} avatar={(<AvatarIcon name="paste" iconsrc="material:content_paste" />)}>
+        title={"Step 1"} subtitle={"Add your Data"} avatar={(<AvatarIcon name="paste" iconsrc="material:content_paste" />)}
+        icons={[(
+            <IconButton key="clearupload" onTouchTap={actions.clear} tooltip="Clear Data">
+                <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+                    clear_all
+                </FontIcon>
+            </IconButton>
+        )]}>
         <CodeMirror value={state.part1.rawdata} options={{
             lineWrapping: true,
         }} onChange={(txt) => actions.setPart1({ rawdata: txt })} />

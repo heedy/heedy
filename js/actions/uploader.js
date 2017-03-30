@@ -6,3 +6,5 @@ export const setState = (s) => ({ type: "UPLOADER_SET", value: s });
 
 export const process = () => ({ type: "UPLOADER_PROCESS" });
 export const upload = () => ({ type: "UPLOADER_UPLOAD" });
+
+export const clear = () => ({ type: "UPLOADER_CLEAR" });
