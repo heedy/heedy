@@ -14,7 +14,7 @@ build: resources bin/connectordb
 # is EXTREMELY expensive (several minutes).
 testbuild: bin/dep/gnatsd bin/connectordb
 	$(COPY) site/www bin/
-	cd site/app;npm run build:html
+	cd site/app;yarn run build:html
 
 #Empty rule for forcing rebuilds
 phony:
@@ -27,11 +27,11 @@ submodules:
 	git submodule update --init --recursive
 
 app: submodules
-	cd site/app;npm update
+	cd site/app;yarn install
 
 resources: bin
 	$(COPY) site/www bin/
-	cd site/app;npm run build
+	cd site/app;yarn run build
 
 
 # Rule to go from source go file to binary
