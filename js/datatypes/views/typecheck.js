@@ -9,7 +9,7 @@
 export const isBool = (d) => (typeof (d) === "boolean" || d === "true" || d === "false" || d === 1 || d === 0);
 export const isNumber = (d) => (!isNaN(parseFloat(d)) && isFinite(d) || isBool(d));
 export const isString = (d) => (typeof (d) === "string");
-export const isObject = (d) => (typeof (d) === "object");
+export const isObject = (d) => (typeof (d) === "object" && d !== null);
 export const isKey = (d) => (isNumber(d) || isString(d));
 export const isLocation = (d) => (isObject(d) && isNumber(d['latitude']) && isNumber(d['longitude']) && (d['accuracy'] === undefined || isNumber(d['accuracy'])));
 
@@ -261,7 +261,7 @@ export const categorical = cacheWrapper('categorical', function (d, f) {
             unique++;
             if (unique > 200) return null;
         }
-        kv.set(dp,kv.get(dp)+1);
+        kv.set(dp, kv.get(dp) + 1);
     }
     let v = {
         categories: unique,

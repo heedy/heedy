@@ -12,6 +12,7 @@ import Checkbox from 'material-ui/Checkbox';
 import LinearProgress from 'material-ui/LinearProgress';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
+import TextField from 'material-ui/TextField';
 
 import ExpandableCard from '../components/ExpandableCard';
 import AvatarIcon from '../components/AvatarIcon';
@@ -25,9 +26,30 @@ import DataView from '../components/DataView';
 import SearchCard from '../components/SearchCard';
 import { setSearchSubmit, setSearchState } from '../actions';
 
-// We want to clear 
+// We want to clear the textbox on click, so we need to know the text we can clear
 import { UploaderPageInitialState } from '../reducers/uploaderPage';
 
+
+const Part1Dropdown = ({ state, setState }) => (
+    <div className="row">
+        <div className="col-sm-12" >
+            <p>
+                ConnectorDB will try to parse your data as CSV with header or JSON, but sometimes it will need help parsing the timestamp.
+            Here, you can optionally set the field name of the timestamp and the <a href="https://momentjs.com/docs/#/parsing/string-format/">timestamp format</a>.
+        </p>
+        </div>
+        <div className="col-sm-6">
+            <h5>Timestamp Field</h5>
+            <TextField hintText="timestamp" style={{ width: "100%" }}
+                value={state.fieldname} onChange={(e) => setState({ fieldname: e.target.value })} />
+        </div>
+        <div className="col-sm-6">
+            <h5>Timestamp Format</h5>
+            <TextField hintText="MM-DD-YYYY" style={{ width: "100%" }}
+                value={state.timeformat} onChange={(e) => setState({ timeformat: e.target.value })} />
+        </div>
+    </div>
+);
 
 const Part1 = ({ state, actions }) => (
     <ExpandableCard width="expandable-half" state={state.part1} setState={actions.setPart1}
@@ -38,7 +60,7 @@ const Part1 = ({ state, actions }) => (
                     clear_all
                 </FontIcon>
             </IconButton>
-        )]}>
+        )]} dropdown={<Part1Dropdown state={state.part1} setState={actions.setPart1} />}>
         <CodeMirror value={state.part1.rawdata} options={{
             lineWrapping: true,
             mode: "text/plain",

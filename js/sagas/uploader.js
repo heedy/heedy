@@ -7,16 +7,64 @@ import { ConnectorDB } from 'connectordb';
 import { cdbPromise } from '../util';
 import { go } from '../actions';
 
+import { UploaderPageInitialState } from '../reducers/uploaderPage';
+
+var filterFloat = function (value) {
+    if (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/
+        .test(value.trim()))
+        return Number(value.trim());
+    return NaN;
+}
+
 function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
+    return !isNaN(filterFloat(n));
+}
+
+function parseData(d) {
+    if (typeof (d) === 'string') {
+        let s = d.trim();
+        if (isNumeric(s)) {
+            return parseFloat(s);
+        }
+        if (s == "true" || s == "True") {
+            return true;
+        }
+        if (s == "false" || s == "False") {
+            return false;
+        }
+        if (s === "" || s == "null") {
+            return null;
+        }
+    }
+    return d;
+}
+
+function canParseTimestamp(ts, timeformat) {
+    if (typeof (d) !== 'string' || isNumeric(ts)) {
+        return (moment.unix(parseFloat()).isAfter('1985-01-01'))
+    }
+    if (timeformat !== "") {
+        moment(ts, timeformat).isValid();
+    }
+    return moment(ts).isValid();
 }
 
 function* process(action) {
     let uploader = yield select((state) => state.pages.uploader);
     let txt = uploader.part1.rawdata;
     let transform = uploader.part2.transform.trim();
+    let timeformat = uploader.part1.timeformat.trim();
+
+    if (txt.trim() === UploaderPageInitialState.part1.rawdata.trim()) {
+        yield put({ type: "UPLOADER_PART2", value: { error: "Please paste your dataset first." } });
+    }
+
+
     // We have the text of the data. Let's try to process it
     let data = [];
+
+    // Whether the data was csv-formatted
+    let isCSV = false;
 
     // Clear the error
     yield put({ type: "UPLOADER_PART2", value: { error: "" } });
@@ -25,13 +73,14 @@ function* process(action) {
         // Holy crap, the data was JSON...
     } catch (e) {
         // The data is NOT JSON. We assume it is CSV, and let PapaParse do its magic :)
-        let result = Papa.parse(txt, { skipEmptyLines: true, dynamicTyping: true, header: true });
+        let result = Papa.parse(txt, { skipEmptyLines: true, header: true });
         if (result.errors.length > 0) {
             console.log("Parsing Error:", result);
             yield put({ type: "UPLOADER_PART2", value: { error: result.errors[0].message } });
             return;
         }
         data = result.data;
+        isCSV = true;
     }
     console.log("Data before processing", data);
 
@@ -49,34 +98,72 @@ function* process(action) {
     // First, let's process the field names, so they are cleaned up. We remove capitalized fields,
     // since by default, fields are lowercase in ConnectorDB
     // We also start looking for timestamps in order:
-    // If 'timestamp' is a field, and can be parsed as a timestamp, it is utomatically chosen as 'the' timestamp field
+    // If we are given a timestamp field, we're done.
+    // If 'timestamp' is a field, and can be parsed as a timestamp, it is automatically chosen as 'the' timestamp field
     // if 't' is a field, and can be parsed as either a timestamp or a unix time, it is chosen
 
+    // This is the data key we will use for the timestamp
+    let timestampKey = uploader.part1.fieldname.trim();
+
+
     let fieldMap = {};
+    let hadFieldName = "";
     let hadTimestamp = "";
     let hadT = "";
+    let hadTime = "";
     for (let i = 0; i < keys.length; i++) {
         let curkey = keys[i];
         fieldMap[curkey] = curkey.trim().replace(/\s+/g, '_').toLowerCase();
         if (fieldMap[curkey] === "timestamp" && moment(d[curkey]).isValid()) {
             hadTimestamp = curkey;
         }
+        if (fieldMap[curkey] === "time" && moment(d[curkey]).isValid()) {
+            hadTime = curkey;
+        }
         if (fieldMap[curkey] === "t" && moment(d[curkey]).isValid()) {
             hadT = curkey;
         }
+        if (timestampKey !== "") {
+            if (curkey === timestampKey) {
+                hadFieldName = curkey;
+            }
+            if (fieldMap[curkey] === timestampKey) {
+                // We allow lowercased versions of the field name
+                hadFieldName = curkey;
+            }
+        }
     }
-    let ts = "";
-    if (hadTimestamp !== "") {
-        ts = hadTimestamp;
+    if (timestampKey !== "") {
+        if (hadFieldName === "") {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Unable to find field name '" + timestampKey + "'" } });
+            return;
+        }
+        timestampKey = hadFieldName;
+    } else if (hadTimestamp !== "") {
+        timestampKey = hadTimestamp;
+        if (!canParseTimestamp(d[timestampKey], timeformat)) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Unable to parse timestamps from '" + timestampKey + "'" } });
+            return;
+        }
+    } else if (hadTime !== "") {
+        timestampKey = hadTime;
+        if (!canParseTimestamp(d[timestampKey], timeformat)) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Unable to parse timestamps from '" + timestampKey + "'" } });
+            return;
+        }
     } else if (hadT !== "") {
-        ts = hadT;
+        timestampKey = hadT;
+        if (!canParseTimestamp(d[timestampKey], timeformat)) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Unable to parse timestamps from '" + timestampKey + "'" } });
+            return;
+        }
     } else {
         // So there was no obvious timestamp field. Shame. We now look for a field that 
-        // can be parsed as a timestamp. We first check for a field that can be parsed as a STRING,
+        // can be parsed as a timestamp. We first check for a field that is a string, and NOT a number
         // since that means it is super likely to be a timestamp.
         let tsfields = {};
         for (let i = 0; i < keys.length; i++) {
-            if (typeof d[keys[i]] === 'string') {
+            if (typeof d[keys[i]] === 'string' && !isNumeric(d[keys[i]])) {
                 let v = moment(d[keys[i]]);
                 if (v.isValid()) {
                     tsfields[keys[i]] = v;
@@ -88,7 +175,7 @@ function* process(action) {
             // We found at least one timestamp field. We just return the first one.
             // Because if the user has multiple, they can just set the field name to "timestamp"
             // to force it to be chosen
-            ts = Object.keys(tsfields)[0];
+            timestampKey = Object.keys(tsfields)[0];
         } else {
             // No string timestamp fields. We now look for unix timestamps. We choose the best
             // one by its proximity to 2018 - data that isn't timestamps usually won't
@@ -96,43 +183,67 @@ function* process(action) {
             let best = 0;
             let bestKey = "";
             for (let i = 0; i < keys.length; i++) {
-                if (typeof d[keys[i]] === 'number') {
-                    if (Math.abs(d[keys[i]] - 1514786400) < Math.abs(best - 1514786400)) {
-                        best = d[keys[i]];
+                if (isNumeric(d[keys[i]])) {
+                    let dtime = parseFloat(d[keys[i]]);
+                    if (Math.abs(dtime - 1514786400) < Math.abs(best - 1514786400)) {
+                        best = dtime;
                         bestKey = keys[i];
                     }
                 }
             }
 
-            if (bestKey === "") {
-                yield put({ type: "UPLOADER_PART2", value: { error: "Could not find timestamps" } });
+            // If the timestamps are before 1985, they're probably not timestamps.
+            // And if they are, the user can specify the field manually.
+            if (bestKey === "" || moment.unix(best).isBefore('1985-01-01')) {
+                yield put({ type: "UPLOADER_PART2", value: { error: "Could not find timestamp field" } });
                 return;
             }
 
-            ts = bestKey;
+            timestampKey = bestKey;
         }
     }
 
-    console.log("Using field " + ts + " as timestamp for processing data");
+    console.log("Using field " + timestampKey + " as timestamp for processing data");
 
-    // OK, at this point, ts is the key of the timestamp. We create a function that will automatically
+    // OK, at this point, timestampKey is the key of the timestamp. We create a function that will automatically
     // convert the data into a unix timestamp given a datapoint 
-    let getT = (dp) => dp[ts];
-    if (typeof d[ts] === 'string') {
-        getT = (dp) => moment(dp[ts]).unix();
+    let getT = null;
+    if (timeformat !== "") {
+        // There is an explicit time format
+        if (!moment(d[timestampKey], timeformat).isValid()) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Could not parse timestamp field '" + timestampKey + "'" } });
+            return;
+        }
+        getT = (dp) => moment(dp[timestampKey], timeformat).unix();
+    } else if (typeof d[timestampKey] === 'string' && !isNumeric(d[timestampKey])) {
+        if (!moment(d[timestampKey]).isValid()) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Could not parse timestamp field '" + timestampKey + "'" } });
+            return;
+        }
+        getT = (dp) => moment(dp[timestampKey]).unix();
+    } else {
+        if (!isNumeric(d[timestampKey])) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Could not parse timestamp field '" + timestampKey + "'" } });
+            return;
+        }
+        getT = (dp) => dp[timestampKey];
     }
 
     // Now we create a generator for the data portion of the datapoint. We remove the timestamp's key from
     // the dataset, so it is not included in the resulting dataset.
-    keys.splice(keys.indexOf(ts), 1);
+    keys.splice(keys.indexOf(timestampKey), 1);
 
-    let getD = (dp) => dp[keys[0]];
+    let getD = isCSV ? ((dp) => parseData(dp[keys[0]])) : ((dp) => dp[keys[0]]);
 
     if (keys.length > 1) {
         getD = (dp) => {
             let result = {};
             for (let i = 0; i < keys.length; i++) {
-                result[fieldMap[keys[i]]] = dp[keys[i]];
+                if (isCSV) {
+                    result[fieldMap[keys[i]]] = parseData(dp[keys[i]]);
+                } else {
+                    result[fieldMap[keys[i]]] = dp[keys[i]];
+                }
             }
             return result;
         };

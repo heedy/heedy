@@ -5,7 +5,9 @@ export const UploaderPageInitialState = {
     search: UploaderSearchInitialState,
     part1: {
         width: "half",
-        rawdata: "Paste your data here..."
+        rawdata: "Paste your data here...",
+        timeformat: "",
+        fieldname: ""
     },
     part2: {
         width: "half",
