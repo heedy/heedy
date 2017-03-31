@@ -40,11 +40,12 @@ function parseData(d) {
 }
 
 function canParseTimestamp(ts, timeformat) {
-    if (typeof (d) !== 'string' || isNumeric(ts)) {
-        return (moment.unix(parseFloat()).isAfter('1985-01-01'))
+    console.log("Checking if can parse: ", ts);
+    if (typeof (ts) !== 'string' || isNumeric(ts)) {
+        return (moment.unix(parseFloat(ts)).isAfter('1985-01-01'))
     }
     if (timeformat !== "") {
-        moment(ts, timeformat).isValid();
+        return moment(ts, timeformat).isValid();
     }
     return moment(ts).isValid();
 }
@@ -111,17 +112,21 @@ function* process(action) {
     let hadTimestamp = "";
     let hadT = "";
     let hadTime = "";
+    let hadDate = "";
     for (let i = 0; i < keys.length; i++) {
         let curkey = keys[i];
         fieldMap[curkey] = curkey.trim().replace(/\s+/g, '_').toLowerCase();
-        if (fieldMap[curkey] === "timestamp" && moment(d[curkey]).isValid()) {
+        if (fieldMap[curkey] === "timestamp") {
             hadTimestamp = curkey;
         }
-        if (fieldMap[curkey] === "time" && moment(d[curkey]).isValid()) {
+        if (fieldMap[curkey] === "time") {
             hadTime = curkey;
         }
-        if (fieldMap[curkey] === "t" && moment(d[curkey]).isValid()) {
+        if (fieldMap[curkey] === "t") {
             hadT = curkey;
+        }
+        if (fieldMap[curkey] === "date") {
+            hadDate = curkey;
         }
         if (timestampKey !== "") {
             if (curkey === timestampKey) {
@@ -147,6 +152,12 @@ function* process(action) {
         }
     } else if (hadTime !== "") {
         timestampKey = hadTime;
+        if (!canParseTimestamp(d[timestampKey], timeformat)) {
+            yield put({ type: "UPLOADER_PART2", value: { error: "Unable to parse timestamps from '" + timestampKey + "'" } });
+            return;
+        }
+    } else if (hadDate !== "") {
+        timestampKey = hadDate;
         if (!canParseTimestamp(d[timestampKey], timeformat)) {
             yield put({ type: "UPLOADER_PART2", value: { error: "Unable to parse timestamps from '" + timestampKey + "'" } });
             return;
