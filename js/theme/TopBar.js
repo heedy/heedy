@@ -112,7 +112,6 @@ class TopBar extends Component {
                         </FontIcon>
                     </IconButton>
                     <AutoComplete disabled={!search.enabled} hintText={search.hint} filter={AutoComplete.noFilter} textFieldStyle={{
-                        paddingLeft: "10px",
                         fontWeight: "bold"
                     }} menuStyle={{
                         background: "#009e42"
@@ -122,12 +121,12 @@ class TopBar extends Component {
                         color: "white"
                     }} hintStyle={{
                         overflow: "hidden",
-                        height: "25px"
+                        height: "25px",
+                        bottom: "10px"
                     }} fullWidth={true} underlineShow={false} open={search.error != ""} searchText={search.text} dataSource={search.autocomplete} onUpdateInput={this.props.searchTextChanged} onNewRequest={this.keypress.bind(this)} /> {search.text == ""
                         ? null
                         : (
                             <FontIcon className="material-icons" style={{
-                                marginTop: "-5px",
                                 paddingRight: "10px"
                             }} onTouchTap={() => this.props.searchTextChanged("", null)}>
                                 close
@@ -136,7 +135,8 @@ class TopBar extends Component {
 
                 </ToolbarGroup>
                 <ToolbarGroup style={{
-                    marginLeft: "10px"
+                    marginLeft: "-10px",
+                    marginRight: "-20px"
                 }}>
                     <IconMenu iconButtonElement={<IconButton> <MoreVertIcon /> </IconButton>} anchorOrigin={{
                         horizontal: 'right',
