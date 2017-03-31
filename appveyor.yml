@@ -20,8 +20,8 @@ install:
   - git submodule update --init --recursive
   # Set up golang - based on https://github.com/joefitzgerald/go-plus/blob/master/appveyor.yml
   - rmdir c:\go /s /q
-  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.7.windows-amd64.zip
-  - 7z x go1.7.windows-amd64.zip -y -oC:\ > NUL
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.8.windows-amd64.zip
+  - 7z x go1.8.windows-amd64.zip -y -oC:\ > NUL
    # Set up redis, gnatsd
   - appveyor DownloadFile https://github.com/nats-io/gnatsd/releases/download/v0.9.4/gnatsd-v0.9.4-windows-amd64.zip
   - 7z x gnatsd-v0.9.4-windows-amd64.zip -y -oC:\connectordb\ > NUL

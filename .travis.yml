@@ -17,7 +17,7 @@ virtualenv:
 
 # All this because of https://github.com/travis-ci/travis-ci/issues/3130
 env:
-    - TRAVIS_NODE_VERSION="4"
+    - TRAVIS_NODE_VERSION="--lts"
 
 before_install:
     - if [ "$TRAVIS_OS_NAME" == "osx" ] ; then brew update; brew install redis;fi   # Darwin does not have redis by default
