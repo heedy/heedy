@@ -14,7 +14,8 @@ export const StreamViewInitialState = {
     bytime: true,
     views: {},
     loading: true,
-    search: StreamSearchInitialState
+    search: StreamSearchInitialState,
+    firstvisit: true // We want to auto-load stream data on first visit only.
 };
 
 export default function streamViewReducer(state, action) {

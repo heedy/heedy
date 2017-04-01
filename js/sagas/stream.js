@@ -24,7 +24,7 @@ function extract(data, time) {
 }
 
 function* putData(path, data) {
-    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: true, t1: moment.unix(data[0].t), t2: moment().endOf('day') } });
+    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: true, t1: moment.unix(data[0].t), t2: moment().endOf('day'), firstvisit: false } });
     yield put({ type: "STREAM_VIEW_DATA", name: path, value: data });
 }
 
@@ -34,7 +34,7 @@ function* queryTimeData(uds, path, data, trange) {
     let t1 = moment.unix(data[data.length - 1].t - trange);
     let t2 = moment();
     try {
-        yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: true, t1: t1, t2: t2 } });
+        yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: true, t1: t1, t2: t2, firstvisit: false } });
         data = (yield cdbPromise(storage.cdb.timeStream(uds[0], uds[1], uds[2], t1.unix(), t2.unix(), 20000), 20 * 1000));
         yield put({ type: "STREAM_VIEW_DATA", name: path, value: data });
     } catch (e) {
@@ -53,10 +53,13 @@ function* navigate(action) {
     // We just navigated to the streams page. Let's check if there is data already queried:
     let state = yield select((state) => state.stream);
 
-    if (state[path] !== undefined) {
+    if (state[path] !== undefined && !state[path].view.firstvisit) {
         // This page was already visited, so we don't query any data.
         return;
     }
+
+    // We've got this - the page was now visited, and we're gonna query the data.
+    yield put({ type: "STREAM_VIEW_SET", name: path, value: { firstvisit: false } });
 
     // We are just getting the initial data from the stream.
     // First, let's query the last... say 100 datapoints.
@@ -128,7 +131,7 @@ function* navigate(action) {
 
     // Oh crap. There might be more than 8k per day. Let's just display 1000 of them
     console.log("Stream looks dense. Querying last 1000 datapoints.")
-    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: false, i1: -1000, i2: 0 } });
+    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: false, i1: -1000, i2: 0, firstvisit: false } });
     try {
         data = (yield cdbPromise(storage.cdb.indexStream(uds[0], uds[1], uds[2], -1000, 0), 15 * 1000));
     } catch (e) {
