@@ -83,7 +83,6 @@ class TopBar extends Component {
                     : (
                         <ToolbarGroup firstChild={true}>
                             <IconButton style={{
-                                marginTop: "7px",
                                 paddingLeft: "20px",
                                 paddingRight: "40px"
                             }} onTouchTap={this.props.hamburgerClick}>
