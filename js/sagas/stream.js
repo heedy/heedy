@@ -128,7 +128,7 @@ function* navigate(action) {
 
     // Oh crap. There might be more than 8k per day. Let's just display 1000 of them
     console.log("Stream looks dense. Querying last 1000 datapoints.")
-    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: false, i1: -1000, t2: 0 } });
+    yield put({ type: "STREAM_VIEW_SET", name: path, value: { bytime: false, i1: -1000, i2: 0 } });
     try {
         data = (yield cdbPromise(storage.cdb.indexStream(uds[0], uds[1], uds[2], -1000, 0), 15 * 1000));
     } catch (e) {
