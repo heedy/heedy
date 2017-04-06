@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"net/http/pprof"
 	"server/restapi"
 	"server/restapi/restcore"
 	"server/webcore"
@@ -149,7 +150,7 @@ func MakeHandler(h http.Handler, verbose bool) http.Handler {
 }
 
 //RunServer runs the ConnectorDB frontend server
-func RunServer(verbose bool) error {
+func RunServer(verbose, profiling bool) error {
 	OSSpecificSetup()
 
 	if verbose {
@@ -187,6 +188,17 @@ func RunServer(verbose bool) error {
 
 	r.Methods("OPTIONS").Handler(MakeHandler(http.HandlerFunc(OptionsHandler), verbose))
 
+	// We enable profiling
+	if profiling {
+		log.Warn("Running golang profiling tools at /debug. Use this only when debugging!")
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/{something}", pprof.Index)
+	}
+
 	//The rest api has its own versioned url
 	s := r.PathPrefix("/api/v1").Subrouter()
 	_, err = restapi.Router(db, s)
@@ -216,6 +228,12 @@ func RunServer(verbose bool) error {
 
 	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
 
+	server := &http.Server{
+		Addr:        listenhost,
+		Handler:     handler,
+		ReadTimeout: time.Duration(c.HTTPReadTimeout) * time.Second,
+	}
+
 	//Run an https server if we are given tls cert and key
 	if c.TLSEnabled() {
 		if c.TLS.ACME.Enabled {
@@ -236,19 +254,13 @@ func RunServer(verbose bool) error {
 		if err != nil {
 			return err
 		}
-		tlsconfig := w.TLSConfig()
+		server.TLSConfig = w.TLSConfig()
 
-		listener, err := tls.Listen("tcp", listenhost, tlsconfig)
+		listener, err := tls.Listen("tcp", listenhost, server.TLSConfig)
 		if err != nil {
 			return err
 		}
 
-		server := &http.Server{
-			Addr:        listenhost,
-			Handler:     handler,
-			TLSConfig:   tlsconfig,
-			ReadTimeout: time.Duration(c.HTTPReadTimeout) * time.Second,
-		}
 		acmestring := ""
 		if c.TLS.ACME.Enabled {
 			acmestring = " ACME"
@@ -259,7 +271,6 @@ func RunServer(verbose bool) error {
 		return server.Serve(listener)
 	}
 	log.Infof("Running ConnectorDB v%s at %s (%s)", connectordb.Version, c.GetSiteURL(), listenhost)
-	http.Handle("/", handler)
 
-	return http.ListenAndServe(listenhost, nil)
+	return server.ListenAndServe()
 }
