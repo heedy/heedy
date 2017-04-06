@@ -36,9 +36,7 @@ func (db *SqlxMixin) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 	}
 
 	// Convert to the correct binding type
-	query = db.DB.Rebind(query)
-
-	prepared, err = db.DB.Preparex(query)
+	prepared, err = db.DB.Preparex(db.DB.Rebind(query))
 
 	if err != nil {
 		return prepared, err

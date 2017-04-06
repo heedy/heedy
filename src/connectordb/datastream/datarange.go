@@ -47,8 +47,8 @@ func (r EmptyRange) Next() (*Datapoint, error) {
 //TimeRange will return all datapoints within the Datarange which are within (c,d].
 type TimeRange struct {
 	dr      ExtendedDataRange //The ExtendedDataRange to wrap
-	endtime float64         //The time at which to stop returning datapoints
-	dpap    *DatapointArray //The current array that is being read
+	endtime float64           //The time at which to stop returning datapoints
+	dpap    *DatapointArray   //The current array that is being read
 }
 
 //Index returns the underlying ExtendedDataRange's index.
@@ -78,6 +78,7 @@ func (r *TimeRange) NextArray() (dpap *DatapointArray, err error) {
 	dpa := r.dpap.TEnd(r.endtime)
 	r.dpap = nil
 	if dpa == nil {
+		r.dr.Close() // Make sure to close the range, since we are done with it
 		return nil, err
 	}
 	if dpa.Length() > 0 {
@@ -105,6 +106,7 @@ func (r *TimeRange) Next() (dp *Datapoint, err error) {
 	//Return nil if the timestamp is beyond our range
 	if dp != nil && r.endtime > 0.0 && dp.Timestamp > r.endtime {
 		//The datapoint is beyond our range.
+		r.dr.Close()
 		return nil, nil
 	}
 	return dp, err
@@ -146,6 +148,7 @@ func (r *NumRange) Index() int64 {
 //amount of datapoints to return.
 func (r *NumRange) NextArray() (*DatapointArray, error) {
 	if r.numleft == 0 {
+		r.dr.Close()
 		return nil, nil
 	}
 
@@ -167,6 +170,7 @@ func (r *NumRange) NextArray() (*DatapointArray, error) {
 //amonut of datapoints to return.
 func (r *NumRange) Next() (*Datapoint, error) {
 	if r.numleft == 0 {
+		r.dr.Close()
 		return nil, nil
 	}
 	r.numleft--

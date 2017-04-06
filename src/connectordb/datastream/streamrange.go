@@ -19,6 +19,7 @@ type StreamRange struct {
 func (d *StreamRange) Close() {
 	if d.dr != nil {
 		d.dr.Close()
+		d.dr = nil
 	}
 }
 
@@ -36,6 +37,9 @@ func (d *StreamRange) getNextExtendedDataRange() (err error) {
 	//If there WAS a batch written, IRange will return a StreamRange - which is also a ExtendedDataRange.
 	//Since writing batches in-between queries is something that rarely happens,
 	//for simplicity's sake, we just stack the StreamRanges each time that happens.
+	// At this point, d.dr is already assumed to be closed, but just to make sure,
+	// we close it again
+	d.Close()
 	d.dr, err = d.ds.IRange(d.deviceID, d.streamID, d.substream, d.index, 0)
 	return err
 }
