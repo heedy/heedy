@@ -10,31 +10,31 @@
   The App component is initialized in index.js. It is react's main entry point.
 */
 
-import React, { Component, PropTypes } from 'react';
-import { connect } from 'react-redux';
+import React, { Component, PropTypes } from "react";
+import { connect } from "react-redux";
 
-import { Route } from 'react-router'
+import { Route } from "react-router";
 
-import Theme from './theme/Theme';
+import Theme from "./theme/Theme";
 
-import MainPage from './MainPage';
-import User from './User';
-import Device from './Device';
-import Stream from './Stream';
+import MainPage from "./MainPage";
+import User from "./User";
+import Device from "./Device";
+import Stream from "./Stream";
 
 // While the logout url removes all cookies, the frontend uses a special component to do further cleanup,
 // since we save a lot of resources offline (so that the app can be used even without internet connection) that
 // should be deleted on logout.
-import Logout from './Logout';
+import Logout from "./Logout";
 
 const App = () => (
-    <Theme>
-        <Route exact path="/" component={MainPage} />
-        <Route exact path="/logout" component={Logout} />
-        <Route exact path="/:user" component={User} />
-        <Route exact path="/:user/:device" component={Device} />
-        <Route exact path="/:user/:device/:stream" component={Stream} />
-    </Theme>
+  <Theme>
+    <Route exact path="/" component={MainPage} />
+    <Route exact path="/logout" component={Logout} />
+    <Route exact path="/:user" component={User} />
+    <Route exact path="/:user/:device" component={Device} />
+    <Route exact path="/:user/:device/:stream" component={Stream} />
+  </Theme>
 );
 
 export default App;

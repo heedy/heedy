@@ -5,50 +5,58 @@
 // The keys in this object are going to be the device paths
 const InitialState = {};
 
-import deviceViewReducer, {DeviceViewInitialState} from './deviceView';
-import deviceEditReducer, {DeviceEditInitialState} from './deviceEdit';
-import streamCreateReducer, {StreamCreateInitialState} from './streamCreate';
+import deviceViewReducer, { DeviceViewInitialState } from "./deviceView";
+import deviceEditReducer, { DeviceEditInitialState } from "./deviceEdit";
+import streamCreateReducer, { StreamCreateInitialState } from "./streamCreate";
 
 // The initial state of a specific device
 const DeviceInitialState = {
-    edit: DeviceEditInitialState,
-    view: DeviceViewInitialState,
-    create: StreamCreateInitialState
+  edit: DeviceEditInitialState,
+  view: DeviceViewInitialState,
+  create: StreamCreateInitialState
 };
 
 export default function deviceReducer(state = InitialState, action) {
-    if (!action.type.startsWith("DEVICE_"))
-        return state;
+  if (!action.type.startsWith("DEVICE_")) return state;
 
-    // Set up the new state
-    let newState = {
-        ...state
+  // Set up the new state
+  let newState = {
+    ...state
+  };
+
+  // If the device already has a state, copy the next level, otherwise, initialize the next level
+  if (state[action.name] !== undefined) {
+    newState[action.name] = {
+      ...state[action.name]
     };
+  } else {
+    newState[action.name] = Object.assign({}, DeviceInitialState);
+  }
 
-    // If the device already has a state, copy the next level, otherwise, initialize the next level
-    if (state[action.name] !== undefined) {
-        newState[action.name] = {
-            ...state[action.name]
-        }
-    } else {
-        newState[action.name] = Object.assign({}, DeviceInitialState);
-    }
+  // Now route to the appropriate reducer
+  if (action.type.startsWith("DEVICE_EDIT"))
+    newState[action.name].edit = deviceEditReducer(
+      newState[action.name].edit,
+      action
+    );
+  if (action.type.startsWith("DEVICE_VIEW_"))
+    newState[action.name].view = deviceViewReducer(
+      newState[action.name].view,
+      action
+    );
+  if (action.type.startsWith("DEVICE_CREATESTREAM_"))
+    newState[action.name].create = streamCreateReducer(
+      newState[action.name].create,
+      action
+    );
 
-    // Now route to the appropriate reducer
-    if (action.type.startsWith("DEVICE_EDIT"))
-        newState[action.name].edit = deviceEditReducer(newState[action.name].edit, action);
-    if (action.type.startsWith("DEVICE_VIEW_"))
-        newState[action.name].view = deviceViewReducer(newState[action.name].view, action);
-    if (action.type.startsWith("DEVICE_CREATESTREAM_"))
-        newState[action.name].create = streamCreateReducer(newState[action.name].create, action);
-
-    return newState;
+  return newState;
 }
 
 // get the device page from the state - the state might not have this
 // particular page initialized, meaning that it wasn't acted upon
 export function getDeviceState(device, state) {
-    return (state.device[device] !== undefined
-        ? state.device[device]
-        : DeviceInitialState);
+  return state.device[device] !== undefined
+    ? state.device[device]
+    : DeviceInitialState;
 }

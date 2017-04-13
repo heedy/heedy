@@ -7,6 +7,6 @@ all of the available inputs, so that they can register themselves.
 */
 
 // The default form to show
-import './default';
-import './log.diary';
-import './rating.stars/index';
+import "./default";
+import "./log.diary";
+import "./rating.stars/index";

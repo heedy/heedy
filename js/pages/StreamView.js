@@ -20,39 +20,83 @@
   While there is no queried data, the analysis cards are replaced with a loading screen.
 **/
 
-import React, { Component, PropTypes } from 'react';
-import { connect } from 'react-redux';
+import React, { Component, PropTypes } from "react";
+import { connect } from "react-redux";
 
-import StreamCard from '../components/StreamCard';
-import DataInput from '../components/DataInput';
-import DataQuery from '../components/DataQuery';
-import DataView from '../components/DataView';
-import SearchCard from '../components/SearchCard';
+import StreamCard from "../components/StreamCard";
+import DataInput from "../components/DataInput";
+import DataQuery from "../components/DataQuery";
+import DataView from "../components/DataView";
+import SearchCard from "../components/SearchCard";
 
-import Loading from '../components/Loading';
+import Loading from "../components/Loading";
 
-import { setSearchSubmit, setSearchState } from '../actions';
+import { setSearchSubmit, setSearchState } from "../actions";
 
-const StreamView = ({ user, device, stream, state, thisUser, thisDevice, clearTransform, transformError }) => (
-    <div>
-        {state.search.submitted != null && state.search.submitted != ""
-            ? (<SearchCard title={state.search.submitted} subtitle={"Transform applied to data"} onClose={clearTransform} />)
+const StreamView = ({
+  user,
+  device,
+  stream,
+  state,
+  thisUser,
+  thisDevice,
+  clearTransform,
+  transformError
+}) => (
+  <div>
+    {state.search.submitted != null && state.search.submitted != ""
+      ? <SearchCard
+          title={state.search.submitted}
+          subtitle={"Transform applied to data"}
+          onClose={clearTransform}
+        />
+      : null}
+    <StreamCard user={user} device={device} stream={stream} state={state} />
+
+    <DataView
+      data={state.data}
+      transform={state.search.submitted}
+      transformError={transformError}
+      datatype={stream.datatype}
+      schema={stream.schema}
+    >
+      {stream.downlink ||
+        (thisUser.name == user.name && thisDevice.name == device.name)
+        ? <DataInput
+            user={user}
+            device={device}
+            stream={stream}
+            schema={JSON.parse(stream.schema)}
+            thisUser={thisUser}
+            thisDevice={thisDevice}
+          />
+        : null}
+      <DataQuery state={state} user={user} device={device} stream={stream} />
+      {state.loading
+        ? <div className="col-lg-12"><Loading /></div>
+        : state.data.length === 0
+            ? <div
+                className="col-lg-12"
+                style={{
+                  textAlign: "center",
+                  paddingTop: 100,
+                  color: "#c2c2c2"
+                }}
+              >
+                <h3>No Data</h3>
+              </div>
             : null}
-        <StreamCard user={user} device={device} stream={stream} state={state} />
-
-        <DataView data={state.data} transform={state.search.submitted} transformError={transformError} datatype={stream.datatype} schema={stream.schema} >
-            {stream.downlink || thisUser.name == user.name && thisDevice.name == device.name
-                ? (<DataInput user={user} device={device} stream={stream} schema={JSON.parse(stream.schema)} thisUser={thisUser} thisDevice={thisDevice} />)
-                : null}
-            <DataQuery state={state} user={user} device={device} stream={stream} />
-            {state.loading ? (<div className="col-lg-12"><Loading /></div>) :
-                (state.data.length === 0 ? (<div className="col-lg-12" style={{ textAlign: "center", paddingTop: 100, color: "#c2c2c2" }}><h3>No Data</h3></div>) : null)}
-        </DataView>
-    </div>
+    </DataView>
+  </div>
 );
 
-
-export default connect((state) => ({ thisUser: state.site.thisUser, thisDevice: state.site.thisDevice }), (dispatch) => ({
+export default connect(
+  state => ({
+    thisUser: state.site.thisUser,
+    thisDevice: state.site.thisDevice
+  }),
+  dispatch => ({
     clearTransform: () => dispatch(setSearchSubmit("")),
-    transformError: (txt) => dispatch(setSearchState({ error: txt }))
-}))(StreamView);
+    transformError: txt => dispatch(setSearchState({ error: txt }))
+  })
+)(StreamView);

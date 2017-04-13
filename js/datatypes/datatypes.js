@@ -6,29 +6,28 @@
 
 // combine takes the given array, and combines it with dots
 function combine(arr) {
-    let res = "";
-    for (let i = 0; i < arr.length; i++) {
-        if (i != 0) {
-            res += ".";
-        }
-        res += arr[i];
+  let res = "";
+  for (let i = 0; i < arr.length; i++) {
+    if (i != 0) {
+      res += ".";
     }
-    return res;
+    res += arr[i];
+  }
+  return res;
 }
 
 // getFromDict is a helper function, used later in the file to correctly separate
 // datatypes by dots.
 function getFromDict(dict, datatype, plugintype) {
-    let datapath = datatype.split(".");
-    let currpath = "";
-    for (let i = datapath.length; i >= 0; i--) {
-        currpath = combine(datapath.slice(0, i));
-        if (dict[currpath] !== undefined) {
-            // console.log("Using " + plugintype + " plugin '" + currpath + "' for datatype '" + datatype + "'");
-            return dict[currpath];
-        }
-
+  let datapath = datatype.split(".");
+  let currpath = "";
+  for (let i = datapath.length; i >= 0; i--) {
+    currpath = combine(datapath.slice(0, i));
+    if (dict[currpath] !== undefined) {
+      // console.log("Using " + plugintype + " plugin '" + currpath + "' for datatype '" + datatype + "'");
+      return dict[currpath];
     }
+  }
 }
 
 // add and get input - there can only be a single input component per stream. The inputs are set up by datatype.
@@ -38,11 +37,11 @@ function getFromDict(dict, datatype, plugintype) {
 var inputdict = {};
 
 export function addInput(datatype, input) {
-    inputdict[datatype] = input;
+  inputdict[datatype] = input;
 }
 
 export function getInput(datatype) {
-    return getFromDict(inputdict, datatype, "input");
+  return getFromDict(inputdict, datatype, "input");
 }
 
 // add and get creators are similar to inputs, as they are per datatype. The creators are
@@ -51,11 +50,11 @@ export function getInput(datatype) {
 
 var createdict = {};
 export function addCreator(datatype, creator) {
-    createdict[datatype] = creator;
+  createdict[datatype] = creator;
 }
 
 export function getCreator(datatype) {
-    return getFromDict(createdict, datatype, "create");
+  return getFromDict(createdict, datatype, "create");
 }
 
 // add and get views for a stream. Each view consists of a function that given a stream either returns a Component
@@ -66,16 +65,16 @@ export function getCreator(datatype) {
 var viewarray = [];
 
 export function addView(view) {
-    viewarray.push(view);
+  viewarray.push(view);
 }
 
 export function getViews(payload) {
-    var resultarray = [];
-    for (let i = 0; i < viewarray.length; i++) {
-        let res = viewarray[i](payload);
-        if (res !== null) {
-            resultarray = resultarray.concat(res);
-        }
+  var resultarray = [];
+  for (let i = 0; i < viewarray.length; i++) {
+    let res = viewarray[i](payload);
+    if (res !== null) {
+      resultarray = resultarray.concat(res);
     }
-    return resultarray;
+  }
+  return resultarray;
 }

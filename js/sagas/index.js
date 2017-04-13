@@ -12,18 +12,18 @@ all more recent code uses newer coding practices and the knowledge gained from t
 That's why the codebase has inconsistent practices - with some code being almost entirely functional with sagas,
 and other code being... not.
 */
-import downlinkSaga from './downlinks';
-import analysisSaga from './analysis';
-import navigationSaga from './navigation';
-import uploaderSaga from './uploader';
-import streamSaga from './stream';
+import downlinkSaga from "./downlinks";
+import analysisSaga from "./analysis";
+import navigationSaga from "./navigation";
+import uploaderSaga from "./uploader";
+import streamSaga from "./stream";
 
 export default function* sagas() {
-    yield [
-        downlinkSaga(),
-        analysisSaga(),
-        navigationSaga(),
-        uploaderSaga(),
-        streamSaga()
-    ];
+  yield [
+    downlinkSaga(),
+    analysisSaga(),
+    navigationSaga(),
+    uploaderSaga(),
+    streamSaga()
+  ];
 }

@@ -1,92 +1,118 @@
-import React, { Component, PropTypes } from 'react';
-import { connect } from 'react-redux';
-import { Card, CardText, CardHeader } from 'material-ui/Card';
-import FontIcon from 'material-ui/FontIcon';
-import IconButton from 'material-ui/IconButton';
-import FlatButton from 'material-ui/FlatButton';
-import TextField from 'material-ui/TextField';
+import React, { Component, PropTypes } from "react";
+import { connect } from "react-redux";
+import { Card, CardText, CardHeader } from "material-ui/Card";
+import FontIcon from "material-ui/FontIcon";
+import IconButton from "material-ui/IconButton";
+import FlatButton from "material-ui/FlatButton";
+import TextField from "material-ui/TextField";
 
-import QueryRange from './QueryRange';
-import TransformInput from './TransformInput';
+import QueryRange from "./QueryRange";
+import TransformInput from "./TransformInput";
 
-import ExpandableCard from './ExpandableCard';
+import ExpandableCard from "./ExpandableCard";
 
-import { query, showMessage } from '../actions';
+import { query, showMessage } from "../actions";
 
 class DataQuery extends Component {
-    static propTypes = {
-        state: PropTypes.object.isRequired,
-        user: PropTypes.object.isRequired,
-        device: PropTypes.object.isRequired,
-        stream: PropTypes.object.isRequired,
-        query: PropTypes.func.isRequired,
-        msg: PropTypes.func.isRequired,
-        timeranges: PropTypes.object
-    }
+  static propTypes = {
+    state: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired,
+    device: PropTypes.object.isRequired,
+    stream: PropTypes.object.isRequired,
+    query: PropTypes.func.isRequired,
+    msg: PropTypes.func.isRequired,
+    timeranges: PropTypes.object
+  };
 
-    query() {
-        let s = this.props.state;
-        // We now run the query
-        this.props.query({
-            bytime: s.bytime,
-            i1: parseInt(s.i1),
-            i2: parseInt(s.i2),
-            t1: s.t1.unix(),
-            t2: s.t2.unix(),
-            limit: s.limit,
-            transform: s.transform
-        });
-    }
+  query() {
+    let s = this.props.state;
+    // We now run the query
+    this.props.query({
+      bytime: s.bytime,
+      i1: parseInt(s.i1),
+      i2: parseInt(s.i2),
+      t1: s.t1.unix(),
+      t2: s.t2.unix(),
+      limit: s.limit,
+      transform: s.transform
+    });
+  }
 
-    render() {
-        let state = this.props.state;
-        let setState = this.props.setState;
+  render() {
+    let state = this.props.state;
+    let setState = this.props.setState;
 
-        var start = state.t1.format('YYYY-MM-DD hh:mm:ss a');
-        var end = state.t2.format('YYYY-MM-DD hh:mm:ss a');
-        var label = start + ' ➡ ' + end;
+    var start = state.t1.format("YYYY-MM-DD hh:mm:ss a");
+    var end = state.t2.format("YYYY-MM-DD hh:mm:ss a");
+    var label = start + " ➡ " + end;
 
-        return (
-            <ExpandableCard state={state} width="expandable-half" setState={this.props.setState} title="Query Data" subtitle="Choose what data is displayed"
-                icons={[(
-                    <IconButton key="pythoncode" onTouchTap={this.props.showPython} tooltip="Show Python Code">
-                        <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
-                            code
-                    </FontIcon>
-                    </IconButton>
-                )]}>
-                <QueryRange state={state} setState={setState} />
-                <h5 style={{
-                    paddingTop: "10px"
-                }}>Server-Side Transform</h5>
-                <TransformInput transform={state.transform} onChange={(txt) => setState({ transform: txt })} />
+    return (
+      <ExpandableCard
+        state={state}
+        width="expandable-half"
+        setState={this.props.setState}
+        title="Query Data"
+        subtitle="Choose what data is displayed"
+        icons={[
+          <IconButton
+            key="pythoncode"
+            onTouchTap={this.props.showPython}
+            tooltip="Show Python Code"
+          >
+            <FontIcon className="material-icons" color="rgba(0,0,0,0.8)">
+              code
+            </FontIcon>
+          </IconButton>
+        ]}
+      >
+        <QueryRange state={state} setState={setState} />
+        <h5
+          style={{
+            paddingTop: "10px"
+          }}
+        >
+          Server-Side Transform
+        </h5>
+        <TransformInput
+          transform={state.transform}
+          onChange={txt => setState({ transform: txt })}
+        />
 
-                <FlatButton style={{
-                    float: "right"
-                }} primary={true} label="Run Query" onTouchTap={() => this.query()} /> {state.error !== null
-                    ? (
-                        <p style={{
-                            paddingTop: "10px",
-                            color: "red"
-                        }}>{state.error.msg}</p>
-                    )
-                    : (
-                        <p style={{
-                            paddingTop: "10px"
-                        }}>Learn about transforms
-                            <a href="https://connectordb.io/docs/pipescript/">{" "}here.</a>
-                        </p>
-                    )}
-            </ExpandableCard>
-        );
-    }
+        <FlatButton
+          style={{
+            float: "right"
+          }}
+          primary={true}
+          label="Run Query"
+          onTouchTap={() => this.query()}
+        /> {state.error !== null
+          ? <p
+              style={{
+                paddingTop: "10px",
+                color: "red"
+              }}
+            >
+              {state.error.msg}
+            </p>
+          : <p
+              style={{
+                paddingTop: "10px"
+              }}
+            >
+              Learn about transforms
+              <a href="https://connectordb.io/docs/pipescript/">{" "}here.</a>
+            </p>}
+      </ExpandableCard>
+    );
+  }
 }
 export default connect(undefined, (dispatch, props) => {
-    let path = props.user.name + "/" + props.device.name + "/" + props.stream.name;
-    return {
-        query: (q) => dispatch(query(props.user, props.device, props.stream, q)),
-        setState: (s) => dispatch({ type: "STREAM_VIEW_SET", name: path, value: s }),
-        msg: (t) => dispatch(showMessage(t)),
-        showPython: () => dispatch({ type: "SHOW_QUERY_CODE", value: path })
-    };
+  let path =
+    props.user.name + "/" + props.device.name + "/" + props.stream.name;
+  return {
+    query: q => dispatch(query(props.user, props.device, props.stream, q)),
+    setState: s => dispatch({ type: "STREAM_VIEW_SET", name: path, value: s }),
+    msg: t => dispatch(showMessage(t)),
+    showPython: () => dispatch({ type: "SHOW_QUERY_CODE", value: path })
+  };
 })(DataQuery);

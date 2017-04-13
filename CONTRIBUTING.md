@@ -19,6 +19,10 @@ If you have issues with the frontend, please copy the relevant lines of your bro
 When reporting a bug, please include enough information for someone unfamilar
 with your setup to reproduce your bug.
 
+## Pull Requests
+
+Please run the [prettier](https://github.com/prettier/prettier) formatter on all code. If using vscode, you can install the `esbenp.prettier-vscode` extension, and enable formatting on save.
+
 ## Contributor License Agreement
 
 ```

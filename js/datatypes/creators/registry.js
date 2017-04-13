@@ -5,6 +5,6 @@ This file is imported at the beginning of the app, and it imports all of the ava
 so that they can be registered.
 */
 
-import './default';
-import './rating.stars';
-import './log.diary';
+import "./default";
+import "./rating.stars";
+import "./log.diary";

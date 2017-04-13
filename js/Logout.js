@@ -4,34 +4,39 @@
   information.
 */
 
-import React, { Component, PropTypes } from 'react';
-import storage from './storage'
+import React, { Component, PropTypes } from "react";
+import storage from "./storage";
 
 class Logout extends Component {
-    constructor(props) {
-        storage.clear().then(() => {
-            console.log("Cleared local storage");
-            // Navigate to the logout of the ConnectorDB server, which will remove cookies
-            window.location = "/logout";
-        }).catch((err) => {
-            alert("Failed to clear local storage: " + err);
-            window.location = "/logout";
-        });
-        super(props);
-    }
-    render() {
-        return (
-            <div style={{
-                textAlign: "center",
-                paddingTop: 200
-            }}>
-                <h1>
-                    Logging Out ...
-                </h1>
-                <p>Clearing local cached data...</p>
-            </div>
-        );
-    }
+  constructor(props) {
+    storage
+      .clear()
+      .then(() => {
+        console.log("Cleared local storage");
+        // Navigate to the logout of the ConnectorDB server, which will remove cookies
+        window.location = "/logout";
+      })
+      .catch(err => {
+        alert("Failed to clear local storage: " + err);
+        window.location = "/logout";
+      });
+    super(props);
+  }
+  render() {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          paddingTop: 200
+        }}
+      >
+        <h1>
+          Logging Out ...
+        </h1>
+        <p>Clearing local cached data...</p>
+      </div>
+    );
+  }
 }
 
 export default Logout;

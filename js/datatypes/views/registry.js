@@ -6,15 +6,15 @@ This file is imported at the beginning of the app, and it imports all of the ava
 so that they can be registered.
 */
 
-import './TableView/index';
-import './InfoView';
-import './BoolView';
-import './LineView';
-import './HistogramView';
-import './BarView';
-import './SingleObjectView';
-import './SentimentLineChart';
-import './ScatterView';
-import './Map';
-import './WebHistoryView';
-import './HeatmapView';
+import "./TableView/index";
+import "./InfoView";
+import "./BoolView";
+import "./LineView";
+import "./HistogramView";
+import "./BarView";
+import "./SingleObjectView";
+import "./SentimentLineChart";
+import "./ScatterView";
+import "./Map";
+import "./WebHistoryView";
+import "./HeatmapView";
