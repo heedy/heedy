@@ -34,7 +34,7 @@ var (
 )
 
 // RootCmd is the root command under which all other commands are placed.
-// It is used to initialize all ariables that are global for the whole app
+// It is used to initialize all variables that are global for the whole app
 var RootCmd = &cobra.Command{
 	Use:   "connectordb",
 	Short: "ConnectorDB is a repository for your quantified-self and IoT data",
