@@ -5,7 +5,8 @@ its width parameter and its state. The card also is set up for easy use with too
 For its state, it is given either undefined, or a specific value, in which case the state overrides size.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import FontIcon from "material-ui/FontIcon";

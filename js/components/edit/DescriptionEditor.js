@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import TextField from "material-ui/TextField";
 
 class NicknameEditor extends Component {
@@ -24,7 +25,8 @@ class NicknameEditor extends Component {
             marginTop: "-20px"
           }}
           onChange={this.props.onChange}
-        /><br />
+        />
+        <br />
       </div>
     );
   }

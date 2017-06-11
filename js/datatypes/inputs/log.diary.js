@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { addInput } from "../datatypes";
 
 import Textarea from "react-textarea-autosize";
@@ -33,9 +34,9 @@ class Diary extends Component {
           minRows={4}
           useCacheForDOMMeasurements
           name={this.props.path}
-          multiLine={true}
           onChange={e => this.props.setState({ value: e.target.value })}
-        /><br />
+        />
+        <br />
         <RaisedButton
           primary={true}
           label="Submit"

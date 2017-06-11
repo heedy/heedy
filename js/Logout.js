@@ -4,7 +4,8 @@
   information.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import storage from "./storage";
 
 class Logout extends Component {

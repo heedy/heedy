@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { addView } from "../datatypes";
 import { numeric, objectvalues, dataKeyCompare, getNumber } from "./typecheck";

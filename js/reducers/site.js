@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import QRCode from "qrcode.react";
 
 import { go } from "../actions";
@@ -20,16 +21,20 @@ const InitialState = {
     },
     device: {
       user: {
-        description: "has all permissions that the owning user has (Create/Read/Update/Delete)"
+        description:
+          "has all permissions that the owning user has (Create/Read/Update/Delete)"
       },
       writer: {
-        description: "can read and update basic properties of streams and devices"
+        description:
+          "can read and update basic properties of streams and devices"
       },
       reader: {
-        description: "can read properties of streams and devices, and read their data"
+        description:
+          "can read properties of streams and devices, and read their data"
       },
       none: {
-        description: "the device is isolated - it only has access to itself and its own streams"
+        description:
+          "the device is isolated - it only has access to itself and its own streams"
       }
     }
   },

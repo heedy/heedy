@@ -11,7 +11,8 @@
   about which user/device/stream it belongs to.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { getDeviceState } from "./reducers/device";
@@ -44,7 +45,8 @@ class Device extends Component {
   }
   componentWillReceiveProps(newProps) {
     if (
-      newProps.user !== this.props.user || newProps.device !== this.props.device
+      newProps.user !== this.props.user ||
+      newProps.device !== this.props.device
     ) {
       setDeviceTitle(newProps.user, newProps.device);
     }

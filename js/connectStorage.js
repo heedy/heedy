@@ -19,13 +19,15 @@
 // TODO: I cry when I see code like this. What makes it all the more horrible is that *I* am
 //  the person who wrote it... This really needs to be refactored... - dkumor
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import storage from "./storage";
+import createClass from "create-react-class";
 
 const NoQueryIfWithinMilliseconds = 1000;
 
 export default function connectStorage(Component, lsdev, lsstream) {
-  return React.createClass({
+  return createClass({
     propTypes: {
       user: PropTypes.string,
       device: PropTypes.string,
@@ -103,7 +105,8 @@ export default function connectStorage(Component, lsdev, lsstream) {
               this.setState({ device: response });
               // If the user was recently queried, don't query it again needlessly
               if (
-                response.timestamp > Date.now() - NoQueryIfWithinMilliseconds
+                response.timestamp >
+                Date.now() - NoQueryIfWithinMilliseconds
               ) {
                 return;
               }
@@ -122,7 +125,8 @@ export default function connectStorage(Component, lsdev, lsstream) {
                 this.setState({ stream: response });
                 // If the user was recently queried, don't query it again needlessly
                 if (
-                  response.timestamp > Date.now() - NoQueryIfWithinMilliseconds
+                  response.timestamp >
+                  Date.now() - NoQueryIfWithinMilliseconds
                 ) {
                   return;
                 }
@@ -153,7 +157,7 @@ export default function connectStorage(Component, lsdev, lsstream) {
             this.setState({ streamarray: response });
           }
           // The query will be caught by the callback
-          storage.query_ls(thisDevice).catch(err => console.log(err));
+          storage.query_ls(thisDevice); //.catch(err => console.log(err));
         });
       }
     },

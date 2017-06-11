@@ -3,7 +3,8 @@ The DataTable displays a table of the currently queried data. It initially only 
 but can be set to the "expanded" state, where it shows the entire dataset
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import moment from "moment";
 
 import DataUpdater from "../components/DataUpdater";
@@ -48,7 +49,9 @@ class DataTable extends DataUpdater {
         }
         dataset[0].t = moment.unix(t).calendar();
       } else if (
-        d.length == 1 && d[0].d !== null && typeof d[0].d !== "object"
+        d.length == 1 &&
+        d[0].d !== null &&
+        typeof d[0].d !== "object"
       ) {
         // This is a single datapoint with a single value. Show an alternate view
         // That highlights the value

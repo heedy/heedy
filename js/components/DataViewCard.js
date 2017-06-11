@@ -9,7 +9,8 @@
   the repeated code used in each view.
 **/
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import ExpandableCard from "./ExpandableCard";
 

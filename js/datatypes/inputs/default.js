@@ -7,7 +7,8 @@ the stream's schema. If the stream has no schema, it has a textbox in which the 
 type in arbitrary JSON.
 **/
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import Form from "react-jsonschema-form";
 import TimeChooser, { getTimestamp } from "./TimeChooser";
@@ -34,7 +35,7 @@ const noSchema = {
 // 1) It modifies the schema given to include default values and be ready for input
 // 2) It generates a uischema, which allows us to set specific view types for
 //  certain schemas. Currently it is used to generate booleans as radio buttons.
-function prepareSchema(s) {
+function prepareSchema(s, firstcall = true) {
   let uiSchema = {};
   let schema = Object.assign({}, s); // We'll be modifying the object, so copy it
   if (schema.type === undefined) {
@@ -43,12 +44,14 @@ function prepareSchema(s) {
     // The schema is valid - set up the default values and uiSchema
     switch (schema.type) {
       case "object":
+        if (schema.properties === undefined || schema.properties == null)
+          return { ui: {}, schema: {} };
         let k = Object.keys(schema.properties);
         for (let i in k) {
           let key = k[i];
-          let ret = prepareSchema(schema.properties[key]);
+          let ret = prepareSchema(schema.properties[key], false);
           uiSchema[key] = ret.ui;
-          schema.properties[key] = ret.s;
+          schema.properties[key] = ret.schema;
         }
         break;
       case "string":
@@ -72,7 +75,7 @@ function prepareSchema(s) {
 
     // The form generator doesn't handle non-object schemas well, so if the
     // root type is not object, we wrap the schema in an object
-    if (schema.type != "object") {
+    if (schema.type != "object" && firstcall) {
       if (schema.title === undefined) {
         schema.title = "Input Data:";
       }

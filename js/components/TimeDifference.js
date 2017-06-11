@@ -1,5 +1,6 @@
 // Displays an element that shows the time elapsed form the gven timestamp
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import moment from "moment";
 
@@ -34,6 +35,7 @@ export default class TimeDifference extends Component {
     clearInterval(this.timer);
   }
   render() {
-    return <div> {this.state.elapsed} </div>;
+    return <div> {this.state.elapsed}
+      {" "}</div>;
   }
 }

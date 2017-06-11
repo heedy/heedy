@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Checkbox from "material-ui/Checkbox";
 
 class EphemeralEditor extends Component {
@@ -12,7 +13,8 @@ class EphemeralEditor extends Component {
       <div>
         <h3>Ephemeral</h3>
         <p>
-          Ephemeral streams do not save data - inserts are only passed through ConnectorDB's messaging system
+          Ephemeral streams do not save data - inserts are only passed through
+          ConnectorDB's messaging system
         </p>
         <Checkbox
           label="Ephemeral"

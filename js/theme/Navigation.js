@@ -8,6 +8,7 @@
 */
 
 import React from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { spacing } from "material-ui/styles";
@@ -55,12 +56,12 @@ const styles = {
 
 class Navigation extends React.Component {
   static propTypes = {
-    docked: React.PropTypes.bool.isRequired,
-    open: React.PropTypes.bool.isRequired,
-    links: React.PropTypes.arrayOf(React.PropTypes.object),
-    onClick: React.PropTypes.func.isRequired,
-    onRequestChange: React.PropTypes.func,
-    location: React.PropTypes.object.isRequired
+    docked: PropTypes.bool.isRequired,
+    open: PropTypes.bool.isRequired,
+    links: PropTypes.arrayOf(PropTypes.object),
+    onClick: PropTypes.func.isRequired,
+    onRequestChange: PropTypes.func,
+    location: PropTypes.object.isRequired
   };
 
   // The navigation does not close itself when in mobile mode when clicked
@@ -96,7 +97,7 @@ class Navigation extends React.Component {
           value={selected}
           onChange={(e, v) => this.onClick(e, v)}
         >
-          {this.props.links.map(link => (
+          {this.props.links.map(link =>
             <ListItem
               key={link.page}
               value={link.page}
@@ -117,7 +118,7 @@ class Navigation extends React.Component {
                     </div>}
               </div>
             </ListItem>
-          ))}
+          )}
         </SelectableList>
       </Drawer>
     );

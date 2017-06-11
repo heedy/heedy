@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { RadioButton, RadioButtonGroup } from "material-ui/RadioButton";
 
@@ -19,7 +20,8 @@ class SchemaEditor extends Component {
       <div>
         <h3>JSON Schema</h3>
         <p>
-          The schema that the data within the stream will conform to. This cannot be changed after creating the stream. &nbsp;
+          The schema that the data within the stream will conform to. This
+          cannot be changed after creating the stream. &nbsp;
           <a href="http://json-schema.org/examples.html">Learn more here...</a>
         </p>
         <RadioButtonGroup

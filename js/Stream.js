@@ -11,7 +11,8 @@
   about which user/device/stream it belongs to.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { getStreamState } from "./reducers/stream";

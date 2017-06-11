@@ -1,7 +1,8 @@
 // The ObjectList is a list of Objects, where the object can be users, devices or streams - it only uses properties shared between
 // all three to render them (except for Public - if the user/device is public, it adds a little social icon)
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import { List, ListItem } from "material-ui/List";

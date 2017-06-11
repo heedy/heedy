@@ -1,7 +1,8 @@
 // ObjectCreate sets up the creation of objects (user/device/stream) - it is the main view used
 // as well as the final buttons
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { Card, CardText, CardHeader, CardActions } from "material-ui/Card";
 import TextField from "material-ui/TextField";
 import Divider from "material-ui/Divider";
@@ -77,7 +78,8 @@ class ObjectCreate extends Component {
             }}
             value={state.name}
             onChange={callbacks.nameChange}
-          /><br /> {this.props.required}
+          />
+          <br /> {this.props.required}
           <Divider
             style={{
               marginTop: "20px"

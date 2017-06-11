@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import FontIcon from "material-ui/FontIcon";
@@ -85,7 +86,9 @@ class DataQuery extends Component {
           primary={true}
           label="Run Query"
           onTouchTap={() => this.query()}
-        /> {state.error !== null
+        />
+        {" "}
+        {state.error !== null
           ? <p
               style={{
                 paddingTop: "10px",

@@ -20,7 +20,8 @@
   While there is no queried data, the analysis cards are replaced with a loading screen.
 **/
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import StreamCard from "../components/StreamCard";
@@ -42,7 +43,7 @@ const StreamView = ({
   thisDevice,
   clearTransform,
   transformError
-}) => (
+}) =>
   <div>
     {state.search.submitted != null && state.search.submitted != ""
       ? <SearchCard
@@ -75,20 +76,19 @@ const StreamView = ({
       {state.loading
         ? <div className="col-lg-12"><Loading /></div>
         : state.data.length === 0
-            ? <div
-                className="col-lg-12"
-                style={{
-                  textAlign: "center",
-                  paddingTop: 100,
-                  color: "#c2c2c2"
-                }}
-              >
-                <h3>No Data</h3>
-              </div>
-            : null}
+          ? <div
+              className="col-lg-12"
+              style={{
+                textAlign: "center",
+                paddingTop: 100,
+                color: "#c2c2c2"
+              }}
+            >
+              <h3>No Data</h3>
+            </div>
+          : null}
     </DataView>
-  </div>
-);
+  </div>;
 
 export default connect(
   state => ({

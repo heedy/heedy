@@ -1,7 +1,8 @@
 /*
 This is the textbox used to input a transform
 */
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Textarea from "react-textarea-autosize";
 
 class TransformInput extends Component {
@@ -23,7 +24,6 @@ class TransformInput extends Component {
           padding: "3px",
           background: "#d5fccf"
         }}
-        multiLine={true}
         onChange={event => this.props.onChange(event.target.value)}
         onClick={this.props.onClick}
       />

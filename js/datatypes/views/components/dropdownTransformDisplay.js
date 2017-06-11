@@ -3,7 +3,9 @@
   of the view's backend
 */
 
-import React, { PropTypes } from "react";
+import React from "react";
+import PropTypes from "prop-types";
+import createClass from "create-react-class";
 
 import TransformInput from "../../../components/TransformInput";
 
@@ -14,7 +16,7 @@ export default function generateDropdownTransformDisplay(
   description,
   transform
 ) {
-  return React.createClass({
+  return createClass({
     render: function() {
       let tf = transform;
       if (this.props.state.transform !== undefined) {

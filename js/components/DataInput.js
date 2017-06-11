@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import ExpandableCard from "./ExpandableCard";
@@ -134,11 +135,8 @@ export default connect(
     setState: v =>
       dispatch({
         type: "STREAM_INPUT",
-        name: props.user.name +
-          "/" +
-          props.device.name +
-          "/" +
-          props.stream.name,
+        name:
+          props.user.name + "/" + props.device.name + "/" + props.stream.name,
         value: v
       })
   })

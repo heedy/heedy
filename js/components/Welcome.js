@@ -1,6 +1,7 @@
 // MainToolbar is the toolbar shown on the main page, from which you can create new rating streams,
 // and so forth
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import FontIcon from "material-ui/FontIcon";
@@ -24,14 +25,18 @@ class Welcome extends Component {
         />
         <CardText>
           <p>
-            It looks like you don't have any ratings or manual inputs set up yet. Click on the star icon above (after reading this) to create your first rating stream.
+            It looks like you don't have any ratings or manual inputs set up
+            yet. Click on the star icon above (after reading this) to create
+            your first rating stream.
           </p>
           <p>
-            Most data will be gathered automatically by your devices, such as an android app, or the laptop logger. Make sure to download the
+            Most data will be gathered automatically by your devices, such as an
+            android app, or the laptop logger. Make sure to download the
             <a href="https://connectordb.io/clients/">
               {" "}open-source ConnectorDB clients{" "}
             </a>
-            if you have not done so already. You can also create your own devices using the
+            if you have not done so already. You can also create your own
+            devices using the
             <a href="https://connectordb-python.readthedocs.io/en/latest/">
               {" "}python client{" "}
             </a>
@@ -39,7 +44,13 @@ class Welcome extends Component {
             <a href="https://connectordb.io/docs/">{" "}documentation{" "}</a>.
           </p>
           <p>
-            Despite the automatic data gathering, it is very difficult to gain insight without having a supervision signal. This is where your manual input is useful. By creating ratings, you can rate your productivity, mood, or log other things, such as progress towards goals or a diary. By consistently doing this every day, over time, you will gain enough data to be able to perform in-depth analysis on what exactly correlates with your abilities.
+            Despite the automatic data gathering, it is very difficult to gain
+            insight without having a supervision signal. This is where your
+            manual input is useful. By creating ratings, you can rate your
+            productivity, mood, or log other things, such as progress towards
+            goals or a diary. By consistently doing this every day, over time,
+            you will gain enough data to be able to perform in-depth analysis on
+            what exactly correlates with your abilities.
           </p>
 
         </CardText>

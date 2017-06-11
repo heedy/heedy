@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 // TEMPORARY HACK: react-star-rating package is outdated on npm with an old react version.
 // github has correct version, which needs to be compiled and stuff, so I just included the

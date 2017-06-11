@@ -3,7 +3,8 @@ The CSVView displays the currently queried data as a CSV text, that can be copie
 into excel and such
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import moment from "moment";
 
 import DataUpdater from "../components/DataUpdater";

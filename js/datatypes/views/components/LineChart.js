@@ -2,7 +2,9 @@
 This shows a line chart of the data given
 */
 
-import React, { PropTypes } from "react";
+import React from "react";
+import PropTypes from "prop-types";
+import createClass from "create-react-class";
 import DataTransformUpdater from "./DataUpdater";
 
 import { Line } from "react-chartjs-2";
@@ -167,7 +169,7 @@ export function generateLineChart(transform = "") {
 
   // If we're given a transform, wrap the LineChart so that we can pass transform into the class.
   if (transform !== "") {
-    component = React.createClass({
+    component = createClass({
       render: function() {
         return <LineChart {...this.props} transform={transform} />;
       }

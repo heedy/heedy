@@ -1,7 +1,8 @@
 /**
  * The HeatmapView shows various heatmaps thanks to reactochart
  */
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { addView } from "../datatypes";
 import { objectvalues, dataKeyCompare } from "./typecheck";
@@ -15,7 +16,7 @@ import _ from "lodash";
 
 function convMap(m) {
   let o = {};
-  m.forEach((v, k) => o[String(k)] = v);
+  m.forEach((v, k) => (o[String(k)] = v));
   return o;
 }
 // Based on:

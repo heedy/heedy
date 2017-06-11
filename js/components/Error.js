@@ -2,7 +2,8 @@
 // The error information is available in globabl variables ErrorStatusCode and ErrorRefCode
 // which are set up in error.html template
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 class Error extends Component {

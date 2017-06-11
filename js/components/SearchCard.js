@@ -2,7 +2,8 @@
   This component is colored like the search bar to make it clear that stuff inside it is related to search
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import FontIcon from "material-ui/FontIcon";
 import IconButton from "material-ui/IconButton";
@@ -62,8 +63,9 @@ class SearchCard extends Component {
                 : null}
 
             </CardHeader>
-          : null} {this.props.children !== undefined &&
-          this.props.children.length > 0
+          : null}
+        {" "}
+        {this.props.children !== undefined && this.props.children.length > 0
           ? <CardText
               style={{
                 textAlign: "center",

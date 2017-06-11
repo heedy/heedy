@@ -2,7 +2,8 @@
   Main is the index page shown after initially logging in to ConnectorDB
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { go } from "../actions";
@@ -39,8 +40,9 @@ class Main extends Component {
           textAlign: "left"
         }}
       >
-        <MainToolbar user={user} device={device} state={state} /> {streams ==
-          null || Object.keys(streams).length == 0
+        <MainToolbar user={user} device={device} state={state} />
+        {" "}
+        {streams == null || Object.keys(streams).length == 0
           ? <Welcome />
           : <div
               style={{

@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Checkbox from "material-ui/Checkbox";
 
 class VisibleEditor extends Component {
@@ -14,7 +15,8 @@ class VisibleEditor extends Component {
         <h3>Visible</h3>
         <p>
           Whether or not the {this.props.type + " "}
-          is shown when listing devices in the web interface. This is to reduce clutter - the device will still be available over REST.
+          is shown when listing devices in the web interface. This is to reduce
+          clutter - the device will still be available over REST.
         </p>
         <Checkbox
           label="Visible"

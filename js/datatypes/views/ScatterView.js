@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import DataTransformUpdater from "./components/DataUpdater";
 import { Line } from "react-chartjs-2";
@@ -55,9 +56,9 @@ class ScatterComponent extends DataTransformUpdater {
       pointColor = new Array(d.length);
       for (let i = 0; i < d.length; i++) {
         let dp = fixData(d[i].d[keys[2]]);
-        pointColor[
-          i
-        ] = `hsla(${Math.floor(120 * (dp - minColor) / (maxColor - minColor))},100%,50%,0.4)`;
+        pointColor[i] = `hsla(${Math.floor(
+          120 * (dp - minColor) / (maxColor - minColor)
+        )},100%,50%,0.4)`;
       }
     }
 

@@ -5,6 +5,7 @@
 */
 
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { spacing } from "material-ui/styles";
@@ -40,11 +41,11 @@ const styles = {
 
 class TopBar extends Component {
   static propTypes = {
-    navDocked: React.PropTypes.bool.isRequired,
-    search: React.PropTypes.object.isRequired,
-    hamburgerClick: React.PropTypes.func,
-    searchTextChanged: React.PropTypes.func,
-    submit: React.PropTypes.func
+    navDocked: PropTypes.bool.isRequired,
+    search: PropTypes.object.isRequired,
+    hamburgerClick: PropTypes.func,
+    searchTextChanged: PropTypes.func,
+    submit: PropTypes.func
   };
 
   keypress(txt, idx) {
@@ -158,7 +159,9 @@ class TopBar extends Component {
             dataSource={search.autocomplete}
             onUpdateInput={this.props.searchTextChanged}
             onNewRequest={this.keypress.bind(this)}
-          /> {search.text == ""
+          />
+          {" "}
+          {search.text == ""
             ? null
             : <FontIcon
                 className="material-icons"

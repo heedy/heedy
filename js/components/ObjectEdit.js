@@ -1,7 +1,8 @@
 // The setup used for editing users/devices/streams. It includes all of the fields
 // shared between users/devices/streams
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { Card, CardText, CardHeader, CardActions } from "material-ui/Card";
 import Dialog from "material-ui/Dialog";

@@ -2,7 +2,9 @@
 This shows a bar chart, with the option of showing a pie chart
 */
 
-import React, { PropTypes } from "react";
+import React from "react";
+import PropTypes from "prop-types";
+import createClass from "create-react-class";
 import DataTransformUpdater from "./DataUpdater";
 import dropdownTransformDisplay from "./dropdownTransformDisplay";
 import { dataKeyCompare } from "../typecheck";
@@ -141,7 +143,7 @@ export function generateBarChart(
   let component = BarChart;
   // If we're given a transform, wrap the BarChart so that we can pass transform into the class.
   if (transform != null && transform !== undefined) {
-    component = React.createClass({
+    component = createClass({
       render: function() {
         return (
           <BarChart

@@ -10,7 +10,8 @@
   The App component is initialized in index.js. It is react's main entry point.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import { Route } from "react-router";
@@ -27,14 +28,13 @@ import Stream from "./Stream";
 // should be deleted on logout.
 import Logout from "./Logout";
 
-const App = () => (
+const App = () =>
   <Theme>
     <Route exact path="/" component={MainPage} />
     <Route exact path="/logout" component={Logout} />
     <Route exact path="/:user" component={User} />
     <Route exact path="/:user/:device" component={Device} />
     <Route exact path="/:user/:device/:stream" component={Stream} />
-  </Theme>
-);
+  </Theme>;
 
 export default App;

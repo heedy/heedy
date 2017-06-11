@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import TextField from "material-ui/TextField";
 
 class DatatypeEditor extends Component {
@@ -13,7 +14,8 @@ class DatatypeEditor extends Component {
       <div>
         <h3>Datatype</h3>
         <p>
-          A stream's datatype tells ConnectorDB how the data should be interpreted.
+          A stream's datatype tells ConnectorDB how the data should be
+          interpreted.
         </p>
         <TextField
           hintText="rating.stars"
@@ -23,7 +25,8 @@ class DatatypeEditor extends Component {
           }}
           value={this.props.value}
           onChange={this.props.onChange}
-        /><br />
+        />
+        <br />
       </div>
     );
   }

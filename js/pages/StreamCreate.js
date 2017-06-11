@@ -3,7 +3,8 @@
   This card renders the corresponding plugin from ../datatypes/creators.
 
 */
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import Error from "../components/Error";
 import { createCancel, createObject, go } from "../actions";

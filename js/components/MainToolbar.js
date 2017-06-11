@@ -1,6 +1,7 @@
 // MainToolbar is the toolbar shown on the main page, from which you can create new rating streams,
 // and so forth
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { go } from "../actions";
 

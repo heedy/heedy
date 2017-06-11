@@ -14,7 +14,8 @@
  * states go into the redux store at some point in the future.
  */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import DataViewCard from "../components/DataViewCard";
@@ -153,7 +154,7 @@ class DataView extends Component {
         }}
       >
         {this.props.children}
-        {this.views.map(view => (
+        {this.views.map(view =>
           <DataViewCard
             key={view.key}
             view={view}
@@ -165,7 +166,7 @@ class DataView extends Component {
             pipescript={this.props.pipescript}
             msg={this.props.showMessage}
           />
-        ))}
+        )}
         {this.props.after !== undefined ? this.props.after : null}
       </div>
     );

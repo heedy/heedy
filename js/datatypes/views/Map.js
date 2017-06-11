@@ -4,7 +4,8 @@ Map shows a map with
 
 import { addView } from "../datatypes";
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import DataTransformUpdater from "./components/DataUpdater";
 
@@ -100,12 +101,13 @@ class MapViewComponent extends DataTransformUpdater {
         fillopacity: fillopacity,
         opacity: opacity,
         key: JSON.stringify(d2[i]),
-        popup: moment.unix(d2[i].t).calendar() +
-          " - [" +
-          d2[i].latlong[0].toString() +
-          "," +
-          d2[i].latlong[1].toString() +
-          "]"
+        popup:
+          moment.unix(d2[i].t).calendar() +
+            " - [" +
+            d2[i].latlong[0].toString() +
+            "," +
+            d2[i].latlong[1].toString() +
+            "]"
       };
     }
 
@@ -126,7 +128,7 @@ class MapViewComponent extends DataTransformUpdater {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="© <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
         />
-        {this.data.map(d => (
+        {this.data.map(d =>
           <Circle
             key={d.key}
             center={d.latlong}
@@ -140,7 +142,7 @@ class MapViewComponent extends DataTransformUpdater {
               <p>{d.popup}</p>
             </Popup>
           </Circle>
-        ))}
+        )}
       </Map>
     );
   }

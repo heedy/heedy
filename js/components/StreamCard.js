@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
 import {
@@ -131,11 +132,8 @@ export default connect(
     onExpandClick: val =>
       dispatch({
         type: "STREAM_VIEW_EXPANDED",
-        name: props.user.name +
-          "/" +
-          props.device.name +
-          "/" +
-          props.stream.name,
+        name:
+          props.user.name + "/" + props.device.name + "/" + props.stream.name,
         value: val
       }),
     onAddClick: () =>

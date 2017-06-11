@@ -2,7 +2,9 @@
 This shows a line chart of the data given. It is assumed that the default transform is already set by the default state (transform property).
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import createClass from "create-react-class";
 import LineChart from "./LineChart";
 import DropDownMenu from "material-ui/DropDownMenu";
 import MenuItem from "material-ui/MenuItem";
@@ -67,7 +69,7 @@ export function generateDropdownLineChart(
     },
     width: "expandable-half",
     dropdown: dropdownTransformDisplay(description, ""),
-    component: React.createClass({
+    component: createClass({
       render: function() {
         return <DropdownLineChart {...this.props} options={options} />;
       }

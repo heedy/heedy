@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { addCreator } from "../datatypes";
 
 import SchemaEditor from "../../components/edit/SchemaEditor";
@@ -61,6 +62,7 @@ addCreator("", {
   name: "stream",
   required: DefaultRequired,
   optional: DefaultOptional,
-  description: "You can create any type of stream here. If you want to create a specific type of stream, choose its icon from the Insert (main) page.",
+  description:
+    "You can create any type of stream here. If you want to create a specific type of stream, choose its icon from the Insert (main) page.",
   default: {}
 });

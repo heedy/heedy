@@ -4,7 +4,8 @@
 // Since the specific components are different for the different object types, this card
 // allows children which will display the properties however they want - it only handles shared properties.
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { Card, CardText, CardHeader } from "material-ui/Card";
 import FontIcon from "material-ui/FontIcon";

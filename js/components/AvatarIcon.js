@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Avatar from "material-ui/Avatar";
 import FontIcon from "material-ui/FontIcon";
 
@@ -13,7 +14,7 @@ function hashFnv32a(str) {
   var i, l;
   let hval = 0x811c9dc5;
 
-  for ((i = 0), (l = str.length); i < l; i++) {
+  for (i = 0, l = str.length; i < l; i++) {
     hval ^= str.charCodeAt(i);
     hval +=
       (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);

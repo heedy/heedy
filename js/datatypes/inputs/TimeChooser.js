@@ -6,7 +6,8 @@ The main difficulty here is that the inserts will always succeed, even if the ti
 before an existing datapoint. This is because inserts are restamp default.
 */
 
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import Toggle from "material-ui/Toggle";
 
 import "bootstrap-daterangepicker/daterangepicker.css";
@@ -52,7 +53,9 @@ class TimeChooser extends Component {
           trackStyle={{
             backgroundColor: "#ff9d9d"
           }}
-        /> {!customtimestamp
+        />
+        {" "}
+        {!customtimestamp
           ? null
           : <div>
               <DateRangePicker
@@ -81,7 +84,8 @@ class TimeChooser extends Component {
                 </div>
               </DateRangePicker>
               <p>
-                Make sure your timestamp is greater than all existing datapoints!
+                Make sure your timestamp is greater than all existing
+                datapoints!
               </p>
             </div>}
       </div>
