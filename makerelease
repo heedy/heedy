@@ -72,7 +72,7 @@ function finalize {
     # ... and generate the signature
     gpg --armor --detach-sig -o ./release/${NAME}.tar.gz.asc ./release/${NAME}.tar.gz
 }
-
+: '
 # --------------------------------------------------
 # WINDOWS amd64
 # We bundle in a windows build of redis, and compress as zip instead of tar.gz
@@ -120,7 +120,7 @@ cd ..
 
 finalize
 
-
+'
 # --------------------------------------------------
 # LINUX amd64 
 # Just works.
