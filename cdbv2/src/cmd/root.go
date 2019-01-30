@@ -29,13 +29,20 @@ func test() {
 	}
 	fmt.Println(string(b))
 
-	f, err := a.AssetFS.Open("/setup/test.html")
+	f, err := a.AssetFS.Open("/setup/css/app.e2713bb0.css")
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
+	finfo, err := f.Stat()
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+	log.Println(finfo.Name())
 
 	buf := new(bytes.Buffer)
+
 	buf.ReadFrom(f)
 	fmt.Println(buf.String())
 
