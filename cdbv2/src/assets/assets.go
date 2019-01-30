@@ -1,25 +1,36 @@
 package assets
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path"
 
 	"github.com/gobuffalo/packr/v2"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/connectordb/connectordb/assets/config"
 )
 
 // Assets holds the information that comes from loading the database folder,
 // merging it with the built-in assets, and combining
 type Assets struct {
-	FolderPath    string
-	ActivePlugins []string // List of active plugins
+	// FolderPath is the path where the database is installed.
+	// it can be "" if we are running ConnectorDB in setup mode,
+	// in which case it runs solely on builtin assets
+	// This is the only thing that needs to be manually initialized.
+	FolderPath string
 
-	Config *Configuration
+	// An override to the configuration. It is merged on top of the root configuration
+	// before any special processing
+	ConfigOverride *config.Configuration
+
+	// The active configuration. This is loaded automatically
+	Config *config.Configuration
 
 	// The overlay filesystems that include the builtin assets, as well as all
-	// overrides from active plugins, and user overrides
+	// overrides from active plugins, and user overrides. It is loaded automatically
 	AssetFS afero.Fs
 }
 
@@ -28,113 +39,81 @@ func (a *Assets) Reload() error {
 
 	builtinAssets := packr.New("assets", "../../assets")
 
-	conf := NewConfiguration()
-
 	// First, we load the configuration from the builtin assets
-	configString, err := builtinAssets.FindString("/connectordb.conf")
+	baseConfigBytes, err := builtinAssets.Find("connectordb.conf")
 	if err != nil {
 		return err
 	}
-	if err = conf.Load(configString); err != nil {
-		return err
-	}
+	baseConfiguration, err := config.LoadConfig(baseConfigBytes, "connectordb.conf")
 
 	// Next, we initialize the filesystem overlays from the builtin assets
 	assetFs := NewAferoPackr(builtinAssets)
 
-	// The os filesystem
-	osfs := afero.NewOsFs()
+	mergedConfiguration := baseConfiguration
 
-	// Make sure that the root directory exists
-	folderPathStats, err := os.Stat(a.FolderPath)
-	if err != nil {
-		return err
-	}
-	if !folderPathStats.IsDir() {
-		return errors.New(pluginFolder + " is not a directory")
-	}
+	if a.FolderPath == "" {
+		// If there is no folder path, we are running purely on built-in assets.
+		log.Warn("No asset folder specified - running on builtin assets.")
 
-	// Now we overlay the configuration and filesystems with the plugin assets
-	for i, pluginName := range a.ActivePlugins {
-		pluginFolder := path.Join(a.FolderPath, "plugins", pluginName)
-		pluginFolderStats, err := os.Stat(configPath)
+	} else {
+		// The os filesystem
+		osfs := afero.NewOsFs()
+
+		// First, we load the root config file, which will specify which plugins to activate
+		configPath := path.Join(a.FolderPath, "connectordb.conf")
+		rootConfiguration, err := config.LoadConfigFile(configPath)
 		if err != nil {
 			return err
 		}
-		if !pluginFolderStats.IsDir() {
-			return errors.New(pluginFolder + " is not a directory")
+
+		if a.ConfigOverride != nil {
+			rootConfiguration = config.MergeConfig(rootConfiguration, a.ConfigOverride)
 		}
 
-		configPath := path.Join(pluginFolder, "connectordb.conf")
-		if _, err := os.Stat(configPath); !os.IsNotExist(err) {
-			if err = conf.LoadFile(configPath); err != nil {
-				return err
+		// Next, we go through the plugin folder one by one, and add the active plugins to configuration
+		// and overlay the plugin's filesystem over assets
+		if rootConfiguration.ActivePlugins != nil {
+
+			for _, pluginName := range *rootConfiguration.ActivePlugins {
+				pluginFolder := path.Join(a.FolderPath, "plugins", pluginName)
+				pluginFolderStats, err := os.Stat(pluginFolder)
+				if err != nil {
+					return err
+				}
+				if !pluginFolderStats.IsDir() {
+					return fmt.Errorf("Could not find plugin %s at %s: not a directory", pluginName, pluginFolder)
+				}
+
+				configPath := path.Join(pluginFolder, "connectordb.conf")
+				pluginConfiguration, err := config.LoadConfigFile(configPath)
+				if err != nil {
+					return err
+				}
+				mergedConfiguration = config.MergeConfig(mergedConfiguration, pluginConfiguration)
+
+				assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, pluginFolder))
 			}
-
 		}
 
-		assetPath := path.Join(pluginFolder, "assets")
-		if assetPathStats, err := os.Stat(configPath); !os.IsNotExist(err) {
-			if assetPathStats.IsDir() {
-				log.Debugf("Adding %s to asset overlay")
-
-				assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, assetPath))
-			}
-
-		}
-	}
-
-	// Finally, we overlay the root directory
-
-	configPath := path.Join(a.FolderPath, "connectordb.conf")
-	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
-		if err = conf.LoadFile(configPath); err != nil {
-			return err
-		}
+		// Finally, we overlay the root directory and root config
+		mergedConfiguration = config.MergeConfig(mergedConfiguration, rootConfiguration)
+		assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, a.FolderPath))
 
 	}
-
-	assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, a.FolderPath))
 
 	// Set the new config and assets
-	a.Config = conf
+	a.Config = mergedConfiguration
 	a.AssetFS = assetFs
 
 	return nil
 }
 
-// GetAssets takes the given config directory, and returns
-// a full filesystem which merges the built-in assets and
-// their overwritten versions in the config folder.
-// This is the core that permits distribution of ConnectorDB as a single binary
-func GetAssets(configPath string, activePlugins []string) (afero.Fs, error) {
-
-	// Assets compiled into the application
-	builtinAssets := NewAferoPackr()
-
-	if configPath == "" {
-		// If no path is given for the configuration, return
-		// just the builtin assets with a writable memory map over them.
-		// This makes any writes ephemeral.
-		afero.NewCopyOnWriteFs(builtinAssets, afero.MemMapFs())
+// NewAssets creates a full new asset system, including configuration.
+func NewAssets(configPath string, override *config.Configuration) (*Assets, error) {
+	a := &Assets{
+		FolderPath:     configPath,
+		ConfigOverride: override,
 	}
 
-	// Now, if we are given a configuration directory,
-	// we open it as an overlay over the builtin assets
-	fileInfo, err := os.Stat(configPath)
-	if os.IsNotExist(err) {
-		// Create the folder
-		err = os.MkdirAll(configPath, 0700)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if !fileInfo.IsDir() {
-		return nil, errors.New("A file with that name already exists")
-	}
-
-	// And now, we overlay the actual config folder
-	diskAssets := afero.NewBasePathFs(afero.NewOsFs(), configPath)
-
-	return afero.NewCopyOnWriteFs(builtinAssets, diskAssets)
+	return a, a.Reload()
 }

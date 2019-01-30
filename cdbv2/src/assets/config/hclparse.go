@@ -90,7 +90,7 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 			baseFieldValue := bv.FieldByName(fieldName)
 			if baseFieldValue.Type() == fieldValue.Type() {
 				if !fieldValue.IsNil() {
-					fmt.Printf("Setting %s\n", fieldName)
+					//fmt.Printf("Setting %s\n", fieldName)
 					baseFieldValue.Set(fieldValue)
 				}
 
@@ -101,14 +101,7 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 
 }
 
-// LoadConfig loads configuration from file
-func LoadConfig(filename string) (*Configuration, error) {
-
-	f, diag := configparser.ParseHCLFile(filename)
-	if diag != nil {
-		return nil, diag
-	}
-
+func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// The configuration is initially unmarshalled into the hclConfiguration
 	// object, which then needs extra processing to get into the format that ConnectorDB
 	// can use.
@@ -116,7 +109,7 @@ func LoadConfig(filename string) (*Configuration, error) {
 	// 			rather than messing with a bunch of workarounds?
 	hc := &hclConfiguration{}
 
-	diag = gohcl.DecodeBody(f.Body, nil, hc)
+	diag := gohcl.DecodeBody(f.Body, nil, hc)
 	if diag != nil {
 		return nil, diag
 	}
@@ -210,4 +203,25 @@ func LoadConfig(filename string) (*Configuration, error) {
 	}
 
 	return c, nil
+}
+
+// LoadConfigFile loads configuration from file
+func LoadConfigFile(filename string) (*Configuration, error) {
+
+	f, diag := configparser.ParseHCLFile(filename)
+	if diag != nil {
+		return nil, diag
+	}
+
+	return loadConfigFromHcl(f, filename)
+}
+
+// LoadConfig loads the configuration from bytes
+func LoadConfig(src []byte, filename string) (*Configuration, error) {
+	f, diag := configparser.ParseHCL(src, filename)
+	if diag != nil {
+		return nil, diag
+	}
+
+	return loadConfigFromHcl(f, filename)
 }
