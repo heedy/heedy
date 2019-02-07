@@ -1,0 +1,40 @@
+{
+  "name": "connectordb-app",
+  "version": "0.4.0",
+  "description": "The ConnectorDB Frontend App",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:html && npm run build:js",
+    "build:js": "rollup -c",
+    "sync:html": "rsync -r ./app ../assets",
+    "build:html": "npm run sync:html && html-minifier --file-ext html --input-dir ../assets/app --output-dir ../assets/app --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags",
+    "debug:js": "rollup -c -w",
+    "debug:html": "nodemon --watch app -e html,css,js --exec \"npm run sync:html\"",
+    "debug": "run-p 'debug:js' 'debug:html'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/connectordb/connectordb.git"
+  },
+  "keywords": [
+    "connectordb"
+  ],
+  "author": "ConnectorDB Contributors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/connectordb/connectordb/issues"
+  },
+  "homepage": "https://connectordb.io",
+  "dependencies": {
+    "nodemon": "^1.18.9",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^1.1.2",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-terser": "^4.0.4",
+    "rollup-plugin-vue": "^4.7.1",
+    "vue": "^2.6.3",
+    "vue-template-compiler": "^2.6.3",
+    "vuetify": "^1.5.0"
+  }
+}

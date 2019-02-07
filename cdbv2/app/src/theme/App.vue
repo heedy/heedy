@@ -7,6 +7,7 @@
       stateless
       aria-haspopup="clipped"
       app
+      class="theme-dark"
       dark
     >
       <v-toolbar flat class="transparent">
@@ -17,7 +18,7 @@
             </v-list-tile-avatar>
 
             <v-list-tile-content>
-              <v-list-tile-title>John Leider</v-list-tile-title>
+              <v-list-tile-title>Daniel Kumor</v-list-tile-title>
             </v-list-tile-content>
 
             <v-list-tile-action>
@@ -44,35 +45,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-content>
-      <v-toolbar color="#455a64" dark>
-        <v-text-field solo-inverted flat hide-details label="Search" prepend-inner-icon="search"></v-text-field>
-      </v-toolbar>
-      <v-container fluid fill-height>
-        <v-layout justify-center align-center>
-          <v-flex text-xs-center>
-            <v-tooltip left>
-              <v-btn slot="activator" :href="source" icon large target="_blank">
-                <v-icon large>code</v-icon>
-              </v-btn>
-              <span>Source</span>
-            </v-tooltip>
-            <v-tooltip right>
-              <v-btn
-                slot="activator"
-                icon
-                large
-                href="https://codepen.io/johnjleider/pen/rJdVMq"
-                target="_blank"
-              >
-                <v-icon large>mdi-codepen</v-icon>
-              </v-btn>
-              <span>Codepen</span>
-            </v-tooltip>
-          </v-flex>
-        </v-layout>
-      </v-container>
-    </v-content>
+    <user/>
   </v-app>
 </template>
 
@@ -91,3 +64,18 @@ export default {
   }
 };
 </script>
+
+<style>
+.theme-dark {
+  color: #1c313a;
+  background-color: #1c313a !important;
+}
+.theme-primary {
+  color: #455a64;
+  background-color: #455a64 !important;
+}
+.theme-light {
+  color: #718792;
+  background-color: #455a64 !important;
+}
+</style>
