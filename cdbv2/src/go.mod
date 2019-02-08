@@ -7,6 +7,7 @@ require (
 	github.com/gobuffalo/meta v0.0.0-20190126124307-c8fb6f4eb5a9 // indirect
 	github.com/gobuffalo/packr/v2 v2.0.0
 	github.com/gobuffalo/tags v2.0.15+incompatible // indirect
+	github.com/golang/protobuf v1.2.0
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/hashicorp/hcl2 v0.0.0-20190130225218-89dbc5eb3d9e
 	github.com/kr/pty v1.1.3 // indirect
@@ -24,4 +25,5 @@ require (
 	golang.org/x/sys v0.0.0-20190130150945-aca44879d564 // indirect
 	golang.org/x/tools v0.0.0-20190131163942-067a2f313b69 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
+	google.golang.org/grpc v1.18.0
 )

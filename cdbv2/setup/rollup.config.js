@@ -23,7 +23,7 @@ function out(name, format = "es") {
     output: {
       name: filename[0],
       file:
-        "../assets/app/js/" + filename[0] + (format == "es" ? ".jsm" : ".js"),
+        "../assets/setup/js/" + filename[0] + (format == "es" ? ".jsm" : ".js"),
       format: format
     },
     plugins: plugins,
@@ -36,9 +36,6 @@ function out(name, format = "es") {
 }
 
 export default [
-  // The base files
-  out("app.js", "umd"),
-  out("theme.js", "umd"),
-  // Default components
-  out("user.vue")
+  // The base file
+  out("setup.js", "iife")
 ];

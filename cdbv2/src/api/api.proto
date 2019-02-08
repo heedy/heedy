@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package connectordb;
+option go_package = "proto";
+
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	info: {
+		title: "ConnectorDB API";
+		version: "1.0";
+		contact: {
+			name: "ConnectorDB Contributors";
+			url: "https://github.com/connectordb/connectordb";
+			email: "none@example.com";
+		};
+		license: {
+			name: "Apache2";
+			url: "https://www.apache.org/licenses/LICENSE-2.0";
+		};
+	};
+	// Overwriting host entry breaks tests, so this is not done here.
+	external_docs: {
+		url: "https://connectordb.io/docs";
+		description: "ConnectorDB Docs";
+	}
+	schemes: HTTP;
+	schemes: HTTPS;
+	schemes: WSS;
+	consumes: "application/json";
+	produces: "application/json";
+	
+};
+
+message PingMessage { string greeting = 1; }
+
+service Ping {
+  rpc SayHello(PingMessage) returns (PingMessage) {
+    option (google.api.http) = {
+      post : "/v1/echo"
+      body : "*"
+    };
+  }
+}

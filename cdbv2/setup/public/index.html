@@ -14,22 +14,23 @@
       href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css"
       rel="stylesheet"
     />
-    <script async src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script
-      async
-      src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"
-    ></script>
 
-    <title>ConnectorDB Setup</title>
+    <title>ConnectorDB</title>
   </head>
   <body>
     <noscript>
       <strong>
-        We're sorry but ConnectorDB's setup doesn't work properly without
-        JavaScript enabled. Please enable it to continue.
+        ConnectorDB doesn't work properly without JavaScript enabled. Please
+        enable it to continue.
       </strong>
     </noscript>
     <div id="app"></div>
-    <!-- built files will be auto injected -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js">
+      Vue.config.productionTip = false;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js">
+      Vue.use(Vuetify);
+    </script>
+    <script src="./js/setup.js"></script>
   </body>
 </html>
