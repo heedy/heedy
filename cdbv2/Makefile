@@ -19,8 +19,8 @@ docs: phony
 	cd docs; make html
 
 gencode: phony
-	mkdir -p src/api/proto
-	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --go_out=plugins=grpc:src/api/proto --grpc-gateway_out=logtostderr=true:src/api/proto
+	mkdir -p src/api/pb
+	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --go_out=plugins=grpc:src/api/pb --grpc-gateway_out=logtostderr=true:src/api/pb
 
 connectordb: src/main.go gencode phony
 	cd src; GO111MODULE=on packr2

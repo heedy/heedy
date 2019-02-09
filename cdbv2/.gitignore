@@ -3,6 +3,6 @@ connectordb
 assets/app
 assets/setup
 assets/docs
-src/api/proto
+src/api/pb
 docs/_build
 docs/api.swagger.json

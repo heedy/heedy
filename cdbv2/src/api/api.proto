@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package connectordb;
-option go_package = "proto";
+option go_package = "pb";
 
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
@@ -38,7 +38,7 @@ message PingMessage { string greeting = 1; }
 service Ping {
   rpc SayHello(PingMessage) returns (PingMessage) {
     option (google.api.http) = {
-      post : "/v1/echo"
+      post : "/api/v1/cdb/echo"
       body : "*"
     };
   }
