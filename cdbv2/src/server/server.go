@@ -174,6 +174,9 @@ func RunServer() {
 			//InsecureSkipVerify: true,
 		},
 	}
+
+	// Set up a http listener
+	go http.ListenAndServe(":3001", mux)
 	// start listening on the socket
 	// Note that if you listen on localhost:<port> you'll not be able to accept
 	// connections over the network. Change it to ":port"  if you want it.
@@ -188,4 +191,5 @@ func RunServer() {
 	if err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
 }

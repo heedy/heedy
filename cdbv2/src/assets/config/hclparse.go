@@ -14,19 +14,17 @@ var (
 )
 
 type hclJSONSchema struct {
-	Name string `hcl:"name,label"`
-
-	Title            *string  `hcl:"title" json:"title,omitempty"`
-	Type             *string  `hcl:"type" json:"type,omitempty"`
-	Description      *string  `hcl:"description" json:"description,omitempty"`
-	Minimum          *float64 `hcl:"minimum" json:"minimum,omitempty"`
-	ExclusiveMinimum *float64 `hcl:"exclusiveMinimum" json:"exclusiveMinimum,omitempty"`
-	Maximum          *float64 `hcl:"maximum" json:"maximum,omitempty"`
-	ExclusiveMaximum *float64 `hcl:"exclusiveMaximum" json:"exclusiveMaximum,omitempty"`
+	Title       *string `hcl:"title" json:"title,omitempty" cty:"title"`
+	Type        *string `hcl:"type" json:"type,omitempty" cty:"type"`
+	Description *string `hcl:"description" json:"description,omitempty" cty:"description"`
+	//Minimum          *float64 `hcl:"minimum" json:"minimum,omitempty" cty:"minimum"`
+	//ExclusiveMinimum *float64 `hcl:"exclusiveMinimum" json:"exclusiveMinimum,omitempty" cty:"exclusiveMinimum"`
+	//Maximum          *float64 `hcl:"maximum" json:"maximum,omitempty" cty:"maximum"`
+	//ExclusiveMaximum *float64 `hcl:"exclusiveMaximum" json:"exclusiveMaximum,omitempty" cty:"exclusiveMaximum"`
 	//Items            *JSONSchema    `hcl:"items" json:"items,omitempty"`
 	//MinItems         *int           `hcl:"minItems" json:"minItems,omitempty"`
 	//UniqueItems      *bool          `hcl:"uniqueItems" json:"uniqueItems,omitempty"`
-	Default *hcl.Attribute `hcl:"default"`
+	//Default *hcl.Attribute `hcl:"default"`
 }
 
 type hclExecJob struct {
@@ -34,20 +32,23 @@ type hclExecJob struct {
 
 	Description *string `hcl:"description" json:"description,omitempty"`
 	Cron        *string `hcl:"cron" json: "cron,omitempty"`
+	Port        *int    `hcl:"port"`
+	KeepAlive   *bool   `hcl:"keepalive"`
 	Cmd         *string `hcl:"cmd" json: "cmd,omitempty"`
 }
 
 type hclPlugin struct {
-	Name        string  `hcl:"name,label"`
-	Cmd         *string `hcl:"cmd" json:"cmd"`
-	Version     *string `hcl:"version" json:"version"`
-	Description *string `hcl:"description" json:"description"`
-	Homepage    *string `hcl:"homepage" json:"homepage"`
-	License     *string `hcl:"license" json:"license"`
+	Name           string                    `hcl:"name,label"`
+	Cmd            *string                   `hcl:"cmd" json:"cmd"`
+	Version        *string                   `hcl:"version" json:"version"`
+	Description    *string                   `hcl:"description" json:"description"`
+	Homepage       *string                   `hcl:"homepage" json:"homepage"`
+	License        *string                   `hcl:"license" json:"license"`
+	GRPC           *string                   `hcl:"grpc" json:"grpc"`
+	Routes         *map[string]string        `hcl:"routes" json:"routes"`
+	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 
 	Exec []hclExecJob `hcl:"exec,block"`
-
-	SettingSchema []hclJSONSchema `hcl:"setting,block"`
 
 	// The remaining stuff is plugin-specific settings
 	// that will be passed to the plugin executables,
@@ -86,9 +87,10 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 		if fieldValue.Kind() == reflect.Ptr {
 			// Only if it is a ptr do we continue, since that's all that we care about
 			fieldName := ov.Type().Field(i).Name
+			//fmt.Println(fieldName)
 
 			baseFieldValue := bv.FieldByName(fieldName)
-			if baseFieldValue.Type() == fieldValue.Type() {
+			if baseFieldValue.IsValid() && baseFieldValue.Type() == fieldValue.Type() {
 				if !fieldValue.IsNil() {
 					//fmt.Printf("Setting %s\n", fieldName)
 					baseFieldValue.Set(fieldValue)
@@ -150,27 +152,36 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			CopyStructIfPtrSet(ej, &hp.Exec[j])
 			p.Exec[hp.Exec[j].Name] = ej
 		}
-
-		for j := range hp.SettingSchema {
-			if hp.SettingSchema[j].Name == "" {
-				return nil, fmt.Errorf("%s: Plugin %s has missing label on setting", filename, hp.Name)
+		if hp.SettingSchemas != nil {
+			for k, v := range *hp.SettingSchemas {
+				setting := &Setting{}
+				//fmt.Println(k,v)
+				CopyStructIfPtrSet(setting, &v)
+				p.Settings[k] = setting
 			}
-
-			hj := hp.SettingSchema[j]
-
-			setting := &Setting{}
-			CopyStructIfPtrSet(setting, &hj)
-			if hj.Default != nil {
-				// There is an attribute there, so read it into a string
-				val, diag := hj.Default.Expr.Value(nil)
-				if diag != nil {
-					return nil, diag
-				}
-				setting.Default = val.AsString()
-			}
-
-			p.Settings[hp.SettingSchema[j].Name] = setting
 		}
+		/*
+			for j := range hp.SettingSchema {
+				if hp.SettingSchema[j].Name == "" {
+					return nil, fmt.Errorf("%s: Plugin %s has missing label on setting", filename, hp.Name)
+				}
+
+				hj := hp.SettingSchema[j]
+
+				setting := &Setting{}
+				CopyStructIfPtrSet(setting, &hj)
+				if hj.Default != nil {
+					// There is an attribute there, so read it into a string
+					val, diag := hj.Default.Expr.Value(nil)
+					if diag != nil {
+						return nil, diag
+					}
+					setting.Default = val.AsString()
+				}
+
+				p.Settings[hp.SettingSchema[j].Name] = setting
+			}
+		*/
 
 		// And now, finally, read in the setting values
 		settings := make(map[string]*hcl.Attribute)

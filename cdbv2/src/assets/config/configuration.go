@@ -23,15 +23,19 @@ type Setting struct {
 type ExecJob struct {
 	Description *string `hcl:"description" json:"description,omitempty"`
 	Cron        *string `hcl:"cron" json:"cron,omitempty"`
+	Port        *int    `hcl:"port" json:"port,omitempty"`
+	KeepAlive   *bool   `hcl:"keepalive" json:"keepalive,omitempty"`
 	Cmd         *string `hcl:"cmd" json:"cmd,omitempty"`
 }
 
 type Plugin struct {
-	Cmd         *string `hcl:"cmd" json:"cmd,omitempty"`
-	Version     *string `hcl:"version" json:"version,omitempty"`
-	Description *string `hcl:"description" json:"description,omitempty"`
-	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
-	License     *string `hcl:"license" json:"license,omitempty"`
+	Cmd         *string            `hcl:"cmd" json:"cmd,omitempty"`
+	Version     *string            `hcl:"version" json:"version,omitempty"`
+	Description *string            `hcl:"description" json:"description,omitempty"`
+	Homepage    *string            `hcl:"homepage" json:"homepage,omitempty"`
+	License     *string            `hcl:"license" json:"license,omitempty"`
+	GRPC        *string            `hcl:"grpc" json:"grpc,omitempty"`
+	Routes      *map[string]string `json:"routes,omitempty"`
 
 	Exec     map[string]*ExecJob `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
@@ -98,6 +102,14 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		if !ok {
 			// We take the overlay's plugin wholesale
 			base.Plugins[pluginName] = oplugin
+
+			// And any setting values automatically become the defaults, because it is assumed
+			// that this config file is defining the given plugin
+			for _, setting := range oplugin.Settings {
+				if setting.Value != nil {
+					setting.Default = setting.Value
+				}
+			}
 		} else {
 			// Need to continue settings merge into the children
 			CopyStructIfPtrSet(bplugin, oplugin)
