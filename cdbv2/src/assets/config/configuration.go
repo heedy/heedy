@@ -58,11 +58,37 @@ func (p *Plugin) Copy() *Plugin {
 	return &np
 }
 
+type Group struct {
+	GRPC     *bool `json:"grpc,omitempty"`
+	REST     *bool `json:"rest,omitempty"`
+	Settings *bool `json:"settings,omitempty"`
+	AddUser  *bool `json:"add_user,omitempty"`
+
+	// Now, we add a mechanism to "inject" the group into each permissions field
+	// This allows simple creation of various levels of admins
+	ListGroup *bool `hcl:"list_group" json:"list_group,omitempty"`
+	EditGroup *bool `hcl:"edit_group" json:"edit_group,omitempty"`
+	DelGroup  *bool `hcl:"del_group" json:"del_group,omitempty"`
+
+	ReadStream  *bool `hcl:"read_stream" json:"read_stream,omitempty"`
+	WriteStream *bool `hcl:"write_stream" json:"write_stream,omitempty"`
+	ModStream   *bool `hcl:"mod_stream" json:"mod_stream,omitempty"`
+	ListStream  *bool `hcl:"list_stream" json:"list_stream,omitempty"`
+	EditStream  *bool `hcl:"edit_stream" json:"edit_stream,omitempty"`
+	DelStream   *bool `hcl:"del_stream" json:"del_stream,omitempty"`
+}
+
 type Configuration struct {
-	SiteURL       *string            `hcl:"siteurl" json:"siteurl,omitempty"`
-	Port          *uint16            `hcl:"port" json:"port,omitempty"`
-	ActivePlugins *[]string          `hcl:"plugins" json:"plugins,omitempty"`
-	Plugins       map[string]*Plugin `json:"plugin"`
+	SiteURL         *string            `hcl:"site_url" json:"site_url,omitempty"`
+	Host            *string            `hcl:"host" json:"host,omitempty"`
+	Port            *uint16            `hcl:"port" json:"port,omitempty"`
+	HTTPPort        *int               `hcl:"http_port" json:"http_port,omitempty"`
+	CORS            *bool              `hcl:"cors" json:"cors,omitempty"`
+	ActivePlugins   *[]string          `hcl:"plugins" json:"plugins,omitempty"`
+	ForbiddenGroups *[]string          `json:"forbidden_groups,omitempty"`
+	Plugins         map[string]*Plugin `json:"plugin"`
+
+	Groups map[string]*Group `json:"groups,omitempty"`
 }
 
 func (c *Configuration) Copy() *Configuration {
@@ -74,12 +100,18 @@ func (c *Configuration) Copy() *Configuration {
 		nc.Plugins[pkey] = pval.Copy()
 	}
 
+	nc.Groups = make(map[string]*Group)
+	for gkey, gval := range c.Groups {
+		newg := *gval
+		nc.Groups[gkey] = &newg
+	}
+
 	return &nc
 
 }
 
 func NewConfiguration() *Configuration {
-	return &Configuration{Plugins: make(map[string]*Plugin)}
+	return &Configuration{Plugins: make(map[string]*Plugin), Groups: make(map[string]*Group)}
 }
 
 func NewPlugin() *Plugin {

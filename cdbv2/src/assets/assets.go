@@ -45,6 +45,9 @@ func (a *Assets) Reload() error {
 		return err
 	}
 	baseConfiguration, err := config.LoadConfig(baseConfigBytes, "connectordb.conf")
+	if err != nil {
+		return err
+	}
 
 	// Next, we initialize the filesystem overlays from the builtin assets
 	assetFs := NewAferoPackr(builtinAssets)

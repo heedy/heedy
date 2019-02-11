@@ -56,11 +56,35 @@ type hclPlugin struct {
 	Settings hcl.Body `hcl:",remain"`
 }
 
+type hclGroup struct {
+	Name     string `hcl:"name,label"`
+	GRPC     *bool  `hcl:"grpc" json:"grpc,omitempty"`
+	REST     *bool  `hcl:"rest"`
+	Settings *bool  `hcl:"settings" json:"settings,omitempty"`
+	AddUser  *bool  `hcl:"add_user" json:"add_user,omitempty"`
+
+	ListGroup *bool `hcl:"list_group" json:"list_group,omitempty"`
+	EditGroup *bool `hcl:"edit_group" json:"edit_group,omitempty"`
+	DelGroup  *bool `hcl:"del_group" json:"del_group,omitempty"`
+
+	ReadStream  *bool `hcl:"read_stream" json:"read_stream,omitempty"`
+	WriteStream *bool `hcl:"write_stream" json:"write_stream,omitempty"`
+	ModStream   *bool `hcl:"mod_stream" json:"mod_stream,omitempty"`
+	ListStream  *bool `hcl:"list_stream" json:"list_stream,omitempty"`
+	EditStream  *bool `hcl:"edit_stream" json:"edit_stream,omitempty"`
+	DelStream   *bool `hcl:"del_stream" json:"del_stream,omitempty"`
+}
+
 type hclConfiguration struct {
-	SiteURL       *string     `hcl:"siteurl"`
-	Port          *uint16     `hcl:"port"`
-	ActivePlugins *[]string   `hcl:"plugins"`
-	Plugins       []hclPlugin `hcl:"plugin,block"`
+	SiteURL         *string     `hcl:"site_url" json:"site_url,omitempty"`
+	Host            *string     `hcl:"host" json:"host,omitempty"`
+	Port            *uint16     `hcl:"port" json:"port,omitempty"`
+	HTTPPort        *int        `hcl:"http_port" json:"http_port,omitempty"`
+	CORS            *bool       `hcl:"cors"`
+	ActivePlugins   *[]string   `hcl:"plugins"`
+	ForbiddenGroups *[]string   `hcl:"forbidden_groups"`
+	Plugins         []hclPlugin `hcl:"plugin,block"`
+	Groups          []hclGroup  `hcl:"group,block"`
 }
 
 func preprocess(i interface{}) (reflect.Value, reflect.Kind) {
@@ -124,6 +148,23 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		c.Port = hc.Port
 		c.ActivePlugins = hc.ActivePlugins
 	*/
+
+	// Loop through the groups
+	for i := range hc.Groups {
+		hg := hc.Groups[i]
+		if hg.Name == "" {
+			return nil, fmt.Errorf("%s: Can't use group with no name", filename)
+		}
+		if _, ok := c.Groups[hg.Name]; ok {
+			return nil, fmt.Errorf("%s: Group \"%s\" defined twice", filename, hg.Name)
+		}
+
+		g := &Group{}
+
+		CopyStructIfPtrSet(g, hg)
+
+		c.Groups[hg.Name] = g
+	}
 
 	// Loop through the plugins
 	for i := range hc.Plugins {
