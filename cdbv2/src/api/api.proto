@@ -43,3 +43,65 @@ service Ping {
     };
   }
 }
+/*
+message UserQuery {
+	string name = 1;
+}
+
+
+message GroupByName {
+	UserQuery user = 1; 
+	string name = 2;
+}
+
+message GroupQuery {
+	// Groups are queried with respect to a user or UUID
+	oneof querytype {
+		GroupByName group = 1;
+		string uuid = 2;
+	}
+	
+}
+
+message StreamQuery {
+	oneof querytype {
+		StreamByName stream = 1;
+		string uuid = 2;
+	}
+}
+*/
+/*
+message StreamDataQuery {
+	uint64 i1 = 1;
+	uint64 i2 = 2;
+	double t1 = 3;
+	double t2 = 4;
+	uint64 limit = 5;
+	string transform = 6;
+}
+*/
+
+/*
+
+message User {
+	string name = 1;
+	string nickname = 2;
+	string profilepic = 3; // This is a url http,base64 and icon are all permitted
+} // By default, no need for listing all the user's groups.
+
+// A datapoint contains a timestamp, and msgpack-encoded data
+message Datapoint {
+	double t = 1;
+	bytes d = 2;
+}
+
+message SearchQuery {
+	string search = 1;
+	uint64 limit = 2;
+}
+
+service ConnectorDB {
+	rpc ListUsers(SearchString) returns (stream User) {};
+	//rpc QueryStream(StreamDataQuery) returns (stream Datapoint) {};
+}
+*/

@@ -21,15 +21,14 @@ type Setting struct {
 }
 
 type ExecJob struct {
-	Description *string `hcl:"description" json:"description,omitempty"`
-	Cron        *string `hcl:"cron" json:"cron,omitempty"`
-	Port        *int    `hcl:"port" json:"port,omitempty"`
-	KeepAlive   *bool   `hcl:"keepalive" json:"keepalive,omitempty"`
-	Cmd         *string `hcl:"cmd" json:"cmd,omitempty"`
+	Description *string   `hcl:"description" json:"description,omitempty"`
+	Cron        *string   `hcl:"cron" json:"cron,omitempty"`
+	Port        *int      `hcl:"port" json:"port,omitempty"`
+	KeepAlive   *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
+	Cmd         *[]string `hcl:"cmd" json:"cmd,omitempty"`
 }
 
 type Plugin struct {
-	Cmd         *string            `hcl:"cmd" json:"cmd,omitempty"`
 	Version     *string            `hcl:"version" json:"version,omitempty"`
 	Description *string            `hcl:"description" json:"description,omitempty"`
 	Homepage    *string            `hcl:"homepage" json:"homepage,omitempty"`

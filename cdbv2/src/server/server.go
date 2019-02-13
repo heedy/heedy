@@ -9,10 +9,15 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/connectordb/connectordb/api"
 	"github.com/connectordb/connectordb/api/pb"
+	"github.com/connectordb/connectordb/plugin"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
@@ -110,6 +115,25 @@ func RunServer() {
 	}
 	fmt.Println(string(b))
 
+	apath, _ := filepath.Abs("./testdb")
+
+	ph, err := plugin.NewPluginManager(apath, a.Config)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			log.Info("Cleanup...")
+			d, _ := time.ParseDuration("5s")
+			ph.Stop(d)
+			log.Info("Done")
+			os.Exit(0)
+		}
+	}()
 	/*
 		f, err := a.AssetFS.Open("/setup/app.css")
 		if err != nil {
@@ -152,13 +176,21 @@ func RunServer() {
 	}
 
 	// Set up the mux
+
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/cdb/", restMux)
 	mux.Handle("/", http.FileServer(afero.NewHttpFs(a.AssetFS)))
 
+	handler := http.Handler(mux)
+
+	if ph.Middleware != nil {
+		log.Info("Adding plugin middleware")
+		handler = ph.Middleware(handler)
+	}
+
 	// the grpcHandlerFunc takes an grpc server and a http muxer and will
 	// route the request to the right place at runtime.
-	mergeHandler := grpcHandlerFunc(grpcServer, mux)
+	mergeHandler := grpcHandlerFunc(grpcServer, handler)
 
 	// configure TLS for our server. TLS is REQUIRED to make this setup work.
 	// check https://golang.org/src/net/http/server.go?#L2746
@@ -176,7 +208,7 @@ func RunServer() {
 	}
 
 	// Set up a http listener
-	go http.ListenAndServe(":3001", mux)
+	go http.ListenAndServe(":3001", handler)
 	// start listening on the socket
 	// Note that if you listen on localhost:<port> you'll not be able to accept
 	// connections over the network. Change it to ":port"  if you want it.

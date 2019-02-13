@@ -30,16 +30,15 @@ type hclJSONSchema struct {
 type hclExecJob struct {
 	Name string `hcl:"name,label"`
 
-	Description *string `hcl:"description" json:"description,omitempty"`
-	Cron        *string `hcl:"cron" json: "cron,omitempty"`
-	Port        *int    `hcl:"port"`
-	KeepAlive   *bool   `hcl:"keepalive"`
-	Cmd         *string `hcl:"cmd" json: "cmd,omitempty"`
+	Description *string   `hcl:"description" json:"description,omitempty"`
+	Cron        *string   `hcl:"cron" json: "cron,omitempty"`
+	Port        *int      `hcl:"port"`
+	KeepAlive   *bool     `hcl:"keepalive"`
+	Cmd         *[]string `hcl:"cmd" json: "cmd,omitempty"`
 }
 
 type hclPlugin struct {
 	Name           string                    `hcl:"name,label"`
-	Cmd            *string                   `hcl:"cmd" json:"cmd"`
 	Version        *string                   `hcl:"version" json:"version"`
 	Description    *string                   `hcl:"description" json:"description"`
 	Homepage       *string                   `hcl:"homepage" json:"homepage"`
