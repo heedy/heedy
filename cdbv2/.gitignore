@@ -1,8 +1,0 @@
-# These are all files that are generated at one point or another
-connectordb
-assets/app
-assets/setup
-assets/docs
-src/api/pb
-docs/_build
-docs/api.swagger.json

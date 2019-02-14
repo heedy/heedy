@@ -1,276 +1,227 @@
-/**
-Copyright (c) 2016 The ConnectorDB Contributors
-Licensed under the MIT license.
-**/
 package server
 
 import (
-	"config"
-	"connectordb"
+	"context"
 	"crypto/tls"
-	"errors"
+	"crypto/x509"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
 	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"net/http/pprof"
-	"server/restapi"
-	"server/restapi/restcore"
-	"server/webcore"
-	"server/website"
+	"os"
+	"os/signal"
+	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"time"
 
-	"github.com/dkumor/acmewrapper"
-	"github.com/gorilla/mux"
-	"github.com/xenolf/lego/acme"
+	"github.com/connectordb/connectordb/api"
+	"github.com/connectordb/connectordb/api/pb"
+	"github.com/connectordb/connectordb/plugin"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/afero"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 
-	stdlog "log"
+	"github.com/connectordb/connectordb/assets"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
-//SecurityHeaderHandler provides a wrapper function for an http.Handler that sets several security headers for all sessions passing through
-func SecurityHeaderHandler(h http.Handler) http.Handler {
+var serverAddress = "localhost:3000"
 
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+func GetCert() (*tls.Certificate, *x509.CertPool) {
+	serverCrt, err := ioutil.ReadFile("out/server.crt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	serverKey, err := ioutil.ReadFile("out/server.key")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// See the OWASP security project for these headers:
-		// https://www.owasp.org/index.php/List_of_useful_HTTP_headers
+	pair, err := tls.X509KeyPair(serverCrt, serverKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	demoKeyPair := &pair
+	demoCertPool := x509.NewCertPool()
+	ok := demoCertPool.AppendCertsFromPEM(serverCrt)
+	if !ok {
+		log.Fatal("bad certs")
+	}
 
-		// Don't allow our site to be embedded in another
-		writer.Header().Set("X-Frame-Options", "deny")
+	return demoKeyPair, demoCertPool
+}
 
-		// Enable the client side XSS filter
-		writer.Header().Set("X-XSS-Protection", "1; mode=block")
-
-		// Disable content sniffing which could lead to improperly executed
-		// scripts or such from malicious user uploads
-		writer.Header().Set("X-Content-Type-Options", "nosniff")
-
-		h.ServeHTTP(writer, request)
+//https://github.com/dhrp/grpc-rest-go-example/blob/master/server/main.go
+// grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
+// connections or otherHandler otherwise. Copied from cockroachdb.
+func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			otherHandler.ServeHTTP(w, r)
+		}
 	})
 }
 
-//OptionsHandler on OPTIONS to allow cross-site XMLHTTPRequest, allow access control origin
-func OptionsHandler(writer http.ResponseWriter, request *http.Request) {
-	webcore.GetRequestLogger(request, "OPTIONS").Debug()
-	webcore.WriteAccessControlHeaders(writer, request)
+// getRestMux initializes a new multiplexer, and registers each endpoint
+// - in this case only the EchoService
 
-	//These headers are only needed for the OPTIONS request
-	writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	writer.WriteHeader(http.StatusOK)
+func getRestMux(certPool *x509.CertPool, opts ...runtime.ServeMuxOption) (*runtime.ServeMux, error) {
+
+	// Because we run our REST endpoint on the same port as the GRPC the address is the same.
+	upstreamGRPCServerAddress := serverAddress
+
+	// get context, this allows control of the connection
+	ctx := context.Background()
+
+	// These credentials are for the upstream connection to the GRPC server
+	dcreds := credentials.NewTLS(&tls.Config{
+		ServerName: upstreamGRPCServerAddress,
+		//RootCAs:    certPool,
+		InsecureSkipVerify: true,
+	})
+	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
+
+	// Which multiplexer to register on.
+	// gwmux := runtime.NewServeMux()
+	gwmux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard,
+		&runtime.JSONPb{OrigName: true, EmitDefaults: true}))
+
+	err := pb.RegisterPingHandlerFromEndpoint(ctx, gwmux, upstreamGRPCServerAddress, dopts)
+	if err != nil {
+		fmt.Printf("serve: %v\n", err)
+		return nil, err
+	}
+
+	return gwmux, nil
 }
 
-// NotFoundHandler handles 404 errors for the whole server
-func NotFoundHandler(writer http.ResponseWriter, request *http.Request) {
-	if strings.HasPrefix(request.URL.Path, "/api") {
-		logger := webcore.GetRequestLogger(request, "404")
-		//If this is a REST API call, write a REST-like error
-		atomic.AddUint32(&webcore.StatsRESTQueries, 1)
-		restcore.WriteError(writer, logger, http.StatusNotFound, errors.New("This path is not recognized"), false)
+func RunServer() {
+	fmt.Println("Running server")
+	a, err := assets.NewAssets("./testdb", nil)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+	b, err := json.MarshalIndent(a.Config, "", " ")
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+	fmt.Println(string(b))
+
+	apath, _ := filepath.Abs("./testdb")
+
+	ph, err := plugin.NewPluginManager(apath, a.Config)
+	if err != nil {
+		log.Error(err.Error())
 		return
 	}
 
-	//Otherwise, we assume that it is the web not found handler
-	website.NotFoundHandler(writer, request)
-
-}
-
-// Redirect80 Redirects port 80 to the given site url
-func Redirect80(siteURL string) {
-	log.Error(http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, siteURL+r.RequestURI, http.StatusMovedPermanently)
-	})))
-}
-
-// VerboseLoggingHandler performs extremely verbose logging - including all incoming requests and responses.
-// This can be activated using --vvv on the server
-func VerboseLoggingHandler(h http.Handler) http.Handler {
-
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		logger := webcore.GetRequestLogger(request, "VERBOSE")
-
-		// We don't want to mess with websocket connections
-		if request.Header.Get("Connection") == "Upgrade" {
-			logger.Debug("Got Upgrade Header (probably starting a websocket connection)")
-			h.ServeHTTP(writer, request)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			log.Info("Cleanup...")
+			d, _ := time.ParseDuration("5s")
+			ph.Stop(d)
+			log.Info("Done")
+			os.Exit(0)
+		}
+	}()
+	/*
+		f, err := a.AssetFS.Open("/setup/app.css")
+		if err != nil {
+			log.Error(err.Error())
 			return
 		}
 
-		req, err := httputil.DumpRequest(request, true)
+		finfo, err := f.Stat()
 		if err != nil {
-			logger.Error(err)
-			http.Error(writer, fmt.Sprint(err), http.StatusInternalServerError)
+			log.Error(err.Error())
 			return
 		}
-		logger.WithField("type", "REQUEST").Debugf("Request:\n\n%s\n\n", string(req))
+		log.Println(finfo.Name())
 
-		rec := httptest.NewRecorder()
+		buf := new(bytes.Buffer)
 
-		h.ServeHTTP(rec, request)
+		buf.ReadFrom(f)
+		fmt.Println(buf.String())
+	*/
 
-		response := rec.Body.Bytes()
+	crt, pool := GetCert()
 
-		headers := ""
-		for k, v := range rec.HeaderMap {
-			curheader := k + ":"
-			for s := range v {
-				curheader += " " + v[s]
-			}
-			headers += curheader + "\n"
-		}
-
-		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] == "gzip" {
-			logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n\nRESPONSE BODY GZIPPED - NOT LOGGING (length: %d)\nIf you want to log response content, disable gzip_static in connectordb.conf\n\n", rec.Code, headers, len(response))
-		} else {
-			// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
-			logger.WithField("type", "RESPONSE").Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))
-		}
-
-		// Now copy everything from response recorder to actual response writer
-		// http://stackoverflow.com/questions/29319783/go-logging-responses-to-incoming-http-requests-inside-http-handlefunc
-		for k, v := range rec.HeaderMap {
-			writer.Header()[k] = v
-		}
-		writer.WriteHeader(rec.Code)
-		writer.Write(response)
-
-	})
-}
-
-// MakeHandler generates the handler for the server. It adds the verbose middleware if it is needed
-func MakeHandler(h http.Handler, verbose bool) http.Handler {
-	if verbose {
-		return VerboseLoggingHandler(h)
-	}
-	return h
-}
-
-//RunServer runs the ConnectorDB frontend server
-func RunServer(verbose, profiling bool) error {
-	OSSpecificSetup()
-
-	if verbose {
-		log.Warn("Running in verbose mode. Use this for debugging only!")
-		restapi.VerboseWebsocket = true // Set websockets to verbose mode too
-	}
-
-	// ACME has a special logger, so set it
-	acme.Logger = stdlog.New(log.StandardLogger().Writer(), "", 0)
-	acmewrapper.Logger = log.StandardLogger()
-
-	// Gets the global server configuration
-	c := config.Get()
-
-	err := webcore.Initialize(c)
-	if err != nil {
-		return err
-	}
-	// Reload webcore settings on config change
-	config.OnChangeCallback(webcore.Initialize)
-
-	//Connect using the configuration
-	db, err := connectordb.Open(c.Options())
-	if err != nil {
-		return err
-	}
-
-	r := mux.NewRouter()
-
-	//Allow for the application to match /path and /path/ to the same place.
-	r.StrictSlash(true)
-
-	//Setup the 404 handler
-	r.NotFoundHandler = MakeHandler(http.HandlerFunc(NotFoundHandler), verbose)
-
-	r.Methods("OPTIONS").Handler(MakeHandler(http.HandlerFunc(OptionsHandler), verbose))
-
-	// We enable profiling
-	if profiling {
-		log.Warn("Running golang profiling tools at /debug. Use this only when debugging!")
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		r.HandleFunc("/debug/pprof/", pprof.Index)
-		r.HandleFunc("/debug/pprof/{something}", pprof.Index)
-	}
-
-	//The rest api has its own versioned url
-	s := r.PathPrefix("/api/v1").Subrouter()
-	_, err = restapi.Router(db, s)
-	if err != nil {
-		return err
-	}
-
-	//The website is initialized at /
-	_, err = website.Router(db, r)
-	if err != nil {
-		return err
-	}
-
-	//Set up the web server
-	handler := MakeHandler(SecurityHeaderHandler(r), verbose)
-
-	//Show the statistics
-	go webcore.RunStats()
-	go webcore.RunQueryTimers()
-
-	//Run the dbwriter
-	go db.RunWriter()
-
-	if c.Redirect80 {
-		go Redirect80(c.GetSiteURL())
-	}
-
-	listenhost := fmt.Sprintf("%s:%d", c.Hostname, c.Port)
-
-	server := &http.Server{
-		Addr:        listenhost,
-		Handler:     handler,
-		ReadTimeout: time.Duration(c.HTTPReadTimeout) * time.Second,
-	}
-
-	//Run an https server if we are given tls cert and key
-	if c.TLSEnabled() {
-		if c.TLS.ACME.Enabled {
-			log.Debugf("Attempting to use ACME with host %s", listenhost)
-		}
-		// Enable http2 support &Let's Encrypt support
-		w, err := acmewrapper.New(acmewrapper.Config{
-			Address:          listenhost,
-			Server:           c.TLS.ACME.Server,
-			PrivateKeyFile:   c.TLS.ACME.PrivateKey,
-			RegistrationFile: c.TLS.ACME.Registration,
-			Domains:          c.TLS.ACME.Domains,
-			TLSCertFile:      c.TLS.Cert,
-			TLSKeyFile:       c.TLS.Key,
-			TOSCallback:      acmewrapper.TOSAgree,
-			AcmeDisabled:     !c.TLS.ACME.Enabled,
-		})
+	errHandler := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		log.Printf("Got message")
+		resp, err := handler(ctx, req)
 		if err != nil {
-			return err
+			log.Printf("method %q failed: %s", info.FullMethod, err)
 		}
-		server.TLSConfig = w.TLSConfig()
-
-		listener, err := tls.Listen("tcp", listenhost, server.TLSConfig)
-		if err != nil {
-			return err
-		}
-
-		acmestring := ""
-		if c.TLS.ACME.Enabled {
-			acmestring = " ACME"
-		}
-
-		log.Infof("Running ConnectorDB v%s at %s (%s TLS%s)", connectordb.Version, c.GetSiteURL(), listenhost, acmestring)
-
-		return server.Serve(listener)
+		return resp, err
 	}
-	log.Infof("Running ConnectorDB v%s at %s (%s)", connectordb.Version, c.GetSiteURL(), listenhost)
+	//creds := credentials.NewClientTLSFromCert(pool, serverAddress)
+	// Start the gRPC server
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(errHandler)) //, grpc.Creds(creds))
+	pb.RegisterPingServer(grpcServer, &api.API{})
+	reflection.Register(grpcServer)
 
-	return server.ListenAndServe()
+	restMux, err := getRestMux(pool)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Set up the mux
+
+	mux := http.NewServeMux()
+	mux.Handle("/api/v1/cdb/", restMux)
+	mux.Handle("/", http.FileServer(afero.NewHttpFs(a.AssetFS)))
+
+	handler := http.Handler(mux)
+
+	if ph.Middleware != nil {
+		log.Info("Adding plugin middleware")
+		handler = ph.Middleware(handler)
+	}
+
+	// the grpcHandlerFunc takes an grpc server and a http muxer and will
+	// route the request to the right place at runtime.
+	mergeHandler := grpcHandlerFunc(grpcServer, handler)
+
+	// configure TLS for our server. TLS is REQUIRED to make this setup work.
+	// check https://golang.org/src/net/http/server.go?#L2746
+	if err != nil {
+		log.Panic(err)
+	}
+	srv := &http.Server{
+		Addr:    serverAddress,
+		Handler: mergeHandler,
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{*crt},
+			NextProtos:   []string{"h2"},
+			//InsecureSkipVerify: true,
+		},
+	}
+
+	// Set up a http listener
+	go http.ListenAndServe(":3001", handler)
+	// start listening on the socket
+	// Note that if you listen on localhost:<port> you'll not be able to accept
+	// connections over the network. Change it to ":port"  if you want it.
+	conn, err := net.Listen("tcp", serverAddress)
+	if err != nil {
+		panic(err)
+	}
+
+	// start the server
+	fmt.Printf("starting GRPC and REST on: %v\n", serverAddress)
+	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
+	if err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
 }

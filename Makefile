@@ -1,101 +1,46 @@
 GO:=go
-COPY:=rsync -r --exclude=.git
 
+.PHONY: clean test phony
 
-VERSION:=$(shell cat version)-git.$(shell git rev-list --count HEAD)
-
-.PHONY: all clean build test submodules resources deps phony testbuild
-
-all: bin/dep/gnatsd bin/connectordb resources
-deps: go-dependencies submodules app
-build: resources bin/connectordb
-
-# A special build for testing purposes: It avoids building the full frontend javascript, which
-# is EXTREMELY expensive (several minutes).
-testbuild: bin/dep/gnatsd bin/connectordb
-	$(COPY) site/www bin/
-	cd site/app;yarn run build:html
+all: setup app connectordb
 
 #Empty rule for forcing rebuilds
 phony:
 
-bin:
-	mkdir bin
-	$(COPY) src/dbsetup/config bin/
+setup: phony
+	cd setup; npm run build
 
-submodules:
-	git submodule update --init --recursive
+app: phony
+	rm -rf src/api/proto;
+	cd app; npm run build
 
-app: submodules
-	cd site/app;yarn install
+docs: phony
+	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --swagger_out=logtostderr=true:docs
+	cd docs; make html
 
-resources: bin
-	$(COPY) site/www bin/
-	cd site/app;yarn run build
+gencode: phony
+	mkdir -p src/api/pb
+	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --go_out=plugins=grpc:src/api/pb --grpc-gateway_out=logtostderr=true:src/api/pb
 
+connectordb: src/main.go gencode phony
+	cd src; GO111MODULE=on packr2
+	cd src; $(GO) build -o ../connectordb
+	cd src; GO111MODULE=on packr2 clean
 
-# Rule to go from source go file to binary
-# http://www.atatus.com/blog/golang-auto-build-versioning/
-bin/connectordb: src/main.go bin phony
-	$(GO) build -o bin/connectordb -ldflags "-X commands.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X commands.GitHash=`git rev-parse HEAD` -X connectordb.Version=$(VERSION)" src/main.go
+debug: gencode
+	cd src; $(GO) build -o ../connectordb
 
 clean:
-	rm -rf bin
 	$(GO) clean
+	# Clear all generated assets for webapp
+	rm -rf ./assets/app
+	rm -rf ./assets/setup
+	# Remove the generated APIs
+	rm -rf src/api/proto
+	rm -rf docs/api.swagger.json
+	rm -rf connectordb
+	# Clean docs
+	cd docs; make clean
 
-
-go-dependencies:
-	# services
-	$(GO) get -u github.com/nats-io/nats github.com/nats-io/gnatsd
-	$(GO) get -u gopkg.in/redis.v4
-
-	# databases
-	$(GO) get -u github.com/lib/pq
-	$(GO) get -u github.com/mattn/go-sqlite3
-	$(GO) get -u github.com/connectordb/duck
-	$(GO) get -u github.com/jmoiron/sqlx
-
-	# utilities
-	$(GO) get -u github.com/xeipuuv/gojsonschema
-	$(GO) get -u gopkg.in/vmihailenco/msgpack.v2
-	$(GO) get -u gopkg.in/fsnotify.v1
-	$(GO) get -u github.com/kardianos/osext
-	$(GO) get -u github.com/nu7hatch/gouuid
-	$(GO) get -u github.com/gorilla/mux github.com/gorilla/context github.com/gorilla/sessions github.com/gorilla/websocket
-	$(GO) get -u github.com/Sirupsen/logrus
-	$(GO) get -u github.com/inconshreveable/mousetrap	# A dependency for compiling windows version
-	$(GO) get -u github.com/josephlewis42/multicache
-	$(GO) get -u github.com/connectordb/njson
-	$(GO) get -u github.com/spf13/cobra
-	$(GO) get -u github.com/tdewolff/minify
-	$(GO) get -u golang.org/x/crypto/bcrypt
-	$(GO) get -u github.com/dkumor/acmewrapper # Let's encrypt support
-
-	# web services
-	$(GO) get -u github.com/gernest/hot				# hot template reloading
-	$(GO) get -u github.com/russross/blackfriday		# markdown processing
-	$(GO) get -u github.com/microcosm-cc/bluemonday	# unsafe html stripper
-
-	$(GO) get -u github.com/stretchr/testify
-
-	# PipeScript
-	$(GO) get -u github.com/connectordb/pipescript
-
-
-bin/dep/gnatsd: bin/dep
-	$(GO) build -o bin/dep/gnatsd github.com/nats-io/gnatsd
-
-bin/dep: bin
-	mkdir -p bin/dep
-
-# specific packages required by the project to run on a host
-host-packages:
-	sudo apt-get update -qq
-	sudo apt-get install -qq redis-server postgresql
-
-connectordb_python:
-	git clone https://github.com/connectordb/connectordb_python
-
-# run tests
-test: connectordb_python
-	./runtests.sh
+	# Clear any assets packed by packr
+	cd src; GO111MODULE=on packr2 clean

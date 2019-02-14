@@ -1,0 +1,56 @@
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+*.sqlite
+*.sqlite3
+*.pyc
+*.pid
+*.out
+*.db
+*.orig
+*.egg-info
+*.log
+
+# Folders
+_obj
+_test
+bin/
+database_test/
+test/
+src/clients/python/build/
+src/clients/python/dist/
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+*.test
+*.prof
+
+# testing directories
+TESTING_*
+
+# The python client
+connectordb_python/
+
+# the test database ad debug database
+#testdb/
+debugdb/
+
+src/config/test.conf
+src/config/permissions/permissions.conf
+src/util/testfile.txt
+
+# Ignore the pushbundle code
+pushbundle

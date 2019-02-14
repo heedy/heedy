@@ -1,18 +1,14 @@
 package main
 
 import (
-	"commands"
-	"os"
-	"strings"
+	"mime"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/connectordb/connectordb/cmd"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	if err := commands.RootCmd.Execute(); err != nil {
-		if !strings.HasPrefix(err.Error(), "unknown command") {
-			log.Error(err)
-		}
-		os.Exit(-1)
-	}
+	log.Info("Starting")
+	mime.AddExtensionType(".jsm", "application/javascript")
+	cmd.Execute()
 }
