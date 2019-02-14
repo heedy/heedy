@@ -124,6 +124,16 @@ func NewPluginManager(assetPath string, c *config.Configuration) (*PluginManager
 			k := i - 1
 			pluginRoutes[i].mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 				log.Info("Forwarding Request")
+
+				// Delete the plugin key if it exists
+				if _, ok := r.Header["X-CDB-Plugin"]; ok {
+					delete(r.Header, "X-CDB-Plugin")
+				}
+
+				// Add the overlay header
+				r.Header["X-Cdb-Overlay"] = []string{strconv.Itoa(k)}
+
+				// And continue on our merry way
 				pluginRoutes[k].mux.ServeHTTP(w, r)
 			})
 		}
@@ -133,7 +143,72 @@ func NewPluginManager(assetPath string, c *config.Configuration) (*PluginManager
 				log.Info("Forwarding to CDB")
 				next.ServeHTTP(w, r)
 			})
-			return pluginRoutes[k].mux
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if overlay, ok := r.Header["X-Cdb-Overlay"]; ok {
+					log.Info("Overlay detected")
+					// Now let's check if the API key is correct
+					// The request is asking for an overlay
+					pluginKeys, ok := r.Header["X-Cdb-Plugin"]
+					if !ok || len(pluginKeys) != 1 {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("400: X-Cdb-Overlay must also include X-Cdb-Plugin header with plugin key"))
+						return
+					}
+
+					pName, ok := pm.PluginKeyMap[pluginKeys[0]]
+					if !ok {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("400: X-Cdb-Plugin invalid"))
+						return
+					}
+
+					if len(overlay) != 1 {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("400: X-Cdb-Overlay invalid"))
+						return
+					}
+					oindex, err := strconv.Atoi(overlay[0])
+					if err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("400: X-Cdb-Overlay invalid"))
+						return
+					}
+					if oindex > len(pluginRoutes) || oindex < 0 {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("400: X-Cdb-Overlay invalid"))
+						return
+					}
+					if oindex == 0 {
+						log.Infof("Forwarding Request from %s to CDB", pName)
+						next.ServeHTTP(w, r)
+					}
+					if oindex < len(pluginRoutes) {
+						log.Infof("Forwarding Request from %s to %s", pName, pluginRoutes[oindex-1].Name)
+						// Delete the plugin key if it exists
+						if _, ok := r.Header["X-CDB-Plugin"]; ok {
+							delete(r.Header, "X-CDB-Plugin")
+						}
+
+						// Add the overlay header
+						r.Header["X-Cdb-Overlay"] = []string{strconv.Itoa(k)}
+
+						pluginRoutes[oindex-1].mux.ServeHTTP(w, r)
+						return
+					}
+
+				}
+
+				log.Info("Using raw data")
+				// Delete the plugin key if it exists
+				if _, ok := r.Header["X-CDB-Plugin"]; ok {
+					delete(r.Header, "X-CDB-Plugin")
+				}
+
+				// Add the overlay header
+				r.Header["X-Cdb-Overlay"] = []string{strconv.Itoa(k)}
+
+				pluginRoutes[k].mux.ServeHTTP(w, r)
+			})
 		}
 	}
 
