@@ -23,9 +23,9 @@ gencode: phony
 	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --go_out=plugins=grpc:src/api/pb --grpc-gateway_out=logtostderr=true:src/api/pb
 
 connectordb: src/main.go gencode phony
-	cd src; GO111MODULE=on packr2
+	statik -src=./assets -dest=./src -p assets -f
 	cd src; $(GO) build -o ../connectordb
-	cd src; GO111MODULE=on packr2 clean
+	rm ./src/assets/statik.go
 
 debug: gencode
 	cd src; $(GO) build -o ../connectordb
@@ -43,4 +43,5 @@ clean:
 	cd docs; make clean
 
 	# Clear any assets packed by packr
-	cd src; GO111MODULE=on packr2 clean
+	#cd src; GO111MODULE=on packr2 clean
+	rm -f ./src/assets/statik.go

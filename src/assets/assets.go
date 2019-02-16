@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/spf13/afero"
 
 	log "github.com/sirupsen/logrus"
@@ -29,6 +28,9 @@ type Assets struct {
 	// The active configuration. This is loaded automatically
 	Config *config.Configuration
 
+	// The overlay stack. index 0 represents built-in assets. Each index is just that stack element.
+	AssetStack []afero.Fs
+
 	// The overlay filesystems that include the builtin assets, as well as all
 	// overrides from active plugins, and user overrides. It is loaded automatically
 	AssetFS afero.Fs
@@ -37,10 +39,13 @@ type Assets struct {
 // Reload the assets from scratch
 func (a *Assets) Reload() error {
 
-	builtinAssets := packr.New("assets", "../../assets")
+	assetStack := make([]afero.Fs, 1)
+
+	builtinAssets := BuiltinAssets()
+	assetStack[0] = builtinAssets
 
 	// First, we load the configuration from the builtin assets
-	baseConfigBytes, err := builtinAssets.Find("connectordb.conf")
+	baseConfigBytes, err := afero.ReadFile(builtinAssets, "/connectordb.conf")
 	if err != nil {
 		return err
 	}
@@ -50,13 +55,13 @@ func (a *Assets) Reload() error {
 	}
 
 	// Next, we initialize the filesystem overlays from the builtin assets
-	assetFs := NewAferoPackr(builtinAssets)
+	assetFs := builtinAssets
 
 	mergedConfiguration := baseConfiguration
 
 	if a.FolderPath == "" {
 		// If there is no folder path, we are running purely on built-in assets.
-		log.Warn("No asset folder specified - running on builtin assets.")
+		log.Debug("No asset folder specified - running on builtin assets.")
 
 	} else {
 		// The os filesystem
@@ -94,19 +99,24 @@ func (a *Assets) Reload() error {
 				}
 				mergedConfiguration = config.MergeConfig(mergedConfiguration, pluginConfiguration)
 
-				assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, pluginFolder))
+				pluginFs := afero.NewBasePathFs(osfs, pluginFolder)
+				assetStack = append(assetStack, pluginFs)
+				assetFs = afero.NewCopyOnWriteFs(assetFs, pluginFs)
 			}
 		}
 
 		// Finally, we overlay the root directory and root config
 		mergedConfiguration = config.MergeConfig(mergedConfiguration, rootConfiguration)
-		assetFs = afero.NewCopyOnWriteFs(assetFs, afero.NewBasePathFs(osfs, a.FolderPath))
+		mainFs := afero.NewBasePathFs(osfs, a.FolderPath)
+		assetStack = append(assetStack, mainFs)
+		assetFs = afero.NewCopyOnWriteFs(assetFs, mainFs)
 
 	}
 
 	// Set the new config and assets
 	a.Config = mergedConfiguration
 	a.AssetFS = assetFs
+	a.AssetStack = assetStack
 
 	return nil
 }

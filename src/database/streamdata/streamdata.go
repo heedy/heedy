@@ -18,6 +18,7 @@ type StreamData interface {
 	RemoveIRange(StreamID uint64, i1 uint64, i2 uint64) error
 	QueryTRange(StreamID uint64, t1 float64, t2 float64, limit int64) (DatapointIterator, error)
 	QueryIRange(StreamID uint64, i1 uint64, i2 uint64, limit int64) (DatapointIterator, error)
-	Delete(StreamID uint64)
-	Create(StreamID uint64)
+	Delete(StreamID uint64) error
+	Create(StreamID uint64) error
+	Length(StreamID uint64) (uint64, error)
 }

@@ -36,6 +36,8 @@ type Plugin struct {
 	GRPC        *string            `hcl:"grpc" json:"grpc,omitempty"`
 	Routes      *map[string]string `json:"routes,omitempty"`
 
+	//FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
+
 	Exec     map[string]*ExecJob `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
 }
@@ -86,6 +88,9 @@ type Configuration struct {
 	ActivePlugins   *[]string          `hcl:"plugins" json:"plugins,omitempty"`
 	ForbiddenGroups *[]string          `json:"forbidden_groups,omitempty"`
 	Plugins         map[string]*Plugin `json:"plugin"`
+
+	Language         *string `hcl:"language" json:"language"`
+	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
 
 	Groups map[string]*Group `json:"groups,omitempty"`
 }

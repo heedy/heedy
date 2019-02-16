@@ -46,6 +46,7 @@ type hclPlugin struct {
 	GRPC           *string                   `hcl:"grpc" json:"grpc"`
 	Routes         *map[string]string        `hcl:"routes" json:"routes"`
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
+	//FallbackLanguage *string                   `hcl:"fallback_language" json:"fallback_language"`
 
 	Exec []hclExecJob `hcl:"exec,block"`
 
@@ -75,15 +76,18 @@ type hclGroup struct {
 }
 
 type hclConfiguration struct {
-	SiteURL         *string     `hcl:"site_url" json:"site_url,omitempty"`
-	Host            *string     `hcl:"host" json:"host,omitempty"`
-	Port            *uint16     `hcl:"port" json:"port,omitempty"`
-	HTTPPort        *int        `hcl:"http_port" json:"http_port,omitempty"`
-	CORS            *bool       `hcl:"cors"`
-	ActivePlugins   *[]string   `hcl:"plugins"`
-	ForbiddenGroups *[]string   `hcl:"forbidden_groups"`
-	Plugins         []hclPlugin `hcl:"plugin,block"`
-	Groups          []hclGroup  `hcl:"group,block"`
+	SiteURL       *string   `hcl:"site_url" json:"site_url,omitempty"`
+	Host          *string   `hcl:"host" json:"host,omitempty"`
+	Port          *uint16   `hcl:"port" json:"port,omitempty"`
+	HTTPPort      *int      `hcl:"http_port" json:"http_port,omitempty"`
+	CORS          *bool     `hcl:"cors"`
+	ActivePlugins *[]string `hcl:"plugins"`
+
+	Language         *string `hcl:"language" json:"language"`
+	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
+
+	Plugins []hclPlugin `hcl:"plugin,block"`
+	Groups  []hclGroup  `hcl:"group,block"`
 }
 
 func preprocess(i interface{}) (reflect.Value, reflect.Kind) {

@@ -102,7 +102,6 @@ func getRestMux(certPool *x509.CertPool, opts ...runtime.ServeMuxOption) (*runti
 }
 
 func RunServer() {
-	fmt.Println("Running server")
 	a, err := assets.NewAssets("./testdb", nil)
 	if err != nil {
 		log.Error(err.Error())
@@ -134,25 +133,6 @@ func RunServer() {
 			os.Exit(0)
 		}
 	}()
-	/*
-		f, err := a.AssetFS.Open("/setup/app.css")
-		if err != nil {
-			log.Error(err.Error())
-			return
-		}
-
-		finfo, err := f.Stat()
-		if err != nil {
-			log.Error(err.Error())
-			return
-		}
-		log.Println(finfo.Name())
-
-		buf := new(bytes.Buffer)
-
-		buf.ReadFrom(f)
-		fmt.Println(buf.String())
-	*/
 
 	crt, pool := GetCert()
 
@@ -174,8 +154,6 @@ func RunServer() {
 	if err != nil {
 		log.Panic(err)
 	}
-
-	// Set up the mux
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/cdb/", restMux)
