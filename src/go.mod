@@ -27,12 +27,15 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.7.0
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
+	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl2 v0.0.0-20190214115825-fb2bc46cdbe3
+	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/openzipkin/zipkin-go v0.1.5 // indirect
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/common v0.2.0 // indirect
 	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd // indirect
+	github.com/rakyll/statik v0.1.5 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/shurcooL/go v0.0.0-20190121191506-3fef8c783dec // indirect

@@ -40,8 +40,7 @@ clean:
 	rm -rf docs/api.swagger.json
 	rm -rf connectordb
 	# Clean docs
-	cd docs; make clean
+	cd docs/en; make clean
 
-	# Clear any assets packed by packr
-	#cd src; GO111MODULE=on packr2 clean
+	# Clear any assets packed by statik
 	rm -f ./src/assets/statik.go

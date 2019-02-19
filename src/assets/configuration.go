@@ -1,7 +1,6 @@
-package config
+package assets
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -83,14 +82,16 @@ type Configuration struct {
 	SiteURL         *string            `hcl:"site_url" json:"site_url,omitempty"`
 	Host            *string            `hcl:"host" json:"host,omitempty"`
 	Port            *uint16            `hcl:"port" json:"port,omitempty"`
-	HTTPPort        *int               `hcl:"http_port" json:"http_port,omitempty"`
+	HTTPPort        *uint16            `hcl:"http_port" json:"http_port,omitempty"`
 	CORS            *bool              `hcl:"cors" json:"cors,omitempty"`
 	ActivePlugins   *[]string          `hcl:"plugins" json:"plugins,omitempty"`
 	ForbiddenGroups *[]string          `json:"forbidden_groups,omitempty"`
-	Plugins         map[string]*Plugin `json:"plugin"`
+	Plugins         map[string]*Plugin `json:"plugin,omitempty"`
 
-	Language         *string `hcl:"language" json:"language"`
-	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
+	SQL *string `hcl:"sql" json:"sql,omitempty"`
+
+	Language         *string `hcl:"language" json:"language,omitempty"`
+	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language,omitempty"`
 
 	Groups map[string]*Group `json:"groups,omitempty"`
 }
@@ -184,21 +185,23 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 }
 
-// WriteConfig writes the updates available in the given configuration to the given file.
-// It overwrites just the updated values, leaving all others intact
-func WriteConfig(filename string, c *Configuration) error {
-	/*
-		f, err := ioutil.ReadFile(filename)
-		if err != nil {
-			return err
-		}
-		writer, diag := hclwrite.ParseConfig(f, filename, hcl.Pos{Line: 1, Column: 1})
-		if diag != nil {
-			return diag
-		}
-		body := writer.Body()
+// LoadConfigFile loads configuration from file
+func LoadConfigFile(filename string) (*Configuration, error) {
 
-		// Aaaand we're fucked, because we can't write into blocks
-	*/
-	return fmt.Errorf("Writer not implemented")
+	f, diag := configparser.ParseHCLFile(filename)
+	if diag != nil {
+		return nil, diag
+	}
+
+	return loadConfigFromHcl(f, filename)
+}
+
+// LoadConfigBytes loads the configuration from bytes
+func LoadConfigBytes(src []byte, filename string) (*Configuration, error) {
+	f, diag := configparser.ParseHCL(src, filename)
+	if diag != nil {
+		return nil, diag
+	}
+
+	return loadConfigFromHcl(f, filename)
 }

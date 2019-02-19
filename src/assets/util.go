@@ -14,7 +14,7 @@ type PrintOpen struct {
 }
 
 func (r PrintOpen) Open(n string) (afero.File, error) {
-	log.Debug("Request: %s", n)
+	log.Debugf("Request: %s", n)
 	return r.Fs.Open(n)
 }
 

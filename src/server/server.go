@@ -157,7 +157,7 @@ func RunServer() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/cdb/", restMux)
-	mux.Handle("/", http.FileServer(afero.NewHttpFs(a.AssetFS)))
+	mux.Handle("/", http.FileServer(afero.NewHttpFs(a.FS)))
 
 	handler := http.Handler(mux)
 

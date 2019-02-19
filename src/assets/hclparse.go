@@ -1,4 +1,4 @@
-package config
+package assets
 
 import (
 	"fmt"
@@ -79,9 +79,11 @@ type hclConfiguration struct {
 	SiteURL       *string   `hcl:"site_url" json:"site_url,omitempty"`
 	Host          *string   `hcl:"host" json:"host,omitempty"`
 	Port          *uint16   `hcl:"port" json:"port,omitempty"`
-	HTTPPort      *int      `hcl:"http_port" json:"http_port,omitempty"`
+	HTTPPort      *uint16   `hcl:"http_port" json:"http_port,omitempty"`
 	CORS          *bool     `hcl:"cors"`
 	ActivePlugins *[]string `hcl:"plugins"`
+
+	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
 	Language         *string `hcl:"language" json:"language"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
@@ -258,25 +260,4 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	}
 
 	return c, nil
-}
-
-// LoadConfigFile loads configuration from file
-func LoadConfigFile(filename string) (*Configuration, error) {
-
-	f, diag := configparser.ParseHCLFile(filename)
-	if diag != nil {
-		return nil, diag
-	}
-
-	return loadConfigFromHcl(f, filename)
-}
-
-// LoadConfig loads the configuration from bytes
-func LoadConfig(src []byte, filename string) (*Configuration, error) {
-	f, diag := configparser.ParseHCL(src, filename)
-	if diag != nil {
-		return nil, diag
-	}
-
-	return loadConfigFromHcl(f, filename)
 }

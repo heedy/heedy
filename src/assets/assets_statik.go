@@ -14,6 +14,9 @@ import (
 	"github.com/spf13/afero"
 )
 
+// The cached builtin Assets
+var builtinAssets afero.Fs
+
 type AferoHttpFile struct {
 	http.File
 }
@@ -146,14 +149,20 @@ func (fs AferoReverseHttpFs) Open(n string) (afero.File, error) {
 }
 
 func BuiltinAssets() afero.Fs {
-	statikFS, err := fs.New()
-	if err != nil {
-		log.Warn("Running assets in debug mode")
-		assetPath, err := filepath.Abs("./assets")
+	if builtinAssets == nil {
+		statikFS, err := fs.New()
 		if err != nil {
-			panic(err)
+			log.Warn("Debug mode: serving assets from ./assets")
+			assetPath, err := filepath.Abs("./assets")
+			if err != nil {
+				panic(err)
+			}
+			builtinAssets = afero.NewBasePathFs(afero.NewOsFs(), assetPath)
+		} else {
+			builtinAssets = NewAferoReverseHttpFs(statikFS)
 		}
-		return afero.NewBasePathFs(afero.NewOsFs(), assetPath)
+
 	}
-	return NewAferoReverseHttpFs(statikFS)
+
+	return builtinAssets
 }

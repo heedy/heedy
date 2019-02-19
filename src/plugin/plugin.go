@@ -13,9 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/connectordb/connectordb/assets"
 	"github.com/go-chi/chi"
-
-	"github.com/connectordb/connectordb/assets/config"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -43,7 +42,7 @@ type PluginManager struct {
 	Middleware func(http.Handler) http.Handler
 }
 
-func NewPluginManager(assetPath string, c *config.Configuration) (*PluginManager, error) {
+func NewPluginManager(assetPath string, c *assets.Configuration) (*PluginManager, error) {
 	pm := &PluginManager{
 		ph:           NewProcessHandler(),
 		forwarders:   make(map[string]*httputil.ReverseProxy),
