@@ -16,7 +16,7 @@
               <v-text-field
             label="Username"
             placeholder="admin"
-            value=""
+            v-model.trim="username"
             required
             solo
           ></v-text-field>
@@ -29,6 +29,7 @@
             label="Password"
             placeholder="Password"
             type="password"
+            v-model="password1"
             required
             solo
           ></v-text-field>
@@ -38,6 +39,7 @@
             label="Repeat Password"
             placeholder="Repeat Password"
             type="password"
+            v-model="password2"
             required
             solo
           ></v-text-field>
@@ -69,7 +71,7 @@
           <v-text-field
             label="Database Location"
             :placeholder="directoryDefault"
-            :value="directory"
+            v-model.trim="directory"
             required
             solo
           ></v-text-field>
@@ -84,7 +86,7 @@
           <v-text-field
             label="Host"
             :placeholder="hostDefault"
-            :value="host"
+            v-model.trim="host"
             required
             solo
           ></v-text-field>
@@ -92,8 +94,9 @@
           <v-flex sm6 xs12 >
           <v-text-field
             label="Port"
+            type="number"
             :placeholder="portDefault"
-            :value="port"
+            v-model.number="port"
             required
             solo
           ></v-text-field>
@@ -138,14 +141,14 @@
         <h3>HTTP</h3>
           <v-layout row wrap>
       <v-flex xs12 sm4>
-        <v-checkbox input-value="true" value label="Enable HTTP port"></v-checkbox>
+        <v-checkbox v-model="httpOn" label="Enable HTTP port"></v-checkbox>
       </v-flex>
       <v-flex xs12 sm8>
         <v-text-field
             label="Port"
-            :placeholder="portDefault"
-            :value="port"
-            required
+            type="number"
+            :placeholder="httpPortDefault"
+            v-model.number="httpPort"
             solo
           ></v-text-field>
       </v-flex>
@@ -193,7 +196,7 @@
             <v-icon>{{ show ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</v-icon> Server Settings
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="info">Create Database</v-btn>
+          <v-btn color="info" @click="submit">Create Database</v-btn>
           
           
         </v-card-actions>
@@ -210,9 +213,57 @@ export default {
       host: configuration["host"],
       portDefault: configuration["port"],
       port: configuration["port"],
-      tls: "selfsigned"
+      httpPortDefault: configuration["http_port"],
+      httpPort: configuration["http_port"],
+      httpOn: configuration["http_port"] > 0,
+      tls: "selfsigned",
+      username: "",
+      password1: "",
+      password2: ""
     }),
-  props: {
+  methods: {
+    submit: async function(event) {
+      if (this.username==="") {
+        console.log("Invalid username");
+        return;
+      }
+      if (this.password1!=this.password2) {
+        console.log("Passwords don't match");
+        return;
+      }
+      if (this.password1==="") {
+        console.log("Must give a password");
+        return;
+      }
+      // Generate the query used to create the user.
+      let query = {
+        user: {
+          name: this.username,
+          password: this.password1
+        },
+        config: {
+          host: this.host,
+          port: this.port,
+          http_port: (this.httpOn? this.httpPort: 0)
+        }
+      };
+
+      // Only add configuration options which have been changed
+      if (this.directory!==this.directoryDefault) {
+        query.directory = this.directory;
+      }
+
+      let result = await fetch("/setup",{
+        method: "POST",
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(query)
+      }).catch(error=> console.error(error));
+      console.log(result);
+      
+    }
   }
 };
 </script>

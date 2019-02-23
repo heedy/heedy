@@ -20,6 +20,16 @@ type setupContext struct {
 	Directory string
 }
 
+// Message sent to user creation stuff
+type setupMessage struct {
+	Config    *assets.Configuration `json:"config,omitempty"`
+	Directory *string               `json:"directory,omitempty"`
+	User      struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	} `json:"user,omitempty"`
+}
+
 // Setup runs the setup server. All of the arguments are optional - include empty strings
 // for the directory and configFile if they are not given, and nil for configuration if no settings
 // were given.
@@ -66,23 +76,35 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 
 	// /setup is POSTed with info, and this function prepares the database
 	mux.Post("/setup", func(w http.ResponseWriter, r *http.Request) {
-		c := assets.NewConfiguration()
-		err := UnmarshalRequest(r, c)
+		log.Info("Got create request")
+		sm := &setupMessage{}
+		err := UnmarshalRequest(r, sm)
 		if err != nil {
 			// ugh
+			log.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		a, err := assets.Create(directory, c, configFile)
+		mydir := directory
+		if sm.Directory != nil {
+			mydir = *sm.Directory
+		}
+
+		log.Infof("Creating database in '%s'", mydir)
+		a, err := assets.Create(mydir, sm.Config, configFile)
 		if err != nil {
+			log.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if err = database.Create(a); err != nil {
-			os.RemoveAll(directory)
+			log.Error(err)
+			os.RemoveAll(mydir)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		log.Info("Success")
 
 		w.WriteHeader(http.StatusOK)
 		return
