@@ -58,7 +58,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43 // indirect
 	github.com/vmihailenco/msgpack v4.0.2+incompatible // indirect
-	github.com/zclconf/go-cty v0.0.0-20190212192503-19dda139b164 // indirect
+	github.com/zclconf/go-cty v0.0.0-20190212192503-19dda139b164
 	go.opencensus.io v0.19.0 // indirect
 	go4.org v0.0.0-20181109185143-00e24f1b2599 // indirect
 	golang.org/x/build v0.0.0-20190215225244-0261b66eb045 // indirect

@@ -94,6 +94,8 @@ type Configuration struct {
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language,omitempty"`
 
 	Groups map[string]*Group `json:"groups,omitempty"`
+
+	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 }
 
 func (c *Configuration) Copy() *Configuration {

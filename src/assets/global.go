@@ -15,7 +15,7 @@ func Get() *Assets {
 	defer assetLock.RUnlock()
 	if globalAssets == nil {
 		var err error
-		globalAssets, err = NewAssets("", nil)
+		globalAssets, err = Load("", nil)
 		if err != nil {
 			panic(err.Error())
 		}

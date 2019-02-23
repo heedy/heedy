@@ -102,7 +102,7 @@ func getRestMux(certPool *x509.CertPool, opts ...runtime.ServeMuxOption) (*runti
 }
 
 func RunServer() {
-	a, err := assets.NewAssets("./testdb", nil)
+	a, err := assets.Load("./testdb", nil)
 	if err != nil {
 		log.Error(err.Error())
 		return

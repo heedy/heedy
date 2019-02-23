@@ -11,7 +11,7 @@ import (
 func TestLoadConfiguration(t *testing.T) {
 	fmt.Printf("\nBUILTIN CONFIGURATIONS ---------------------------\n\n")
 	testreadconf := func(fname string) {
-		c, err := LoadConfigFile("../../assets/connectordb.conf")
+		c, err := LoadConfigFile(fname)
 		require.NoErrorf(t, err, "Could not read configuration file %s", fname)
 
 		b, err := json.MarshalIndent(c, "", "  ")

@@ -3,7 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/connectordb/connectordb/setup"
+	"github.com/connectordb/connectordb/assets"
+
+	"github.com/connectordb/connectordb/database"
+	"github.com/connectordb/connectordb/server"
 
 	"github.com/spf13/cobra"
 )
@@ -14,6 +17,8 @@ var (
 	nosetup    bool
 	setupHost  string
 	configFile string
+	port       uint16
+	host       string
 )
 
 // CreateCmd creates a new database
@@ -41,24 +46,35 @@ It is recommended that new users use the web setup, which will guide you in prep
 		if len(args) == 1 {
 			directory = args[0]
 		}
-
-		a, err := setup.CreateDatabase(directory, nil, configFile)
-		if err != nil {
-			return err
+		c := assets.NewConfiguration()
+		if port != 0 {
+			c.Port = &port
 		}
-		if err = setup.InitializeDatabase(a); err != nil {
-			os.RemoveAll(directory)
-			return err
+		if host != "_" {
+			c.Host = &host
 		}
 
-		//setup.RunSetup(assetFs)
+		if nosetup {
+			a, err := assets.Create(directory, c, configFile)
+			if err != nil {
+				return err
+			}
+			if err = database.Create(a); err != nil {
+				os.RemoveAll(directory)
+				return err
+			}
+			return nil
+		}
+		return server.Setup(directory, c, configFile, setupHost)
 
-		return nil
 	},
 }
 
 func init() {
-	CreateCmd.Flags().StringVar(&setupHost, "setup", ":8000", "Start a setup server on the given host:port")
+	CreateCmd.Flags().Uint16VarP(&port, "port", "p", 0, "The port on which to run ConnectorDB")
+	CreateCmd.Flags().StringVar(&host, "host", "_", "The host on which to run ConnectorDB")
+	CreateCmd.Flags().BoolVar(&nosetup, "nosetup", false, "Don't start the setup server - directly create the database.")
+	CreateCmd.Flags().StringVar(&setupHost, "setup", ":8000", "Run a setup server on the given host:port")
 	CreateCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to an existing configuration file to use for the database.")
 
 	RootCmd.AddCommand(CreateCmd)
