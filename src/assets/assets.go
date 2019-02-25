@@ -128,8 +128,8 @@ func (a *Assets) Abs(p string) string {
 	return fpabs
 }
 
-// New creates a full new asset system, including configuration.
-func Load(configPath string, override *Configuration) (*Assets, error) {
+// Open opens the assets in a given configuration path
+func Open(configPath string, override *Configuration) (*Assets, error) {
 	a := &Assets{
 		FolderPath:     configPath,
 		ConfigOverride: override,

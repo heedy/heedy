@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"errors"
 	"io"
 	"os"
 	"syscall"
@@ -152,11 +153,25 @@ func BuiltinAssets() afero.Fs {
 	if builtinAssets == nil {
 		statikFS, err := fs.New()
 		if err != nil {
-			log.Warn("Debug mode: serving assets from ./assets")
-			assetPath, err := filepath.Abs("./assets")
+			// Try to find an assets folder in the ancestors
+			cwd, err := os.Getwd()
 			if err != nil {
 				panic(err)
 			}
+			assetPath := filepath.Join(cwd, "assets")
+			_, err = os.Stat(filepath.Join(assetPath, "connectordb.conf"))
+			for os.IsNotExist(err) {
+				cwdnew := filepath.Dir(cwd)
+				if cwdnew == cwd {
+					panic(errors.New("Could not find assets folder"))
+				}
+				cwd = cwdnew
+				assetPath = filepath.Join(cwd, "assets")
+				_, err = os.Stat(filepath.Join(assetPath, "connectordb.conf"))
+			}
+
+			log.Warnf("Debug mode: using assets from %s", assetPath)
+
 			builtinAssets = afero.NewBasePathFs(afero.NewOsFs(), assetPath)
 		} else {
 			builtinAssets = NewAferoReverseHttpFs(statikFS)

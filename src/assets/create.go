@@ -68,7 +68,7 @@ func Create(directory string, cfg *Configuration, configFile string) (*Assets, e
 	}
 
 	// And now load the assets
-	ass, err := Load(directory, nil)
+	ass, err := Open(directory, nil)
 	if err != nil {
 		// Must clean up on failure
 		osFs.RemoveAll(directory)

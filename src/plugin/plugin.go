@@ -26,7 +26,7 @@ type pluginMux struct {
 	mux  *chi.Mux
 }
 
-type PluginManager struct {
+type Manager struct {
 	ph *ProcessHandler
 
 	// The plugins call the same function, but sets the X-CDB-Chain: <name> <- name of plugin to forward to
@@ -42,8 +42,10 @@ type PluginManager struct {
 	Middleware func(http.Handler) http.Handler
 }
 
-func NewPluginManager(assetPath string, c *assets.Configuration) (*PluginManager, error) {
-	pm := &PluginManager{
+func NewManager(a *assets.Assets) (*Manager, error) {
+	c := a.Config
+	assetPath := a.FolderPath
+	pm := &Manager{
 		ph:           NewProcessHandler(),
 		forwarders:   make(map[string]*httputil.ReverseProxy),
 		PluginKeyMap: make(map[string]string),
@@ -263,6 +265,6 @@ func NewPluginManager(assetPath string, c *assets.Configuration) (*PluginManager
 	return pm, nil
 }
 
-func (pm *PluginManager) Stop(d time.Duration) error {
+func (pm *Manager) Stop(d time.Duration) error {
 	return pm.ph.Stop(d)
 }

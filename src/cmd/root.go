@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/connectordb/connectordb/server"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +21,7 @@ var RootCmd = &cobra.Command{
 	Short: "ConnectorDB is a repository for your quantified-self and IoT data",
 	Long:  `ConnectorDB is a database built for interacting with your IoT devices and for storing your quantified-self data.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		server.RunServer()
+		//server.RunServer()
 		//cmd.HelpFunc()(cmd, args)
 	},
 }

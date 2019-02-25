@@ -24,11 +24,11 @@ gencode: phony
 
 connectordb: src/main.go gencode phony
 	statik -src=./assets -dest=./src -p assets -f
-	cd src; $(GO) build -o ../connectordb
+	cd src; $(GO) build --tags "sqlite_foreign_keys sqlite_fts5" -o ../connectordb
 	rm ./src/assets/statik.go
 
 debug: gencode
-	cd src; $(GO) build -o ../connectordb
+	cd src; $(GO) build --tags "sqlite_foreign_keys sqlite_fts5" -o ../connectordb
 
 clean:
 	$(GO) clean
