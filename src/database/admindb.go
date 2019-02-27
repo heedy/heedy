@@ -19,10 +19,10 @@ func (db *AdminDB) Close() error {
 // AuthUser returns the groupid and password hash for the given user, or an authentication error
 func (db *AdminDB) AuthUser(name string, password string) (string, string, error) {
 	var selectResult struct {
+		Name     string
 		Password string
-		ID       string
 	}
-	err := db.Get(&selectResult, "SELECT password,id FROM users WHERE id = ? LIMIT 1;", name)
+	err := db.Get(&selectResult, "SELECT name,password FROM users WHERE name = ? LIMIT 1;", name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", "", ErrUserNotFound
@@ -32,17 +32,11 @@ func (db *AdminDB) AuthUser(name string, password string) (string, string, error
 	if err = CheckPassword(password, selectResult.Password); err != nil {
 		return "", "", ErrUserNotFound
 	}
-	return selectResult.ID, selectResult.Password, nil
+	return selectResult.Name, selectResult.Password, nil
 }
 
 // CreateUser is the administrator version of create
 func (db *AdminDB) CreateUser(u *User) error {
-	if u.Password == "" {
-		return ErrNoPasswordGiven
-	}
-	if u.Owner != nil {
-		return ErrInvalidQuery
-	}
 	groupColumns, groupValues, userColumns, userValues, err := userCreateQuery(u)
 	if err != nil {
 		return err
@@ -52,13 +46,14 @@ func (db *AdminDB) CreateUser(u *User) error {
 	if err != nil {
 		return err
 	}
-	result, err := tx.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
+	// Insert into user needs to be first, as group uses user as owner.
+	result, err := tx.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, qQ(len(userValues))), userValues...)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	result, err = tx.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, qQ(len(userValues))), userValues...)
+	result, err = tx.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
@@ -70,7 +65,7 @@ func (db *AdminDB) CreateUser(u *User) error {
 // ReadUser reads a user
 func (db *AdminDB) ReadUser(name string) (*User, error) {
 	u := &User{}
-	err := db.Get(u, "SELECT groups.id, groups.name, groups.fullname, groups.description, groups.icon FROM users INNER JOIN groups ON users.id = groups.id WHERE (users.id=?) LIMIT 1;", name)
+	err := db.Get(u, "SELECT * FROM groups WHERE id=? AND owner=id LIMIT 1;", name)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -93,9 +88,17 @@ func (db *AdminDB) UpdateUser(u *User) error {
 	}
 
 	if u.Name != nil {
-		// A name change changes the group's ID also. group ID change will cascade to user
+		// A name change changes the group's ID also. We need to manually handle this.
 		groupValues = append(groupValues, *u.Name)
 		groupColumns = groupColumns + ",id=?"
+
+		// Unfortunately, sqlite doesn't support alter table foreign keys, so we need to manually update the user name,
+		// rather than cascading id change to user name
+		userValues = append(userValues, *u.Name)
+		if len(userValues) > 0 {
+			userColumns = userColumns + ","
+		}
+		userColumns = userColumns + "name=?"
 	}
 
 	groupValues = append(groupValues, u.ID)
@@ -106,10 +109,10 @@ func (db *AdminDB) UpdateUser(u *User) error {
 		return err
 	}
 
-	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded on group change
+	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded to group owners
 	if len(userValues) > 1 {
 		// This uses a join to make sure that the group is in fact an existing user
-		result, err := tx.Exec(fmt.Sprintf("UPDATE users SET %s WHERE id=?;", userColumns), userValues...)
+		result, err := tx.Exec(fmt.Sprintf("UPDATE users SET %s WHERE name=?;", userColumns), userValues...)
 		err = getExecError(result, err)
 		if err != nil {
 			tx.Rollback()
@@ -119,7 +122,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 
 	if len(groupValues) > 1 { // we added name, so check if >1
 		// This uses a join to make sure that the group is in fact an existing user
-		result, err := tx.Exec(fmt.Sprintf("UPDATE groups SET %s INNER JOIN users ON users.id=groups.id WHERE users.id=?", groupColumns), groupValues...)
+		result, err := tx.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=? and id=owner;", groupColumns), groupValues...)
 		err = getExecError(result, err)
 		if err != nil {
 			tx.Rollback()
@@ -132,11 +135,8 @@ func (db *AdminDB) UpdateUser(u *User) error {
 
 // DelUser deletes the given user
 func (db *AdminDB) DelUser(name string) error {
-	// The user will be deleted by cascade. The join ensures that the group is actually an existing user
-	// What we want is:
-	//		DELETE groups FROM groups INNER JOIN users ON users.id = groups.id WHERE users.id = ?;
-	// but sqlite doesn't support join on delete, so we do it manually
-	result, err := db.Exec("DELETE FROM groups WHERE id IN (SELECT id FROM users WHERE users.id=?);", name)
+	// The user's group will be deleted by cascade on group owner
+	result, err := db.Exec("DELETE FROM users WHERE name=?;", name)
 	return getExecError(result, err)
 }
 
@@ -147,9 +147,9 @@ func (db *AdminDB) SearchUsers(query string, limit int) ([]*User, error) {
 
 	if query == "" {
 		if limit > 0 {
-			err = db.Select(&searchResult, "SELECT groups.name, groups.fullname, groups.description, groups.icon FROM users INNER JOIN groups ON users.id = groups.id LIMIT ?;", limit)
+			err = db.Select(&searchResult, "SELECT * FROM groups WHERE id=? and id=owner LIMIT ?;", limit)
 		} else {
-			err = db.Select(&searchResult, "SELECT groups.name, groups.fullname, groups.description, groups.icon FROM users INNER JOIN groups ON users.id = groups.id;")
+			err = db.Select(&searchResult, "SELECT * FROM groups WHERE id=? and id=owner;")
 		}
 		return searchResult, err
 	}
@@ -160,26 +160,26 @@ func (db *AdminDB) SearchUsers(query string, limit int) ([]*User, error) {
 
 // CreateGroup generates a group with the given owner groupID
 func (db *AdminDB) CreateGroup(g *Group) (string, error) {
-	groupColumns, groupValues, err := groupCreateQuery(g)
-	if err != nil {
-		return "", err
-	}
 	if g.Owner == nil {
 		// A group must have an owner
 		return "", ErrInvalidQuery
+	}
+	groupColumns, groupValues, err := groupCreateQuery(g)
+	if err != nil {
+		return "", err
 	}
 
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
 	err = getExecError(result, err)
 
-	// The last element of groupValuse is guaranteed to be the ID string
+	// The last element of groupValues is guaranteed to be the ID string
 	return groupValues[len(groupValues)-1].(string), err
 }
 
 // ReadGroup reads a group by id
 func (db *AdminDB) ReadGroup(id string) (*Group, error) {
 	g := &Group{}
-	err := db.Get(g, "SELECT id, name, fullname, description, icon, owner FROM groups WHERE (id=?) LIMIT 1;", id)
+	err := db.Get(g, "SELECT * FROM groups WHERE (id=?) LIMIT 1;", id)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -197,23 +197,19 @@ func (db *AdminDB) UpdateGroup(g *Group) error {
 
 	groupValues = append(groupValues, g.ID)
 
-	// Disallow changing username if it is a user
-	if g.Name != nil {
-		groupValues = append(groupValues, g.ID)
-		result, err := db.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=? AND id NOT IN (SELECT users.id FROM users WHERE users.id=?);", groupColumns), groupValues...)
-		return getExecError(result, err)
-	}
-
-	result, err := db.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=?;", groupColumns), groupValues...)
+	// Allow updating groups that are not users
+	result, err := db.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=? AND id!=owner;", groupColumns), groupValues...)
 	return getExecError(result, err)
 
 }
 
 // DelGroup deletes the given group. It does not permit deleting users.
 func (db *AdminDB) DelGroup(id string) error {
-	result, err := db.Exec("DELETE FROM groups WHERE id=? AND id NOT IN (SELECT users.id FROM users WHERE users.id=?);", id, id)
+	result, err := db.Exec("DELETE FROM groups WHERE id=? AND id!=owner;", id)
 	return getExecError(result, err)
 }
+
+/*
 
 // SetGroupPermissions sets the given permissions
 func (db *AdminDB) SetGroupPermissions(g *GroupPermissions) error {
@@ -252,3 +248,4 @@ func (db *AdminDB) GetGroupPermissions(target string) (map[string]*GroupPermissi
 	}
 	return result, nil
 }
+*/

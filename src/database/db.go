@@ -11,7 +11,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Group struct {
+// Details is used in groups, users, connections and streams to hold info
+type Details struct {
 	ID          string  `json:"id"`
 	Name        *string `json:"name"`
 	FullName    *string `json:"fullname"`
@@ -20,43 +21,27 @@ type Group struct {
 	Icon        *string `json:"icon"`
 }
 
+// Group holds a group's details
+type Group struct {
+	Details
+
+	// These are global permissions that can be set for groups.
+	// Defaults for all are 0, which mean no special access.
+	// The globals stack, meaning that global stream access is only active for groups/users that you
+	// can already read
+
+	GlobalAddUsers         *bool `json:"global_addusers,omitempty" db:"global_addusers"`
+	GlobalConfig           *bool `json:"global_configaccess" db:"global_configaccess"`
+	GlobalUserAccess       *int  `json:"global_useraccess,omitempty" db:"global_useraccess"`             //1 is read user, 2 is modify user, 3 is delete user
+	GlobalConnectionAccess *int  `json:"global_connectionaccess,omitempty" db:"global_connectionaccess"` //1 is read, 2 is modify, 3 is delete
+	GlobalStreamAccess     *int  `json:"global_streamaccess,omitempty" db:"global_streamaccess"`         // See stream access
+	GlobalGroupAccess      *int  `json:"global_groupaccess,omitempty" db:"global_groupaccess"`
+}
+
+// User holds a user's data
 type User struct {
 	Group
 	Password string `json:"password,omitempty"`
-}
-
-type Device struct {
-	Group
-	APIKey *string `json:"apikey,omitempty"`
-}
-
-type StreamPermissions struct {
-	Target string `json:"target"`
-	Actor  string `json:"actor"`
-
-	StreamRead   bool `json:"stream_read"`
-	StreamWrite  bool `json:"stream_write"`
-	StreamDelete bool `json:"stream_delete"`
-
-	DataRead    bool `json:"data_read"`
-	DataWrite   bool `json:"data_write"`
-	DataRemove  bool `json:"data_remove"`
-	ActionWrite bool `json:"action_write"`
-}
-
-type GroupPermissions struct {
-	StreamPermissions
-
-	GroupRead   bool `json:"group_read"`
-	GroupWrite  bool `json:"group_write"`
-	GroupDelete bool `json:"group_delete"`
-
-	AddStream bool `json:"add_stream"`
-	AddChild  bool `json:"add_child"`
-
-	ListStreams  bool `json:"list_streams"`
-	ListChildren bool `json:"list_children"`
-	ListShared   bool `json:"list_shared"`
 }
 
 // DB represents the database. This interface is implemented in many ways:
@@ -137,45 +122,75 @@ func getExecError(result sql.Result, err error) error {
 	return nil
 }
 
-func groupTable(g *Group) (groupColumns []string, groupValues []interface{}, err error) {
-	groupColumns = make([]string, 0)
-	groupValues = make([]interface{}, 0)
+func extractDetails(d *Details) (detailColumns []string, detailValues []interface{}, err error) {
+	detailColumns = make([]string, 0)
+	detailValues = make([]interface{}, 0)
 
-	if g.Name != nil {
-		if err = ValidName(*g.Name); err != nil {
+	if d.Name != nil {
+		if err = ValidName(*d.Name); err != nil {
 			return
 		}
-		groupColumns = append(groupColumns, "name")
-		groupValues = append(groupValues, *g.Name)
+		detailColumns = append(detailColumns, "name")
+		detailValues = append(detailValues, *d.Name)
 	}
 
-	if g.Description != nil {
-		groupColumns = append(groupColumns, "description")
-		groupValues = append(groupValues, *g.Description)
+	if d.Description != nil {
+		detailColumns = append(detailColumns, "description")
+		detailValues = append(detailValues, *d.Description)
 	}
-	if g.Icon != nil {
-		if err = ValidIcon(*g.Icon); err != nil {
+	if d.Icon != nil {
+		if err = ValidIcon(*d.Icon); err != nil {
 			return
 		}
-		groupColumns = append(groupColumns, "icon")
-		groupValues = append(groupValues, *g.Icon)
+		detailColumns = append(detailColumns, "icon")
+		detailValues = append(detailValues, *d.Icon)
 	}
-	if g.FullName != nil {
-		groupColumns = append(groupColumns, "fullname")
-		groupValues = append(groupValues, *g.FullName)
+	if d.FullName != nil {
+		detailColumns = append(detailColumns, "fullname")
+		detailValues = append(detailValues, *d.FullName)
 	}
-	if g.Owner != nil {
-		if err = ValidName(*g.Owner); err != nil {
+	if d.Owner != nil {
+		if err = ValidName(*d.Owner); err != nil {
 			return
 		}
-		groupColumns = append(groupColumns, "owner")
-		groupValues = append(groupValues, *g.Owner)
+		detailColumns = append(detailColumns, "owner")
+		detailValues = append(detailValues, *d.Owner)
 	}
 	return
 }
 
-func userTable(u *User) (groupColumns []string, groupValues []interface{}, userColumns []string, userValues []interface{}, err error) {
-	groupColumns, groupValues, err = groupTable(&u.Group)
+func extractGroup(g *Group) (groupColumns []string, groupValues []interface{}, err error) {
+	groupColumns, groupValues, err = extractDetails(&g.Details)
+	if err != nil {
+		return
+	}
+
+	if g.GlobalAddUsers != nil {
+		groupColumns = append(groupColumns, "global_addusers")
+		groupValues = append(groupValues, *g.GlobalAddUsers)
+	}
+	if g.GlobalUserAccess != nil {
+		groupColumns = append(groupColumns, "global_useraccess")
+		groupValues = append(groupValues, *g.GlobalUserAccess)
+	}
+	if g.GlobalConnectionAccess != nil {
+		groupColumns = append(groupColumns, "global_connectionaccess")
+		groupValues = append(groupValues, *g.GlobalConnectionAccess)
+	}
+	if g.GlobalStreamAccess != nil {
+		groupColumns = append(groupColumns, "global_streamaccess")
+		groupValues = append(groupValues, *g.GlobalStreamAccess)
+	}
+	if g.GlobalGroupAccess != nil {
+		groupColumns = append(groupColumns, "global_groupaccess")
+		groupValues = append(groupValues, *g.GlobalGroupAccess)
+	}
+
+	return
+}
+
+func extractUser(u *User) (groupColumns []string, groupValues []interface{}, userColumns []string, userValues []interface{}, err error) {
+	groupColumns, groupValues, err = extractGroup(&u.Group)
 	if err != nil {
 		return
 	}
@@ -209,22 +224,31 @@ func userCreateQuery(u *User) (string, []interface{}, string, []interface{}, err
 	if u.Name == nil {
 		return "", nil, "", nil, ErrInvalidName
 	}
-	groupColumns, groupValues, userColumns, userValues, err := userTable(u)
+	if u.Password == "" {
+		return "", nil, "", nil, ErrNoPasswordGiven
+	}
+	if u.Owner != nil {
+		return "", nil, "", nil, ErrInvalidQuery
+	}
+	u.Owner = u.Name
+
+	groupColumns, groupValues, userColumns, userValues, err := extractUser(u)
 	if err != nil {
 		return "", nil, "", nil, err
 	}
 
-	// Now add the name of the user to group values and columns
-	groupColumns = append(groupColumns, "id", "name")
-	groupValues = append(groupValues, *u.Name, *u.Name)
+	// Now add the name of the user as the ID of the details (group), and as the name of the user
+	groupColumns = append(groupColumns, "id")
+	groupValues = append(groupValues, *u.Name)
 
-	userColumns = append(userColumns, "id")
+	userColumns = append(userColumns, "name")
 	userValues = append(userValues, u.Name)
+
 	return strings.Join(groupColumns, ","), groupValues, strings.Join(userColumns, ","), userValues, err
 }
 
 func userUpdateQuery(u *User) (string, []interface{}, string, []interface{}, error) {
-	groupColumns, groupValues, userColumns, userValues, err := userTable(u)
+	groupColumns, groupValues, userColumns, userValues, err := extractUser(u)
 	if err != nil {
 		return "", nil, "", nil, err
 	}
@@ -236,21 +260,21 @@ func groupCreateQuery(g *Group) (string, []interface{}, error) {
 	if g.Name == nil {
 		return "", nil, ErrInvalidName
 	}
-	groupColumns, groupValues, err := groupTable(g)
+	groupColumns, groupValues, err := extractGroup(g)
 	if err != nil {
 		return "", nil, err
 	}
 
-	// Since we are creating the group, we also set up the name and id of the group
+	// Since we are creating the details, we also set up the id of the group
 	// We guarantee that ID is last element
-	groupColumns = append(groupColumns, "name", "id")
-	groupValues = append(groupValues, g.Name, uuid.New().String())
+	groupColumns = append(groupColumns, "id")
+	groupValues = append(groupValues, uuid.New().String())
 
 	return strings.Join(groupColumns, ","), groupValues, nil
 
 }
 
 func groupUpdateQuery(g *Group) (string, []interface{}, error) {
-	groupColumns, groupValues, err := groupTable(g)
+	groupColumns, groupValues, err := extractGroup(g)
 	return strings.Join(groupColumns, "=?,") + "=?", groupValues, err
 }

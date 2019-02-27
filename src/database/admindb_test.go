@@ -13,7 +13,7 @@ func newAssets(t *testing.T) (*assets.Assets, func()) {
 	a, err := assets.Open("", nil)
 	require.NoError(t, err)
 	a.FolderPath = "./"
-	sqla := "sqlite3://test_db/cdb.db?_journal=WAL"
+	sqla := "sqlite3://test_db/cdb.db?_journal=WAL&_fk=1"
 	a.Config.SQL = &sqla
 	return a, func() {
 		os.RemoveAll("./test_db")
@@ -42,7 +42,9 @@ func TestAdminUser(t *testing.T) {
 	name := "testy"
 	require.NoError(t, db.CreateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "testpass",
 	}))
@@ -50,7 +52,9 @@ func TestAdminUser(t *testing.T) {
 	name = "test2"
 	require.EqualError(t, db.CreateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "",
 	}), ErrNoPasswordGiven.Error())
@@ -58,7 +62,9 @@ func TestAdminUser(t *testing.T) {
 	name = "tee hee"
 	require.Error(t, db.CreateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "mypass",
 	}), "Bad name must fail validation")
@@ -66,7 +72,9 @@ func TestAdminUser(t *testing.T) {
 	name = "testy"
 	require.Error(t, db.CreateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "mypass",
 	}), "Should fail to add existing user")
@@ -90,13 +98,17 @@ func TestAdminUser(t *testing.T) {
 	name = "testy"
 	require.Error(t, db.UpdateUser(&User{
 		Group: Group{
-			ID: name,
+			Details: Details{
+				ID: name,
+			},
 		},
 	}), "Updating nothing should give an error")
 
 	require.NoError(t, db.UpdateUser(&User{
 		Group: Group{
-			ID: name,
+			Details: Details{
+				ID: name,
+			},
 		},
 		Password: "mypass2",
 	}), "Update password should succeed")
@@ -110,7 +122,9 @@ func TestAdminUser(t *testing.T) {
 	name = "testyeee"
 	require.Error(t, db.UpdateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "mypass2",
 	}), "Update should fail on nonexistent user")
@@ -131,7 +145,9 @@ func TestAdminGroup(t *testing.T) {
 	name := "testy"
 	require.NoError(t, db.CreateUser(&User{
 		Group: Group{
-			Name: &name,
+			Details: Details{
+				Name: &name,
+			},
 		},
 		Password: "testpass",
 	}))
@@ -142,9 +158,11 @@ func TestAdminGroup(t *testing.T) {
 
 	gdesc := "This is a testy group"
 	gid, err := db.CreateGroup(&Group{
-		Name:        &name,
-		Description: &gdesc,
-		Owner:       &name,
+		Details: Details{
+			Name:        &name,
+			Description: &gdesc,
+			Owner:       &name,
+		},
 	})
 	require.NoError(t, err)
 
@@ -158,8 +176,10 @@ func TestAdminGroup(t *testing.T) {
 
 	owner := "derp"
 	err = db.UpdateGroup(&Group{
-		ID:    gid,
-		Owner: &owner,
+		Details: Details{
+			ID:    gid,
+			Owner: &owner,
+		},
 	})
 	require.Error(t, err, "Group owner must be valid")
 

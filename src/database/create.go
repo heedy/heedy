@@ -15,237 +15,254 @@ import (
 )
 
 var schema = `
--- Groups are the underlying container for streams and access control
+
+-- A user is a group with an additional password. The id is a group id, we will
+-- add the foreign key constraint once the groups table is created.
+CREATE TABLE users (
+	name VARCHAR(36) PRIMARY KEY NOT NULL,
+	password VARCHAR NOT NULL
+);
+
+
+-- Groups are the underlying container for access control and sharing
 CREATE TABLE groups (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
 	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
 	icon VARCHAR DEFAULT '',
-	owner VARCHAR(36),
+	owner VARCHAR(36) NOT NULL,
+
+
+	-- Groups are used as ConnectorDB's permissions vehicle,
+	-- so an admin can add global permissions to group members
+	global_addusers BOOLEAN DEFAULT FALSE,
+	global_useraccess INTEGER DEFAULT 0, -- 1 is read user, 2 is modify user, 3 is delete user
+	global_connectionaccess INTEGER DEFAULT 0, -- 1 is read, 2 is modify, 3 is delete
+	global_streamaccess INTEGER DEFAULT 0, -- 1 is read, 2 is insert, 3 is remove data, 4 is modify, 5 is delete
+	global_groupaccess INTEGER DEFAULT 0,
+	global_configaccess BOOLEAN DEFAULT FALSE, -- Whether the group has access to database configuration.
 
 	CONSTRAINT groupowner
 		FOREIGN KEY(owner) 
-		REFERENCES groups(id)
+		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
 
-CREATE INDEX groupowners ON groups (owner,name);
 
--- A user is a group with an additional password
-CREATE TABLE users (
-	id VARCHAR(36) PRIMARY KEY NOT NULL,
-	password VARCHAR NOT NULL,
-
-	CONSTRAINT usergroup
-		FOREIGN KEY (id) 
-		REFERENCES groups(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-		
-);
-
--- An apikey is a group with an API key.
--- We explictly link groups with API keys because that is the main use:
--- to allow something to add data to streams in its own group.
--- We also permit api keys without a linked group to behave as a raw accessor,
--- without ownership of anything
-CREATE TABLE apikeys (
-	apikey VARCHAR UNIQUE PRIMARY KEY NOT NULL,
-	groupid VARCHAR(36),
+-- We explictly exploit deferred constraints to allow the user's name to be 
+-- constrained to a group id. When adding a user, we first add the user,
+-- and then the group, which defers the user foreign key check to commit.
+--
+-- EDIT: Holy shit sqlite doesn't support ALTER TABLE ADD CONSTRAINT! That means we just have
+-- to be very careful to explicitly manipulate the database in the correct way so that
+-- the user and group are modified/deleted correctly
+--
+-- ALTER TABLE users ADD CONSTRAINT usergroup
+--	FOREIGN KEY (name) 
+--	REFERENCES groups(id)
+--	ON UPDATE CASCADE
+--	ON DELETE CASCADE
+--	DEFERRABLE INITIALLY DEFERRED;
 	
-	
-	CONSTRAINT keygroup
-		FOREIGN KEY (groupid) 
-		REFERENCES groups(id)
+
+CREATE TABLE connections (
+	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
+	name VARCHAR NOT NULL,
+	fullname VARCHAR DEFAULT '',
+	description VARCHAR DEFAULT '',
+	icon VARCHAR DEFAULT '',
+	owner VARACHAR(36) NOT NULL,
+
+	-- Can (but does not have to) have an API key
+	apikey VARCHAR DEFAULT NULL,
+
+	self_access INTEGER DEFAULT 1, -- 0 is has no ability to create streams, 1 is allowed to handle itself
+	access INTEGER DEFAULT 0, -- 1 is read user, 2 is ...
+
+	CONSTRAINT connectionowner
+		FOREIGN KEY(owner) 
+		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
-CREATE INDEX apikeyidx ON apikeys (apikey);
+
+
 
 CREATE TABLE streams (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
-	nickname VARCHAR DEFAULT '',
+	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
 	icon VARCHAR DEFAULT '',
-	owner VARCHAR(36),
+	source VARACHAR(36) DEFAULT NULL,
+	owner VARCHAR(36) NOT NULL,
 
-	schema VARCHAR NOT NULL,
-	ephemeral BOOLEAN DEFAULT FALSE, -- an ephemeral stream does not save data, it just sends it through messaging
-	action BOOLEAN DEFAULT FALSE, -- whether the stream permits action (intervention). 0.3 called these downlinks.
-	external VARCHAR,	-- If NULL, not virtual. If not null, gives the handler url for the stream
+	-- json schema
+	schema VARCHAR DEFAULT '{}',
 
-	UNIQUE(owner,name),
-	CONSTRAINT groupowner
+	-- Set to '' when the stream is internal, and gives the rest url/plugin uri for querying if external
+	external VARCHAR DEFAULT '',
+
+	actor BOOLEAN DEFAULT FALSE, -- Whether the stream is also an actor, ie, it can take action, meaning that it performs interventions
+
+	-- What access is given to the user and others who have access to the stream
+	access INTEGER DEFAULT 2, -- 0 hidden, 1 read, 2 insert actions, 3 insert, 4 remove data, 5 modify, 6 delete
+
+	CONSTRAINT streamconnection
+		FOREIGN KEY(source) 
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+
+	CONSTRAINT streamowner
 		FOREIGN KEY(owner) 
+		REFERENCES users(name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+------------------------------------------------------------------------------------
+-- GROUP ACCESS
+------------------------------------------------------------------------------------
+
+
+CREATE TABLE group_members (
+	groupid VARCHAR(36),
+	id VARCHAR(36),
+
+	access INTEGER DEFAULT 2, -- 1 is readonly, 2 gives stream insert access, 3 allows adding streams/sources, 4 allows removing streams/sources
+
+	UNIQUE(groupid,id),
+	PRIMARY KEY (groupid,id),
+
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES users(name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT groupid
+		FOREIGN KEY(groupid)
 		REFERENCES groups(id)
 		ON UPDATE CASCADE
-		ON DELETE CASCADE	
+		ON DELETE CASCADE
 );
 
-CREATE INDEX streamIndex ON streams (owner,name);
+CREATE TABLE group_streams (
+	groupid VARCHAR(36),
+	id VARCHAR(36),
 
+	access INTEGER DEFAULT 1, -- Same as stream access
 
-----------------------------------------------------------------------
--- Permissions
-----------------------------------------------------------------------
+	UNIQUE(id,groupid),
+	PRIMARY KEY (id,groupid),
 
--- These are all identical tables, giving (target,actor) pairs specifying
--- if the given target can have the action done to it by the actor group
-
-
-CREATE TABLE stream_permissions (
-	target VARCHAR(36) NOT NULL,
-	actor VARCHAR(36) NOT NULL,
-
-	streamread BOOLEAN DEFAULT FALSE,
-	streamwrite BOOLEAN DEFAULT FALSE,
-	streamdelete BOOLEAN DEFAULT FALSE,
-
-	dataread BOOLEAN DEFAULT FALSE,
-	datawrite BOOLEAN DEFAULT FALSE,
-	dataremove BOOLEAN DEFAULT FALSE,
-	actionwrite BOOLEAN DEFAULT FALSE, -- actions are append-only
-
-	UNIQUE(target,actor),
-	PRIMARY KEY (target,actor),
-
-	CONSTRAINT targetisstream
-		FOREIGN KEY(target) 
-		REFERENCES streams(id) 
-		ON DELETE CASCADE
-		ON UPDATE CASCADE,
-	CONSTRAINT actorisgroup
-		FOREIGN KEY(actor) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES streams(id)
 		ON UPDATE CASCADE
-);
-
-CREATE TABLE group_permissions (
-	target VARCHAR(36) NOT NULL,
-	actor VARCHAR(36) NOT NULL,
-
-	-- group actions prefixed with g, so we can use same column names for streams
-	groupread BOOLEAN DEFAULT FALSE,
-	groupwrite BOOLEAN DEFAULT FALSE,
-	groupdelete BOOLEAN DEFAULT FALSE,
-
-	addstream BOOLEAN DEFAULT FALSE,
-	addchild BOOLEAN DEFAULT FALSE,
-
-	liststreams BOOLEAN DEFAULT FALSE,
-	listchildren BOOLEAN DEFAULT FALSE,
-	listshared BOOLEAN DEFAULT FALSE, 	
-
-	-- child & shared stream permissions
-	-- shared streams will intersect with the streams' actual permissions
-
-	streamread BOOLEAN DEFAULT FALSE,
-	streamwrite BOOLEAN DEFAULT FALSE,
-	streamdelete BOOLEAN DEFAULT FALSE,
-
-	dataread BOOLEAN DEFAULT FALSE,
-	datawrite BOOLEAN DEFAULT FALSE,
-	dataremove BOOLEAN DEFAULT FALSE,
-	actionwrite BOOLEAN DEFAULT FALSE, -- actions are append-only
-
-	UNIQUE(target,actor),
-	PRIMARY KEY (target,actor),
-
-	CONSTRAINT targetisgroup
-		FOREIGN KEY(target) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
-		ON UPDATE CASCADE,
-	CONSTRAINT actorisgroup
-		FOREIGN KEY(actor) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT groupid
+		FOREIGN KEY(groupid)
+		REFERENCES groups(id)
 		ON UPDATE CASCADE
+		ON DELETE CASCADE
 );
 
+CREATE TABLE group_connections (
+	groupid VARCHAR(36),
+	id VARCHAR(36),
 
-----------------------------------------------------------------------
--- APIKey Permissions
-----------------------------------------------------------------------
+	access INTEGER DEFAULT 1, -- Same as stream access
 
--- A key belongs to a user - by default it doesn't have any permissions,
--- but it can be given permissions that are intersected with the user's permissions.
--- This is necessary because things can be shared with a user that the user can't add permissions for.
--- These tables allow the user to give access to anything it can read to a key
+	UNIQUE(id,groupid),
+	PRIMARY KEY (id,groupid),
 
-
-CREATE TABLE apikey_stream_permissions (
-	target VARCHAR(36) NOT NULL,
-	actor VARCHAR(36) NOT NULL,
-
-	read BOOLEAN DEFAULT FALSE,
-	write BOOLEAN DEFAULT FALSE,
-	remove BOOLEAN DEFAULT FALSE,
-
-	rdata BOOLEAN DEFAULT FALSE,
-	wdata BOOLEAN DEFAULT FALSE,
-	remdata BOOLEAN DEFAULT FALSE,
-	waction BOOLEAN DEFAULT FALSE, -- actions are append-only
-
-	UNIQUE(target,actor),
-	PRIMARY KEY (target,actor),
-
-	CONSTRAINT targetisstream
-		FOREIGN KEY(target) 
-		REFERENCES streams(id) 
-		ON DELETE CASCADE
-		ON UPDATE CASCADE,
-	CONSTRAINT actorisgroup
-		FOREIGN KEY(actor) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES connections(id)
 		ON UPDATE CASCADE
-);
-
-CREATE TABLE apikey_group_permissions (
-	target VARCHAR(36) NOT NULL,
-	actor VARCHAR(36) NOT NULL,
-
-	-- group actions prefixed with g, so we can use same column names for streams
-	gread BOOLEAN DEFAULT FALSE,
-	gwrite BOOLEAN DEFAULT FALSE,
-	gupdate BOOLEAN DEFAULT FALSE,
-
-	listchildren BOOLEAN DEFAULT FALSE, -- can list the direct children of the group
-	listall BOOLEAN DEFAULT FALSE, 		-- can list streams shared with the group
-	addstream BOOLEAN DEFAULT FALSE,
-
-	-- child stream permissions
-
-	read BOOLEAN DEFAULT FALSE,
-	write BOOLEAN DEFAULT FALSE,
-	remove BOOLEAN DEFAULT FALSE,
-
-	rdata BOOLEAN DEFAULT FALSE,
-	wdata BOOLEAN DEFAULT FALSE,
-	remdata BOOLEAN DEFAULT FALSE,
-	waction BOOLEAN DEFAULT FALSE,
-
-	UNIQUE(target,actor),
-	PRIMARY KEY (target,actor),
-
-	CONSTRAINT targetisgroup
-		FOREIGN KEY(target) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
-		ON UPDATE CASCADE,
-	CONSTRAINT actorisgroup
-		FOREIGN KEY(actor) 
-		REFERENCES groups(id) 
-		ON DELETE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT groupid
+		FOREIGN KEY(groupid)
+		REFERENCES groups(id)
 		ON UPDATE CASCADE
+		ON DELETE CASCADE
 );
 
+------------------------------------------------------------------------------------
+-- CONNECTION ACCESS
+------------------------------------------------------------------------------------
 
+CREATE TABLE connection_streams (
+	connection VARCHAR(36),
+	id VARCHAR(36),
+
+	access INTEGER DEFAULT 1, -- Same as stream access
+
+	UNIQUE(connection,id),
+	PRIMARY KEY (connection,id),
+
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES streams(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT connectionid
+		FOREIGN KEY(connection)
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+CREATE TABLE connection_connections (
+	connection VARCHAR(36),
+	id VARCHAR(36),
+
+	access INTEGER DEFAULT 1, -- Same as stream access
+
+	UNIQUE(connection,id),
+	PRIMARY KEY (connection,id),
+
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT connectionid
+		FOREIGN KEY(connection)
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+CREATE TABLE connection_groups (
+	connection VARCHAR(36),
+	id VARCHAR(36),
+
+	access INTEGER DEFAULT 1, -- Same as stream access
+
+	UNIQUE(connection,id),
+	PRIMARY KEY (connection,id),
+
+	CONSTRAINT idid
+		FOREIGN KEY(id)
+		REFERENCES groups(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	
+	CONSTRAINT connectionid
+		FOREIGN KEY(connection)
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
 
 `
 
