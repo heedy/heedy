@@ -76,7 +76,7 @@ CREATE TABLE connections (
 	owner VARACHAR(36) NOT NULL,
 
 	-- Can (but does not have to) have an API key
-	apikey VARCHAR DEFAULT NULL,
+	apikey VARCHAR UNIQUE DEFAULT NULL,
 
 	self_access INTEGER DEFAULT 1, -- 0 is has no ability to create streams, 1 is allowed to handle itself
 	access INTEGER DEFAULT 0, -- 1 is read user, 2 is ...
@@ -87,7 +87,10 @@ CREATE TABLE connections (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
-
+-- We will want to list connections by owner 
+CREATE INDEX connectionowner ON connections(owner,name);
+-- A lot of querying will happen by API key
+CREATE INDEX connectionapikey ON connections(apikey);
 
 
 CREATE TABLE streams (
@@ -96,7 +99,7 @@ CREATE TABLE streams (
 	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
 	icon VARCHAR DEFAULT '',
-	source VARACHAR(36) DEFAULT NULL,
+	connection VARACHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
 	-- json schema
@@ -111,7 +114,7 @@ CREATE TABLE streams (
 	access INTEGER DEFAULT 2, -- 0 hidden, 1 read, 2 insert actions, 3 insert, 4 remove data, 5 modify, 6 delete
 
 	CONSTRAINT streamconnection
-		FOREIGN KEY(source) 
+		FOREIGN KEY(connection) 
 		REFERENCES connections(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,

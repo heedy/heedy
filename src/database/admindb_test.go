@@ -12,11 +12,12 @@ import (
 func newAssets(t *testing.T) (*assets.Assets, func()) {
 	a, err := assets.Open("", nil)
 	require.NoError(t, err)
+	os.RemoveAll("./test_db")
 	a.FolderPath = "./"
 	sqla := "sqlite3://test_db/cdb.db?_journal=WAL&_fk=1"
 	a.Config.SQL = &sqla
 	return a, func() {
-		os.RemoveAll("./test_db")
+		//os.RemoveAll("./test_db")
 	}
 }
 
@@ -119,19 +120,34 @@ func TestAdminUser(t *testing.T) {
 	_, _, err = db.AuthUser("testy", "mypass2")
 	require.NoError(t, err, "This should be the new password...")
 
-	name = "testyeee"
+	name2 := "testyeee"
 	require.Error(t, db.UpdateUser(&User{
 		Group: Group{
 			Details: Details{
-				Name: &name,
+				ID: name2,
 			},
 		},
 		Password: "mypass2",
 	}), "Update should fail on nonexistent user")
 
-	require.NoError(t, db.DelUser("testy"))
+	require.NoError(t, db.UpdateUser(&User{
+		Group: Group{
+			Details: Details{
+				ID:   name,
+				Name: &name2,
+			},
+		},
+	}), "User name should update")
 
-	require.Error(t, db.DelUser("testy"), "Deleting nonexistent user should fail")
+	_, err = db.ReadUser(name)
+	require.Error(t, err)
+	u, err = db.ReadUser(name2)
+	require.NoError(t, err)
+	require.Equal(t, *u.Name, name2)
+
+	require.NoError(t, db.DelUser(name2))
+
+	require.Error(t, db.DelUser(name2), "Deleting nonexistent user should fail")
 
 	_, _, err = db.AuthUser("testy", "mypass2")
 	require.Error(t, err, "User should no longer exist")
@@ -194,6 +210,99 @@ func TestAdminGroup(t *testing.T) {
 
 }
 
-func TestAdminGroupPermissions(t *testing.T) {
+func TestAdminConnection(t *testing.T) {
+	db, cleanup := newDB(t)
+	defer cleanup()
 
+	name := "testy"
+	require.NoError(t, db.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	badname := "derp"
+	conn, apikey, err := db.CreateConnection(&Connection{
+		Details: Details{
+			Name:  &name,
+			Owner: &name,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, apikey, "")
+
+	_, err = db.GetConnectionByKey("")
+	require.Error(t, err)
+
+	c, err := db.ReadConnection(conn)
+	require.NoError(t, err)
+
+	require.Equal(t, *c.Name, name)
+
+	c = &Connection{
+		Details: Details{
+			ID: conn,
+		},
+		APIKey: &badname, // can be anything
+	}
+	require.NoError(t, db.UpdateConnection(c))
+	require.NotEqual(t, badname, *c.APIKey, "The API key should have been changed during update")
+
+	c2, err := db.GetConnectionByKey(*c.APIKey)
+	require.NoError(t, err)
+	require.Equal(t, c2.ID, c.ID)
+
+	require.NoError(t, db.DelConnection(c.ID))
+
+	_, err = db.ReadConnection(conn)
+	require.Error(t, err)
+}
+
+func TestAdminStream(t *testing.T) {
+	db, cleanup := newDB(t)
+	defer cleanup()
+
+	name := "testy"
+	require.NoError(t, db.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	badname := "derp"
+	conn, _, err := db.CreateConnection(&Connection{
+		Details: Details{
+			Name:  &name,
+			Owner: &name,
+		},
+	})
+	require.NoError(t, err)
+	sid, err := db.CreateStream(&Stream{
+		Details: Details{
+			Owner: &name,
+			Name:  &name,
+		},
+		Connection: &conn,
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       sid,
+			FullName: &badname,
+		},
+	}))
+
+	s, err := db.ReadStream(sid)
+	require.NoError(t, err)
+	require.Equal(t, *s.FullName, badname)
+
+	require.NoError(t, db.DelStream(sid))
+	require.Error(t, db.DelStream(sid))
 }

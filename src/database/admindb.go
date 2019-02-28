@@ -80,7 +80,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 		return err
 	}
 	if u.Owner != nil {
-		return ErrInvalidQuery
+		u.Owner = nil
 	}
 	groupColumns, groupValues, userColumns, userValues, err := userUpdateQuery(u)
 	if err != nil {
@@ -95,14 +95,15 @@ func (db *AdminDB) UpdateUser(u *User) error {
 		// Unfortunately, sqlite doesn't support alter table foreign keys, so we need to manually update the user name,
 		// rather than cascading id change to user name
 		userValues = append(userValues, *u.Name)
-		if len(userValues) > 0 {
-			userColumns = userColumns + ","
+		if len(userValues) > 1 {
+			userColumns = userColumns + ",name=?"
+		} else {
+			userColumns = "name=?"
 		}
-		userColumns = userColumns + "name=?"
 	}
 
-	groupValues = append(groupValues, u.ID)
 	userValues = append(userValues, u.ID)
+	groupValues = append(groupValues, u.ID)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -122,7 +123,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 
 	if len(groupValues) > 1 { // we added name, so check if >1
 		// This uses a join to make sure that the group is in fact an existing user
-		result, err := tx.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=? and id=owner;", groupColumns), groupValues...)
+		result, err := tx.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=?;", groupColumns), groupValues...)
 		err = getExecError(result, err)
 		if err != nil {
 			tx.Rollback()
@@ -160,10 +161,6 @@ func (db *AdminDB) SearchUsers(query string, limit int) ([]*User, error) {
 
 // CreateGroup generates a group with the given owner groupID
 func (db *AdminDB) CreateGroup(g *Group) (string, error) {
-	if g.Owner == nil {
-		// A group must have an owner
-		return "", ErrInvalidQuery
-	}
 	groupColumns, groupValues, err := groupCreateQuery(g)
 	if err != nil {
 		return "", err
@@ -206,6 +203,112 @@ func (db *AdminDB) UpdateGroup(g *Group) error {
 // DelGroup deletes the given group. It does not permit deleting users.
 func (db *AdminDB) DelGroup(id string) error {
 	result, err := db.Exec("DELETE FROM groups WHERE id=? AND id!=owner;", id)
+	return getExecError(result, err)
+}
+
+// CreateConnection creates a new connection. Nuff said.
+func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
+	cColumns, cValues, err := connectionCreateQuery(c)
+	if err != nil {
+		return "", "", err
+	}
+
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO connections (%s) VALUES (%s);", cColumns, qQ(len(cValues))), cValues...)
+	err = getExecError(result, err)
+
+	// id is last, apikey is second to last
+	return cValues[len(cValues)-1].(string), cValues[len(cValues)-2].(string), err
+
+}
+
+// ReadConnection gets the connection associated with the given API key
+func (db *AdminDB) ReadConnection(id string) (*Connection, error) {
+	c := &Connection{}
+	err := db.Get(c, "SELECT * FROM connections WHERE (id=?) LIMIT 1;", id)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return c, err
+}
+
+// GetConnectionByKey reads the connection corresponding to the given api key
+func (db *AdminDB) GetConnectionByKey(apikey string) (*Connection, error) {
+	if apikey == "" {
+		return nil, ErrNotFound
+	}
+	c := &Connection{}
+	err := db.Get(c, "SELECT * FROM connections WHERE (apikey=?) LIMIT 1;", apikey)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return c, err
+}
+
+// UpdateConnection updates the given connection (by ID). Note that the inserted values will be written directly to
+// the object.
+func (db *AdminDB) UpdateConnection(c *Connection) error {
+	cColumns, cValues, err := connectionUpdateQuery(c)
+	if err != nil {
+		return err
+	}
+
+	cValues = append(cValues, c.ID)
+
+	// Allow updating groups that are not users
+	result, err := db.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE id=?;", cColumns), cValues...)
+	return getExecError(result, err)
+
+}
+
+// DelConnection deletes the given connection.
+func (db *AdminDB) DelConnection(id string) error {
+	result, err := db.Exec("DELETE FROM connections WHERE id=?;", id)
+	return getExecError(result, err)
+}
+
+// CreateStream creates the stream
+func (db *AdminDB) CreateStream(s *Stream) (string, error) {
+	sColumns, sValues, err := streamCreateQuery(s)
+	if err != nil {
+		return "", err
+	}
+
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO streams (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
+	err = getExecError(result, err)
+
+	// id is last,
+	return sValues[len(sValues)-1].(string), err
+
+}
+
+// ReadStream gets the stream by ID
+func (db *AdminDB) ReadStream(id string) (*Stream, error) {
+	c := &Stream{}
+	err := db.Get(c, "SELECT * FROM streams WHERE (id=?) LIMIT 1;", id)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return c, err
+}
+
+// UpdateStream updates the given stream by ID
+func (db *AdminDB) UpdateStream(s *Stream) error {
+	sColumns, sValues, err := streamUpdateQuery(s)
+	if err != nil {
+		return err
+	}
+
+	sValues = append(sValues, s.ID)
+
+	// Allow updating groups that are not users
+	result, err := db.Exec(fmt.Sprintf("UPDATE streams SET %s WHERE id=?;", sColumns), sValues...)
+	return getExecError(result, err)
+
+}
+
+// DelStream deletes the given stream
+func (db *AdminDB) DelStream(id string) error {
+	result, err := db.Exec("DELETE FROM streams WHERE id=?;", id)
 	return getExecError(result, err)
 }
 

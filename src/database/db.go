@@ -44,6 +44,27 @@ type User struct {
 	Password string `json:"password,omitempty"`
 }
 
+type Connection struct {
+	Details
+
+	APIKey     *string `json:"apikey,omitempty"`
+	SelfAccess *int    `json:"self_access,omitempty" db:"self_access"`
+	Access     *int    `json:"access,omitempty"`
+
+	Settings      *string `json:"settings,omitempty"`
+	SettingSchema *string `json:"setting_schema,omitempty"`
+}
+
+type Stream struct {
+	Details
+
+	Connection *string `json:"connection,omitempty"`
+	Schema     *string `json:"schema,omitempty"`
+	External   *string `json:"external,omitempty"`
+	Actor      *bool   `json:"actor,omitempty"`
+	Access     *int    `json:"access,omitempty"`
+}
+
 // DB represents the database. This interface is implemented in many ways:
 //	once for admin
 //	once for users
@@ -214,6 +235,78 @@ func extractUser(u *User) (groupColumns []string, groupValues []interface{}, use
 	return
 }
 
+func extractConnection(c *Connection) (cColumns []string, cValues []interface{}, err error) {
+	cColumns, cValues, err = extractDetails(&c.Details)
+	if err != nil {
+		return
+	}
+
+	if c.SelfAccess != nil {
+		cColumns = append(cColumns, "self_access")
+		cValues = append(cValues, *c.SelfAccess)
+	}
+	if c.Access != nil {
+		cColumns = append(cColumns, "access")
+		cValues = append(cValues, *c.Access)
+	}
+	if c.Settings != nil {
+		cColumns = append(cColumns, "settings")
+		cValues = append(cValues, *c.Settings)
+	}
+	if c.SettingSchema != nil {
+		cColumns = append(cColumns, "setting_schema")
+		cValues = append(cValues, *c.SettingSchema)
+	}
+
+	// Guaranteed to be last element
+	if c.APIKey != nil {
+		cColumns = append(cColumns, "apikey")
+		if *c.APIKey == "" {
+			// This means deleting the API key, so set it to empty
+			cValues = append(cValues, "")
+		} else {
+			// Anything else we replace with a new API key
+			apikey := uuid.New().String()
+			c.APIKey = &apikey // Write the API key back to the connection object
+			cValues = append(cValues, apikey)
+		}
+
+	}
+
+	return
+}
+
+func extractStream(s *Stream) (sColumns []string, sValues []interface{}, err error) {
+	sColumns, sValues, err = extractDetails(&s.Details)
+	if err != nil {
+		return
+	}
+
+	if s.Connection != nil {
+		sColumns = append(sColumns, "connection")
+		sValues = append(sValues, *s.Connection)
+	}
+	if s.Schema != nil {
+		sColumns = append(sColumns, "schema")
+		sValues = append(sValues, *s.Schema)
+	}
+	if s.External != nil {
+		sColumns = append(sColumns, "external")
+		sValues = append(sValues, *s.External)
+	}
+	if s.Actor != nil {
+		sColumns = append(sColumns, "actor")
+		sValues = append(sValues, *s.Actor)
+	}
+
+	if s.Access != nil {
+		sColumns = append(sColumns, "access")
+		sValues = append(sValues, *s.Access)
+	}
+
+	return
+}
+
 // Insert the right amount of question marks for the given query
 func qQ(size int) string {
 	s := strings.Repeat("?,", size)
@@ -243,6 +336,7 @@ func userCreateQuery(u *User) (string, []interface{}, string, []interface{}, err
 
 	userColumns = append(userColumns, "name")
 	userValues = append(userValues, u.Name)
+	u.ID = *u.Name
 
 	return strings.Join(groupColumns, ","), groupValues, strings.Join(userColumns, ","), userValues, err
 }
@@ -260,6 +354,10 @@ func groupCreateQuery(g *Group) (string, []interface{}, error) {
 	if g.Name == nil {
 		return "", nil, ErrInvalidName
 	}
+	if g.Owner == nil {
+		// A group must have an owner
+		return "", nil, ErrInvalidQuery
+	}
 	groupColumns, groupValues, err := extractGroup(g)
 	if err != nil {
 		return "", nil, err
@@ -268,7 +366,9 @@ func groupCreateQuery(g *Group) (string, []interface{}, error) {
 	// Since we are creating the details, we also set up the id of the group
 	// We guarantee that ID is last element
 	groupColumns = append(groupColumns, "id")
-	groupValues = append(groupValues, uuid.New().String())
+	gid := uuid.New().String()
+	groupValues = append(groupValues, gid)
+	g.ID = gid // Set the object's ID
 
 	return strings.Join(groupColumns, ","), groupValues, nil
 
@@ -277,4 +377,63 @@ func groupCreateQuery(g *Group) (string, []interface{}, error) {
 func groupUpdateQuery(g *Group) (string, []interface{}, error) {
 	groupColumns, groupValues, err := extractGroup(g)
 	return strings.Join(groupColumns, "=?,") + "=?", groupValues, err
+}
+
+func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
+	if c.Name == nil {
+		return "", nil, ErrInvalidName
+	}
+	if c.Owner == nil {
+		return "", nil, ErrInvalidQuery
+	}
+	if c.APIKey == nil {
+		// We want the API key to always be set on create - and set to null if none specified
+		// This is because we use the cValues array in returns, so we want the last 2 elements
+		// to be the API key, and id.
+		es := ""
+		c.APIKey = &es
+	}
+	cColumns, cValues, err := extractConnection(c)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// We create an ID for the connection. Guaranteed to be last element
+	cColumns = append(cColumns, "id")
+	cid := uuid.New().String()
+	cValues = append(cValues, cid)
+	c.ID = cid
+
+	return strings.Join(cColumns, ","), cValues, err
+}
+
+func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
+	cColumns, cValues, err := extractConnection(c)
+	return strings.Join(cColumns, "=?") + "=?", cValues, err
+}
+
+func streamCreateQuery(s *Stream) (string, []interface{}, error) {
+	if s.Name == nil {
+		return "", nil, ErrInvalidName
+	}
+	if s.Owner == nil {
+		return "", nil, ErrInvalidQuery
+	}
+	sColumns, sValues, err := extractStream(s)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// We create an ID for the connection. Guaranteed to be last element
+	sColumns = append(sColumns, "id")
+	sid := uuid.New().String()
+	sValues = append(sValues, sid)
+	s.ID = sid
+
+	return strings.Join(sColumns, ","), sValues, err
+}
+
+func streamUpdateQuery(s *Stream) (string, []interface{}, error) {
+	sColumns, sValues, err := extractStream(s)
+	return strings.Join(sColumns, "=?") + "=?", sValues, err
 }
