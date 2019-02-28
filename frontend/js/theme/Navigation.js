@@ -1,0 +1,133 @@
+/*
+  Navigation is included in Theme.js. It represents the nav drawer. It renders the main app menu,
+  which is embedded in the app state. On click, it navigates to the path given in the specific navigation
+  element.
+
+  If you want to change the menu contents itself, please go to ../reducers/site.js, where the navigation
+  is set up in json
+*/
+
+import React from "react";
+import PropTypes from "prop-types";
+import { connect } from "react-redux";
+
+import { spacing } from "material-ui/styles";
+import Drawer from "material-ui/Drawer";
+import { List, ListItem, makeSelectable } from "material-ui/List";
+import FontIcon from "material-ui/FontIcon";
+
+// This is directly from https://github.com/callemall/material-ui/blob/master/docs/src/app/components/AppNavDrawer.js
+const SelectableList = makeSelectable(List);
+
+import { go } from "../actions";
+
+// styles are all of the colors and sizes for the underlying website theme
+const styles = {
+  // logo requires a manual div to be displayed correctly, so we set up all of the
+  // coloring and box shadow to imitate the toolbar
+  logo: {
+    lineHeight: `${spacing.desktopKeylineIncrement}px`,
+    background: "#009e42",
+    paddingLeft: spacing.desktopGutter,
+    marginBottom: 8,
+    boxShadow: "0px 2px 5px #888888"
+  },
+
+  // These styles pertain to the main navigation menu
+  menuInnerDivStyle: {
+    paddingLeft: "50px",
+    paddingTop: "0px",
+    paddingBottom: "0px"
+  },
+  menuStyle: {
+    paddingTop: "5px"
+  },
+
+  menuSubText: {
+    fontSize: ".8em",
+    color: "grey",
+    lineHeight: ".8em",
+    paddingBottom: "15px"
+  },
+  menuMainText: {
+    lineHeight: "2em"
+  }
+};
+
+class Navigation extends React.Component {
+  static propTypes = {
+    docked: PropTypes.bool.isRequired,
+    open: PropTypes.bool.isRequired,
+    links: PropTypes.arrayOf(PropTypes.object),
+    onClick: PropTypes.func.isRequired,
+    onRequestChange: PropTypes.func,
+    location: PropTypes.object.isRequired
+  };
+
+  // The navigation does not close itself when in mobile mode when clicked
+  // we therefore manually close it on click
+  onClick(e, v) {
+    this.props.onClick(e, v);
+    if (!this.props.docked) {
+      this.props.onRequestChange(false);
+    }
+  }
+
+  render() {
+    let curloc = this.props.location.pathname + this.props.location.hash;
+    let selected = curloc.substring(1, curloc.length);
+    return (
+      <Drawer
+        docked={this.props.docked}
+        open={this.props.docked ? true : this.props.open}
+        onRequestChange={this.props.onRequestChange}
+        style={{
+          zIndex: 9900
+        }}
+      >
+        <div style={styles.logo}>
+          <img
+            src={"/app/title_logo_light.png"}
+            style={{
+              height: "24px"
+            }}
+          />
+        </div>
+        <SelectableList
+          value={selected}
+          onChange={(e, v) => this.onClick(e, v)}
+        >
+          {this.props.links.map(link =>
+            <ListItem
+              key={link.page}
+              value={link.page}
+              leftIcon={
+                <FontIcon className="material-icons" style={{ color: "black" }}>
+                  {" "}{link.icon}{" "}
+                </FontIcon>
+              }
+              innerDivStyle={styles.menuInnerDivStyle}
+              style={styles.menuStyle}
+            >
+              <div>
+                <div style={styles.menuMainText}>{link.title}</div>
+                {link.subtitle == ""
+                  ? null
+                  : <div style={styles.menuSubText}>
+                      {link.subtitle}
+                    </div>}
+              </div>
+            </ListItem>
+          )}
+        </SelectableList>
+      </Drawer>
+    );
+  }
+}
+
+export default connect(
+  state => ({ links: state.site.navigation }),
+  dispatch => ({
+    onClick: (e, id) => dispatch(go(id))
+  })
+)(Navigation);

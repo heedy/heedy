@@ -1,0 +1,8 @@
+language: node_js
+
+node_js:
+    - "7.7"
+
+script:
+    - mkdir ../../bin
+    - npm run build:js
