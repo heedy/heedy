@@ -81,6 +81,9 @@ CREATE TABLE connections (
 	self_access INTEGER DEFAULT 1, -- 0 is has no ability to create streams, 1 is allowed to handle itself
 	access INTEGER DEFAULT 0, -- 1 is read user, 2 is ...
 
+	settings VARCHAR DEFAULT '{}',
+	setting_schema VARCHAR DEFAULT '{}',
+
 	CONSTRAINT connectionowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(name)
@@ -266,6 +269,45 @@ CREATE TABLE connection_groups (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
+
+
+------------------------------------------------------------------
+-- Key-Value Storage for Plugins & Frontend
+------------------------------------------------------------------
+
+-- The given storage allows the frontend to save settings and such
+CREATE TABLE user_kv (
+	user VARCHAR(36) NOT NULL,
+	key VARCHAR NOT NULL,
+	value VARCHAR DEFAULT '',
+
+	PRIMARY KEY(user,key),
+	UNIQUE(user,key),
+
+	CONSTRAINT kvuser
+		FOREIGN KEY(user) 
+		REFERENCES users(name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+CREATE TABLE plugin_kv (
+	plugin VARCHAR,
+	-- Plugins can optionally save keys by user, where the key
+	-- is automatically life-cycled with the user
+	user VARCHAR DEFAULT '',
+	key VARCHAR NOT NULL,
+	value VARCHAR DEFAULT '',
+
+	PRIMARY KEY(plugin,user,key),
+	UNIQUE(plugin,user,key),
+
+	CONSTRAINT kvuser
+		FOREIGN KEY(user) 
+		REFERENCES users(name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+)
 
 `
 
