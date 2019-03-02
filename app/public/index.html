@@ -32,6 +32,7 @@
       Vue.use(Vuetify);
     </script>
     <script>
+      var appinfo = {{ . }};
       function dynamicImport(filename) {
         // Webpack has serious issues getting a dynamic import to work,
         // so we set it up directly in the html file where webpack can't get

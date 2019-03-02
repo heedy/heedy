@@ -16,6 +16,10 @@ func (db *AdminDB) Close() error {
 	return db.DB.Close()
 }
 
+func (db *AdminDB) ThisUser() (*User, error) {
+	return nil, nil // Not a user
+}
+
 // AuthUser returns the groupid and password hash for the given user, or an authentication error
 func (db *AdminDB) AuthUser(name string, password string) (string, string, error) {
 	var selectResult struct {

@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/connectordb/connectordb/assets"
-	"github.com/connectordb/connectordb/database"
+	"github.com/connectordb/connectordb/src/assets"
+	"github.com/connectordb/connectordb/src/database"
 	"github.com/go-chi/chi"
 	"github.com/spf13/afero"
 

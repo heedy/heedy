@@ -58,24 +58,52 @@ func (p *Plugin) Copy() *Plugin {
 	return &np
 }
 
-type Group struct {
-	GRPC     *bool `json:"grpc,omitempty"`
-	REST     *bool `json:"rest,omitempty"`
-	Settings *bool `json:"settings,omitempty"`
-	AddUser  *bool `json:"add_user,omitempty"`
+type MenuItem struct {
+	Route *string `json:"route,omitempty" hcl:"route" cty:"route"`
+	Icon  *string `json:"icon,omitempty" hcl:"icon" cty:"icon"`
+	Text  *string `json:"text,omitempty" hcl:"text" cty:"text"`
 
-	// Now, we add a mechanism to "inject" the group into each permissions field
-	// This allows simple creation of various levels of admins
-	ListGroup *bool `hcl:"list_group" json:"list_group,omitempty"`
-	EditGroup *bool `hcl:"edit_group" json:"edit_group,omitempty"`
-	DelGroup  *bool `hcl:"del_group" json:"del_group,omitempty"`
+	// Description is shown in tooltip
+	Description *string `json:"description,omitempty" hcl:"description" cty:"description"`
 
-	ReadStream  *bool `hcl:"read_stream" json:"read_stream,omitempty"`
-	WriteStream *bool `hcl:"write_stream" json:"write_stream,omitempty"`
-	ModStream   *bool `hcl:"mod_stream" json:"mod_stream,omitempty"`
-	ListStream  *bool `hcl:"list_stream" json:"list_stream,omitempty"`
-	EditStream  *bool `hcl:"edit_stream" json:"edit_stream,omitempty"`
-	DelStream   *bool `hcl:"del_stream" json:"del_stream,omitempty"`
+	// Active is true by default, but can be set to false to disable the route
+	Active *bool `json:"active,omitempty" hcl:"active" cty:"active"`
+}
+
+type App struct {
+	Routes map[string]string   `json:"routes" hcl:"routes"`
+	Menu   map[string]MenuItem `json:"menu" hcl:"menu"`
+
+	PublicRoutes map[string]string   `json:"public_routes" hcl:"public_routes"`
+	PublicMenu   map[string]MenuItem `json:"public_menu" hcl:"public_menu"`
+}
+
+func NewApp() App {
+	return App{
+		Routes:       make(map[string]string),
+		PublicRoutes: make(map[string]string),
+		Menu:         make(map[string]MenuItem),
+		PublicMenu:   make(map[string]MenuItem),
+	}
+}
+
+func (a *App) Copy() App {
+	na := NewApp()
+
+	for ak, av := range a.Routes {
+		na.Routes[ak] = av
+	}
+	for ak, av := range a.PublicRoutes {
+		na.PublicRoutes[ak] = av
+	}
+
+	for ak, av := range a.Menu {
+		na.Menu[ak] = av
+	}
+	for ak, av := range a.PublicMenu {
+		na.PublicMenu[ak] = av
+	}
+	return na
 }
 
 type Configuration struct {
@@ -90,10 +118,10 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
+	App App `json:"app"`
+
 	Language         *string `hcl:"language" json:"language,omitempty"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language,omitempty"`
-
-	Groups map[string]*Group `json:"groups,omitempty"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 }
@@ -101,24 +129,26 @@ type Configuration struct {
 func (c *Configuration) Copy() *Configuration {
 	nc := *c
 
+	nc.App = c.App.Copy()
+
 	nc.Plugins = make(map[string]*Plugin)
 
 	for pkey, pval := range c.Plugins {
 		nc.Plugins[pkey] = pval.Copy()
 	}
-
-	nc.Groups = make(map[string]*Group)
-	for gkey, gval := range c.Groups {
-		newg := *gval
-		nc.Groups[gkey] = &newg
-	}
-
+	/*
+		nc.Groups = make(map[string]*Group)
+		for gkey, gval := range c.Groups {
+			newg := *gval
+			nc.Groups[gkey] = &newg
+		}
+	*/
 	return &nc
 
 }
 
 func NewConfiguration() *Configuration {
-	return &Configuration{Plugins: make(map[string]*Plugin), Groups: make(map[string]*Group)}
+	return &Configuration{Plugins: make(map[string]*Plugin), App: NewApp()}
 }
 
 func NewPlugin() *Plugin {
@@ -134,6 +164,34 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	overlay = overlay.Copy()
 
 	CopyStructIfPtrSet(base, overlay)
+
+	// Merge the maps of App
+	for ak, av := range overlay.App.Menu {
+		cv, ok := base.App.Menu[ak]
+		if ok {
+			// Update only the set values of menu
+			CopyStructIfPtrSet(&cv, &av)
+			base.App.Menu[ak] = cv
+		} else {
+			base.App.Menu[ak] = av
+		}
+	}
+	for ak, av := range overlay.App.PublicMenu {
+		cv, ok := base.App.PublicMenu[ak]
+		if ok {
+			// Update only the set values of menu
+			CopyStructIfPtrSet(&cv, &av)
+			base.App.PublicMenu[ak] = cv
+		} else {
+			base.App.PublicMenu[ak] = av
+		}
+	}
+	for ak, av := range overlay.App.Routes {
+		base.App.Routes[ak] = av
+	}
+	for ak, av := range overlay.App.PublicRoutes {
+		base.App.PublicRoutes[ak] = av
+	}
 
 	// Now go into the maps, and continue the good work
 	for pluginName, oplugin := range overlay.Plugins {

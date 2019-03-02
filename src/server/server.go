@@ -1,23 +1,26 @@
 package server
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/connectordb/connectordb/plugin"
-	"github.com/spf13/afero"
+	"github.com/go-chi/chi"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
+	"github.com/connectordb/connectordb/src/database"
+	"github.com/connectordb/connectordb/src/plugin"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func Run(a *assets.Assets) error {
+	db, err := database.Open(a)
+	if err != nil {
+		return err
+	}
 
 	ph, err := plugin.NewManager(a)
 	if err != nil {
@@ -39,15 +42,27 @@ func Run(a *assets.Assets) error {
 
 	serverAddress := fmt.Sprintf("%s:%d", *a.Config.Host, *a.Config.Port)
 
-	restMux, err := RestMux()
+	apiMux, err := APIMux(a)
 	if err != nil {
-		log.Panic(err)
+		return err
+	}
+	appMux, err := AppMux(a)
+	if err != nil {
 		return err
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/api/v1/cdb/", restMux)
-	mux.Handle("/", http.FileServer(afero.NewHttpFs(a.FS)))
+	mux := chi.NewMux()
+	mux.Mount("/api", apiMux)
+	mux.Mount("/app", appMux)
+
+	// Get assets directly for the main files
+
+	//mux.Handle("/app", assetFS)
+	//mux.Handle("/www/*", assetFS)
+
+	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/app/", http.StatusFound)
+	})
 
 	handler := http.Handler(mux)
 
@@ -58,7 +73,8 @@ func Run(a *assets.Assets) error {
 
 	// the grpcHandlerFunc takes an grpc server and a http muxer and will
 	// route the request to the right place at runtime.
-	mergeHandler := grpcHandlerFunc(grpcServer, handler)
+	//mergeHandler := grpcHandlerFunc(grpcServer, handler)
+	//mergeHandler := handler
 
 	// configure TLS for our server. TLS is REQUIRED to make this setup work.
 	// check https://golang.org/src/net/http/server.go?#L2746
@@ -66,33 +82,40 @@ func Run(a *assets.Assets) error {
 		log.Panic(err)
 	}
 
-	srv := &http.Server{
-		Addr:    serverAddress,
-		Handler: mergeHandler,
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{*crt},
-			NextProtos:   []string{"h2"},
-			//InsecureSkipVerify: true,
-		},
-	}
+	http.ListenAndServe(serverAddress, NewAuthHandler(NewLoggingHandler(handler), db))
+	/*
+		srv := &http.Server{
+			Addr:    serverAddress,
+			Handler: mergeHandler,
+			 TLSConfig: &tls.Config{
+				Certificates: []tls.Certificate{*crt},
+				NextProtos:   []string{"h2"},
+				//InsecureSkipVerify: true,
+			},
+		}
 
-	// Set up a http listener
-	if *a.Config.HTTPPort > 0 {
-		httpServer := fmt.Sprintf("%s:%d", *a.Config.Host, *a.Config.HTTPPort)
-		log.Infof("Starting http server at %s", httpServer)
-		go http.ListenAndServe(httpServer, handler)
-	}
-	// start listening on the socket
-	// Note that if you listen on localhost:<port> you'll not be able to accept
-	// connections over the network. Change it to ":port"  if you want it.
-	conn, err := net.Listen("tcp", serverAddress)
-	if err != nil {
-		return err
-	}
 
-	// start the server
-	log.Infof("starting GRPC and REST on %s", serverAddress)
-	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
+
+		// Set up a http listener
+
+			if *a.Config.HTTPPort > 0 {
+				httpServer := fmt.Sprintf("%s:%d", *a.Config.Host, *a.Config.HTTPPort)
+				log.Infof("Starting http server at %s", httpServer)
+				go http.ListenAndServe(httpServer, handler)
+			}
+
+		// start listening on the socket
+		// Note that if you listen on localhost:<port> you'll not be able to accept
+		// connections over the network. Change it to ":port"  if you want it.
+		conn, err := net.Listen("tcp", serverAddress)
+		if err != nil {
+			return err
+		}
+
+		// start the server
+		log.Infof("starting on %s", serverAddress)
+		err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
+	*/
 	if err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

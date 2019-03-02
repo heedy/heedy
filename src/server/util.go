@@ -8,7 +8,7 @@ import (
 
 	"net/http"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 )
 
 //UnmarshalRequest unmarshals the input data to the given interface

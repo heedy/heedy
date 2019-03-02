@@ -23,7 +23,7 @@ var RunCmd = &cobra.Command{
 			return errors.New("Must specify a database location")
 		}
 		directory := args[0]
-		a, err := assets.Load(directory, nil)
+		a, err := assets.Open(directory, nil)
 		if err != nil {
 			return err
 		}

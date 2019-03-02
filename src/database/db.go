@@ -71,8 +71,9 @@ type Stream struct {
 //	once for devices
 //	once for public
 type DB interface {
-	CreateUser(u *User, password string) error
+	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
+	ThisUser() (*User, error) // returns nil if not a user
 }
 
 var (
