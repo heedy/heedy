@@ -3,7 +3,7 @@ package main
 import (
 	"mime"
 
-	"github.com/connectordb/connectordb/cmd"
+	"github.com/connectordb/connectordb/src/cmd"
 )
 
 func main() {

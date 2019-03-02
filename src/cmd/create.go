@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 
-	"github.com/connectordb/connectordb/database"
-	"github.com/connectordb/connectordb/server"
+	"github.com/connectordb/connectordb/src/database"
+	"github.com/connectordb/connectordb/src/server"
 
 	"github.com/spf13/cobra"
 )

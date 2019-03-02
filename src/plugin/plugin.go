@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 	"github.com/go-chi/chi"
 
 	log "github.com/sirupsen/logrus"

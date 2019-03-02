@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 
 	"github.com/stretchr/testify/require"
 )

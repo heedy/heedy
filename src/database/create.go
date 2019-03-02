@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 
 	// Make sure we include sqlite support
 	_ "github.com/mattn/go-sqlite3"

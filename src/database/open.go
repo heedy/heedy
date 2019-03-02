@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/connectordb/connectordb/assets"
+	"github.com/connectordb/connectordb/src/assets"
 
 	"github.com/jmoiron/sqlx"
 

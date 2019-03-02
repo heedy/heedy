@@ -52,7 +52,7 @@ type Connection struct {
 	Access     *int    `json:"access,omitempty"`
 
 	Settings      *string `json:"settings,omitempty"`
-	SettingSchema *string `json:"setting_schema,omitempty"`
+	SettingSchema *string `json:"setting_schema,omitempty" db:"setting_schema"`
 }
 
 type Stream struct {

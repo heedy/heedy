@@ -20,6 +20,7 @@ require (
 	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 // indirect
 	github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
+	github.com/google/go-github/v24 v24.0.1
 	github.com/google/pprof v0.0.0-20190208070709-b421f19a5c07 // indirect
 	github.com/google/uuid v1.1.0
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
@@ -67,7 +68,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67
 	golang.org/x/exp v0.0.0-20190212162250-21964bba6549 // indirect
 	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd
-	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635 // indirect
+	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635
 	golang.org/x/perf v0.0.0-20190124201629-844a5f5b46f4 // indirect
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect
 	golang.org/x/tools v0.0.0-20190214204934-8dcb7bc8c7fe // indirect
