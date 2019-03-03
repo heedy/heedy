@@ -70,7 +70,7 @@ type MenuItem struct {
 	Active *bool `json:"active,omitempty" hcl:"active" cty:"active"`
 }
 
-type App struct {
+type Frontend struct {
 	Routes map[string]string   `json:"routes" hcl:"routes"`
 	Menu   map[string]MenuItem `json:"menu" hcl:"menu"`
 
@@ -78,8 +78,8 @@ type App struct {
 	PublicMenu   map[string]MenuItem `json:"public_menu" hcl:"public_menu"`
 }
 
-func NewApp() App {
-	return App{
+func NewFrontend() Frontend {
+	return Frontend{
 		Routes:       make(map[string]string),
 		PublicRoutes: make(map[string]string),
 		Menu:         make(map[string]MenuItem),
@@ -87,8 +87,8 @@ func NewApp() App {
 	}
 }
 
-func (a *App) Copy() App {
-	na := NewApp()
+func (a *Frontend) Copy() Frontend {
+	na := NewFrontend()
 
 	for ak, av := range a.Routes {
 		na.Routes[ak] = av
@@ -118,7 +118,7 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	App App `json:"app"`
+	Frontend Frontend `json:"frontend"`
 
 	Language         *string `hcl:"language" json:"language,omitempty"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language,omitempty"`
@@ -129,7 +129,7 @@ type Configuration struct {
 func (c *Configuration) Copy() *Configuration {
 	nc := *c
 
-	nc.App = c.App.Copy()
+	nc.Frontend = c.Frontend.Copy()
 
 	nc.Plugins = make(map[string]*Plugin)
 
@@ -148,7 +148,7 @@ func (c *Configuration) Copy() *Configuration {
 }
 
 func NewConfiguration() *Configuration {
-	return &Configuration{Plugins: make(map[string]*Plugin), App: NewApp()}
+	return &Configuration{Plugins: make(map[string]*Plugin), Frontend: NewFrontend()}
 }
 
 func NewPlugin() *Plugin {
@@ -165,32 +165,32 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 	CopyStructIfPtrSet(base, overlay)
 
-	// Merge the maps of App
-	for ak, av := range overlay.App.Menu {
-		cv, ok := base.App.Menu[ak]
+	// Merge the maps of Frontend
+	for ak, av := range overlay.Frontend.Menu {
+		cv, ok := base.Frontend.Menu[ak]
 		if ok {
 			// Update only the set values of menu
 			CopyStructIfPtrSet(&cv, &av)
-			base.App.Menu[ak] = cv
+			base.Frontend.Menu[ak] = cv
 		} else {
-			base.App.Menu[ak] = av
+			base.Frontend.Menu[ak] = av
 		}
 	}
-	for ak, av := range overlay.App.PublicMenu {
-		cv, ok := base.App.PublicMenu[ak]
+	for ak, av := range overlay.Frontend.PublicMenu {
+		cv, ok := base.Frontend.PublicMenu[ak]
 		if ok {
 			// Update only the set values of menu
 			CopyStructIfPtrSet(&cv, &av)
-			base.App.PublicMenu[ak] = cv
+			base.Frontend.PublicMenu[ak] = cv
 		} else {
-			base.App.PublicMenu[ak] = av
+			base.Frontend.PublicMenu[ak] = av
 		}
 	}
-	for ak, av := range overlay.App.Routes {
-		base.App.Routes[ak] = av
+	for ak, av := range overlay.Frontend.Routes {
+		base.Frontend.Routes[ak] = av
 	}
-	for ak, av := range overlay.App.PublicRoutes {
-		base.App.PublicRoutes[ak] = av
+	for ak, av := range overlay.Frontend.PublicRoutes {
+		base.Frontend.PublicRoutes[ak] = av
 	}
 
 	// Now go into the maps, and continue the good work

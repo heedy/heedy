@@ -1,6 +1,6 @@
 # These are all files that are generated at one point or another
 connectordb
-assets/app
+assets/public
 assets/setup
 assets/docs
 src/api/pb

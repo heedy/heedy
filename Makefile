@@ -2,7 +2,7 @@ GO:=go
 
 .PHONY: clean test phony
 
-all: setup app connectordb
+all: setup frontend connectordb
 
 #Empty rule for forcing rebuilds
 phony:
@@ -10,9 +10,9 @@ phony:
 setup: phony
 	cd setup; npm run build
 
-app: phony
+frontend: phony
 	rm -rf src/api/proto;
-	cd app; npm run build
+	cd frontend; npm run build
 
 docs: phony
 	protoc -I ./src/api/ -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway api.proto --swagger_out=logtostderr=true:docs
@@ -33,7 +33,7 @@ debug: #gencode
 clean:
 	# $(GO) clean
 	# Clear all generated assets for webapp
-	rm -rf ./assets/app
+	rm -rf ./assets/public
 	rm -rf ./assets/setup
 	# Remove the generated APIs
 	rm -rf src/api/proto

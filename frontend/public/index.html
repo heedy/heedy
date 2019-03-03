@@ -25,26 +25,17 @@
       </strong>
     </noscript>
     <div id="app"></div>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js">
-      Vue.config.productionTip = false;
-    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js">
       Vue.use(Vuetify);
     </script>
+
+    <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
     <script>
       var appinfo = {{ . }};
-      function dynamicImport(filename) {
-        // Webpack has serious issues getting a dynamic import to work,
-        // so we set it up directly in the html file where webpack can't get
-        // its hands on it.
-        console.log("dynamic Import", filename);
-        return import(filename).then(function(m) {
-          console.log("Got", m);
-          return m;
-        });
-      }
     </script>
-    <script src="./js/app.js"></script>
-    <script src="./js/theme.js"></script>
+    <script src="./main.jsm" type="module"></script>
   </body>
 </html>

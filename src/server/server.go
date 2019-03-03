@@ -46,23 +46,24 @@ func Run(a *assets.Assets) error {
 	if err != nil {
 		return err
 	}
-	appMux, err := AppMux(a)
+	fMux, err := FrontendMux(a)
 	if err != nil {
 		return err
 	}
 
 	mux := chi.NewMux()
 	mux.Mount("/api", apiMux)
-	mux.Mount("/app", appMux)
+	mux.Mount("/", fMux)
 
 	// Get assets directly for the main files
 
 	//mux.Handle("/app", assetFS)
 	//mux.Handle("/www/*", assetFS)
-
-	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/app/", http.StatusFound)
-	})
+	/*
+		mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/app/", http.StatusFound)
+		})
+	*/
 
 	handler := http.Handler(mux)
 

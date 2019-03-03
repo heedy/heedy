@@ -55,7 +55,7 @@ type hclPlugin struct {
 	// and can be queried by javascript as part of the configuration
 	Settings hcl.Body `hcl:",remain"`
 }
-type hclApp struct {
+type hclFrontend struct {
 	Routes *map[string]string   `json:"routes" hcl:"routes"`
 	Menu   *map[string]MenuItem `json:"menu" hcl:"menu"`
 
@@ -78,7 +78,7 @@ type hclConfiguration struct {
 
 	Plugins []hclPlugin `hcl:"plugin,block"`
 
-	App *hclApp `hcl:"app,block"`
+	Frontend *hclFrontend `hcl:"frontend,block"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 }
@@ -164,18 +164,18 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		}*/
 
 	// Load the app block
-	if hc.App != nil {
-		if hc.App.Routes != nil {
-			c.App.Routes = *hc.App.Routes
+	if hc.Frontend != nil {
+		if hc.Frontend.Routes != nil {
+			c.Frontend.Routes = *hc.Frontend.Routes
 		}
-		if hc.App.PublicRoutes != nil {
-			c.App.PublicRoutes = *hc.App.PublicRoutes
+		if hc.Frontend.PublicRoutes != nil {
+			c.Frontend.PublicRoutes = *hc.Frontend.PublicRoutes
 		}
-		if hc.App.Menu != nil {
-			c.App.Menu = *hc.App.Menu
+		if hc.Frontend.Menu != nil {
+			c.Frontend.Menu = *hc.Frontend.Menu
 		}
-		if hc.App.PublicMenu != nil {
-			c.App.PublicMenu = *hc.App.PublicMenu
+		if hc.Frontend.PublicMenu != nil {
+			c.Frontend.PublicMenu = *hc.Frontend.PublicMenu
 		}
 	}
 

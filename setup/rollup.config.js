@@ -24,14 +24,14 @@ function out(name, format = "es") {
       name: filename[0],
       file:
         "../assets/setup/js/" + filename[0] + (format == "es" ? ".jsm" : ".js"),
-      format: format
+      format: format,
+      globals: {
+        vue: "Vue",
+        vuetify: "Vuetify"
+      }
     },
     plugins: plugins,
-    external: ["vue", "vuetify"],
-    globals: {
-      vue: "Vue",
-      vuetify: "Vuetify"
-    }
+    external: ["vue", "vuetify"]
   };
 }
 
