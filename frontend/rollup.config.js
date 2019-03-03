@@ -38,11 +38,11 @@ function out(name, loc = "js/", format = "es") {
         "../assets/public/" +
         loc +
         filename[0] +
-        (format == "es" ? ".jsm" : ".js"),
+        (format == "es" ? ".mjs" : ".js"),
       format: format
     },
     plugins: plugins,
-    external: ["vue", "./js/theme.jsm"]
+    external: ["vue", "./js/theme.mjs"]
   };
 }
 

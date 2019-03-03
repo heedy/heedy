@@ -10,15 +10,16 @@
       class="theme-dark"
       dark
     >
-      <v-toolbar flat class="transparent">
+      <v-toolbar flat class="transparent" v-if="user!=null">
         <v-list class="pa-0">
-          <v-list-tile avatar>
+          <v-list-tile avatar :to="'/user/' + user.name">
             <v-list-tile-avatar>
-              <img src="https://randomuser.me/api/portraits/men/85.jpg">
+              <v-icon v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')">{{ user.icon.substring(3,user.icon.length) }}</v-icon>
+              <img v-else :src="user.icon" />
             </v-list-tile-avatar>
 
             <v-list-tile-content>
-              <v-list-tile-title>Daniel Kumor</v-list-tile-title>
+              <v-list-tile-title>{{ user.fullname }}</v-list-tile-title>
             </v-list-tile-content>
 
             <v-list-tile-action>
@@ -28,18 +29,19 @@
             </v-list-tile-action>
           </v-list-tile>
         </v-list>
+        
       </v-toolbar>
-
+      
       <v-list class="pt-0" dense>
         <v-divider></v-divider>
-
-        <v-list-tile v-for="item in items" :key="item.title">
+        <v-list-tile v-for="item in menu" :key="item.key" :to="item.route" active-class="active-btn">
           <v-list-tile-action>
-            <v-icon>{{ item.icon }}</v-icon>
+            <v-icon v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')">{{ item.icon.substring(3,item.icon.length) }}</v-icon>
+            <img v-else :src="item.icon" />
           </v-list-tile-action>
 
           <v-list-tile-content>
-            <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+            <v-list-tile-title>{{ item.text }}</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
       </v-list>
@@ -57,7 +59,7 @@ import "vuetify/dist/vuetify.min.css";
 */
 
 // Vue is used as a global
-Vue.use(Vuetify);
+//Vue.use(Vuetify);
 
 export default {
   data: () => ({
@@ -66,15 +68,27 @@ export default {
       { title: "Home", icon: "dashboard" },
       { title: "About", icon: "question_answer" }
     ],
-    mini: null
+    mini: true
   }),
   props: {
     source: String
+  },
+  computed: {
+    menu() {
+      let s = this.$store.state.menu;
+      return Object.keys(s).map(k => ({key: k, text: s[k].text, icon: s[k].icon, route: s[k].route}));
+    },
+    user() {
+      return {fullname: "Daniel Kumor",name: "dkumor", icon:"mi:face"};//this.$store.state.user;
+    }
   }
 };
 </script>
 
 <style>
+.active-btn {
+  color: #DCDCDC;
+}
 .theme-dark {
   color: #1c313a;
   background-color: #1c313a !important;

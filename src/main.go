@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	mime.AddExtensionType(".jsm", "application/javascript")
+	mime.AddExtensionType(".mjs", "application/javascript")
 	cmd.Execute()
 }

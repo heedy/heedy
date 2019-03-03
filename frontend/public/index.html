@@ -11,6 +11,12 @@
       rel="stylesheet"
     />
     <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+    <link
       href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css"
       rel="stylesheet"
     />
@@ -34,8 +40,8 @@
 
     <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
     <script>
-      var appinfo = {{ . }};
+      const appinfo = {{ . }};
     </script>
-    <script src="./main.jsm" type="module"></script>
+    <script src="./main.mjs" type="module"></script>
   </body>
 </html>
