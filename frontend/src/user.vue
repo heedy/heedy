@@ -1,9 +1,11 @@
-<template>
-<v-content>
-  <v-toolbar class="theme-primary" dark>
+<template >
+  <div>
+<v-toolbar class="theme-primary" dark app>
     <v-text-field solo-inverted flat hide-details label="Search" prepend-inner-icon="search"></v-text-field>
   </v-toolbar>
+<v-content>
   <v-container fluid fill-height>
+    
     <v-layout justify-center align-center>
       <v-flex text-xs-center>
         <v-tooltip left>
@@ -28,6 +30,7 @@
     </v-layout>
   </v-container>
 </v-content>
+</div>
 </template>
 
 <script>

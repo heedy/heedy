@@ -50,6 +50,7 @@ export default [
   // The base files
   out("main.js", ""),
   out("theme.vue"),
+  out("login.vue"),
   // Default components
   out("user.vue")
 ];
