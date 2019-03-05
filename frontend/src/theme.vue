@@ -115,7 +115,7 @@ export default {
     bottom: false,  // Whether to display the navigation on bottom, in mobile mode
     mini: true,      // In desktop mode, whether to show mini drawer
     small: false,    // In mobile mode whether to show text. Same effect as mini
-    transparent: true, // Whether the nav is to be transparent to fit in with the page theme
+    transparent: false, // Whether the nav is to be transparent to fit in with the page theme
     dark: true  // Whether to user the dark theme
   }),
   props: {

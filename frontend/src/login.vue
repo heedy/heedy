@@ -1,6 +1,6 @@
 <template>
 <v-content class="login-background">
-    <v-container fluid fill-height>
+    <v-container fluid >
         <v-layout justify-center align-center>
             <v-flex text-xs-center>
                 <v-card class="mx-auto" max-width="400">
@@ -34,6 +34,7 @@ export default {
 
 <style>
 .login-background {
-    background: linear-gradient(to bottom, #182447, #215D85);
+    /*background: linear-gradient(to bottom, #182447, #215D85);*/
+    margin-top: 10%;
 }
 </style>
