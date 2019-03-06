@@ -16,7 +16,7 @@
       <v-toolbar flat class="transparent" >
         <v-list class="pa-0" v-if="user==null">
           <v-tooltip right dark :disabled="!mini">
-              <v-list-tile avatar to="/login" slot="activator">
+              <v-list-tile avatar to="/login" slot="activator" active-class="active-btn" class="inactive-btn">
                 <v-list-tile-avatar>
                   <v-icon>fas fa-sign-in-alt</v-icon>
                 </v-list-tile-avatar>
@@ -47,7 +47,7 @@
       <v-list class="pt-0" dense>
         <v-divider v-if="!transparent"></v-divider>
         <v-tooltip v-for="item in menu" :key="item.key" dark :disabled="!mini" right>
-          <v-list-tile :to="item.route" active-class="active-btn" slot="activator">
+          <v-list-tile :to="item.route" active-class="active-btn" class="inactive-btn" slot="activator">
             <v-list-tile-action>
               <v-icon v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')">{{ item.icon.substring(3,item.icon.length) }}</v-icon>
               <img v-else :src="item.icon" />
@@ -149,7 +149,11 @@ export default {
 
 <style>
 .active-btn {
-  color: #DCDCDC;
+  color: white !important;
+}
+
+.inactive-btn {
+  color: #CCCCCC;
 }
 .theme-dark {
   color: #1c313a;

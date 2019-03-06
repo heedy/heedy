@@ -12,6 +12,7 @@ import (
 	"github.com/connectordb/connectordb/src/assets"
 	"github.com/connectordb/connectordb/src/database"
 	"github.com/connectordb/connectordb/src/plugin"
+	"github.com/connectordb/connectordb/src/server/auth"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -83,7 +84,7 @@ func Run(a *assets.Assets) error {
 		log.Panic(err)
 	}
 
-	http.ListenAndServe(serverAddress, NewAuthHandler(NewLoggingHandler(handler), db))
+	http.ListenAndServe(serverAddress, auth.New(db, handler))
 	/*
 		srv := &http.Server{
 			Addr:    serverAddress,

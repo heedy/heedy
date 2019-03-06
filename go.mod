@@ -40,6 +40,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd // indirect
 	github.com/rakyll/statik v0.1.5 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
+	github.com/rs/xid v1.2.1
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/shurcooL/go v0.0.0-20190121191506-3fef8c783dec // indirect
 	github.com/shurcooL/gofontwoff v0.0.0-20181114050219-180f79e6909d // indirect

@@ -74,6 +74,7 @@ type DB interface {
 	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
 	ThisUser() (*User, error) // returns nil if not a user
+	ID() string               // This is an identifier for the database. empty string is public access
 }
 
 var (

@@ -6,8 +6,8 @@ import (
 
 	"github.com/connectordb/connectordb/src/assets"
 	"github.com/connectordb/connectordb/src/database"
+	"github.com/connectordb/connectordb/src/server/auth"
 	"github.com/go-chi/chi"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
@@ -34,10 +34,10 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 
 	// This is the main function that sets up the frontend template
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		l := r.Context().Value(cK("log")).(*logrus.Entry)
-		db := r.Context().Value(cK("cdb")).(database.DB)
+		ctx := r.Context().Value(auth.CTX).(*auth.Context)
+		l := ctx.Log
 
-		u, err := db.ThisUser()
+		u, err := ctx.DB.ThisUser()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
