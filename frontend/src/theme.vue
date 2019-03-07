@@ -1,5 +1,5 @@
 <template>
-  <v-app id="cdb" v-resize="onResize">
+  <v-app id="heedy" v-resize="onResize">
     <v-navigation-drawer
       :mini-variant="mini"
       stateless
@@ -61,7 +61,7 @@
         </v-tooltip>
       </v-list>
     </v-navigation-drawer>
-      
+    
     <router-view></router-view>
     
     <v-bottom-nav
@@ -171,4 +171,5 @@ export default {
 .clearshadows {
   box-shadow: none !important;
 }
+
 </style>

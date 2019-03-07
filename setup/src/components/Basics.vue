@@ -47,8 +47,8 @@
         </v-layout>
         
               </v-flex>
-              <p>ConnectorDB is ready to create a database with default settings, you just need to give it a starting user.
-                For more control on how ConnectorDB is set up, click on the "Server Settings" button.
+              <p>Heedy is ready to create a database with default settings, you just need to give it a starting user.
+                For more control on how Heedy is set up, click on the "Server Settings" button.
               </p>
             </v-layout>
         </v-container>
@@ -75,7 +75,7 @@
             required
             solo
           ></v-text-field>
-          <p>This is the place to put all files needed to run ConnectorDB. It is also the place where settings are saved, and where plugins will be installed.</p>
+          <p>This is the place to put all files needed to run Heedy. It is also the place where settings are saved, and where plugins will be installed.</p>
         </v-flex>
 
         <v-flex xs12 >
@@ -103,8 +103,8 @@
           </v-flex>
         </v-layout>
         <p>The main host and port on which to run the server. You should leave the host blank
-            if you want to make ConnectorDB accessible from your phone or other devices on the network.
-            If you want to run ConnectorDB in local mode, so that only things running on the same computer
+            if you want to make Heedy accessible from your phone or other devices on the network.
+            If you want to run Heedy in local mode, so that only things running on the same computer
             as the server can access it, you can use "localhost".
             </p>
           
@@ -155,7 +155,7 @@
     </v-layout>
           <p>
             If running at home, your browser will give error messages when trying to connect to the https port,
-            because it does not recognize self-signed certificates. ConnectorDB therefore also allows you to expose
+            because it does not recognize self-signed certificates. Heedy therefore also allows you to expose
             an unencrypted port. Beware, though - anyone on your network can read your passwords and data when using this port!
           </p>
         </v-flex>

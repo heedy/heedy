@@ -1,7 +1,7 @@
 {
-  "name": "connectordb-app",
-  "version": "0.4.0",
-  "description": "The ConnectorDB Frontend App",
+  "name": "heedy-frontend",
+  "version": "0.1.0",
+  "description": "The Heedy Frontend",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:html && npm run build:js",
@@ -14,17 +14,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/connectordb/connectordb.git"
+    "url": "git+https://github.com/heedy/heedy.git"
   },
   "keywords": [
-    "connectordb"
+    "heedy"
   ],
-  "author": "ConnectorDB Contributors",
+  "author": "heedy Contributors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/connectordb/connectordb/issues"
+    "url": "https://github.com/heedy/heedy/issues"
   },
-  "homepage": "https://connectordb.io",
+  "homepage": "https://heedy.org",
   "dependencies": {
     "nodemon": "^1.18.10",
     "npm-run-all": "^4.1.5",

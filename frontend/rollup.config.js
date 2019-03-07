@@ -48,7 +48,7 @@ function externalize(arr) {
   return arr;
 }
 
-function out(name, loc = "cdb/", format = "es") {
+function out(name, loc = "heedy/", format = "es") {
   let filename = name.split(".");
   return {
     input: "src/" + name,

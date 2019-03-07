@@ -1,3 +1,0 @@
-[submodule "site/app"]
-	path = site/app
-	url = https://github.com/connectordb/connectordb-frontend

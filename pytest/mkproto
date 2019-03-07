@@ -1,7 +1,0 @@
-#!/bin/bash
-python -m grpc_tools.protoc -I ../src/api/ -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway api.proto --python_out=. --grpc_python_out=.
-
-# Make the dependecies...
-python -m grpc_tools.protoc -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway google/api/annotations.proto --python_out=. 
-python -m grpc_tools.protoc -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway google/api/http.proto --python_out=. 
-python -m grpc_tools.protoc -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I $GOPATH/src/github.com/grpc-ecosystem/grpc-gateway protoc-gen-swagger/options/openapiv2.proto --python_out=. 

@@ -1,34 +1,21 @@
-# These are all files that are generated at one point or another
-connectordb
+# The public folder is generated from the frontend
 assets/public
 assets/setup
-assets/docs
-src/api/pb
-docs/_build
-docs/api.swagger.json
 
+# The built executable
+heedy
 
-*.exe
-*.test
-*.prof
+# Node modules are unnecessary
+node_modules/
 
-*.o
-*.a
-*.so
-*.sqlite
-*.sqlite3
-*.pyc
-*.pid
-*.out
-*.db
-*.orig
-*.egg-info
-*.log
+# Don't include python build cache
+__pycache__/
+*.py[cod]
 
+# Ignore databases generated for testing
+test_db/
+testdb/
 
-# Folders
-_obj
-_test
-bin/
-database_test/
-test/
+# Eh, package lock is not needed temporarily
+package-lock.json
+go.sum

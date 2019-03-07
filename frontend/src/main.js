@@ -2,9 +2,9 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 import Vuex from "vuex";
 
-import Theme from "./cdb/theme.mjs";
-import NotFound from "./cdb/404.mjs";
-import Loading from "./cdb/loading.mjs";
+import Theme from "./heedy/theme.mjs";
+import NotFound from "./heedy/404.mjs";
+import Loading from "./heedy/loading.mjs";
 
 // Add the two libraries
 Vue.use(VueRouter);
