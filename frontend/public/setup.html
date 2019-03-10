@@ -11,37 +11,29 @@
       rel="stylesheet"
     />
     <link
-      rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
-      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
-      crossorigin="anonymous"
-    />
-    <link
       href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css"
       rel="stylesheet"
     />
 
-    <title>heedy</title>
+    <title>Heedy Setup</title>
   </head>
   <body>
     <noscript>
       <strong>
-        heedy doesn't work properly without JavaScript enabled. Please enable it
+        Heedy doesn't work properly without JavaScript enabled. Please enable it
         to continue.
       </strong>
     </noscript>
     <div id="app"></div>
-
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js">
       Vue.use(Vuetify);
     </script>
-
-    <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
     <script>
-      const appinfo = {{ . }};
+      var configuration = {{.Config }};
+      var installDirectory = {{.Directory}};
     </script>
-    <script src="./static/main.mjs" type="module"></script>
+    <!-- setup is at /setup/, so need to go up a folder to /static -->
+    <script src="../static/setup.mjs" type="module"></script>
   </body>
 </html>

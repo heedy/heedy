@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/go-chi/chi"
 	"github.com/spf13/afero"
 
 	log "github.com/sirupsen/logrus"
@@ -36,8 +36,8 @@ type setupMessage struct {
 // This will load the default config, overwritten with configFile, overwritten with c, and use that
 // as the "defaults" for fields given to the user.
 func Setup(directory string, c *assets.Configuration, configFile string, setupBind string) error {
-
-	setupbytes, err := afero.ReadFile(assets.FS(), "/setup/index.html")
+	frontendFS := afero.NewBasePathFs(assets.FS(), "/public")
+	setupbytes, err := afero.ReadFile(frontendFS, "/setup.html")
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			Directory: directory,
 		})
 	})
-	mux.Mount("/setup/", http.FileServer(afero.NewHttpFs(assets.FS())))
+	mux.Mount("/static/", http.FileServer(afero.NewHttpFs(frontendFS)))
 
 	// /setup is POSTed with info, and this function prepares the database
 	mux.Post("/setup", func(w http.ResponseWriter, r *http.Request) {

@@ -1,3 +1,4 @@
+import glob from "glob";
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import postcss from "rollup-plugin-postcss";
@@ -35,7 +36,7 @@ function externalize(arr) {
     externals.push(
       "./" +
         o.output.file.substring(
-          "../assets/public/".length,
+          "../assets/public/static/".length,
           o.output.file.length
         )
     );
@@ -44,35 +45,35 @@ function externalize(arr) {
   arr.map(o => {
     o.external = externals;
   });
-
+  console.log(arr);
   return arr;
 }
 
-function out(name, loc = "heedy/", format = "es") {
+function out(name, loc = "", format = "es") {
   let filename = name.split(".");
   return {
     input: "src/" + name,
     output: {
       name: filename[0],
       file:
-        "../assets/public/" +
+        "../assets/public/static/" +
         loc +
         filename[0] +
         (format == "es" ? ".mjs" : ".js"),
       format: format
     },
     plugins: plugins
-    //external: ["vue", "./frontend/theme.mjs"]
   };
 }
-
-export default externalize([
-  // The base files
-  out("main.js", ""),
-  out("404.vue"),
-  out("loading.vue"),
-  out("theme.vue"),
-  out("login.vue"),
-  // Default components
-  out("user.vue")
-]);
+export default externalize(
+  [
+    // The base files
+    out("main.js"),
+    out("auth.js"),
+    out("setup.js")
+  ]
+    .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
+    .concat(
+      glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
+    )
+);

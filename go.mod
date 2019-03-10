@@ -10,6 +10,7 @@ require (
 	github.com/hashicorp/hcl2 v0.0.0-20190305174554-fdf8e232b64f
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.3.0

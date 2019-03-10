@@ -33,16 +33,6 @@ CREATE TABLE groups (
 	icon VARCHAR DEFAULT '',
 	owner VARCHAR(36) NOT NULL,
 
-
-	-- Groups are used as heedy's permissions vehicle,
-	-- so an admin can add global permissions to group members
-	global_addusers BOOLEAN DEFAULT FALSE,
-	global_useraccess INTEGER DEFAULT 0, -- 1 is read user, 2 is modify user, 3 is delete user
-	global_connectionaccess INTEGER DEFAULT 0, -- 1 is read, 2 is modify, 3 is delete
-	global_streamaccess INTEGER DEFAULT 0, -- 1 is read, 2 is insert, 3 is remove data, 4 is modify, 5 is delete
-	global_groupaccess INTEGER DEFAULT 0,
-	global_configaccess BOOLEAN DEFAULT FALSE, -- Whether the group has access to database configuration.
-
 	CONSTRAINT groupowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(name)
@@ -77,9 +67,6 @@ CREATE TABLE connections (
 
 	-- Can (but does not have to) have an API key
 	apikey VARCHAR UNIQUE DEFAULT NULL,
-
-	self_access INTEGER DEFAULT 1, -- 0 is has no ability to create streams, 1 is allowed to handle itself
-	access INTEGER DEFAULT 0, -- 1 is read user, 2 is ...
 
 	settings VARCHAR DEFAULT '{}',
 	setting_schema VARCHAR DEFAULT '{}',
@@ -133,6 +120,18 @@ CREATE TABLE streams (
 -- GROUP ACCESS
 ------------------------------------------------------------------------------------
 
+-- The scopes available to the group
+CREATE TABLE group_scopes (
+	groupid VARCHAR(36) NOT NULL,
+	scope VARCHAR NOT NULL,
+	PRIMARY KEY (groupid,scope),
+	UNIQUE (groupid,scope),
+	CONSTRAINT fk_groupid
+		FOREIGN KEY(groupid)
+		REFERENCES groups(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
 
 CREATE TABLE group_members (
 	groupid VARCHAR(36),
@@ -204,6 +203,20 @@ CREATE TABLE group_connections (
 -- CONNECTION ACCESS
 ------------------------------------------------------------------------------------
 
+-- The scopes available to the connection
+CREATE TABLE connection_scopes (
+	connectionid VARCHAR(36) NOT NULL,
+	scope VARCHAR NOT NULL,
+	PRIMARY KEY (connectionid,scope),
+	UNIQUE (connectionid,scope),
+	CONSTRAINT fk_connectionid
+		FOREIGN KEY(connectionid)
+		REFERENCES connections(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+
 CREATE TABLE connection_streams (
 	connection VARCHAR(36),
 	id VARCHAR(36),
@@ -270,6 +283,25 @@ CREATE TABLE connection_groups (
 		ON DELETE CASCADE
 );
 
+------------------------------------------------------------------
+-- User Login Tokens
+------------------------------------------------------------------
+-- These are used to control manually logged in devices,
+-- so that we don't need to put passwords in cookies
+
+CREATE TABLE logins (
+	user VARCHAR(36) NOT NULL,
+	token VARCHAR UNIQUE NOT NULL,
+
+	CONSTRAINT fk_user
+		FOREIGN KEY(user) 
+		REFERENCES users(name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+-- This will be requested on every single query
+CREATE INDEX login_tokens ON logins(token);
 
 ------------------------------------------------------------------
 -- Key-Value Storage for Plugins & Frontend
@@ -295,7 +327,7 @@ CREATE TABLE plugin_kv (
 	plugin VARCHAR,
 	-- Plugins can optionally save keys by user, where the key
 	-- is automatically life-cycled with the user
-	user VARCHAR DEFAULT '',
+	user VARCHAR DEFAULT NULL,
 	key VARCHAR NOT NULL,
 	value VARCHAR DEFAULT '',
 
@@ -307,7 +339,7 @@ CREATE TABLE plugin_kv (
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
-)
+);
 
 `
 

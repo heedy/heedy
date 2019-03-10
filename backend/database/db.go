@@ -1,6 +1,7 @@
 package database
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"errors"
@@ -25,17 +26,7 @@ type Details struct {
 type Group struct {
 	Details
 
-	// These are global permissions that can be set for groups.
-	// Defaults for all are 0, which mean no special access.
-	// The globals stack, meaning that global stream access is only active for groups/users that you
-	// can already read
-
-	GlobalAddUsers         *bool `json:"global_addusers,omitempty" db:"global_addusers"`
-	GlobalConfig           *bool `json:"global_configaccess" db:"global_configaccess"`
-	GlobalUserAccess       *int  `json:"global_useraccess,omitempty" db:"global_useraccess"`             //1 is read user, 2 is modify user, 3 is delete user
-	GlobalConnectionAccess *int  `json:"global_connectionaccess,omitempty" db:"global_connectionaccess"` //1 is read, 2 is modify, 3 is delete
-	GlobalStreamAccess     *int  `json:"global_streamaccess,omitempty" db:"global_streamaccess"`         // See stream access
-	GlobalGroupAccess      *int  `json:"global_groupaccess,omitempty" db:"global_groupaccess"`
+	// No more info is needed for now
 }
 
 // User holds a user's data
@@ -47,9 +38,7 @@ type User struct {
 type Connection struct {
 	Details
 
-	APIKey     *string `json:"apikey,omitempty"`
-	SelfAccess *int    `json:"self_access,omitempty" db:"self_access"`
-	Access     *int    `json:"access,omitempty"`
+	APIKey *string `json:"apikey,omitempty"`
 
 	Settings      *string `json:"settings,omitempty"`
 	SettingSchema *string `json:"setting_schema,omitempty" db:"setting_schema"`
@@ -71,10 +60,15 @@ type Stream struct {
 //	once for devices
 //	once for public
 type DB interface {
+	ID() string // This is an identifier for the database. empty string is public access
+
+	// Gets the user for a given login token
+	LoginToken(token string) (string, error)
+	// Adds a login token to the given user, returning it
+	AddLoginToken(user string) (string, error)
+
 	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
-	ThisUser() (*User, error) // returns nil if not a user
-	ID() string               // This is an identifier for the database. empty string is public access
 }
 
 var (
@@ -85,6 +79,14 @@ var (
 	ErrInvalidName     = errors.New("Invalid name")
 	ErrInvalidQuery    = errors.New("Invalid query")
 )
+
+// GenerateKey creates a random API key
+func GenerateKey(length int) (string, error) {
+	// Prepare the plugin API key
+	apikey := make([]byte, length)
+	_, err := rand.Read(apikey)
+	return base64.StdEncoding.EncodeToString(apikey), err
+}
 
 // HashPassword generates a bcrypt hash for the given password
 func HashPassword(password string) (string, error) {
@@ -184,31 +186,6 @@ func extractDetails(d *Details) (detailColumns []string, detailValues []interfac
 
 func extractGroup(g *Group) (groupColumns []string, groupValues []interface{}, err error) {
 	groupColumns, groupValues, err = extractDetails(&g.Details)
-	if err != nil {
-		return
-	}
-
-	if g.GlobalAddUsers != nil {
-		groupColumns = append(groupColumns, "global_addusers")
-		groupValues = append(groupValues, *g.GlobalAddUsers)
-	}
-	if g.GlobalUserAccess != nil {
-		groupColumns = append(groupColumns, "global_useraccess")
-		groupValues = append(groupValues, *g.GlobalUserAccess)
-	}
-	if g.GlobalConnectionAccess != nil {
-		groupColumns = append(groupColumns, "global_connectionaccess")
-		groupValues = append(groupValues, *g.GlobalConnectionAccess)
-	}
-	if g.GlobalStreamAccess != nil {
-		groupColumns = append(groupColumns, "global_streamaccess")
-		groupValues = append(groupValues, *g.GlobalStreamAccess)
-	}
-	if g.GlobalGroupAccess != nil {
-		groupColumns = append(groupColumns, "global_groupaccess")
-		groupValues = append(groupValues, *g.GlobalGroupAccess)
-	}
-
 	return
 }
 
@@ -242,15 +219,6 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 	if err != nil {
 		return
 	}
-
-	if c.SelfAccess != nil {
-		cColumns = append(cColumns, "self_access")
-		cValues = append(cValues, *c.SelfAccess)
-	}
-	if c.Access != nil {
-		cColumns = append(cColumns, "access")
-		cValues = append(cValues, *c.Access)
-	}
 	if c.Settings != nil {
 		cColumns = append(cColumns, "settings")
 		cValues = append(cValues, *c.Settings)
@@ -268,7 +236,11 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 			cValues = append(cValues, "")
 		} else {
 			// Anything else we replace with a new API key
-			apikey := uuid.New().String()
+			var apikey string
+			apikey, err = GenerateKey(15)
+			if err != nil {
+				return
+			}
 			c.APIKey = &apikey // Write the API key back to the connection object
 			cValues = append(cValues, apikey)
 		}

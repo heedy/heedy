@@ -1,9 +1,9 @@
 # The public folder is generated from the frontend
-assets/public
-assets/setup
+/assets/public
+/assets/setup
 
 # The built executable
-heedy
+/heedy
 
 # Node modules are unnecessary
 node_modules/

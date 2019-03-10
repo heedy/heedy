@@ -16,10 +16,6 @@ func (db *AdminDB) Close() error {
 	return db.DB.Close()
 }
 
-func (db *AdminDB) ThisUser() (*User, error) {
-	return nil, nil // Not a user
-}
-
 func (db *AdminDB) ID() string {
 	return ""
 }
@@ -41,6 +37,32 @@ func (db *AdminDB) AuthUser(name string, password string) (string, string, error
 		return "", "", ErrUserNotFound
 	}
 	return selectResult.Name, selectResult.Password, nil
+}
+
+// LoginToken gets an active login token's username
+func (db *AdminDB) LoginToken(token string) (string, error) {
+	var selectResult struct {
+		User string
+	}
+	err := db.Get(&selectResult, "SELECT user FROM logins WHERE token=?;", token)
+	return selectResult.User, err
+}
+
+// AddLoginToken gets the token for a given user
+func (db *AdminDB) AddLoginToken(user string) (token string, err error) {
+	token, err = GenerateKey(15)
+	if err != nil {
+		return
+	}
+	result, err2 := db.Exec("INSERT INTO logins (user,token) VALUES (?,?);", user, token)
+	err = getExecError(result, err2)
+	return
+}
+
+// RemoveLoginToken deletes the given token from the database
+func (db *AdminDB) RemoveLoginToken(token string) error {
+	result, err := db.Exec("DELETE FROM logins WHERE token=?;", token)
+	return getExecError(result, err)
 }
 
 // CreateUser is the administrator version of create

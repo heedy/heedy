@@ -1,7 +1,7 @@
 import VueRouter from "vue-router";
 
-import Theme from "./components/Theme.vue";
-import Basics from "./components/Basics.vue";
+import Theme from "./embedded/setup/Theme.vue";
+import Basics from "./embedded/setup/Basics.vue";
 
 Vue.use(VueRouter);
 
