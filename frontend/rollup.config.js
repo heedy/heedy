@@ -45,7 +45,7 @@ function externalize(arr) {
   arr.map(o => {
     o.external = externals;
   });
-  console.log(arr);
+  //console.log(arr);
   return arr;
 }
 

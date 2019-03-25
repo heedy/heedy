@@ -41,6 +41,9 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 
 	// This is the main function that sets up the frontend template
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		// Disallow clickjacking
+		w.Header().Add("X-Frame-Options", "DENY")
+
 		ctx := r.Context().Value(auth.CTX).(*auth.Context)
 		/*
 			u, err := ctx.DB.ThisUser()
@@ -81,6 +84,10 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 	}
 
 	mux.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
+
+		// Disallow clickjacking
+		// https://www.oauth.com/oauth2-servers/authorization/security-considerations/
+		w.Header().Add("X-Frame-Options", "DENY")
 		ctx := r.Context().Value(auth.CTX).(*auth.Context)
 		ctx.Log.Debug("Running auth template")
 		aTemplate.Execute(w, &aContext{

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/dkumor/statik/fs"
+	"github.com/rakyll/statik/fs"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )

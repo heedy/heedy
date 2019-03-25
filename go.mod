@@ -4,13 +4,13 @@ go 1.12
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/dkumor/statik v0.1.6-0.20190216195738-8395d6673762
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/hcl2 v0.0.0-20190305174554-fdf8e232b64f
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/rakyll/statik v0.1.6
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.3.0

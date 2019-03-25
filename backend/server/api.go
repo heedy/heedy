@@ -3,8 +3,8 @@ package server
 import (
 	"net/http"
 
-	"github.com/heedy/heedy/backend/assets"
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/backend/assets"
 )
 
 // The this route operates with reference to the logged in connection.
@@ -14,8 +14,7 @@ func GetThis(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-// RequestToken permits a user to log in. It also leaves us open to future
-// oauth implementation
+// RequestToken permits a user to log in.
 func RequestToken(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 
@@ -28,6 +27,8 @@ func APIMux(a *assets.Assets) (*chi.Mux, error) {
 	v1mux := chi.NewMux()
 
 	v1mux.Get("/this", GetThis)
+
+	// The token request
 	v1mux.Post("/token", RequestToken)
 
 	apiMux := chi.NewMux()
