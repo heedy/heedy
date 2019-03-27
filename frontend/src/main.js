@@ -11,14 +11,20 @@ Vue.use(VueRouter);
 Vue.use(Vuex);
 
 // Add the app's routes to the router, with pages loaded dynamically
+
+// TODO: https://github.com/vuejs/vue-router/pull/2140/commits/8975db3659401ef5831ebf2eae5558f2bf3075e1
+// Lazy loading and error pages are not functional in router. Will need to fix this before release
 export const router = new VueRouter({
   routes: Object.keys(appinfo.routes)
     .map(k => ({
       path: k,
-      component: () => import("./" + appinfo.routes[k]),
-      loading: Loading,
-      error: NotFound,
-      delay: 200
+      component: () => ({
+        component: import("./" + appinfo.routes[k]),
+        loading: Loading,
+        error: NotFound,
+        delay: 200,
+        timeout: 0
+      })
     }))
     .concat([
       {

@@ -29,6 +29,11 @@ const plugins = [
 if (production) {
   plugins.push(terser());
 }
+
+function checkExternal(modid, parent, isResolved) {
+  return !isResolved && modid.endsWith(".mjs");
+}
+/*
 function externalize(arr) {
   // Add all generated outputs as valid externals
   let externals = Object.keys(globals);
@@ -45,9 +50,10 @@ function externalize(arr) {
   arr.map(o => {
     o.external = externals;
   });
-  //console.log(arr);
+  console.log(arr);
   return arr;
 }
+*/
 
 function out(name, loc = "", format = "es") {
   let filename = name.split(".");
@@ -62,18 +68,17 @@ function out(name, loc = "", format = "es") {
         (format == "es" ? ".mjs" : ".js"),
       format: format
     },
-    plugins: plugins
+    plugins: plugins,
+    external: checkExternal
   };
 }
-export default externalize(
-  [
-    // The base files
-    out("main.js"),
-    out("auth.js"),
-    out("setup.js")
-  ]
-    .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
-    .concat(
-      glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
-    )
-);
+export default [
+  // The base files
+  out("main.js"),
+  out("auth.js"),
+  out("setup.js")
+]
+  .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
+  .concat(
+    glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
+  );

@@ -3,10 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/server"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -33,9 +33,9 @@ var RunCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(b))
+		logrus.Debug(string(b))
 
-		return server.Run(a)
+		return server.Run()
 	},
 }
 

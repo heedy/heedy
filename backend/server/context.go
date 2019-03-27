@@ -1,4 +1,4 @@
-package auth
+package server
 
 import (
 	"github.com/heedy/heedy/backend/database"
@@ -7,7 +7,7 @@ import (
 )
 
 // A Context is generated for all requests, and holds all the info necessary for completing it.
-// This object is injected into each request's context under the key Ctx
+// This object can be extracted from a request with the CTX function.
 type Context struct {
 	Log     *log.Entry  // The request's logger
 	DB      database.DB // The authenticated database object

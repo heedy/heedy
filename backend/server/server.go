@@ -12,18 +12,18 @@ import (
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugin"
-	"github.com/heedy/heedy/backend/server/auth"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(a *assets.Assets) error {
-	db, err := database.Open(a)
+func Run() error {
+	db, err := database.Open(assets.Get())
 	if err != nil {
 		return err
 	}
+	auth := NewAuth(db)
 
-	ph, err := plugin.NewManager(a)
+	ph, err := plugin.NewManager(assets.Get())
 	if err != nil {
 		log.Error(err.Error())
 		return err
@@ -41,19 +41,24 @@ func Run(a *assets.Assets) error {
 		}
 	}()
 
-	serverAddress := fmt.Sprintf("%s:%d", *a.Config.Host, *a.Config.Port)
+	serverAddress := fmt.Sprintf("%s:%d", assets.Config().GetHost(), assets.Config().GetPort())
 
-	apiMux, err := APIMux(a)
+	apiMux, err := APIMux()
 	if err != nil {
 		return err
 	}
-	fMux, err := FrontendMux(a)
+	authMux, err := AuthMux(auth)
+	if err != nil {
+		return err
+	}
+	fMux, err := FrontendMux()
 	if err != nil {
 		return err
 	}
 
 	mux := chi.NewMux()
 	mux.Mount("/api", apiMux)
+	mux.Mount("/auth", authMux)
 	mux.Mount("/", fMux)
 
 	// Get assets directly for the main files
@@ -84,7 +89,7 @@ func Run(a *assets.Assets) error {
 		log.Panic(err)
 	}
 
-	http.ListenAndServe(serverAddress, auth.New(db, handler))
+	http.ListenAndServe(serverAddress, NewMiddleware(auth, handler))
 	/*
 		srv := &http.Server{
 			Addr:    serverAddress,

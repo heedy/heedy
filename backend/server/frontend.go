@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/server/auth"
 	"github.com/spf13/afero"
 )
 
@@ -18,15 +17,15 @@ type fContext struct {
 }
 
 type aContext struct {
-	User    *database.User    `json:"user"`
-	Request *auth.AuthRequest `json:"request`
+	User    *database.User `json:"user"`
+	Request *CodeRequest   `json:"request"`
 }
 
 // FrontendMux represents the frontend
-func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
+func FrontendMux() (*chi.Mux, error) {
 	mux := chi.NewMux()
 
-	frontendFS := afero.NewBasePathFs(a.FS, "/public")
+	frontendFS := afero.NewBasePathFs(assets.Get().FS, "/public")
 
 	// The main frontend app
 
@@ -44,7 +43,7 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 		// Disallow clickjacking
 		w.Header().Add("X-Frame-Options", "DENY")
 
-		ctx := r.Context().Value(auth.CTX).(*auth.Context)
+		ctx := CTX(r)
 		/*
 			u, err := ctx.DB.ThisUser()
 			if err != nil {
@@ -57,8 +56,8 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 		ctx.Log.Debug("Running template for public")
 		fTemplate.Execute(w, &fContext{
 			User:   nil,
-			Routes: a.Config.Frontend.PublicRoutes,
-			Menu:   a.Config.Frontend.PublicMenu,
+			Routes: assets.Config().Frontend.PublicRoutes,
+			Menu:   assets.Config().Frontend.PublicMenu,
 		})
 		return
 		/*
@@ -71,30 +70,6 @@ func FrontendMux(a *assets.Assets) (*chi.Mux, error) {
 			})
 		*/
 
-	})
-
-	// The authorization flow (login/give permissions page)
-	abytes, err := afero.ReadFile(frontendFS, "/auth.html")
-	if err != nil {
-		return nil, err
-	}
-	aTemplate, err := template.New("auth").Parse(string(abytes))
-	if err != nil {
-		return nil, err
-	}
-
-	mux.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
-
-		// Disallow clickjacking
-		// https://www.oauth.com/oauth2-servers/authorization/security-considerations/
-		w.Header().Add("X-Frame-Options", "DENY")
-		ctx := r.Context().Value(auth.CTX).(*auth.Context)
-		ctx.Log.Debug("Running auth template")
-		aTemplate.Execute(w, &aContext{
-			User:    nil,
-			Request: nil,
-		})
-		return
 	})
 
 	// Handles getting all assets other than the root webpage

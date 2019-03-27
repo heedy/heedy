@@ -1,4 +1,4 @@
-package auth
+package server
 
 import (
 	"context"
@@ -10,20 +10,23 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/xid"
 	"github.com/sirupsen/logrus"
-
-	"github.com/heedy/heedy/backend/database"
 )
 
-// NotABasicType is there because the context package doesn't like basic indices, so we use a constant that is
+// notABasicType is there because the context package doesn't like basic indices, so we use a constant that is
 // used to get the context from requests
-type NotABasicType uint8
+type notABasicType uint8
 
 const (
-	// CTX is the context entry used to get the auth context from the request context
-	CTX NotABasicType = iota
+	// ctx is the context entry used to get the auth context from the request context
+	ctxtype notABasicType = iota
 )
 
-// requestLogger generates a basic logger that
+// CTX gets the heedy request context from an http.Request
+func CTX(r *http.Request) *Context {
+	return r.Context().Value(ctxtype).(*Context)
+}
+
+// requestLogger generates a basic logger that holds relevant request info
 func requestLogger(r *http.Request) *logrus.Entry {
 	fields := logrus.Fields{"addr": r.RemoteAddr, "path": r.URL.Path, "method": r.Method}
 	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
@@ -35,10 +38,9 @@ func requestLogger(r *http.Request) *logrus.Entry {
 // Middleware is a middleware that authenticates requests and generates a Context object containing
 // the info necessary to complete the request
 type Middleware struct {
-	// These allow the auth middleware to generate user-specific database connections
-	// Each connection has exactly the access that it is authenticated to have
-	db      *database.AdminDB
 	handler http.Handler
+
+	auth *Auth
 
 	// The auth system also allows special token-based access. This is specifically built
 	// to support plugins. Each request that is forwarded through the plugin system
@@ -49,10 +51,10 @@ type Middleware struct {
 	activeRequests map[string]*Context
 }
 
-// New generates a new Auth middleware
-func New(db *database.AdminDB, h http.Handler) *Middleware {
+// NewMiddleware generates a new Auth middleware
+func NewMiddleware(auth *Auth, h http.Handler) *Middleware {
 	return &Middleware{
-		db:             db,
+		auth:           auth,
 		handler:        h,
 		activeRequests: make(map[string]*Context),
 	}
@@ -62,7 +64,7 @@ func (a *Middleware) serve(w http.ResponseWriter, r *http.Request, requestStart 
 	a.Lock()
 	a.activeRequests[c.Token] = c
 	a.Unlock()
-	a.handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CTX, c)))
+	a.handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxtype, c)))
 	a.Lock()
 	delete(a.activeRequests, c.Token)
 	a.Unlock()
@@ -127,7 +129,7 @@ func (a *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ID:    id,
 		Token: uuid.New().String(),
 	}
-	db, err := Authenticate(a.db, r)
+	db, err := a.auth.Authenticate(r)
 	if err != nil {
 		// Authentication failed. This means that it was an illegal request, and we treat it as such
 		time.Sleep(time.Second)
