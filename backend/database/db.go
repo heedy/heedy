@@ -26,7 +26,8 @@ type Details struct {
 type Group struct {
 	Details
 
-	// No more info is needed for now
+	PublicAccess *int `json:"public_access,omitempty" db:"public_access"`
+	UserAccess   *int `json:"user_access,omitempty" db:"user_access"`
 }
 
 // User holds a user's data
@@ -57,27 +58,23 @@ type Stream struct {
 // DB represents the database. This interface is implemented in many ways:
 //	once for admin
 //	once for users
-//	once for devices
+//	once for connections
 //	once for public
 type DB interface {
 	ID() string // This is an identifier for the database. empty string is public access
-
-	// Gets the user for a given login token
-	LoginToken(token string) (string, error)
-	// Adds a login token to the given user, returning it
-	AddLoginToken(user string) (string, error)
 
 	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
 }
 
 var (
-	ErrNotFound        = errors.New("The selected resource was not found")
+	ErrNotFound        = errors.New("not_found: The selected resource was not found")
 	ErrNoUpdate        = errors.New("Nothing to update")
 	ErrNoPasswordGiven = errors.New("A user cannot have an empty password")
 	ErrUserNotFound    = errors.New("User was not found")
 	ErrInvalidName     = errors.New("Invalid name")
 	ErrInvalidQuery    = errors.New("Invalid query")
+	ErrAccessDenied    = errors.New("access_denied: you are not allowed to do this")
 )
 
 // GenerateKey creates a random API key
@@ -184,8 +181,31 @@ func extractDetails(d *Details) (detailColumns []string, detailValues []interfac
 	return
 }
 
+// Checks whether the given group access level is OK
+func ValidGroupAccessLevel(level int) error {
+	if level < 0 || level > 600 {
+		return errors.New("malformed_query: Access levels are 0-600")
+	}
+	return nil
+}
+
 func extractGroup(g *Group) (groupColumns []string, groupValues []interface{}, err error) {
 	groupColumns, groupValues, err = extractDetails(&g.Details)
+
+	if g.PublicAccess != nil {
+		if err = ValidGroupAccessLevel(*g.PublicAccess); err != nil {
+			return
+		}
+		groupColumns = append(groupColumns, "public_access")
+		groupValues = append(groupValues, *g.PublicAccess)
+	}
+	if g.UserAccess != nil {
+		if err = ValidGroupAccessLevel(*g.PublicAccess); err != nil {
+			return
+		}
+		groupColumns = append(groupColumns, "user_access")
+		groupValues = append(groupValues, *g.UserAccess)
+	}
 	return
 }
 

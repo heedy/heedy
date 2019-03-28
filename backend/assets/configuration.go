@@ -118,6 +118,8 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
+	Scopes map[string]string `json:"scopes,omitempty"`
+
 	Frontend Frontend `json:"frontend"`
 
 	Language         *string `hcl:"language" json:"language,omitempty"`

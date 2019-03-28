@@ -104,6 +104,30 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			return
 		}
 
+		db, err := database.Open(a)
+		if err != nil {
+			log.Error(err)
+			os.RemoveAll(mydir)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		defer db.Close()
+
+		// Now add the default user
+		if err = db.CreateUser(&database.User{
+			Group: database.Group{
+				Details: database.Details{
+					Name: &sm.User.Name,
+				},
+			},
+			Password: sm.User.Password,
+		}); err != nil {
+			log.Error(err)
+			os.RemoveAll(mydir)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		log.Info("Success")
 
 		w.WriteHeader(http.StatusOK)

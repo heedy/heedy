@@ -32,6 +32,8 @@ CREATE TABLE groups (
 	description VARCHAR DEFAULT '',
 	icon VARCHAR DEFAULT '',
 	owner VARCHAR(36) NOT NULL,
+	public_access INTEGER DEFAULT 0, -- access of the public to the group
+	user_access INTEGER DEFAULT 0, -- access of all users to the group
 
 	CONSTRAINT groupowner
 		FOREIGN KEY(owner) 
@@ -101,7 +103,7 @@ CREATE TABLE streams (
 	actor BOOLEAN DEFAULT FALSE, -- Whether the stream is also an actor, ie, it can take action, meaning that it performs interventions
 
 	-- What access is given to the user and others who have access to the stream
-	access INTEGER DEFAULT 2, -- 0 hidden, 1 read, 2 insert actions, 3 insert, 4 remove data, 5 modify, 6 delete
+	access INTEGER DEFAULT 2, -- 0 hidden, 100 read, 200 insert actions, 300 insert, 400 remove data, 500 modify, 600 delete
 
 	CONSTRAINT streamconnection
 		FOREIGN KEY(connection) 
@@ -135,15 +137,15 @@ CREATE TABLE group_scopes (
 
 CREATE TABLE group_members (
 	groupid VARCHAR(36),
-	id VARCHAR(36),
+	username VARCHAR(36),
 
-	access INTEGER DEFAULT 2, -- 1 is readonly, 2 gives stream insert access, 3 allows adding streams/sources, 4 allows removing streams/sources
+	access INTEGER DEFAULT 3, -- 100 is read group, 200 is readonly all, 300 gives stream insert access, 400 allows adding streams/sources, 500 allows removing streams/sources, 600 allows adding/removing members (except owner)
 
-	UNIQUE(groupid,id),
-	PRIMARY KEY (groupid,id),
+	UNIQUE(groupid,username),
+	PRIMARY KEY (groupid,username),
 
 	CONSTRAINT idid
-		FOREIGN KEY(id)
+		FOREIGN KEY(username)
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
@@ -243,7 +245,7 @@ CREATE TABLE connection_connections (
 	connection VARCHAR(36),
 	id VARCHAR(36),
 
-	access INTEGER DEFAULT 1, -- Same as stream access
+	access INTEGER DEFAULT 100, -- Same as stream access
 
 	UNIQUE(connection,id),
 	PRIMARY KEY (connection,id),
@@ -265,7 +267,7 @@ CREATE TABLE connection_groups (
 	connection VARCHAR(36),
 	id VARCHAR(36),
 
-	access INTEGER DEFAULT 1, -- Same as stream access
+	access INTEGER DEFAULT 100, -- Same as stream access
 
 	UNIQUE(connection,id),
 	PRIMARY KEY (connection,id),
@@ -289,7 +291,7 @@ CREATE TABLE connection_groups (
 -- These are used to control manually logged in devices,
 -- so that we don't need to put passwords in cookies
 
-CREATE TABLE logins (
+CREATE TABLE user_tokens (
 	user VARCHAR(36) NOT NULL,
 	token VARCHAR UNIQUE NOT NULL,
 
@@ -301,7 +303,7 @@ CREATE TABLE logins (
 );
 
 -- This will be requested on every single query
-CREATE INDEX login_tokens ON logins(token);
+CREATE INDEX login_tokens ON user_tokens(token);
 
 ------------------------------------------------------------------
 -- Key-Value Storage for Plugins & Frontend
@@ -339,6 +341,47 @@ CREATE TABLE plugin_kv (
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
+);
+
+------------------------------------------------------------------
+-- Database Default Users & Groups
+------------------------------------------------------------------
+
+-- The public group is created by default, and cannot be deleted,
+-- as it represents the database view that someone not logged in will get.
+
+-- The heedy user represents the database internals. It is used as the actor
+-- when the software or plugins do something
+INSERT INTO users VALUES ("heedy","-");
+INSERT INTO groups (id,name,fullname,description,icon,owner) VALUES (
+	"heedy",
+	"heedy",
+	"Heedy",
+	"",
+	"mi:remove_red_eye",
+	"heedy"
+);
+
+-- the public group has ID public
+INSERT INTO groups (id,name,fullname,description,icon,owner,public_access) VALUES (
+	"public",
+	"public",
+	"Public",
+	"Make accessible to all visitors, even if they're not logged in",
+	"mi:share",
+	"heedy",
+	400 -- Allows each user to add/remove their own streams/connections
+);
+
+-- the users group has ID users
+INSERT INTO groups (id,name,fullname,description,icon,owner,user_access) VALUES (
+	"users",
+	"users",
+	"Users",
+	"Make accessible to all logged-in users",
+	"mi:supervised_user_circle",
+	"heedy",
+	400 -- Allows each user to add/remove their own streams/connections
 );
 
 `

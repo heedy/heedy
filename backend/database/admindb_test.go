@@ -306,3 +306,47 @@ func TestAdminStream(t *testing.T) {
 	require.NoError(t, db.DelStream(sid))
 	require.Error(t, db.DelStream(sid))
 }
+
+func TestAdminScopes(t *testing.T) {
+	db, cleanup := newDB(t)
+	defer cleanup()
+
+	name := "testy"
+	require.NoError(t, db.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	scopes, err := db.GetGroupScopes(name)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(scopes))
+
+	scopes, err = db.GetGroupScopes("notvalid")
+	require.NoError(t, err)
+	require.Equal(t, 0, len(scopes))
+
+	require.Error(t, db.AddGroupScopes("notvalid", "myscope", "myscope2"))
+
+	scopes, err = db.GetGroupScopes("notvalid")
+	require.NoError(t, err)
+	require.Equal(t, 0, len(scopes))
+
+	require.NoError(t, db.AddGroupScopes(name, "myscope", "myscope2"))
+
+	scopes, err = db.GetGroupScopes(name)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(scopes))
+
+	require.NoError(t, db.RemGroupScopes("notvalid", "myscope"))
+
+	require.NoError(t, db.RemGroupScopes(name, "myscope3", "myscope"))
+
+	scopes, err = db.GetGroupScopes(name)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(scopes))
+	require.Equal(t, "myscope2", scopes[0])
+}

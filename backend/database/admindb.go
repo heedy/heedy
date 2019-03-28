@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // AdminDB holds the main database, with admin access
@@ -17,7 +19,7 @@ func (db *AdminDB) Close() error {
 }
 
 func (db *AdminDB) ID() string {
-	return ""
+	return "heedy" // An administrative database acts as heedy
 }
 
 // AuthUser returns the groupid and password hash for the given user, or an authentication error
@@ -44,7 +46,7 @@ func (db *AdminDB) LoginToken(token string) (string, error) {
 	var selectResult struct {
 		User string
 	}
-	err := db.Get(&selectResult, "SELECT user FROM logins WHERE token=?;", token)
+	err := db.Get(&selectResult, "SELECT user FROM user_tokens WHERE token=?;", token)
 	return selectResult.User, err
 }
 
@@ -54,14 +56,14 @@ func (db *AdminDB) AddLoginToken(user string) (token string, err error) {
 	if err != nil {
 		return
 	}
-	result, err2 := db.Exec("INSERT INTO logins (user,token) VALUES (?,?);", user, token)
+	result, err2 := db.Exec("INSERT INTO user_tokens (user,token) VALUES (?,?);", user, token)
 	err = getExecError(result, err2)
 	return
 }
 
 // RemoveLoginToken deletes the given token from the database
 func (db *AdminDB) RemoveLoginToken(token string) error {
-	result, err := db.Exec("DELETE FROM logins WHERE token=?;", token)
+	result, err := db.Exec("DELETE FROM user_tokens WHERE token=?;", token)
 	return getExecError(result, err)
 }
 
@@ -340,6 +342,45 @@ func (db *AdminDB) UpdateStream(s *Stream) error {
 func (db *AdminDB) DelStream(id string) error {
 	result, err := db.Exec("DELETE FROM streams WHERE id=?;", id)
 	return getExecError(result, err)
+}
+
+// AddGroupScopes adds the given scopes to the group, without checking their validity
+func (db *AdminDB) AddGroupScopes(groupid string, scopes ...string) error {
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return err
+	}
+
+	for i := range scopes {
+		result, err := tx.Exec("INSERT OR IGNORE INTO group_scopes(groupid,scope) VALUES (?,?);", groupid, scopes[i])
+		err = getExecError(result, err)
+		if err != nil && err != ErrNotFound {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// RemGroupScopes removes scopes from a group
+func (db *AdminDB) RemGroupScopes(groupid string, scopes ...string) error {
+	query, args, err := sqlx.In("DELETE FROM group_scopes WHERE groupid=? AND scope IN (?) ", groupid, scopes)
+	if err != nil {
+		return err
+	}
+	result, err := db.Exec(query, args...)
+	err = getExecError(result, err)
+	if err == ErrNotFound {
+		return nil
+	}
+	return err
+}
+
+// GetGroupScopes gets the scopes in a group
+func (db *AdminDB) GetGroupScopes(groupid string) ([]string, error) {
+	var scopes []string
+	err := db.Select(&scopes, "SELECT scope FROM group_scopes WHERE groupid=?", groupid)
+	return scopes, err
 }
 
 /*

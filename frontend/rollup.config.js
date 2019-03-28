@@ -2,6 +2,7 @@ import glob from "glob";
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import postcss from "rollup-plugin-postcss";
+import json from "rollup-plugin-json";
 import externalGlobals from "rollup-plugin-external-globals";
 import VuePlugin from "rollup-plugin-vue";
 import replace from "rollup-plugin-replace";
@@ -20,8 +21,14 @@ const plugins = [
   // https://github.com/rollup/rollup/issues/1437
   // https://github.com/rollup/rollup/issues/2374
   externalGlobals(globals),
-  resolve(),
+  resolve({
+    browser: true,
+    preferBuiltins: false
+  }),
   postcss(),
+  json({
+    compact: true
+  }),
   replace({
     "process.env.NODE_ENV": JSON.stringify(production ? "production" : "debug")
   })
@@ -31,7 +38,7 @@ if (production) {
 }
 
 function checkExternal(modid, parent, isResolved) {
-  return !isResolved && modid.endsWith(".mjs");
+  return (!isResolved && modid.endsWith(".mjs")) || modid.startsWith("http");
 }
 /*
 function externalize(arr) {
@@ -76,7 +83,8 @@ export default [
   // The base files
   out("main.js"),
   out("auth.js"),
-  out("setup.js")
+  out("setup.js"),
+  out("heedy/util.js")
 ]
   .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
   .concat(
