@@ -2,6 +2,7 @@ package assets
 
 import (
 	"reflect"
+	"strings"
 )
 
 type Setting struct {
@@ -118,7 +119,10 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Scopes map[string]string `json:"scopes,omitempty"`
+	Scopes              *map[string]string `json:"scopes,omitempty"`
+	NewUserScopes       *[]string          `json:"new_user_scopes,omitempty"`
+	NewGroupScopes      *[]string          `json:"new_group_scopes"`
+	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty"`
 
 	Frontend Frontend `json:"frontend"`
 
@@ -150,7 +154,10 @@ func (c *Configuration) Copy() *Configuration {
 }
 
 func NewConfiguration() *Configuration {
-	return &Configuration{Plugins: make(map[string]*Plugin), Frontend: NewFrontend()}
+	return &Configuration{
+		Plugins:  make(map[string]*Plugin),
+		Frontend: NewFrontend(),
+	}
 }
 
 func NewPlugin() *Plugin {
@@ -160,10 +167,94 @@ func NewPlugin() *Plugin {
 	}
 }
 
+// MergeStringArrays allows merging arrays of strings, with the result having each element
+// at most once, and special prefix of + being ignored, and - allowing removal from array
+func MergeStringArrays(base *[]string, overlay *[]string) *[]string {
+	if base == nil {
+		return overlay
+	}
+	if overlay == nil {
+		return base
+	}
+
+	output := make([]string, 0)
+	for _, d := range *base {
+		if !strings.HasPrefix(d, "-") {
+			if strings.HasPrefix(d, "+") {
+				d = d[1:len(d)]
+			}
+
+			// Check if the output aready contains it
+			contained := false
+			for _, bd := range output {
+				if bd == d {
+					contained = true
+					break
+				}
+			}
+			if !contained {
+				output = append(output, d)
+			}
+
+		}
+	}
+	for _, d := range *overlay {
+		if strings.HasPrefix(d, "-") {
+			if len(output) <= 0 {
+				break
+			}
+			d = d[1:len(d)]
+
+			// Remove element if contained
+			for j, bd := range output {
+				if bd == d {
+					if len(output) == j+1 {
+						output = output[:len(output)-1]
+					} else {
+						output[j] = output[len(output)-1]
+						output = output[:len(output)-1]
+						break
+					}
+
+				}
+			}
+		} else {
+			if strings.HasPrefix(d, "+") {
+				d = d[1:len(d)]
+			}
+
+			// Check if the output aready contains it
+			contained := false
+			for _, bd := range output {
+				if bd == d {
+					contained = true
+					break
+				}
+			}
+			if !contained {
+				output = append(output, d)
+			}
+		}
+	}
+	return &output
+}
+
 // Merges two configurations together
 func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	base = base.Copy()
 	overlay = overlay.Copy()
+
+	// Copy the scopes to overlay, since they will be replaced with CopyStruct
+	if overlay.Scopes != nil && base.Scopes != nil {
+		for sk, sv := range *overlay.Scopes {
+			(*base.Scopes)[sk] = sv
+		}
+		overlay.Scopes = base.Scopes
+	}
+
+	overlay.NewUserScopes = MergeStringArrays(base.NewUserScopes, overlay.NewUserScopes)
+	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
+	overlay.NewGroupScopes = MergeStringArrays(base.NewGroupScopes, overlay.NewGroupScopes)
 
 	CopyStructIfPtrSet(base, overlay)
 

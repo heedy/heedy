@@ -39,7 +39,7 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 		return nil, err
 	}
 
-	adminDB := &AdminDB{}
+	adminDB := &AdminDB{a: a}
 	adminDB.SqlxCache.InitCache(db)
 	return adminDB, nil
 }

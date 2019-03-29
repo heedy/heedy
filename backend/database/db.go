@@ -61,7 +61,8 @@ type Stream struct {
 //	once for connections
 //	once for public
 type DB interface {
-	ID() string // This is an identifier for the database. empty string is public access
+	AdminDB() *AdminDB // Returns the underlying administrative database
+	ID() string        // This is an identifier for the database. empty string is public access
 
 	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
@@ -336,12 +337,39 @@ func userCreateQuery(u *User) (string, []interface{}, string, []interface{}, err
 }
 
 func userUpdateQuery(u *User) (string, []interface{}, string, []interface{}, error) {
-	groupColumns, groupValues, userColumns, userValues, err := extractUser(u)
+	if err := ValidName(u.ID); err != nil {
+		return "", nil, "", nil, err
+	}
+	if u.Owner != nil {
+		u.Owner = nil
+	}
+	gColumns, groupValues, uColumns, userValues, err := extractUser(u)
 	if err != nil {
 		return "", nil, "", nil, err
 	}
 
-	return strings.Join(groupColumns, "=?,") + "=?", groupValues, strings.Join(userColumns, "=?,") + "=?", userValues, err
+	groupColumns := strings.Join(gColumns, "=?,") + "=?"
+	userColumns := strings.Join(uColumns, "=?,") + "=?"
+
+	if u.Name != nil {
+		// A name change changes the group's ID also. We need to manually handle this.
+		groupValues = append(groupValues, *u.Name)
+		groupColumns = groupColumns + ",id=?"
+
+		// Unfortunately, sqlite doesn't support alter table foreign keys, so we need to manually update the user name,
+		// rather than cascading id change to user name
+		userValues = append(userValues, *u.Name)
+		if len(userValues) > 1 {
+			userColumns = userColumns + ",name=?"
+		} else {
+			userColumns = "name=?"
+		}
+	}
+
+	userValues = append(userValues, u.ID)
+	groupValues = append(groupValues, u.ID)
+
+	return groupColumns, groupValues, userColumns, userValues, err
 }
 
 func groupCreateQuery(g *Group) (string, []interface{}, error) {

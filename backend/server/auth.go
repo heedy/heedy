@@ -75,10 +75,10 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 		// as if the auth didn't exist.
 
 		if cookie.Name == "token" && cookie.Value != "" {
-			_, err := a.db.LoginToken(cookie.Value) // user name not currently used
+			username, err := a.db.LoginToken(cookie.Value) // user name not currently used
 			if err == nil {
 				// Return the logged in user database
-				return a.db, nil
+				return database.NewUserDB(a.db, username), nil
 			}
 		}
 		r.AddCookie(&http.Cookie{
@@ -89,7 +89,7 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 	}
 
 	// Nobody is logged in, return a public database view
-	return a.db, nil
+	return &database.PublicDB{a.db}, nil
 }
 
 type tokenResponse struct {

@@ -5,12 +5,26 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/heedy/heedy/backend/assets"
+
 	"github.com/jmoiron/sqlx"
 )
 
 // AdminDB holds the main database, with admin access
 type AdminDB struct {
 	SqlxCache
+
+	a *assets.Assets
+}
+
+// AdminDB returns the admin database
+func (db *AdminDB) AdminDB() *AdminDB {
+	return db
+}
+
+// Assets returns the assets being used for the database
+func (db *AdminDB) Assets() *assets.Assets {
+	return db.a
 }
 
 // Close closes the backend database
@@ -91,6 +105,16 @@ func (db *AdminDB) CreateUser(u *User) error {
 		tx.Rollback()
 		return err
 	}
+
+	scopes := db.Assets().Config.GetNewUserScopes()
+	for i := range scopes {
+		result, err := tx.Exec("INSERT INTO group_scopes(groupid,scope) VALUES (?,?);", u.Name, scopes[i])
+		err = getExecError(result, err)
+		if err != nil && err != ErrNotFound {
+			tx.Rollback()
+			return err
+		}
+	}
 	return tx.Commit()
 }
 
@@ -108,34 +132,10 @@ func (db *AdminDB) ReadUser(name string) (*User, error) {
 
 // UpdateUser updates the given portions of a user
 func (db *AdminDB) UpdateUser(u *User) error {
-	if err := ValidName(u.ID); err != nil {
-		return err
-	}
-	if u.Owner != nil {
-		u.Owner = nil
-	}
 	groupColumns, groupValues, userColumns, userValues, err := userUpdateQuery(u)
 	if err != nil {
 		return err
 	}
-
-	if u.Name != nil {
-		// A name change changes the group's ID also. We need to manually handle this.
-		groupValues = append(groupValues, *u.Name)
-		groupColumns = groupColumns + ",id=?"
-
-		// Unfortunately, sqlite doesn't support alter table foreign keys, so we need to manually update the user name,
-		// rather than cascading id change to user name
-		userValues = append(userValues, *u.Name)
-		if len(userValues) > 1 {
-			userColumns = userColumns + ",name=?"
-		} else {
-			userColumns = "name=?"
-		}
-	}
-
-	userValues = append(userValues, u.ID)
-	groupValues = append(groupValues, u.ID)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -197,12 +197,32 @@ func (db *AdminDB) CreateGroup(g *Group) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	groupid := groupValues[len(groupValues)-1].(string)
 
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return "", err
+	}
+
+	result, err := tx.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
 	err = getExecError(result, err)
+	if err != nil {
+		tx.Rollback()
+		return "", err
+	}
+
+	scopes := db.Assets().Config.GetNewGroupScopes()
+	for i := range scopes {
+		result, err := tx.Exec("INSERT INTO group_scopes(groupid,scope) VALUES (?,?);", groupid, scopes[i])
+		err = getExecError(result, err)
+		if err != nil && err != ErrNotFound {
+			tx.Rollback()
+			return "", err
+		}
+	}
 
 	// The last element of groupValues is guaranteed to be the ID string
-	return groupValues[len(groupValues)-1].(string), err
+	return groupid, tx.Commit()
 }
 
 // ReadGroup reads a group by id
@@ -244,12 +264,33 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+	// id is last, apikey is second to last
+	connectionid := cValues[len(cValues)-1].(string)
+	apikey := cValues[len(cValues)-2].(string)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return "", "", err
+	}
 
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO connections (%s) VALUES (%s);", cColumns, qQ(len(cValues))), cValues...)
 	err = getExecError(result, err)
+	if err != nil {
+		tx.Rollback()
+		return "", "", err
+	}
 
-	// id is last, apikey is second to last
-	return cValues[len(cValues)-1].(string), cValues[len(cValues)-2].(string), err
+	scopes := db.Assets().Config.GetNewConnectionScopes()
+	for i := range scopes {
+		result, err := tx.Exec("INSERT INTO connection_scopes(connectionid,scope) VALUES (?,?);", connectionid, scopes[i])
+		err = getExecError(result, err)
+		if err != nil && err != ErrNotFound {
+			tx.Rollback()
+			return "", "", err
+		}
+	}
+
+	return connectionid, apikey, tx.Commit()
 
 }
 
@@ -344,11 +385,71 @@ func (db *AdminDB) DelStream(id string) error {
 	return getExecError(result, err)
 }
 
-// AddGroupScopes adds the given scopes to the group, without checking their validity
-func (db *AdminDB) AddGroupScopes(groupid string, scopes ...string) error {
+// AddUserScopes adds scopes to the user
+func (db *AdminDB) AddUserScopes(username string, scopes ...string) error {
+	if username == "heedy" {
+		return ErrAccessDenied
+	}
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		return err
+	}
+
+	for i := range scopes {
+		result, err := tx.Exec("INSERT OR IGNORE INTO group_scopes(groupid,scope) VALUES (?,?);", username, scopes[i])
+		err = getExecError(result, err)
+		if err != nil && err != ErrNotFound {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// RemUserScopes removes scopes from a user, while ensuring that all the user's groups also lose the given scope
+func (db *AdminDB) RemUserScopes(groupid string, scopes ...string) error {
+	if groupid == "heedy" {
+		return ErrAccessDenied
+	}
+	query, args, err := sqlx.In(`DELETE FROM group_scopes WHERE groupid IN (SELECT id FROM groups WHERE owner=?) AND scope IN (?);`, groupid, scopes)
+	if err != nil {
+		return err
+	}
+	result, err := db.Exec(query, args...)
+	err = getExecError(result, err)
+	if err == ErrNotFound {
+		return nil
+	}
+	return err
+}
+
+// AddGroupScopes adds the given scopes to the group. It only adds the scoped that the owner also has, and gives an error if the owner
+// does not have the necessary permissions
+func (db *AdminDB) AddGroupScopes(groupid string, scopes ...string) error {
+	query, args, err := sqlx.In("SELECT COUNT(scope) FROM group_scopes INNER JOIN groups ON group_scopes.groupid=groups.owner WHERE groups.id=? AND group_scopes.scope IN (?)", groupid, scopes)
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return err
+	}
+	var scopeCount int
+	err = tx.Get(&scopeCount, query, args...)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	if scopeCount != len(scopes) {
+		// Wrong scope count. However, maybe we want to add scopes to a group belonging to heedy user - this needs to always succeed, since heedy user is special
+		var username string
+		err = tx.Get(&username, "SELECT owner FROM groups WHERE id=?;", groupid)
+		if err != nil || username != "heedy" {
+			tx.Rollback()
+			return errors.New("access_denied: you cannot add a scope that the group's owner does not have")
+		}
+		// Username is heedy, we're fine
 	}
 
 	for i := range scopes {

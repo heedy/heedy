@@ -73,6 +73,11 @@ type hclConfiguration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
+	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	NewUserScopes       *[]string          `json:"new_user_scopes,omitempty" hcl:"new_user_scopes"`
+	NewGroupScopes      *[]string          `json:"new_group_scopes" hcl:"new_group_scopes"`
+	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+
 	Language         *string `hcl:"language" json:"language"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
 

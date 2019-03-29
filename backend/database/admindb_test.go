@@ -86,6 +86,7 @@ func TestAdminUser(t *testing.T) {
 	u, err := db.ReadUser("testy")
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
+	require.Equal(t, u.Password, "", "The password should never be read back")
 
 	_, _, err = db.AuthUser("testy", "testpass")
 	require.NoError(t, err)
@@ -320,10 +321,10 @@ func TestAdminScopes(t *testing.T) {
 		},
 		Password: "testpass",
 	}))
-
+	userscopes := db.Assets().Config.GetNewUserScopes()
 	scopes, err := db.GetGroupScopes(name)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(scopes))
+	require.Equal(t, len(userscopes), len(scopes))
 
 	scopes, err = db.GetGroupScopes("notvalid")
 	require.NoError(t, err)
@@ -335,18 +336,19 @@ func TestAdminScopes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(scopes))
 
-	require.NoError(t, db.AddGroupScopes(name, "myscope", "myscope2"))
+	require.NoError(t, db.AddUserScopes(name, "myscope", "myscope2"))
 
 	scopes, err = db.GetGroupScopes(name)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(scopes))
+	require.Equal(t, len(userscopes)+2, len(scopes))
 
 	require.NoError(t, db.RemGroupScopes("notvalid", "myscope"))
+	require.NoError(t, db.RemUserScopes("notvalid", "myscope"))
 
-	require.NoError(t, db.RemGroupScopes(name, "myscope3", "myscope"))
+	require.NoError(t, db.RemUserScopes(name, "myscope3", "myscope"))
 
 	scopes, err = db.GetGroupScopes(name)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(scopes))
-	require.Equal(t, "myscope2", scopes[0])
+	require.Equal(t, len(userscopes)+1, len(scopes))
+	//require.Equal(t, "myscope2", scopes[0])
 }
