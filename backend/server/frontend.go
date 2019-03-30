@@ -12,6 +12,7 @@ import (
 
 type fContext struct {
 	User   *database.User             `json:"user"`
+	Scopes []string                   `json:"scopes"`
 	Routes map[string]string          `json:"routes"`
 	Menu   map[string]assets.MenuItem `json:"menu"`
 }
@@ -44,31 +45,45 @@ func FrontendMux() (*chi.Mux, error) {
 		w.Header().Add("X-Frame-Options", "DENY")
 
 		ctx := CTX(r)
-		/*
-			u, err := ctx.DB.ThisUser()
+		u, err := ctx.DB.User()
+		if err != nil {
+			WriteJSONError(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		if u == nil {
+			scopes, err := ctx.DB.AdminDB().GetGroupScopes("public")
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				WriteJSONError(w, r, http.StatusInternalServerError, err)
 				return
 			}
-			if u == nil {
-		*/
-		// Not a user, so show public database
-		ctx.Log.Debug("Running template for public")
-		fTemplate.Execute(w, &fContext{
-			User:   nil,
-			Routes: assets.Config().Frontend.PublicRoutes,
-			Menu:   assets.Config().Frontend.PublicMenu,
-		})
-		return
-		/*
-			}
-			l.Infof("Running template for %s", *u.Name)
-			fTemplate.Execute(w, &fContext{
-				User:   u,
-				Routes: a.Config.Frontend.Routes,
-				Menu:   a.Config.Frontend.Menu,
+			// Running template as public
+			err = fTemplate.Execute(w, &fContext{
+				User:   nil,
+				Scopes: scopes,
+				Routes: assets.Config().Frontend.PublicRoutes,
+				Menu:   assets.Config().Frontend.PublicMenu,
 			})
-		*/
+			if err != nil {
+				WriteJSONError(w, r, http.StatusInternalServerError, err)
+			}
+			return
+		}
+
+		scopes, err := ctx.DB.GetUserScopes(u.ID)
+		if err != nil {
+			WriteJSONError(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		err = fTemplate.Execute(w, &fContext{
+			User:   u,
+			Scopes: scopes,
+			Routes: assets.Config().Frontend.Routes,
+			Menu:   assets.Config().Frontend.Menu,
+		})
+		if err != nil {
+			WriteJSONError(w, r, http.StatusInternalServerError, err)
+		}
+		return
 
 	})
 

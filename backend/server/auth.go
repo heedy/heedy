@@ -89,7 +89,7 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 	}
 
 	// Nobody is logged in, return a public database view
-	return &database.PublicDB{a.db}, nil
+	return database.NewPublicDB(a.db), nil
 }
 
 type tokenResponse struct {

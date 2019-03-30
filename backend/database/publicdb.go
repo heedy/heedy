@@ -4,6 +4,10 @@ type PublicDB struct {
 	DB *AdminDB
 }
 
+func NewPublicDB(db *AdminDB) *PublicDB {
+	return &PublicDB{DB: db}
+}
+
 // AdminDB returns the admin database
 func (db *PublicDB) AdminDB() *AdminDB {
 	return db.DB
@@ -11,6 +15,11 @@ func (db *PublicDB) AdminDB() *AdminDB {
 
 func (db *PublicDB) ID() string {
 	return ""
+}
+
+// User returns the user that is logged in
+func (db *PublicDB) User() (*User, error) {
+	return nil, nil
 }
 
 func (db *PublicDB) CreateUser(u *User) error {
@@ -39,4 +48,18 @@ func (db *PublicDB) DelUser(name string) error {
 	return delUser(db.DB, name, `DELETE FROM users WHERE name=? AND EXISTS (
 			SELECT 1 FROM group_scopes WHERE scope='users:delete' AND groupid='public'
 		);`, name)
+}
+
+func (db *PublicDB) GetUserScopes(username string) ([]string, error) {
+
+	var scopes []string
+	err := db.DB.Select(&scopes, `SELECT DISTINCT(scope) FROM group_scopes WHERE
+			(groupid IN (?, 'public', 'users') OR groupid IN (SELECT groupid FROM group_members WHERE username=?))
+			AND EXISTS (SELECT 1 FROM group_scopes WHERE scope='users:scopes' AND groupid='public');`, username, username)
+	if err == nil && len(scopes) == 0 {
+		// TODO: Same error as in userdb - need to perform an additional check here, because maybe the user actually has 0 scopes (unlikely)
+		return scopes, ErrAccessDenied
+	}
+	return scopes, err
+
 }

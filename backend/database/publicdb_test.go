@@ -73,3 +73,29 @@ func TestPublicUser(t *testing.T) {
 	_, err = adb.ReadUser("testy")
 	require.Error(t, err)
 }
+
+func TestPublicUserScope(t *testing.T) {
+	adb, cleanup := newDB(t)
+	defer cleanup()
+
+	// Create
+	name := "testy"
+	require.NoError(t, adb.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	db := NewPublicDB(adb)
+
+	_, err := db.GetUserScopes("testy")
+	require.Error(t, err)
+
+	require.NoError(t, adb.AddGroupScopes("public", "users:scopes"))
+
+	_, err = db.GetUserScopes("testy")
+	require.NoError(t, err)
+}

@@ -36,6 +36,11 @@ func (db *AdminDB) ID() string {
 	return "heedy" // An administrative database acts as heedy
 }
 
+// User returns the user that is logged in
+func (db *AdminDB) User() (*User, error) {
+	return nil, nil
+}
+
 // AuthUser returns the groupid and password hash for the given user, or an authentication error
 func (db *AdminDB) AuthUser(name string, password string) (string, string, error) {
 	var selectResult struct {
@@ -477,10 +482,22 @@ func (db *AdminDB) RemGroupScopes(groupid string, scopes ...string) error {
 	return err
 }
 
-// GetGroupScopes gets the scopes in a group
+// GetGroupScopes gets the scopes in a group. This is also the method used to get a single user's
+// scopes without the addition of group membership
 func (db *AdminDB) GetGroupScopes(groupid string) ([]string, error) {
 	var scopes []string
 	err := db.Select(&scopes, "SELECT scope FROM group_scopes WHERE groupid=?", groupid)
+	return scopes, err
+}
+
+// GetUserScopes returns all of the scopes that the user has. This also includes scopes that
+// it has inherited through group membership. Use GetGroupScopes to get just the scopes
+// of the specific user
+func (db *AdminDB) GetUserScopes(username string) ([]string, error) {
+	var scopes []string
+	err := db.Select(&scopes, `SELECT DISTINCT(scope) FROM group_scopes WHERE groupid IN (?, 'public', 'users') OR groupid IN (
+			SELECT groupid FROM group_members WHERE username=?
+		);`, username, username)
 	return scopes, err
 }
 

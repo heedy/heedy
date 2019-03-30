@@ -40,14 +40,15 @@
                 <v-icon
                   v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
                 >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
-                <img v-else :src="user.icon">
+                <img v-else-if="user.icon.length > 0" :src="user.icon">
+                <v-icon v-else>person</v-icon>
               </v-list-tile-avatar>
 
               <v-list-tile-content>
-                <v-list-tile-title>{{ user.fullname }}</v-list-tile-title>
+                <v-list-tile-title>{{ username }}</v-list-tile-title>
               </v-list-tile-content>
             </v-list-tile>
-            <span>{{ user.fullname }}</span>
+            <span>{{ username }}</span>
           </v-tooltip>
         </v-list>
       </v-toolbar>
@@ -95,13 +96,14 @@
       </v-tooltip>
       <v-tooltip v-else top dark :disabled="!small">
         <v-btn dark flat :to="'/user/' + user.name" slot="activator">
-          <span v-if="!small">{{ user.fullname }}</span>
+          <span v-if="!small">{{ username }}</span>
           <v-icon
             v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
           >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
-          <img v-else :src="user.icon">
+          <img v-else-if="user.icon.length > 0" :src="user.icon">
+          <v-icon v-else>person</v-icon>
         </v-btn>
-        <span>{{ user.fullname }}</span>
+        <span>{{ username }}</span>
       </v-tooltip>
       <v-tooltip v-for="item in menu" :key="item.key" top dark :disabled="!small">
         <v-btn dark flat :to="item.route" slot="activator">
@@ -154,6 +156,10 @@ export default {
     },
     shownav() {
       return Object.keys(this.$store.state.menu).length > 0; // Only show the nav if there is a menu to show.
+    },
+    username() {
+      let u = this.$store.state.user;
+      return u.fullname.length > 0 ? u.fullname : u.name;
     }
   },
   mounted() {

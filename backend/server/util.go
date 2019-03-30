@@ -42,7 +42,7 @@ type ErrorResponse struct {
 // WriteJSONError writes an error message as json. It is assumed that the resulting
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
-	c := r.Context().Value(CTX).(*Context)
+	c := CTX(r)
 
 	es := ErrorResponse{
 		Error:            "access_denied",

@@ -64,8 +64,12 @@ type DB interface {
 	AdminDB() *AdminDB // Returns the underlying administrative database
 	ID() string        // This is an identifier for the database. empty string is public access
 
+	// Currently logged in user
+	User() (*User, error)
+
 	CreateUser(u *User) error
 	ReadUser(name string) (*User, error)
+	GetUserScopes(name string) ([]string, error)
 }
 
 var (

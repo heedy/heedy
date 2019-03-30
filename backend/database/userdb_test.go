@@ -59,6 +59,8 @@ func TestUserUser(t *testing.T) {
 
 	// Make sure we can no longer read ourselves if we remove the wrong permission
 	adb.RemUserScopes("testy", "user:read")
+	adb.RemGroupScopes("users", "user:read")
+
 	_, err = db.ReadUser("testy")
 	require.Error(t, err)
 
@@ -121,4 +123,56 @@ func TestUserUser(t *testing.T) {
 	// And now comes the question of ensuring that the db object is no longer valid...
 	// but a user only logs in from browser, so maybe can just manually check eveny couple minutes?
 
+}
+
+func TestUserScopes(t *testing.T) {
+	adb, cleanup := newDB(t)
+	defer cleanup()
+
+	// Create
+	name := "testy"
+	require.NoError(t, adb.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	name2 := "testy2"
+	require.NoError(t, adb.CreateUser(&User{
+		Group: Group{
+			Details: Details{
+				Name: &name2,
+			},
+		},
+		Password: "testpass",
+	}))
+
+	db := NewUserDB(adb, "testy")
+
+	s, err := db.GetUserScopes("testy")
+	require.NoError(t, err)
+
+	require.NoError(t, adb.AddGroupScopes("users", "trunk"))
+	require.NoError(t, adb.AddUserScopes("testy", "retfdg"))
+
+	s2, err := db.GetUserScopes("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s)+2, len(s2))
+
+	_, err = db.GetUserScopes("testy2")
+	require.Error(t, err)
+
+	require.NoError(t, adb.AddGroupScopes("users", "users:scopes"))
+	s, err = db.GetUserScopes("testy2")
+	require.NoError(t, err)
+
+	require.NoError(t, adb.AddGroupScopes("users", "trueertwertnk"))
+	require.NoError(t, adb.AddUserScopes("testy2", "retfgshfdgaerdg"))
+
+	s2, err = db.GetUserScopes("testy2")
+	require.NoError(t, err)
+	require.Equal(t, len(s)+2, len(s2))
 }

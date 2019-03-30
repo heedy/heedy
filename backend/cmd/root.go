@@ -20,10 +20,6 @@ var RootCmd = &cobra.Command{
 	Use:   "heedy",
 	Short: "Heedy is an IoT and QS repository and analysis system",
 	Long:  `Heedy is a database built for interacting with your IoT devices and for storing your quantified-self data. It is buit to be extensible and self-contained, with a powerful plugin system allowing for in-depth analysis and action.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		//server.RunServer()
-		//cmd.HelpFunc()(cmd, args)
-	},
 }
 
 // Execute runs the root command

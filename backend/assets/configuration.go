@@ -120,6 +120,7 @@ type Configuration struct {
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty"`
+	TransferableScopes  *[]string          `json:"transferable_scopes"`
 	NewUserScopes       *[]string          `json:"new_user_scopes,omitempty"`
 	NewGroupScopes      *[]string          `json:"new_group_scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty"`
@@ -132,6 +133,14 @@ type Configuration struct {
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 }
 
+func copyStringArrayPtr(s *[]string) *[]string {
+	if s == nil {
+		return s
+	}
+	ns := make([]string, len(*s))
+	copy(ns, *s)
+	return &ns
+}
 func (c *Configuration) Copy() *Configuration {
 	nc := *c
 
@@ -142,13 +151,7 @@ func (c *Configuration) Copy() *Configuration {
 	for pkey, pval := range c.Plugins {
 		nc.Plugins[pkey] = pval.Copy()
 	}
-	/*
-		nc.Groups = make(map[string]*Group)
-		for gkey, gval := range c.Groups {
-			newg := *gval
-			nc.Groups[gkey] = &newg
-		}
-	*/
+
 	return &nc
 
 }
@@ -251,7 +254,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		}
 		overlay.Scopes = base.Scopes
 	}
-
+	overlay.TransferableScopes = MergeStringArrays(base.TransferableScopes, overlay.TransferableScopes)
 	overlay.NewUserScopes = MergeStringArrays(base.NewUserScopes, overlay.NewUserScopes)
 	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
 	overlay.NewGroupScopes = MergeStringArrays(base.NewGroupScopes, overlay.NewGroupScopes)

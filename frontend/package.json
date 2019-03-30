@@ -39,6 +39,7 @@
     "rollup-plugin-terser": "^4.0.4",
     "rollup-plugin-vue": "^4.7.2",
     "vue": "^2.6.10",
+    "vue-avatar-cropper": "0.0.28",
     "vue-meta": "^1.5.8",
     "vue-router": "^3.0.2",
     "vue-template-compiler": "^2.6.10",

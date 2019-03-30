@@ -384,6 +384,19 @@ INSERT INTO groups (id,name,fullname,description,icon,owner,user_access) VALUES 
 	400 -- Allows each user to add/remove their own streams/connections
 );
 
+-- Add the user scopes required for the frontend to function into the users group
+-- Any other scopes can be added per-user (see new_user_scopes in heedy.conf)
+INSERT INTO group_scopes (groupid,scope) VALUES
+	('users','user:read'),
+	('users','group:read'),
+	('users','connection:read'),
+	('users','stream:read'),
+	('users','user:scopes'),
+	('users','group:scopes'),
+	('users','connection:scopes'),
+	('users','connection:active_scopes');
+	
+
 `
 
 // Create sets up a new heedy instance
