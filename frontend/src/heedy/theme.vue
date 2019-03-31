@@ -55,7 +55,7 @@
 
       <v-list class="pt-0" dense>
         <v-divider v-if="!transparent"></v-divider>
-        <v-tooltip v-for="item in menu" :key="item.key" dark :disabled="!mini" right>
+        <v-tooltip v-for="item in menu" :key="item.key" dark :disabled="!mini">
           <v-list-tile
             :to="item.route"
             active-class="active-btn"
@@ -77,6 +77,18 @@
         </v-tooltip>
       </v-list>
     </v-navigation-drawer>
+
+    <v-snackbar
+      v-model="alert_value"
+      :color="alert.type"
+      :timeout="4000"
+      :vertical="false"
+      top
+      :right="!bottom"
+    >
+      {{ alert.text }}
+      <v-btn dark flat @click="alert_value = false">Close</v-btn>
+    </v-snackbar>
 
     <router-view></router-view>
 
@@ -143,7 +155,7 @@ export default {
   },
   computed: {
     menu() {
-      let s = this.$store.state.menu;
+      let s = this.$store.state.info.menu;
       return Object.keys(s).map(k => ({
         key: k,
         text: s[k].text,
@@ -152,14 +164,29 @@ export default {
       }));
     },
     user() {
-      return this.$store.state.user;
+      return this.$store.state.info.user;
     },
     shownav() {
-      return Object.keys(this.$store.state.menu).length > 0; // Only show the nav if there is a menu to show.
+      return Object.keys(this.$store.state.info.menu).length > 0; // Only show the nav if there is a menu to show.
     },
     username() {
-      let u = this.$store.state.user;
+      let u = this.$store.state.info.user;
       return u.fullname.length > 0 ? u.fullname : u.name;
+    },
+    alert() {
+      return this.$store.state.alert;
+    },
+    alert_value: {
+      get() {
+        return this.$store.state.alert.value;
+      },
+      set(newValue) {
+        this.$store.commit("alert", {
+          value: newValue,
+          text: "",
+          type: "info"
+        });
+      }
     }
   },
   mounted() {

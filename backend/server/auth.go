@@ -81,11 +81,6 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 				return database.NewUserDB(a.db, username), nil
 			}
 		}
-		r.AddCookie(&http.Cookie{
-			Name:   cookie.Name,
-			Value:  "",
-			MaxAge: 0,
-		})
 	}
 
 	// Nobody is logged in, return a public database view
@@ -120,7 +115,8 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 		}
 		uname, _, err := a.db.AuthUser(usr, password)
 		if err != nil {
-			writeAuthError(w, r, 400, "access_denied", "No user was found with the given password")
+			time.Sleep(1 * time.Second) // Wait a second before returning failure
+			writeAuthError(w, r, 400, "access_denied", "Wrong username or password")
 			return
 		}
 		// Add the token
@@ -134,9 +130,11 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 		// but we will actually set the cookie anyways, so we directly get whether
 		// the user is logged in with each request
 		http.SetCookie(w, &http.Cookie{
-			Name:    "token",
-			Value:   tok,
-			Expires: time.Now().AddDate(5, 0, 0),
+			Name:     "token",
+			Value:    tok,
+			Expires:  time.Now().AddDate(5, 0, 0),
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
 		})
 
 		// ... and also return the json response
@@ -204,6 +202,34 @@ func AuthMux(a *Auth) (*chi.Mux, error) {
 			Request: nil,
 		})
 		return
+	})
+
+	mux.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+		c := CTX(r)
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    "",
+			MaxAge:   0,
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
+		})
+
+		// Should verify that getting correct referrer
+		http.Redirect(w, r, "/", 303)
+
+		// We use the happy path - this never fails. At worst it
+		v, err := r.Cookie("token")
+		if err != nil {
+			c.Log.Error(err)
+			return
+		}
+		if v.Value != "" {
+			err = c.DB.AdminDB().RemoveLoginToken(v.Value)
+			if err != nil {
+				c.Log.Error(err)
+			}
+		}
 	})
 	return mux, nil
 }

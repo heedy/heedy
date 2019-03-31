@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -79,16 +78,15 @@ func (a *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestStart := time.Now()
 
 	// First check if we are continuing an existing request
-	authHeader := r.Header.Get("Authorization")
+	handlerHeader := r.Header.Get("Handler")
 
 	// If the token comes from a "request handler", ie, a plugin processing an active request,
 	// we don't generate a new context, but use an existing one.
-	const handlerPrefix = "Handler "
-	if len(authHeader) > len(handlerPrefix) && strings.EqualFold(handlerPrefix, authHeader[:len(handlerPrefix)]) {
+	if len(handlerHeader) > 0 {
 		// The authorization header is of type Handler, this means that we might be in the middle of a request.
 		// The request should be one of the active requests, so that we can continue it
 		a.RLock()
-		curRequest, ok := a.activeRequests[authHeader[len(handlerPrefix):]]
+		curRequest, ok := a.activeRequests[handlerHeader]
 		a.RUnlock()
 		if !ok {
 			// The request was claiming to have a valid request token, but didn't!

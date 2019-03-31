@@ -13,10 +13,16 @@ import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugin"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
-func Run() error {
+// RunOptions give special options for running
+type RunOptions struct {
+	Verbose bool
+}
+
+func Run(r *RunOptions) error {
 	db, err := database.Open(assets.Get())
 	if err != nil {
 		return err
@@ -78,18 +84,14 @@ func Run() error {
 		handler = ph.Middleware(handler)
 	}
 
-	// the grpcHandlerFunc takes an grpc server and a http muxer and will
-	// route the request to the right place at runtime.
-	//mergeHandler := grpcHandlerFunc(grpcServer, handler)
-	//mergeHandler := handler
+	contextMiddleware := http.Handler(NewMiddleware(auth, handler))
 
-	// configure TLS for our server. TLS is REQUIRED to make this setup work.
-	// check https://golang.org/src/net/http/server.go?#L2746
-	if err != nil {
-		log.Panic(err)
+	if r != nil && r.Verbose {
+		logrus.Warn("Running in verbose mode")
+		contextMiddleware = VerboseLoggingMiddleware(contextMiddleware)
 	}
 
-	http.ListenAndServe(serverAddress, NewMiddleware(auth, handler))
+	http.ListenAndServe(serverAddress, contextMiddleware)
 	/*
 		srv := &http.Server{
 			Addr:    serverAddress,

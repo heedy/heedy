@@ -43,6 +43,7 @@ func FrontendMux() (*chi.Mux, error) {
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		// Disallow clickjacking
 		w.Header().Add("X-Frame-Options", "DENY")
+		w.Header().Add("Cache-Control", "private, no-cache")
 
 		ctx := CTX(r)
 		u, err := ctx.DB.User()

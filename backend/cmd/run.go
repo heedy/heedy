@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+
 var RunCmd = &cobra.Command{
 	Use:   "run [location of database]",
 	Short: "Runs heedy",
@@ -35,10 +37,14 @@ var RunCmd = &cobra.Command{
 		}
 		logrus.Debug(string(b))
 
-		return server.Run()
+		return server.Run(&server.RunOptions{
+			Verbose: verbose,
+		})
 	},
 }
 
 func init() {
+	RunCmd.Flags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
 	RootCmd.AddCommand(RunCmd)
+
 }
