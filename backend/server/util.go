@@ -53,7 +53,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	errs := strings.SplitN(err.Error(), ":", 2)
 	if len(errs) > 1 && !strings.Contains(errs[0], " ") {
 		es.Error = errs[0]
-		es.ErrorDescription = errs[1]
+		es.ErrorDescription = strings.TrimSpace(errs[1])
 	}
 
 	if c != nil {
@@ -97,4 +97,18 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
 	w.WriteHeader(http.StatusOK)
 	w.Write(jdata)
+}
+
+// WriteResult writes "ok" if the command succeeded, and outputs an error if it didn't
+func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
+	if err != nil {
+		// By default, an error returns 400
+		WriteJSONError(w, r, 400, err)
+		return
+	}
+	// success :)
+	w.Header().Set("Content-Length", "4")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`"ok"`))
+
 }

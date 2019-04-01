@@ -24,7 +24,7 @@ func (db *UserDB) ID() string {
 
 // User returns the user that is logged in
 func (db *UserDB) User() (*User, error) {
-	return db.ReadUser(db.user)
+	return db.ReadUser(db.user, true)
 }
 
 func (db *UserDB) CreateUser(u *User) error {
@@ -37,7 +37,7 @@ func (db *UserDB) CreateUser(u *User) error {
 		) LIMIT 1;`, db.user, db.user)
 }
 
-func (db *UserDB) ReadUser(name string) (*User, error) {
+func (db *UserDB) ReadUser(name string, avatar bool) (*User, error) {
 	// A user can be read if:
 	//	the user's public_access is >= 100 (read access by public),
 	//	the user's user_access >=100
@@ -45,7 +45,7 @@ func (db *UserDB) ReadUser(name string) (*User, error) {
 	//	the user to be read is itself, and the user has user:read scope
 
 	if name != db.user {
-		return readUser(db.adb, name, `SELECT * FROM groups WHERE id=? AND owner=id 
+		return readUser(db.adb, name, avatar, `SELECT * FROM groups WHERE id=? AND owner=id 
 		AND (
 				(public_access >= 100 OR user_access >=100)
 			OR EXISTS 
@@ -59,7 +59,7 @@ func (db *UserDB) ReadUser(name string) (*User, error) {
 
 	}
 
-	return readUser(db.adb, name, `SELECT * FROM groups WHERE id=? AND owner=id 
+	return readUser(db.adb, name, avatar, `SELECT * FROM groups WHERE id=? AND owner=id 
 		AND (
 				(public_access >= 100 OR user_access >=100)
 			OR EXISTS 

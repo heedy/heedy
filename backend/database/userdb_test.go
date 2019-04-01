@@ -47,30 +47,30 @@ func TestUserUser(t *testing.T) {
 		Password: "testpass",
 	}))
 
-	_, err := db.ReadUser("notauser")
+	_, err := db.ReadUser("notauser", false)
 	require.Error(t, err)
 
-	u, err := db.ReadUser("testy")
+	u, err := db.ReadUser("testy", false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
 
-	_, err = db.ReadUser("testy2")
+	_, err = db.ReadUser("testy2", false)
 	require.Error(t, err)
 
 	// Make sure we can no longer read ourselves if we remove the wrong permission
 	adb.RemUserScopes("testy", "user:read")
 	adb.RemGroupScopes("users", "user:read")
 
-	_, err = db.ReadUser("testy")
+	_, err = db.ReadUser("testy", false)
 	require.Error(t, err)
 
 	adb.AddGroupScopes("users", "users:read")
 
-	u, err = db.ReadUser("testy")
+	u, err = db.ReadUser("testy", false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
 
-	u, err = db.ReadUser("testy2")
+	u, err = db.ReadUser("testy2", false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy2")
 
@@ -115,7 +115,7 @@ func TestUserUser(t *testing.T) {
 
 	require.NoError(t, db.DelUser("testy2"))
 
-	_, err = adb.ReadUser("testy2")
+	_, err = adb.ReadUser("testy2", false)
 	require.Error(t, err)
 
 	require.NoError(t, db.DelUser("testy"))

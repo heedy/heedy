@@ -124,14 +124,16 @@ func (db *AdminDB) CreateUser(u *User) error {
 }
 
 // ReadUser reads a user
-func (db *AdminDB) ReadUser(name string) (*User, error) {
+func (db *AdminDB) ReadUser(name string, avatar bool) (*User, error) {
 	u := &User{}
 	err := db.Get(u, "SELECT * FROM groups WHERE id=? AND owner=id LIMIT 1;", name)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
-
+	if !avatar {
+		u.Avatar = nil
+	}
 	return u, err
 }
 
@@ -231,12 +233,15 @@ func (db *AdminDB) CreateGroup(g *Group) (string, error) {
 }
 
 // ReadGroup reads a group by id
-func (db *AdminDB) ReadGroup(id string) (*Group, error) {
+func (db *AdminDB) ReadGroup(id string, avatar bool) (*Group, error) {
 	g := &Group{}
 	err := db.Get(g, "SELECT * FROM groups WHERE (id=?) LIMIT 1;", id)
 
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
+	}
+	if avatar {
+		g.Avatar = nil
 	}
 
 	return g, err
@@ -300,11 +305,14 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 }
 
 // ReadConnection gets the connection associated with the given API key
-func (db *AdminDB) ReadConnection(id string) (*Connection, error) {
+func (db *AdminDB) ReadConnection(id string, avatar bool) (*Connection, error) {
 	c := &Connection{}
 	err := db.Get(c, "SELECT * FROM connections WHERE (id=?) LIMIT 1;", id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
+	}
+	if !avatar {
+		c.Avatar = nil
 	}
 	return c, err
 }
@@ -360,11 +368,14 @@ func (db *AdminDB) CreateStream(s *Stream) (string, error) {
 }
 
 // ReadStream gets the stream by ID
-func (db *AdminDB) ReadStream(id string) (*Stream, error) {
+func (db *AdminDB) ReadStream(id string, avatar bool) (*Stream, error) {
 	c := &Stream{}
 	err := db.Get(c, "SELECT * FROM streams WHERE (id=?) LIMIT 1;", id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
+	}
+	if !avatar {
+		c.Avatar = nil
 	}
 	return c, err
 }

@@ -19,7 +19,7 @@ type Details struct {
 	FullName    *string `json:"fullname"`
 	Description *string `json:"description"`
 	Owner       *string `json:"owner"`
-	Icon        *string `json:"icon"`
+	Avatar      *string `json:"avatar"`
 }
 
 // Group holds a group's details
@@ -68,7 +68,10 @@ type DB interface {
 	User() (*User, error)
 
 	CreateUser(u *User) error
-	ReadUser(name string) (*User, error)
+	ReadUser(name string, avatar bool) (*User, error)
+	UpdateUser(u *User) error
+	DelUser(name string) error
+
 	GetUserScopes(name string) ([]string, error)
 }
 
@@ -112,22 +115,24 @@ func ValidName(name string) error {
 	return ErrInvalidName
 }
 
-// Ensures that the icon is in a valid format
-func ValidIcon(icon string) error {
-	if icon == "" {
+// Ensures that the avatar is in a valid format
+func ValidAvatar(avatar string) error {
+	if avatar == "" {
 		return nil
 	}
-	// We permit special icon prefixes to be used. The first one is material:, which represents material icons
+	// We permit special avatar prefixes to be used. The first one is material:, which represents material icons
 	// that are assumed to be bundled with all applications that display heedy data. The second is fa: which
-	// will represent fontawesome icons in the future
-	if strings.HasPrefix(icon, "material:") || strings.HasPrefix(icon, "fa:") {
-		if len(icon) > 30 {
-			return errors.New("icon name can't be more than 30 characters.")
+	// will represent fontawesome avatars in the future
+	if strings.HasPrefix(avatar, "material:") || strings.HasPrefix(avatar, "fa:") {
+		if len(avatar) > 30 {
+			return errors.New("bad_request: avatar icon name can't be more than 30 characters")
 		}
 		return nil
 	}
-	_, err := base64.URLEncoding.DecodeString(icon)
-	return err
+	if !strings.HasPrefix(avatar, "data:image/") {
+		return errors.New("bad_request: Avatar iamges must be data-urls")
+	}
+	return nil
 }
 
 // Performs a set of tests on the result and error of a
@@ -165,12 +170,12 @@ func extractDetails(d *Details) (detailColumns []string, detailValues []interfac
 		detailColumns = append(detailColumns, "description")
 		detailValues = append(detailValues, *d.Description)
 	}
-	if d.Icon != nil {
-		if err = ValidIcon(*d.Icon); err != nil {
+	if d.Avatar != nil {
+		if err = ValidAvatar(*d.Avatar); err != nil {
 			return
 		}
-		detailColumns = append(detailColumns, "icon")
-		detailValues = append(detailValues, *d.Icon)
+		detailColumns = append(detailColumns, "avatar")
+		detailValues = append(detailValues, *d.Avatar)
 	}
 	if d.FullName != nil {
 		detailColumns = append(detailColumns, "fullname")

@@ -80,10 +80,10 @@ func TestAdminUser(t *testing.T) {
 		Password: "mypass",
 	}), "Should fail to add existing user")
 
-	_, err := db.ReadUser("testee")
+	_, err := db.ReadUser("testee", false)
 	require.EqualError(t, err, ErrUserNotFound.Error())
 
-	u, err := db.ReadUser("testy")
+	u, err := db.ReadUser("testy", false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
 	require.Equal(t, u.Password, "", "The password should never be read back")
@@ -140,9 +140,9 @@ func TestAdminUser(t *testing.T) {
 		},
 	}), "User name should update")
 
-	_, err = db.ReadUser(name)
+	_, err = db.ReadUser(name, false)
 	require.Error(t, err)
-	u, err = db.ReadUser(name2)
+	u, err = db.ReadUser(name2, false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, name2)
 
@@ -169,7 +169,7 @@ func TestAdminGroup(t *testing.T) {
 		Password: "testpass",
 	}))
 
-	ug, err := db.ReadGroup("testy")
+	ug, err := db.ReadGroup("testy", false)
 	require.NoError(t, err, "A user is a group")
 	require.Equal(t, *ug.Name, name)
 
@@ -183,12 +183,12 @@ func TestAdminGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	g, err := db.ReadGroup(gid)
+	g, err := db.ReadGroup(gid, false)
 	require.NoError(t, err, "A group should be selectable")
 	require.NotNil(t, g.Description)
 	require.Equal(t, gdesc, *g.Description)
 
-	_, err = db.ReadGroup("tree")
+	_, err = db.ReadGroup("tree", false)
 	require.Error(t, err, "Group should not exist")
 
 	owner := "derp"
@@ -206,7 +206,7 @@ func TestAdminGroup(t *testing.T) {
 	err = db.DelGroup(gid)
 	require.NoError(t, err)
 
-	_, err = db.ReadGroup(gid)
+	_, err = db.ReadGroup(gid, false)
 	require.Error(t, err, "Group should not exist")
 
 }
@@ -238,7 +238,7 @@ func TestAdminConnection(t *testing.T) {
 	_, err = db.GetConnectionByKey("")
 	require.Error(t, err)
 
-	c, err := db.ReadConnection(conn)
+	c, err := db.ReadConnection(conn, false)
 	require.NoError(t, err)
 
 	require.Equal(t, *c.Name, name)
@@ -258,7 +258,7 @@ func TestAdminConnection(t *testing.T) {
 
 	require.NoError(t, db.DelConnection(c.ID))
 
-	_, err = db.ReadConnection(conn)
+	_, err = db.ReadConnection(conn, false)
 	require.Error(t, err)
 }
 
@@ -300,7 +300,7 @@ func TestAdminStream(t *testing.T) {
 		},
 	}))
 
-	s, err := db.ReadStream(sid)
+	s, err := db.ReadStream(sid, false)
 	require.NoError(t, err)
 	require.Equal(t, *s.FullName, badname)
 

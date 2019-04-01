@@ -38,11 +38,7 @@
             <v-tooltip right dark :disabled="!mini">
               <v-list-tile avatar :to="'/user/' + user.name" slot="activator">
                 <v-list-tile-avatar>
-                  <v-icon
-                    v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
-                  >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
-                  <img v-else-if="user.icon.length > 0" :src="user.icon">
-                  <v-icon v-else>person</v-icon>
+                  <avatar :image="user.avatar"></avatar>
                 </v-list-tile-avatar>
 
                 <v-list-tile-content>
@@ -152,11 +148,7 @@
       <v-tooltip v-else top dark :disabled="!small" style="text-align:center;">
         <v-btn dark flat :to="'/user/' + user.name" slot="activator">
           <span v-if="!small">{{ username }}</span>
-          <v-icon
-            v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
-          >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
-          <img v-else-if="user.icon.length > 0" :src="user.icon">
-          <v-icon v-else>person</v-icon>
+          <avatar :image="user.avatar" :size="28"></avatar>
         </v-btn>
         <span>{{ username }}</span>
       </v-tooltip>
@@ -225,7 +217,12 @@ import "vuetify/dist/vuetify.min.css";
 Vue.use(Vuetify);
 */
 
+import Avatar from "./components/avatar.mjs";
+
 export default {
+  components: {
+    Avatar
+  },
   data: () => ({
     bottom: false, // Whether to display the navigation on bottom, in mobile mode
     mini: true, // In desktop mode, whether to show mini drawer
@@ -254,7 +251,10 @@ export default {
     },
     username() {
       let u = this.$store.state.info.user;
-      return u.fullname.length > 0 ? u.fullname : u.name;
+      if (u.fullname.length == 0) {
+        return u.name;
+      }
+      return u.fullname.length > 10 ? u.fullname.split(" ")[0] : u.fullname;
     },
     alert() {
       return this.$store.state.alert;

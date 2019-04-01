@@ -36,12 +36,12 @@ func TestPublicUser(t *testing.T) {
 		},
 		Password: "testpass",
 	}))
-	_, err := db.ReadUser("testy")
+	_, err := db.ReadUser("testy", false)
 	require.Error(t, err)
 
 	adb.AddGroupScopes("public", "users:read")
 
-	u, err := db.ReadUser("testy")
+	u, err := db.ReadUser("testy", false)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
 
@@ -70,7 +70,7 @@ func TestPublicUser(t *testing.T) {
 	adb.AddGroupScopes("public", "users:delete")
 	require.NoError(t, db.DelUser("testy"))
 
-	_, err = adb.ReadUser("testy")
+	_, err = adb.ReadUser("testy", false)
 	require.Error(t, err)
 }
 

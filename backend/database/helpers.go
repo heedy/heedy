@@ -20,11 +20,14 @@ func createUser(adb *AdminDB, u *User, sqlStatement string, args ...interface{})
 	return adb.CreateUser(u)
 }
 
-func readUser(adb *AdminDB, name string, selectStatement string, args ...interface{}) (*User, error) {
+func readUser(adb *AdminDB, name string, avatar bool, selectStatement string, args ...interface{}) (*User, error) {
 	u := &User{}
 	err := adb.Get(u, selectStatement, args...)
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
+	}
+	if !avatar {
+		u.Avatar = nil
 	}
 
 	return u, err

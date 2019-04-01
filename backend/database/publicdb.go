@@ -29,10 +29,10 @@ func (db *PublicDB) CreateUser(u *User) error {
 
 }
 
-func (db *PublicDB) ReadUser(name string) (*User, error) {
+func (db *PublicDB) ReadUser(name string, avatar bool) (*User, error) {
 	// A user can be read if the user's public_access is >= 100 (read access by public)
 	// or if the public group has the users:read scope
-	return readUser(db.DB, name, `SELECT * FROM groups WHERE id=? AND owner=id AND (
+	return readUser(db.DB, name, avatar, `SELECT * FROM groups WHERE id=? AND owner=id AND (
 			public_access >= 100 
 		OR 
 			EXISTS (SELECT 1 FROM group_scopes WHERE groupid='public' and scope='users:read')

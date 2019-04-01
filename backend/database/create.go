@@ -30,7 +30,7 @@ CREATE TABLE groups (
 	name VARCHAR NOT NULL,
 	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
-	icon VARCHAR DEFAULT '',
+	avatar VARCHAR DEFAULT '',
 	owner VARCHAR(36) NOT NULL,
 	public_access INTEGER DEFAULT 0, -- access of the public to the group
 	user_access INTEGER DEFAULT 0, -- access of all users to the group
@@ -64,7 +64,7 @@ CREATE TABLE connections (
 	name VARCHAR NOT NULL,
 	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
-	icon VARCHAR DEFAULT '',
+	avatar VARCHAR DEFAULT '',
 	owner VARACHAR(36) NOT NULL,
 
 	-- Can (but does not have to) have an API key
@@ -90,7 +90,7 @@ CREATE TABLE streams (
 	name VARCHAR NOT NULL,
 	fullname VARCHAR DEFAULT '',
 	description VARCHAR DEFAULT '',
-	icon VARCHAR DEFAULT '',
+	avatar VARCHAR DEFAULT '',
 	connection VARACHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
@@ -353,7 +353,7 @@ CREATE TABLE plugin_kv (
 -- The heedy user represents the database internals. It is used as the actor
 -- when the software or plugins do something
 INSERT INTO users VALUES ("heedy","-");
-INSERT INTO groups (id,name,fullname,description,icon,owner) VALUES (
+INSERT INTO groups (id,name,fullname,description,avatar,owner) VALUES (
 	"heedy",
 	"heedy",
 	"Heedy",
@@ -363,7 +363,7 @@ INSERT INTO groups (id,name,fullname,description,icon,owner) VALUES (
 );
 
 -- the public group has ID public
-INSERT INTO groups (id,name,fullname,description,icon,owner,public_access) VALUES (
+INSERT INTO groups (id,name,fullname,description,avatar,owner,public_access) VALUES (
 	"public",
 	"public",
 	"Public",
@@ -374,7 +374,7 @@ INSERT INTO groups (id,name,fullname,description,icon,owner,public_access) VALUE
 );
 
 -- the users group has ID users
-INSERT INTO groups (id,name,fullname,description,icon,owner,user_access) VALUES (
+INSERT INTO groups (id,name,fullname,description,avatar,owner,user_access) VALUES (
 	"users",
 	"users",
 	"Users",
