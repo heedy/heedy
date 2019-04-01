@@ -111,9 +111,21 @@ export async function api(method, uri, data = null, json = true) {
       options.headers["Content-Type"] = "application/x-www-form-urlencoded";
     }
   }
-  console.log(uri, options);
-  let response = await fetch(uri, options);
-  console.log(response);
+  try {
+    var response = await fetch(uri, options);
+  } catch (err) {
+    return {
+      response: {
+        ok: false
+      },
+      data: {
+        error: "fetch_error",
+        error_description: "Could not connect to the server",
+        id: "?"
+      }
+    };
+  }
+
   try {
     return {
       response: response,

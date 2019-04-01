@@ -13,69 +13,112 @@
       :temporary="transparent"
       v-if="shownav"
     >
-      <v-toolbar flat class="transparent">
-        <v-list class="pa-0" v-if="user==null">
-          <v-tooltip right dark :disabled="!mini">
+      <v-layout column fill-height>
+        <v-toolbar flat class="transparent">
+          <v-list class="pa-0" v-if="user==null">
+            <v-tooltip right dark :disabled="!mini">
+              <v-list-tile
+                avatar
+                to="/login"
+                slot="activator"
+                active-class="active-btn"
+                class="inactive-btn"
+              >
+                <v-list-tile-avatar>
+                  <v-icon>fas fa-sign-in-alt</v-icon>
+                </v-list-tile-avatar>
+                <v-list-tile-content>
+                  <v-list-tile-title>Log In</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
+              <span>Log In</span>
+            </v-tooltip>
+          </v-list>
+          <v-list class="pa-0" v-else>
+            <v-tooltip right dark :disabled="!mini">
+              <v-list-tile avatar :to="'/user/' + user.name" slot="activator">
+                <v-list-tile-avatar>
+                  <v-icon
+                    v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
+                  >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
+                  <img v-else-if="user.icon.length > 0" :src="user.icon">
+                  <v-icon v-else>person</v-icon>
+                </v-list-tile-avatar>
+
+                <v-list-tile-content>
+                  <v-list-tile-title>{{ username }}</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
+              <span>{{ username }}</span>
+            </v-tooltip>
+          </v-list>
+        </v-toolbar>
+        <v-list class="pt-0" dense>
+          <v-divider v-if="!transparent"></v-divider>
+          <v-tooltip v-for="item in menu" :key="item.key" dark right :disabled="!mini">
             <v-list-tile
-              avatar
-              to="/login"
-              slot="activator"
+              :to="item.route"
               active-class="active-btn"
               class="inactive-btn"
+              slot="activator"
+              avatar
             >
               <v-list-tile-avatar>
-                <v-icon>fas fa-sign-in-alt</v-icon>
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>Log In</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <span>Log In</span>
-          </v-tooltip>
-        </v-list>
-        <v-list class="pa-0" v-else>
-          <v-tooltip right dark :disabled="!mini">
-            <v-list-tile avatar :to="'/user/' + user.name" slot="activator">
-              <v-list-tile-avatar>
                 <v-icon
-                  v-if="user.icon.startsWith('fa:') || user.icon.startsWith('mi:')"
-                >{{ user.icon.substring(3,user.icon.length) }}</v-icon>
-                <img v-else-if="user.icon.length > 0" :src="user.icon">
-                <v-icon v-else>person</v-icon>
+                  v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
+                >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
+                <img v-else :src="item.icon">
               </v-list-tile-avatar>
 
               <v-list-tile-content>
-                <v-list-tile-title>{{ username }}</v-list-tile-title>
+                <v-list-tile-title>{{ item.text }}</v-list-tile-title>
               </v-list-tile-content>
             </v-list-tile>
-            <span>{{ username }}</span>
+            <span>{{ item.text }}</span>
           </v-tooltip>
         </v-list>
-      </v-toolbar>
+        <v-spacer></v-spacer>
 
-      <v-list class="pt-0" dense>
-        <v-divider v-if="!transparent"></v-divider>
-        <v-tooltip v-for="item in menu" :key="item.key" dark :disabled="!mini">
-          <v-list-tile
-            :to="item.route"
-            active-class="active-btn"
-            class="inactive-btn"
-            slot="activator"
-          >
-            <v-list-tile-action>
-              <v-icon
-                v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
-              >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
-              <img v-else :src="item.icon">
-            </v-list-tile-action>
+        <v-list class="pt-0" dense v-if="user!=null">
+          <!-- https://github.com/vuetifyjs/vuetify/issues/4848 -->
+          <v-menu offset-x style="width:100%">
+            <template #activator="{ on: menu }">
+              <v-tooltip right dark :disabled="!mini">
+                <template #activator="{ on: tooltip }">
+                  <v-list-tile slot="activator" v-on="{ ...tooltip, ...menu }" style="width:100%">
+                    <v-list-tile-avatar>
+                      <v-icon>more_vert</v-icon>
+                    </v-list-tile-avatar>
 
-            <v-list-tile-content>
-              <v-list-tile-title>{{ item.text }}</v-list-tile-title>
-            </v-list-tile-content>
-          </v-list-tile>
-          <span>{{ item.text }}</span>
-        </v-tooltip>
-      </v-list>
+                    <v-list-tile-content v-if="!mini">
+                      <v-list-tile-title>More</v-list-tile-title>
+                    </v-list-tile-content>
+                  </v-list-tile>
+                </template>
+                <span>More</span>
+              </v-tooltip>
+            </template>
+            <v-list>
+              <v-list-tile avatar to="/settings">
+                <v-list-tile-avatar>
+                  <v-icon>settings</v-icon>
+                </v-list-tile-avatar>
+                <v-list-tile-content>
+                  <v-list-tile-title>Settings</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
+              <v-list-tile avatar to="/logout">
+                <v-list-tile-avatar>
+                  <v-icon>fas fa-sign-out-alt</v-icon>
+                </v-list-tile-avatar>
+                <v-list-tile-content>
+                  <v-list-tile-title>Log Out</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
+            </v-list>
+          </v-menu>
+        </v-list>
+      </v-layout>
     </v-navigation-drawer>
 
     <v-snackbar
@@ -99,14 +142,14 @@
       :class="{'theme-dark': !transparent, 'transparent': transparent,'clearshadows': transparent}"
       v-if="shownav"
     >
-      <v-tooltip top dark :disabled="!small" v-if="user==null">
+      <v-tooltip top dark :disabled="!small" v-if="user==null" style="text-align:center;">
         <v-btn dark flat to="/login" slot="activator">
           <span v-if="!small">Log In</span>
           <v-icon>fas fa-sign-in-alt</v-icon>
         </v-btn>
         <span>Log In</span>
       </v-tooltip>
-      <v-tooltip v-else top dark :disabled="!small">
+      <v-tooltip v-else top dark :disabled="!small" style="text-align:center;">
         <v-btn dark flat :to="'/user/' + user.name" slot="activator">
           <span v-if="!small">{{ username }}</span>
           <v-icon
@@ -117,7 +160,14 @@
         </v-btn>
         <span>{{ username }}</span>
       </v-tooltip>
-      <v-tooltip v-for="item in menu" :key="item.key" top dark :disabled="!small">
+      <v-tooltip
+        v-for="item in menu"
+        :key="item.key"
+        top
+        dark
+        :disabled="!small"
+        style="text-align:center;"
+      >
         <v-btn dark flat :to="item.route" slot="activator">
           <span v-if="!small">{{ item.text }}</span>
           <v-icon
@@ -127,6 +177,39 @@
         </v-btn>
         <span>{{ item.text }}</span>
       </v-tooltip>
+      <div style="text-align:center;" v-if="user!=null">
+        <v-menu offset-y top>
+          <template #activator="{ on: menu }">
+            <v-tooltip top dark :disabled="!small">
+              <template #activator="{ on: tooltip }">
+                <v-btn dark flat v-on="{ ...tooltip, ...menu }">
+                  <span v-if="!small">More</span>
+                  <v-icon>more_vert</v-icon>
+                </v-btn>
+              </template>
+              <span>More</span>
+            </v-tooltip>
+          </template>
+          <v-list>
+            <v-list-tile avatar to="/settings">
+              <v-list-tile-avatar>
+                <v-icon>settings</v-icon>
+              </v-list-tile-avatar>
+              <v-list-tile-content>
+                <v-list-tile-title>Settings</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-list-tile avatar to="/logout">
+              <v-list-tile-avatar>
+                <v-icon>fas fa-sign-out-alt</v-icon>
+              </v-list-tile-avatar>
+              <v-list-tile-content>
+                <v-list-tile-title>Log Out</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </v-menu>
+      </div>
     </v-bottom-nav>
   </v-app>
 </template>
