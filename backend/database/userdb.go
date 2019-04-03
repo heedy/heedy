@@ -24,7 +24,9 @@ func (db *UserDB) ID() string {
 
 // User returns the user that is logged in
 func (db *UserDB) User() (*User, error) {
-	return db.ReadUser(db.user, true)
+	return db.ReadUser(db.user, &ReadUserOptions{
+		Avatar: true,
+	})
 }
 
 func (db *UserDB) CreateUser(u *User) error {
@@ -37,7 +39,7 @@ func (db *UserDB) CreateUser(u *User) error {
 		) LIMIT 1;`, db.user, db.user)
 }
 
-func (db *UserDB) ReadUser(name string, avatar bool) (*User, error) {
+func (db *UserDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	// A user can be read if:
 	//	the user's public_access is >= 100 (read access by public),
 	//	the user's user_access >=100
@@ -45,7 +47,7 @@ func (db *UserDB) ReadUser(name string, avatar bool) (*User, error) {
 	//	the user to be read is itself, and the user has user:read scope
 
 	if name != db.user {
-		return readUser(db.adb, name, avatar, `SELECT * FROM groups WHERE id=? AND owner=id 
+		return readUser(db.adb, name, o, `SELECT * FROM groups WHERE id=? AND owner=id 
 		AND (
 				(public_access >= 100 OR user_access >=100)
 			OR EXISTS 
@@ -59,7 +61,7 @@ func (db *UserDB) ReadUser(name string, avatar bool) (*User, error) {
 
 	}
 
-	return readUser(db.adb, name, avatar, `SELECT * FROM groups WHERE id=? AND owner=id 
+	return readUser(db.adb, name, o, `SELECT * FROM groups WHERE id=? AND owner=id 
 		AND (
 				(public_access >= 100 OR user_access >=100)
 			OR EXISTS 
@@ -114,7 +116,7 @@ func (db *UserDB) DelUser(name string) error {
 		);`, name, db.user, db.user, db.user)
 }
 
-func (db *UserDB) GetUserScopes(username string) ([]string, error) {
+func (db *UserDB) ReadUserScopes(username string) ([]string, error) {
 	if db.user != username {
 		var scopes []string
 		err := db.adb.Select(&scopes, `SELECT DISTINCT(scope) FROM group_scopes WHERE
@@ -133,7 +135,7 @@ func (db *UserDB) GetUserScopes(username string) ([]string, error) {
 		return scopes, err
 	}
 	// If the user is me, just get my scopes, and check if I have the necessary permissions manually
-	scopes, err := db.adb.GetUserScopes(username)
+	scopes, err := db.adb.ReadUserScopes(username)
 	if err != nil {
 		return scopes, err
 	}

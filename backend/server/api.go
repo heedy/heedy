@@ -9,13 +9,14 @@ import (
 )
 
 func ReadUser(w http.ResponseWriter, r *http.Request) {
+	var o database.ReadUserOptions
 	username := chi.URLParam(r, "username")
-	avatarString, ok := r.URL.Query()["avatar"]
-	avatar := false
-	if ok && len(avatarString) > 0 {
-		avatar = avatarString[0] == "true"
+	err := queryDecoder.Decode(&o, r.URL.Query())
+	if err != nil {
+		WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
 	}
-	u, err := CTX(r).DB.ReadUser(username, avatar)
+	u, err := CTX(r).DB.ReadUser(username, &o)
 	WriteJSON(w, r, u, err)
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {

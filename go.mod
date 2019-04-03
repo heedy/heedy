@@ -6,6 +6,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/google/uuid v1.1.1
+	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/hcl2 v0.0.0-20190305174554-fdf8e232b64f
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0

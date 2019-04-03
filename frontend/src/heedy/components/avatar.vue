@@ -1,5 +1,5 @@
 <template>
-  <v-avatar :size="size" color="grey lighten-4">
+  <v-avatar :size="size" color="grey lighten-4" :style="style">
     <v-icon
       v-if="image.startsWith('fa:') || image.startsWith('mi:')"
     >{{ image.substring(3,image.length) }}</v-icon>
@@ -16,7 +16,8 @@ export default {
     size: {
       type: Number,
       default: 48
-    }
+    },
+    style: String
   },
   computed: {
     /*

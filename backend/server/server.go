@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/gorilla/schema"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
@@ -16,6 +17,8 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
+
+var queryDecoder = schema.NewDecoder()
 
 // RunOptions give special options for running
 type RunOptions struct {
