@@ -126,9 +126,10 @@ export const store = new Vuex.Store({
       };
     },
     setUser(state, v) {
-      console.log("SET", v, state.users);
       Vue.set(state.users, v.name, v);
-      console.log("SET FINISHED", state.users);
+      if (state.info.user != null && state.info.user.name == v.name) {
+        state.info.user = v;
+      }
     }
   },
   actions: {
@@ -160,7 +161,7 @@ export const store = new Vuex.Store({
     }
   }
 });
-console.log(store.state);
+console.log("Starting app state:", store.state);
 // Vue is used as a global
 export const vue = new Vue({
   router: router,

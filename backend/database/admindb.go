@@ -65,7 +65,7 @@ func (db *AdminDB) LoginToken(token string) (string, error) {
 	var selectResult struct {
 		User string
 	}
-	err := db.Get(&selectResult, "SELECT user FROM user_tokens WHERE token=?;", token)
+	err := db.Get(&selectResult, "SELECT user FROM user_logintokens WHERE token=?;", token)
 	return selectResult.User, err
 }
 
@@ -75,14 +75,14 @@ func (db *AdminDB) AddLoginToken(user string) (token string, err error) {
 	if err != nil {
 		return
 	}
-	result, err2 := db.Exec("INSERT INTO user_tokens (user,token) VALUES (?,?);", user, token)
+	result, err2 := db.Exec("INSERT INTO user_logintokens (user,token) VALUES (?,?);", user, token)
 	err = getExecError(result, err2)
 	return
 }
 
 // RemoveLoginToken deletes the given token from the database
 func (db *AdminDB) RemoveLoginToken(token string) error {
-	result, err := db.Exec("DELETE FROM user_tokens WHERE token=?;", token)
+	result, err := db.Exec("DELETE FROM user_logintokens WHERE token=?;", token)
 	return getExecError(result, err)
 }
 
@@ -112,6 +112,7 @@ func (db *AdminDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	if o == nil || !o.Avatar {
 		u.Avatar = nil
 	}
+
 	return u, err
 }
 
@@ -321,15 +322,15 @@ func (db *AdminDB) DelStream(id string) error {
 }
 
 // AddUserScopes adds scopes to the user
-func (db *AdminDB) AddUserScopeSets(username string, scopesets ...string) error {
+func (db *AdminDB) AddUserScopeSet(username string, scopesets ...string) error {
 	if username == "heedy" {
-		return ErrAccessDenied
+		return ErrAccessDenied("The heedy user cannot have its scopes modified")
 	}
 	// Make sure users or public is not one of the scopesets
 	for i := range scopesets {
 		if scopesets[i] == "users" || scopesets[i] == "public" {
 			scopesets[i] = scopesets[len(scopesets)-1]
-			return db.AddUserScopeSets(username, scopesets[:len(scopesets)-1]...)
+			return db.AddUserScopeSet(username, scopesets[:len(scopesets)-1]...)
 		}
 	}
 
@@ -352,7 +353,7 @@ func (db *AdminDB) AddUserScopeSets(username string, scopesets ...string) error 
 // RemUserScopeSets removes scope sets from a user, while ensuring that all the user's connections also lose the given scope sets
 func (db *AdminDB) RemUserScopeSets(username string, scopesets ...string) error {
 	if username == "heedy" {
-		return ErrAccessDenied
+		return ErrAccessDenied("The heedy user cannot have its scopes modified")
 	}
 	for i := range scopesets {
 		if scopesets[i] == "users" || scopesets[i] == "public" {
@@ -396,7 +397,7 @@ func (db *AdminDB) ReadUserScopeSets(username string) ([]string, error) {
 	return scopesets, err
 }
 
-func (db *AdminDB) AddScopeSet(scopeset string, scopes ...string) error {
+func (db *AdminDB) AddScope(scopeset string, scopes ...string) error {
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		return err
@@ -413,8 +414,8 @@ func (db *AdminDB) AddScopeSet(scopeset string, scopes ...string) error {
 	return tx.Commit()
 }
 
-// RemScopeSet removes scopes from a set, while ensuring that all the user's connections also lose the scopes
-func (db *AdminDB) RemScopeSet(scopeset string, scope ...string) error {
+// RemScope removes scopes from a set, while ensuring that all the user's connections also lose the scopes
+func (db *AdminDB) RemScope(scopeset string, scope ...string) error {
 	query, args, err := sqlx.In(`DELETE FROM scopesets WHERE name=? AND scope IN (?);`, scopeset, scope)
 	if err != nil {
 		return err
@@ -439,7 +440,7 @@ func (db *AdminDB) RemScopeSet(scopeset string, scope ...string) error {
 		EXISTS (
 			SELECT 1 FROM connections WHERE connection_scopes.connectionid=connections.id 
 			AND connection_scopes.scope NOT IN (
-				SELECT scope FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=connections.owner
+				SELECT scope FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=connections.owner)
 			)
 		);
 	`)

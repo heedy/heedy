@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -15,7 +16,7 @@ type Details struct {
 	Name        *string `json:"name" db:"name"`
 	FullName    *string `json:"fullname" db:"fullname"`
 	Description *string `json:"description" db:"description"`
-	Avatar      *string `json:"avatar"`
+	Avatar      *string `json:"avatar" db:"avatar"`
 }
 
 // User holds a user's data
@@ -95,7 +96,12 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 
-	GetUserScopes(name string) ([]string, error)
+	ReadUserScopes(name string) ([]string, error)
+}
+
+func ErrAccessDenied(err string, args ...interface{}) error {
+	s := fmt.Sprintf(err, args...)
+	return fmt.Errorf("access_denied: %s", s)
 }
 
 var (
@@ -105,7 +111,6 @@ var (
 	ErrUserNotFound    = errors.New("User was not found")
 	ErrInvalidName     = errors.New("Invalid name")
 	ErrInvalidQuery    = errors.New("Invalid query")
-	ErrAccessDenied    = errors.New("access_denied: you are not allowed to do this")
 )
 
 // Gets all pointer elements of a struct, and wherever the pointer isn't nil, adds it to the array
@@ -295,6 +300,9 @@ func userUpdateQuery(u *User) (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	if len(uColumns) == 0 {
+		return "", nil, ErrNoUpdate
+	}
 
 	userColumns := strings.Join(uColumns, "=?,") + "=?"
 
@@ -329,6 +337,9 @@ func groupCreateQuery(g *Group) (string, []interface{}, error) {
 
 func groupUpdateQuery(g *Group) (string, []interface{}, error) {
 	groupColumns, groupValues, err := extractGroup(g)
+	if len(groupColumns) == 0 {
+		return "", nil, ErrNoUpdate
+	}
 	return strings.Join(groupColumns, "=?,") + "=?", groupValues, err
 }
 
@@ -360,6 +371,9 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 
 func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
 	cColumns, cValues, err := extractConnection(c)
+	if len(cValues) == 0 {
+		return "", nil, ErrNoUpdate
+	}
 	return strings.Join(cColumns, "=?") + "=?", cValues, err
 }
 
@@ -386,5 +400,8 @@ func streamCreateQuery(s *Stream) (string, []interface{}, error) {
 
 func streamUpdateQuery(s *Stream) (string, []interface{}, error) {
 	sColumns, sValues, err := extractStream(s)
+	if len(sValues) == 0 {
+		return "", nil, ErrNoUpdate
+	}
 	return strings.Join(sColumns, "=?") + "=?", sValues, err
 }

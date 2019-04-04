@@ -52,7 +52,7 @@ func FrontendMux() (*chi.Mux, error) {
 			return
 		}
 		if u == nil {
-			scopes, err := ctx.DB.AdminDB().GetGroupScopes("public")
+			scopes, err := ctx.DB.AdminDB().ReadScopeSet("public")
 			if err != nil {
 				WriteJSONError(w, r, http.StatusInternalServerError, err)
 				return
@@ -70,7 +70,7 @@ func FrontendMux() (*chi.Mux, error) {
 			return
 		}
 
-		scopes, err := ctx.DB.GetUserScopes(u.ID)
+		scopes, err := ctx.DB.ReadUserScopes(*u.Name)
 		if err != nil {
 			WriteJSONError(w, r, http.StatusInternalServerError, err)
 			return

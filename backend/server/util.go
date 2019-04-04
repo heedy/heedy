@@ -48,6 +48,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 		Error:            "access_denied",
 		ErrorDescription: err.Error(),
 	}
+	myerr := err
 
 	// We can have error types encoded in the error, split with a :
 	errs := strings.SplitN(err.Error(), ":", 2)
@@ -71,9 +72,9 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	}
 
 	if c != nil {
-		c.Log.Warn(err)
+		c.Log.Warn(myerr)
 	} else {
-		logrus.Warn(err)
+		logrus.Warn(myerr)
 	}
 
 	w.Header().Set("Content-Length", strconv.Itoa(len(jes)))

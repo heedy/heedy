@@ -21,20 +21,6 @@ func (c *Configuration) GetPort() uint16 {
 	return 0
 }
 
-func (c *Configuration) GetNewUserScopes() []string {
-	if c.NewUserScopes != nil {
-		return *c.NewUserScopes
-	}
-	return []string{}
-}
-
-func (c *Configuration) GetNewGroupScopes() []string {
-	if c.NewGroupScopes != nil {
-		return *c.NewGroupScopes
-	}
-	return []string{}
-}
-
 func (c *Configuration) GetNewConnectionScopes() []string {
 	if c.NewConnectionScopes != nil {
 		return *c.NewConnectionScopes

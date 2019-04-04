@@ -25,40 +25,40 @@ func (db *PublicDB) User() (*User, error) {
 func (db *PublicDB) CreateUser(u *User) error {
 
 	// Only create the user if the public group contains the user:create scope
-	return createUser(db.DB, u, "SELECT 1 FROM group_scopes WHERE groupid='public' and scope='users:create';")
+	return createUser(db.DB, u, "SELECT 1 FROM scopesets WHERE name='public' and scope='users:create';")
 
 }
 
 func (db *PublicDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	// A user can be read if the user's public_access is >= 100 (read access by public)
 	// or if the public group has the users:read scope
-	return readUser(db.DB, name, o, `SELECT * FROM groups WHERE id=? AND owner=id AND (
+	return readUser(db.DB, name, o, `SELECT * FROM users WHERE name=? AND (
 			public_access >= 100 
 		OR 
-			EXISTS (SELECT 1 FROM group_scopes WHERE groupid='public' and scope='users:read')
+			EXISTS (SELECT 1 FROM scopesets WHERE name='public' and scope='users:read')
 		) LIMIT 1;`, name)
 
 }
 
 func (db *PublicDB) UpdateUser(u *User) error {
-	return updateUser(db.DB, u, `SELECT DISTINCT(scope) FROM group_scopes WHERE groupid='public' AND scope LIKE 'users:edit%';`)
+	return updateUser(db.DB, u, `SELECT DISTINCT(scope) FROM scopesets WHERE name='public' AND scope LIKE 'users:edit%';`)
 }
 
 func (db *PublicDB) DelUser(name string) error {
 	return delUser(db.DB, name, `DELETE FROM users WHERE name=? AND EXISTS (
-			SELECT 1 FROM group_scopes WHERE scope='users:delete' AND groupid='public'
+			SELECT 1 FROM scopesets WHERE scope='users:delete' AND name='public'
 		);`, name)
 }
 
-func (db *PublicDB) GetUserScopes(username string) ([]string, error) {
+func (db *PublicDB) ReadUserScopes(username string) ([]string, error) {
 
 	var scopes []string
-	err := db.DB.Select(&scopes, `SELECT DISTINCT(scope) FROM group_scopes WHERE
-			(groupid IN (?, 'public', 'users') OR groupid IN (SELECT groupid FROM group_members WHERE username=?))
-			AND EXISTS (SELECT 1 FROM group_scopes WHERE scope='users:scopes' AND groupid='public');`, username, username)
+	err := db.DB.Select(&scopes, `SELECT DISTINCT(scope) FROM scopesets WHERE
+			(name IN ('public', 'users') OR name IN (SELECT scopeset FROM user_scopesets WHERE user=?))
+			AND EXISTS (SELECT 1 FROM scopesets WHERE scope='users:scopes' AND name='public');`, username)
 	if err == nil && len(scopes) == 0 {
 		// TODO: Same error as in userdb - need to perform an additional check here, because maybe the user actually has 0 scopes (unlikely)
-		return scopes, ErrAccessDenied
+		return scopes, ErrAccessDenied("You do not have permission to read scopes for %s", username)
 	}
 	return scopes, err
 

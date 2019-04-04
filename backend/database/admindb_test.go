@@ -36,6 +36,22 @@ func newDB(t *testing.T) (*AdminDB, func()) {
 	return db, cleanup
 }
 
+func newDBWithUser(t *testing.T) (*AdminDB, func()) {
+	adb, cleanup := newDB(t)
+
+	name := "testy"
+	passwd := "testpass"
+	require.NoError(t, adb.CreateUser(&User{
+
+		Details: Details{
+			Name: &name,
+		},
+
+		Password: &passwd,
+	}))
+	return adb, cleanup
+}
+
 func TestAdminUser(t *testing.T) {
 	db, cleanup := newDB(t)
 	defer cleanup()
@@ -312,7 +328,7 @@ func TestAdminScopes(t *testing.T) {
 	require.Contains(t, scopesets, "users")
 	require.Contains(t, scopesets, "public")
 
-	require.NoError(t, db.AddUserScopeSets("testy", "tee", "hee", "public")) // public scope set won't be added
+	require.NoError(t, db.AddUserScopeSet("testy", "tee", "hee", "public")) // public scope set won't be added
 	scopesets2, err := db.ReadUserScopeSets("testy")
 	require.NoError(t, err)
 	require.Equal(t, len(scopesets), len(scopesets2)-2)
@@ -333,7 +349,7 @@ func TestAdminScopes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(s), 0)
 
-	err = db.AddScopeSet("tee", "hee")
+	err = db.AddScope("tee", "hee")
 	require.NoError(t, err)
 	s, err = db.ReadScopeSet("tee")
 	require.NoError(t, err)
@@ -344,7 +360,7 @@ func TestAdminScopes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(scopes), len(scopes2)-1)
 
-	require.NoError(t, db.AddUserScopeSets("testy", "scree"))
+	require.NoError(t, db.AddUserScopeSet("testy", "scree"))
 	ss, err := db.GetAllScopeSets()
 	require.NoError(t, err)
 

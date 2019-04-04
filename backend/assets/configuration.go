@@ -120,9 +120,6 @@ type Configuration struct {
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty"`
-	TransferableScopes  *[]string          `json:"transferable_scopes"`
-	NewUserScopes       *[]string          `json:"new_user_scopes,omitempty"`
-	NewGroupScopes      *[]string          `json:"new_group_scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty"`
 
 	Frontend Frontend `json:"frontend"`
@@ -254,10 +251,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		}
 		overlay.Scopes = base.Scopes
 	}
-	overlay.TransferableScopes = MergeStringArrays(base.TransferableScopes, overlay.TransferableScopes)
-	overlay.NewUserScopes = MergeStringArrays(base.NewUserScopes, overlay.NewUserScopes)
 	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
-	overlay.NewGroupScopes = MergeStringArrays(base.NewGroupScopes, overlay.NewGroupScopes)
 
 	CopyStructIfPtrSet(base, overlay)
 

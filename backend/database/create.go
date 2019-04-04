@@ -146,14 +146,14 @@ CREATE TABLE user_scopesets (
 
 CREATE TABLE group_members (
 	groupid VARCHAR(36),
-	username VARCHAR(36),
+	user VARCHAR(36),
 
 	access INTEGER DEFAULT 200, -- 100 is read group, 200 is readonly all, 300 gives stream insert access, 400 allows adding streams/sources, 500 allows removing streams/sources, 600 allows adding/removing members (except owner)
 	
-	PRIMARY KEY (groupid,username),
+	PRIMARY KEY (groupid,user),
 
 	CONSTRAINT idid
-		FOREIGN KEY(username)
+		FOREIGN KEY(user)
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
@@ -374,13 +374,16 @@ INSERT INTO groups (id,name,fullname,description,avatar,owner,user_access) VALUE
 -- Add the user scopes required for the frontend to function into the users scopeset
 INSERT INTO scopesets (name,scope) VALUES
 	('users','user:read'),
+	('users','user:edit'),
+	('users','user:edit:password'),
+	('users','user:delete'),
 	('users','group:read'),
 	('users','connection:read'),
+	('users','connection:create'),
 	('users','stream:read'),
 	('users','user:scopes'),
 	('users','group:scopes'),
-	('users','connection:scopes'),
-	('users','connection:active_scopes');
+	('users','connection:scopes');
 	
 
 `

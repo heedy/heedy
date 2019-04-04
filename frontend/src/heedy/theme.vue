@@ -147,7 +147,7 @@
       </v-tooltip>
       <v-tooltip v-else top dark :disabled="!small" style="text-align:center;">
         <v-btn dark flat :to="'/user/' + user.name" slot="activator">
-          <span v-if="!small">{{ username }}</span>
+          <span v-if="!small" style="padding-top: 5px;">{{ username }}</span>
           <avatar :image="user.avatar" :size="28"></avatar>
         </v-btn>
         <span>{{ username }}</span>

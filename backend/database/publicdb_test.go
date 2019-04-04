@@ -1,6 +1,11 @@
 package database
 
-/*
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
 func TestPublicUser(t *testing.T) {
 	adb, cleanup := newDB(t)
 	defer cleanup()
@@ -8,53 +13,55 @@ func TestPublicUser(t *testing.T) {
 	db := PublicDB{adb}
 
 	name := "testy"
+	passwd := "testpass"
 
 	// Can't create the user
-	require.EqualError(t, db.CreateUser(&User{
+	require.Error(t, db.CreateUser(&User{
 		Details: Details{
 			Name: &name,
 		},
-		Password: "testpass",
-	}), ErrAccessDenied.Error())
+		Password: &passwd,
+	}))
 
 	// Add user creation permission
-	adb.AddGroupScopes("public", "users:create")
+	adb.AddScope("public", "users:create")
 
 	// Create
 	require.NoError(t, db.CreateUser(&User{
 		Details: Details{
 			Name: &name,
 		},
-		Password: "testpass",
+		Password: &passwd,
 	}))
 	_, err := db.ReadUser("testy", nil)
 	require.Error(t, err)
 
-	adb.AddGroupScopes("public", "users:read")
+	require.NoError(t, adb.AddScope("public", "users:read"))
 
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
 
 	// Shouldn't be allowed to change another user's password without the scope present
+	passwd = "mypass2"
 	require.Error(t, db.UpdateUser(&User{
 		Details: Details{
 			ID: "testy",
 		},
-		Password: "mypass2",
+		Password: &passwd,
 	}))
 
-	adb.AddGroupScopes("public", "users:edit:password")
+	require.NoError(t, adb.AddScope("public", "users:edit:password"))
 
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
 			ID: "testy",
 		},
-		Password: "mypass2",
+		Password: &passwd,
 	}))
 
 	require.Error(t, db.DelUser("testy"))
-	adb.AddGroupScopes("public", "users:delete")
+	adb.AddScope("public", "users:delete")
 	require.NoError(t, db.DelUser("testy"))
 
 	_, err = adb.ReadUser("testy", nil)
@@ -67,21 +74,21 @@ func TestPublicUserScope(t *testing.T) {
 
 	// Create
 	name := "testy"
+	passwd := "testpass"
 	require.NoError(t, adb.CreateUser(&User{
 		Details: Details{
 			Name: &name,
 		},
-		Password: "testpass",
+		Password: &passwd,
 	}))
 
 	db := NewPublicDB(adb)
 
-	_, err := db.GetUserScopes("testy")
+	_, err := db.ReadUserScopes("testy")
 	require.Error(t, err)
 
-	require.NoError(t, adb.AddGroupScopes("public", "users:scopes"))
+	require.NoError(t, adb.AddScope("public", "users:scopes"))
 
-	_, err = db.GetUserScopes("testy")
+	_, err = db.ReadUserScopes("testy")
 	require.NoError(t, err)
 }
-*/

@@ -115,12 +115,10 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 
 		// Now add the default user
 		if err = db.CreateUser(&database.User{
-			Group: database.Group{
-				Details: database.Details{
-					Name: &sm.User.Name,
-				},
+			Details: database.Details{
+				Name: &sm.User.Name,
 			},
-			Password: sm.User.Password,
+			Password: &sm.User.Password,
 		}); err != nil {
 			log.Error(err)
 			os.RemoveAll(mydir)

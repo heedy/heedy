@@ -36,15 +36,12 @@ export default {
   },
   watch: {
     username: function(newValue) {
-      console.log("REad USer", newValue);
       this.$store.dispatch("readUser", { name: newValue });
     }
   },
   computed: {
     user: function() {
-      console.log("Compued");
       let usr = this.$store.state.users[this.username] || null;
-      console.log(this.username, usr, this.$store.state.users);
       return usr;
     }
   },
