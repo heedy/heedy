@@ -90,10 +90,11 @@ CREATE TABLE streams (
 	description VARCHAR DEFAULT '',
 	avatar VARCHAR DEFAULT '',
 	connection VARCHAR(36) DEFAULT NULL,
-	user VARCHAR(36) NOT NULL,
+	owner VARCHAR(36) NOT NULL,
 
 	-- json schema
 	schema VARCHAR DEFAULT '{}',
+	type VARCHAR DEFAULT '',
 
 	-- Set to '' when the stream is internal, and gives the rest url/plugin uri for querying if external
 	external VARCHAR DEFAULT '',
@@ -101,7 +102,7 @@ CREATE TABLE streams (
 	actor BOOLEAN DEFAULT FALSE, -- Whether the stream is also an actor, ie, it can take action, meaning that it performs interventions
 
 	-- What access is given to the user and others who have access to the stream
-	access INTEGER DEFAULT 200, -- 0 hidden, 100 read, 200 insert actions, 300 insert, 400 remove data, 500 modify, 600 delete
+	access INTEGER DEFAULT 200, -- 0 hidden, 100 read, 200 insert actions, 300 modify, 400 insert data, 500 remove data, 600 delete
 
 	CONSTRAINT streamconnection
 		FOREIGN KEY(connection) 
@@ -109,8 +110,8 @@ CREATE TABLE streams (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT streamuser
-		FOREIGN KEY(user) 
+	CONSTRAINT streamowner
+		FOREIGN KEY(owner) 
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
@@ -167,15 +168,15 @@ CREATE TABLE group_members (
 
 CREATE TABLE group_streams (
 	groupid VARCHAR(36),
-	id VARCHAR(36),
+	streamid VARCHAR(36),
 
 	access INTEGER DEFAULT 1, -- Same as stream access
 
-	UNIQUE(id,groupid),
-	PRIMARY KEY (id,groupid),
+	UNIQUE(groupid,streamid),
+	PRIMARY KEY (groupid,streamid),
 
 	CONSTRAINT idid
-		FOREIGN KEY(id)
+		FOREIGN KEY(streamid)
 		REFERENCES streams(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
@@ -333,6 +334,28 @@ CREATE TABLE plugin_kv (
 );
 
 ------------------------------------------------------------------
+-- Database Views
+------------------------------------------------------------------
+
+CREATE VIEW user_scopes(user,scope) AS
+SELECT x.name, scope FROM scopesets 
+	JOIN (SELECT users.name AS name,user_scopesets.scopeset AS scopeset FROM users 
+				LEFT JOIN user_scopesets ON users.name=user_scopesets.user
+			) AS x 
+		ON (x.scopeset=scopesets.name OR scopesets.name IN ('users', 'public')
+		);
+
+
+CREATE VIEW user_can_read_user(user,target) AS
+	SELECT users.name, t.name  FROM users,users t WHERE 
+		t.public_access >= 100 OR t.user_access >=100 OR users.name=t.name 
+		OR 'users:read' IN (SELECT scope FROM user_scopes WHERE user_scopes.user=users.name);
+
+CREATE VIEW public_can_read_user(user) AS
+	SELECT users.name FROM users WHERE
+		users.public_access >= 100 OR 'users:read' IN (SELECT scope FROM scopesets WHERE scopesets.name='public');
+
+------------------------------------------------------------------
 -- Database Default Users & Groups
 ------------------------------------------------------------------
 
@@ -370,21 +393,6 @@ INSERT INTO groups (id,name,fullname,description,avatar,owner,user_access) VALUE
 	"heedy",
 	400 -- Allows each user to add/remove their own streams/connections
 );
-
--- Add the user scopes required for the frontend to function into the users scopeset
-INSERT INTO scopesets (name,scope) VALUES
-	('users','user:read'),
-	('users','user:edit'),
-	('users','user:edit:password'),
-	('users','user:delete'),
-	('users','group:read'),
-	('users','connection:read'),
-	('users','connection:create'),
-	('users','stream:read'),
-	('users','user:scopes'),
-	('users','group:scopes'),
-	('users','connection:scopes');
-	
 
 `
 

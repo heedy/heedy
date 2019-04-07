@@ -119,7 +119,8 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Scopes              *map[string]string `json:"scopes,omitempty"`
+	UserScopes          *map[string]string `json:"user_scopes,omitempty"`
+	ConnectionScopes    *map[string]string `json:"connection_scopes,omitempty"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty"`
 
 	Frontend Frontend `json:"frontend"`
@@ -245,11 +246,17 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	overlay = overlay.Copy()
 
 	// Copy the scopes to overlay, since they will be replaced with CopyStruct
-	if overlay.Scopes != nil && base.Scopes != nil {
-		for sk, sv := range *overlay.Scopes {
-			(*base.Scopes)[sk] = sv
+	if overlay.UserScopes != nil && base.UserScopes != nil {
+		for sk, sv := range *overlay.UserScopes {
+			(*base.UserScopes)[sk] = sv
 		}
-		overlay.Scopes = base.Scopes
+		overlay.UserScopes = base.UserScopes
+	}
+	if overlay.ConnectionScopes != nil && base.ConnectionScopes != nil {
+		for sk, sv := range *overlay.ConnectionScopes {
+			(*base.ConnectionScopes)[sk] = sv
+		}
+		overlay.ConnectionScopes = base.ConnectionScopes
 	}
 	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
 

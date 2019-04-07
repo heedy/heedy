@@ -30,119 +30,66 @@ func (db *UserDB) User() (*User, error) {
 }
 
 func (db *UserDB) CreateUser(u *User) error {
-
 	// Only create the user if I have the users:create scope
-	return createUser(db.adb, u, `SELECT 1 FROM scopesets WHERE scope='users:create' AND (
-			name IN (
-				SELECT scopeset FROM user_scopesets WHERE user=?
-			) OR name IN ('public', 'users')
-		) LIMIT 1;`, db.user)
+	return createUser(db.adb, u, `SELECT 1 FROM user_scopes WHERE user=? AND scope='users:create';`, db.user)
 }
 
 func (db *UserDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
-	// A user can be read if:
+	// A user can be read if it is the current user, OR
 	//	the user's public_access is >= 100 (read access by public),
 	//	the user's user_access >=100
-	//	the user is member of a group which gives it users:read scope
-	//	the user to be read is itself, and the user has user:read scope
-	if name != db.user {
-		return readUser(db.adb, name, o, `SELECT * FROM users WHERE name=?
-		AND (
-				(public_access >= 100 OR user_access >=100)
-			OR EXISTS 
-				(SELECT 1 FROM scopesets WHERE scope='users:read' AND (
-						name IN ('public', 'users') 
-					OR 
-						name IN (SELECT scopeset FROM user_scopesets WHERE user=?)
-					)
-				)
-		)
-		LIMIT 1;`, name, db.user)
-
+	//	current user has users:read scope
+	if name == db.user {
+		return db.adb.ReadUser(name, o)
 	}
 
-	return readUser(db.adb, name, o, `SELECT * FROM users WHERE name=?
-		AND (
-				(public_access >= 100 OR user_access >=100)
-			OR EXISTS 
-				(SELECT 1 FROM scopesets WHERE scope IN ('users:read', 'user:read') AND (
-						name IN ('public', 'users') 
-					OR 
-						name IN (SELECT scopeset FROM user_scopesets WHERE user=?)
-					)
-				)
-		)
-		LIMIT 1;`, name, db.user)
+	return readUser(db.adb, name, o, `SELECT * FROM users WHERE name=? AND EXISTS 
+		(SELECT 1 FROM user_can_read_user WHERE target=? AND user=?) LIMIT 1;`, name, name, db.user)
 
 }
 
 // UpdateUser updates the given portions of a user
 func (db *UserDB) UpdateUser(u *User) error {
 	if u.ID == db.user {
-		return updateUser(db.adb, u, `SELECT DISTINCT(scope) FROM scopesets WHERE (
-					(scope LIKE 'users:edit%' OR scope LIKE 'user:edit%')
-				AND
-					(name IN (SELECT scopeset FROM user_scopesets WHERE user=?) OR name IN ('public', 'users'))
-			);`, db.user)
+		if u.Name != nil {
+			// Updating the username requires user:edit:name scope
+			return updateUser(db.adb, u, `SELECT 1 FROM user_scopes 
+					WHERE user=? AND scope IN ('user:edit:name', 'users:edit:name');`, db.user)
+		}
+		return db.adb.UpdateUser(u)
 	}
-	return updateUser(db.adb, u, `SELECT DISTINCT(scope) FROM scopesets WHERE (
-				scope LIKE 'users:edit%'
-			AND
-				(name IN (SELECT scopeset FROM user_scopesets WHERE user=?) OR name IN ('public', 'users'))
-		);`, db.user)
+
+	requiredScopes := []string{"users:edit"}
+
+	if u.Password != nil {
+		// Trying to edit the user's password
+		requiredScopes = append(requiredScopes, "users:edit:password")
+	}
+	if u.Name != nil {
+		requiredScopes = append(requiredScopes, "users:edit:name")
+	}
+
+	return updateUser(db.adb, u, sqlIn(`SELECT 1 FROM user_can_read_user WHERE user=? AND target=? 
+			AND ?=(SELECT COUNT(DISTINCT(scope)) FROM user_scopes WHERE scope IN (%s));`, requiredScopes), db.user, u.ID, len(requiredScopes))
 }
 
 func (db *UserDB) DelUser(name string) error {
 	// A user can be deleted if:
 	//	the user is member of a group which gives it users:delete scope
 	//	the user to be read is itself, and the user has user:delete scope
-
-	if db.user != name {
-		return delUser(db.adb, name, `DELETE FROM users WHERE name=? AND EXISTS (
-			SELECT 1 FROM scopesets WHERE scope='users:delete' AND (
-				name IN ('public', 'users') 
-				OR name IN (SELECT scopeset FROM user_scopesets WHERE user=?)
-			) LIMIT 1
-		);`, name, db.user)
+	if name == db.user {
+		return delUser(db.adb, name, `DELETE FROM users WHERE name=? AND EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope IN ('user:delete', 'users:delete'));`, name, name)
 	}
 
-	// The user has same name, add check for user:delete
-	return delUser(db.adb, name, `DELETE FROM users WHERE name=? AND EXISTS (
-			SELECT 1 FROM scopesets WHERE scope IN ('user:delete', 'users:delete') AND (
-				name IN ('public', 'users') 
-				OR name IN (SELECT scopeset FROM user_scopesets WHERE user=?)
-			) LIMIT 1	
-		);`, name, db.user, db.user, db.user)
+	return delUser(db.adb, name, `DELETE FROM users WHERE name=? 
+			AND EXISTS (SELECT 1 FROM user_can_read_user WHERE target=? AND user=?) 
+			AND 'users:delete' IN (SELECT scope FROM user_scopes WHERE user=?)`, name, name, db.user, db.user)
 }
 
 func (db *UserDB) ReadUserScopes(username string) ([]string, error) {
-	if db.user != username {
-		var scopes []string
-		err := db.adb.Select(&scopes, `SELECT DISTINCT(scope) FROM scopesets WHERE
-			(name IN ('public', 'users') OR name IN (SELECT scopeset FROM user_scopesets WHERE user=?))
-			AND EXISTS (
-				SELECT 1 FROM scopesets WHERE scope='users:scopes' AND (
-					name IN ('public', 'users') 
-					OR name IN (SELECT scopeset FROM user_scopesets WHERE user=?)
-				)
-			);`, username, db.user)
-		if err == nil && len(scopes) == 0 {
-			// TODO: This assumes that all users have at least one scope. Run another query here to make sure
-			// that we don't have the necessary permissions.
-			return scopes, ErrAccessDenied("You do not have permission to read scopes for '%s'", username)
-		}
-		return scopes, err
+	if db.user == username {
+		return db.adb.ReadUserScopes(username)
 	}
-	// If the user is me, just get my scopes, and check if I have the necessary permissions manually
-	scopes, err := db.adb.ReadUserScopes(username)
-	if err != nil {
-		return scopes, err
-	}
-	for _, v := range scopes {
-		if v == "users:scopes" || v == "user:scopes" {
-			return scopes, nil
-		}
-	}
-
-	return []string{}, ErrAccessDenied("You do not have permission to read your user's scopes")
+	return readUserScopes(db.adb, username, `SELECT 1 FROM user_can_read_user WHERE target=? AND user=?
+		AND 'users:scopes' IN (SELECT scope FROM user_scopes s WHERE s.user=?);`, username, db.user, db.user)
 }

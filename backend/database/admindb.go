@@ -279,6 +279,14 @@ func (db *AdminDB) CreateStream(s *Stream) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if s.Connection != nil {
+		// We must insert while also setting the owner to the connection's owner
+		sValues = append(sValues, *s.Connection)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO streams (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
+		err = getExecError(result, err)
+
+		return s.ID, err
+	}
 
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO streams (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
 	err = getExecError(result, err)
@@ -373,21 +381,9 @@ func (db *AdminDB) RemUserScopeSets(username string, scopesets ...string) error 
 	err = getExecError(result, err)
 	if err != nil && err != ErrNotFound {
 		tx.Rollback()
-		return nil
+		return err
 	}
-
-	// Must also delete any scopes that the user no longer has from its connections
-	result, err = tx.Exec(`DELETE FROM connection_scopes WHERE 
-		connectionid IN (SELECT id FROM connections WHERE owner=?)
-		AND scope NOT IN (SELECT scope FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=?));
-	`, username, username)
-	err = getExecError(result, err)
-	if err == ErrNotFound || err == nil {
-		tx.Commit()
-		return nil
-	}
-	tx.Rollback()
-	return err
+	return tx.Commit()
 }
 
 func (db *AdminDB) ReadUserScopeSets(username string) ([]string, error) {
@@ -432,23 +428,6 @@ func (db *AdminDB) RemScope(scopeset string, scope ...string) error {
 		return nil
 	}
 
-	// Must also delete any scopes that were removed from all connections that were using it
-	// Here we get once again thrown against the limitations of sqlite, and need to do some clever query writing instead of a simple join and IN over tuples.
-	// We delete all values from connections scope where the corresponding connection's owner does not have a scope that is in connection_scopes.
-	// WARNING: this probably does a full table scan.
-	result, err = tx.Exec(`DELETE FROM connection_scopes WHERE 
-		EXISTS (
-			SELECT 1 FROM connections WHERE connection_scopes.connectionid=connections.id 
-			AND connection_scopes.scope NOT IN (
-				SELECT scope FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=connections.owner)
-			)
-		);
-	`)
-	err = getExecError(result, err)
-	if err != ErrNotFound && err != nil {
-		tx.Rollback()
-		return err
-	}
 	return tx.Commit()
 }
 
@@ -523,30 +502,25 @@ func (db *AdminDB) DeleteScopeSet(scopeset string) error {
 		return err
 	}
 
-	// Must also delete any scopes that were removed from all connections that were using it
-	// Here we get once again thrown against the limitations of sqlite, and need to do some clever query writing instead of a simple join and IN over tuples.
-	// We delete all values from connections scope where the corresponding connection's owner does not have a scope that is in connection_scopes.
-	// WARNING: this probably does a full table scan.
-	result, err = tx.Exec(`DELETE FROM connection_scopes WHERE 
-		EXISTS (
-			SELECT 1 FROM connections WHERE connection_scopes.connectionid=connections.id 
-			AND connection_scopes.scope NOT IN (
-				SELECT scope FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=connections.owner)
-			)
-		);
-	`)
-	err = getExecError(result, err)
-	if err != ErrNotFound && err != nil {
-		tx.Rollback()
-		return err
-	}
 	return tx.Commit()
 }
 
 func (db *AdminDB) ReadUserScopes(username string) ([]string, error) {
 	var scopes []string
-	err := db.Select(&scopes, `SELECT DISTINCT(scope) FROM scopesets WHERE name IN (SELECT scopeset FROM user_scopesets WHERE user=?) OR name IN ('users', 'public');`, username)
+	err := db.Select(&scopes, `SELECT DISTINCT(scope) FROM user_scopes WHERE user=?;`, username)
 
+	if err == nil && len(scopes) == 0 {
+		// We must check if the user exists
+		rows, err := db.DB.Query(`SELECT 1 FROM users WHERE name=?;`, username)
+		if err != nil {
+			return nil, err
+		}
+		userExists := rows.Next()
+		rows.Close()
+		if !userExists {
+			return scopes, ErrNotFound
+		}
+	}
 	return scopes, err
 }
 

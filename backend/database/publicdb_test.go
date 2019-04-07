@@ -51,7 +51,7 @@ func TestPublicUser(t *testing.T) {
 		Password: &passwd,
 	}))
 
-	require.NoError(t, adb.AddScope("public", "users:edit:password"))
+	require.NoError(t, adb.AddScope("public", "users:edit", "users:edit:password"))
 
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
@@ -87,7 +87,7 @@ func TestPublicUserScope(t *testing.T) {
 	_, err := db.ReadUserScopes("testy")
 	require.Error(t, err)
 
-	require.NoError(t, adb.AddScope("public", "users:scopes"))
+	require.NoError(t, adb.AddScope("public", "users:read", "users:scopes"))
 
 	_, err = db.ReadUserScopes("testy")
 	require.NoError(t, err)

@@ -23,8 +23,8 @@ type Details struct {
 type User struct {
 	Details
 
-	PublicAccess *int `json:"public_access,omitempty" db:"public_access"`
-	UserAccess   *int `json:"user_access,omitempty" db:"user_access"`
+	PublicAccess *int `json:"public_access" db:"public_access"`
+	UserAccess   *int `json:"user_access" db:"user_access"`
 
 	Password *string `json:"password,omitempty" db:"password"`
 }
@@ -34,8 +34,8 @@ type Group struct {
 	Details
 	Owner *string `json:"owner" db:"owner"`
 
-	PublicAccess *int `json:"public_access,omitempty" db:"public_access"`
-	UserAccess   *int `json:"user_access,omitempty" db:"user_access"`
+	PublicAccess *int `json:"public_access" db:"public_access"`
+	UserAccess   *int `json:"user_access" db:"user_access"`
 }
 
 type Connection struct {
@@ -44,19 +44,20 @@ type Connection struct {
 
 	APIKey *string `json:"apikey,omitempty" db:"apikey"`
 
-	Settings      *string `json:"settings,omitempty" db:"settings"`
-	SettingSchema *string `json:"setting_schema,omitempty" db:"setting_schema"`
+	Settings      *string `json:"settings" db:"settings"`
+	SettingSchema *string `json:"setting_schema" db:"setting_schema"`
 }
 
 type Stream struct {
 	Details
 
-	User       *string `json:"user,omitempty" db:"user"`
+	Owner      *string `json:"owner,omitempty" db:"owner"`
 	Connection *string `json:"connection,omitempty" db:"connection"`
 	Schema     *string `json:"schema,omitempty" db:"schema"`
-	External   *string `json:"external,omitempty" db:"external"`
-	Actor      *bool   `json:"actor,omitempty" db:"actor"`
-	Access     *int    `json:"access,omitempty" db:"access"`
+	Type       *string `json:"type,omitempty" db:"type"`
+	External   *string `json:"external" db:"external"`
+	Actor      *bool   `json:"actor" db:"actor"`
+	Access     *int    `json:"access" db:"access"`
 }
 
 // ReadUserOptions gives options for reading a user
@@ -102,6 +103,10 @@ type DB interface {
 func ErrAccessDenied(err string, args ...interface{}) error {
 	s := fmt.Sprintf(err, args...)
 	return fmt.Errorf("access_denied: %s", s)
+}
+func ErrBadQuery(err string, args ...interface{}) error {
+	s := fmt.Sprintf(err, args...)
+	return fmt.Errorf("bad_query: %s", s)
 }
 
 var (
@@ -258,8 +263,8 @@ func extractStream(s *Stream) (sColumns []string, sValues []interface{}, err err
 	if err != nil {
 		return
 	}
-	if s.User != nil {
-		if err = ValidName(*s.User); err != nil {
+	if s.Owner != nil {
+		if err = ValidName(*s.Owner); err != nil {
 			return
 		}
 	}
@@ -274,6 +279,10 @@ func extractStream(s *Stream) (sColumns []string, sValues []interface{}, err err
 func qQ(size int) string {
 	s := strings.Repeat("?,", size)
 	return s[:len(s)-1]
+}
+
+func sqlIn(s string, v []string) string {
+	return fmt.Sprintf(s, "'"+strings.Join(v, "', '")+"'")
 }
 
 func userCreateQuery(u *User) (string, []interface{}, error) {
@@ -381,8 +390,11 @@ func streamCreateQuery(s *Stream) (string, []interface{}, error) {
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
-	if s.User == nil && s.Connection == nil {
-		return "", nil, ErrInvalidQuery
+	if s.Owner == nil && s.Connection == nil {
+		return "", nil, ErrBadQuery("You must specify either a user or a connection to which the stream should belong")
+	}
+	if s.Connection != nil && s.Owner != nil {
+		return "", nil, ErrBadQuery("When creating a stream for a connection, you must not specify an owner")
 	}
 	sColumns, sValues, err := extractStream(s)
 	if err != nil {

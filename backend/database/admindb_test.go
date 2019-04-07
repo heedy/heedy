@@ -290,7 +290,6 @@ func TestAdminStream(t *testing.T) {
 
 			Name: &name,
 		},
-		User:       &name,
 		Connection: &conn,
 	})
 	require.NoError(t, err)
@@ -343,7 +342,7 @@ func TestAdminScopes(t *testing.T) {
 
 	scopes, err := db.ReadUserScopes("testy")
 	require.NoError(t, err)
-	require.True(t, len(scopes) > 0)
+	require.True(t, len(scopes) == 0) // By default, a user has no special scopes
 
 	s, err := db.ReadScopeSet("tee")
 	require.NoError(t, err)

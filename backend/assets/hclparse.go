@@ -73,7 +73,8 @@ type hclConfiguration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	UserScopes          *map[string]string `json:"user_scopes,omitempty" hcl:"user_scopes"`
+	ConnectionScopes    *map[string]string `json:"connection_scopes,omitempty" hcl:"connection_scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
 
 	Language         *string `hcl:"language" json:"language"`

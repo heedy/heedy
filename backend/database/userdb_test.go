@@ -53,13 +53,6 @@ func TestUserUser(t *testing.T) {
 	_, err = db.ReadUser("testy2", nil)
 	require.Error(t, err)
 
-	// Make sure we can no longer read ourselves if we remove the wrong permission
-	require.NoError(t, adb.RemScope("testy", "user:read"))
-	require.NoError(t, adb.RemScope("users", "user:read"))
-
-	_, err = db.ReadUser("testy", nil)
-	require.Error(t, err)
-
 	adb.AddScope("users", "users:read")
 
 	u, err = db.ReadUser("testy", nil)
@@ -86,7 +79,7 @@ func TestUserUser(t *testing.T) {
 		Password: &passwd,
 	}))
 
-	adb.AddScope("testy", "users:edit:password")
+	adb.AddScope("testy", "users:edit", "users:edit:password")
 
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
@@ -169,8 +162,16 @@ func TestUserScopes(t *testing.T) {
 	require.Error(t, err)
 
 	require.NoError(t, adb.AddScope("users", "users:scopes"))
+	uacc := 100
+	require.NoError(t, adb.UpdateUser(&User{
+		Details: Details{
+			ID: "testy2",
+		},
+		UserAccess: &uacc,
+	}))
 	s, err = db.ReadUserScopes("testy2")
 	require.NoError(t, err)
+	require.Equal(t, len(s), 2)
 
 	require.NoError(t, adb.AddScope("users", "trueertwertnk"))
 	require.NoError(t, adb.AddScope("testy2", "retfgshfdgaerdg"))
