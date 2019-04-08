@@ -181,3 +181,100 @@ func TestUserScopes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(s)+2, len(s2))
 }
+
+func TestUserStreams(t *testing.T) {
+	adb, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy"
+	name2 := "testy2"
+	passwd := "testpass"
+	canRead := 100
+	require.NoError(t, adb.CreateUser(&User{
+		Details: Details{
+			Name: &name2,
+		},
+		Password:   &passwd,
+		UserAccess: &canRead,
+	}))
+
+	db := NewUserDB(adb, "testy")
+	sname := "streamy"
+	_, err := db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name2,
+	})
+	require.Error(t, err)
+
+	s1, err := db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name,
+	})
+	require.NoError(t, err)
+
+	adb.AddScope("users", "streams:create")
+
+	s2, err := db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name2,
+	})
+	require.NoError(t, err)
+
+	s, err := db.ReadStream(s1, nil)
+	require.NoError(t, err)
+	require.Equal(t, s.ID, s1)
+
+	_, err = db.ReadStream(s2, nil)
+	require.Error(t, err)
+
+	adb.AddScope("public", "streams:read")
+	s, err = db.ReadStream(s2, nil)
+	require.NoError(t, err)
+	require.Equal(t, s.ID, s2)
+
+	fname := "booya"
+	require.NoError(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       s1,
+			FullName: &fname,
+		},
+	}))
+
+	s, err = db.ReadStream(s1, nil)
+	require.NoError(t, err)
+	require.NotNil(t, s.FullName)
+	require.Equal(t, *s.FullName, fname)
+
+	require.NoError(t, db.DelStream(s1))
+
+	require.Error(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       s2,
+			FullName: &fname,
+		},
+	}))
+
+	adb.AddScope("users", "streams:edit")
+	require.NoError(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       s2,
+			FullName: &fname,
+		},
+	}))
+
+	s, err = db.ReadStream(s2, nil)
+	require.NoError(t, err)
+	require.NotNil(t, s.FullName)
+	require.Equal(t, *s.FullName, fname)
+
+	require.Error(t, db.DelStream(s2))
+
+	adb.AddScope("users", "streams:delete")
+	require.NoError(t, db.DelStream(s2))
+}

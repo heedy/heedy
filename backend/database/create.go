@@ -14,7 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var schema = `
+const schema = `
 
 -- A user is a group with an additional password. The id is a group id, we will
 -- add the foreign key constraint once the groups table is created.
@@ -24,6 +24,7 @@ CREATE TABLE users (
 	description VARCHAR DEFAULT '',
 	avatar VARCHAR DEFAULT '',
 
+	-- 100 is read user - there is currently no further access available for users
 	public_access INTEGER DEFAULT 0, -- access of the public to the user
 	user_access INTEGER DEFAULT 0, -- access of all users to the user
 
@@ -32,6 +33,7 @@ CREATE TABLE users (
 	UNIQUE(name)
 );
 
+CREATE INDEX useraccess ON users(public_access,user_access);
 
 -- Groups are the underlying container for access control and sharing
 CREATE TABLE groups (
@@ -53,6 +55,9 @@ CREATE TABLE groups (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
+
+CREATE INDEX groupaccess ON groups(public_access,user_access);
+CREATE INDEX groupowner ON groups(owner);
 	
 
 CREATE TABLE connections (
@@ -149,7 +154,7 @@ CREATE TABLE group_members (
 	groupid VARCHAR(36),
 	user VARCHAR(36),
 
-	access INTEGER DEFAULT 200, -- 100 is read group, 200 is readonly all, 300 gives stream insert access, 400 allows adding streams/sources, 500 allows removing streams/sources, 600 allows adding/removing members (except owner)
+	access INTEGER DEFAULT 200, -- 100 is read group, 200 is readonly all, 300 gives stream insert access, 400 allows adding/removing own streams/sources, 500 allows removing streams/sources, 600 allows adding/removing members (except owner)
 	
 	PRIMARY KEY (groupid,user),
 
@@ -170,7 +175,7 @@ CREATE TABLE group_streams (
 	groupid VARCHAR(36),
 	streamid VARCHAR(36),
 
-	access INTEGER DEFAULT 1, -- Same as stream access
+	access INTEGER DEFAULT 100, -- Same as stream access
 
 	UNIQUE(groupid,streamid),
 	PRIMARY KEY (groupid,streamid),
@@ -337,23 +342,49 @@ CREATE TABLE plugin_kv (
 -- Database Views
 ------------------------------------------------------------------
 
+-- A table containing all the scopes for each user
 CREATE VIEW user_scopes(user,scope) AS
-SELECT x.name, scope FROM scopesets 
-	JOIN (SELECT users.name AS name,user_scopesets.scopeset AS scopeset FROM users 
-				LEFT JOIN user_scopesets ON users.name=user_scopesets.user
-			) AS x 
-		ON (x.scopeset=scopesets.name OR scopesets.name IN ('users', 'public')
-		);
+	SELECT x.name, scope FROM scopesets 
+		JOIN (SELECT users.name AS name,user_scopesets.scopeset AS scopeset FROM users 
+					LEFT JOIN user_scopesets ON users.name=user_scopesets.user
+				) AS x 
+		ON (x.scopeset=scopesets.name OR scopesets.name IN ('users', 'public')) AND x.name<>'heedy';
 
-
+-- A table of user * user, containing all the possible usernames that can read the given target username
 CREATE VIEW user_can_read_user(user,target) AS
-	SELECT users.name, t.name  FROM users,users t WHERE 
+	SELECT users.name, t.name  FROM users,users t WHERE users.name<>'heedy' AND (
 		t.public_access >= 100 OR t.user_access >=100 OR users.name=t.name 
-		OR 'users:read' IN (SELECT scope FROM user_scopes WHERE user_scopes.user=users.name);
+		OR 'users:read' IN (SELECT scope FROM user_scopes WHERE user_scopes.user=users.name));
 
+-- A table containing a list of users that can be read by the public
 CREATE VIEW public_can_read_user(user) AS
 	SELECT users.name FROM users WHERE
 		users.public_access >= 100 OR 'users:read' IN (SELECT scope FROM scopesets WHERE scopesets.name='public');
+
+
+-- A table of all streams that the given user can read based on group membership alone
+CREATE VIEW user_can_read_groupstreams(user,stream) AS
+	SELECT x.name,group_streams.streamid FROM groups 
+		JOIN (SELECT users.name,group_members.groupid from users LEFT JOIN group_members ON (group_members.user=users.name)) AS x 
+			ON (x.name<>'heedy' AND (x.groupid=groups.id OR groups.public_access>=200 OR groups.user_access>=200 OR groups.owner=x.name)) 
+		JOIN group_streams ON (groups.id=group_streams.groupid AND group_streams.access>=100);
+
+
+-- A table containing all the usernames that can read each stream. This encodes some internal processing:
+-- A user can read a stream if...
+-- 	1) The user owns the stream
+--	2) The user is a member of a group which gives access to the stream
+CREATE VIEW user_can_read_stream(user,stream) AS
+	SELECT users.name,streams.id FROM users JOIN streams ON users.name=streams.owner 
+		OR streams.id IN (SELECT stream FROM user_can_read_groupstreams WHERE user=users.name)
+		OR ('streams:read' IN (SELECT scope FROM user_scopes WHERE user=users.name) 
+			AND EXISTS (SELECT 1 FROM user_can_read_user WHERE user=users.name AND target=streams.owner));
+
+CREATE VIEW public_can_read_stream(stream) AS
+	SELECT streams.id FROM streams WHERE
+		streams.id IN (SELECT streamid FROM group_streams JOIN groups ON (groups.id=group_streams.groupid) WHERE groups.public_access >= 200)
+		OR (streams.owner IN (SELECT user FROM public_can_read_user) AND 'streams:read' IN (SELECT scope FROM scopesets WHERE scopesets.name='public'));
+	
 
 ------------------------------------------------------------------
 -- Database Default Users & Groups

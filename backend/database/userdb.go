@@ -93,3 +93,57 @@ func (db *UserDB) ReadUserScopes(username string) ([]string, error) {
 	return readUserScopes(db.adb, username, `SELECT 1 FROM user_can_read_user WHERE target=? AND user=?
 		AND 'users:scopes' IN (SELECT scope FROM user_scopes s WHERE s.user=?);`, username, db.user, db.user)
 }
+
+// CreateStream creates the stream
+func (db *UserDB) CreateStream(s *Stream) (string, error) {
+	if s.Owner == nil {
+		if s.Connection == nil {
+			return "", ErrBadQuery("You must specify either an owner or a connection to which the stream should belong")
+		}
+		// Create stream for a connection...
+		return "", ErrAccessDenied("Only a connection can add streams to itself")
+	}
+	if *s.Owner == db.user {
+		// The owner is us, so we can directly create the stream
+		return db.adb.CreateStream(s)
+	}
+	// The owner is someone else, so check if we are allowed to create a stream for them
+	return createStream(db.adb, s, `SELECT 1 FROM user_scopes WHERE user=? AND scope='streams:create'
+			AND EXISTS (SELECT 1 FROM user_can_read_user WHERE user=? AND target=?);`, db.user, db.user, *s.Owner)
+
+}
+
+// ReadStream gets the stream by ID
+func (db *UserDB) ReadStream(id string, o *ReadStreamOptions) (*Stream, error) {
+	return readStream(db.adb, id, o, `SELECT * FROM streams WHERE id=? AND EXISTS
+		(SELECT 1 FROM user_can_read_stream WHERE stream=? AND user=? LIMIT 1);`, id, id, db.user)
+}
+
+// UpdateStream updates the given stream by ID
+func (db *UserDB) UpdateStream(s *Stream) error {
+	if s.Actor != nil || s.Access != nil || s.External != nil || s.Schema != nil {
+		// The user is trying to edit core stream properties. Disallow this if the stream belongs to a connection
+		return updateStream(db.adb, s, `SELECT 1 FROM user_can_read_stream WHERE stream=? AND user=? 
+			AND EXISTS (
+				SELECT 1 FROM streams WHERE id=? AND connection IS NULL AND (owner=? OR
+						EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='streams:edit')
+					)
+				);`, s.ID, db.user, s.ID, db.user, db.user)
+	}
+	return updateStream(db.adb, s, `SELECT 1 FROM user_can_read_stream WHERE stream=? AND user=? 
+		AND EXISTS (
+			SELECT 1 FROM streams WHERE id=? AND (owner=? OR
+					EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='streams:edit')
+				)
+			);`, s.ID, db.user, s.ID, db.user, db.user)
+}
+
+// DelStream deletes the given stream, so long as it doesn't belong to a connection
+func (db *UserDB) DelStream(id string) error {
+	return delStream(db.adb, id, `DELETE FROM streams WHERE id=?
+			AND connection IS NULL
+			AND (
+				owner=? OR EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='streams:delete')
+				AND EXISTS (SELECT 1 FROM user_can_read_stream WHERE stream=? AND user=?)
+			);`, id, db.user, db.user, id, db.user)
+}

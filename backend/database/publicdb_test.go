@@ -92,3 +92,75 @@ func TestPublicUserScope(t *testing.T) {
 	_, err = db.ReadUserScopes("testy")
 	require.NoError(t, err)
 }
+
+func TestPublicStreams(t *testing.T) {
+	adb, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy"
+	name2 := "testy2"
+	passwd := "testpass"
+	canRead := 100
+	require.NoError(t, adb.CreateUser(&User{
+		Details: Details{
+			Name: &name2,
+		},
+		Password:     &passwd,
+		PublicAccess: &canRead,
+	}))
+
+	db := NewPublicDB(adb)
+	sname := "streamy"
+	_, err := db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name2,
+	})
+	require.Error(t, err)
+
+	adb.AddScope("public", "streams:create")
+	s1, err := db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name2,
+	})
+	require.NoError(t, err)
+
+	_, err = db.CreateStream(&Stream{
+		Details: Details{
+			Name: &sname,
+		},
+		Owner: &name,
+	})
+	require.Error(t, err)
+
+	_, err = db.ReadStream(s1, nil)
+	require.Error(t, err)
+
+	adb.AddScope("public", "streams:read")
+	s, err := db.ReadStream(s1, nil)
+	require.NoError(t, err)
+	require.Equal(t, s.ID, s1)
+
+	fname := "booya"
+	require.Error(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       s1,
+			FullName: &fname,
+		},
+	}))
+
+	adb.AddScope("public", "streams:edit")
+	require.NoError(t, db.UpdateStream(&Stream{
+		Details: Details{
+			ID:       s1,
+			FullName: &fname,
+		},
+	}))
+
+	require.Error(t, db.DelStream(s1))
+	adb.AddScope("public", "streams:delete")
+	require.NoError(t, db.DelStream(s1))
+}

@@ -391,7 +391,7 @@ func streamCreateQuery(s *Stream) (string, []interface{}, error) {
 		return "", nil, ErrInvalidName
 	}
 	if s.Owner == nil && s.Connection == nil {
-		return "", nil, ErrBadQuery("You must specify either a user or a connection to which the stream should belong")
+		return "", nil, ErrBadQuery("You must specify either an owner or a connection to which the stream should belong")
 	}
 	if s.Connection != nil && s.Owner != nil {
 		return "", nil, ErrBadQuery("When creating a stream for a connection, you must not specify an owner")
