@@ -16,6 +16,17 @@ import (
 
 const schema = `
 
+-- This is a meta-table, which specifies the versions of database tables
+-- Every plugin that includes tables in the core database must add itself to the table
+CREATE TABLE heedy (
+	name VARCHAR(36) PRIMARY KEY NOT NULL,
+	version VARCHAR(36)
+);
+
+-- This makes sure that the heedy version is specified, so that future upgrades will know
+-- whether a schema modification is necessary
+INSERT INTO heedy VALUES ("heedy","0.4.0");
+
 -- A user is a group with an additional password. The id is a group id, we will
 -- add the foreign key constraint once the groups table is created.
 CREATE TABLE users (
@@ -374,6 +385,7 @@ CREATE VIEW user_can_read_groupstreams(user,stream) AS
 -- A user can read a stream if...
 -- 	1) The user owns the stream
 --	2) The user is a member of a group which gives access to the stream
+--	3) The user can read the stream's owner, and has the 'streams:read' scope
 CREATE VIEW user_can_read_stream(user,stream) AS
 	SELECT users.name,streams.id FROM users JOIN streams ON users.name=streams.owner 
 		OR streams.id IN (SELECT stream FROM user_can_read_groupstreams WHERE user=users.name)
@@ -390,8 +402,9 @@ CREATE VIEW public_can_read_stream(stream) AS
 -- Database Default Users & Groups
 ------------------------------------------------------------------
 
--- The public group is created by default, and cannot be deleted,
--- as it represents the database view that someone not logged in will get.
+-- The public/users group is created by default, and cannot be deleted,
+-- as it represents the database view that someone not logged in will get,
+-- and the streams accessible to a user who is logged in
 
 -- The heedy user represents the database internals. It is used as the actor
 -- when the software or plugins do something

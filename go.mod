@@ -18,6 +18,7 @@ require (
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.2.2
+	github.com/vmihailenco/msgpack v3.3.3+incompatible
 	github.com/zclconf/go-cty v0.0.0-20190212192503-19dda139b164
 	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
 )
