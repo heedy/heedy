@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -9,7 +11,58 @@ import (
 	"github.com/google/uuid"
 )
 
-// Details is used in groups, users, connections and streams to hold info
+// ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
+// and output a value.
+type ScopeArray struct {
+	Scopes []string
+}
+
+func (s *ScopeArray) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case []byte:
+		json.Unmarshal(v, &s.Scopes)
+		return nil
+	case string:
+		json.Unmarshal([]byte(v), &s.Scopes)
+		return nil
+	default:
+		return fmt.Errorf("Can't scan scope array, unsupported type: %T", v)
+	}
+}
+
+func (s *ScopeArray) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Scopes)
+}
+
+func (s *ScopeArray) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &s.Scopes)
+}
+
+func (s *ScopeArray) Value() (driver.Value, error) {
+	return s.MarshalJSON()
+}
+
+// SourceMeta represents a json column in the table. To handle it correctly, we need to manually scan it
+// and output the relevant values
+type SourceMeta map[string]interface{}
+
+func (s *SourceMeta) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case []byte:
+		json.Unmarshal(v, &s)
+		return nil
+	case string:
+		json.Unmarshal([]byte(v), &s)
+		return nil
+	default:
+		return fmt.Errorf("Can't unmarshal source meta, unsupported type: %T", v)
+	}
+}
+func (s *SourceMeta) Value() (driver.Value, error) {
+	return json.Marshal(s)
+}
+
+// Details is used in groups, users, connections and sources to hold info
 type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
 	ID          string  `json:"id,omitempty" db:"id"`
@@ -17,14 +70,18 @@ type Details struct {
 	FullName    *string `json:"fullname" db:"fullname"`
 	Description *string `json:"description" db:"description"`
 	Avatar      *string `json:"avatar" db:"avatar"`
+
+	// The access array, giving the current user's permissions.
+	// It is generated manually for each read query, it does not exist in the database.
+	Access []string `json:"access" db:"-"`
 }
 
 // User holds a user's data
 type User struct {
 	Details
 
-	PublicAccess *int `json:"public_access" db:"public_access"`
-	UserAccess   *int `json:"user_access" db:"user_access"`
+	PublicRead *bool `json:"public_read" db:"public_read"`
+	UsersRead  *bool `json:"users_read" db:"users_read"`
 
 	Password *string `json:"password,omitempty" db:"password"`
 }
@@ -34,8 +91,8 @@ type Group struct {
 	Details
 	Owner *string `json:"owner" db:"owner"`
 
-	PublicAccess *int `json:"public_access" db:"public_access"`
-	UserAccess   *int `json:"user_access" db:"user_access"`
+	PublicScopes *ScopeArray `json:"public_scopes" db:"public_scopes"`
+	UserScopes   *ScopeArray `json:"user_scopes" db:"user_scopes"`
 }
 
 type Connection struct {
@@ -48,16 +105,21 @@ type Connection struct {
 	SettingSchema *string `json:"setting_schema" db:"setting_schema"`
 }
 
-type Stream struct {
+type Source struct {
 	Details
 
 	Owner      *string `json:"owner,omitempty" db:"owner"`
 	Connection *string `json:"connection,omitempty" db:"connection"`
-	Schema     *string `json:"schema,omitempty" db:"schema"`
-	Type       *string `json:"type,omitempty" db:"type"`
-	External   *string `json:"external" db:"external"`
-	Actor      *bool   `json:"actor" db:"actor"`
-	Access     *int    `json:"access" db:"access"`
+
+	Type *string     `json:"type,omitempty" db:"type"`
+	Meta *SourceMeta `json:"meta,omitempty" db:"meta"`
+
+	Scopes *ScopeArray `json:"scopes" db:"scopes"`
+}
+
+func (s *Source) String() string {
+	b, _ := json.MarshalIndent(s, "", "  ")
+	return string(b)
 }
 
 // ReadUserOptions gives options for reading a user
@@ -75,8 +137,8 @@ type ReadConnectionOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
 }
 
-// ReadStreamOptions gives options for reading
-type ReadStreamOptions struct {
+// ReadSourceOptions gives options for reading
+type ReadSourceOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
 }
 
@@ -97,7 +159,12 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 
-	ReadUserScopes(name string) ([]string, error)
+	/*
+		CreateSource(s *Source) (string, error)
+		ReadSource(id string, o *ReadSourceOptions) (*Source, error)
+		UpdateSource(s *Source) error
+		DelSource(id string) error
+	*/
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -171,13 +238,13 @@ func extractGroup(g *Group) (groupColumns []string, groupValues []interface{}, e
 		}
 	}
 
-	if g.PublicAccess != nil {
-		if err = ValidGroupAccessLevel(*g.PublicAccess); err != nil {
+	if g.PublicScopes != nil {
+		if err = ValidGroupScopes(*g.PublicScopes); err != nil {
 			return
 		}
 	}
-	if g.UserAccess != nil {
-		if err = ValidGroupAccessLevel(*g.UserAccess); err != nil {
+	if g.UserScopes != nil {
+		if err = ValidGroupScopes(*g.UserScopes); err != nil {
 			return
 		}
 	}
@@ -197,16 +264,6 @@ func extractUser(u *User) (userColumns []string, userValues []interface{}, err e
 	userColumns, userValues, err = extractDetails(&u.Details)
 	if err != nil {
 		return
-	}
-	if u.PublicAccess != nil {
-		if err = ValidGroupAccessLevel(*u.PublicAccess); err != nil {
-			return
-		}
-	}
-	if u.UserAccess != nil {
-		if err = ValidGroupAccessLevel(*u.UserAccess); err != nil {
-			return
-		}
 	}
 	if u.Password != nil {
 		var password string
@@ -258,7 +315,7 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 	return
 }
 
-func extractStream(s *Stream) (sColumns []string, sValues []interface{}, err error) {
+func extractSource(s *Source) (sColumns []string, sValues []interface{}, err error) {
 	sColumns, sValues, err = extractDetails(&s.Details)
 	if err != nil {
 		return
@@ -383,20 +440,23 @@ func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
 	if len(cValues) == 0 {
 		return "", nil, ErrNoUpdate
 	}
-	return strings.Join(cColumns, "=?") + "=?", cValues, err
+	return strings.Join(cColumns, "=?,") + "=?", cValues, err
 }
 
-func streamCreateQuery(s *Stream) (string, []interface{}, error) {
+func sourceCreateQuery(s *Source) (string, []interface{}, error) {
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
 	if s.Owner == nil && s.Connection == nil {
-		return "", nil, ErrBadQuery("You must specify either an owner or a connection to which the stream should belong")
+		return "", nil, ErrBadQuery("You must specify either an owner or a connection to which the source should belong")
 	}
 	if s.Connection != nil && s.Owner != nil {
-		return "", nil, ErrBadQuery("When creating a stream for a connection, you must not specify an owner")
+		return "", nil, ErrBadQuery("When creating a source for a connection, you must not specify an owner")
 	}
-	sColumns, sValues, err := extractStream(s)
+	if s.Type == nil {
+		return "", nil, ErrBadQuery("Must specify a source type")
+	}
+	sColumns, sValues, err := extractSource(s)
 	if err != nil {
 		return "", nil, err
 	}
@@ -410,10 +470,13 @@ func streamCreateQuery(s *Stream) (string, []interface{}, error) {
 	return strings.Join(sColumns, ","), sValues, err
 }
 
-func streamUpdateQuery(s *Stream) (string, []interface{}, error) {
-	sColumns, sValues, err := extractStream(s)
+func sourceUpdateQuery(s *Source) (string, []interface{}, error) {
+	sColumns, sValues, err := extractSource(s)
+	if s.Type != nil {
+		return "", nil, ErrBadQuery("Modifying a source type is not supported")
+	}
 	if len(sValues) == 0 {
 		return "", nil, ErrNoUpdate
 	}
-	return strings.Join(sColumns, "=?") + "=?", sValues, err
+	return strings.Join(sColumns, "=?,") + "=?", sValues, err
 }

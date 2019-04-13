@@ -32,15 +32,19 @@ func WriteConfig(filename string, c *Configuration) error {
 	if c.Port != nil {
 		body.SetAttributeValue("port", cty.NumberIntVal(int64(*c.Port)))
 	}
-	if c.HTTPPort != nil {
-		body.SetAttributeValue("http_port", cty.NumberIntVal(int64(*c.HTTPPort)))
-	}
 	if c.ActivePlugins != nil {
 		plist := make([]cty.Value, 0)
 		for i := range *c.ActivePlugins {
 			plist = append(plist, cty.StringVal((*c.ActivePlugins)[i]))
 		}
 		body.SetAttributeValue("plugins", cty.ListVal(plist))
+	}
+	if c.AdminUsers != nil {
+		alist := make([]cty.Value, 0)
+		for i := range *c.AdminUsers {
+			alist = append(alist, cty.StringVal((*c.AdminUsers)[i]))
+		}
+		body.SetAttributeValue("admin_users", cty.ListVal(alist))
 	}
 
 	return ioutil.WriteFile(filename, writer.Bytes(), 0755)

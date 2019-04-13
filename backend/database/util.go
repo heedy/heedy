@@ -62,10 +62,7 @@ func ValidAvatar(avatar string) error {
 }
 
 // Checks whether the given group access level is OK
-func ValidGroupAccessLevel(level int) error {
-	if level < 0 || level > 600 {
-		return errors.New("malformed_query: Access levels are 0-600")
-	}
+func ValidGroupScopes(s ScopeArray) error {
 	return nil
 }
 

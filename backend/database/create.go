@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/heedy/heedy/backend/database/streams"
+
 	"github.com/heedy/heedy/backend/assets"
 
 	// Make sure we include sqlite support
@@ -31,43 +33,54 @@ INSERT INTO heedy VALUES ("heedy","0.4.0");
 -- add the foreign key constraint once the groups table is created.
 CREATE TABLE users (
 	name VARCHAR(36) PRIMARY KEY NOT NULL,
-	fullname VARCHAR DEFAULT '',
-	description VARCHAR DEFAULT '',
-	avatar VARCHAR DEFAULT '',
+	fullname VARCHAR NOT NULL DEFAULT '',
+	description VARCHAR NOT NULL DEFAULT '',
+	avatar VARCHAR NOT NULL DEFAULT '',
 
-	-- 100 is read user - there is currently no further access available for users
-	public_access INTEGER DEFAULT 0, -- access of the public to the user
-	user_access INTEGER DEFAULT 0, -- access of all users to the user
+	-- whether the public or users can read the user
+	public_read BOOLEAN NOT NULL DEFAULT FALSE,
+	users_read BOOLEAN NOT NULL DEFAULT FALSE,
 
 	password VARCHAR NOT NULL,
 
 	UNIQUE(name)
 );
 
-CREATE INDEX useraccess ON users(public_access,user_access);
+CREATE INDEX useraccess ON users(public_read,users_read);
 
 -- Groups are the underlying container for access control and sharing
 CREATE TABLE groups (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 
 	name VARCHAR NOT NULL,
-	fullname VARCHAR DEFAULT '',
-	description VARCHAR DEFAULT '',
-	avatar VARCHAR DEFAULT '',
-	
-	public_access INTEGER DEFAULT 0, -- access of the public to the group
-	user_access INTEGER DEFAULT 0, -- access of all users to the group
+	fullname VARCHAR NOT NULL DEFAULT '',
+	description VARCHAR NOT NULL DEFAULT '',
+	avatar VARCHAR NOT NULL DEFAULT '',
 
 	owner VARCHAR(36) NOT NULL,
+
+	-- json array of scopes given to the public and to users.
+	-- We use the empty array
+	public_scopes VARCHAR NOT NULL DEFAULT '[]',
+	user_scopes VARCHAR NOT NULL DEFAULT '[]',
 
 	CONSTRAINT groupowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(name)
 		ON UPDATE CASCADE
-		ON DELETE CASCADE
+		ON DELETE CASCADE,
+
+	-- For public and user access, must explicitly give group read permission,
+	-- which automatically gives read access to all sources
+	CONSTRAINT scopes_readaccess CHECK (
+		(public_scopes='[]' OR public_scopes LIKE '%"group:read"%')
+		AND (user_scopes='[]' OR user_scopes LIKE '%"group:read"%')
+	)
 );
 
-CREATE INDEX groupaccess ON groups(public_access,user_access);
+-- This index simply checks if there exists any scope in the arrays. It allows quickly determining if
+-- the group has given no special permissions to the public or to users.
+CREATE INDEX groupscopes ON groups(public_scopes<>'[]',user_scopes<>'[]');
 CREATE INDEX groupowner ON groups(owner);
 	
 
@@ -75,9 +88,9 @@ CREATE TABLE connections (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 
 	name VARCHAR NOT NULL,
-	fullname VARCHAR DEFAULT '',
-	description VARCHAR DEFAULT '',
-	avatar VARCHAR DEFAULT '',
+	fullname VARCHAR NOT NULL DEFAULT '',
+	description VARCHAR NOT NULL DEFAULT '',
+	avatar VARCHAR NOT NULL DEFAULT '',
 
 	owner VARACHAR(36) NOT NULL,
 
@@ -99,59 +112,29 @@ CREATE INDEX connectionowner ON connections(owner,name);
 CREATE INDEX connectionapikey ON connections(apikey);
 
 
-CREATE TABLE streams (
+CREATE TABLE sources (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
-	fullname VARCHAR DEFAULT '',
-	description VARCHAR DEFAULT '',
-	avatar VARCHAR DEFAULT '',
+	fullname VARCHAR NOT NULL DEFAULT '',
+	description VARCHAR NOT NULL DEFAULT '',
+	avatar VARCHAR NOT NULL DEFAULT '',
 	connection VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
-	-- json schema
-	schema VARCHAR DEFAULT '{}',
-	type VARCHAR DEFAULT '',
+	type VARCHAR NOT NULL, 	            -- The source type
+	meta VARCHAR NOT NULL DEFAULT '{}', -- Metadata for the source
 
-	-- Set to '' when the stream is internal, and gives the rest url/plugin uri for querying if external
-	external VARCHAR DEFAULT '',
+	-- Maximal scopes that can be given. The * represents all scopes possible for the given source type
+	scopes VARCHAR NOT NULL DEFAULT '["*"]',
 
-	actor BOOLEAN DEFAULT FALSE, -- Whether the stream is also an actor, ie, it can take action, meaning that it performs interventions
-
-	-- What access is given to the user and others who have access to the stream
-	access INTEGER DEFAULT 200, -- 0 hidden, 100 read, 200 insert actions, 300 modify, 400 insert data, 500 remove data, 600 delete
-
-	CONSTRAINT streamconnection
+	CONSTRAINT sourceconnection
 		FOREIGN KEY(connection) 
 		REFERENCES connections(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT streamowner
+	CONSTRAINT sourceowner
 		FOREIGN KEY(owner) 
-		REFERENCES users(name)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
-
-------------------------------------------------------------------------------------
--- USER SCOPES
-------------------------------------------------------------------------------------
-
--- Scopesets are sets of scopes which correspond to a scopeset
-CREATE TABLE scopesets (
-	name VARCHAR(36) NOT NULL,
-	scope VARCHAR(36) NOT NULL,
-
-	PRIMARY KEY (name,scope)
-);
-
--- A user is given a scope set
-CREATE TABLE user_scopesets (
-	user VARCHAR(36) NOT NULL,
-	scopeset VARCHAR NOT NULL,
-	PRIMARY KEY (user,scopeset),
-	CONSTRAINT fk_userss
-		FOREIGN KEY(user)
 		REFERENCES users(name)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
@@ -165,7 +148,9 @@ CREATE TABLE group_members (
 	groupid VARCHAR(36),
 	user VARCHAR(36),
 
-	access INTEGER DEFAULT 200, -- 100 is read group, 200 is readonly all, 300 gives stream insert access, 400 allows adding/removing own streams/sources, 500 allows removing streams/sources, 600 allows adding/removing members (except owner)
+	-- json array of scopes given to the group members.
+	-- the group read scope is implied
+	scopes VARCHAR NOT NULL DEFAULT '[]',
 	
 	PRIMARY KEY (groupid,user),
 
@@ -182,18 +167,18 @@ CREATE TABLE group_members (
 		ON DELETE CASCADE
 );
 
-CREATE TABLE group_streams (
+CREATE TABLE group_sources (
 	groupid VARCHAR(36),
-	streamid VARCHAR(36),
+	sourceid VARCHAR(36),
 
-	access INTEGER DEFAULT 100, -- Same as stream access
+	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	UNIQUE(groupid,streamid),
-	PRIMARY KEY (groupid,streamid),
+	UNIQUE(groupid,sourceid),
+	PRIMARY KEY (groupid,sourceid),
 
-	CONSTRAINT idid
-		FOREIGN KEY(streamid)
-		REFERENCES streams(id)
+	CONSTRAINT sourceid
+		FOREIGN KEY(sourceid)
+		REFERENCES sources(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
@@ -208,6 +193,8 @@ CREATE TABLE group_streams (
 -- CONNECTION ACCESS
 ------------------------------------------------------------------------------------
 
+
+
 -- The scopes available to the connection
 CREATE TABLE connection_scopes (
 	connectionid VARCHAR(36) NOT NULL,
@@ -220,6 +207,8 @@ CREATE TABLE connection_scopes (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
+
+/* COMMENTED OUT FOR NOW
 
 -- Streams that the connection is permitted to access
 CREATE TABLE connection_streams (
@@ -246,22 +235,22 @@ CREATE TABLE connection_streams (
 
 -- Other connections that the connection is permitted to access
 CREATE TABLE connection_connections (
-	connection VARCHAR(36),
-	id VARCHAR(36),
+	connectionid VARCHAR(36),
+	otherid VARCHAR(36),
 
-	access INTEGER DEFAULT 100, -- Same as stream access
+	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	UNIQUE(connection,id),
-	PRIMARY KEY (connection,id),
+	UNIQUE(connectionid,otherid),
+	PRIMARY KEY (connectionid,otherid),
 
 	CONSTRAINT idid
-		FOREIGN KEY(id)
+		FOREIGN KEY(connectionid)
 		REFERENCES connections(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
 	CONSTRAINT connectionid
-		FOREIGN KEY(connection)
+		FOREIGN KEY(otherid)
 		REFERENCES connections(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
@@ -269,27 +258,27 @@ CREATE TABLE connection_connections (
 
 -- Groups that the connection is permitted to access
 CREATE TABLE connection_groups (
-	connection VARCHAR(36),
-	id VARCHAR(36),
+	connectionid VARCHAR(36),
+	groupid VARCHAR(36),
 
-	access INTEGER DEFAULT 100, -- Same as stream access
+	scopes VARCHAR NOT NULL DEFAULT '[]',
 
 	UNIQUE(connection,id),
 	PRIMARY KEY (connection,id),
 
-	CONSTRAINT idid
-		FOREIGN KEY(id)
+	CONSTRAINT groupid
+		FOREIGN KEY(groupid)
 		REFERENCES groups(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
 	CONSTRAINT connectionid
-		FOREIGN KEY(connection)
+		FOREIGN KEY(connectionid)
 		REFERENCES connections(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
-
+*/
 ------------------------------------------------------------------
 -- User Login Tokens
 ------------------------------------------------------------------
@@ -353,50 +342,7 @@ CREATE TABLE plugin_kv (
 -- Database Views
 ------------------------------------------------------------------
 
--- A table containing all the scopes for each user
-CREATE VIEW user_scopes(user,scope) AS
-	SELECT x.name, scope FROM scopesets 
-		JOIN (SELECT users.name AS name,user_scopesets.scopeset AS scopeset FROM users 
-					LEFT JOIN user_scopesets ON users.name=user_scopesets.user
-				) AS x 
-		ON (x.scopeset=scopesets.name OR scopesets.name IN ('users', 'public')) AND x.name<>'heedy';
 
--- A table of user * user, containing all the possible usernames that can read the given target username
-CREATE VIEW user_can_read_user(user,target) AS
-	SELECT users.name, t.name  FROM users,users t WHERE users.name<>'heedy' AND (
-		t.public_access >= 100 OR t.user_access >=100 OR users.name=t.name 
-		OR 'users:read' IN (SELECT scope FROM user_scopes WHERE user_scopes.user=users.name));
-
--- A table containing a list of users that can be read by the public
-CREATE VIEW public_can_read_user(user) AS
-	SELECT users.name FROM users WHERE
-		users.public_access >= 100 OR 'users:read' IN (SELECT scope FROM scopesets WHERE scopesets.name='public');
-
-
--- A table of all streams that the given user can read based on group membership alone
-CREATE VIEW user_can_read_groupstreams(user,stream) AS
-	SELECT x.name,group_streams.streamid FROM groups 
-		JOIN (SELECT users.name,group_members.groupid from users LEFT JOIN group_members ON (group_members.user=users.name)) AS x 
-			ON (x.name<>'heedy' AND (x.groupid=groups.id OR groups.public_access>=200 OR groups.user_access>=200 OR groups.owner=x.name)) 
-		JOIN group_streams ON (groups.id=group_streams.groupid AND group_streams.access>=100);
-
-
--- A table containing all the usernames that can read each stream. This encodes some internal processing:
--- A user can read a stream if...
--- 	1) The user owns the stream
---	2) The user is a member of a group which gives access to the stream
---	3) The user can read the stream's owner, and has the 'streams:read' scope
-CREATE VIEW user_can_read_stream(user,stream) AS
-	SELECT users.name,streams.id FROM users JOIN streams ON users.name=streams.owner 
-		OR streams.id IN (SELECT stream FROM user_can_read_groupstreams WHERE user=users.name)
-		OR ('streams:read' IN (SELECT scope FROM user_scopes WHERE user=users.name) 
-			AND EXISTS (SELECT 1 FROM user_can_read_user WHERE user=users.name AND target=streams.owner));
-
-CREATE VIEW public_can_read_stream(stream) AS
-	SELECT streams.id FROM streams WHERE
-		streams.id IN (SELECT streamid FROM group_streams JOIN groups ON (groups.id=group_streams.groupid) WHERE groups.public_access >= 200)
-		OR (streams.owner IN (SELECT user FROM public_can_read_user) AND 'streams:read' IN (SELECT scope FROM scopesets WHERE scopesets.name='public'));
-	
 
 ------------------------------------------------------------------
 -- Database Default Users & Groups
@@ -413,29 +359,30 @@ INSERT INTO users (name,fullname,description,avatar,password) VALUES (
 	"Heedy",
 	"",
 	"mi:remove_red_eye",
-	"-"
+	"-"	
 );
 
 -- the public group has ID public
-INSERT INTO groups (id,name,fullname,description,avatar,owner,public_access) VALUES (
+INSERT INTO groups (id,name,fullname,description,avatar,owner,public_scopes,user_scopes) VALUES (
 	"public",
 	"public",
 	"Public",
 	"Make accessible to all visitors, even if they're not logged in",
 	"mi:share",
 	"heedy",
-	400 -- Allows each user to add/remove their own streams/connections
+	'["group:read"]',
+	'["group:read","group:addsource"]'
 );
 
 -- the users group has ID users
-INSERT INTO groups (id,name,fullname,description,avatar,owner,user_access) VALUES (
+INSERT INTO groups (id,name,fullname,description,avatar,owner,user_scopes) VALUES (
 	"users",
 	"users",
 	"Users",
 	"Make accessible to all logged-in users",
 	"mi:supervised_user_circle",
 	"heedy",
-	400 -- Allows each user to add/remove their own streams/connections
+	'["group:read","group:addsource"]'
 );
 
 `
@@ -477,11 +424,9 @@ func Create(a *assets.Assets) error {
 		return err
 	}
 
-	if sqltype == "sqlite3" {
-		_, err = db.Exec(sqliteAddonSchema)
-		if err != nil {
-			return err
-		}
+	err = streams.CreateSQLData(db)
+	if err != nil {
+		return err
 	}
 
 	return db.Close()

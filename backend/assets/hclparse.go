@@ -64,27 +64,28 @@ type hclFrontend struct {
 }
 
 type hclConfiguration struct {
-	SiteURL       *string   `hcl:"site_url" json:"site_url,omitempty"`
-	Host          *string   `hcl:"host" json:"host,omitempty"`
-	Port          *uint16   `hcl:"port" json:"port,omitempty"`
-	HTTPPort      *uint16   `hcl:"http_port" json:"http_port,omitempty"`
-	CORS          *bool     `hcl:"cors"`
-	ActivePlugins *[]string `hcl:"plugins"`
-
-	SQL *string `hcl:"sql" json:"sql,omitempty"`
-
-	UserScopes          *map[string]string `json:"user_scopes,omitempty" hcl:"user_scopes"`
-	ConnectionScopes    *map[string]string `json:"connection_scopes,omitempty" hcl:"connection_scopes"`
-	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+	SiteURL        *string   `hcl:"site_url" json:"site_url,omitempty"`
+	Host           *string   `hcl:"host" json:"host,omitempty"`
+	Port           *uint16   `hcl:"port" json:"port,omitempty"`
+	ActivePlugins  *[]string `hcl:"plugins" json:"plugins,omitempty"`
+	AdminUsers     *[]string `hcl:"admin_users" json:"admin_users,omitempty"`
+	ForbiddenUsers *[]string `hcl:"forbidden_users" json:"forbidden_users,omitempty"`
 
 	Language         *string `hcl:"language" json:"language"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
 
-	Plugins []hclPlugin `hcl:"plugin,block"`
+	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
 	Frontend *hclFrontend `hcl:"frontend,block"`
 
+	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+
+	SourceTypes *map[string]SourceType `json:"source_types" hcl:"source_types"`
+
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
+
+	Plugins []hclPlugin `hcl:"plugin,block"`
 }
 
 func preprocess(i interface{}) (reflect.Value, reflect.Kind) {
@@ -143,31 +144,13 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// Now we move the values over to the configuration
 	c := NewConfiguration()
 	CopyStructIfPtrSet(c, hc)
-	/*
-		c.SiteURL = hc.SiteURL
-		c.Port = hc.Port
-		c.ActivePlugins = hc.ActivePlugins
-	*/
 
-	// Loop through the groups
-	/*
-		for i := range hc.Groups {
-			hg := hc.Groups[i]
-			if hg.Name == "" {
-				return nil, fmt.Errorf("%s: Can't use group with no name", filename)
-			}
-			if _, ok := c.Groups[hg.Name]; ok {
-				return nil, fmt.Errorf("%s: Group \"%s\" defined twice", filename, hg.Name)
-			}
+	// Load the source_types
+	if hc.SourceTypes != nil {
+		c.SourceTypes = *hc.SourceTypes
+	}
 
-			g := &Group{}
-
-			CopyStructIfPtrSet(g, hg)
-
-			c.Groups[hg.Name] = g
-		}*/
-
-	// Load the app block
+	// Load the frontend block
 	if hc.Frontend != nil {
 		if hc.Frontend.Routes != nil {
 			c.Frontend.Routes = *hc.Frontend.Routes

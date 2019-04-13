@@ -107,28 +107,36 @@ func (a *Frontend) Copy() Frontend {
 	return na
 }
 
+type SourceType struct {
+	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
+	Icon     *string `json:"icon,omitempty" hcl:"icon" cty:"icon"`
+	API      *string `json:"api,omitempty" hcl:"api" cty:"api"`
+	Name     *string `json:"name,omitempty" hcl:"name" cty:"name"`
+}
+
 type Configuration struct {
-	SiteURL         *string            `hcl:"site_url" json:"site_url,omitempty"`
-	Host            *string            `hcl:"host" json:"host,omitempty"`
-	Port            *uint16            `hcl:"port" json:"port,omitempty"`
-	HTTPPort        *uint16            `hcl:"http_port" json:"http_port,omitempty"`
-	CORS            *bool              `hcl:"cors" json:"cors,omitempty"`
-	ActivePlugins   *[]string          `hcl:"plugins" json:"plugins,omitempty"`
-	ForbiddenGroups *[]string          `json:"forbidden_groups,omitempty"`
-	Plugins         map[string]*Plugin `json:"plugin,omitempty"`
-
-	SQL *string `hcl:"sql" json:"sql,omitempty"`
-
-	UserScopes          *map[string]string `json:"user_scopes,omitempty"`
-	ConnectionScopes    *map[string]string `json:"connection_scopes,omitempty"`
-	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty"`
-
-	Frontend Frontend `json:"frontend"`
+	SiteURL        *string   `hcl:"site_url" json:"site_url,omitempty"`
+	Host           *string   `hcl:"host" json:"host,omitempty"`
+	Port           *uint16   `hcl:"port" json:"port,omitempty"`
+	ActivePlugins  *[]string `hcl:"plugins" json:"plugins,omitempty"`
+	AdminUsers     *[]string `hcl:"admin_users" json:"admin_users,omitempty"`
+	ForbiddenUsers *[]string `hcl:"forbidden_users" json:"forbidden_users,omitempty"`
 
 	Language         *string `hcl:"language" json:"language,omitempty"`
 	FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language,omitempty"`
 
+	SQL *string `hcl:"sql" json:"sql,omitempty"`
+
+	Frontend Frontend `json:"frontend"`
+
+	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+
+	SourceTypes map[string]SourceType `json:"source_types" hcl:"source_types"`
+
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
+
+	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 }
 
 func copyStringArrayPtr(s *[]string) *[]string {
@@ -150,14 +158,20 @@ func (c *Configuration) Copy() *Configuration {
 		nc.Plugins[pkey] = pval.Copy()
 	}
 
+	nc.SourceTypes = make(map[string]SourceType)
+	for k, v := range c.SourceTypes {
+		nc.SourceTypes[k] = v
+	}
+
 	return &nc
 
 }
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
-		Plugins:  make(map[string]*Plugin),
-		Frontend: NewFrontend(),
+		Plugins:     make(map[string]*Plugin),
+		SourceTypes: make(map[string]SourceType),
+		Frontend:    NewFrontend(),
 	}
 }
 
@@ -246,21 +260,28 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	overlay = overlay.Copy()
 
 	// Copy the scopes to overlay, since they will be replaced with CopyStruct
-	if overlay.UserScopes != nil && base.UserScopes != nil {
-		for sk, sv := range *overlay.UserScopes {
-			(*base.UserScopes)[sk] = sv
+	if overlay.Scopes != nil && base.Scopes != nil {
+		for sk, sv := range *overlay.Scopes {
+			(*base.Scopes)[sk] = sv
 		}
-		overlay.UserScopes = base.UserScopes
-	}
-	if overlay.ConnectionScopes != nil && base.ConnectionScopes != nil {
-		for sk, sv := range *overlay.ConnectionScopes {
-			(*base.ConnectionScopes)[sk] = sv
-		}
-		overlay.ConnectionScopes = base.ConnectionScopes
+		overlay.Scopes = base.Scopes
 	}
 	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
+	overlay.ForbiddenUsers = MergeStringArrays(base.ForbiddenUsers, overlay.ForbiddenUsers)
 
 	CopyStructIfPtrSet(base, overlay)
+
+	// Merge the SourceTypes map
+	for ak, av := range overlay.SourceTypes {
+		cv, ok := base.SourceTypes[ak]
+		if ok {
+			// Update only the set values of menu
+			CopyStructIfPtrSet(&cv, &av)
+			base.SourceTypes[ak] = cv
+		} else {
+			base.SourceTypes[ak] = av
+		}
+	}
 
 	// Merge the maps of Frontend
 	for ak, av := range overlay.Frontend.Menu {

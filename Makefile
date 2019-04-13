@@ -12,11 +12,11 @@ frontend: phony
 
 heedy: backend/main.go phony # gencode
 	statik -src=./assets -dest=./backend -p assets -f
-	cd backend; $(GO) build --tags "sqlite_foreign_keys" -o ../heedy
+	cd backend; $(GO) build --tags "sqlite_foreign_keys json1" -o ../heedy
 	rm ./backend/assets/statik.go
 
 debug:
-	cd backend; $(GO) build --tags "sqlite_foreign_keys" -o ../heedy
+	cd backend; $(GO) build --tags "sqlite_foreign_keys json1" -o ../heedy
 
 clean:
 	# $(GO) clean

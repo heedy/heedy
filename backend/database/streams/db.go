@@ -69,10 +69,10 @@ type InsertQuery struct {
 	Type *string `json:"type,omitempty"`
 }
 
-// Database is the interface for storage of stream datapoints
-type Database interface {
-	Insert(StreamID string, data DatapointIterator, q *InsertQuery) error
-	Remove(StreamID string, q *Query) error
-	Get(StreamID string, q *Query) (DatapointIterator, error)
-	Length(StreamID string) (uint64, error)
+// StreamDB is the interface for storage of stream datapoints
+type StreamDB interface {
+	WriteStreamData(StreamID string, data DatapointIterator, q *InsertQuery) error
+	RemoveStreamData(StreamID string, q *Query) error
+	ReadStreamData(StreamID string, q *Query) (DatapointIterator, error)
+	StreamDataLength(StreamID string, actor bool) (uint64, error)
 }

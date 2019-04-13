@@ -13,8 +13,8 @@ import (
 const sqlSchema = `
 
 CREATE TABLE streamdata (
-	streamid VARCHAR(36),
-	timestamp REAL,
+	streamid VARCHAR(36) NOT NULL,
+	timestamp REAL NOT NULL,
 	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
@@ -28,8 +28,8 @@ CREATE TABLE streamdata (
 );
 
 CREATE TABLE streamdata_actions (
-	streamid VARCHAR(36),
-	timestamp REAL,
+	streamid VARCHAR(36) NOT NULL,
+	timestamp REAL NOT NULL,
 	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
@@ -69,11 +69,107 @@ func (s *SQLIterator) Next() (*Datapoint, error) {
 	return dp, err
 }
 
+// returns the timestamp associated with the given index. If the index goes beyond the array bounds, returns a timestamp
+// 1 beyond the earliest/latest datapoint. This allows fuzzy index-based querying.
+func getSQLIndexTimestamp(table string, sid string, index int64) (string, []interface{}) {
+	if index == 0 {
+		return fmt.Sprintf("(SELECT MIN(timestamp) FROM %s WHERE streamid=?)", table), []interface{}{sid}
+	}
+	if index == -1 {
+		return fmt.Sprintf("(SELECT MAX(timestamp) FROM %s WHERE streamid=?)", table), []interface{}{sid}
+	}
+	if index > 0 {
+		return fmt.Sprintf(`COALESCE(
+				(SELECT timestamp FROM %s WHERE streamid=? ORDER BY timestamp ASC LIMIT 1 OFFSET ?),
+				(SELECT MAX(timestamp)+1 FROM %s WHERE streamid=?)
+			)`, table, table), []interface{}{sid, index, sid}
+	}
+	// index is < 0, we want to get from the most recent datapoint
+	return fmt.Sprintf(`COALESCE(
+			(SELECT timestamp FROM %s WHERE streamid=? ORDER BY timestamp DESC LIMIT 1 OFFSET ?),
+			(SELECT MIN(timestamp)-1 FROM %s WHERE streamid=?)
+		)`, table, table), []interface{}{sid, -index - 1, sid}
+}
+
+// generates a query for the given stream id. It has all the contents after the "SELECT * FROM " in a query,
+// so the result is to be simply pasted instead of manually choosing a table and WHERE clause
+// For example, if Query.T is set, will return "streamdata WHERE timestamp=? ORDER BY timestamp ASC", with the timestamp
+// in the corresponding value array.
+func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
+	table := "streamdata"
+	asc := "ASC"
+	constraints := []string{"streamid=?"}
+	cValues := []interface{}{sid}
+
+	if q.Actions != nil && *q.Actions {
+		table = "streamdata_actions"
+	}
+	if q.Reversed != nil {
+		if *q.Reversed {
+			asc = "DESC"
+		}
+		if order {
+			return "", nil, errors.New("bad_query: Ordering is not supported on this query type")
+		}
+	}
+
+	if q.T != nil {
+		constraints = append(constraints, "timestamp=?")
+		cValues = append(cValues, *q.T)
+		if q.I != nil || q.I1 != nil || q.I2 != nil || q.T1 != nil || q.T2 != nil {
+			return "", nil, errors.New("bad_query: Cannot query by range and by single timestamp at the same time")
+		}
+	} else if q.I != nil {
+		c, v := getSQLIndexTimestamp(table, sid, *q.I)
+		constraints = append(constraints, "timestamp="+c)
+		cValues = append(cValues, v...)
+		if q.I1 != nil || q.I2 != nil || q.T1 != nil || q.T2 != nil {
+			return "", nil, errors.New("bad_query: Cannot query by range and by single index at the same time")
+		}
+	} else {
+		// Otherwise, we're querying a range
+		if q.T1 != nil {
+			constraints = append(constraints, "timestamp>=?")
+			cValues = append(cValues, *q.T1)
+		}
+		if q.T2 != nil {
+			constraints = append(constraints, "timestamp<?")
+			cValues = append(cValues, *q.T2)
+		}
+		if q.I1 != nil {
+			c, v := getSQLIndexTimestamp(table, sid, *q.I1)
+			constraints = append(constraints, "timestamp>="+c)
+			cValues = append(cValues, v...)
+		}
+		if q.I2 != nil {
+			c, v := getSQLIndexTimestamp(table, sid, *q.I2)
+			constraints = append(constraints, "timestamp<"+c)
+			cValues = append(cValues, v...)
+		}
+
+	}
+
+	// If ordering is not supported, return a query without the order by clause
+	if !order {
+		if q.Transform != nil || q.Limit != nil {
+			return "", nil, errors.New("bad_query: limits and transforms are not supported on this query type")
+		}
+		return fmt.Sprintf("%s WHERE %s", table, strings.Join(constraints, " AND ")), cValues, nil
+	}
+
+	totalQuery := fmt.Sprintf("%s WHERE %s ORDER BY timestamp %s", table, strings.Join(constraints, " AND "), asc)
+	if q.Transform == nil && q.Limit != nil {
+		totalQuery = totalQuery + " LIMIT ?"
+		cValues = append(cValues, *q.Limit)
+	}
+	return totalQuery, cValues, nil
+}
+
 type SQLData struct {
 	db *sqlx.DB
 }
 
-func CreateSQLData(db *sqlx.DB) error {
+func CreateSQLData(db *sql.DB) error {
 	_, err := db.Exec(sqlSchema)
 	return err
 }
@@ -82,7 +178,7 @@ func OpenSQLData(db *sqlx.DB) *SQLData {
 	return &SQLData{db: db}
 }
 
-func (d *SQLData) Length(sid string, actions bool) (l uint64, err error) {
+func (d *SQLData) StreamDataLength(sid string, actions bool) (l uint64, err error) {
 	if actions {
 		err = d.db.Get(&l, `SELECT COUNT(*) FROM streamdata_actions WHERE streamid=?`, sid)
 		return
@@ -91,7 +187,7 @@ func (d *SQLData) Length(sid string, actions bool) (l uint64, err error) {
 	return
 }
 
-func (d *SQLData) Insert(sid string, data DatapointIterator, q *InsertQuery) error {
+func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQuery) error {
 	table := "streamdata"
 	insert := "INSERT"
 	ts := float64(-999999999)
@@ -155,77 +251,25 @@ func (d *SQLData) Insert(sid string, data DatapointIterator, q *InsertQuery) err
 
 }
 
-func (d *SQLData) Read(sid string, q *Query) (*SQLIterator, error) {
-	table := "streamdata"
-	asc := "ASC"
+func (d *SQLData) ReadStreamData(sid string, q *Query) (DatapointIterator, error) {
 
-	if q.Actions != nil && *q.Actions {
-		table = "streamdata_actions"
+	query, values, err := querySQL(sid, q, true)
+	if err != nil {
+		return nil, err
 	}
-	if q.Reversed != nil && *q.Reversed {
-		asc = "DESC"
-	}
-	constraints := []string{"streamid=?"}
-	cValues := []interface{}{sid}
+	rows, err := d.db.Query("SELECT timestamp,actor,data FROM "+query, values...)
 
-	if q.T1 != nil {
-		constraints = append(constraints, "timestamp>=?")
-		cValues = append(cValues, *q.T1)
-	}
-	if q.T2 != nil {
-		constraints = append(constraints, "timestamp<?")
-		cValues = append(cValues, *q.T2)
-	}
-	if q.T != nil {
-		if len(constraints) > 1 {
-			return nil, errors.New("bad_query: can't query both by time range and by timestamp at the same time")
-		}
-		constraints = append(constraints, "timestamp=?")
-		cValues = append(cValues, *q.T)
-	}
-	if q.I == nil && q.I1 == nil && q.I2 == nil {
-		rows, err := d.db.Query(fmt.Sprintf("SELECT timestamp,actor,data FROM %s WHERE %s ORDER BY timestamp %s;", table, strings.Join(constraints, " AND "), asc), cValues...)
-		return &SQLIterator{rows}, err
-	}
+	// TODO: Add transform
+	return &SQLIterator{rows}, err
 
-	if len(constraints) > 1 {
-		return nil, errors.New("bad_query: can't query by time and by index at the same time")
-	}
-
-	return nil, errors.New("server_error: querying by index is currently not supported")
 }
 
-func (d *SQLData) Remove(sid string, q *Query) error {
-	table := "streamdata"
-	if q.Actions != nil && *q.Actions {
-		table = "streamdata_actions"
-	}
-	constraints := []string{"streamid=?"}
-	cValues := []interface{}{sid}
-
-	if q.T1 != nil {
-		constraints = append(constraints, "timestamp>=?")
-		cValues = append(cValues, *q.T1)
-	}
-	if q.T2 != nil {
-		constraints = append(constraints, "timestamp<?")
-		cValues = append(cValues, *q.T2)
-	}
-	if q.T != nil {
-		if len(constraints) > 1 {
-			return errors.New("bad_query: can't remove both by time range and by timestamp at the same time")
-		}
-		constraints = append(constraints, "timestamp=?")
-		cValues = append(cValues, *q.T)
-	}
-	if q.I == nil && q.I1 == nil && q.I2 == nil {
-		_, err := d.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s;", table, strings.Join(constraints, " AND ")), cValues...)
+func (d *SQLData) RemoveStreamData(sid string, q *Query) error {
+	query, values, err := querySQL(sid, q, false)
+	if err != nil {
 		return err
 	}
+	_, err = d.db.Exec("DELETE FROM "+query, values...)
+	return err
 
-	if len(constraints) > 1 {
-		return errors.New("bad_query: can't remove by time and by index at the same time")
-	}
-
-	return errors.New("server_error: querying by index is currently not supported")
 }

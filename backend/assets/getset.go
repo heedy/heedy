@@ -27,3 +27,16 @@ func (c *Configuration) GetNewConnectionScopes() []string {
 	}
 	return []string{}
 }
+
+// UserIsAdmin checks if the given user is an admin
+func (c *Configuration) UserIsAdmin(username string) bool {
+	if c.AdminUsers == nil {
+		return false
+	}
+	for _, v := range *c.AdminUsers {
+		if v == username {
+			return true
+		}
+	}
+	return false
+}

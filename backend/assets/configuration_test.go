@@ -20,7 +20,7 @@ func TestLoadConfiguration(t *testing.T) {
 	}
 
 	testreadconf("../../assets/heedy.conf")
-	testreadconf("../../assets/newdb/heedy.conf")
+	testreadconf("../../assets/new/heedy.conf")
 
 	fmt.Printf("------------------------------------------------------\n\n")
 }

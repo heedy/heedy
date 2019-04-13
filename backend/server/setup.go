@@ -90,6 +90,11 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			mydir = *sm.Directory
 		}
 
+		// Add the user to admins
+		if sm.Config.AdminUsers == nil || len(*sm.Config.AdminUsers) == 0 {
+			sm.Config.AdminUsers = &[]string{sm.User.Name}
+		}
+
 		log.Infof("Creating database in '%s'", mydir)
 		a, err := assets.Create(mydir, sm.Config, configFile)
 		if err != nil {

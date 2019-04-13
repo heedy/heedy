@@ -12,7 +12,7 @@ import (
 
 type fContext struct {
 	User   *database.User             `json:"user"`
-	Scopes []string                   `json:"scopes"`
+	Admin  bool                       `json:"admin"`
 	Routes map[string]string          `json:"routes"`
 	Menu   map[string]assets.MenuItem `json:"menu"`
 }
@@ -52,15 +52,10 @@ func FrontendMux() (*chi.Mux, error) {
 			return
 		}
 		if u == nil {
-			scopes, err := ctx.DB.AdminDB().ReadScopeSet("public")
-			if err != nil {
-				WriteJSONError(w, r, http.StatusInternalServerError, err)
-				return
-			}
 			// Running template as public
 			err = fTemplate.Execute(w, &fContext{
 				User:   nil,
-				Scopes: scopes,
+				Admin:  false,
 				Routes: assets.Config().Frontend.PublicRoutes,
 				Menu:   assets.Config().Frontend.PublicMenu,
 			})
@@ -70,14 +65,9 @@ func FrontendMux() (*chi.Mux, error) {
 			return
 		}
 
-		scopes, err := ctx.DB.ReadUserScopes(*u.Name)
-		if err != nil {
-			WriteJSONError(w, r, http.StatusInternalServerError, err)
-			return
-		}
 		err = fTemplate.Execute(w, &fContext{
 			User:   u,
-			Scopes: scopes,
+			Admin:  ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
 			Routes: assets.Config().Frontend.Routes,
 			Menu:   assets.Config().Frontend.Menu,
 		})

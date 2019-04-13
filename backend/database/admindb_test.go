@@ -52,7 +52,7 @@ func newDBWithUser(t *testing.T) (*AdminDB, func()) {
 	return adb, cleanup
 }
 
-func TestAdminUser(t *testing.T) {
+func TestAdminDBUser(t *testing.T) {
 	db, cleanup := newDB(t)
 	defer cleanup()
 
@@ -264,12 +264,13 @@ func TestAdminConnection(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestAdminStream(t *testing.T) {
+func TestAdminSource(t *testing.T) {
 	db, cleanup := newDB(t)
 	defer cleanup()
 
 	name := "testy"
 	passwd := "testpass"
+	stype := "stream"
 	require.NoError(t, db.CreateUser(&User{
 		Details: Details{
 			Name: &name,
@@ -285,94 +286,41 @@ func TestAdminStream(t *testing.T) {
 		Owner: &name,
 	})
 	require.NoError(t, err)
-	sid, err := db.CreateStream(&Stream{
+	sid, err := db.CreateSource(&Source{
 		Details: Details{
 
 			Name: &name,
 		},
 		Connection: &conn,
+		Type:       &stype,
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, db.UpdateStream(&Stream{
+	require.NoError(t, db.UpdateSource(&Source{
 		Details: Details{
 			ID:       sid,
 			FullName: &badname,
 		},
+
+		Meta: &SourceMeta{
+			"schema": 4,
+		},
+
+		Scopes: &ScopeArray{
+			Scopes: []string{"myscope1", "myscope2"},
+		},
 	}))
 
-	s, err := db.ReadStream(sid, nil)
+	s, err := db.ReadSource(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.FullName, badname)
+	require.NotNil(t, s.Scopes)
+	require.NotNil(t, s.Meta)
+	require.Equal(t, (*s.Scopes).Scopes[0], "myscope1")
+	require.Equal(t, (*s.Meta)["schema"], float64(4))
 
-	require.NoError(t, db.DelStream(sid))
-	require.Error(t, db.DelStream(sid))
-}
+	//fmt.Printf(s.String())
 
-func TestAdminScopes(t *testing.T) {
-	db, cleanup := newDB(t)
-	defer cleanup()
-
-	name := "testy"
-	passwd := "testpass"
-	require.NoError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
-		Password: &passwd,
-	}))
-
-	scopesets, err := db.ReadUserScopeSets("testy")
-	require.NoError(t, err)
-	require.Contains(t, scopesets, "users")
-	require.Contains(t, scopesets, "public")
-
-	require.NoError(t, db.AddUserScopeSet("testy", "tee", "hee", "public")) // public scope set won't be added
-	scopesets2, err := db.ReadUserScopeSets("testy")
-	require.NoError(t, err)
-	require.Equal(t, len(scopesets), len(scopesets2)-2)
-
-	err = db.RemUserScopeSets("testy", "users")
-	require.Error(t, err)
-	err = db.RemUserScopeSets("testy", "hee")
-	require.NoError(t, err)
-	scopesets2, err = db.ReadUserScopeSets("testy")
-	require.NoError(t, err)
-	require.Equal(t, len(scopesets), len(scopesets2)-1)
-
-	scopes, err := db.ReadUserScopes("testy")
-	require.NoError(t, err)
-	require.True(t, len(scopes) == 0) // By default, a user has no special scopes
-
-	s, err := db.ReadScopeSet("tee")
-	require.NoError(t, err)
-	require.Equal(t, len(s), 0)
-
-	err = db.AddScope("tee", "hee")
-	require.NoError(t, err)
-	s, err = db.ReadScopeSet("tee")
-	require.NoError(t, err)
-	require.Equal(t, len(s), 1)
-	require.Equal(t, s[0], "hee")
-
-	scopes2, err := db.ReadUserScopes("testy")
-	require.NoError(t, err)
-	require.Equal(t, len(scopes), len(scopes2)-1)
-
-	require.NoError(t, db.AddUserScopeSet("testy", "scree"))
-	ss, err := db.GetAllScopeSets()
-	require.NoError(t, err)
-
-	require.Equal(t, len(ss), 4) // users,public, tee, scree
-
-	require.NoError(t, db.DeleteScopeSet("tee"))
-
-	scopesets, err = db.ReadUserScopeSets("testy")
-	require.NoError(t, err)
-	require.NotContains(t, scopesets, "tee")
-
-	ss, err = db.GetAllScopeSets()
-	require.NoError(t, err)
-	require.NotContains(t, ss, "tee")
-
+	require.NoError(t, db.DelSource(sid))
+	require.Error(t, db.DelSource(sid))
 }

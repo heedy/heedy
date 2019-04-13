@@ -2,12 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/heedy/heedy/backend/assets"
-
-	"github.com/jmoiron/sqlx"
 )
 
 // AdminDB holds the main database, with admin access
@@ -273,32 +270,32 @@ func (db *AdminDB) DelConnection(id string) error {
 	return getExecError(result, err)
 }
 
-// CreateStream creates the stream
-func (db *AdminDB) CreateStream(s *Stream) (string, error) {
-	sColumns, sValues, err := streamCreateQuery(s)
+// CreateSource creates the source
+func (db *AdminDB) CreateSource(s *Source) (string, error) {
+	sColumns, sValues, err := sourceCreateQuery(s)
 	if err != nil {
 		return "", err
 	}
 	if s.Connection != nil {
 		// We must insert while also setting the owner to the connection's owner
 		sValues = append(sValues, *s.Connection)
-		result, err := db.Exec(fmt.Sprintf("INSERT INTO streams (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
 		err = getExecError(result, err)
 
 		return s.ID, err
 	}
 
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO streams (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
 	err = getExecError(result, err)
 
 	return s.ID, err
 
 }
 
-// ReadStream gets the stream by ID
-func (db *AdminDB) ReadStream(id string, o *ReadStreamOptions) (*Stream, error) {
-	c := &Stream{}
-	err := db.Get(c, "SELECT * FROM streams WHERE (id=?) LIMIT 1;", id)
+// ReadSource gets the source by ID
+func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
+	c := &Source{}
+	err := db.Get(c, "SELECT * FROM sources WHERE (id=?) LIMIT 1;", id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -308,9 +305,9 @@ func (db *AdminDB) ReadStream(id string, o *ReadStreamOptions) (*Stream, error) 
 	return c, err
 }
 
-// UpdateStream updates the given stream by ID
-func (db *AdminDB) UpdateStream(s *Stream) error {
-	sColumns, sValues, err := streamUpdateQuery(s)
+// UpdateSource updates the given source by ID
+func (db *AdminDB) UpdateSource(s *Source) error {
+	sColumns, sValues, err := sourceUpdateQuery(s)
 	if err != nil {
 		return err
 	}
@@ -318,324 +315,13 @@ func (db *AdminDB) UpdateStream(s *Stream) error {
 	sValues = append(sValues, s.ID)
 
 	// Allow updating groups that are not users
-	result, err := db.Exec(fmt.Sprintf("UPDATE streams SET %s WHERE id=?;", sColumns), sValues...)
+	result, err := db.Exec(fmt.Sprintf("UPDATE sources SET %s WHERE id=?;", sColumns), sValues...)
 	return getExecError(result, err)
 
 }
 
-// DelStream deletes the given stream
-func (db *AdminDB) DelStream(id string) error {
-	result, err := db.Exec("DELETE FROM streams WHERE id=?;", id)
+// DelSource deletes the given source
+func (db *AdminDB) DelSource(id string) error {
+	result, err := db.Exec("DELETE FROM sources WHERE id=?;", id)
 	return getExecError(result, err)
 }
-
-// AddUserScopes adds scopes to the user
-func (db *AdminDB) AddUserScopeSet(username string, scopesets ...string) error {
-	if username == "heedy" {
-		return ErrAccessDenied("The heedy user cannot have its scopes modified")
-	}
-	// Make sure users or public is not one of the scopesets
-	for i := range scopesets {
-		if scopesets[i] == "users" || scopesets[i] == "public" {
-			scopesets[i] = scopesets[len(scopesets)-1]
-			return db.AddUserScopeSet(username, scopesets[:len(scopesets)-1]...)
-		}
-	}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-
-	for i := range scopesets {
-		result, err := tx.Exec("INSERT OR IGNORE INTO user_scopesets(user,scopeset) VALUES (?,?);", username, scopesets[i])
-		err = getExecError(result, err)
-		if err != nil && err != ErrNotFound {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit()
-}
-
-// RemUserScopeSets removes scope sets from a user, while ensuring that all the user's connections also lose the given scope sets
-func (db *AdminDB) RemUserScopeSets(username string, scopesets ...string) error {
-	if username == "heedy" {
-		return ErrAccessDenied("The heedy user cannot have its scopes modified")
-	}
-	for i := range scopesets {
-		if scopesets[i] == "users" || scopesets[i] == "public" {
-			return errors.New("bad_query: Cannot remove the 'users' or 'public' scopesets from a user")
-		}
-	}
-	query, args, err := sqlx.In(`DELETE FROM user_scopesets WHERE user=? AND scopeset IN (?);`, username, scopesets)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-	result, err := tx.Exec(query, args...)
-	err = getExecError(result, err)
-	if err != nil && err != ErrNotFound {
-		tx.Rollback()
-		return err
-	}
-	return tx.Commit()
-}
-
-func (db *AdminDB) ReadUserScopeSets(username string) ([]string, error) {
-	var scopesets []string
-	err := db.Select(&scopesets, `SELECT scopeset FROM user_scopesets WHERE user=?;`, username)
-	scopesets = append(scopesets, "users", "public")
-	return scopesets, err
-}
-
-func (db *AdminDB) AddScope(scopeset string, scopes ...string) error {
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-
-	for i := range scopes {
-		result, err := tx.Exec("INSERT OR IGNORE INTO scopesets(name,scope) VALUES (?,?);", scopeset, scopes[i])
-		err = getExecError(result, err)
-		if err != nil && err != ErrNotFound {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit()
-}
-
-// RemScope removes scopes from a set, while ensuring that all the user's connections also lose the scopes
-func (db *AdminDB) RemScope(scopeset string, scope ...string) error {
-	query, args, err := sqlx.In(`DELETE FROM scopesets WHERE name=? AND scope IN (?);`, scopeset, scope)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-	result, err := tx.Exec(query, args...)
-	err = getExecError(result, err)
-	if err != nil && err != ErrNotFound {
-		tx.Rollback()
-		return nil
-	}
-
-	return tx.Commit()
-}
-
-func (db *AdminDB) ReadScopeSet(scopeset string) ([]string, error) {
-	var scopes []string
-	err := db.Select(&scopes, `SELECT scope FROM scopesets WHERE name=?;`, scopeset)
-	return scopes, err
-}
-
-func (db *AdminDB) GetAllScopeSets() (map[string][]string, error) {
-	var s []struct {
-		Scope string
-		Name  string
-	}
-	var setnames []string
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return nil, err
-	}
-	err = tx.Select(&s, `SELECT scope,name FROM scopesets;`)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	// This handles scopesets that have no actual scopes in them
-	err = tx.Select(&setnames, `SELECT DISTINCT(scopeset) FROM user_scopesets;`)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	var res = make(map[string][]string)
-	for _, v := range s {
-		if _, ok := res[v.Name]; !ok {
-			res[v.Name] = []string{v.Scope}
-		} else {
-			res[v.Name] = append(res[v.Name], v.Scope)
-		}
-	}
-	for _, v := range setnames {
-		if _, ok := res[v]; !ok {
-			res[v] = []string{}
-		}
-	}
-
-	if _, ok := res["public"]; !ok {
-		res["public"] = []string{}
-	}
-	if _, ok := res["users"]; !ok {
-		res["users"] = []string{}
-	}
-
-	return res, tx.Commit()
-}
-
-// DeleteScopeSet deletes all references to a scopeset
-func (db *AdminDB) DeleteScopeSet(scopeset string) error {
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-	result, err := tx.Exec(`DELETE FROM scopesets WHERE name=?;`, scopeset)
-	err = getExecError(result, err)
-	if err != nil && err != ErrNotFound {
-		tx.Rollback()
-		return err
-	}
-	result, err = tx.Exec(`DELETE FROM user_scopesets WHERE scopeset=?;`, scopeset)
-	err = getExecError(result, err)
-	if err != nil && err != ErrNotFound {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit()
-}
-
-func (db *AdminDB) ReadUserScopes(username string) ([]string, error) {
-	var scopes []string
-	err := db.Select(&scopes, `SELECT DISTINCT(scope) FROM user_scopes WHERE user=?;`, username)
-
-	if err == nil && len(scopes) == 0 {
-		// We must check if the user exists
-		rows, err := db.DB.Query(`SELECT 1 FROM users WHERE name=?;`, username)
-		if err != nil {
-			return nil, err
-		}
-		userExists := rows.Next()
-		rows.Close()
-		if !userExists {
-			return scopes, ErrNotFound
-		}
-	}
-	return scopes, err
-}
-
-/*
-
-// AddGroupScopes adds the given scopes to the group. It only adds the scoped that the owner also has, and gives an error if the owner
-// does not have the necessary permissions
-func (db *AdminDB) AddGroupScopes(groupid string, scopes ...string) error {
-	query, args, err := sqlx.In("SELECT COUNT(scope) FROM group_scopes INNER JOIN groups ON group_scopes.groupid=groups.owner WHERE groups.id=? AND group_scopes.scope IN (?)", groupid, scopes)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		return err
-	}
-	var scopeCount int
-	err = tx.Get(&scopeCount, query, args...)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-	if scopeCount != len(scopes) {
-		// Wrong scope count. However, maybe we want to add scopes to a group belonging to heedy user - this needs to always succeed, since heedy user is special
-		var username string
-		err = tx.Get(&username, "SELECT owner FROM groups WHERE id=?;", groupid)
-		if err != nil || username != "heedy" {
-			tx.Rollback()
-			return errors.New("access_denied: you cannot add a scope that the group's owner does not have")
-		}
-		// Username is heedy, we're fine
-	}
-
-	for i := range scopes {
-		result, err := tx.Exec("INSERT OR IGNORE INTO group_scopes(groupid,scope) VALUES (?,?);", groupid, scopes[i])
-		err = getExecError(result, err)
-		if err != nil && err != ErrNotFound {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit()
-}
-
-// RemGroupScopes removes scopes from a group
-func (db *AdminDB) RemGroupScopes(groupid string, scopes ...string) error {
-	query, args, err := sqlx.In("DELETE FROM group_scopes WHERE groupid=? AND scope IN (?) ", groupid, scopes)
-	if err != nil {
-		return err
-	}
-	result, err := db.Exec(query, args...)
-	err = getExecError(result, err)
-	if err == ErrNotFound {
-		return nil
-	}
-	return err
-}
-
-// GetGroupScopes gets the scopes in a group. This is also the method used to get a single user's
-// scopes without the addition of group membership
-func (db *AdminDB) GetGroupScopes(groupid string) ([]string, error) {
-	var scopes []string
-	err := db.Select(&scopes, "SELECT scope FROM group_scopes WHERE groupid=?", groupid)
-	return scopes, err
-}
-
-// GetUserScopes returns all of the scopes that the user has. This also includes scopes that
-// it has inherited through group membership. Use GetGroupScopes to get just the scopes
-// of the specific user
-func (db *AdminDB) GetUserScopes(username string) ([]string, error) {
-	var scopes []string
-	err := db.Select(&scopes, `SELECT DISTINCT(scope) FROM group_scopes WHERE groupid IN (?, 'public', 'users') OR groupid IN (
-			SELECT groupid FROM group_members WHERE username=?
-		);`, username, username)
-	return scopes, err
-}
-
-/*
-
-// SetGroupPermissions sets the given permissions
-func (db *AdminDB) SetGroupPermissions(g *GroupPermissions) error {
-	if g.Target == "" || g.Actor == "" || g.Target == g.Actor {
-		return ErrInvalidQuery
-	}
-	if !g.GroupRead && !g.GroupWrite && !g.GroupDelete && !g.AddStream && !g.AddChild && !g.ListStreams && !g.ListChildren && !g.ListShared && !g.StreamRead && !g.StreamWrite && !g.StreamDelete && !g.DataRead && !g.DataWrite && !g.DataRemove && !g.ActionWrite {
-		// Want to set action with NO permissions, so we just remove it from the group permissions if it exists
-		_, err := db.Exec("DELETE FROM group_permissions WHERE target=? AND actor=?;", g.Target, g.Actor)
-		return err
-	}
-
-	result, err := db.NamedExec(`INSERT OR REPLACE INTO group_permissions VALUES (
-		:Target,:Actor,
-		:GroupRead,:GroupWrite,:GroupDelete,
-		:AddStream,:AddChild,
-		:ListStreams,:ListChildren,:ListShared,
-		:StreamRead,:StreamWrite,:StreamDelete,
-		:DataRead,:DataWrite,:DataRemove,:ActionWrite
-		)`, g)
-	return getExecError(result, err)
-}
-
-// GetGroupPermissions returns the explicit permissions for the given group.
-func (db *AdminDB) GetGroupPermissions(target string) (map[string]*GroupPermissions, error) {
-	var gp []*GroupPermissions
-
-	err := db.Select(&gp, "SELECT * FROM group_permissions WHERE target=?", target)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[string]*GroupPermissions)
-	for i := range gp {
-		result[gp[i].Actor] = gp[i]
-	}
-	return result, nil
-}
-*/
