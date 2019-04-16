@@ -115,7 +115,8 @@ func (a *Assets) Reload() error {
 	a.FS = FS
 	a.Stack = assetStack
 
-	return nil
+	// Validate the configuration
+	return a.Config.Validate()
 }
 
 // Abs returns config-relative absolute paths

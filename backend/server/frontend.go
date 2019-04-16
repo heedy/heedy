@@ -11,10 +11,11 @@ import (
 )
 
 type fContext struct {
-	User   *database.User             `json:"user"`
-	Admin  bool                       `json:"admin"`
-	Routes map[string]string          `json:"routes"`
-	Menu   map[string]assets.MenuItem `json:"menu"`
+	User        *database.User                        `json:"user"`
+	Admin       bool                                  `json:"admin"`
+	Routes      map[string]string                     `json:"routes"`
+	Menu        map[string]assets.MenuItem            `json:"menu"`
+	SourceTypes map[string]*assets.SourceTypeFrontend `json:"source_types"`
 }
 
 type aContext struct {
@@ -51,13 +52,22 @@ func FrontendMux() (*chi.Mux, error) {
 			WriteJSONError(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		cfg := assets.Config()
+
+		sourceMap := make(map[string]*assets.SourceTypeFrontend)
+		for k, v := range cfg.SourceTypes {
+			sourceMap[k] = v.Frontend
+		}
+
 		if u == nil {
 			// Running template as public
 			err = fTemplate.Execute(w, &fContext{
-				User:   nil,
-				Admin:  false,
-				Routes: assets.Config().Frontend.PublicRoutes,
-				Menu:   assets.Config().Frontend.PublicMenu,
+				User:        nil,
+				Admin:       false,
+				Routes:      cfg.Frontend.PublicRoutes,
+				Menu:        cfg.Frontend.PublicMenu,
+				SourceTypes: sourceMap,
 			})
 			if err != nil {
 				WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -66,10 +76,11 @@ func FrontendMux() (*chi.Mux, error) {
 		}
 
 		err = fTemplate.Execute(w, &fContext{
-			User:   u,
-			Admin:  ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
-			Routes: assets.Config().Frontend.Routes,
-			Menu:   assets.Config().Frontend.Menu,
+			User:        u,
+			Admin:       ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
+			Routes:      assets.Config().Frontend.Routes,
+			Menu:        assets.Config().Frontend.Menu,
+			SourceTypes: sourceMap,
 		})
 		if err != nil {
 			WriteJSONError(w, r, http.StatusInternalServerError, err)

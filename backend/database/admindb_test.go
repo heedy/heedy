@@ -98,6 +98,7 @@ func TestAdminDBUser(t *testing.T) {
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
+	require.Equal(t, u.Access.String(), "read update update:password delete")
 	require.Nil(t, u.Password, "The password should never be read back")
 
 	_, _, err = db.AuthUser("testy", "testpass")
@@ -157,60 +158,6 @@ func TestAdminDBUser(t *testing.T) {
 
 	_, _, err = db.AuthUser("testy", "mypass2")
 	require.Error(t, err, "User should no longer exist")
-
-}
-
-func TestAdminGroup(t *testing.T) {
-	db, cleanup := newDB(t)
-	defer cleanup()
-
-	name := "testy"
-	passwd := "testpass"
-	require.NoError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
-		Password: &passwd,
-	}))
-
-	_, err := db.ReadGroup("testy", nil)
-	require.Error(t, err, "A user is not a group")
-
-	gdesc := "This is a testy group"
-	gid, err := db.CreateGroup(&Group{
-		Details: Details{
-			Name:        &name,
-			Description: &gdesc,
-		},
-		Owner: &name,
-	})
-	require.NoError(t, err)
-
-	g, err := db.ReadGroup(gid, nil)
-	require.NoError(t, err, "A group should be selectable")
-	require.NotNil(t, g.Description)
-	require.Equal(t, gdesc, *g.Description)
-
-	_, err = db.ReadGroup("tree", nil)
-	require.Error(t, err, "Group should not exist")
-
-	owner := "derp"
-	err = db.UpdateGroup(&Group{
-		Details: Details{
-			ID: gid,
-		},
-		Owner: &owner,
-	})
-	require.Error(t, err, "Group owner must be valid")
-
-	err = db.DelGroup("testy")
-	require.Error(t, err, "Deleting user must fail")
-
-	err = db.DelGroup(gid)
-	require.NoError(t, err)
-
-	_, err = db.ReadGroup(gid, nil)
-	require.Error(t, err, "Group should not exist")
 
 }
 

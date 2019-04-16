@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/heedy/heedy/backend/database/streams"
-
 	"github.com/heedy/heedy/backend/assets"
 
 	// Make sure we include sqlite support
@@ -47,42 +45,6 @@ CREATE TABLE users (
 );
 
 CREATE INDEX useraccess ON users(public_read,users_read);
-
--- Groups are the underlying container for access control and sharing
-CREATE TABLE groups (
-	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
-
-	name VARCHAR NOT NULL,
-	fullname VARCHAR NOT NULL DEFAULT '',
-	description VARCHAR NOT NULL DEFAULT '',
-	avatar VARCHAR NOT NULL DEFAULT '',
-
-	owner VARCHAR(36) NOT NULL,
-
-	-- json array of scopes given to the public and to users.
-	-- We use the empty array
-	public_scopes VARCHAR NOT NULL DEFAULT '[]',
-	user_scopes VARCHAR NOT NULL DEFAULT '[]',
-
-	CONSTRAINT groupowner
-		FOREIGN KEY(owner) 
-		REFERENCES users(name)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-
-	-- For public and user access, must explicitly give group read permission,
-	-- which automatically gives read access to all sources
-	CONSTRAINT scopes_readaccess CHECK (
-		(public_scopes='[]' OR public_scopes LIKE '%"group:read"%')
-		AND (user_scopes='[]' OR user_scopes LIKE '%"group:read"%')
-	)
-);
-
--- This index simply checks if there exists any scope in the arrays. It allows quickly determining if
--- the group has given no special permissions to the public or to users.
-CREATE INDEX groupscopes ON groups(public_scopes<>'[]',user_scopes<>'[]');
-CREATE INDEX groupowner ON groups(owner);
-	
 
 CREATE TABLE connections (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
@@ -137,56 +99,10 @@ CREATE TABLE sources (
 		FOREIGN KEY(owner) 
 		REFERENCES users(name)
 		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
-
-------------------------------------------------------------------------------------
--- GROUP ACCESS
-------------------------------------------------------------------------------------
-
-CREATE TABLE group_members (
-	groupid VARCHAR(36),
-	user VARCHAR(36),
-
-	-- json array of scopes given to the group members.
-	-- the group read scope is implied
-	scopes VARCHAR NOT NULL DEFAULT '[]',
-	
-	PRIMARY KEY (groupid,user),
-
-	CONSTRAINT idid
-		FOREIGN KEY(user)
-		REFERENCES users(name)
-		ON UPDATE CASCADE
 		ON DELETE CASCADE,
-	
-	CONSTRAINT groupid
-		FOREIGN KEY(groupid)
-		REFERENCES groups(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
 
-CREATE TABLE group_sources (
-	groupid VARCHAR(36),
-	sourceid VARCHAR(36),
-
-	scopes VARCHAR NOT NULL DEFAULT '[]',
-
-	UNIQUE(groupid,sourceid),
-	PRIMARY KEY (groupid,sourceid),
-
-	CONSTRAINT sourceid
-		FOREIGN KEY(sourceid)
-		REFERENCES sources(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-	
-	CONSTRAINT groupid
-		FOREIGN KEY(groupid)
-		REFERENCES groups(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
+	CONSTRAINT valid_scopes CHECK (json_valid(scopes)),
+	CONSTRAINT valid_meta CHECK (json_valid(meta))
 );
 
 ------------------------------------------------------------------------------------
@@ -208,77 +124,7 @@ CREATE TABLE connection_scopes (
 		ON DELETE CASCADE
 );
 
-/* COMMENTED OUT FOR NOW
 
--- Streams that the connection is permitted to access
-CREATE TABLE connection_streams (
-	connectionid VARCHAR(36),
-	streamid VARCHAR(36),
-
-	access INTEGER DEFAULT 1, -- Same as stream access
-
-	UNIQUE(connectionid,streamid),
-	PRIMARY KEY (connectionid,streamid),
-
-	CONSTRAINT cstreamid
-		FOREIGN KEY(streamid)
-		REFERENCES streams(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-	
-	CONSTRAINT cconnectionid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
-
--- Other connections that the connection is permitted to access
-CREATE TABLE connection_connections (
-	connectionid VARCHAR(36),
-	otherid VARCHAR(36),
-
-	scopes VARCHAR NOT NULL DEFAULT '[]',
-
-	UNIQUE(connectionid,otherid),
-	PRIMARY KEY (connectionid,otherid),
-
-	CONSTRAINT idid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-	
-	CONSTRAINT connectionid
-		FOREIGN KEY(otherid)
-		REFERENCES connections(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
-
--- Groups that the connection is permitted to access
-CREATE TABLE connection_groups (
-	connectionid VARCHAR(36),
-	groupid VARCHAR(36),
-
-	scopes VARCHAR NOT NULL DEFAULT '[]',
-
-	UNIQUE(connection,id),
-	PRIMARY KEY (connection,id),
-
-	CONSTRAINT groupid
-		FOREIGN KEY(groupid)
-		REFERENCES groups(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-	
-	CONSTRAINT connectionid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
-*/
 ------------------------------------------------------------------
 -- User Login Tokens
 ------------------------------------------------------------------
@@ -343,9 +189,8 @@ CREATE TABLE plugin_kv (
 ------------------------------------------------------------------
 
 
-
 ------------------------------------------------------------------
--- Database Default Users & Groups
+-- Database Default User is Heedy
 ------------------------------------------------------------------
 
 -- The public/users group is created by default, and cannot be deleted,
@@ -359,30 +204,7 @@ INSERT INTO users (name,fullname,description,avatar,password) VALUES (
 	"Heedy",
 	"",
 	"mi:remove_red_eye",
-	"-"	
-);
-
--- the public group has ID public
-INSERT INTO groups (id,name,fullname,description,avatar,owner,public_scopes,user_scopes) VALUES (
-	"public",
-	"public",
-	"Public",
-	"Make accessible to all visitors, even if they're not logged in",
-	"mi:share",
-	"heedy",
-	'["group:read"]',
-	'["group:read","group:addsource"]'
-);
-
--- the users group has ID users
-INSERT INTO groups (id,name,fullname,description,avatar,owner,user_scopes) VALUES (
-	"users",
-	"users",
-	"Users",
-	"Make accessible to all logged-in users",
-	"mi:supervised_user_circle",
-	"heedy",
-	'["group:read","group:addsource"]'
+	"-"
 );
 
 `
@@ -420,11 +242,6 @@ func Create(a *assets.Assets) error {
 	}
 
 	_, err = db.Exec(schema)
-	if err != nil {
-		return err
-	}
-
-	err = streams.CreateSQLData(db)
 	if err != nil {
 		return err
 	}

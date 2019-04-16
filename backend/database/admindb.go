@@ -110,6 +110,9 @@ func (db *AdminDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 		u.Avatar = nil
 	}
 
+	// Admin has all of the user scopes
+	u.Access.Scopes = []string{"read", "update", "update:password", "delete"}
+
 	return u, err
 }
 
@@ -135,54 +138,6 @@ func (db *AdminDB) UpdateUser(u *User) error {
 func (db *AdminDB) DelUser(name string) error {
 	// The user's group will be deleted by cascade on group owner
 	result, err := db.Exec("DELETE FROM users WHERE name=?;", name)
-	return getExecError(result, err)
-}
-
-// CreateGroup generates a group with the given owner groupID
-func (db *AdminDB) CreateGroup(g *Group) (string, error) {
-	groupColumns, groupValues, err := groupCreateQuery(g)
-	if err != nil {
-		return "", err
-	}
-
-	result, err := db.DB.Exec(fmt.Sprintf("INSERT INTO groups (%s) VALUES (%s);", groupColumns, qQ(len(groupValues))), groupValues...)
-	err = getExecError(result, err)
-	return g.ID, err
-}
-
-// ReadGroup reads a group by id
-func (db *AdminDB) ReadGroup(id string, o *ReadGroupOptions) (*Group, error) {
-	g := &Group{}
-	err := db.Get(g, "SELECT * FROM groups WHERE (id=?) LIMIT 1;", id)
-
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	}
-	if o != nil && o.Avatar {
-		g.Avatar = nil
-	}
-
-	return g, err
-}
-
-// UpdateGroup updates the given group (by ID)
-func (db *AdminDB) UpdateGroup(g *Group) error {
-	groupColumns, groupValues, err := groupUpdateQuery(g)
-	if err != nil {
-		return err
-	}
-
-	groupValues = append(groupValues, g.ID)
-
-	// Allow updating groups that are not users
-	result, err := db.Exec(fmt.Sprintf("UPDATE groups SET %s WHERE id=? AND id!=owner;", groupColumns), groupValues...)
-	return getExecError(result, err)
-
-}
-
-// DelGroup deletes the given group. It does not permit deleting users.
-func (db *AdminDB) DelGroup(id string) error {
-	result, err := db.Exec("DELETE FROM groups WHERE id=? AND id!=owner;", id)
 	return getExecError(result, err)
 }
 

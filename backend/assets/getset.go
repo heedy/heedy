@@ -40,3 +40,9 @@ func (c *Configuration) UserIsAdmin(username string) bool {
 	}
 	return false
 }
+
+// GetSourceType returns the given source type
+func (c *Configuration) GetSourceType(sourcetype string) (*SourceType, bool) {
+	s, ok := c.SourceTypes[sourcetype]
+	return &s, ok
+}

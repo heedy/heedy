@@ -62,7 +62,7 @@ func ValidAvatar(avatar string) error {
 }
 
 // Checks whether the given group access level is OK
-func ValidGroupScopes(s ScopeArray) error {
+func ValidGroupScopes(s *ScopeArray) error {
 	return nil
 }
 

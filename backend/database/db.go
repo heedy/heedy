@@ -30,16 +30,24 @@ func (s *ScopeArray) Scan(val interface{}) error {
 	}
 }
 
+func (s *ScopeArray) String() string {
+	return strings.Join(s.Scopes, " ")
+}
+
 func (s *ScopeArray) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.Scopes)
+
+	return json.Marshal(s.String())
 }
 
 func (s *ScopeArray) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &s.Scopes)
+	var total string
+	err := json.Unmarshal(b, &total)
+	s.Scopes = strings.Split(total, " ")
+	return err
 }
 
 func (s *ScopeArray) Value() (driver.Value, error) {
-	return s.MarshalJSON()
+	return json.Marshal(s.Scopes)
 }
 
 // SourceMeta represents a json column in the table. To handle it correctly, we need to manually scan it
@@ -73,7 +81,7 @@ type Details struct {
 
 	// The access array, giving the current user's permissions.
 	// It is generated manually for each read query, it does not exist in the database.
-	Access []string `json:"access" db:"-"`
+	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
 
 // User holds a user's data
@@ -84,15 +92,6 @@ type User struct {
 	UsersRead  *bool `json:"users_read" db:"users_read"`
 
 	Password *string `json:"password,omitempty" db:"password"`
-}
-
-// Group holds a group's details
-type Group struct {
-	Details
-	Owner *string `json:"owner" db:"owner"`
-
-	PublicScopes *ScopeArray `json:"public_scopes" db:"public_scopes"`
-	UserScopes   *ScopeArray `json:"user_scopes" db:"user_scopes"`
 }
 
 type Connection struct {
@@ -124,11 +123,6 @@ func (s *Source) String() string {
 
 // ReadUserOptions gives options for reading a user
 type ReadUserOptions struct {
-	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
-}
-
-// ReadGroupOptions gives options for reading
-type ReadGroupOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
 }
 
@@ -226,36 +220,10 @@ func extractDetails(d *Details) (columns []string, values []interface{}, err err
 			return
 		}
 	}
+	if len(d.Access.Scopes) > 0 {
+		err = ErrBadQuery("The access field is auto-generated from permissions - it cannot be set directly")
+	}
 	columns, values = extractPointers(d)
-
-	return
-}
-
-func extractGroup(g *Group) (groupColumns []string, groupValues []interface{}, err error) {
-	if g.Owner != nil {
-		if err = ValidName(*g.Owner); err != nil {
-			return
-		}
-	}
-
-	if g.PublicScopes != nil {
-		if err = ValidGroupScopes(*g.PublicScopes); err != nil {
-			return
-		}
-	}
-	if g.UserScopes != nil {
-		if err = ValidGroupScopes(*g.UserScopes); err != nil {
-			return
-		}
-	}
-
-	groupColumns, groupValues, err = extractDetails(&g.Details)
-	if err != nil {
-		return nil, nil, err
-	}
-	c2, g2 := extractPointers(g)
-	groupColumns = append(groupColumns, c2...)
-	groupValues = append(groupValues, g2...)
 
 	return
 }
@@ -375,38 +343,6 @@ func userUpdateQuery(u *User) (string, []interface{}, error) {
 	userValues = append(userValues, u.ID)
 
 	return userColumns, userValues, err
-}
-
-func groupCreateQuery(g *Group) (string, []interface{}, error) {
-	if g.Name == nil {
-		return "", nil, ErrInvalidName
-	}
-	if g.Owner == nil {
-		// A group must have an owner
-		return "", nil, ErrInvalidQuery
-	}
-	groupColumns, groupValues, err := extractGroup(g)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// Since we are creating the details, we also set up the id of the group
-	// We guarantee that ID is last element
-	groupColumns = append(groupColumns, "id")
-	gid := uuid.New().String()
-	groupValues = append(groupValues, gid)
-	g.ID = gid // Set the object's ID
-
-	return strings.Join(groupColumns, ","), groupValues, nil
-
-}
-
-func groupUpdateQuery(g *Group) (string, []interface{}, error) {
-	groupColumns, groupValues, err := extractGroup(g)
-	if len(groupColumns) == 0 {
-		return "", nil, ErrNoUpdate
-	}
-	return strings.Join(groupColumns, "=?,") + "=?", groupValues, err
 }
 
 func connectionCreateQuery(c *Connection) (string, []interface{}, error) {

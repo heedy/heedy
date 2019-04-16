@@ -63,6 +63,14 @@ type hclFrontend struct {
 	PublicMenu   *map[string]MenuItem `json:"public_menu" hcl:"public_menu"`
 }
 
+type hclSourceType struct {
+	Label string `hcl:"label,label"`
+
+	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	API      *string             `json:"api,omitempty" hcl:"api" cty:"api"`
+	Scopes   *map[string]string  `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+}
+
 type hclConfiguration struct {
 	SiteURL        *string   `hcl:"site_url" json:"site_url,omitempty"`
 	Host           *string   `hcl:"host" json:"host,omitempty"`
@@ -81,7 +89,7 @@ type hclConfiguration struct {
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
 
-	SourceTypes *map[string]SourceType `json:"source_types" hcl:"source_types"`
+	SourceTypes []hclSourceType `json:"source_types" hcl:"source,block"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 
@@ -145,9 +153,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	c := NewConfiguration()
 	CopyStructIfPtrSet(c, hc)
 
-	// Load the source_types
-	if hc.SourceTypes != nil {
-		c.SourceTypes = *hc.SourceTypes
+	// Loop through the sources
+	for _, ht := range hc.SourceTypes {
+		t := SourceType{}
+
+		CopyStructIfPtrSet(&t, ht)
+		c.SourceTypes[ht.Label] = t
 	}
 
 	// Load the frontend block

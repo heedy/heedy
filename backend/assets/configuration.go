@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -107,11 +108,31 @@ func (a *Frontend) Copy() Frontend {
 	return na
 }
 
+// SourceTypeFrontend is the frontend info for
+type SourceTypeFrontend struct {
+	Name   *string            `json:"name,omitempty" hcl:"name" cty:"name"`
+	Icon   *string            `json:"icon,omitempty" hcl:"icon" cty:"icon"`
+	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+	Create *string            `json:"create,omitempty" hcl:"create" cty:"create"`
+}
+
+func (f *SourceTypeFrontend) Copy() *SourceTypeFrontend {
+	fnew := &SourceTypeFrontend{}
+	CopyStructIfPtrSet(fnew, f)
+	if f.Routes != nil {
+		newRoutes := make(map[string]string)
+		for k, v := range *(f.Routes) {
+			newRoutes[k] = v
+		}
+		fnew.Routes = &newRoutes
+	}
+	return fnew
+}
+
 type SourceType struct {
-	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
-	Icon     *string `json:"icon,omitempty" hcl:"icon" cty:"icon"`
-	API      *string `json:"api,omitempty" hcl:"api" cty:"api"`
-	Name     *string `json:"name,omitempty" hcl:"name" cty:"name"`
+	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	API      *string             `json:"api,omitempty" hcl:"api" cty:"api"`
+	Scopes   *map[string]string  `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
 }
 
 type Configuration struct {
@@ -139,6 +160,13 @@ type Configuration struct {
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 }
 
+func (c *Configuration) Validate() error {
+	if c.SQL == nil {
+		return fmt.Errorf("No SQL database was specified")
+	}
+	return nil
+}
+
 func copyStringArrayPtr(s *[]string) *[]string {
 	if s == nil {
 		return s
@@ -160,6 +188,9 @@ func (c *Configuration) Copy() *Configuration {
 
 	nc.SourceTypes = make(map[string]SourceType)
 	for k, v := range c.SourceTypes {
+		if v.Frontend != nil {
+			v.Frontend = v.Frontend.Copy()
+		}
 		nc.SourceTypes[k] = v
 	}
 
@@ -275,7 +306,32 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	for ak, av := range overlay.SourceTypes {
 		cv, ok := base.SourceTypes[ak]
 		if ok {
-			// Update only the set values of menu
+			// Merge the Frontend overlay
+			if cv.Frontend != nil && av.Frontend != nil {
+
+				avf := av.Frontend
+				// CopyStruct will replace the frontend with the overlay
+				av.Frontend = cv.Frontend
+
+				// av.Frontend is the base, and avf is the overlay
+				if av.Frontend.Routes != nil && avf.Routes != nil {
+					// Need to merge the routes
+					for rk, rv := range *(avf.Routes) {
+						(*av.Frontend.Routes)[rk] = rv
+					}
+					avf.Routes = nil // Set it to nil so it isn't copied over
+				}
+				CopyStructIfPtrSet(av.Frontend, avf)
+			}
+			// Copy the scopes to av
+			if av.Scopes != nil && cv.Scopes != nil {
+				for sk, sv := range *av.Scopes {
+					(*cv.Scopes)[sk] = sv
+				}
+				av.Scopes = cv.Scopes
+			}
+
+			// Update only the set values
 			CopyStructIfPtrSet(&cv, &av)
 			base.SourceTypes[ak] = cv
 		} else {
