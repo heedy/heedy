@@ -56,7 +56,7 @@ func ValidAvatar(avatar string) error {
 		return nil
 	}
 	if !strings.HasPrefix(avatar, "data:image/") {
-		return errors.New("bad_request: Avatar iamges must be data-urls or be prefixed with mi: or fa:")
+		return errors.New("bad_request: Avatar images must be data-urls or be prefixed with mi: or fa:")
 	}
 	return nil
 }

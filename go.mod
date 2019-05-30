@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/hcl2 v0.0.0-20190305174554-fdf8e232b64f
@@ -24,4 +25,5 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/zclconf/go-cty v0.0.0-20190212192503-19dda139b164
 	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
+	golang.org/x/oauth2 v0.0.0-20190523182746-aaccbc9213b0
 )

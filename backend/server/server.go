@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
@@ -30,25 +29,8 @@ func Run(r *RunOptions) error {
 	if err != nil {
 		return err
 	}
+
 	auth := NewAuth(db)
-
-	ph, err := plugin.NewManager(assets.Get())
-	if err != nil {
-		log.Error(err.Error())
-		return err
-	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			log.Info("Cleanup...")
-			d, _ := time.ParseDuration("5s")
-			ph.Stop(d)
-			log.Info("Done")
-			os.Exit(0)
-		}
-	}()
 
 	serverAddress := fmt.Sprintf("%s:%d", assets.Config().GetHost(), assets.Config().GetPort())
 
@@ -80,21 +62,31 @@ func Run(r *RunOptions) error {
 		})
 	*/
 
-	handler := http.Handler(mux)
-
-	if ph.Middleware != nil {
-		log.Info("Adding plugin middleware")
-		handler = ph.Middleware(handler)
+	ph, err := plugin.NewManager(assets.Get(), http.Handler(mux))
+	if err != nil {
+		log.Error(err.Error())
+		return err
 	}
 
-	contextMiddleware := http.Handler(NewMiddleware(auth, handler))
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			log.Info("Cleanup...")
+			ph.Stop()
+			log.Info("Done")
+			os.Exit(0)
+		}
+	}()
+
+	requestHandler := http.Handler(NewRequestHandler(auth, ph))
 
 	if r != nil && r.Verbose {
 		logrus.Warn("Running in verbose mode")
-		contextMiddleware = VerboseLoggingMiddleware(contextMiddleware)
+		requestHandler = VerboseLoggingMiddleware(requestHandler)
 	}
 
-	http.ListenAndServe(serverAddress, contextMiddleware)
+	http.ListenAndServe(serverAddress, requestHandler)
 	/*
 		srv := &http.Server{
 			Addr:    serverAddress,

@@ -14,7 +14,7 @@ func (db *PublicDB) AdminDB() *AdminDB {
 }
 
 func (db *PublicDB) ID() string {
-	return ""
+	return "public" // The public db acts publically
 }
 
 // User returns the user that is logged in

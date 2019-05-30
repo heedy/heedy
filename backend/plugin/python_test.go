@@ -1,5 +1,6 @@
 package plugin
 
+/*
 import (
 	"fmt"
 	"testing"
@@ -13,3 +14,4 @@ func TestSearchPython(t *testing.T) {
 	fmt.Printf("%v", envs)
 
 }
+*/

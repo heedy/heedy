@@ -55,7 +55,7 @@ func writeAuthError(w http.ResponseWriter, r *http.Request, status int, errVal, 
 
 // Auth handles the oauth flow
 type Auth struct {
-	db *database.AdminDB
+	DB *database.AdminDB
 
 	codeCache *cache.Cache
 }
@@ -63,7 +63,7 @@ type Auth struct {
 // NewAuth creates a new oauth flow handler using an admin DB
 func NewAuth(db *database.AdminDB) *Auth {
 	return &Auth{
-		db:        db,
+		DB:        db,
 		codeCache: cache.New(5*time.Minute, 5*time.Minute),
 	}
 }
@@ -75,16 +75,34 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 		// as if the auth didn't exist.
 
 		if cookie.Name == "token" && cookie.Value != "" {
-			username, err := a.db.LoginToken(cookie.Value) // user name not currently used
+			username, err := a.DB.LoginToken(cookie.Value) // user name not currently used
 			if err == nil {
 				// Return the logged in user database
-				return database.NewUserDB(a.db, username), nil
+				return database.NewUserDB(a.DB, username), nil
 			}
 		}
 	}
 
 	// Nobody is logged in, return a public database view
-	return database.NewPublicDB(a.db), nil
+	return database.NewPublicDB(a.DB), nil
+}
+
+// As creates a database As the given identifier. That is, if as is heedy, it returns an admin db,
+// if it is public, returns a public db, and if it is a username/connection then it returns those.
+func (a *Auth) As(identifier string) (database.DB, error) {
+	if identifier == "heedy" {
+		return a.DB, nil
+	}
+	if identifier == "public" {
+		return database.NewPublicDB(a.DB), nil
+	}
+	_, err := a.DB.ReadUser(identifier, &database.ReadUserOptions{
+		Avatar: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return database.NewUserDB(a.DB, identifier), nil
 }
 
 type tokenResponse struct {
@@ -113,14 +131,14 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 			writeAuthError(w, r, 400, "parameter_absent", "Must have both username and password")
 			return
 		}
-		uname, _, err := a.db.AuthUser(usr, password)
+		uname, _, err := a.DB.AuthUser(usr, password)
 		if err != nil {
 			time.Sleep(1 * time.Second) // Wait a second before returning failure
 			writeAuthError(w, r, 400, "access_denied", "Wrong username or password")
 			return
 		}
 		// Add the token
-		tok, err := a.db.AddLoginToken(uname)
+		tok, err := a.DB.AddLoginToken(uname)
 		if err != nil {
 			writeAuthError(w, r, 400, "server_error", err.Error())
 			return

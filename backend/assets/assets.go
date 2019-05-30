@@ -61,6 +61,12 @@ func (a *Assets) Reload() error {
 		//log.Debug("No asset folder specified - running on builtin assets.")
 
 	} else {
+		// Make sure the folder path is absolute
+		a.FolderPath, err = filepath.Abs(a.FolderPath)
+		if err != nil {
+			return err
+		}
+
 		// The os filesystem
 		osfs := afero.NewOsFs()
 
@@ -127,6 +133,16 @@ func (a *Assets) Abs(p string) string {
 		return fp
 	}
 	return fpabs
+}
+
+// DataDir returns the directory where data is stored
+func (a *Assets) DataDir() string {
+	return path.Join(a.FolderPath, "data")
+}
+
+// PluginDir returns the directory where plugin data is stored
+func (a *Assets) PluginDir() string {
+	return path.Join(a.FolderPath, "plugins")
 }
 
 // Open opens the assets in a given configuration path

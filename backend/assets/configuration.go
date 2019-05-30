@@ -21,12 +21,11 @@ type Setting struct {
 	Value            interface{} `json:"value,omitempty"`
 }
 
-type ExecJob struct {
-	Description *string   `hcl:"description" json:"description,omitempty"`
-	Cron        *string   `hcl:"cron" json:"cron,omitempty"`
-	Port        *int      `hcl:"port" json:"port,omitempty"`
-	KeepAlive   *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
-	Cmd         *[]string `hcl:"cmd" json:"cmd,omitempty"`
+type Exec struct {
+	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
+	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
+	KeepAlive *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
+	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
 }
 
 type Plugin struct {
@@ -39,13 +38,13 @@ type Plugin struct {
 
 	//FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
 
-	Exec     map[string]*ExecJob `json:"exec,omitempty"`
+	Exec     map[string]*Exec    `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
 }
 
 func (p *Plugin) Copy() *Plugin {
 	np := *p
-	np.Exec = make(map[string]*ExecJob)
+	np.Exec = make(map[string]*Exec)
 	np.Settings = make(map[string]*Setting)
 
 	for ekey, eval := range p.Exec {
@@ -150,6 +149,8 @@ type Configuration struct {
 
 	Frontend Frontend `json:"frontend"`
 
+	ExecTimeout *string `json:"exec_timeout,omitempty"`
+
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
 
@@ -208,7 +209,7 @@ func NewConfiguration() *Configuration {
 
 func NewPlugin() *Plugin {
 	return &Plugin{
-		Exec:     make(map[string]*ExecJob),
+		Exec:     make(map[string]*Exec),
 		Settings: make(map[string]*Setting),
 	}
 }

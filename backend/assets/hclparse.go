@@ -27,14 +27,13 @@ type hclJSONSchema struct {
 	//Default *hcl.Attribute `hcl:"default"`
 }
 
-type hclExecJob struct {
+type hclExec struct {
 	Name string `hcl:"name,label"`
 
-	Description *string   `hcl:"description" json:"description,omitempty"`
-	Cron        *string   `hcl:"cron" json: "cron,omitempty"`
-	Port        *int      `hcl:"port"`
-	KeepAlive   *bool     `hcl:"keepalive"`
-	Cmd         *[]string `hcl:"cmd" json: "cmd,omitempty"`
+	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
+	Cron      *string   `hcl:"cron" json: "cron,omitempty"`
+	KeepAlive *bool     `hcl:"keepalive"`
+	Cmd       *[]string `hcl:"cmd" json: "cmd,omitempty"`
 }
 
 type hclPlugin struct {
@@ -48,7 +47,7 @@ type hclPlugin struct {
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 	//FallbackLanguage *string                   `hcl:"fallback_language" json:"fallback_language"`
 
-	Exec []hclExecJob `hcl:"exec,block"`
+	Exec []hclExec `hcl:"exec,block"`
 
 	// The remaining stuff is plugin-specific settings
 	// that will be passed to the plugin executables,
@@ -85,6 +84,8 @@ type hclConfiguration struct {
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
 	Frontend *hclFrontend `hcl:"frontend,block"`
+
+	ExecTimeout *string `hcl:"exec_timeout"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
@@ -200,7 +201,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				return nil, fmt.Errorf("%s: Plugin %s exec %s defined twice", filename, hp.Name, hp.Exec[j].Name)
 			}
 
-			ej := &ExecJob{}
+			ej := &Exec{}
 			CopyStructIfPtrSet(ej, &hp.Exec[j])
 			p.Exec[hp.Exec[j].Name] = ej
 		}
