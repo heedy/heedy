@@ -112,7 +112,6 @@ type SourceTypeFrontend struct {
 	Name   *string            `json:"name,omitempty" hcl:"name" cty:"name"`
 	Icon   *string            `json:"icon,omitempty" hcl:"icon" cty:"icon"`
 	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
-	Create *string            `json:"create,omitempty" hcl:"create" cty:"create"`
 }
 
 func (f *SourceTypeFrontend) Copy() *SourceTypeFrontend {
@@ -130,8 +129,27 @@ func (f *SourceTypeFrontend) Copy() *SourceTypeFrontend {
 
 type SourceType struct {
 	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	API      *string             `json:"api,omitempty" hcl:"api" cty:"api"`
-	Scopes   *map[string]string  `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+
+	Meta   *map[string]interface{} `json:"meta,omitempty"`
+	Routes *map[string]string      `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+	Scopes *map[string]string      `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+}
+
+func (s *SourceType) Copy() SourceType {
+	snew := SourceType{}
+	CopyStructIfPtrSet(&snew, s)
+	if s.Routes != nil {
+		newRoutes := make(map[string]string)
+		for k, v := range *(s.Routes) {
+			newRoutes[k] = v
+		}
+		snew.Routes = &newRoutes
+	}
+	if s.Frontend != nil {
+		snew.Frontend = s.Frontend.Copy()
+	}
+
+	return snew
 }
 
 type Configuration struct {
@@ -154,7 +172,7 @@ type Configuration struct {
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
 
-	SourceTypes map[string]SourceType `json:"source_types" hcl:"source_types"`
+	SourceTypes map[string]SourceType `json:"source" hcl:"source_types"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 
@@ -189,10 +207,7 @@ func (c *Configuration) Copy() *Configuration {
 
 	nc.SourceTypes = make(map[string]SourceType)
 	for k, v := range c.SourceTypes {
-		if v.Frontend != nil {
-			v.Frontend = v.Frontend.Copy()
-		}
-		nc.SourceTypes[k] = v
+		nc.SourceTypes[k] = v.Copy()
 	}
 
 	return &nc
@@ -330,6 +345,13 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 					(*cv.Scopes)[sk] = sv
 				}
 				av.Scopes = cv.Scopes
+			}
+			// Copy the routes to av
+			if av.Routes != nil && cv.Routes != nil {
+				for rk, rv := range *av.Routes {
+					(*cv.Routes)[rk] = rv
+				}
+				av.Routes = cv.Routes
 			}
 
 			// Update only the set values

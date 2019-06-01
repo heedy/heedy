@@ -1,4 +1,4 @@
-package plugin
+package server
 
 import (
 	"context"
@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// BuiltinRoutes holds routes for APIs for sources and routes that are directly compiled into the core heedy executable.
+var BuiltinRoutes = make(map[string]http.Handler)
+
 type unixDialer struct {
 	Location string
 	net.Dialer
@@ -22,15 +25,31 @@ func (d *unixDialer) DialContext(ctx context.Context, network, address string) (
 	return d.Dialer.DialContext(ctx, "unix", d.Location)
 }
 
-// NewReverseProxy generates a reverse proxy from a given uri, automatically handling unix uris
-func NewReverseProxy(datadir, uri string) (*httputil.ReverseProxy, error) {
+// NewReverseProxy generates a reverse proxy from a given uri, automatically handling unix sockets,
+// and builtin handlers
+func NewReverseProxy(datadir, uri string) (http.Handler, error) {
+
+	gatewayError := func(w http.ResponseWriter, r *http.Request, err error) {
+		WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s",err.Error()))
+	}
+
+	if strings.HasPrefix(uri, "builtin://") {
+		// Use one of the built-in handlers
+		handler, ok := BuiltinRoutes[uri[len("builtin://"):]]
+		if !ok {
+			return nil, fmt.Errorf("Did not find handler '%s'", uri)
+		}
+		return handler, nil
+	}
 
 	if !strings.HasPrefix(uri, "unix://") {
 		parsedURL, err := url.Parse(uri)
 		if err != nil {
 			return nil, err
 		}
-		return httputil.NewSingleHostReverseProxy(parsedURL), nil
+		p := httputil.NewSingleHostReverseProxy(parsedURL)
+		p.ErrorHandler = gatewayError
+		return p, nil
 	}
 
 	// Otherwise, we set up a unix domain socket.
@@ -58,6 +77,7 @@ func NewReverseProxy(datadir, uri string) (*httputil.ReverseProxy, error) {
 	}
 
 	p := httputil.NewSingleHostReverseProxy(parsedURL)
+	p.ErrorHandler = gatewayError
 
 	if !filepath.IsAbs(host) {
 		host = filepath.Join(datadir, host)

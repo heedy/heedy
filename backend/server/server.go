@@ -11,7 +11,6 @@ import (
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/plugin"
 
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -61,8 +60,13 @@ func Run(r *RunOptions) error {
 			http.Redirect(w, r, "/app/", http.StatusFound)
 		})
 	*/
-
-	ph, err := plugin.NewManager(assets.Get(), http.Handler(mux))
+	om, err := NewOverlayManager(assets.Get(), http.Handler(mux))
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+	em := NewExecManager(assets.Get())
+	err = em.Start()
 	if err != nil {
 		log.Error(err.Error())
 		return err
@@ -73,13 +77,13 @@ func Run(r *RunOptions) error {
 	go func() {
 		for range c {
 			log.Info("Cleanup...")
-			ph.Stop()
+			em.Stop()
 			log.Info("Done")
 			os.Exit(0)
 		}
 	}()
 
-	requestHandler := http.Handler(NewRequestHandler(auth, ph))
+	requestHandler := http.Handler(NewRequestHandler(auth, em, om))
 
 	if r != nil && r.Verbose {
 		logrus.Warn("Running in verbose mode")

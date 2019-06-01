@@ -20,6 +20,15 @@ func apiHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8") // All API requests return json
 }
 
+// RequestLogger generates a basic logger that holds relevant request info
+func RequestLogger(r *http.Request) *logrus.Entry {
+	fields := logrus.Fields{"addr": r.RemoteAddr, "path": r.URL.Path, "method": r.Method}
+	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+		fields["realip"] = realIP
+	}
+	return logrus.WithFields(fields)
+}
+
 //UnmarshalRequest unmarshals the input data to the given interface
 func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	defer request.Body.Close()
@@ -45,7 +54,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	c := CTX(r)
 
 	es := ErrorResponse{
-		Error:            "access_denied",
+		Error:            "internal_error",
 		ErrorDescription: err.Error(),
 	}
 	myerr := err
@@ -58,7 +67,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	}
 
 	if c != nil {
-		es.ID = c.ID
+		es.ID = c.RequestID
 	}
 	jes, err := json.Marshal(&es)
 	if err != nil {

@@ -1,4 +1,4 @@
-package plugin
+package server
 
 import (
 	"crypto/rand"

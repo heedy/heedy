@@ -40,7 +40,7 @@ func APIMux() (*chi.Mux, error) {
 	v1mux := chi.NewMux()
 
 	v1mux.Get("/user/{username}", ReadUser)
-	v1mux.Post("/user/{username}", UpdateUser)
+	v1mux.Patch("/user/{username}", UpdateUser)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

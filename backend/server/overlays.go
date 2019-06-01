@@ -1,6 +1,7 @@
-package plugin
+package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,8 +13,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// RouteManager handles overloading the REST API from plugins
-type RouteManager struct {
+// OverlayManager handles overloading the REST API from plugins
+type OverlayManager struct {
 	// Overlays specifies the MuxArray element of the ith plugin.
 	// The value 0 is raw heedy, and all values >=1 refer to MuxArray[value-1]
 	Overlays []int
@@ -22,8 +23,8 @@ type RouteManager struct {
 	apiHandler http.Handler
 }
 
-// NewRouteManager creates the overlays for REST API
-func NewRouteManager(a *assets.Assets, h http.Handler) (*RouteManager, error) {
+// NewOverlayManager creates the overlays for REST API
+func NewOverlayManager(a *assets.Assets, h http.Handler) (*OverlayManager, error) {
 	c := a.Config
 
 	muxarray := make([]*chi.Mux, 0)
@@ -71,29 +72,28 @@ func NewRouteManager(a *assets.Assets, h http.Handler) (*RouteManager, error) {
 
 	}
 
-	return &RouteManager{
+	return &OverlayManager{
 		Overlays:   overlays,
 		MuxArray:   muxarray,
 		apiHandler: h,
 	}, nil
 }
 
-func (m *RouteManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *OverlayManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	muxindex := len(m.MuxArray)
 
 	if overlay, ok := r.Header["X-Heedy-Overlay"]; ok {
 		if len(overlay) != 1 {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "plugin_error", "error_description": "invalid overlay number"}`))
+			WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid overlay number"))
+			return
 		}
 		oindex, err := strconv.Atoi(overlay[0])
 		if err != nil || oindex < -1 || oindex >= len(m.Overlays) {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "plugin_error", "error_description": "invalid overlay number"}`))
+			WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid overlay number"))
 			return
 		}
 
-		// Remove the overlay header if the RouteManager can handle it directly (ie: all values other than -1)
+		// Remove the overlay header if the OverlayManager can handle it directly (ie: all values other than -1)
 		if oindex >= 0 {
 			delete(r.Header, "X-Heedy-Overlay")
 		} else {

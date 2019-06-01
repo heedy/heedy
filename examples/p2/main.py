@@ -38,6 +38,7 @@ async def fwd(request):
     headers = multidict.CIMultiDict(request.headers)
 
     headers["X-Heedy-Key"] = apikey
+    headers["X-Heedy-Auth"] = "public"
     headers["X-Heedy-Overlay"] = str(overlay)
 
     print(headers)

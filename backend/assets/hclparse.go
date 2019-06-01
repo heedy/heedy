@@ -1,12 +1,15 @@
 package assets
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hclparse"
+	"github.com/zclconf/go-cty/cty"
+	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
 var (
@@ -66,8 +69,11 @@ type hclSourceType struct {
 	Label string `hcl:"label,label"`
 
 	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	API      *string             `json:"api,omitempty" hcl:"api" cty:"api"`
-	Scopes   *map[string]string  `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+
+	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+
+	Meta   *cty.Value         `hcl:"meta,attr"`
+	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
 }
 
 type hclConfiguration struct {
@@ -159,6 +165,20 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		t := SourceType{}
 
 		CopyStructIfPtrSet(&t, ht)
+
+		if ht.Meta != nil {
+			var metaMap map[string]interface{}
+			b, err := json.Marshal(ctyjson.SimpleJSONValue{Value: *ht.Meta})
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(b, &metaMap)
+			if err != nil {
+				return nil, err
+			}
+			t.Meta = &metaMap
+		}
+
 		c.SourceTypes[ht.Label] = t
 	}
 

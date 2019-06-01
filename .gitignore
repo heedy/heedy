@@ -2,6 +2,11 @@
 /assets/public
 /assets/setup
 
+# test text file
+backend/server/tests/exec/data/test.txt
+
+# Don't save any socket files
+*.sock
 # The built executable
 /heedy
 
