@@ -65,7 +65,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// First check if the request is coming from a plugin
 	pluginKey := r.Header.Get("X-Heedy-Key")
 	if len(pluginKey) > 0 {
-		// There is a plugin key present
+		// There is a plugin key present, make sure it was given to one of the plugin processes
 		proc, ok := a.plugins.Processes[pluginKey]
 		if !ok {
 			time.Sleep(time.Second)

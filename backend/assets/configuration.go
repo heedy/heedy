@@ -1,9 +1,12 @@
 package assets
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/xeipuuv/gojsonschema"
 )
 
 type Setting struct {
@@ -133,6 +136,8 @@ type SourceType struct {
 	Meta   *map[string]interface{} `json:"meta,omitempty"`
 	Routes *map[string]string      `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 	Scopes *map[string]string      `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+
+	metaSchema *gojsonschema.Schema
 }
 
 func (s *SourceType) Copy() SourceType {
@@ -150,6 +155,53 @@ func (s *SourceType) Copy() SourceType {
 	}
 
 	return snew
+}
+
+// ValidateMeta checks the given metadata is valid
+func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
+	if s.metaSchema == nil {
+		objectMap := make(map[string]interface{})
+		objectMap["type"] = "object"
+		objectMap["additionalProperties"] = false
+
+		if s.Meta != nil {
+			if v, ok := (*s.Meta)["type"]; ok {
+				if v != "object" {
+					return errors.New("Meta schema type must be object")
+				}
+				objectMap = *s.Meta
+			} else {
+				propMap := make(map[string]interface{})
+				for k, v := range *s.Meta {
+					if k == "additionalProperties" || k == "required" {
+						objectMap[k] = v
+					} else {
+						propMap[k] = v
+					}
+				}
+				objectMap["properties"] = propMap
+			}
+		}
+
+		// objectMap is now the schema
+		s.metaSchema, err = gojsonschema.NewSchema(gojsonschema.NewGoLoader(objectMap))
+		if err != nil {
+			s.metaSchema = nil
+			return err
+		}
+	}
+	if meta != nil {
+		// Validate the schema
+		res, err := (*s.metaSchema).Validate(gojsonschema.NewGoLoader(meta))
+		if err != nil {
+			return err
+		}
+		if !res.Valid() {
+			return errors.New(res.Errors()[0].String())
+		}
+	}
+
+	return nil
 }
 
 type Configuration struct {
@@ -183,6 +235,14 @@ func (c *Configuration) Validate() error {
 	if c.SQL == nil {
 		return fmt.Errorf("No SQL database was specified")
 	}
+
+	for k, v := range c.SourceTypes {
+		err := v.ValidateMeta(nil)
+		if err != nil {
+			return fmt.Errorf("source %s meta schema invalid: %s", k, err.Error())
+		}
+	}
+
 	return nil
 }
 

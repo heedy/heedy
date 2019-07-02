@@ -1,5 +1,9 @@
 package assets
 
+import (
+	"fmt"
+)
+
 func (c *Configuration) GetRequestBodyByteLimit() int64 {
 	if c.RequestBodyByteLimit != nil {
 		return *c.RequestBodyByteLimit
@@ -45,4 +49,13 @@ func (c *Configuration) UserIsAdmin(username string) bool {
 func (c *Configuration) GetSourceType(sourcetype string) (*SourceType, bool) {
 	s, ok := c.SourceTypes[sourcetype]
 	return &s, ok
+}
+
+// ValidateSourceMeta makes sure that sources have valid metadata
+func (c *Configuration) ValidateSourceMeta(sourcetype string, meta *map[string]interface{}) error {
+	s, ok := c.SourceTypes[sourcetype]
+	if !ok {
+		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+	}
+	return s.ValidateMeta(meta)
 }

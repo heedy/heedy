@@ -32,3 +32,24 @@ func TestLoadConfiguration(t *testing.T) {
 
 	fmt.Printf("------------------------------------------------------\n\n")
 }
+
+func TestSchemaValidation(t *testing.T) {
+	c, err := LoadConfigFile("../../assets/heedy.conf")
+	require.NoError(t, err)
+
+	v := map[string]interface{}{
+		"actor": false,
+	}
+
+	require.NoError(t, c.ValidateSourceMeta("stream", &v))
+
+	v = map[string]interface{}{
+		"actor": "hi",
+	}
+	require.Error(t, c.ValidateSourceMeta("stream", &v))
+
+	v = map[string]interface{}{
+		"ar": "hi",
+	}
+	require.Error(t, c.ValidateSourceMeta("stream", &v))
+}

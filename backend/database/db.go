@@ -9,21 +9,42 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/heedy/heedy/backend/assets"
 )
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
 type ScopeArray struct {
-	Scopes []string
+	Scopes   []string
+	scopeMap map[string]bool
+}
+
+// Update cleans out the scopes to remove repeated items
+func (s *ScopeArray) Update() {
+	s.scopeMap = make(map[string]bool)
+	for _, v := range s.Scopes {
+		s.scopeMap[v] = true
+	}
+
+	if _, ok := s.scopeMap["*"]; ok {
+		s.Scopes = []string{"*"}
+		return
+	}
+	s.Scopes = make([]string, 0, len(s.scopeMap))
+	for k := range s.scopeMap {
+		s.Scopes = append(s.Scopes, k)
+	}
 }
 
 func (s *ScopeArray) Scan(val interface{}) error {
 	switch v := val.(type) {
 	case []byte:
 		json.Unmarshal(v, &s.Scopes)
+		s.Update()
 		return nil
 	case string:
 		json.Unmarshal([]byte(v), &s.Scopes)
+		s.Update()
 		return nil
 	default:
 		return fmt.Errorf("Can't scan scope array, unsupported type: %T", v)
@@ -43,11 +64,24 @@ func (s *ScopeArray) UnmarshalJSON(b []byte) error {
 	var total string
 	err := json.Unmarshal(b, &total)
 	s.Scopes = strings.Split(total, " ")
+	s.Update()
 	return err
 }
 
 func (s *ScopeArray) Value() (driver.Value, error) {
 	return json.Marshal(s.Scopes)
+}
+
+// HasScope checks if the given scope is present
+func (s *ScopeArray) HasScope(sv string) (ok bool) {
+	if s.scopeMap == nil {
+		s.Update()
+	}
+	_, ok = s.scopeMap[sv]
+	if !ok {
+		_, ok = s.scopeMap["*"]
+	}
+	return
 }
 
 // SourceMeta represents a json column in the table. To handle it correctly, we need to manually scan it
@@ -79,7 +113,7 @@ type Details struct {
 	Description *string `json:"description" db:"description"`
 	Avatar      *string `json:"avatar" db:"avatar"`
 
-	// The access array, giving the current user's permissions.
+	// The access array, giving the permissions the cuurently logged in thing has
 	// It is generated manually for each read query, it does not exist in the database.
 	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
@@ -153,12 +187,15 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 
-	/*
-		CreateSource(s *Source) (string, error)
-		ReadSource(id string, o *ReadSourceOptions) (*Source, error)
-		UpdateSource(s *Source) error
-		DelSource(id string) error
-	*/
+	CreateSource(s *Source) (string, error)
+	ReadSource(id string, o *ReadSourceOptions) (*Source, error)
+	UpdateSource(s *Source) error
+	DelSource(id string) error
+
+	ShareSource(sourceid, userid string, sa *ScopeArray) error
+	UnshareSourceFromUser(sourceid, userid string) error
+	UnshareSource(sourceid string) error
+	GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -293,6 +330,7 @@ func extractSource(s *Source) (sColumns []string, sValues []interface{}, err err
 			return
 		}
 	}
+
 	c2, g2 := extractPointers(s)
 	sColumns = append(sColumns, c2...)
 	sValues = append(sValues, g2...)
@@ -379,7 +417,7 @@ func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
 	return strings.Join(cColumns, "=?,") + "=?", cValues, err
 }
 
-func sourceCreateQuery(s *Source) (string, []interface{}, error) {
+func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{}, error) {
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
@@ -397,6 +435,16 @@ func sourceCreateQuery(s *Source) (string, []interface{}, error) {
 		return "", nil, err
 	}
 
+	if s.Meta != nil {
+		err = c.ValidateSourceMeta(*s.Type, (*map[string]interface{})(s.Meta))
+	} else {
+		m := map[string]interface{}{}
+		err = c.ValidateSourceMeta(*s.Type, &m)
+	}
+	if err != nil {
+		return "", nil, err
+	}
+
 	// We create an ID for the connection. Guaranteed to be last element
 	sColumns = append(sColumns, "id")
 	sid := uuid.New().String()
@@ -406,13 +454,17 @@ func sourceCreateQuery(s *Source) (string, []interface{}, error) {
 	return strings.Join(sColumns, ","), sValues, err
 }
 
-func sourceUpdateQuery(s *Source) (string, []interface{}, error) {
+// The source s is assumed to have the underlying source type added in.
+func sourceUpdateQuery(c *assets.Configuration, s *Source, sourceType string) (string, []interface{}, error) {
 	sColumns, sValues, err := extractSource(s)
 	if s.Type != nil {
 		return "", nil, ErrBadQuery("Modifying a source type is not supported")
 	}
 	if len(sValues) == 0 {
 		return "", nil, ErrNoUpdate
+	}
+	if s.Meta != nil && err != nil {
+		err = c.ValidateSourceMeta(*s.Type, (*map[string]interface{})(s.Meta))
 	}
 	return strings.Join(sColumns, "=?,") + "=?", sValues, err
 }

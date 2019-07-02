@@ -227,10 +227,11 @@ func (db *AdminDB) DelConnection(id string) error {
 
 // CreateSource creates the source
 func (db *AdminDB) CreateSource(s *Source) (string, error) {
-	sColumns, sValues, err := sourceCreateQuery(s)
+	sColumns, sValues, err := sourceCreateQuery(db.Assets().Config, s)
 	if err != nil {
 		return "", err
 	}
+
 	if s.Connection != nil {
 		// We must insert while also setting the owner to the connection's owner
 		sValues = append(sValues, *s.Connection)
@@ -248,35 +249,46 @@ func (db *AdminDB) CreateSource(s *Source) (string, error) {
 }
 
 // ReadSource gets the source by ID
-func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
-	c := &Source{}
-	err := db.Get(c, "SELECT * FROM sources WHERE (id=?) LIMIT 1;", id)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	}
-	if o != nil && o.Avatar {
-		c.Avatar = nil
-	}
-	return c, err
+func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (s *Source, err error) {
+	s, err = readSource(db, id, o, `SELECT *,'["*"]' AS access FROM sources WHERE (id=?) LIMIT 1;`, id)
+	return
 }
 
 // UpdateSource updates the given source by ID
 func (db *AdminDB) UpdateSource(s *Source) error {
-	sColumns, sValues, err := sourceUpdateQuery(s)
-	if err != nil {
-		return err
-	}
-
-	sValues = append(sValues, s.ID)
-
-	// Allow updating groups that are not users
-	result, err := db.Exec(fmt.Sprintf("UPDATE sources SET %s WHERE id=?;", sColumns), sValues...)
-	return getExecError(result, err)
-
+	return updateSource(db, s, `SELECT type,'["*"]' AS access FROM sources WHERE id=? LIMIT 1;`, s.ID)
 }
 
 // DelSource deletes the given source
 func (db *AdminDB) DelSource(id string) error {
 	result, err := db.Exec("DELETE FROM sources WHERE id=?;", id)
 	return getExecError(result, err)
+}
+
+// ShareSource shares the given source with the given user, allowing the given set of scopes
+func (db *AdminDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+	if len(sa.Scopes) == 0 {
+		return db.UnshareSourceFromUser(sourceid, userid)
+	}
+	if !sa.HasScope("read") {
+		return ErrBadQuery("To share a source, it needs to have the read scope active")
+	}
+
+	res, err := db.Exec("INSERT OR REPLACE INTO shared_sources(username,sourceid,scopes) VALUES (?,?,?);", userid, sourceid, sa)
+	return getExecError(res, err)
+}
+
+// UnshareSourceFromUser Removes the given share from the source
+func (db *AdminDB) UnshareSourceFromUser(sourceid, userid string) error {
+	return unshareSourceFromUser(db, sourceid, userid, "DELETE FROM shared_sources WHERE sourceid=? AND username=?", sourceid, userid)
+}
+
+// UnshareSource deletes ALL the shares fro mthe source
+func (db *AdminDB) UnshareSource(sourceid string) error {
+	return unshareSource(db, sourceid, "DELETE FROM shared_sources WHERE sourceid=?", sourceid)
+}
+
+// GetSourceShares returns the shares of the source
+func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+	return getSourceShares(db, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?`, sourceid)
 }

@@ -127,3 +127,39 @@ func TestUserUpdateAvatar(t *testing.T) {
 		},
 	}))
 }
+
+func TestUserSource(t *testing.T) {
+	adb, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	db := NewUserDB(adb, "testy")
+	name := "tree"
+	stype := "stream"
+	sid, err := db.CreateSource(&Source{
+		Details: Details{
+			Name: &name,
+		},
+		Type: &stype,
+	})
+	require.NoError(t, err)
+
+	name2 := "derpy"
+	require.NoError(t, db.UpdateSource(&Source{
+		Details: Details{
+			ID:       sid,
+			FullName: &name2,
+		},
+		Meta: &SourceMeta{
+			"schema": 4,
+		},
+	}))
+	s, err := db.ReadSource(sid, nil)
+	require.NoError(t, err)
+	require.Equal(t, *s.FullName, name2)
+	require.NotNil(t, s.Scopes)
+	require.NotNil(t, s.Meta)
+	require.True(t, s.Access.HasScope("*"))
+
+	require.NoError(t, db.DelSource(sid))
+	require.Error(t, db.DelSource(sid))
+}

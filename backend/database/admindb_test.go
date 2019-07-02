@@ -263,11 +263,62 @@ func TestAdminSource(t *testing.T) {
 	require.Equal(t, *s.FullName, badname)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
-	require.Equal(t, (*s.Scopes).Scopes[0], "myscope1")
+	require.Equal(t, len((*s.Scopes).Scopes), 2)
 	require.Equal(t, (*s.Meta)["schema"], float64(4))
 
 	//fmt.Printf(s.String())
 
 	require.NoError(t, db.DelSource(sid))
 	require.Error(t, db.DelSource(sid))
+}
+
+func TestAdminShareSource(t *testing.T) {
+	db, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy"
+	stype := "stream"
+	sid, err := db.CreateSource(&Source{
+		Details: Details{
+
+			Name: &name,
+		},
+		Owner: &name,
+		Type:  &stype,
+	})
+	require.NoError(t, err)
+
+	m, err := db.GetSourceShares(sid)
+	require.NoError(t, err)
+	require.Equal(t, len(m), 0)
+
+	require.NoError(t, db.ShareSource(sid, "public", &ScopeArray{
+		Scopes: []string{"read", "write"},
+	}))
+
+	m, err = db.GetSourceShares(sid)
+	require.NoError(t, err)
+	require.Equal(t, len(m), 1)
+
+	require.Equal(t, len(m["public"].Scopes), 2)
+
+	require.NoError(t, db.ShareSource(sid, "users", &ScopeArray{
+		Scopes: []string{"read", "write", "love"},
+	}))
+
+	m, err = db.GetSourceShares(sid)
+	require.NoError(t, err)
+	require.Equal(t, len(m), 2)
+
+	require.NoError(t, db.UnshareSourceFromUser(sid, "users"))
+
+	m, err = db.GetSourceShares(sid)
+	require.NoError(t, err)
+	require.Equal(t, len(m), 1)
+
+	require.NoError(t, db.UnshareSource(sid))
+
+	m, err = db.GetSourceShares(sid)
+	require.NoError(t, err)
+	require.Equal(t, len(m), 0)
 }

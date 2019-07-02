@@ -43,3 +43,35 @@ func (db *PublicDB) DelUser(name string) error {
 func (db *PublicDB) CreateSource(s *Source) (string, error) {
 	return "", ErrAccessDenied("You must be logged in to create sources")
 }
+
+// ReadSource reads the given source if it is shared
+func (db *PublicDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
+	return readSource(db.adb, id, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
+		WHERE sources.id=? AND ss.user='public' AND ss.source=sources.id;`, id)
+}
+
+// UpdateSource allows editing a source
+func (db *PublicDB) UpdateSource(s *Source) error {
+	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
+		WHERE sources.id=? AND ss.user='public' AND ss.source=sources.id;`, s.ID)
+}
+
+func (db *PublicDB) DelSource(id string) error {
+	return ErrAccessDenied("You must be logged in to delete sources")
+}
+
+func (db *PublicDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+	return ErrAccessDenied("You must be logged in to share sources")
+}
+
+func (db *PublicDB) UnshareSourceFromUser(sourceid, userid string) error {
+	return ErrAccessDenied("You must be logged in to delete source shares")
+}
+
+func (db *PublicDB) UnshareSource(sourceid string) error {
+	return ErrAccessDenied("You must be logged in to delete source shares")
+}
+
+func (db *PublicDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+	return nil, ErrAccessDenied("You must be logged in to get the source shares")
+}

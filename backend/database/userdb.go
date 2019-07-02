@@ -67,62 +67,54 @@ func (db *UserDB) DelUser(name string) error {
 	return ErrAccessDenied("You cannot delete other users")
 }
 
-/*
-// CreateSource creates the source
+// CreateSource creates the source.
 func (db *UserDB) CreateSource(s *Source) (string, error) {
+	if s.Connection != nil {
+		return "", ErrAccessDenied("You cannot create sources belonging to a connection")
+	}
 	if s.Owner == nil {
-		if s.Connection == nil {
-			return "", ErrBadQuery("You must specify either an owner or a connection to which the source should belong")
-		}
-		// Create source for a connection...
-		return "", ErrAccessDenied("Only a connection can add sources to itself")
+		// If no owner is specified, assume the current user
+		s.Owner = &db.user
 	}
-	if *s.Owner == db.user {
-		// The owner is us, so we can directly create the source
-		return db.adb.CreateSource(s)
+	if *s.Owner != db.user {
+		return "", ErrAccessDenied("Cannot create a source belonging to someone else")
 	}
-	// The owner is someone else, so check if we are allowed to create a source for them
-	return createSource(db.adb, s, `SELECT 1 FROM user_scopes WHERE user=? AND scope='sources:create'
-			AND EXISTS (SELECT 1 FROM user_can_read_user WHERE user=? AND target=?);`, db.user, db.user, *s.Owner)
-
+	return db.adb.CreateSource(s)
 }
 
-// ReadSource gets the source by ID
+// ReadSource reads the given source if the user has sufficient permissions
 func (db *UserDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
-	return readSource(db.adb, id, o, `SELECT * FROM sources WHERE id=? AND EXISTS
-		(SELECT 1 FROM user_can_read_source WHERE source=? AND user=? LIMIT 1);`, id, id, db.user)
+	return readSource(db.adb, id, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
+		WHERE sources.id=? AND ss.user IN (?,"public","users") AND ss.source=sources.id;`, id, db.user)
 }
 
-// UpdateSource updates the given source by ID
+// UpdateSource allows editing a source
 func (db *UserDB) UpdateSource(s *Source) error {
-	if s.Actor != nil || s.Access != nil || s.External != nil || s.Schema != nil {
-		// The user is trying to edit core source properties. Disallow this if the source belongs to a connection
-		return updateSource(db.adb, s, `SELECT 1 FROM user_can_read_source WHERE source=? AND user=?
-			AND EXISTS (
-				SELECT 1 FROM sources WHERE id=? AND connection IS NULL AND (owner=? OR
-						EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='sources:edit')
-					)
-				);`, s.ID, db.user, s.ID, db.user, db.user)
-	}
-	return updateSource(db.adb, s, `SELECT 1 FROM user_can_read_source WHERE source=? AND user=?
-		AND EXISTS (
-			SELECT 1 FROM sources WHERE id=? AND (owner=? OR
-					EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='sources:edit')
-				)
-			);`, s.ID, db.user, s.ID, db.user, db.user)
+	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
+		WHERE sources.id=? AND ss.user IN (?,"public","users") AND ss.source=sources.id;`, s.ID, db.user)
 }
 
-// DelSource deletes the given source, so long as it doesn't belong to a connection
+// Can only delete sources that belong to *us*
 func (db *UserDB) DelSource(id string) error {
-	return delSource(db.adb, id, `DELETE FROM sources WHERE id=?
-			AND connection IS NULL
-			AND (
-				owner=? OR EXISTS (SELECT 1 FROM user_scopes WHERE user=? AND scope='sources:delete')
-				AND EXISTS (SELECT 1 FROM user_can_read_source WHERE source=? AND user=?)
-			);`, id, db.user, db.user, id, db.user)
+	result, err := db.adb.Exec("DELETE FROM sources WHERE id=? AND owner=? AND connection IS NULL;", id, db.user)
+	return getExecError(result, err)
 }
 
-func (db *UserDB) ReadSourceData(id string, q *sources.Query) (sources.DatapointIterator, error) {
-	return readSourceData(db.adb, id, q, `SELECT 1 FROM user_can_read_source WHERE source=? AND user=? LIMIT 1`, id, db.user)
+func (db *UserDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+	return shareSource(db, sourceid, userid, sa, `SELECT 1 FROM sources WHERE owner=? AND id=?`, db.user, sourceid)
 }
-*/
+
+func (db *UserDB) UnshareSourceFromUser(sourceid, userid string) error {
+	return unshareSourceFromUser(db.adb, sourceid, userid, `DELETE FROM shared_sources WHERE sourceid=? AND username=? 
+		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, userid, db.user)
+}
+
+func (db *UserDB) UnshareSource(sourceid string) error {
+	return unshareSource(db.adb, sourceid, `DELETE FROM shared_sources WHERE sourceid=?
+		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, db.user)
+}
+
+func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+	return getSourceShares(db.adb, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?
+		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, db.user)
+}
