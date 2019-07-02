@@ -67,6 +67,23 @@ func (db *UserDB) DelUser(name string) error {
 	return ErrAccessDenied("You cannot delete other users")
 }
 
+// CanCreateSource returns whether the given source can be
+func (db *UserDB) CanCreateSource(s *Source) error {
+	_, _, err := sourceCreateQuery(db.adb.Assets().Config, s)
+	if err != nil {
+		return err
+	}
+	if s.Owner != nil {
+		if *s.Owner != db.user {
+			return ErrAccessDenied("Cannot create a source for another user")
+		}
+	}
+	if s.Connection != nil {
+		return ErrAccessDenied("Can't create a source for a connection")
+	}
+	return nil
+}
+
 // CreateSource creates the source.
 func (db *UserDB) CreateSource(s *Source) (string, error) {
 	if s.Connection != nil {

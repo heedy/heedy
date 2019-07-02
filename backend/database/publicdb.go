@@ -40,6 +40,17 @@ func (db *PublicDB) DelUser(name string) error {
 	return ErrAccessDenied("You must be logged in to delete your user")
 }
 
+// CanCreateSource returns whether the given source can be
+func (db *PublicDB) CanCreateSource(s *Source) error {
+	if s.Type == nil {
+		return ErrBadQuery("No source type given")
+	}
+	if s.Name == nil {
+		return ErrBadQuery("The source needs a name")
+	}
+	return ErrAccessDenied("must be logged in to create the source")
+}
+
 func (db *PublicDB) CreateSource(s *Source) (string, error) {
 	return "", ErrAccessDenied("You must be logged in to create sources")
 }

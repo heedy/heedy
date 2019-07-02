@@ -60,7 +60,13 @@ func Run(r *RunOptions) error {
 			http.Redirect(w, r, "/app/", http.StatusFound)
 		})
 	*/
-	om, err := NewOverlayManager(assets.Get(), http.Handler(mux))
+	sm, err := NewSourceManager(assets.Get(), http.Handler(mux))
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+
+	om, err := NewOverlayManager(assets.Get(), sm)
 	if err != nil {
 		log.Error(err.Error())
 		return err
@@ -78,6 +84,7 @@ func Run(r *RunOptions) error {
 		for range c {
 			log.Info("Cleanup...")
 			em.Stop()
+			db.Close()
 			log.Info("Done")
 			os.Exit(0)
 		}

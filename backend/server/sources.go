@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
@@ -34,6 +36,18 @@ type SourceManager struct {
 func stripRequestPrefix(h http.Handler, n int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Strip the first n elements from the path
+		if r.URL.Path[0] == '/' {
+			r.URL.Path = r.URL.Path[1:]
+		}
+		s := strings.SplitN(r.URL.Path, "/", n)
+		fmt.Printf("\n\n%s %v\n\n", r.URL.Path, s)
+		if len(s) < n {
+			r.URL.Path = "/"
+		} else {
+			r.URL.Path = "/" + s[len(s)-1]
+		}
+
+		fmt.Printf("%s\n\n", r.URL.Path)
 		h.ServeHTTP(w, r)
 	}
 }
@@ -50,6 +64,10 @@ func clearChiContext(h http.Handler) http.HandlerFunc {
 func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) {
 	sources := make(map[string]Source)
 
+	// The base handler is served from mounted handlers, so we need to make sure the chi context is cleared
+	// so that it restarts the mux
+	h = clearChiContext(h)
+
 	// Generate all handlers for the sources
 	for sname, sv := range a.Config.SourceTypes {
 		s := Source{}
@@ -61,14 +79,15 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 				if err != nil {
 					return nil, err
 				}
+				fwdstrip := stripRequestPrefix(fwd, 6)
 				if r == "create" {
-					s.Create = fwd
+					s.Create = fwdstrip
 				} else {
 					if s.Routes == nil {
 						s.Routes = chi.NewMux()
-						s.Routes.NotFound(clearChiContext(h))
+						s.Routes.NotFound(h.ServeHTTP)
 					}
-					s.Routes.Handle(r, fwd)
+					s.Routes.Handle(r, fwdstrip)
 				}
 			}
 		}
@@ -89,6 +108,7 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 }
 
 func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("CREATE")
 	// Read the source in to find the type, and then see if we should forward the create request
 	// or just handle it locally
 	//Limit requests to the limit given in configuration
@@ -126,6 +146,11 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 	// There is a forward for this source type. First check if we have permission to create the source in the first place,
 	// and then forward.
+	err = CTX(r).DB.CanCreateSource(&src)
+	if err != nil {
+		WriteJSONError(w, r, http.StatusForbidden, err)
+		return
+	}
 
 	s.Create.ServeHTTP(w, r)
 
@@ -134,10 +159,40 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	// Get the source from the database, and find its type. Then, extract the scopes available for us
 	// and set the X-Heedy-Scopes and X-Heedy-Source headers, and forward to the source API.
+	ctx := CTX(r)
+	srcid := chi.URLParam(r, "sourceid")
+	s, err := ctx.DB.ReadSource(srcid, nil)
+	if err != nil {
+		WriteJSONError(w, r, http.StatusForbidden, err)
+		return
+	}
+	r.Header["X-Heedy-Source"] = []string{srcid}
+	r.Header["X-Heedy-Type"] = []string{*s.Type}
+	r.Header["X-Heedy-Access"] = s.Access.Scopes
+
+	b, err := json.Marshal(s.Meta)
+	if err != nil {
+		WriteJSONError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	r.Header["X-Heedy-Meta"] = []string{base64.StdEncoding.EncodeToString(b)}
+
+	// Now get the correct source API
+	ss, ok := sm.Sources[*s.Type]
+	if ok {
+		if ss.Routes != nil {
+			fmt.Printf("USING PROXY")
+			ss.Routes.ServeHTTP(w, r)
+			return
+		}
+	} else {
+		ctx.Log.Warnf("Request is for an unrecognized source '%s'", *s.Type)
+	}
 
 	// We need to clear the chi context if forwarding to the builtin REST API, because handleAPI was Mount-ed
 	// which means that the context is relative to the mountpoint, whereas we want it to be the root context.
-	sm.handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, nil)))
+	sm.handler.ServeHTTP(w, r)
 }
 
 func (sm *SourceManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {

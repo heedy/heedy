@@ -187,6 +187,7 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 
+	CanCreateSource(s *Source) error
 	CreateSource(s *Source) (string, error)
 	ReadSource(id string, o *ReadSourceOptions) (*Source, error)
 	UpdateSource(s *Source) error

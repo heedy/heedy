@@ -225,6 +225,12 @@ func (db *AdminDB) DelConnection(id string) error {
 	return getExecError(result, err)
 }
 
+// CanCreateSource returns whether the given source can be
+func (db *AdminDB) CanCreateSource(s *Source) error {
+	_, _, err := sourceCreateQuery(db.Assets().Config, s)
+	return err
+}
+
 // CreateSource creates the source
 func (db *AdminDB) CreateSource(s *Source) (string, error) {
 	sColumns, sValues, err := sourceCreateQuery(db.Assets().Config, s)
