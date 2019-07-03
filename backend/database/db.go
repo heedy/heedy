@@ -180,7 +180,7 @@ type DB interface {
 	ID() string        // This is an identifier for the database. empty string is public access
 
 	// Currently logged in user
-	User() (*User, error)
+	// User() (*User, error)
 
 	CreateUser(u *User) error
 	ReadUser(name string, o *ReadUserOptions) (*User, error)

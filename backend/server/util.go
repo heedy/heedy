@@ -22,7 +22,11 @@ func apiHeaders(w http.ResponseWriter) {
 
 // RequestLogger generates a basic logger that holds relevant request info
 func RequestLogger(r *http.Request) *logrus.Entry {
-	fields := logrus.Fields{"addr": r.RemoteAddr, "path": r.URL.Path, "method": r.Method}
+	raddr := r.RemoteAddr
+	if fwdFor := r.Header.Get("X-Forwarded-For"); fwdFor != "" {
+		raddr = fwdFor
+	}
+	fields := logrus.Fields{"addr": raddr, "path": r.URL.Path, "method": r.Method}
 	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
 		fields["realip"] = realIP
 	}
@@ -42,10 +46,15 @@ func UnmarshalRequest(request *http.Request, unmarshalTo interface{}) error {
 	return json.Unmarshal(data, unmarshalTo)
 }
 
+// ErrorResponse is the response given by the server upon an error
 type ErrorResponse struct {
-	Error            string `json:"error"`
+	ErrorName        string `json:"error"`
 	ErrorDescription string `json:"error_description"`
 	ID               string `json:"id,omitempty"`
+}
+
+func (er *ErrorResponse) Error() string {
+	return er.ErrorName + ":" + er.ErrorDescription
 }
 
 // WriteJSONError writes an error message as json. It is assumed that the resulting
@@ -54,7 +63,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	c := CTX(r)
 
 	es := ErrorResponse{
-		Error:            "internal_error",
+		ErrorName:        "internal_error",
 		ErrorDescription: err.Error(),
 	}
 	myerr := err
@@ -62,7 +71,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 	// We can have error types encoded in the error, split with a :
 	errs := strings.SplitN(err.Error(), ":", 2)
 	if len(errs) > 1 && !strings.Contains(errs[0], " ") {
-		es.Error = errs[0]
+		es.ErrorName = errs[0]
 		es.ErrorDescription = strings.TrimSpace(errs[1])
 	}
 

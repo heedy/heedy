@@ -135,6 +135,16 @@ func (a *Assets) Abs(p string) string {
 	return fpabs
 }
 
+// Abs returns config-relative absolute paths
+func (a *Assets) DataAbs(p string) string {
+	fp := filepath.Join(a.DataDir(), p)
+	fpabs, err := filepath.Abs(fp)
+	if err != nil {
+		return fp
+	}
+	return fpabs
+}
+
 // DataDir returns the directory where data is stored
 func (a *Assets) DataDir() string {
 	return path.Join(a.FolderPath, "data")

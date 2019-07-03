@@ -280,7 +280,7 @@ func Create(a *assets.Assets) error {
 	}
 
 	// We use the sql as location of our sqlite database
-	sqlpath := a.Abs(sqlInfo[1])
+	sqlpath := a.DataAbs(sqlInfo[1])
 
 	// Create any necessary directories
 	sqlfolder := filepath.Dir(sqlpath)

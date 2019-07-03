@@ -110,9 +110,6 @@ func (db *AdminDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 		u.Avatar = nil
 	}
 
-	// Admin has all of the user scopes
-	u.Access.Scopes = []string{"read", "update", "update:password", "delete"}
-
 	return u, err
 }
 

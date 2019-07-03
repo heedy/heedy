@@ -28,6 +28,7 @@ type Exec struct {
 	APIKey  string                `json:"apikey"`
 	Config  *assets.Configuration `json:"config"`
 
+	MainDir   string `json:"main_dir"`
 	DataDir   string `json:"data_dir"`
 	PluginDir string `json:"plugin_dir"`
 
@@ -191,6 +192,7 @@ func (em *ExecManager) Start() error {
 					Overlay:   pindex,
 					APIKey:    base64.StdEncoding.EncodeToString(apikeybytes),
 					Config:    em.Assets.Config,
+					MainDir:   em.Assets.FolderPath,
 					DataDir:   em.Assets.DataDir(),
 					PluginDir: path.Join(em.Assets.PluginDir(), pname),
 					keepAlive: keepAlive,

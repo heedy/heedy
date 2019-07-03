@@ -32,7 +32,7 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 	}
 
 	// We use the sql as location of our sqlite database
-	sqlpath := a.Abs(sqlInfo[1])
+	sqlpath := a.DataAbs(sqlInfo[1])
 
 	db, err := sqlx.Open(sqltype, sqlpath)
 	if err != nil {

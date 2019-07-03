@@ -40,14 +40,12 @@ func stripRequestPrefix(h http.Handler, n int) http.HandlerFunc {
 			r.URL.Path = r.URL.Path[1:]
 		}
 		s := strings.SplitN(r.URL.Path, "/", n)
-		fmt.Printf("\n\n%s %v\n\n", r.URL.Path, s)
 		if len(s) < n {
 			r.URL.Path = "/"
 		} else {
 			r.URL.Path = "/" + s[len(s)-1]
 		}
 
-		fmt.Printf("%s\n\n", r.URL.Path)
 		h.ServeHTTP(w, r)
 	}
 }
@@ -108,7 +106,6 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 }
 
 func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("CREATE")
 	// Read the source in to find the type, and then see if we should forward the create request
 	// or just handle it locally
 	//Limit requests to the limit given in configuration
@@ -182,7 +179,6 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	ss, ok := sm.Sources[*s.Type]
 	if ok {
 		if ss.Routes != nil {
-			fmt.Printf("USING PROXY")
 			ss.Routes.ServeHTTP(w, r)
 			return
 		}
