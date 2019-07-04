@@ -37,14 +37,16 @@ func CreateSource(w http.ResponseWriter, r *http.Request) {
 		WriteJSONError(w, r, 400, err)
 		return
 	}
+	adb:= CTX(r).DB
 
-	var sres struct {
-		ID string `json:"id"`
+	sid, err := adb.CreateSource(&s)
+	if err!=nil {
+		WriteJSONError(w, r, 400, err)
+		return 
 	}
+	s2,err := adb.ReadSource(sid,nil)
 
-	sres.ID, err = CTX(r).DB.CreateSource(&s)
-
-	WriteJSON(w, r, &s, err)
+	WriteJSON(w, r, s2, err)
 }
 
 func ReadSource(w http.ResponseWriter, r *http.Request) {

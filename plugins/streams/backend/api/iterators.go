@@ -1,4 +1,4 @@
-package streams
+package api
 
 import (
 	"errors"
@@ -15,8 +15,8 @@ type DataValidator struct {
 }
 
 // NewDataValidator ensures that the stream data fits the given schema and has actor set properly
-func NewDataValidator(data DatapointIterator, schema string, actor string) (*DataValidator, error) {
-	s, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(schema))
+func NewDataValidator(data DatapointIterator, schema interface{}, actor string) (*DataValidator, error) {
+	s, err := gojsonschema.NewSchema(gojsonschema.NewGoLoader(schema))
 	if err != nil {
 		return nil, err
 	}

@@ -419,6 +419,7 @@ func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
 }
 
 func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{}, error) {
+	var err error
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
@@ -431,17 +432,17 @@ func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{
 	if s.Type == nil {
 		return "", nil, ErrBadQuery("Must specify a source type")
 	}
-	sColumns, sValues, err := extractSource(s)
+	if s.Meta != nil {
+		err = c.ValidateSourceMetaWithDefaults(*s.Type, *s.Meta)
+	} else {
+		m := map[string]interface{}{}
+		err = c.ValidateSourceMetaWithDefaults(*s.Type, m)
+	}
 	if err != nil {
 		return "", nil, err
 	}
 
-	if s.Meta != nil {
-		err = c.ValidateSourceMeta(*s.Type, (*map[string]interface{})(s.Meta))
-	} else {
-		m := map[string]interface{}{}
-		err = c.ValidateSourceMeta(*s.Type, &m)
-	}
+	sColumns, sValues, err := extractSource(s)
 	if err != nil {
 		return "", nil, err
 	}

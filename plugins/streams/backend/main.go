@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"path"
 
-	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/plugin"
 	"github.com/heedy/heedy/plugins/streams/backend/api"
 	log "github.com/sirupsen/logrus"
@@ -20,12 +19,12 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
-
-	m := chi.NewMux()
-
-	m.Mount("/data", api.DataMux())
-
-	pluginMiddleware := plugin.NewMiddleware(p, m)
+	err = p.InitSQL("streams", api.SQLVersion, api.SQLUpdater)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	pluginMiddleware := plugin.NewMiddleware(p, api.Handler)
 
 	server := http.Server{
 		Handler: pluginMiddleware,

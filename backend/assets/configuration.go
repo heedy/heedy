@@ -138,6 +138,7 @@ type SourceType struct {
 	Scopes *map[string]string      `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
 
 	metaSchema *gojsonschema.Schema
+	metaObj    map[string]interface{}
 }
 
 func (s *SourceType) Copy() SourceType {
@@ -182,6 +183,7 @@ func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
 				objectMap["properties"] = propMap
 			}
 		}
+		s.metaObj = objectMap
 
 		// objectMap is now the schema
 		s.metaSchema, err = gojsonschema.NewSchema(gojsonschema.NewGoLoader(objectMap))
@@ -202,6 +204,63 @@ func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
 	}
 
 	return nil
+}
+
+// ValidateMetaWithDefaults takes a meta value, and adds any required defaults to the root object
+// if a default is provided.
+func (s *SourceType) ValidateMetaWithDefaults(meta map[string]interface{}) (err error) {
+	err = s.ValidateMeta(&meta)
+	if err != nil {
+		// If there was an issue, we check if there are defaults in the schema for required values
+		// that we can set here
+		v, ok := s.metaObj["required"]
+		if !ok {
+			return err
+		}
+		va, ok := v.([]interface{})
+		if !ok {
+			return err
+		}
+
+		propObji, ok := s.metaObj["properties"]
+		if !ok {
+			return err
+		}
+		propObj, ok := propObji.(map[string]interface{})
+		if !ok {
+			return err
+		}
+
+		updated := false
+		for _, vav := range va {
+			vavs, ok := vav.(string)
+			if !ok {
+				return err
+			}
+			_, ok = meta[vavs]
+			if !ok {
+				// The meta doesn't have the required value. Check if a default is set
+				mov, ok := propObj[vavs]
+				if !ok {
+					return err
+				}
+				movm, ok := mov.(map[string]interface{})
+				if !ok {
+					return err
+				}
+				defaultval, ok := movm["default"]
+				if !ok {
+					return err
+				}
+				meta[vavs] = defaultval
+				updated = true
+			}
+		}
+		if updated {
+			err = s.ValidateMeta(&meta)
+		}
+	}
+	return err
 }
 
 type Configuration struct {

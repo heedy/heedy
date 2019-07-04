@@ -47,14 +47,19 @@ func FrontendMux() (*chi.Mux, error) {
 		w.Header().Add("Cache-Control", "private, no-cache")
 
 		ctx := CTX(r)
-		u, err := ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
-			Avatar: true,
-		})
-		if err != nil {
-			WriteJSONError(w, r, http.StatusInternalServerError, err)
-			return
+		var u *database.User
+		var err error
+		
+		if _,ok := ctx.DB.(*database.UserDB); ok {
+			u, err = ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
+				Avatar: true,
+			})
+			if err != nil {
+				WriteJSONError(w, r, http.StatusInternalServerError, err)
+				return
+			}
 		}
-
+		
 		cfg := assets.Config()
 
 		sourceMap := make(map[string]*assets.SourceTypeFrontend)

@@ -1,4 +1,4 @@
-package streams
+package api
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 type Datapoint struct {
 	Timestamp float64     `json:"t" db:"timestamp" msgpack:"t,omitempty"`
 	Data      interface{} `json:"d" db:"data" msgpack:"d,omitempty"`
-	Actor     string      `json:"a,omitempty" msgpack:"a,omitempty"`
+	Actor     string      `json:"a,omitempty" db:"actor" msgpack:"a,omitempty"`
 }
 
 //IsEqual checks if the datapoint is equal to another datapoint

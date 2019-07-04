@@ -59,3 +59,12 @@ func (c *Configuration) ValidateSourceMeta(sourcetype string, meta *map[string]i
 	}
 	return s.ValidateMeta(meta)
 }
+
+// ValidateSourceMetaWithDefaults validates the source, additionally setting required values to defaults
+func (c *Configuration) ValidateSourceMetaWithDefaults(sourcetype string, meta map[string]interface{}) error {
+	s, ok := c.SourceTypes[sourcetype]
+	if !ok {
+		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+	}
+	return s.ValidateMetaWithDefaults(meta)
+}

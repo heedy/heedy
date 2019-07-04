@@ -1,43 +1,48 @@
-package streams
+package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/vmihailenco/msgpack"
 )
+
+var SQLVersion = 1
 
 const sqlSchema = `
 
 CREATE TABLE streamdata (
-	streamid VARCHAR(36) NOT NULL,
-	timestamp REAL NOT NULL,
+	streamid VARCHAR(36),
+	timestamp REAL,
 	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
 	PRIMARY KEY (streamid,timestamp),
+	CONSTRAINT valid_data CHECK (json_valid(data)),
 
-	CONSTRAINT streamfk
+	CONSTRAINT source_fk
 		FOREIGN KEY(streamid)
-		REFERENCES streams(id)
+		REFERENCES sources(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
+
 );
 
 CREATE TABLE streamdata_actions (
-	streamid VARCHAR(36) NOT NULL,
-	timestamp REAL NOT NULL,
+	streamid VARCHAR(36),
+	timestamp REAL,
 	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
 	PRIMARY KEY (streamid,timestamp),
+	CONSTRAINT valid_data CHECK (json_valid(data)),
 
-	CONSTRAINT streamfk
+	CONSTRAINT source_fk
 		FOREIGN KEY(streamid)
-		REFERENCES streams(id)
+		REFERENCES sources(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
@@ -65,7 +70,9 @@ func (s *SQLIterator) Next() (*Datapoint, error) {
 		s.rows.Close()
 		return nil, err
 	}
-	err := msgpack.Unmarshal(b, &dp.Data)
+	// github.com/vmihailenco/msgpack
+	// err := msgpack.Unmarshal(b, &dp.Data)
+	err := json.Unmarshal(b, &dp.Data)
 	return dp, err
 }
 
@@ -169,7 +176,7 @@ type SQLData struct {
 	db *sqlx.DB
 }
 
-func CreateSQLData(db *sql.DB) error {
+func CreateSQLData(db *sqlx.DB) error {
 	_, err := db.Exec(sqlSchema)
 	return err
 }
@@ -227,7 +234,9 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 			tx.Rollback()
 			return errors.New("bad_query: datapoint older than existing data")
 		}
-		b, err := msgpack.Marshal(dp.Data)
+		// github.com/vmihailenco/msgpack
+		// b, err := msgpack.Marshal(dp.Data)
+		b, err := json.Marshal(dp.Data)
 		if err != nil {
 			tx.Rollback()
 			return err

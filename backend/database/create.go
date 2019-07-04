@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/jmoiron/sqlx"
 
 	// Make sure we include sqlite support
 	_ "github.com/mattn/go-sqlite3"
@@ -20,12 +20,12 @@ const schema = `
 -- Every plugin that includes tables in the core database must add itself to the table
 CREATE TABLE heedy (
 	name VARCHAR(36) PRIMARY KEY NOT NULL,
-	version VARCHAR(36)
+	version INTEGER
 );
 
 -- This makes sure that the heedy version is specified, so that future upgrades will know
 -- whether a schema modification is necessary
-INSERT INTO heedy VALUES ("heedy","0.4.0");
+INSERT INTO heedy VALUES ("heedy",1);
 
 -- A user is a group with an additional password. The id is a group id, we will
 -- add the foreign key constraint once the groups table is created.
@@ -288,7 +288,7 @@ func Create(a *assets.Assets) error {
 		return err
 	}
 
-	db, err := sql.Open(sqltype, sqlpath)
+	db, err := sqlx.Open(sqltype, sqlpath)
 	if err != nil {
 		return err
 	}
@@ -298,5 +298,16 @@ func Create(a *assets.Assets) error {
 		return err
 	}
 
-	return db.Close()
+	adb := &AdminDB{
+		a: a,
+	}
+	adb.SqlxCache.InitCache(db)
+
+	// Need to initialize all registered plugins
+	err = initRegisteredPlugins(adb)
+	if err != nil {
+		return err
+	}
+
+	return adb.Close()
 }

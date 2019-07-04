@@ -1,4 +1,4 @@
-package streams
+package api
 
 import (
 	"os"
@@ -15,11 +15,11 @@ func genDatabase(t *testing.T) (*sqlx.DB, func()) {
 	require.NoError(t, err)
 
 	_, err = db.Exec(`
-	CREATE TABLE streams (
+	CREATE TABLE sources (
 		id VARCHAR(36) PRIMARY KEY
 	);
 
-	INSERT INTO streams VALUES ('s1'), ('s2');
+	INSERT INTO sources VALUES ('s1'), ('s2');
 `)
 	require.NoError(t, err)
 
@@ -31,7 +31,7 @@ func genDatabase(t *testing.T) (*sqlx.DB, func()) {
 func TestDatabase(t *testing.T) {
 	sdb, cleanup := genDatabase(t)
 	defer cleanup()
-	require.NoError(t, CreateSQLData(sdb.DB))
+	require.NoError(t, CreateSQLData(sdb))
 
 	s := OpenSQLData(sdb)
 

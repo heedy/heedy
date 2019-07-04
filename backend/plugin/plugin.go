@@ -89,3 +89,16 @@ func (p *Plugin) Close() {
 		p.ADB.Close()
 	}
 }
+
+// InitSQL initializes the plugin's sql portion
+func (p *Plugin) InitSQL(name string, version int, updater database.PluginFunc) error {
+	adb, err := p.AdminDB()
+	if err != nil {
+		return err
+	}
+	return database.InitPlugin(adb, &database.PluginInfo{
+		Name:    name,
+		Version: version,
+		Updater: updater,
+	})
+}
