@@ -81,9 +81,11 @@ function out(name, loc = "", format = "es") {
 }
 export default [
   // The base files
-  out("main.js"),
+  out("app.js"),
   out("auth.js"),
   out("setup.js"),
+  // The main app's files
+  out("heedy/main.js"),
   out("heedy/util.js")
 ]
   .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))

@@ -2,7 +2,7 @@ GO:=go
 
 .PHONY: clean test phony
 
-all: frontend streams
+all: 
 
 #Empty rule for forcing rebuilds
 phony:
@@ -13,6 +13,14 @@ frontend: phony
 streams: backend/main.go phony # gencode
 	cd backend; $(GO) build --tags "sqlite_foreign_keys json1" -o ../assets/streams
 
+standalone: streams
+
+builtin:
+	rm -rf ./assets/public
+	ln -s ../../../assets/public assets/public
+	
+debug:
+	cd frontend; npm run debug
 
 clean:
 	# $(GO) clean
