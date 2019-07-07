@@ -218,13 +218,13 @@ CREATE TABLE plugin_kv (
 ------------------------------------------------------------------
 
 CREATE VIEW user_source_scopes(user,source,scope) AS
-	SELECT sources.owner,sources.id,"*" FROM sources WHERE sources.connection IS NULL
+	SELECT sources.owner,sources.id,'*' FROM sources WHERE sources.connection IS NULL
 	UNION ALL
 	SELECT sources.owner,sources.id,value FROM sources,json_each(sources.scopes) WHERE sources.connection IS NOT NULL
 	UNION ALL
-	SELECT shared_sources.username,sources.id,ss.value FROM sources,shared_sources,json_each(shared_sources.scopes) AS ss WHERE shared_sources.sourceid=sources.id AND ss.value<>"*" AND EXISTS (SELECT sss.value FROM json_each(sources.scopes) AS sss WHERE sss.value=ss.value OR sss.value="*")
+	SELECT shared_sources.username,sources.id,ss.value FROM sources,shared_sources,json_each(shared_sources.scopes) AS ss WHERE shared_sources.sourceid=sources.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(sources.scopes) AS sss WHERE sss.value=ss.value OR sss.value='*')
 	UNION ALL
-	SELECT shared_sources.username,sources.id,sss.value FROM sources,shared_sources,json_each(sources.scopes) AS sss WHERE shared_sources.sourceid=sources.id AND EXISTS (SELECT 1 FROM json_each(shared_sources.scopes) AS ss WHERE ss.value="*")
+	SELECT shared_sources.username,sources.id,sss.value FROM sources,shared_sources,json_each(sources.scopes) AS sss WHERE shared_sources.sourceid=sources.id AND EXISTS (SELECT 1 FROM json_each(shared_sources.scopes) AS ss WHERE ss.value='*')
 	;
 
 
@@ -237,17 +237,17 @@ INSERT INTO users (name,fullname,description,avatar,password) VALUES
 -- as they represent the database view that someone not logged in will get,
 -- and the sources accessible to a user who is logged in
 (
-	"users",
-	"Users",
-	"All logged-in users",
-	"mi:perm_identity",
-	"-"
+	'users',
+	'Users',
+	'All logged-in users',
+	'mi:perm_identity',
+	'-'
 ),(
-	"public",
-	"Public",
-	"Represents everyone - any visitor to this heedy server",
-	"mi:share",
-	"-"
+	'public',
+	'Public',
+	'Represents everyone - any visitor to this heedy server',
+	'mi:share',
+	'-'
 ),
 -- The heedy user represents the database internals. It is used as the actor
 -- when the software or plugins do something 

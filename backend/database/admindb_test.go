@@ -13,8 +13,8 @@ func newAssets(t *testing.T) (*assets.Assets, func()) {
 	a, err := assets.Open("", nil)
 	require.NoError(t, err)
 	os.RemoveAll("./test_db")
-	a.FolderPath = "./"
-	sqla := "sqlite3://test_db/heedy.db?_journal=WAL&_fk=1"
+	a.FolderPath = "./test_db"
+	sqla := "sqlite3://heedy.db?_journal=WAL&_fk=1"
 	a.Config.SQL = &sqla
 	return a, func() {
 		//os.RemoveAll("./test_db")
@@ -98,7 +98,8 @@ func TestAdminDBUser(t *testing.T) {
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
 	require.Equal(t, *u.Name, "testy")
-	require.Equal(t, u.Access.String(), "read update update:password delete")
+	// users don't have access
+	//require.Equal(t, u.Access.String(), "read update update:password delete")
 	require.Nil(t, u.Password, "The password should never be read back")
 
 	_, _, err = db.AuthUser("testy", "testpass")

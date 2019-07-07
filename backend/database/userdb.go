@@ -102,13 +102,13 @@ func (db *UserDB) CreateSource(s *Source) (string, error) {
 // ReadSource reads the given source if the user has sufficient permissions
 func (db *UserDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
 	return readSource(db.adb, id, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
-		WHERE sources.id=? AND ss.user IN (?,"public","users") AND ss.source=sources.id;`, id, db.user)
+		WHERE sources.id=? AND ss.user IN (?,'public','users') AND ss.source=sources.id;`, id, db.user)
 }
 
 // UpdateSource allows editing a source
 func (db *UserDB) UpdateSource(s *Source) error {
 	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
-		WHERE sources.id=? AND ss.user IN (?,"public","users") AND ss.source=sources.id;`, s.ID, db.user)
+		WHERE sources.id=? AND ss.user IN (?,'public','users') AND ss.source=sources.id;`, s.ID, db.user)
 }
 
 // Can only delete sources that belong to *us*
