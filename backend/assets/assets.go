@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
@@ -51,6 +52,16 @@ func (a *Assets) Reload() error {
 		return err
 	}
 
+	// Some plugins come built-in. Check for the built-in plugins
+	if baseConfiguration.ActivePlugins != nil {
+		for _, v := range *baseConfiguration.ActivePlugins {
+			_, ok := baseConfiguration.Plugins[v]
+			if !ok {
+				return fmt.Errorf("Builtin configuration does not define plugin '%s'", v)
+			}
+		}
+	}
+
 	// Next, we initialize the filesystem overlays from the builtin assets
 	FS := builtinAssets
 
@@ -86,26 +97,33 @@ func (a *Assets) Reload() error {
 		if rootConfiguration.ActivePlugins != nil {
 
 			for _, pluginName := range *rootConfiguration.ActivePlugins {
-				pluginFolder := path.Join(a.FolderPath, "plugins", pluginName)
-				pluginFolderStats, err := os.Stat(pluginFolder)
-				if err != nil {
-					return err
-				}
-				if !pluginFolderStats.IsDir() {
-					return fmt.Errorf("Could not find plugin %s at %s: not a directory", pluginName, pluginFolder)
-				}
+				if !strings.HasPrefix(pluginName, "-") {
+					if strings.HasPrefix(pluginName, "+") {
+						pluginName = pluginName[1:len(pluginName)]
+					}
 
-				configPath := path.Join(pluginFolder, "heedy.conf")
-				pluginConfiguration, err := LoadConfigFile(configPath)
-				if err != nil {
-					return err
-				}
-				mergedConfiguration = MergeConfig(mergedConfiguration, pluginConfiguration)
+					pluginFolder := path.Join(a.FolderPath, "plugins", pluginName)
+					pluginFolderStats, err := os.Stat(pluginFolder)
+					if err != nil {
+						return err
+					}
+					if !pluginFolderStats.IsDir() {
+						return fmt.Errorf("Could not find plugin %s at %s: not a directory", pluginName, pluginFolder)
+					}
 
-				pluginFs := afero.NewBasePathFs(osfs, pluginFolder)
-				assetStack = append(assetStack, pluginFs)
-				FS = afero.NewCopyOnWriteFs(FS, pluginFs)
+					configPath := path.Join(pluginFolder, "heedy.conf")
+					pluginConfiguration, err := LoadConfigFile(configPath)
+					if err != nil {
+						return err
+					}
+					mergedConfiguration = MergeConfig(mergedConfiguration, pluginConfiguration)
+
+					pluginFs := afero.NewBasePathFs(osfs, pluginFolder)
+					assetStack = append(assetStack, pluginFs)
+					FS = afero.NewCopyOnWriteFs(FS, pluginFs)
+				}
 			}
+
 		}
 
 		// Finally, we overlay the root directory and root config
@@ -113,6 +131,9 @@ func (a *Assets) Reload() error {
 		mainFs := afero.NewBasePathFs(osfs, a.FolderPath)
 		assetStack = append(assetStack, mainFs)
 		FS = afero.NewCopyOnWriteFs(FS, mainFs)
+
+		// Get the full list of active plugins here
+		mergedConfiguration.ActivePlugins = MergeStringArrays(baseConfiguration.ActivePlugins, rootConfiguration.ActivePlugins)
 
 	}
 

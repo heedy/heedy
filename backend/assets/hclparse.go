@@ -40,15 +40,16 @@ type hclExec struct {
 }
 
 type hclPlugin struct {
-	Name           string                    `hcl:"name,label"`
-	Version        *string                   `hcl:"version" json:"version"`
-	Description    *string                   `hcl:"description" json:"description"`
-	Homepage       *string                   `hcl:"homepage" json:"homepage"`
-	License        *string                   `hcl:"license" json:"license"`
-	GRPC           *string                   `hcl:"grpc" json:"grpc"`
-	Routes         *map[string]string        `hcl:"routes" json:"routes"`
+	Name        string  `hcl:"name,label"`
+	Version     *string `hcl:"version" json:"version"`
+	Description *string `hcl:"description" json:"description"`
+	Homepage    *string `hcl:"homepage" json:"homepage"`
+	License     *string `hcl:"license" json:"license"`
+
+	Frontend *string            `hcl:"frontend" json:"frontend"`
+	Backend  *map[string]string `hcl:"backend" json:"backend"`
+
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
-	//FallbackLanguage *string                   `hcl:"fallback_language" json:"fallback_language"`
 
 	Exec []hclExec `hcl:"exec,block"`
 
@@ -57,20 +58,13 @@ type hclPlugin struct {
 	// and can be queried by javascript as part of the configuration
 	Settings hcl.Body `hcl:",remain"`
 }
-type hclFrontend struct {
-	Routes *map[string]string   `json:"routes" hcl:"routes"`
-	Menu   *map[string]MenuItem `json:"menu" hcl:"menu"`
-
-	PublicRoutes *map[string]string   `json:"public_routes" hcl:"public_routes"`
-	PublicMenu   *map[string]MenuItem `json:"public_menu" hcl:"public_menu"`
-}
 
 type hclSourceType struct {
 	Label string `hcl:"label,label"`
 
-	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
 
-	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+	Backend *map[string]string `json:"backend,omitempty" hcl:"backend" cty:"backend"`
 
 	Meta   *cty.Value         `hcl:"meta,attr"`
 	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
@@ -89,7 +83,7 @@ type hclConfiguration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Frontend *hclFrontend `hcl:"frontend,block"`
+	Frontend *string `hcl:"frontend"`
 
 	ExecTimeout *string `hcl:"exec_timeout"`
 
@@ -180,22 +174,6 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		}
 
 		c.SourceTypes[ht.Label] = t
-	}
-
-	// Load the frontend block
-	if hc.Frontend != nil {
-		if hc.Frontend.Routes != nil {
-			c.Frontend.Routes = *hc.Frontend.Routes
-		}
-		if hc.Frontend.PublicRoutes != nil {
-			c.Frontend.PublicRoutes = *hc.Frontend.PublicRoutes
-		}
-		if hc.Frontend.Menu != nil {
-			c.Frontend.Menu = *hc.Frontend.Menu
-		}
-		if hc.Frontend.PublicMenu != nil {
-			c.Frontend.PublicMenu = *hc.Frontend.PublicMenu
-		}
 	}
 
 	// Loop through the plugins

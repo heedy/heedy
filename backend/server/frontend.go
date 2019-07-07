@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 
@@ -10,12 +11,15 @@ import (
 	"github.com/spf13/afero"
 )
 
+type frontendPlugin struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
 type fContext struct {
-	User        *database.User                        `json:"user"`
-	Admin       bool                                  `json:"admin"`
-	Routes      map[string]string                     `json:"routes"`
-	Menu        map[string]assets.MenuItem            `json:"menu"`
-	SourceTypes map[string]*assets.SourceTypeFrontend `json:"source_types"`
+	User     *database.User   `json:"user"`
+	Admin    bool             `json:"admin"`
+	Frontend []frontendPlugin `json:"frontend"`
 }
 
 type aContext struct {
@@ -49,8 +53,8 @@ func FrontendMux() (*chi.Mux, error) {
 		ctx := CTX(r)
 		var u *database.User
 		var err error
-		
-		if _,ok := ctx.DB.(*database.UserDB); ok {
+
+		if _, ok := ctx.DB.(*database.UserDB); ok {
 			u, err = ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
 				Avatar: true,
 			})
@@ -59,22 +63,43 @@ func FrontendMux() (*chi.Mux, error) {
 				return
 			}
 		}
-		
+
 		cfg := assets.Config()
 
-		sourceMap := make(map[string]*assets.SourceTypeFrontend)
-		for k, v := range cfg.SourceTypes {
-			sourceMap[k] = v.Frontend
+		frontendPlugins := make([]frontendPlugin, 0)
+		if cfg.Frontend != nil {
+			frontendPlugins = append(frontendPlugins, frontendPlugin{
+				Name: "heedy",
+				Path: *cfg.Frontend,
+			})
 		}
+		for _, p := range cfg.GetActivePlugins() {
+			v, ok := cfg.Plugins[p]
+			if !ok {
+				WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Failed to find plugin in configuration"))
+				return
+			}
+			if v.Frontend != nil {
+				frontendPlugins = append(frontendPlugins, frontendPlugin{
+					Name: p,
+					Path: *v.Frontend,
+				})
+			}
+		}
+
+		/*
+			sourceMap := make(map[string]*assets.SourceTypeFrontend)
+			for k, v := range cfg.SourceTypes {
+				sourceMap[k] = v.Frontend
+			}
+		*/
 
 		if u == nil {
 			// Running template as public
 			err = fTemplate.Execute(w, &fContext{
-				User:        nil,
-				Admin:       false,
-				Routes:      cfg.Frontend.PublicRoutes,
-				Menu:        cfg.Frontend.PublicMenu,
-				SourceTypes: sourceMap,
+				User:     nil,
+				Admin:    false,
+				Frontend: frontendPlugins,
 			})
 			if err != nil {
 				WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -83,11 +108,9 @@ func FrontendMux() (*chi.Mux, error) {
 		}
 
 		err = fTemplate.Execute(w, &fContext{
-			User:        u,
-			Admin:       ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
-			Routes:      assets.Config().Frontend.Routes,
-			Menu:        assets.Config().Frontend.Menu,
-			SourceTypes: sourceMap,
+			User:     u,
+			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
+			Frontend: frontendPlugins,
 		})
 		if err != nil {
 			WriteJSONError(w, r, http.StatusInternalServerError, err)

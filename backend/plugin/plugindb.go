@@ -189,10 +189,9 @@ func (db *PluginDB) CreateSource(s *database.Source) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var s database.Soruce
 
-	err =  db.UnmarshalRequest(&s,"POST", api, bytes.NewBuffer(b))
-	return s.ID,err
+	err = db.UnmarshalRequest(&s, "POST", api, bytes.NewBuffer(b))
+	return s.ID, err
 }
 func (db *PluginDB) ReadSource(id string, o *database.ReadSourceOptions) (*database.Source, error) {
 	api := fmt.Sprintf("/api/heedy/v1/source/%s", id)

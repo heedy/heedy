@@ -17,7 +17,6 @@ const sqlSchema = `
 CREATE TABLE streamdata (
 	streamid VARCHAR(36),
 	timestamp REAL,
-	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
 	PRIMARY KEY (streamid,timestamp),
@@ -50,7 +49,8 @@ CREATE TABLE streamdata_actions (
 `
 
 type SQLIterator struct {
-	rows *sql.Rows
+	rows    *sql.Rows
+	actions bool
 }
 
 func (s *SQLIterator) Close() error {
@@ -66,13 +66,20 @@ func (s *SQLIterator) Next() (*Datapoint, error) {
 	dp := &Datapoint{}
 	var b []byte
 
-	if err := s.rows.Scan(&dp.Timestamp, &dp.Actor, &b); err != nil {
+	var err error
+	if s.actions {
+		err = s.rows.Scan(&dp.Timestamp, &dp.Actor, &b)
+	} else {
+		err = s.rows.Scan(&dp.Timestamp, &b)
+	}
+
+	if err != nil {
 		s.rows.Close()
 		return nil, err
 	}
 	// github.com/vmihailenco/msgpack
 	// err := msgpack.Unmarshal(b, &dp.Data)
-	err := json.Unmarshal(b, &dp.Data)
+	err = json.Unmarshal(b, &dp.Data)
 	return dp, err
 }
 
@@ -198,9 +205,11 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 	table := "streamdata"
 	insert := "INSERT"
 	ts := float64(-999999999)
+	actions := false
 
 	if q.Actions != nil && *q.Actions {
 		table = "streamdata_actions"
+		actions = true
 	}
 
 	dp, err := data.Next()
@@ -227,7 +236,10 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 		}
 		insert = "INSERT OR REPLACE"
 	}
-	fullQuery := fmt.Sprintf("%s INTO %s VALUES (?,?,?,?)", insert, table)
+	fullQuery := fmt.Sprintf("%s INTO %s VALUES (?,?,?)", insert, table)
+	if actions {
+		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?)", insert, table)
+	}
 
 	for dp != nil {
 		if dp.Timestamp <= ts {
@@ -241,8 +253,12 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 			tx.Rollback()
 			return err
 		}
+		if actions {
+			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Actor, b)
+		} else {
+			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, b)
+		}
 
-		_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Actor, b)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -266,10 +282,16 @@ func (d *SQLData) ReadStreamData(sid string, q *Query) (DatapointIterator, error
 	if err != nil {
 		return nil, err
 	}
-	rows, err := d.db.Query("SELECT timestamp,actor,data FROM "+query, values...)
+	if q.Actions != nil && *q.Actions {
+		rows, err := d.db.Query("SELECT timestamp,actor,data FROM "+query, values...)
+
+		// TODO: Add transform
+		return &SQLIterator{rows, true}, err
+	}
+	rows, err := d.db.Query("SELECT timestamp,data FROM "+query, values...)
 
 	// TODO: Add transform
-	return &SQLIterator{rows}, err
+	return &SQLIterator{rows, false}, err
 
 }
 

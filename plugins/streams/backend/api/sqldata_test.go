@@ -32,18 +32,21 @@ func TestDatabase(t *testing.T) {
 	sdb, cleanup := genDatabase(t)
 	defer cleanup()
 	require.NoError(t, CreateSQLData(sdb))
-
+	action := true
 	s := OpenSQLData(sdb)
 
 	l, err := s.StreamDataLength("s1", false)
 	require.NoError(t, err)
 	require.Equal(t, l, uint64(0))
 
-	require.NoError(t, s.WriteStreamData("s1", NewDatapointArrayIterator(dpa1), &InsertQuery{}))
+	require.NoError(t, s.WriteStreamData("s1", NewDatapointArrayIterator(dpa1), &InsertQuery{
+		Actions: &action,
+	}))
 
 	tt := float64(1.0)
 	di, err := s.ReadStreamData("s1", &Query{
-		T: &tt,
+		T:       &tt,
+		Actions: &action,
 	})
 	require.NoError(t, err)
 	dpa, err := NewArrayFromIterator(di)
@@ -52,7 +55,8 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, dpa.String(), dpa1[0:1].String())
 
 	di, err = s.ReadStreamData("s1", &Query{
-		T1: &tt,
+		T1:      &tt,
+		Actions: &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -63,11 +67,13 @@ func TestDatabase(t *testing.T) {
 	// Overwrite the first datapoint
 	insertType := "upsert"
 	require.NoError(t, s.WriteStreamData("s1", NewDatapointArrayIterator(dpa3), &InsertQuery{
-		Type: &insertType,
+		Type:    &insertType,
+		Actions: &action,
 	}))
 
 	di, err = s.ReadStreamData("s1", &Query{
-		T1: &tt,
+		T1:      &tt,
+		Actions: &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -77,16 +83,18 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, dpa[0].String(), dpa3[0].String())
 	require.Equal(t, dpa[1].String(), dpa1[1].String())
 
-	l, err = s.StreamDataLength("s1", false)
+	l, err = s.StreamDataLength("s1", true)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), l)
 
 	require.NoError(t, s.RemoveStreamData("s1", &Query{
-		T: &tt,
+		T:       &tt,
+		Actions: &action,
 	}))
 
 	di, err = s.ReadStreamData("s1", &Query{
-		T1: &tt,
+		T1:      &tt,
+		Actions: &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)

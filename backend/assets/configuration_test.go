@@ -38,7 +38,8 @@ func TestSchemaValidation(t *testing.T) {
 	require.NoError(t, err)
 
 	v := map[string]interface{}{
-		"actor": false,
+		"schema": map[string]interface{}{},
+		"actor":  false,
 	}
 
 	require.NoError(t, c.ValidateSourceMeta("stream", &v))

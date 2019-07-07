@@ -7,7 +7,6 @@ import (
 	"os/signal"
 
 	"github.com/go-chi/chi"
-	"github.com/gorilla/schema"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
@@ -15,8 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
-
-var queryDecoder = schema.NewDecoder()
 
 // RunOptions give special options for running
 type RunOptions struct {
@@ -62,19 +59,16 @@ func Run(r *RunOptions) error {
 	*/
 	sm, err := NewSourceManager(assets.Get(), http.Handler(mux))
 	if err != nil {
-		log.Error(err.Error())
 		return err
 	}
 
 	om, err := NewOverlayManager(assets.Get(), sm)
 	if err != nil {
-		log.Error(err.Error())
 		return err
 	}
 	em := NewExecManager(assets.Get())
 	err = em.Start()
 	if err != nil {
-		log.Error(err.Error())
 		return err
 	}
 
@@ -97,7 +91,7 @@ func Run(r *RunOptions) error {
 		requestHandler = VerboseLoggingMiddleware(requestHandler)
 	}
 
-	http.ListenAndServe(serverAddress, requestHandler)
+	err = http.ListenAndServe(serverAddress, requestHandler)
 	/*
 		srv := &http.Server{
 			Addr:    serverAddress,

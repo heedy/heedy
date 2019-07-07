@@ -32,14 +32,13 @@ type Exec struct {
 }
 
 type Plugin struct {
-	Version     *string            `hcl:"version" json:"version,omitempty"`
-	Description *string            `hcl:"description" json:"description,omitempty"`
-	Homepage    *string            `hcl:"homepage" json:"homepage,omitempty"`
-	License     *string            `hcl:"license" json:"license,omitempty"`
-	GRPC        *string            `hcl:"grpc" json:"grpc,omitempty"`
-	Routes      *map[string]string `json:"routes,omitempty"`
+	Version     *string `hcl:"version" json:"version,omitempty"`
+	Description *string `hcl:"description" json:"description,omitempty"`
+	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
+	License     *string `hcl:"license" json:"license,omitempty"`
 
-	//FallbackLanguage *string `hcl:"fallback_language" json:"fallback_language"`
+	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	Backend  *map[string]string `json:"backend,omitempty"`
 
 	Exec     map[string]*Exec    `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
@@ -62,80 +61,13 @@ func (p *Plugin) Copy() *Plugin {
 	return &np
 }
 
-type MenuItem struct {
-	Route *string `json:"route,omitempty" hcl:"route" cty:"route"`
-	Icon  *string `json:"icon,omitempty" hcl:"icon" cty:"icon"`
-	Text  *string `json:"text,omitempty" hcl:"text" cty:"text"`
-
-	// Description is shown in tooltip
-	Description *string `json:"description,omitempty" hcl:"description" cty:"description"`
-
-	// Active is true by default, but can be set to false to disable the route
-	Active *bool `json:"active,omitempty" hcl:"active" cty:"active"`
-}
-
-type Frontend struct {
-	Routes map[string]string   `json:"routes" hcl:"routes"`
-	Menu   map[string]MenuItem `json:"menu" hcl:"menu"`
-
-	PublicRoutes map[string]string   `json:"public_routes" hcl:"public_routes"`
-	PublicMenu   map[string]MenuItem `json:"public_menu" hcl:"public_menu"`
-}
-
-func NewFrontend() Frontend {
-	return Frontend{
-		Routes:       make(map[string]string),
-		PublicRoutes: make(map[string]string),
-		Menu:         make(map[string]MenuItem),
-		PublicMenu:   make(map[string]MenuItem),
-	}
-}
-
-func (a *Frontend) Copy() Frontend {
-	na := NewFrontend()
-
-	for ak, av := range a.Routes {
-		na.Routes[ak] = av
-	}
-	for ak, av := range a.PublicRoutes {
-		na.PublicRoutes[ak] = av
-	}
-
-	for ak, av := range a.Menu {
-		na.Menu[ak] = av
-	}
-	for ak, av := range a.PublicMenu {
-		na.PublicMenu[ak] = av
-	}
-	return na
-}
-
-// SourceTypeFrontend is the frontend info for
-type SourceTypeFrontend struct {
-	Name   *string            `json:"name,omitempty" hcl:"name" cty:"name"`
-	Icon   *string            `json:"icon,omitempty" hcl:"icon" cty:"icon"`
-	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
-}
-
-func (f *SourceTypeFrontend) Copy() *SourceTypeFrontend {
-	fnew := &SourceTypeFrontend{}
-	CopyStructIfPtrSet(fnew, f)
-	if f.Routes != nil {
-		newRoutes := make(map[string]string)
-		for k, v := range *(f.Routes) {
-			newRoutes[k] = v
-		}
-		fnew.Routes = &newRoutes
-	}
-	return fnew
-}
-
 type SourceType struct {
-	Frontend *SourceTypeFrontend `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	Backend  *map[string]string `json:"backend,omitempty" hcl:"backend" cty:"backend"`
 
-	Meta   *map[string]interface{} `json:"meta,omitempty"`
-	Routes *map[string]string      `json:"routes,omitempty" hcl:"routes" cty:"routes"`
-	Scopes *map[string]string      `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+	Meta *map[string]interface{} `json:"meta,omitempty"`
+
+	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
 
 	metaSchema *gojsonschema.Schema
 	metaObj    map[string]interface{}
@@ -144,15 +76,12 @@ type SourceType struct {
 func (s *SourceType) Copy() SourceType {
 	snew := SourceType{}
 	CopyStructIfPtrSet(&snew, s)
-	if s.Routes != nil {
+	if s.Backend != nil {
 		newRoutes := make(map[string]string)
-		for k, v := range *(s.Routes) {
+		for k, v := range *(s.Backend) {
 			newRoutes[k] = v
 		}
-		snew.Routes = &newRoutes
-	}
-	if s.Frontend != nil {
-		snew.Frontend = s.Frontend.Copy()
+		snew.Backend = &newRoutes
 	}
 
 	return snew
@@ -276,7 +205,7 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Frontend Frontend `json:"frontend"`
+	Frontend *string `json:"frontend"`
 
 	ExecTimeout *string `json:"exec_timeout,omitempty"`
 
@@ -316,8 +245,6 @@ func copyStringArrayPtr(s *[]string) *[]string {
 func (c *Configuration) Copy() *Configuration {
 	nc := *c
 
-	nc.Frontend = c.Frontend.Copy()
-
 	nc.Plugins = make(map[string]*Plugin)
 
 	for pkey, pval := range c.Plugins {
@@ -337,7 +264,6 @@ func NewConfiguration() *Configuration {
 	return &Configuration{
 		Plugins:     make(map[string]*Plugin),
 		SourceTypes: make(map[string]SourceType),
-		Frontend:    NewFrontend(),
 	}
 }
 
@@ -441,23 +367,6 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	for ak, av := range overlay.SourceTypes {
 		cv, ok := base.SourceTypes[ak]
 		if ok {
-			// Merge the Frontend overlay
-			if cv.Frontend != nil && av.Frontend != nil {
-
-				avf := av.Frontend
-				// CopyStruct will replace the frontend with the overlay
-				av.Frontend = cv.Frontend
-
-				// av.Frontend is the base, and avf is the overlay
-				if av.Frontend.Routes != nil && avf.Routes != nil {
-					// Need to merge the routes
-					for rk, rv := range *(avf.Routes) {
-						(*av.Frontend.Routes)[rk] = rv
-					}
-					avf.Routes = nil // Set it to nil so it isn't copied over
-				}
-				CopyStructIfPtrSet(av.Frontend, avf)
-			}
 			// Copy the scopes to av
 			if av.Scopes != nil && cv.Scopes != nil {
 				for sk, sv := range *av.Scopes {
@@ -466,11 +375,11 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				av.Scopes = cv.Scopes
 			}
 			// Copy the routes to av
-			if av.Routes != nil && cv.Routes != nil {
-				for rk, rv := range *av.Routes {
-					(*cv.Routes)[rk] = rv
+			if av.Backend != nil && cv.Backend != nil {
+				for rk, rv := range *av.Backend {
+					(*cv.Backend)[rk] = rv
 				}
-				av.Routes = cv.Routes
+				av.Backend = cv.Backend
 			}
 
 			// Update only the set values
@@ -481,35 +390,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		}
 	}
 
-	// Merge the maps of Frontend
-	for ak, av := range overlay.Frontend.Menu {
-		cv, ok := base.Frontend.Menu[ak]
-		if ok {
-			// Update only the set values of menu
-			CopyStructIfPtrSet(&cv, &av)
-			base.Frontend.Menu[ak] = cv
-		} else {
-			base.Frontend.Menu[ak] = av
-		}
-	}
-	for ak, av := range overlay.Frontend.PublicMenu {
-		cv, ok := base.Frontend.PublicMenu[ak]
-		if ok {
-			// Update only the set values of menu
-			CopyStructIfPtrSet(&cv, &av)
-			base.Frontend.PublicMenu[ak] = cv
-		} else {
-			base.Frontend.PublicMenu[ak] = av
-		}
-	}
-	for ak, av := range overlay.Frontend.Routes {
-		base.Frontend.Routes[ak] = av
-	}
-	for ak, av := range overlay.Frontend.PublicRoutes {
-		base.Frontend.PublicRoutes[ak] = av
-	}
-
-	// Now go into the maps, and continue the good work
+	// Now go into the plugins, and continue the good work
 	for pluginName, oplugin := range overlay.Plugins {
 		bplugin, ok := base.Plugins[pluginName]
 		if !ok {

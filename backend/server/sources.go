@@ -70,9 +70,9 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 	for sname, sv := range a.Config.SourceTypes {
 		s := Source{}
 
-		if sv.Routes != nil && len(*sv.Routes) > 0 {
+		if sv.Backend != nil && len(*sv.Backend) > 0 {
 			// The source has a backend component, which we now construct
-			for r, uri := range *sv.Routes {
+			for r, uri := range *sv.Backend {
 				fwd, err := NewReverseProxy(a.DataDir(), uri)
 				if err != nil {
 					return nil, err

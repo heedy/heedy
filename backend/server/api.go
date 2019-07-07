@@ -37,14 +37,14 @@ func CreateSource(w http.ResponseWriter, r *http.Request) {
 		WriteJSONError(w, r, 400, err)
 		return
 	}
-	adb:= CTX(r).DB
+	adb := CTX(r).DB
 
 	sid, err := adb.CreateSource(&s)
-	if err!=nil {
+	if err != nil {
 		WriteJSONError(w, r, 400, err)
-		return 
+		return
 	}
-	s2,err := adb.ReadSource(sid,nil)
+	s2, err := adb.ReadSource(sid, nil)
 
 	WriteJSON(w, r, s2, err)
 }

@@ -19,6 +19,7 @@ require (
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.2.2
+	github.com/urfave/cli v1.20.0
 	github.com/vmihailenco/msgpack v3.3.3+incompatible
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

@@ -10,9 +10,12 @@ import (
 
 	"net/http"
 
+	"github.com/gorilla/schema"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
+
+var queryDecoder = schema.NewDecoder()
 
 // apiHeaders writes headers that need to be present in all API requests
 func apiHeaders(w http.ResponseWriter) {

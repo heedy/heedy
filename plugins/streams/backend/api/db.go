@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"reflect"
+	"time"
 )
 
 type Datapoint struct {
@@ -20,6 +21,14 @@ func (d *Datapoint) IsEqual(dp *Datapoint) bool {
 func (d *Datapoint) String() string {
 	b, _ := json.Marshal(d)
 	return string(b)
+}
+
+// NewDatapoint returns a datapoint with the current timestamp
+func NewDatapoint(data interface{}) *Datapoint {
+	return &Datapoint{
+		Timestamp: float64(time.Now().UnixNano()) * 1e-9,
+		Data:      data,
+	}
 }
 
 //A DatapointArray holds a couple useful functions that act on it

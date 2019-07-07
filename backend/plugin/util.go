@@ -4,10 +4,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/heedy/heedy/backend/database"
 )
+
+func ErrPlugin(err string, args ...interface{}) error {
+	s := fmt.Sprintf(err, args...)
+	return fmt.Errorf("internal_plugin_error: %s", s)
+}
 
 // NoOverlay returns a copy of the database with all overlays removed if it is a PluginDB. This is needed
 // for any queries that are run from source implementations
@@ -39,4 +45,42 @@ func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
 		return err
 	}
 	return json.Unmarshal(b, obj)
+}
+
+// SourceInfo holds the information sent from heedy as http headers about a source.
+// These headers are only present in requests for source API
+type SourceInfo struct {
+	Type   string
+	ID     string
+	Meta   map[string]interface{}
+	Access database.ScopeArray
+}
+
+// GetSourceInfo prepares all source details that come in as part of a source request
+func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
+	si := SourceInfo{
+		Type: r.Header.Get("X-Heedy-Type"),
+		ID:   r.Header.Get("X-Heedy-Source"),
+	}
+	if si.Type == "" || si.ID == "" {
+		return nil, ErrPlugin("No type or ID headers were present in source request")
+	}
+	a, ok := r.Header["X-Heedy-Access"]
+	if !ok {
+		return nil, ErrPlugin("No access scopes were present in source request")
+	}
+	si.Access = database.ScopeArray{Scopes: a}
+
+	m := r.Header.Get("X-Heedy-Meta")
+	if m == "" {
+		return nil, ErrPlugin("No meta in source request")
+	}
+
+	b, err := base64.StdEncoding.DecodeString(m)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &(si.Meta))
+	return &si, err
+
 }

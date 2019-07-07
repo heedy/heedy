@@ -42,6 +42,16 @@
     <script>
       const appinfo = {{ . }};
     </script>
-    <script src="./static/main.mjs" type="module"></script>
+    <!--<script src="./static/main.mjs" type="module"></script>-->
+    <script>
+      // TYPE: module
+      //import App from "./static/main.mjs";
+      console.log("Setting up...");
+      //var app = new App(appinfo);
+      for (let i = 0; i < appinfo.frontend.length; i++) {
+        let f = appinfo.frontend[i];
+        console.log("Initializing", f.name);
+      }
+    </script>
   </body>
 </html>
