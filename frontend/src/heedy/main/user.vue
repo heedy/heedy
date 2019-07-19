@@ -14,8 +14,8 @@
 </template>
 
 <script>
-import Loading from "./loading.mjs";
-import User from "./components/user.mjs";
+import {Loading} from "../components.mjs";
+import User from "./user2.vue";
 export default {
   components: {
     User,
@@ -27,8 +27,8 @@ export default {
     username: {
       type: String,
       default: function() {
-        if (this.$store.state.info.user != null) {
-          return this.$store.state.info.user.name;
+        if (this.$store.state.app.info.user != null) {
+          return this.$store.state.app.info.user.name;
         }
         return "";
       }
@@ -41,7 +41,7 @@ export default {
   },
   computed: {
     user: function() {
-      let usr = this.$store.state.users[this.username] || null;
+      let usr = this.$store.state.heedy.users[this.username] || null;
       return usr;
     }
   },

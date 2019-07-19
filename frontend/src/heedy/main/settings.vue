@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import PageContainer from "../embedded/page_container.vue";
+import {PageContainer} from "../components.mjs";
 
 export default {
   components: {

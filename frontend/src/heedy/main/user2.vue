@@ -43,9 +43,9 @@
 import Croppa from "vue-croppa";
 import "vue-croppa/dist/vue-croppa.css";
 
-import Avatar from "./avatar.mjs";
+import {Avatar} from "../components.mjs";
 
-import { api } from "../../main.mjs";
+import api from "../api.mjs";
 
 export default {
   components: {
@@ -77,7 +77,7 @@ export default {
         console.log(this.modified.avatar);
       }
       let result = await api(
-        "POST",
+        "PATCH",
         `api/heedy/v1/user/${this.user.name}`,
         this.modified
       );

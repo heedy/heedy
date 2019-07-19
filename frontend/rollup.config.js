@@ -86,9 +86,10 @@ export default [
   out("setup.js"),
   // The main app's files
   out("heedy/main.js"),
-  out("heedy/util.js")
+  out("heedy/api.js"),
+  out("heedy/components.js")
 ]
-  .concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
+  /*.concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
   .concat(
     glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
-  );
+  );*/

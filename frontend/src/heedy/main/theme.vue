@@ -1,20 +1,18 @@
 <template>
-  <v-app id="heedy" v-resize="onResize">
-    <v-navigation-drawer
-      :mini-variant="mini"
-      stateless
-      :value="!bottom"
-      :class="{'theme-dark': !transparent, 'transparent': transparent,'clearshadows': transparent}"
-      width="200"
-      app
-      :floating="transparent"
-      :dark="dark"
-      hide-overlay
-      :temporary="transparent"
-      v-if="shownav"
-    >
-      <v-layout column fill-height>
-        <v-toolbar flat class="transparent">
+    <v-app id="heedy" v-resize="onResize">
+        <v-navigation-drawer
+            :mini-variant="mini"
+            stateless
+            :value="!bottom"
+            class="theme-dark"
+            width="200"
+            app
+            dark
+            hide-overlay
+            v-if="shownav"
+            >
+            <v-layout column fill-height>
+        <v-toolbar flat>
           <v-list class="pa-0" v-if="user==null">
             <v-tooltip right dark :disabled="!mini">
               <v-list-tile
@@ -50,7 +48,7 @@
           </v-list>
         </v-toolbar>
         <v-list class="pt-0" dense>
-          <v-divider v-if="!transparent"></v-divider>
+          <v-divider></v-divider>
           <v-tooltip v-for="item in menu" :key="item.key" dark right :disabled="!mini">
             <v-list-tile
               :to="item.route"
@@ -75,7 +73,7 @@
         </v-list>
         <v-spacer></v-spacer>
 
-        <v-list class="pt-0" dense v-if="user!=null">
+        <v-list class="pt-0" dense v-if="showSecondaryMenu">
           <!-- https://github.com/vuetifyjs/vuetify/issues/4848 -->
           <v-menu offset-x style="width:100%">
             <template #activator="{ on: menu }">
@@ -95,15 +93,18 @@
               </v-tooltip>
             </template>
             <v-list>
-              <v-list-tile avatar to="/settings">
+              <v-list-tile v-for="item in secondaryMenu" :key="item.key" avatar :to="item.route">
                 <v-list-tile-avatar>
-                  <v-icon>settings</v-icon>
+                  <v-icon
+                    v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
+                  >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
+                  <img v-else :src="item.icon">
                 </v-list-tile-avatar>
                 <v-list-tile-content>
-                  <v-list-tile-title>Settings</v-list-tile-title>
+                  <v-list-tile-title>{{ item.text }}</v-list-tile-title>
                 </v-list-tile-content>
               </v-list-tile>
-              <v-list-tile avatar to="/logout">
+              <v-list-tile v-if="user!=null" avatar to="/logout">
                 <v-list-tile-avatar>
                   <v-icon>fas fa-sign-out-alt</v-icon>
                 </v-list-tile-avatar>
@@ -132,10 +133,10 @@
     <router-view></router-view>
 
     <v-bottom-nav
-      :dark="dark"
+      dark
       :value="bottom"
       app
-      :class="{'theme-dark': !transparent, 'transparent': transparent,'clearshadows': transparent}"
+      class="theme-dark"
       v-if="shownav"
     >
       <v-tooltip top dark :disabled="!small" v-if="user==null" style="text-align:center;">
@@ -169,7 +170,7 @@
         </v-btn>
         <span>{{ item.text }}</span>
       </v-tooltip>
-      <div style="text-align:center;" v-if="user!=null">
+      <div style="text-align:center;" v-if="showSecondaryMenu">
         <v-menu offset-y top>
           <template #activator="{ on: menu }">
             <v-tooltip top dark :disabled="!small">
@@ -183,15 +184,18 @@
             </v-tooltip>
           </template>
           <v-list>
-            <v-list-tile avatar to="/settings">
+            <v-list-tile v-for="item in secondaryMenu" :key="item.key" avatar :to="item.route">
               <v-list-tile-avatar>
-                <v-icon>settings</v-icon>
+                <v-icon
+                    v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
+                  >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
+                  <img v-else :src="item.icon">
               </v-list-tile-avatar>
               <v-list-tile-content>
-                <v-list-tile-title>Settings</v-list-tile-title>
+                <v-list-tile-title>{{ item.text }}</v-list-tile-title>
               </v-list-tile-content>
             </v-list-tile>
-            <v-list-tile avatar to="/logout">
+            <v-list-tile v-if="user!=null" avatar to="/logout">
               <v-list-tile-avatar>
                 <v-icon>fas fa-sign-out-alt</v-icon>
               </v-list-tile-avatar>
@@ -203,111 +207,76 @@
         </v-menu>
       </div>
     </v-bottom-nav>
-  </v-app>
+    </v-app>
 </template>
-
 <script>
-/*
-import Vue from "vue";
-import Vuetify from "vuetify";
-import "vuetify/dist/vuetify.min.css";
 
-// This theme uses Vuetify. All pages are free to use vuetify components.
-// This also means that any theme must either include vuetify, or replace/reimplement all frontend pages.
-Vue.use(Vuetify);
-*/
-
-import Avatar from "./components/avatar.mjs";
+import {Avatar} from "../components.mjs";
 
 export default {
-  components: {
-    Avatar
-  },
-  data: () => ({
-    bottom: false, // Whether to display the navigation on bottom, in mobile mode
-    mini: true, // In desktop mode, whether to show mini drawer
-    small: false, // In mobile mode whether to show text. Same effect as mini
-    transparent: false, // Whether the nav is to be transparent to fit in with the page theme
-    dark: true // Whether to user the dark theme
-  }),
-  props: {
-    source: String
-  },
-  computed: {
-    menu() {
-      let s = this.$store.state.info.menu;
-      return Object.keys(s).map(k => ({
-        key: k,
-        text: s[k].text,
-        icon: s[k].icon,
-        route: s[k].route
-      }));
+    components: {
+        Avatar
     },
-    user() {
-      return this.$store.state.info.user;
+    data: () => ({
+        bottom: false, // Whether to display the navigation on bottom, in mobile mode
+        mini: true, // In desktop mode, whether to show mini drawer
+        small: false, // In mobile mode whether to show text. Only active when mini is true
+    }),
+    computed: {
+        menu() {
+        let s = this.$store.state.app.menu;
+        return s;
+        },
+        secondaryMenu() {
+          return this.$store.state.app.secondaryMenu;
+        },
+        user() {
+        return this.$store.state.app.info.user;
+        },
+        shownav() {
+          return true;
+          //return Object.keys(this.$store.state.app.menu).length > 0; // Only show the nav if there is a menu to show.
+        },
+        showSecondaryMenu() {
+          // Must have logout button
+          if (this.$store.state.app.info.user!=null) {
+            return true;
+          }
+          // Otherwise, only show it if there are menu items for it
+          return this.$store.state.app.secondaryMenu.length > 0;
+        },
+        username() {
+        let u = this.$store.state.app.info.user;
+        if (u.fullname.length == 0) {
+            return u.name;
+        }
+        return u.fullname.length > 10 ? u.fullname.split(" ")[0] : u.fullname;
+        },
+        alert() {
+        return this.$store.state.heedy.alert;
+        },
+        alert_value: {
+        get() {
+            return this.$store.state.heedy.alert.value;
+        },
+        set(newValue) {
+            this.$store.commit("alert", {
+            value: newValue,
+            text: "",
+            type: "info"
+            });
+        }
+        }
     },
-    shownav() {
-      return Object.keys(this.$store.state.info.menu).length > 0; // Only show the nav if there is a menu to show.
+    mounted() {
+        this.onResize();
     },
-    username() {
-      let u = this.$store.state.info.user;
-      if (u.fullname.length == 0) {
-        return u.name;
-      }
-      return u.fullname.length > 10 ? u.fullname.split(" ")[0] : u.fullname;
-    },
-    alert() {
-      return this.$store.state.alert;
-    },
-    alert_value: {
-      get() {
-        return this.$store.state.alert.value;
-      },
-      set(newValue) {
-        this.$store.commit("alert", {
-          value: newValue,
-          text: "",
-          type: "info"
-        });
-      }
-    }
-  },
-  mounted() {
-    this.onResize();
-  },
-
-  methods: {
+    methods: {
     onResize() {
       this.bottom = window.innerWidth < 960;
       this.small = window.innerWidth < 500;
       this.mini = window.innerWidth < 1440;
     }
   }
-};
+}
 </script>
-
-<style>
-.active-btn {
-  color: white !important;
-}
-
-.inactive-btn {
-  color: #cccccc;
-}
-.theme-dark {
-  color: #1c313a;
-  background-color: #1c313a !important;
-}
-.theme-primary {
-  color: #455a64;
-  background-color: #455a64 !important;
-}
-.theme-light {
-  color: #718792;
-  background-color: #455a64 !important;
-}
-
-.clearshadows {
-  box-shadow: none !important;
-}
-</style>

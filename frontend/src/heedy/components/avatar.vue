@@ -4,7 +4,7 @@
       v-if="image.startsWith('fa:') || image.startsWith('mi:')"
     >{{ image.substring(3,image.length) }}</v-icon>
     <img v-else-if="image.length > 0" :src="image">
-    <v-icon v-else :size="iconSize">person</v-icon>
+    <v-icon v-else :size="iconSize">{{ defaultIcon }}</v-icon>
   </v-avatar>
 </template>
 
@@ -20,6 +20,10 @@ export default {
     size: {
       type: Number,
       default: 48
+    },
+    defaultIcon: {
+      type: String,
+      default: "person"
     }
   },
   computed: {

@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { api } from "../main.mjs";
+import api from "../api.mjs";
 export default {
   data: () => ({
     loading: false,
