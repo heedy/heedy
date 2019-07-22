@@ -6,7 +6,8 @@
 
 import Loading from "./components/loading.vue";
 import Avatar from  "./components/avatar.vue";
+import AvatarEditor from "./components/avatar_editor.vue";
 import PageContainer from "./components/page_container.vue";
 import NotFound from "./components/404.vue";
 
-export {Loading, NotFound, Avatar, PageContainer};
+export {Loading, NotFound, Avatar, AvatarEditor, PageContainer};

@@ -1,9 +1,10 @@
 <template>
   <v-avatar :size="size" :color="color">
+    <img v-if="image.startsWith('data:image/')" :src="image">
     <v-icon
-      v-if="image.startsWith('fa:') || image.startsWith('mi:')"
-    >{{ image.substring(3,image.length) }}</v-icon>
-    <img v-else-if="image.length > 0" :src="image">
+      v-else-if="image.length > 0"
+      :size="iconSize"
+    >{{ image }}</v-icon>
     <v-icon v-else :size="iconSize">{{ defaultIcon }}</v-icon>
   </v-avatar>
 </template>

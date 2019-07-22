@@ -13,8 +13,7 @@
             <h5 style="color:gray;padding-top:10px">{{user.name}}</h5>
           </template>
           <template v-else>
-            <croppa :width="160" :height="160" v-model="imageCropper"></croppa>
-            <v-btn small flat>Icon Chooser</v-btn>
+            <avatar-editor ref="avatarEditor" :image="user.avatar" ></avatar-editor>
           </template>
         </v-flex>
         <v-flex xs12 sm8 md9 lg10>
@@ -43,21 +42,20 @@
 import Croppa from "vue-croppa";
 import "vue-croppa/dist/vue-croppa.css";
 
-import {Avatar} from "../components.mjs";
+import {Avatar, AvatarEditor} from "../components.mjs";
 
 import api from "../api.mjs";
 
 export default {
   components: {
     Croppa: Croppa.component,
-    Avatar
+    Avatar,
+    AvatarEditor
   },
   data: () => ({
     editing: false,
-    editingIcon: false,
     modified: {},
     loading: false,
-    imageCropper: {}
   }),
   props: {
     user: Object,
@@ -71,11 +69,11 @@ export default {
     },
     save: async function() {
       this.loading = true;
-      if (!this.editingIcon && this.imageCropper.hasImage()) {
+      if (this.$refs.avatarEditor.hasImage()) {
         // We are in the image picker, and an image was chosen
-        this.modified.avatar = this.imageCropper.generateDataUrl();
-        console.log(this.modified.avatar);
+        this.modified.avatar = this.$refs.avatarEditor.getImage();
       }
+      console.log(this.modified);
       let result = await api(
         "PATCH",
         `api/heedy/v1/user/${this.user.name}`,

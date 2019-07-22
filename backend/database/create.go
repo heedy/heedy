@@ -240,13 +240,13 @@ INSERT INTO users (name,fullname,description,avatar,password) VALUES
 	'users',
 	'Users',
 	'All logged-in users',
-	'mi:perm_identity',
+	'perm_identity',
 	'-'
 ),(
 	'public',
 	'Public',
 	'Represents everyone - any visitor to this heedy server',
-	'mi:share',
+	'share',
 	'-'
 ),
 -- The heedy user represents the database internals. It is used as the actor
@@ -255,7 +255,7 @@ INSERT INTO users (name,fullname,description,avatar,password) VALUES
 	"heedy",
 	"Heedy",
 	"",
-	"mi:remove_red_eye",
+	"remove_red_eye",
 	"-"
 );
 

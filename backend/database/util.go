@@ -46,17 +46,11 @@ func ValidAvatar(avatar string) error {
 	if avatar == "" {
 		return nil
 	}
-	// We permit special avatar prefixes to be used. The first one is material:, which represents material icons
-	// that are assumed to be bundled with all applications that display heedy data. The second is fa: which
-	// will represent fontawesome avatars in the future
-	if strings.HasPrefix(avatar, "mi:") || strings.HasPrefix(avatar, "fa:") {
+	if !strings.HasPrefix(avatar, "data:image/") {
 		if len(avatar) > 30 {
-			return errors.New("bad_request: avatar icon name can't be more than 30 characters")
+			return errors.New("bad_request: avatar icon name can't be more than 30 characters unless it is an image")
 		}
 		return nil
-	}
-	if !strings.HasPrefix(avatar, "data:image/") {
-		return errors.New("bad_request: Avatar images must be data-urls or be prefixed with mi: or fa:")
 	}
 	return nil
 }
