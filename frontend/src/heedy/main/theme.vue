@@ -1,212 +1,136 @@
 <template>
     <v-app id="heedy" v-resize="onResize">
         <v-navigation-drawer
-            :mini-variant="mini"
+            :expand-on-hover="true"
             stateless
-            :value="!bottom"
-            class="theme-dark"
-            width="200"
             app
             dark
             hide-overlay
-            v-if="shownav"
-            >
+            :value="!bottom"
+            v-if="shownav && !bottom"
+        >
             <v-layout column fill-height>
-        <v-toolbar flat>
-          <v-list class="pa-0" v-if="user==null">
-            <v-tooltip right dark :disabled="!mini">
-              <v-list-tile
-                avatar
-                to="/login"
-                slot="activator"
-                active-class="active-btn"
-                class="inactive-btn"
-              >
-                <v-list-tile-avatar>
-                  <v-icon>fas fa-sign-in-alt</v-icon>
-                </v-list-tile-avatar>
-                <v-list-tile-content>
-                  <v-list-tile-title>Log In</v-list-tile-title>
-                </v-list-tile-content>
-              </v-list-tile>
-              <span>Log In</span>
-            </v-tooltip>
-          </v-list>
-          <v-list class="pa-0" v-else>
-            <v-tooltip right dark :disabled="!mini">
-              <v-list-tile avatar :to="'/user/' + user.name" slot="activator">
-                <v-list-tile-avatar>
-                  <avatar :image="user.avatar"></avatar>
-                </v-list-tile-avatar>
+                <v-list dense nav class="py-0">
+                    <v-list-item v-if="user==null" two-line to="/login">
+                        <v-list-item-avatar>
+                            <v-icon>fas fa-sign-in-alt</v-icon>
+                        </v-list-item-avatar>
 
-                <v-list-tile-content>
-                  <v-list-tile-title>{{ username }}</v-list-tile-title>
-                </v-list-tile-content>
-              </v-list-tile>
-              <span>{{ username }}</span>
-            </v-tooltip>
-          </v-list>
-        </v-toolbar>
-        <v-list class="pt-0" dense>
-          <v-divider></v-divider>
-          <v-tooltip v-for="item in menu" :key="item.key" dark right :disabled="!mini">
-            <v-list-tile
-              :to="item.route"
-              active-class="active-btn"
-              class="inactive-btn"
-              slot="activator"
-              avatar
+                        <v-list-item-content>
+                            <v-list-item-title>Log In</v-list-item-title>
+                            <v-list-item-subtitle>Access your Heedy account</v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item v-else two-line  :to="'/user/' + user.name">
+                        <v-list-item-avatar>
+                            <avatar :image="user.avatar"></avatar>
+                        </v-list-item-avatar>
+
+                        <v-list-item-content>
+                            <v-list-item-title>{{ username }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ user.name }}</v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-divider></v-divider>
+
+                    <v-list-item v-for="item in menu" :key="item.key" :to="item.route">
+                        <v-list-item-avatar>
+                            <v-icon>{{ item.icon }}</v-icon>
+                        </v-list-item-avatar>
+
+                        <v-list-item-content>
+                            <v-list-item-title>{{ item.text }}</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-menu right v-if="showSecondaryMenu" >
+                        <template #activator="{ on }">
+                            <v-list-item v-on="on">
+                                <v-list-item-avatar>
+                                    <v-icon>more_vert</v-icon>
+                                </v-list-item-avatar>
+
+                                <v-list-item-content>
+                                    <v-list-item-title>More</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <v-list>
+                            <v-list-item v-for="item in secondaryMenu" :key="item.key" :to="item.route">
+                                <v-list-item-avatar>
+                                    <v-icon>{{ item.icon }}</v-icon>
+                                </v-list-item-avatar>
+                                <v-list-item-title>{{ item.text }}</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item v-if="user!=null" to="/logout">
+                                <v-list-item-avatar>
+                                    <v-icon>fas fa-sign-out-alt</v-icon>
+                                </v-list-item-avatar>
+                                <v-list-item-title>Log Out</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
+                </v-list>
+            </v-layout>
+        </v-navigation-drawer>
+
+        <v-snackbar
+            v-model="alert_value"
+            :color="alert.type"
+            :timeout="4000"
+            :vertical="false"
+            top
+            :right="!bottom"
             >
-              <v-list-tile-avatar>
-                <v-icon
-                  v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
-                >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
-                <img v-else :src="item.icon">
-              </v-list-tile-avatar>
+            {{ alert.text }}
+            <v-btn dark text @click="alert_value = false">Close</v-btn>
+        </v-snackbar>
 
-              <v-list-tile-content>
-                <v-list-tile-title>{{ item.text }}</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <span>{{ item.text }}</span>
-          </v-tooltip>
-        </v-list>
-        <v-spacer></v-spacer>
+        <router-view></router-view>
+        <v-bottom-navigation
+            dark
+            v-if="bottom && shownav"
+            app
+            grow
+            >
+            <v-btn v-if="user==null" to="/login">
+                <span>Log In</span>
+                <v-icon>fas fa-sign-in-alt</v-icon>
+            </v-btn>
+            <v-btn v-else :to="'/user/' + user.name">
+                <span>{{ username }}</span>
+                <avatar :image="user.avatar" :size="28"></avatar>
+            </v-btn>
 
-        <v-list class="pt-0" dense v-if="showSecondaryMenu">
-          <!-- https://github.com/vuetifyjs/vuetify/issues/4848 -->
-          <v-menu offset-x style="width:100%">
-            <template #activator="{ on: menu }">
-              <v-tooltip right dark :disabled="!mini">
-                <template #activator="{ on: tooltip }">
-                  <v-list-tile slot="activator" v-on="{ ...tooltip, ...menu }" style="width:100%">
-                    <v-list-tile-avatar>
-                      <v-icon>more_vert</v-icon>
-                    </v-list-tile-avatar>
+            <v-btn v-for="item in menu" :key="item.key" :to="item.route">
+                <span>{{ item.text }}</span>
+                <v-icon>{{ item.icon }}</v-icon>
+            </v-btn>
 
-                    <v-list-tile-content v-if="!mini">
-                      <v-list-tile-title>More</v-list-tile-title>
-                    </v-list-tile-content>
-                  </v-list-tile>
+            <v-menu offset-y top v-if="showSecondaryMenu">
+                <template #activator="{ on }">
+                    <v-btn v-on="on">
+                        <span>More</span>
+                        <v-icon>more_vert</v-icon>
+                    </v-btn>
                 </template>
-                <span>More</span>
-              </v-tooltip>
-            </template>
-            <v-list>
-              <v-list-tile v-for="item in secondaryMenu" :key="item.key" avatar :to="item.route">
-                <v-list-tile-avatar>
-                  <v-icon
-                    v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
-                  >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
-                  <img v-else :src="item.icon">
-                </v-list-tile-avatar>
-                <v-list-tile-content>
-                  <v-list-tile-title>{{ item.text }}</v-list-tile-title>
-                </v-list-tile-content>
-              </v-list-tile>
-              <v-list-tile v-if="user!=null" avatar to="/logout">
-                <v-list-tile-avatar>
-                  <v-icon>fas fa-sign-out-alt</v-icon>
-                </v-list-tile-avatar>
-                <v-list-tile-content>
-                  <v-list-tile-title>Log Out</v-list-tile-title>
-                </v-list-tile-content>
-              </v-list-tile>
-            </v-list>
-          </v-menu>
-        </v-list>
-      </v-layout>
-    </v-navigation-drawer>
-
-    <v-snackbar
-      v-model="alert_value"
-      :color="alert.type"
-      :timeout="4000"
-      :vertical="false"
-      top
-      :right="!bottom"
-    >
-      {{ alert.text }}
-      <v-btn dark flat @click="alert_value = false">Close</v-btn>
-    </v-snackbar>
-
-    <router-view></router-view>
-
-    <v-bottom-nav
-      dark
-      :value="bottom"
-      app
-      class="theme-dark"
-      v-if="shownav"
-    >
-      <v-tooltip top dark :disabled="!small" v-if="user==null" style="text-align:center;">
-        <v-btn dark flat to="/login" slot="activator">
-          <span v-if="!small">Log In</span>
-          <v-icon>fas fa-sign-in-alt</v-icon>
-        </v-btn>
-        <span>Log In</span>
-      </v-tooltip>
-      <v-tooltip v-else top dark :disabled="!small" style="text-align:center;">
-        <v-btn dark flat :to="'/user/' + user.name" slot="activator">
-          <span v-if="!small" style="padding-top: 5px;">{{ username }}</span>
-          <avatar :image="user.avatar" :size="28"></avatar>
-        </v-btn>
-        <span>{{ username }}</span>
-      </v-tooltip>
-      <v-tooltip
-        v-for="item in menu"
-        :key="item.key"
-        top
-        dark
-        :disabled="!small"
-        style="text-align:center;"
-      >
-        <v-btn dark flat :to="item.route" slot="activator">
-          <span v-if="!small">{{ item.text }}</span>
-          <v-icon
-            v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
-          >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
-          <img v-else :src="item.icon">
-        </v-btn>
-        <span>{{ item.text }}</span>
-      </v-tooltip>
-      <div style="text-align:center;" v-if="showSecondaryMenu">
-        <v-menu offset-y top>
-          <template #activator="{ on: menu }">
-            <v-tooltip top dark :disabled="!small">
-              <template #activator="{ on: tooltip }">
-                <v-btn dark flat v-on="{ ...tooltip, ...menu }">
-                  <span v-if="!small">More</span>
-                  <v-icon>more_vert</v-icon>
-                </v-btn>
-              </template>
-              <span>More</span>
-            </v-tooltip>
-          </template>
-          <v-list>
-            <v-list-tile v-for="item in secondaryMenu" :key="item.key" avatar :to="item.route">
-              <v-list-tile-avatar>
-                <v-icon
-                    v-if="item.icon.startsWith('fa:') || item.icon.startsWith('mi:')"
-                  >{{ item.icon.substring(3,item.icon.length) }}</v-icon>
-                  <img v-else :src="item.icon">
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>{{ item.text }}</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <v-list-tile v-if="user!=null" avatar to="/logout">
-              <v-list-tile-avatar>
-                <v-icon>fas fa-sign-out-alt</v-icon>
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>Log Out</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-          </v-list>
-        </v-menu>
-      </div>
-    </v-bottom-nav>
+                <v-list>
+                    <v-list-item v-for="item in secondaryMenu" :key="item.key" :to="item.route">
+                        <v-list-item-avatar>
+                            <v-icon>{{ item.icon }}</v-icon>
+                        </v-list-item-avatar>
+                        <v-list-item-title>{{ item.text }}</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item v-if="user!=null" to="/logout">
+                        <v-list-item-avatar>
+                            <v-icon>fas fa-sign-out-alt</v-icon>
+                        </v-list-item-avatar>
+                        <v-list-item-title>Log Out</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+            </v-menu>
+        </v-bottom-navigation>
     </v-app>
 </template>
 <script>
@@ -219,7 +143,6 @@ export default {
     },
     data: () => ({
         bottom: false, // Whether to display the navigation on bottom, in mobile mode
-        mini: true, // In desktop mode, whether to show mini drawer
         small: false, // In mobile mode whether to show text. Only active when mini is true
     }),
     computed: {
@@ -275,7 +198,6 @@ export default {
     onResize() {
       this.bottom = window.innerWidth < 960;
       this.small = window.innerWidth < 500;
-      this.mini = window.innerWidth < 1440;
     }
   }
 }

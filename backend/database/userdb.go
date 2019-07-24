@@ -135,3 +135,9 @@ func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, er
 	return getSourceShares(db.adb, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?
 		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, db.user)
 }
+
+// ListSources lists the given sources
+func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
+	return listSources(db.adb,o,`SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
+		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`,db.user)
+}

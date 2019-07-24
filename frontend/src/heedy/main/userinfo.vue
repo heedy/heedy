@@ -7,7 +7,7 @@
     </div>
     <v-container grid-list-md>
       <v-layout row wrap>
-        <v-flex xs12 sm4 md3 lg2 text-xs-center justify-center>
+        <v-flex xs12 sm4 md3 lg2 text-center justify-center>
           <template v-if="!editing">
             <avatar :size="120" :image="user.avatar"></avatar>
             <h5 style="color:gray;padding-top:10px">{{user.name}}</h5>
@@ -39,8 +39,6 @@
 </template>
 
 <script>
-import Croppa from "vue-croppa";
-import "vue-croppa/dist/vue-croppa.css";
 
 import {Avatar, AvatarEditor} from "../components.mjs";
 
@@ -48,7 +46,6 @@ import api from "../api.mjs";
 
 export default {
   components: {
-    Croppa: Croppa.component,
     Avatar,
     AvatarEditor
   },

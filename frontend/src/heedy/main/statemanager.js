@@ -1,5 +1,5 @@
 
-
+import Vue from "../../dist.mjs";
 import api from "../api.mjs";
 
 let users = {};
@@ -50,11 +50,14 @@ export default {
               type: "error",
               text: res.data.error_description
             });
+            
+          } else {
+            if (rootState.app.info.user!=null && rootState.app.info.user.name == q.name) {
+              commit("updateLoggedInUser",res.data);
+            }
+            commit("setUser", res.data);
           }
-          if (rootState.app.info.user!=null && rootState.app.info.user.name == q.name) {
-            commit("updateLoggedInUser",res.data);
-          }
-          commit("setUser", res.data);
+          
           
           if (q.hasOwnProperty("callback")) {
             q.callback();

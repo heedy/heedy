@@ -4,9 +4,11 @@
       <v-layout>
         <v-flex>
           <v-card>
-            <v-container>
-              <slot></slot>
-            </v-container>
+            <v-card-text class="text--primary">
+              <v-container>
+                <slot></slot>
+              </v-container>
+            </v-card-text>
           </v-card>
         </v-flex>
       </v-layout>

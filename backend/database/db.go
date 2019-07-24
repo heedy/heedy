@@ -170,6 +170,24 @@ type ReadSourceOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
 }
 
+// ListSourcesOptions shows the options for listing sources
+type ListSourcesOptions struct {
+	// Whether to include avatars
+	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
+	// Limit results to the given user's sources.
+	User *string `json:"user,omitempty" schema:"user"`
+	// Limit the results to the given connection's sources
+	Connection *string `json:"connection,omitempty" schema:"connection"`
+	// Limit results to sources of the given type
+	Type *string `json:"type,omitempty" schema:"type"`
+	// Maximum number of results to return
+	Limit *int `json:"limit,omitempty" schema:"limit"`
+
+	// Whether to include shared sources (not belonging to the user)
+	// This is only allowed for user==current user
+	Shared *bool
+}
+
 // DB represents the database. This interface is implemented in many ways:
 //	once for admin
 //	once for users
@@ -197,6 +215,8 @@ type DB interface {
 	UnshareSourceFromUser(sourceid, userid string) error
 	UnshareSource(sourceid string) error
 	GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error)
+
+	ListSources(o *ListSourcesOptions) ([]*Source,error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -469,4 +489,29 @@ func sourceUpdateQuery(c *assets.Configuration, s *Source, sourceType string) (s
 		err = c.ValidateSourceMeta(*s.Type, (*map[string]interface{})(s.Meta))
 	}
 	return strings.Join(sColumns, "=?,") + "=?", sValues, err
+}
+
+func listSourcesQuery(o *ListSourcesOptions) (string,[]interface{},error) {
+	sColumns := make([]string,0)
+	sValues := make([]interface{},0)
+	if o!=nil {
+
+		if o.User!=nil {
+			sColumns = append(sColumns,"owner")
+			sValues = append(sValues,*o.User)
+		}
+		if o.Connection!=nil {
+			sColumns = append(sColumns,"connection")
+			sValues = append(sValues,*o.Connection)
+		}
+		if o.Type!=nil {
+			sColumns = append(sColumns,"type")
+			sValues = append(sValues,*o.Type)
+		}
+	}
+	if len(sColumns)==0 {
+		return "1=1",sValues,nil
+	}
+
+	return strings.Join(sColumns, "=? AND ") + "=?", sValues, nil
 }

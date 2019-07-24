@@ -295,3 +295,8 @@ func (db *AdminDB) UnshareSource(sourceid string) error {
 func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
 	return getSourceShares(db, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?`, sourceid)
 }
+
+// ListSources lists the given sources
+func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
+	return listSources(db,o,`SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
+}

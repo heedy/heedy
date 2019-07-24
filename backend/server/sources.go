@@ -99,6 +99,9 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 	}
 
 	sm.mux.Post("/api/heedy/v1/source", sm.handleCreate)
+	// Since the Post is here, we must manually set the GET as valid and forward it
+	// to the underlying api, otherwise we get a 405 error
+	sm.mux.Get("/api/heedy/v1/source", sm.handler.ServeHTTP)
 	sm.mux.Mount("/api/heedy/v1/source/{sourceid}", http.HandlerFunc(sm.handleAPI))
 	sm.mux.NotFound(sm.handler.ServeHTTP)
 

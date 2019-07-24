@@ -20,7 +20,7 @@ function setup(app) {
         app.addSecondaryMenuItem({
             key: "heedySettings",
             text: "Settings",
-            icon: "mi:settings",
+            icon: "settings",
             route: "/settings"
         });
         
@@ -32,6 +32,11 @@ function setup(app) {
         app.addRoute({
             path: "/settings",
             component: Settings
+        });
+
+        app.addRoute({
+            path: "/",
+            redirect: `/user/${app.info.user.name}`
         });
 
     } else {
@@ -48,7 +53,7 @@ function setup(app) {
         app.addMenuItem({
             key: "heedyHome",
             text: "Home",
-            icon: "mi:home",
+            icon: "home",
             route: "/"
         });
     } 
@@ -58,7 +63,7 @@ function setup(app) {
     app.addRoute({
         path: "/user/:username",
         component: User
-    })
+    });
 }
 
 export default setup;

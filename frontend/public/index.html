@@ -4,22 +4,16 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <link rel="icon" href="./favicon.ico" />
-    <!-- Explicitly include the global dependency libraries-->
-    <link
-      href="https://fonts.googleapis.com/css?family=Material+Icons"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css"
       crossorigin="anonymous"
     />
-    <link
-      href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css"
-      rel="stylesheet"
-    />
-
+    <!--<link rel="icon" href="./favicon.ico" />-->
+    <!-- Explicitly include the global dependency libraries-->
+    <link href="./static/dist/vuetify.min.css" rel="stylesheet"/>
     <title>heedy</title>
   </head>
   <body>
@@ -31,17 +25,12 @@
     </noscript>
     <div id="app"></div>
 
-    <!-- TODO: change vue to min version to get rid of development mode -->
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js">
-      Vue.use(Vuetify);
-    </script>
-
     <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
     <script>
       const appinfo = {{ . }};
     </script>
+
+    <!-- TODO: embed app.mjs here directly -->
     <script src="./static/app.mjs" type="module"></script>
   </body>
 </html>

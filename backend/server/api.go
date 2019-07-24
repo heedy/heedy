@@ -30,6 +30,17 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	WriteResult(w, r, CTX(r).DB.UpdateUser(&u))
 }
 
+func ListSources(w http.ResponseWriter,r *http.Request) {
+	var o database.ListSourcesOptions
+	err := queryDecoder.Decode(&o, r.URL.Query())
+	if err != nil {
+		WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	sl,err := CTX(r).DB.ListSources(&o)
+	WriteJSON(w, r, sl, err)
+}
+
 func CreateSource(w http.ResponseWriter, r *http.Request) {
 	var s database.Source
 	err := UnmarshalRequest(r, &s)
@@ -90,6 +101,7 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/user/{username}", UpdateUser)
 
 	v1mux.Post("/source", CreateSource)
+	v1mux.Get("/source",ListSources)
 	v1mux.Get("/source/{sourceid}", ReadSource)
 	v1mux.Patch("/source/{sourceid}", UpdateSource)
 	v1mux.Delete("/source/{sourceid}", DeleteSource)

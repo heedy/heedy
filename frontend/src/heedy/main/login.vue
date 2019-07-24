@@ -2,7 +2,7 @@
   <v-content class="login-background">
     <v-container fluid>
       <v-layout justify-center align-center>
-        <v-flex text-xs-center>
+        <v-flex text-center>
           <v-card class="mx-auto" max-width="400">
             <form @submit.prevent="login">
               <v-card-title>

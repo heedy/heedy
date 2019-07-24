@@ -179,3 +179,34 @@ func getSourceShares(adb *AdminDB, sourceid, selectStatement string, args ...int
 
 	return m, err
 }
+
+func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string,args ...interface{}) ([]*Source,error) {
+	var res []*Source
+	q,v,err := listSourcesQuery(o)
+	if err!=nil {
+		return nil,err
+	}
+
+	v = append(v,args...)
+	limitString := ""
+	if o!=nil && o.Limit!=nil {
+		limitString =  fmt.Sprintf("LIMIT %d",*o.Limit)
+	} else {
+		// If no limit is given, use limit of 1000
+		limitString =  fmt.Sprintf("LIMIT %d",1000)
+	}
+	qstring := fmt.Sprintf(selectStatement,q,limitString)
+	
+	err = adb.Select(&res,qstring,v...)
+	if err!=nil {
+		return nil,err
+	}
+
+	// Clear avatars if not needed
+	if o!=nil && o.Avatar!=nil && *o.Avatar {
+		for r := range res {
+			res[r].Avatar = nil
+		}
+	}
+	return res,nil
+}

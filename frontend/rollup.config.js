@@ -1,16 +1,18 @@
-import glob from "glob";
+//import glob from "glob";
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import postcss from "rollup-plugin-postcss";
 import json from "rollup-plugin-json";
-import externalGlobals from "rollup-plugin-external-globals";
+//import externalGlobals from "rollup-plugin-external-globals";
 import VuePlugin from "rollup-plugin-vue";
 import replace from "rollup-plugin-replace";
 import { terser } from "rollup-plugin-terser";
 
+/*
 let globals = {
   vue: "Vue"
 };
+*/
 
 const production = !process.env.ROLLUP_WATCH;
 const plugins = [
@@ -20,7 +22,7 @@ const plugins = [
   //
   // https://github.com/rollup/rollup/issues/1437
   // https://github.com/rollup/rollup/issues/2374
-  externalGlobals(globals),
+  //externalGlobals(globals),
   resolve({
     browser: true,
     preferBuiltins: false
@@ -84,6 +86,7 @@ export default [
   out("app.js"),
   out("auth.js"),
   out("setup.js"),
+  out("dist.js"),
   // The main app's files
   out("heedy/main.js"),
   out("heedy/api.js"),

@@ -2,7 +2,7 @@
   <v-content class="loading">
     <v-container fluid>
       <v-layout justify-center align-center>
-        <v-flex text-xs-center>
+        <v-flex text-center>
           <h1>Loading...</h1>
         </v-flex>
       </v-layout>

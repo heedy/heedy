@@ -4,11 +4,11 @@
              <avatar :size="size-30" defaultIcon="person" :image="iconText" >
             </avatar><br/>
             <v-text-field class="centered-input" label="Icon Name" placeholder="person" v-model="iconText"></v-text-field>
-            <v-btn small flat @click="iconMode = false" >Custom Image</v-btn>
+            <v-btn small text @click="iconMode = false" >Custom Image</v-btn>
         </template>
         <template v-else>
             <croppa :width="size" :height="size" ref="imageCropper"></croppa><br/>
-            <v-btn small flat @click="iconMode = true" >Font Icons</v-btn>
+            <v-btn small text @click="iconMode = true" >Font Icons</v-btn>
         </template>
     </div>
 </template>

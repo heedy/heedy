@@ -232,3 +232,17 @@ func (db *PluginDB) UnshareSource(sourceid string) error {
 func (db *PluginDB) GetSourceShares(sourceid string) (m map[string]*database.ScopeArray, err error) {
 	return nil, ErrUnimplemented
 }
+
+// ListSources lists the given sources
+func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Source,error) {
+	var sl []*database.Source
+	api := "/api/heedy/v1/source"
+
+	if o != nil {
+		form := url.Values{}
+		queryEncoder.Encode(o, form)
+		api = api + "?" + form.Encode()
+	}
+	err := db.UnmarshalRequest(&sl,"GET",api,nil)
+	return sl,err
+}

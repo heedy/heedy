@@ -86,3 +86,9 @@ func (db *PublicDB) UnshareSource(sourceid string) error {
 func (db *PublicDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
 	return nil, ErrAccessDenied("You must be logged in to get the source shares")
 }
+
+// ListSources lists the given sources
+func (db *PublicDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
+	return listSources(db.adb,o,`SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
+		WHERE %s AND ss.user='public' AND ss.source=sources.id GROUP BY sources.id %s;`)
+}

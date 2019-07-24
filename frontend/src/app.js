@@ -1,10 +1,4 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
-import Vuex, { mapState } from "vuex";
-
-// Add the two libraries
-Vue.use(VueRouter);
-Vue.use(Vuex);
+import Vue, {VueRouter,Vuex,Vuetify} from "./dist.mjs";
 
 var vuexPlugins = [];
 var vuexModules = {};
@@ -129,9 +123,16 @@ async function setup() {
     }
   });
 
+  const vuetify = new Vuetify({
+    icons: {
+      iconfont: 'md',
+    },
+  });
+
   const vue = new Vue({
     router: router,
     store: store,
+    vuetify: vuetify,
     render: h => h(currentTheme)
   })
 

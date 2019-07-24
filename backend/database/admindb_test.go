@@ -267,6 +267,20 @@ func TestAdminSource(t *testing.T) {
 	require.Equal(t, len((*s.Scopes).Scopes), 2)
 	require.Equal(t, (*s.Meta)["schema"], float64(4))
 
+	sl,err := db.ListSources(nil)
+	require.NoError(t,err)
+	require.Equal(t,len(sl),1)
+	sourceType:= "notascouce"
+	sl,err = db.ListSources(&ListSourcesOptions{
+		Type: &sourceType,
+	})
+	require.NoError(t,err)
+	require.Equal(t,len(sl),0)
+	sl,err = db.ListSources(&ListSourcesOptions{
+		Type: &stype,
+	})
+	require.NoError(t,err)
+	require.Equal(t,len(sl),1)
 	//fmt.Printf(s.String())
 
 	require.NoError(t, db.DelSource(sid))

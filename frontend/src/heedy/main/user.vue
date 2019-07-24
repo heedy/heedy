@@ -2,10 +2,27 @@
   <div>
     <loading v-if="user==null"></loading>
     <v-content v-else>
-      <v-container fill-height>
+      <v-container grid-list-xl>
         <v-layout>
           <v-flex>
-            <user :user="user" editable></user>
+            <user-info :user="user" :editable="editable"></user-info>
+          </v-flex>
+        </v-layout>
+        <v-layout>
+          <v-flex>
+            <v-card>
+              <v-list two-line subheader>
+                <v-list-item>
+                  <v-list-item-avatar>
+                    <v-icon>accessibility</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>Hi there</v-list-item-title>
+                    <v-list-item-subtitle>Hey theere I am a </v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-card>
           </v-flex>
         </v-layout>
       </v-container>
@@ -14,12 +31,13 @@
 </template>
 
 <script>
-import {Loading} from "../components.mjs";
-import User from "./user2.vue";
+import {Loading, Avatar} from "../components.mjs";
+import UserInfo from "./userinfo.vue";
 export default {
   components: {
-    User,
-    Loading
+    UserInfo,
+    Loading,
+    Avatar
   },
   data: () => ({}),
 
@@ -40,9 +58,15 @@ export default {
     }
   },
   computed: {
-    user: function() {
+    user() {
       let usr = this.$store.state.heedy.users[this.username] || null;
       return usr;
+    },
+    editable() {
+      if (this.$store.state.app.info.user == null) {
+          return false;
+        }
+      return this.username == this.$store.state.app.info.user.name;
     }
   },
   created() {
