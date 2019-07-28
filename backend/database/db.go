@@ -494,6 +494,7 @@ func sourceUpdateQuery(c *assets.Configuration, s *Source, sourceType string) (s
 func listSourcesQuery(o *ListSourcesOptions) (string,[]interface{},error) {
 	sColumns := make([]string,0)
 	sValues := make([]interface{},0)
+	pretext := ""
 	if o!=nil {
 
 		if o.User!=nil {
@@ -501,8 +502,12 @@ func listSourcesQuery(o *ListSourcesOptions) (string,[]interface{},error) {
 			sValues = append(sValues,*o.User)
 		}
 		if o.Connection!=nil {
-			sColumns = append(sColumns,"connection")
-			sValues = append(sValues,*o.Connection)
+			if *o.Connection == "none" {
+				pretext = "connection IS NULL"
+			} else {
+				sColumns = append(sColumns,"connection")
+				sValues = append(sValues,*o.Connection)
+			}
 		}
 		if o.Type!=nil {
 			sColumns = append(sColumns,"type")
@@ -510,8 +515,14 @@ func listSourcesQuery(o *ListSourcesOptions) (string,[]interface{},error) {
 		}
 	}
 	if len(sColumns)==0 {
-		return "1=1",sValues,nil
+		if len(pretext)==0 {
+			return "1=1",sValues,nil
+		}
+		return pretext,sValues,nil
+	}
+	if len(pretext)==0 {
+		return strings.Join(sColumns, "=? AND ") + "=?", sValues, nil
 	}
 
-	return strings.Join(sColumns, "=? AND ") + "=?", sValues, nil
+	return pretext + " AND " + strings.Join(sColumns, "=? AND ") + "=?", sValues, nil
 }

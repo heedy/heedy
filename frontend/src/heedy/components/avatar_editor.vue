@@ -1,16 +1,20 @@
 <template>
-    <div>
+    <v-container >
+        <v-layout column align-center style="border: 1px solid; border-radius: 4px; padding: 6px; border-color: #F0F0F0;">
         <template v-if="iconMode">
-             <avatar :size="size-30" defaultIcon="person" :image="iconText" >
-            </avatar><br/>
+             <avatar :size="size-30" defaultIcon="person" :colorHash="colorHash" :image="iconText" >
+            </avatar>
             <v-text-field class="centered-input" label="Icon Name" placeholder="person" v-model="iconText"></v-text-field>
             <v-btn small text @click="iconMode = false" >Custom Image</v-btn>
         </template>
         <template v-else>
-            <croppa :width="size" :height="size" ref="imageCropper"></croppa><br/>
-            <v-btn small text @click="iconMode = true" >Font Icons</v-btn>
+            <v-flex style="margin-bottom: 5px">
+            <croppa :width="size" :height="size" ref="imageCropper"></croppa>
+            </v-flex>
+            <v-btn small text @click="iconMode = true">Font Icons</v-btn>
         </template>
-    </div>
+        </v-layout>
+    </v-container>
 </template>
 <script>
 import Croppa from "vue-croppa";
@@ -32,6 +36,10 @@ export default {
         size: {
             default: 160,
             type: Number
+        },
+        colorHash: {
+            type: String,
+            default: ""
         }
     },
     watch: {

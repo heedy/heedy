@@ -1,19 +1,53 @@
 <template>
   <v-card>
-    <div style="position:absolute;bottom:2px;right:2px;" v-if="editable && !editing">
+    <div style="position:absolute;top:2px;right:16px;" v-if="editable && !editing">
       <v-btn icon @click="editing=true">
-        <v-icon style="color:lightgray">edit</v-icon>
+        <v-icon style="color:lightgray;opacity:0.3">edit</v-icon>
       </v-btn>
     </div>
+    <v-speed-dial bottom right absolute v-if="editable && !editing"
+      direction="left"
+      v-model="fab"
+      transition="slide-x-reverse-transition"
+      open-on-hover
+    >
+        <template v-slot:activator>
+        <v-btn
+          v-model="fab"
+          color="blue darken-2"
+          dark
+          fab
+        >
+          <v-icon v-if="fab">close</v-icon>
+          <v-icon v-else>add</v-icon>
+        </v-btn>
+      </template>
+      <v-tooltip v-for="item in sourceCreators" :key="item.key" bottom>
+        <template v-slot:activator="{ on }">
+          <v-btn
+            fab
+            dark
+            small
+            color="green"
+            v-on="on"
+            :to="item.route"
+          >
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-btn>
+        </template>
+        <span>{{ item.text }}</span>
+      </v-tooltip>
+      
+    </v-speed-dial>
     <v-container grid-list-md>
       <v-layout row wrap>
         <v-flex xs12 sm4 md3 lg2 text-center justify-center>
           <template v-if="!editing">
-            <avatar :size="120" :image="user.avatar"></avatar>
+            <avatar :size="120" :image="user.avatar" :colorHash="user.name" ></avatar>
             <h5 style="color:gray;padding-top:10px">{{user.name}}</h5>
           </template>
           <template v-else>
-            <avatar-editor ref="avatarEditor" :image="user.avatar" ></avatar-editor>
+            <avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.name" ></avatar-editor>
           </template>
         </v-flex>
         <v-flex xs12 sm8 md9 lg10>
@@ -53,6 +87,7 @@ export default {
     editing: false,
     modified: {},
     loading: false,
+    fab: false
   }),
   props: {
     user: Object,
@@ -65,6 +100,7 @@ export default {
       this.modified = {};
     },
     save: async function() {
+      if (this.loading) return;
       this.loading = true;
       if (this.$refs.avatarEditor.hasImage()) {
         // We are in the image picker, and an image was chosen
@@ -105,6 +141,9 @@ export default {
       set(v) {
         this.modified.fullname = v;
       }
+    },
+    sourceCreators() {
+      return this.$store.state.heedy.sourceCreators;
     }
   }
 };

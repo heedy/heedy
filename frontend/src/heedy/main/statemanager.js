@@ -14,7 +14,14 @@ export default {
             text: "",
             type: ""
         },
-        users: users
+        users: users,
+        sources: {},
+
+        // A list of IDs under each user's key
+        userSources: {},
+
+        // The following are initialized by the sourceInjector
+        sourceCreators: []
     },
     mutations: {
         alert(state, v) {
@@ -27,6 +34,17 @@ export default {
         },
         setUser(state, v) {
           Vue.set(state.users, v.name, v);
+        },
+        setSource(state, v) {
+          Vue.set(state.sources,v.id, v);
+        },
+        setUserSources(state,v) {
+          let srcidarray = [];
+          for (let i=0;i < v.sources.length;i++) {
+            Vue.set(state.sources,v.sources[i].id, v.sources[i]);
+            srcidarray.push(v.sources[i].id);
+          }
+          Vue.set(state.userSources,v.user,srcidarray);
         }
       },
       actions: {
@@ -62,6 +80,52 @@ export default {
           if (q.hasOwnProperty("callback")) {
             q.callback();
           }
+      },
+      readSource: async function({ commit, rootState }, q) {
+        console.log("Reading source", q.id);
+        let res = await api("GET", `api/heedy/v1/source/${q.id}`, {
+          avatar: true
+        });
+        if (!res.response.ok) {
+          commit("alert", {
+            type: "error",
+            text: res.data.error_description
+          });
+          
+        } else {
+          commit("setSource", res.data);
         }
+        
+        
+        if (q.hasOwnProperty("callback")) {
+          q.callback();
+        }
+      },
+      readUserSources: async function({commit,rootState}, q) {
+        console.log("Reading sources for user", q.name);
+        let query = {user: q.name};
+
+        if (rootState.app.info.user!=null && rootState.app.info.user.name == q.name) {
+          query["connection"] = "none";
+        }
+
+        let res = await api("GET", `api/heedy/v1/source`, query);
+        if (!res.response.ok) {
+          commit("alert", {
+            type: "error",
+            text: res.data.error_description
+          });
+          
+        } else {
+          commit("setUserSources", {user: q.name, sources: res.data});
+        }
+        
+        
+        if (q.hasOwnProperty("callback")) {
+          q.callback();
+        }
+
       }
+
+    }
 };

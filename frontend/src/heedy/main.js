@@ -6,10 +6,17 @@ import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
 import Settings from "./main/settings.vue";
 import User from "./main/user.vue";
+import Source from "./main/source.vue";
 
 import vuexModule from "./main/statemanager.js";
+import SourceInjector, {sourceTypeRouter} from "./main/sourceInjector.js";
+
+
 
 function setup(app) {
+    // Inject the source handler to the app
+    app.inject("source",SourceInjector);
+
     app.addVuexModule(vuexModule);
     
     app.setTheme(Theme);
@@ -39,6 +46,13 @@ function setup(app) {
             redirect: `/user/${app.info.user.name}`
         });
 
+        app.addMenuItem({
+            key: "connections",
+            text: "Connections",
+            icon: "settings_input_component",
+            route: "/connections"
+        });
+
     } else {
         // Pages to set up for public site visitors
         app.addRoute({
@@ -62,7 +76,16 @@ function setup(app) {
 
     app.addRoute({
         path: "/user/:username",
+        props: true,
         component: User
+    });
+
+    app.addRoute({
+        path: "/source/:sourceid",
+        props: true,
+        component: Source,
+        // The children are initialized by the injector.
+        children: sourceTypeRouter
     });
 }
 

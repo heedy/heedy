@@ -6,6 +6,9 @@ var vuexModules = {};
 var appMenu = [];
 var secondaryMenu = [];
 
+var injected = {};
+
+
 
 // routes need pre-processing
 var routes = {};
@@ -16,6 +19,13 @@ class App {
   constructor(pluginName) {
     this.info = appinfo;
     this.pluginName = pluginName;
+
+    // Add all injected subclasses to the global app object
+    for (let key in injected) {
+      // skip loop if the property is from prototype
+      if (!injected.hasOwnProperty(key)) continue;
+      this[key] = new injected[key](pluginName);
+    }
 
   }
 
@@ -69,10 +79,15 @@ class App {
 
   /**
    * Adds an item to the secondary menu
-   * @param {*} m The mnu itm to add. Same exact concept as addMenuItem.
+   * @param {*} m The menu itm to add. Same exact concept as addMenuItem.
    */
   addSecondaryMenuItem(m) {
     secondaryMenu.push(m);
+  }
+
+  inject(name, p) {
+    injected[name] = p;
+    this[name] = new injected[name](this.pluginName);
   }
 
 }
@@ -87,6 +102,13 @@ async function setup() {
     console.log("Preparing", appinfo.frontend[i].name);
     (await plugins[i]).default(new App(appinfo.frontend[i].name));
   }
+
+  // Now go through the injected modules to run their onInit
+  for (let key in injected) {
+    // skip loop if the property is from prototype
+    if (!injected.hasOwnProperty(key)) continue;
+    (injected[key]["$onInit"] || (() => (1)))();
+  } 
 
   // There is a single built in vuex module, which holds 
   // the app info, the main menu, the extra menu, 
