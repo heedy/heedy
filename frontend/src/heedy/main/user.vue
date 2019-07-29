@@ -1,5 +1,6 @@
 <template >
   <div>
+    <vue-headful :title="title"></vue-headful>
     <loading v-if="user==null"></loading>
     <v-content v-else>
       <v-container grid-list-xl>
@@ -70,7 +71,18 @@ export default {
           return false;
         }
       return this.username == this.$store.state.app.info.user.name;
-    }
+    },
+    title() {
+            let u = this.user;
+            if (u==null) {
+                return "loading... | heedy";
+            }
+            let n = u.fullname;
+            if (n=="") {
+              n = u.name;
+            }
+            return n + " | heedy";
+        }
   },
   created() {
     this.$store.dispatch("readUser", { name: this.username });

@@ -2,6 +2,7 @@ import Vue from "vue";
 import Vuetify from "vuetify";
 import VueRouter from "vue-router";
 import Vuex, { mapState } from "vuex";
+import VueHeadful from "vue-headful";
 
 import VueCodemirror from 'vue-codemirror';
 
@@ -25,6 +26,10 @@ Vue.use(Vuetify);
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(VueCodemirror);
+
+// Setting the title component
+Vue.component('vue-headful', VueHeadful);
+
 
 // Export the libraries
 export {

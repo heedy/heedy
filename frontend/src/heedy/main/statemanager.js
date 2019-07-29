@@ -21,7 +21,10 @@ export default {
         userSources: {},
 
         // The following are initialized by the sourceInjector
-        sourceCreators: []
+        sourceCreators: [],
+
+        // Subpaths for each source type
+        typePaths: {}
     },
     mutations: {
         alert(state, v) {

@@ -1,32 +1,16 @@
 <template>
-    <div>
-        <loading v-if="source==null"></loading>
-        <h1 v-else>{{ source.name }}</h1>
-    </div>
+    <h1>{{ source.fullname }}</h1>
 </template>
 <script>
-import {Loading} from "../components.mjs";
 export default {
-    components: {
-        Loading
-    },
-    data: () => ({}),
     props: {
-        sourceid: String
+        source: Object
     },
-    watch: {
-        sourceid(newValue) {
-            this.$store.dispatch("readSource",{id: newValue});
+    beforeMount() {
+        let typePath = this.$store.state.heedy.typePaths[this.source.type] || "";
+        if (typePath!="") {
+            this.$router.push(`/source/${this.source.id}/` + typePath);
         }
-    },
-    computed: {
-        source() {
-            return this.$store.state.heedy.sources[this.sourceid] || null;
-        }
-    },
-    created() {
-        console.log(this.sourceid);
-        this.$store.dispatch("readSource",{id: this.sourceid});
     }
 }
 </script>

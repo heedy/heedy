@@ -1,4 +1,5 @@
 import Create from "./main/create.vue";
+import Stream from "./main/stream.vue";
 
 function setup(app) {
 
@@ -22,6 +23,12 @@ function setup(app) {
       component: Create
     });
   }
+
+  app.source.typePath("stream","stream/");
+  app.source.addRoute("stream",{
+    path: "/",
+    component: Stream
+  });
 }
 
 export default setup;

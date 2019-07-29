@@ -7,6 +7,7 @@ import Logout from "./main/logout.vue";
 import Settings from "./main/settings.vue";
 import User from "./main/user.vue";
 import Source from "./main/source.vue";
+import SourceRouter from "./main/source_router.vue";
 
 import vuexModule from "./main/statemanager.js";
 import SourceInjector, {sourceTypeRouter} from "./main/sourceInjector.js";
@@ -83,9 +84,16 @@ function setup(app) {
     app.addRoute({
         path: "/source/:sourceid",
         props: true,
-        component: Source,
+        component: SourceRouter,
         // The children are initialized by the injector.
         children: sourceTypeRouter
+    });
+
+    // Add the root source router
+    sourceTypeRouter.push({
+        path: '',
+        props: true,
+        component: Source
     });
 }
 

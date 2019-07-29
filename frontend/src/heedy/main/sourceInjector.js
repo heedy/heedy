@@ -4,6 +4,7 @@ var sourceRoutes = {};
 
 var sourceTypeRouter = [];
 
+
 class Source {
     constructor(pluginName) {
     }
@@ -14,6 +15,10 @@ class Source {
      */
     addCreator(c) {
         vuexModule.state.sourceCreators.push(c);
+    }
+
+    typePath(t,p) {
+        vuexModule.state.typePaths[t] = p;
     }
 
     /**

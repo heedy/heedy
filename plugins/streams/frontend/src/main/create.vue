@@ -161,7 +161,7 @@ export default {
         this.loading = false;
         return;
       }
-      console.log(result);
+      this.$store.commit("setSource",result.data);
       this.$router.push({path: `/source/${result.data.id}/stream`})
     }
   }
