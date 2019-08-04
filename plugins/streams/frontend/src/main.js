@@ -24,11 +24,7 @@ function setup(app) {
     });
   }
 
-  app.source.typePath("stream","stream/");
-  app.source.addRoute("stream",{
-    path: "/",
-    component: Stream
-  });
+  app.source.typeComponent("stream",Stream);
 }
 
 export default setup;

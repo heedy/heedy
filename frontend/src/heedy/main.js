@@ -95,6 +95,7 @@ function setup(app) {
         props: true,
         component: Source
     });
+    
 }
 
 export default setup;

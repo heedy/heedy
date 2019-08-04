@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/dkumor/revhttpfs v0.0.0-20190804203940-8dd55c115095
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.1

@@ -23,7 +23,7 @@
                     </v-list-item>
                     <v-list-item v-else two-line  :to="'/user/' + user.name">
                         <v-list-item-avatar>
-                            <avatar :image="user.avatar"></avatar>
+                            <avatar :image="user.avatar" :colorHash="user.name"></avatar>
                         </v-list-item-avatar>
 
                         <v-list-item-content>

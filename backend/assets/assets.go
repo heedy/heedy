@@ -1,14 +1,56 @@
 package assets
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/dkumor/revhttpfs"
+	"github.com/rakyll/statik/fs"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
+
+// The cached builtin Assets
+var builtinAssets afero.Fs
+
+// BuiltinAssets prepares the assets built into the executable. If no such assets are found, it tries
+// to find an assets folder, and use that, which is useful for debugging and development.
+func BuiltinAssets() afero.Fs {
+	if builtinAssets == nil {
+		statikFS, err := fs.New()
+		if err != nil {
+			// Try to find an assets folder in the ancestors
+			cwd, err := os.Getwd()
+			if err != nil {
+				panic(err)
+			}
+			assetPath := filepath.Join(cwd, "assets")
+			_, err = os.Stat(filepath.Join(assetPath, "heedy.conf"))
+			for os.IsNotExist(err) {
+				cwdnew := filepath.Dir(cwd)
+				if cwdnew == cwd {
+					panic(errors.New("Could not find assets folder"))
+				}
+				cwd = cwdnew
+				assetPath = filepath.Join(cwd, "assets")
+				_, err = os.Stat(filepath.Join(assetPath, "heedy.conf"))
+			}
+
+			log.Warnf("Debug mode: using assets from %s", assetPath)
+
+			builtinAssets = afero.NewBasePathFs(afero.NewOsFs(), assetPath)
+		} else {
+			builtinAssets = revhttpfs.NewReverseHttpFs(statikFS)
+		}
+
+	}
+
+	return builtinAssets
+}
 
 // Assets holds the information that comes from loading the database folder,
 // merging it with the built-in assets, and combining

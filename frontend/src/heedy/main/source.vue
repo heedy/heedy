@@ -1,15 +1,18 @@
 <template>
-    <h1>{{ source.fullname }}</h1>
+    <component :is="is" :source="source" />
 </template>
 <script>
+
+import {typeComponents} from "./sourceInjector.js";
+import SourceDefault from "./source_default.vue";
+
 export default {
     props: {
         source: Object
     },
-    beforeMount() {
-        let typePath = this.$store.state.heedy.typePaths[this.source.type] || "";
-        if (typePath!="") {
-            this.$router.push(`/source/${this.source.id}/` + typePath);
+    computed: {
+        is() {
+            return typeComponents[this.source.type] || SourceDefault;
         }
     }
 }

@@ -24,7 +24,7 @@ const plugins = [
   // https://github.com/rollup/rollup/issues/2374
   //externalGlobals(globals),
   resolve({
-    browser: true,
+    //browser: true,
     preferBuiltins: false
   }),
   postcss(),

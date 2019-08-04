@@ -17,6 +17,13 @@ import 'codemirror/lib/codemirror.css';
 //import '@mdi/font/css/materialdesignicons.css';
 // require styles
 
+// HotTable has some annoying code where it requires Vue, and
+// therefore we should add it here in dist. It should really
+// be moved to the stream plugin at some point.
+import { HotTable } from '@handsontable/vue';
+import "handsontable/dist/handsontable.full.css";
+Vue.component("hot-table",HotTable);
+
 
 // Disable the vue console messages
 Vue.config.productionTip = false;

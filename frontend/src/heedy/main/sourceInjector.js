@@ -4,6 +4,8 @@ var sourceRoutes = {};
 
 var sourceTypeRouter = [];
 
+var typeComponents = {};
+
 
 class Source {
     constructor(pluginName) {
@@ -17,18 +19,16 @@ class Source {
         vuexModule.state.sourceCreators.push(c);
     }
 
-    typePath(t,p) {
-        vuexModule.state.typePaths[t] = p;
+    typeComponent(t,c) {
+        typeComponents[t] = c;
     }
 
     /**
      * Adds a route to the given source type. The route
-     * automatically takes /source/:sourceid/{t}/ as the root path
-     * @param {*} t 
+     * automatically takes /source/:sourceid/{r.path}
      * @param {*} r 
      */
-    addRoute(t,r) {
-        r.path = t + r.path;
+    addRoute(r) {
         sourceRoutes[r.path] = r;
     }
 
@@ -42,5 +42,5 @@ class Source {
     }
 }
 
-export {sourceTypeRouter}
+export {sourceTypeRouter, typeComponents}
 export default Source;
