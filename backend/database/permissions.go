@@ -73,6 +73,23 @@ func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectState
 	return s, err
 }
 
+func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectStatement string, args ...interface{}) (*Connection,error) {
+	c := &Connection{}
+	err := adb.Get(c, selectStatement, args...)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+
+	if o == nil || !o.Avatar {
+		c.Avatar = nil
+	}
+	if o==nil || !o.APIKey {
+		c.APIKey = nil
+	}
+
+	return c, err
+}
+
 // updateSource uses a select statement that returns the source type if editing is permitted
 func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...interface{}) error {
 	// Get the source type and scopes
@@ -109,6 +126,13 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 
 	// Allow updating groups that are not users
 	result, err := adb.Exec(fmt.Sprintf("UPDATE sources SET %s WHERE id=?;", sColumns), sValues...)
+	return getExecError(result, err)
+}
+
+func updateConnection(adb *AdminDB, c *Connection, whereStatement string, args ...interface{}) error {
+	cColumns, cValues, err := connectionUpdateQuery(c)
+	cValues = append(cValues,args...)
+	result,err := adb.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE %s",cColumns,whereStatement),cValues...)
 	return getExecError(result, err)
 }
 
@@ -203,10 +227,29 @@ func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string,arg
 	}
 
 	// Clear avatars if not needed
-	if o!=nil && o.Avatar!=nil && *o.Avatar {
+	if o!=nil && o.Avatar!=nil && !(*o.Avatar) {
 		for r := range res {
 			res[r].Avatar = nil
 		}
+	}
+	return res,nil
+}
+
+func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement string, args ...interface{}) ([]*Connection, error) {
+	var res []*Connection
+	err := adb.Select(&res,selectStatement,args...)
+	if err!=nil {
+		return nil,err
+	}
+	if o!=nil {
+		if o.Avatar!=nil && !(*o.Avatar) {
+			for r := range res {
+				res[r].Avatar = nil
+			}
+		}
+	}
+	for r := range res {
+		res[r].APIKey = nil
 	}
 	return res,nil
 }

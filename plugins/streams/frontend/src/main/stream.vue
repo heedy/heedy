@@ -8,7 +8,7 @@
           <v-flex>
             <v-card>
               <v-card-text>
-                <hot-table :data="datatable" :rowHeaders="true" :colHeaders="true"></hot-table>
+                
               </v-card-text>
             </v-card>
           </v-flex>
@@ -24,14 +24,7 @@ import StreamInfo from "./streaminfo.vue";
 
 export default {
     components: {StreamInfo},
-    data: () => ({
-      datatable: [
-          ["", "Ford", "Volvo", "Toyota", "Honda"],
-          ["2016", 10, 11, 12, 13],
-          ["2017", 20, 11, 14, 13],
-          ["2018", 30, 15, 12, 13]
-        ]
-    }),
+    
     props: {
         source: Object
     },

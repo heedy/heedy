@@ -9,6 +9,7 @@ require (
 	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/schema v1.1.0
+	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/hcl2 v0.0.0-20190702185634-5b39d9ff3a9a
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0

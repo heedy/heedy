@@ -59,6 +59,9 @@ CREATE TABLE connections (
 	-- Can (but does not have to) have an API key
 	apikey VARCHAR UNIQUE DEFAULT NULL,
 
+	-- Permissions are granted to a connection through scopes
+	scopes VARCHAR NOT NULL DEFAULT '[]',
+
 	settings VARCHAR DEFAULT '{}',
 	setting_schema VARCHAR DEFAULT '{}',
 
@@ -133,25 +136,6 @@ CREATE TABLE shared_sources (
 );
 
 CREATE INDEX share_sourceid on shared_sources(sourceid);
-
-------------------------------------------------------------------------------------
--- CONNECTION ACCESS
-------------------------------------------------------------------------------------
-
-
-
--- The scopes available to the connection
-CREATE TABLE connection_scopes (
-	connectionid VARCHAR(36) NOT NULL,
-	scope VARCHAR NOT NULL,
-	PRIMARY KEY (connectionid,scope),
-	UNIQUE (connectionid,scope),
-	CONSTRAINT fk_connectionid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE
-);
 
 
 ------------------------------------------------------------------

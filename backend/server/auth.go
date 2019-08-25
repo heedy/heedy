@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -69,6 +70,30 @@ func NewAuth(db *database.AdminDB) *Auth {
 }
 
 func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
+	// First, try authenticating as a connection
+	apikey := r.Header.Get("Authorization")
+	if len(apikey) > 0 {
+		const prefix = "Bearer "
+		if len(apikey) < len(prefix) || strings.EqualFold(apikey[:len(prefix)],prefix) {
+			return nil,errors.New("bad_request: Malformed authorization header")
+		}
+		apikey = apikey[len(prefix):]
+	} else {
+		// No authorization header. Check the url params for a token
+		apikey = r.URL.Query().Get("token")
+	}
+
+	if len(apikey) > 0 {
+		// Try logging in as a connection
+		c,err := a.DB.GetConnectionByKey(apikey)
+		if err!=nil {
+			return nil,errors.New("access_denied: invalid API key")
+		}
+		return database.NewConnectionDB(a.DB,c),nil
+
+	}
+
+	// Then see if there was a cookie
 	cookie, err := r.Cookie("token")
 	if err == nil {
 		// There was a cookie. Cookie errors are just treated

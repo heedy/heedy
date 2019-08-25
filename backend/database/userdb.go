@@ -137,7 +137,36 @@ func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, er
 }
 
 // ListSources lists the given sources
-func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
-	return listSources(db.adb,o,`SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
-		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`,db.user)
+func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
+		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`, db.user)
+}
+
+func (db *UserDB) CreateConnection(c *Connection) (string, string, error) {
+
+	if c.Owner == nil {
+		// If no owner is specified, assume the current user
+		c.Owner = &db.user
+	}
+	if *c.Owner != db.user {
+		return "", "", ErrAccessDenied("Cannot create a connection belonging to someone else")
+	}
+	return db.adb.CreateConnection(c)
+}
+func (db *UserDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
+	// Can only read connections that belong to us
+	return readConnection(db.adb,cid,o,`SELECT * FROM connections WHERE owner=? AND id=?;`,db.user,cid)
+}
+func (db *UserDB) UpdateConnection(c *Connection) error {
+	return updateConnection(db.adb,c,`id=? AND owner=?`,c.ID,db.user)
+}
+func (db *UserDB) DelConnection(cid string) error {
+	result, err := db.adb.Exec("DELETE FROM connections WHERE id=? AND owner=?;", cid, db.user)
+	return getExecError(result, err)
+}
+func (db *UserDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
+	if o!=nil && o.User!=nil && *o.User!=db.user {
+		return nil,ErrAccessDenied("Can only list your own connections")
+	}
+	return listConnections(db.adb,o,`SELECT * FROM connections WHERE owner=?`,db.user)
 }

@@ -88,6 +88,66 @@ func DeleteSource(w http.ResponseWriter, r *http.Request) {
 	WriteResult(w, r, CTX(r).DB.DelSource(sid))
 }
 
+func CreateConnection(w http.ResponseWriter, r *http.Request) {
+	var c database.Connection
+	if err := UnmarshalRequest(r, &c); err != nil {
+		WriteJSONError(w, r, 400, err)
+		return
+	}
+	db := CTX(r).DB
+	cid,_, err := db.CreateConnection(&c)
+	if err != nil {
+		WriteJSONError(w, r, 400, err)
+		return
+	}
+	c2, err := db.ReadConnection(cid,&database.ReadConnectionOptions{
+		APIKey: true,
+	})
+	WriteJSON(w,r,c2,err)
+}
+
+func ReadConnection(w http.ResponseWriter, r *http.Request) {
+	var o database.ReadConnectionOptions
+	cid := chi.URLParam(r, "connectionid")
+	err := queryDecoder.Decode(&o, r.URL.Query())
+	if err != nil {
+		WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	s, err := CTX(r).DB.ReadConnection(cid, &o)
+	WriteJSON(w, r, s, err)
+}
+
+
+func UpdateConnection(w http.ResponseWriter, r *http.Request) {
+	var c database.Connection
+
+	if err := UnmarshalRequest(r, &c); err != nil {
+		WriteJSONError(w, r, 400, err)
+		return
+	}
+	c.ID = chi.URLParam(r, "connectionid")
+	WriteResult(w, r, CTX(r).DB.UpdateConnection(&c))
+}
+
+func DeleteConnection(w http.ResponseWriter, r *http.Request) {
+	cid := chi.URLParam(r, "connectionid")
+	WriteResult(w, r, CTX(r).DB.DelConnection(cid))
+}
+
+
+func ListConnections(w http.ResponseWriter,r *http.Request) {
+	var o database.ListConnectionOptions
+	err := queryDecoder.Decode(&o, r.URL.Query())
+	if err != nil {
+		WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	cl,err := CTX(r).DB.ListConnections(&o)
+	WriteJSON(w, r, cl, err)
+}
+
+
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	WriteJSONError(w, r, http.StatusNotFound, errors.New("not_found: The given endpoint is not available"))
 }
@@ -105,6 +165,12 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Get("/source/{sourceid}", ReadSource)
 	v1mux.Patch("/source/{sourceid}", UpdateSource)
 	v1mux.Delete("/source/{sourceid}", DeleteSource)
+
+	v1mux.Post("/connection", CreateConnection)
+	v1mux.Get("/connection", ListConnections)
+	v1mux.Get("/connection/{connectionid}",ReadConnection)
+	v1mux.Patch("/connection/{connectionid}",UpdateConnection)
+	v1mux.Delete("/connection/{connectionid}",DeleteConnection)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

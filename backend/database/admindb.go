@@ -66,6 +66,7 @@ func (db *AdminDB) LoginToken(token string) (string, error) {
 	return selectResult.User, err
 }
 
+
 // AddLoginToken gets the token for a given user
 func (db *AdminDB) AddLoginToken(user string) (token string, err error) {
 	token, err = GenerateKey(15)
@@ -137,6 +138,86 @@ func (db *AdminDB) DelUser(name string) error {
 	result, err := db.Exec("DELETE FROM users WHERE name=?;", name)
 	return getExecError(result, err)
 }
+
+// CanCreateSource returns whether the given source can be
+func (db *AdminDB) CanCreateSource(s *Source) error {
+	_, _, err := sourceCreateQuery(db.Assets().Config, s)
+	return err
+}
+
+// CreateSource creates the source
+func (db *AdminDB) CreateSource(s *Source) (string, error) {
+	sColumns, sValues, err := sourceCreateQuery(db.Assets().Config, s)
+	if err != nil {
+		return "", err
+	}
+
+	if s.Connection != nil {
+		// We must insert while also setting the owner to the connection's owner
+		sValues = append(sValues, *s.Connection)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
+		err = getExecError(result, err)
+
+		return s.ID, err
+	}
+
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
+	err = getExecError(result, err)
+
+	return s.ID, err
+
+}
+
+// ReadSource gets the source by ID
+func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (s *Source, err error) {
+	s, err = readSource(db, id, o, `SELECT *,'["*"]' AS access FROM sources WHERE (id=?) LIMIT 1;`, id)
+	return
+}
+
+// UpdateSource updates the given source by ID
+func (db *AdminDB) UpdateSource(s *Source) error {
+	return updateSource(db, s, `SELECT type,'["*"]' AS access FROM sources WHERE id=? LIMIT 1;`, s.ID)
+}
+
+// DelSource deletes the given source
+func (db *AdminDB) DelSource(id string) error {
+	result, err := db.Exec("DELETE FROM sources WHERE id=?;", id)
+	return getExecError(result, err)
+}
+
+// ShareSource shares the given source with the given user, allowing the given set of scopes
+func (db *AdminDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+	if len(sa.Scopes) == 0 {
+		return db.UnshareSourceFromUser(sourceid, userid)
+	}
+	if !sa.HasScope("read") {
+		return ErrBadQuery("To share a source, it needs to have the read scope active")
+	}
+
+	res, err := db.Exec("INSERT OR REPLACE INTO shared_sources(username,sourceid,scopes) VALUES (?,?,?);", userid, sourceid, sa)
+	return getExecError(res, err)
+}
+
+// UnshareSourceFromUser Removes the given share from the source
+func (db *AdminDB) UnshareSourceFromUser(sourceid, userid string) error {
+	return unshareSourceFromUser(db, sourceid, userid, "DELETE FROM shared_sources WHERE sourceid=? AND username=?", sourceid, userid)
+}
+
+// UnshareSource deletes ALL the shares fro mthe source
+func (db *AdminDB) UnshareSource(sourceid string) error {
+	return unshareSource(db, sourceid, "DELETE FROM shared_sources WHERE sourceid=?", sourceid)
+}
+
+// GetSourceShares returns the shares of the source
+func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+	return getSourceShares(db, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?`, sourceid)
+}
+
+// ListSources lists the given sources
+func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
+	return listSources(db,o,`SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
+}
+
 
 // CreateConnection creates a new connection. Nuff said.
 func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
@@ -222,81 +303,7 @@ func (db *AdminDB) DelConnection(id string) error {
 	return getExecError(result, err)
 }
 
-// CanCreateSource returns whether the given source can be
-func (db *AdminDB) CanCreateSource(s *Source) error {
-	_, _, err := sourceCreateQuery(db.Assets().Config, s)
-	return err
-}
-
-// CreateSource creates the source
-func (db *AdminDB) CreateSource(s *Source) (string, error) {
-	sColumns, sValues, err := sourceCreateQuery(db.Assets().Config, s)
-	if err != nil {
-		return "", err
-	}
-
-	if s.Connection != nil {
-		// We must insert while also setting the owner to the connection's owner
-		sValues = append(sValues, *s.Connection)
-		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
-		err = getExecError(result, err)
-
-		return s.ID, err
-	}
-
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
-	err = getExecError(result, err)
-
-	return s.ID, err
-
-}
-
-// ReadSource gets the source by ID
-func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (s *Source, err error) {
-	s, err = readSource(db, id, o, `SELECT *,'["*"]' AS access FROM sources WHERE (id=?) LIMIT 1;`, id)
-	return
-}
-
-// UpdateSource updates the given source by ID
-func (db *AdminDB) UpdateSource(s *Source) error {
-	return updateSource(db, s, `SELECT type,'["*"]' AS access FROM sources WHERE id=? LIMIT 1;`, s.ID)
-}
-
-// DelSource deletes the given source
-func (db *AdminDB) DelSource(id string) error {
-	result, err := db.Exec("DELETE FROM sources WHERE id=?;", id)
-	return getExecError(result, err)
-}
-
-// ShareSource shares the given source with the given user, allowing the given set of scopes
-func (db *AdminDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
-	if len(sa.Scopes) == 0 {
-		return db.UnshareSourceFromUser(sourceid, userid)
-	}
-	if !sa.HasScope("read") {
-		return ErrBadQuery("To share a source, it needs to have the read scope active")
-	}
-
-	res, err := db.Exec("INSERT OR REPLACE INTO shared_sources(username,sourceid,scopes) VALUES (?,?,?);", userid, sourceid, sa)
-	return getExecError(res, err)
-}
-
-// UnshareSourceFromUser Removes the given share from the source
-func (db *AdminDB) UnshareSourceFromUser(sourceid, userid string) error {
-	return unshareSourceFromUser(db, sourceid, userid, "DELETE FROM shared_sources WHERE sourceid=? AND username=?", sourceid, userid)
-}
-
-// UnshareSource deletes ALL the shares fro mthe source
-func (db *AdminDB) UnshareSource(sourceid string) error {
-	return unshareSource(db, sourceid, "DELETE FROM shared_sources WHERE sourceid=?", sourceid)
-}
-
-// GetSourceShares returns the shares of the source
-func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
-	return getSourceShares(db, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?`, sourceid)
-}
-
-// ListSources lists the given sources
-func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
-	return listSources(db,o,`SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
+// ListConnections lists connections
+func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection,error) {
+	return nil,ErrUnimplemented
 }

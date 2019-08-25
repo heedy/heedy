@@ -134,6 +134,8 @@ type Connection struct {
 
 	APIKey *string `json:"apikey,omitempty" db:"apikey"`
 
+	Scopes *ScopeArray `json:"scopes" db:"scopes"`
+
 	Settings      *string `json:"settings" db:"settings"`
 	SettingSchema *string `json:"setting_schema" db:"setting_schema"`
 }
@@ -163,6 +165,7 @@ type ReadUserOptions struct {
 // ReadConnectionOptions gives options for reading
 type ReadConnectionOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
+	APIKey bool `json:"apikey,omitempty" schema:"apikey"`
 }
 
 // ReadSourceOptions gives options for reading
@@ -188,6 +191,14 @@ type ListSourcesOptions struct {
 	Shared *bool
 }
 
+// ListConnectionOptions holds the options associated with listing connections
+type ListConnectionOptions struct {
+	// Whether to include avatars
+	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
+	// Limit results to the given user's connections
+	User *string `json:"user,omitempty" schema:"user"`
+}
+
 // DB represents the database. This interface is implemented in many ways:
 //	once for admin
 //	once for users
@@ -204,6 +215,12 @@ type DB interface {
 	ReadUser(name string, o *ReadUserOptions) (*User, error)
 	UpdateUser(u *User) error
 	DelUser(name string) error
+
+	CreateConnection(c *Connection) (string,string,error)
+	ReadConnection(cid string, o *ReadConnectionOptions) (*Connection,error)
+	UpdateConnection(c *Connection) error
+	DelConnection(cid string) error
+	ListConnections(o *ListConnectionOptions) ([]*Connection,error)
 
 	CanCreateSource(s *Source) error
 	CreateSource(s *Source) (string, error)
@@ -411,11 +428,7 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 	if c.Owner == nil {
 		return "", nil, ErrInvalidQuery
 	}
-	if c.APIKey == nil {
-		// We want the API key to always be set on create
-		es := ""
-		c.APIKey = &es
-	}
+	
 	cColumns, cValues, err := extractConnection(c)
 	if err != nil {
 		return "", nil, err

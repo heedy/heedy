@@ -246,3 +246,56 @@ func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Sou
 	err := db.UnmarshalRequest(&sl,"GET",api,nil)
 	return sl,err
 }
+
+func (db *PluginDB) CreateConnection(c *database.Connection) (string,string,error) {
+	api := "/api/heedy/v1/connection"
+	b, err := json.Marshal(c)
+	if err != nil {
+		return "","", err
+	}
+
+	err = db.UnmarshalRequest(&c, "POST", api, bytes.NewBuffer(b))
+	apikey := ""
+	if c.APIKey!=nil {
+		apikey = *c.APIKey
+	}
+	return c.ID,apikey,err
+}
+func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection,error) {
+	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
+
+	if o != nil {
+		form := url.Values{}
+		queryEncoder.Encode(o, form)
+		api = api + "?" + form.Encode()
+	}
+	var c database.Connection
+
+	err := db.UnmarshalRequest(&c, "GET", api, nil)
+	return &c, err
+}
+func (db *PluginDB) UpdateConnection(c *database.Connection) error {
+	api := fmt.Sprintf("/api/heedy/v1/connection/%s", c.ID)
+	b, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
+}
+func (db *PluginDB) DelConnection(id string) error {
+	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
+	return db.BasicRequest("DELETE", api, nil)
+}
+func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*database.Connection,error) {
+	var cl []*database.Connection
+	api := "/api/heedy/v1/connection"
+
+	if o != nil {
+		form := url.Values{}
+		queryEncoder.Encode(o, form)
+		api = api + "?" + form.Encode()
+	}
+	err := db.UnmarshalRequest(&cl,"GET",api,nil)
+	return cl,err
+}
