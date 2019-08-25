@@ -84,6 +84,60 @@ func (s *ScopeArray) HasScope(sv string) (ok bool) {
 	return
 }
 
+func connectionParentScope(s string) string {
+	r := strings.SplitN(s, ":", 2)
+	return r[0]
+}
+
+// ConnectionScopeArray works with connection scopes, which have different details than source scopes
+type ConnectionScopeArray struct {
+	ScopeArray
+}
+
+// Update cleans out the scopes to remove repeated items
+func (s *ConnectionScopeArray) Update() {
+	scopeMap := make(map[string]bool)
+	for _, v := range s.Scopes {
+		scopeMap[v] = true
+	}
+
+	// Now for each scope, check if there is a wildcard, meaning that
+	// self.sources encompasses self.sources:read
+
+	s.scopeMap = make(map[string]bool)
+	if _, ok := scopeMap["*"]; ok {
+		s.scopeMap["*"] = true
+		s.Scopes = []string{"*"}
+		return
+	}
+
+	for _, v := range s.Scopes {
+		if _, ok := scopeMap[connectionParentScope(v)]; !ok {
+			s.scopeMap[v] = true
+		}
+	}
+
+	s.Scopes = make([]string, 0, len(s.scopeMap))
+	for k := range s.scopeMap {
+		s.Scopes = append(s.Scopes, k)
+	}
+}
+
+// HasScope checks if the given scope is present
+func (s *ConnectionScopeArray) HasScope(sv string) (ok bool) {
+	if s.scopeMap == nil {
+		s.Update()
+	}
+	_, ok = s.scopeMap[sv]
+	if !ok {
+		_, ok = s.scopeMap[connectionParentScope(sv)]
+		if !ok {
+			_, ok = s.scopeMap["*"]
+		}
+	}
+	return
+}
+
 // SourceMeta represents a json column in the table. To handle it correctly, we need to manually scan it
 // and output the relevant values
 type SourceMeta map[string]interface{}
@@ -112,10 +166,6 @@ type Details struct {
 	FullName    *string `json:"fullname" db:"fullname"`
 	Description *string `json:"description" db:"description"`
 	Avatar      *string `json:"avatar" db:"avatar"`
-
-	// The access array, giving the permissions the cuurently logged in thing has
-	// It is generated manually for each read query, it does not exist in the database.
-	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
 
 // User holds a user's data
@@ -134,7 +184,7 @@ type Connection struct {
 
 	APIKey *string `json:"apikey,omitempty" db:"apikey"`
 
-	Scopes *ScopeArray `json:"scopes" db:"scopes"`
+	Scopes *ConnectionScopeArray `json:"scopes" db:"scopes"`
 
 	Settings      *string `json:"settings" db:"settings"`
 	SettingSchema *string `json:"setting_schema" db:"setting_schema"`
@@ -150,6 +200,10 @@ type Source struct {
 	Meta *SourceMeta `json:"meta,omitempty" db:"meta"`
 
 	Scopes *ScopeArray `json:"scopes" db:"scopes"`
+
+	// The access array, giving the permissions the cuurently logged in thing has
+	// It is generated manually for each read query, it does not exist in the database.
+	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
 
 func (s *Source) String() string {
@@ -216,11 +270,11 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 
-	CreateConnection(c *Connection) (string,string,error)
-	ReadConnection(cid string, o *ReadConnectionOptions) (*Connection,error)
+	CreateConnection(c *Connection) (string, string, error)
+	ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error)
 	UpdateConnection(c *Connection) error
 	DelConnection(cid string) error
-	ListConnections(o *ListConnectionOptions) ([]*Connection,error)
+	ListConnections(o *ListConnectionOptions) ([]*Connection, error)
 
 	CanCreateSource(s *Source) error
 	CreateSource(s *Source) (string, error)
@@ -233,7 +287,7 @@ type DB interface {
 	UnshareSource(sourceid string) error
 	GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error)
 
-	ListSources(o *ListSourcesOptions) ([]*Source,error)
+	ListSources(o *ListSourcesOptions) ([]*Source, error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -295,9 +349,7 @@ func extractDetails(d *Details) (columns []string, values []interface{}, err err
 			return
 		}
 	}
-	if len(d.Access.Scopes) > 0 {
-		err = ErrBadQuery("The access field is auto-generated from permissions - it cannot be set directly")
-	}
+
 	columns, values = extractPointers(d)
 
 	return
@@ -368,6 +420,9 @@ func extractSource(s *Source) (sColumns []string, sValues []interface{}, err err
 			return
 		}
 	}
+	if len(s.Access.Scopes) > 0 {
+		err = ErrBadQuery("The access field is auto-generated from permissions - it cannot be set directly")
+	}
 
 	c2, g2 := extractPointers(s)
 	sColumns = append(sColumns, c2...)
@@ -428,10 +483,17 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 	if c.Owner == nil {
 		return "", nil, ErrInvalidQuery
 	}
-	
 	cColumns, cValues, err := extractConnection(c)
 	if err != nil {
 		return "", nil, err
+	}
+
+	if c.APIKey == nil {
+		apikey, err := GenerateKey(15)
+		if err != nil {
+			return "", nil, err
+		}
+		c.APIKey = &apikey
 	}
 
 	// We create an ID for the connection. Guaranteed to be last element
@@ -504,36 +566,36 @@ func sourceUpdateQuery(c *assets.Configuration, s *Source, sourceType string) (s
 	return strings.Join(sColumns, "=?,") + "=?", sValues, err
 }
 
-func listSourcesQuery(o *ListSourcesOptions) (string,[]interface{},error) {
-	sColumns := make([]string,0)
-	sValues := make([]interface{},0)
+func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
+	sColumns := make([]string, 0)
+	sValues := make([]interface{}, 0)
 	pretext := ""
-	if o!=nil {
+	if o != nil {
 
-		if o.User!=nil {
-			sColumns = append(sColumns,"owner")
-			sValues = append(sValues,*o.User)
+		if o.User != nil {
+			sColumns = append(sColumns, "owner")
+			sValues = append(sValues, *o.User)
 		}
-		if o.Connection!=nil {
+		if o.Connection != nil {
 			if *o.Connection == "none" {
 				pretext = "connection IS NULL"
 			} else {
-				sColumns = append(sColumns,"connection")
-				sValues = append(sValues,*o.Connection)
+				sColumns = append(sColumns, "connection")
+				sValues = append(sValues, *o.Connection)
 			}
 		}
-		if o.Type!=nil {
-			sColumns = append(sColumns,"type")
-			sValues = append(sValues,*o.Type)
+		if o.Type != nil {
+			sColumns = append(sColumns, "type")
+			sValues = append(sValues, *o.Type)
 		}
 	}
-	if len(sColumns)==0 {
-		if len(pretext)==0 {
-			return "1=1",sValues,nil
+	if len(sColumns) == 0 {
+		if len(pretext) == 0 {
+			return "1=1", sValues, nil
 		}
-		return pretext,sValues,nil
+		return pretext, sValues, nil
 	}
-	if len(pretext)==0 {
+	if len(pretext) == 0 {
 		return strings.Join(sColumns, "=? AND ") + "=?", sValues, nil
 	}
 

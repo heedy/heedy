@@ -88,16 +88,16 @@ func (db *PublicDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, 
 }
 
 // ListSources lists the given sources
-func (db *PublicDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
-	return listSources(db.adb,o,`SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
+func (db *PublicDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
 		WHERE %s AND ss.user='public' AND ss.source=sources.id GROUP BY sources.id %s;`)
 }
 
-func (db *PublicDB) CreateConnection(c *Connection) (string,string,error) {
- return "","",ErrAccessDenied("You must be logged in to create connections")
+func (db *PublicDB) CreateConnection(c *Connection) (string, string, error) {
+	return "", "", ErrAccessDenied("You must be logged in to create connections")
 }
-func (db *PublicDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection,error) {
-	return nil,ErrAccessDenied("You must be logged in to read connections")
+func (db *PublicDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
+	return nil, ErrAccessDenied("You must be logged in to read connections")
 }
 func (db *PublicDB) UpdateConnection(c *Connection) error {
 	return ErrAccessDenied("You must be logged in to update connections")
@@ -105,6 +105,6 @@ func (db *PublicDB) UpdateConnection(c *Connection) error {
 func (db *PublicDB) DelConnection(cid string) error {
 	return ErrAccessDenied("You must be logged in to delete connections")
 }
-func (db *PublicDB) ListConnections(o *ListConnectionOptions) ([]*Connection,error) {
-	return nil,ErrAccessDenied("You must be logged in to list connections")
+func (db *PublicDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
+	return nil, ErrAccessDenied("You must be logged in to list connections")
 }

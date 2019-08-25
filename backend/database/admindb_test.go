@@ -176,11 +176,13 @@ func TestAdminConnection(t *testing.T) {
 	}))
 
 	badname := "derp"
+	noapikey := ""
 	conn, apikey, err := db.CreateConnection(&Connection{
 		Details: Details{
 			Name: &name,
 		},
 		Owner: &name,
+		APIKey: &noapikey,
 	})
 	require.NoError(t, err)
 	require.Equal(t, apikey, "")
