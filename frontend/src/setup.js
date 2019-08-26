@@ -1,7 +1,7 @@
-import VueRouter from "vue-router";
+import Vue, {VueRouter,Vuetify} from "./dist.mjs";
 
 import Theme from "./embedded/setup/Theme.vue";
-import Basics from "./embedded/setup/Basics.vue";
+import Create from "./embedded/setup/Create.vue";
 
 Vue.use(VueRouter);
 
@@ -9,13 +9,19 @@ const router = new VueRouter({
   routes: [
     {
       path: "/",
-      name: "Basics",
-      component: Basics
+      name: "Create",
+      component: Create
     }
   ]
+});
+const vuetify = new Vuetify({
+  icons: {
+    iconfont: 'md',
+  },
 });
 
 new Vue({
   router,
+  vuetify: vuetify,
   render: h => h(Theme)
 }).$mount("#app");

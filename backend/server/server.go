@@ -11,7 +11,6 @@ import (
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -87,7 +86,7 @@ func Run(r *RunOptions) error {
 	requestHandler := http.Handler(NewRequestHandler(auth, em, om))
 
 	if r != nil && r.Verbose {
-		logrus.Warn("Running in verbose mode")
+		log.Warn("Running in verbose mode")
 		requestHandler = VerboseLoggingMiddleware(requestHandler)
 	}
 

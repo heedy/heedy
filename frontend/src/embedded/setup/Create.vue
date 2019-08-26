@@ -1,14 +1,17 @@
 <template>
-    <v-card color="rgb(245,245,250)">
+    <v-card color="rgb(245,245,250)" elevation="24">
 
-        <v-card-title primary-title>
-          <div>
-            <div class="headline">Create Your User</div>
-            <span class="grey--text">The first user is created as a database administrator.</span>
-          </div>
+        <v-card-title text-center>
+            <v-layout row justify-center>
+              <v-flex text-center style="padding-top: 1cm;">
+                <h1 style="color:#1976d2;padding-bottom: 7px;">heedy</h1>
+                <h4>Create your Database</h4>
+              </v-flex>
+            </v-layout>
         </v-card-title>
-      <v-form v-model="valid">
+      <v-form style="padding-left:15px;padding-right:15px;">
         <v-card-text>
+          <v-alert v-if="alert.length>0" text outlined color="deep-orange" icon="error_outline">{{ alert }}</v-alert>
           <v-container>
           <v-layout row wrap>
             <v-flex xs12>
@@ -18,12 +21,14 @@
             placeholder="admin"
             v-model.trim="username"
             required
+            autofocus
             solo
+            tabindex="1"
           ></v-text-field>
               </v-flex>
               <v-flex xs12>
               <h3>Password</h3>
-              <v-layout row wrap>
+              </v-flex>
           <v-flex md6 xs12 >
           <v-text-field
             label="Password"
@@ -32,6 +37,7 @@
             v-model="password1"
             required
             solo
+            tabindex="2"
           ></v-text-field>
           </v-flex>
           <v-flex md6 xs12 >
@@ -42,11 +48,9 @@
             v-model="password2"
             required
             solo
+            tabindex="3"
           ></v-text-field>
           </v-flex>
-        </v-layout>
-        
-              </v-flex>
               <p>Heedy is ready to create a database with default settings, you just need to give it a starting user.
                 For more control on how Heedy is set up, click on the "Server Settings" button.
               </p>
@@ -68,30 +72,38 @@
       <v-layout row wrap>
         <v-flex xs12>
         <h3>Database Location</h3>
+        <p>This is the place where heedy will put all its files. It is also the place where settings are saved, and where plugins will be installed.
+          You can choose a different folder by specifying it in the heedy command - this field is readonly.
+        </p>
           <v-text-field
             label="Database Location"
             :placeholder="directoryDefault"
             v-model.trim="directory"
-            required
+            readonly
             solo
           ></v-text-field>
-          <p>This is the place to put all files needed to run Heedy. It is also the place where settings are saved, and where plugins will be installed.</p>
+          
         </v-flex>
 
         <v-flex xs12 >
         <h3>Host & Port</h3>
-        
-        <v-layout row wrap>
-          <v-flex sm6 xs12 >
+        <p>The main host and port on which to run the server. You should leave the host blank
+            if you want to make Heedy accessible from your phone or other devices on the network.
+            If you want to run Heedy in local mode, so that only things running on the same computer
+            as the server can access it, you can use "localhost".
+            </p>
+        </v-flex>
+          <v-flex sm8 xs12 >
           <v-text-field
             label="Host"
             :placeholder="hostDefault"
             v-model.trim="host"
             required
             solo
+            tabindex="5"
           ></v-text-field>
           </v-flex>
-          <v-flex sm6 xs12 >
+          <v-flex sm4 xs12 >
           <v-text-field
             label="Port"
             type="number"
@@ -99,91 +111,35 @@
             v-model.number="port"
             required
             solo
+            tabindex="6"
           ></v-text-field>
           </v-flex>
-        </v-layout>
-        <p>The main host and port on which to run the server. You should leave the host blank
-            if you want to make Heedy accessible from your phone or other devices on the network.
-            If you want to run Heedy in local mode, so that only things running on the same computer
-            as the server can access it, you can use "localhost".
-            </p>
-          
-            
-        </v-flex>
-
+        
+      <!--
         <v-flex xs12>
         <h3>HTTPS</h3>
-          <v-radio-group v-model="tls">
+        <p>When accessing heedy over the internet, it is very important to 
+          have an encrypted connection, so that others can't see your info and passwords.
+          If you have a domain name, heedy can automatically set up https for you using Let's Encrypt.</p>
+          <v-radio-group v-model="tls" >
       <v-radio
-        label="Self-Signed Certificate"
-        value="selfsigned"
+        label="No Encryption"
+        value="none"
+        tabindex="7"
       ></v-radio>
       <v-radio
-        label="Use Let's Encrypt Certificate"
+        label="Use Let's Encrypt"
         value="letsencrypt"
+        tabindex="8"
       ></v-radio>
       <v-radio
         label="Custom"
         value="custom"
+        tabindex="9"
       ></v-radio>
     </v-radio-group>
-          <p>
-            The main port is always https,
-            so you must also choose how to encrypt the port. If you are running it at home, the default
-            self-signed certificate is good enough. If you are running it on the web, then you should choose
-            let's encrypt to generate valid certificates. Finally, you are also free to provide your own 
-            encryption keys.
-          </p>
         </v-flex>
-
-
-        <v-flex xs12>
-        <h3>HTTP</h3>
-          <v-layout row wrap>
-      <v-flex xs12 sm4>
-        <v-checkbox v-model="httpOn" label="Enable HTTP port"></v-checkbox>
-      </v-flex>
-      <v-flex xs12 sm8>
-        <v-text-field
-            label="Port"
-            type="number"
-            :placeholder="httpPortDefault"
-            v-model.number="httpPort"
-            solo
-          ></v-text-field>
-      </v-flex>
-    </v-layout>
-          <p>
-            If running at home, your browser will give error messages when trying to connect to the https port,
-            because it does not recognize self-signed certificates. Heedy therefore also allows you to expose
-            an unencrypted port. Beware, though - anyone on your network can read your passwords and data when using this port!
-          </p>
-        </v-flex>
-  <!--
-        <v-flex
-          xs12
-          md4
-        >
-          <v-text-field
-            v-model="lastname"
-            :rules="nameRules"
-            :counter="10"
-            label="Last name"
-            required
-          ></v-text-field>
-        </v-flex>
-
-        <v-flex
-          xs12
-          md4
-        >
-          <v-text-field
-            v-model="email"
-            :rules="emailRules"
-            label="E-mail"
-            required
-          ></v-text-field>
-        </v-flex>-->
+        -->
       </v-layout>
     </v-container>
   
@@ -192,11 +148,11 @@
         </v-form>
 
         <v-card-actions>
-            <v-btn flat @click="show = !show">
+            <v-btn text @click="show = !show" tabindex="11">
             <v-icon>{{ show ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</v-icon> Server Settings
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="info" @click="submit">Create Database</v-btn>
+          <v-btn color="info" @click="submit" tabindex="10">Create Database</v-btn>
           
           
         </v-card-actions>
@@ -204,6 +160,9 @@
 </template>
 
 <script>
+
+import api from "../../heedy/api.mjs";
+
 export default {
   data: () => ({
       show: false,
@@ -211,28 +170,37 @@ export default {
       directory: installDirectory,
       hostDefault: configuration["host"],
       host: configuration["host"],
-      portDefault: configuration["port"],
-      port: configuration["port"],
-      httpPortDefault: configuration["http_port"],
-      httpPort: configuration["http_port"],
-      httpOn: configuration["http_port"] > 0,
-      tls: "selfsigned",
+      portDefault: configuration["port"].toString(),
+      port: configuration["port"].toString(),
+      tls: "none",
       username: "",
       password1: "",
-      password2: ""
+      password2: "",
+      alert: ""
     }),
   methods: {
     submit: async function(event) {
+      this.alert="";
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
       if (this.username==="") {
-        console.log("Invalid username");
+        this.alert = "A username is required";
         return;
       }
       if (this.password1!=this.password2) {
-        console.log("Passwords don't match");
+        this.alert = "The passwords do not match";
         return;
       }
       if (this.password1==="") {
-        console.log("Must give a password");
+        this.alert = "A password is required";
+        return;
+      }
+      let port = parseInt(this.port,10);
+      if (isNaN(port)) {
+        this.alert = "The port must be a number";
         return;
       }
       // Generate the query used to create the user.
@@ -243,8 +211,7 @@ export default {
         },
         config: {
           host: this.host,
-          port: this.port,
-          http_port: (this.httpOn? this.httpPort: 0)
+          port: port
         }
       };
 
@@ -261,7 +228,30 @@ export default {
         },
         body: JSON.stringify(query)
       }).catch(error=> console.error(error));
-      console.log(result);
+      
+      if (result.status!=200) {
+        this.alert = (await result.json())["error_description"];
+        return
+      }
+
+      let furl = "/auth/token"
+      if (this.host!=this.hostDefault || this.port!=this.portDefault) {
+        window.location.href = "http://"+this.host + ":" + this.portDefault;
+      }
+
+      // The setup went with defaults, so log in
+      await api(
+        "POST",
+        "/auth/token",
+        {
+          grant_type: "password",
+          username: this.username,
+          password: this.password1
+        },
+        false
+      );
+      // We don't actually care about the result - we just wanted the cookie. Now redirect
+      window.location.href = window.location.href.split("setup/")[0];
       
     }
   }

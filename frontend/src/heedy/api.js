@@ -1,6 +1,6 @@
 
 // https://stackoverflow.com/questions/1714786/query-string-encoding-of-a-javascript-object
-function urlify(obj) {
+export function urlify(obj) {
     var str = [];
     for (var p in obj)
       if (obj.hasOwnProperty(p)) {
