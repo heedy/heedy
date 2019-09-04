@@ -182,6 +182,8 @@ type Connection struct {
 	Details
 	Owner *string `json:"owner" db:"owner"`
 
+	Enabled *bool	`json:"enabled,omitempty" db:"enabled"`
+
 	APIKey *string `json:"apikey,omitempty" db:"apikey"`
 
 	Scopes *ConnectionScopeArray `json:"scopes" db:"scopes"`

@@ -89,6 +89,9 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 		if err!=nil {
 			return nil,errors.New("access_denied: invalid API key")
 		}
+		if !*c.Enabled {
+			return nil, errors.New("connection_disabled: the connection was disabled")
+		}
 		return database.NewConnectionDB(a.DB,c),nil
 
 	}

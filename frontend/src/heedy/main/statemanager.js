@@ -24,7 +24,10 @@ export default {
         sourceCreators: [],
 
         // Subpaths for each source type
-        typePaths: {}
+        typePaths: {},
+
+        // The map of connection scopes along with their descriptions
+        connectionScopes: null
     },
     mutations: {
         alert(state, v) {
@@ -48,6 +51,9 @@ export default {
             srcidarray.push(v.sources[i].id);
           }
           Vue.set(state.userSources,v.user,srcidarray);
+        },
+        setConnectionScopes(state,v) {
+          state.connectionScopes = v;
         }
       },
       actions: {
@@ -128,7 +134,21 @@ export default {
           q.callback();
         }
 
+      },
+      getConnectionScopes: async function({commit}) {
+        console.log("Loading available connection scopes");
+        let res = await api("GET", "api/heedy/v1/meta/scopes");
+        if (!res.response.ok) {
+          commit("alert", {
+            type: "error",
+            text: res.data.error_description
+          });
+          
+        } else {
+          commit("setConnectionScopes", res.data);
+        }
       }
 
     }
+    
 };

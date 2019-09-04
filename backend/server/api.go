@@ -1,11 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/buildinfo"
 )
 
 func ReadUser(w http.ResponseWriter, r *http.Request) {
@@ -148,6 +150,67 @@ func ListConnections(w http.ResponseWriter,r *http.Request) {
 }
 
 
+func GetSourceScopes(w http.ResponseWriter, r *http.Request) {
+	// TODO: figure out whether to require auth for this
+	a := CTX(r).DB.AdminDB().Assets()
+	stype := chi.URLParam(r, "sourcetype")
+	scopes, err := a.Config.GetSourceScopes(stype)
+	WriteJSON(w,r,scopes,err)
+}
+
+func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
+	a := CTX(r).DB.AdminDB().Assets()
+	// Now our job is to generate all of the scopes
+	// TODO: language support
+	// TODO: maybe require auth for this?
+
+	var smap = map[string]string{
+		"owner": "All available access to your user",
+		"owner:read": "Read your user info",
+		"owner:update": "Modify your user's info",
+		"users": "All permissions for all users",
+		"users:read": "Read all users that you can read",
+		"users:update": "Modify info for all users you can modify",
+		"sources": "All permissions for all sources of all types",
+		"sources:read": "Read all sources belonging to you (of all types)",
+		"sources:update": "Modify data of all sources belonging to you (of all types)",
+		"sources:delete": "Delete any sources belonging to you (of all types)",
+		"shared": "All permissions for sources shared with you (of all types)",
+		"shared:read": "Read sources of all types that were shared with you",
+		"self.sources": "Allows the connection to manage its own sources of all types",
+	}
+
+	// Generate the source type scopes
+	for stype := range a.Config.SourceTypes {
+		smap[fmt.Sprintf("sources.%s",stype)] = fmt.Sprintf("All permissions for sources of type '%s'",stype)
+		smap[fmt.Sprintf("sources.%s:read",stype)] = fmt.Sprintf("Read access for your sources of type '%s'",stype)
+		smap[fmt.Sprintf("sources.%s:delete",stype)] = fmt.Sprintf("Can delete your sources of type '%s'",stype)
+
+		smap[fmt.Sprintf("shared.%s",stype)] = fmt.Sprintf("All permissions for sources of type '%s' that were shared with you",stype)
+		smap[fmt.Sprintf("shared.%s:read",stype)] = fmt.Sprintf("Read access for your sources of type '%s' that were shared with you",stype)
+		
+		smap[fmt.Sprintf("self.sources.%s",stype)] = fmt.Sprintf("Allows the connection to manage its own sources of type '%s'",stype)
+	
+		// And now generate the per-type scopes
+		stypemap := a.Config.SourceTypes[stype].Scopes
+		if stypemap!=nil {
+			for sscope := range *stypemap {
+				smap[fmt.Sprintf("sources.%s:%s",stype,sscope)] = (*stypemap)[sscope]
+				//smap[fmt.Sprintf("self.sources.%s:%s",stype,sscope)] = (*stypemap)[sscope]
+				smap[fmt.Sprintf("shared.%s:%s",stype,sscope)] = (*stypemap)[sscope]
+			}
+		}
+	}
+
+	WriteJSON(w,r,smap,nil)
+	
+}
+
+func GetVersion(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(buildinfo.Version))
+}
+
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	WriteJSONError(w, r, http.StatusNotFound, errors.New("not_found: The given endpoint is not available"))
 }
@@ -171,6 +234,10 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Get("/connection/{connectionid}",ReadConnection)
 	v1mux.Patch("/connection/{connectionid}",UpdateConnection)
 	v1mux.Delete("/connection/{connectionid}",DeleteConnection)
+
+	v1mux.Get("/meta/scopes/{sourcetype}",GetSourceScopes)
+	v1mux.Get("/meta/scopes", GetConnectionScopes)
+	v1mux.Get("/meta/version",GetVersion)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

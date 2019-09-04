@@ -27,7 +27,9 @@ const plugins = [
     //browser: true,
     preferBuiltins: false
   }),
-  postcss(),
+  postcss({
+    minimize: true
+  }),
   json({
     compact: true
   }),

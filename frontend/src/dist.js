@@ -8,12 +8,13 @@ import VueCodemirror from 'vue-codemirror';
 
 import 'codemirror/mode/javascript/javascript.js';
 import 'codemirror/mode/python/python.js';
-import 'codemirror/lib/codemirror.css';
+
 
 // For some reason, postcss refuses to load the
 // vuetify css. We therefore manually include it
 // in the html.
-// import 'vuetify/dist/vuetify.min.css';
+import 'codemirror/lib/codemirror.css';
+import 'vuetify/dist/vuetify.css';
 //import '@mdi/font/css/materialdesignicons.css';
 // require styles
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path"
 
 	"github.com/heedy/heedy/backend/assets"
 
@@ -26,7 +27,7 @@ var CreateCmd = &cobra.Command{
 	Use:   "create [location to put database]",
 	Short: "Create a new database",
 	Long: `Sets up the given directory with a new heedy database.
-Creates the folder if it doesn't exist, but fails if the folder is not empty.
+Creates the folder if it doesn't exist, but fails if the folder is not empty. If no folder is specified, uses the default database location.
 
 If you want to set it up from command line, without the setup server, you can specify a configuration file and the admin user:
    
@@ -42,9 +43,15 @@ It is recommended that new users use the web setup, which will guide you in prep
 			return ErrTooManyArgs
 		}
 
-		directory := ""
+		var directory string
 		if len(args) == 1 {
 			directory = args[0]
+		} else if len(args)==0 {
+			f, err := os.UserConfigDir()
+			if err!=nil {
+				return err
+			}
+			directory = path.Join(f,"heedy")
 		}
 		c := assets.NewConfiguration()
 		if port != 0 {

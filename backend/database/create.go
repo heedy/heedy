@@ -65,6 +65,8 @@ CREATE TABLE connections (
 	settings VARCHAR DEFAULT '{}',
 	setting_schema VARCHAR DEFAULT '{}',
 
+	enabled BOOLEAN NOT NULL DEFAULT TRUE,
+
 	CONSTRAINT connectionowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(name)

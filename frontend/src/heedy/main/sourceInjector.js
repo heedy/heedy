@@ -23,6 +23,7 @@ class Source {
         typeComponents[t] = c;
     }
 
+
     /**
      * Adds a route to the given source type. The route
      * automatically takes /source/:sourceid/{r.path}

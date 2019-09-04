@@ -7,6 +7,8 @@ import Logout from "./main/logout.vue";
 import Settings from "./main/settings.vue";
 import User from "./main/user.vue";
 import Source from "./main/source.vue";
+import Connections from "./main/connections.vue";
+import CreateConnection from "./main/create_connection.vue";
 import SourceRouter from "./main/source_router.vue";
 
 import vuexModule from "./main/statemanager.js";
@@ -40,6 +42,14 @@ function setup(app) {
         app.addRoute({
             path: "/settings",
             component: Settings
+        });
+        app.addRoute({
+            path: "/connections",
+            component: Connections
+        });
+        app.addRoute({
+            path: "/create/connection",
+            component: CreateConnection
         });
 
         app.addRoute({

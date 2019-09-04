@@ -114,7 +114,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			writeSetupError(w,r,http.StatusBadRequest,errors.New("Setup is already complete"))
 			return
 		}
-		log.Info("Got create request")
+		log.Debug("Got create request")
 		sm := &setupMessage{}
 		err := UnmarshalRequest(r, sm)
 		if err != nil {

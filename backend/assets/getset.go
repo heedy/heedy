@@ -75,3 +75,15 @@ func (c *Configuration) ValidateSourceMetaWithDefaults(sourcetype string, meta m
 	}
 	return s.ValidateMetaWithDefaults(meta)
 }
+
+// GetSourceScopes returns the map of scopes
+func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string,error) {
+	s,ok := c.SourceTypes[sourcetype]
+	if !ok {
+		return nil,fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+	}
+	if s.Scopes==nil {
+		return make(map[string]string),nil
+	}
+	return *s.Scopes, nil
+}

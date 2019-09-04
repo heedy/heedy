@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
+	"path/filepath"
+	"path"
+	"os"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/server"
@@ -16,15 +18,28 @@ var verbose bool
 var RunCmd = &cobra.Command{
 	Use:   "run [location of database]",
 	Short: "Runs heedy",
-	Long:  `Runs heedy using the passed database.`,
+	Long:  `Runs heedy using the passed database. If no folder is specifed, uses the default database location.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
 			return ErrTooManyArgs
 		}
-		if len(args) != 1 {
-			return errors.New("Must specify a database location")
+		var directory string
+		if len(args) == 1 {
+			directory = args[0]
+		} else {
+			f, err := os.UserConfigDir()
+			if err!=nil {
+				return err
+			}
+			directory = path.Join(f,"heedy")
 		}
-		directory := args[0]
+		var err error
+		directory, err = filepath.Abs(directory)
+		if err!=nil {
+			return err
+		}
+		logrus.Infof("Using database at %s",directory)
+		
 		a, err := assets.Open(directory, nil)
 		if err != nil {
 			return err

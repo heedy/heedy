@@ -9,7 +9,7 @@
               </v-flex>
             </v-layout>
         </v-card-title>
-      <v-form style="padding-left:15px;padding-right:15px;">
+      <v-form @submit="submit" style="padding-left:15px;padding-right:15px;">
         <v-card-text>
           <v-alert v-if="alert.length>0" text outlined color="deep-orange" icon="error_outline">{{ alert }}</v-alert>
           <v-container>
@@ -76,11 +76,10 @@
           You can choose a different folder by specifying it in the heedy command - this field is readonly.
         </p>
           <v-text-field
-            label="Database Location"
             :placeholder="directoryDefault"
             v-model.trim="directory"
             readonly
-            solo
+            outlined
           ></v-text-field>
           
         </v-flex>
@@ -145,17 +144,16 @@
   
           </v-card-text>
         </v-slide-y-transition>
-        </v-form>
-
         <v-card-actions>
             <v-btn text @click="show = !show" tabindex="11">
             <v-icon>{{ show ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</v-icon> Server Settings
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="info" @click="submit" tabindex="10">Create Database</v-btn>
+          <v-btn color="info" type="submit" tabindex="10">Create Database</v-btn>
           
           
         </v-card-actions>
+        </v-form>
       </v-card>
 </template>
 
