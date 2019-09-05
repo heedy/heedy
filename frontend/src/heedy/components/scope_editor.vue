@@ -91,15 +91,15 @@ export default {
       // We can make the permissions look pretty by splitting them into subtypes
       [{
           name: "self",
-          description: "Permissions relative to the connection itself",
+          description: "The connection's permissions for its own private data",
           color: "green"
         },{
           name: "sources",
-          description: "Permissions for sources belonging to you",
+          description: "The connection's access to sources belonging to you",
           color: "blue"
         },{
           name: "shared",
-          description: "Permissions for sources shared with you",
+          description: "The connection's access to sources shared with you",
           color: "purple"
         },{
           name: "owner",

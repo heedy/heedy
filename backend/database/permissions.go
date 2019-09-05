@@ -42,7 +42,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 		return ErrAccessDenied("You do not have sufficient access to edit this user")
 	}
 
-	result, err := tx.Exec(fmt.Sprintf("UPDATE users SET %s WHERE name=?;", userColumns), userValues...)
+	result, err := tx.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()

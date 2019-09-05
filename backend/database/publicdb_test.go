@@ -25,9 +25,7 @@ func TestPublicUser(t *testing.T) {
 
 	// Create the user with admin db
 	require.NoError(t, adb.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}))
 
@@ -47,7 +45,7 @@ func TestPublicUser(t *testing.T) {
 
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
-	require.Equal(t, *u.Name, "testy")
+	require.Equal(t, *u.UserName, "testy")
 
 	// Modifying a user is no-go
 	require.Error(t, db.UpdateUser(&User{

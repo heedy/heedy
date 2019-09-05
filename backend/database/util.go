@@ -34,11 +34,11 @@ var (
 	nameValidator = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]*$")
 )
 
-func ValidName(name string) error {
+func ValidUserName(name string) error {
 	if nameValidator.MatchString(name) && len(name) > 0 {
 		return nil
 	}
-	return ErrInvalidName
+	return ErrInvalidUserName
 }
 
 // Ensures that the avatar is in a valid format

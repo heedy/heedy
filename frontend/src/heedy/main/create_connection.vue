@@ -13,7 +13,7 @@
                     </div>
                     
                     <v-card-title>
-                        <v-text-field label="Full Name" placeholder="My Connection" v-model="fullName"></v-text-field>
+                        <v-text-field label="Connection Name" placeholder="My Connection" v-model="name"></v-text-field>
                         <v-text-field label="Connection Name" placeholder="myconnection" v-model="name"></v-text-field>
                     </v-card-title>
                     <v-card-title>
@@ -65,7 +65,6 @@ export default {
         description: "",
         scopes: "",
         name: "",
-        fullName: "",
         advanced: false,
         loading: false,
         alert: ""
@@ -78,7 +77,7 @@ export default {
             this.loading = true;
             this.alert="";
 
-            this.alert = "Unimplemented 2";
+            this.alert = "Unimplemented";
             console.log({
                 description: this.description,
                 scopes: this.scopes,

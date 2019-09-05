@@ -54,7 +54,7 @@ function setup(app) {
 
         app.addRoute({
             path: "/",
-            redirect: `/user/${app.info.user.name}`
+            redirect: `/user/${app.info.user.username}`
         });
 
         app.addMenuItem({

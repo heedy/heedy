@@ -178,6 +178,7 @@ export default {
     }),
   methods: {
     submit: async function(event) {
+      event.preventDefault();
       this.alert="";
       window.scrollTo({
         top: 0,
@@ -204,7 +205,7 @@ export default {
       // Generate the query used to create the user.
       let query = {
         user: {
-          name: this.username,
+          username: this.username,
           password: this.password1
         },
         config: {
@@ -238,16 +239,32 @@ export default {
       }
 
       // The setup went with defaults, so log in
-      await api(
-        "POST",
-        "/auth/token",
-        {
-          grant_type: "password",
-          username: this.username,
-          password: this.password1
-        },
-        false
-      );
+
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      let i=0;
+      let isok = false;
+      do {
+        i +=1
+        let res = await api(
+          "POST",
+          "/auth/token",
+          {
+            grant_type: "password",
+            username: this.username,
+            password: this.password1
+          },
+          false
+        )
+        isok = res.response.ok;
+        console.log(res);
+        if (!isok) {
+          await sleep(100);
+        }
+      } while (i < 5 && !isok)
+      
       // We don't actually care about the result - we just wanted the cookie. Now redirect
       window.location.href = window.location.href.split("setup/")[0];
       

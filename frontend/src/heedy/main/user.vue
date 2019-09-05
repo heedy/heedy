@@ -16,7 +16,7 @@
                     <avatar :image="item.avatar" :colorHash="item.id" ></avatar>
                   </v-list-item-avatar>
                   <v-list-item-content>
-                    <v-list-item-title>{{ item.fullname }}</v-list-item-title>
+                    <v-list-item-title>{{ item.name }}</v-list-item-title>
                     <v-list-item-subtitle>{{ item.description }}</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
@@ -46,7 +46,7 @@ export default {
       type: String,
       default: function() {
         if (this.$store.state.app.info.user != null) {
-          return this.$store.state.app.info.user.name;
+          return this.$store.state.app.info.user.username;
         }
         return "";
       }
@@ -54,8 +54,8 @@ export default {
   },
   watch: {
     username: function(newValue) {
-      this.$store.dispatch("readUser", { name: newValue });
-      this.$store.dispatch("readUserSources", { name: newValue });
+      this.$store.dispatch("readUser", { username: newValue });
+      this.$store.dispatch("readUserSources", { username: newValue });
     }
   },
   computed: {
@@ -70,23 +70,23 @@ export default {
       if (this.$store.state.app.info.user == null) {
           return false;
         }
-      return this.username == this.$store.state.app.info.user.name;
+      return this.username == this.$store.state.app.info.user.username;
     },
     title() {
             let u = this.user;
             if (u==null) {
                 return "loading... | heedy";
             }
-            let n = u.fullname;
+            let n = u.name;
             if (n=="") {
-              n = u.name;
+              n = u.username;
             }
             return n + " | heedy";
         }
   },
   created() {
-    this.$store.dispatch("readUser", { name: this.username });
-    this.$store.dispatch("readUserSources", { name: this.username });
+    this.$store.dispatch("readUser", { username: this.username });
+    this.$store.dispatch("readUserSources", { username: this.username });
   }
 };
 </script>

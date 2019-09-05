@@ -28,7 +28,7 @@ func (db *PublicDB) CreateUser(u *User) error {
 
 func (db *PublicDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	// A user can be read if the user has public_read
-	return readUser(db.adb, name, o, `SELECT * FROM users WHERE name=? AND public_read;`, name)
+	return readUser(db.adb, name, o, `SELECT * FROM users WHERE username=? AND public_read;`, name)
 
 }
 

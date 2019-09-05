@@ -43,20 +43,20 @@
       <v-layout row wrap>
         <v-flex xs12 sm4 md3 lg2 text-center justify-center>
           <template v-if="!editing">
-            <avatar :size="120" :image="user.avatar" :colorHash="user.name" ></avatar>
-            <h5 style="color:gray;padding-top:10px">{{user.name}}</h5>
+            <avatar :size="120" :image="user.avatar" :colorHash="user.username" ></avatar>
+            <h5 style="color:gray;padding-top:10px">{{user.username}}</h5>
           </template>
           <template v-else>
-            <avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.name" ></avatar-editor>
+            <avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.username" ></avatar-editor>
           </template>
         </v-flex>
         <v-flex xs12 sm8 md9 lg10>
-          <h2 v-if="!editing">{{ user.fullname==""?user.name:user.fullname}}</h2>
+          <h2 v-if="!editing">{{ user.name==""?user.username:user.name}}</h2>
           <v-text-field
             v-else
-            :label="user.fullname==''?user.name:user.fullname"
+            :label="user.name==''?user.username:user.name"
             solo
-            v-model="fullname"
+            v-model="name"
           ></v-text-field>
           <v-textarea v-if="editing" solo label="No description given." v-model="description"></v-textarea>
           <p v-else-if="user.description!=''">{{ user.description }}</p>
@@ -109,7 +109,7 @@ export default {
       console.log(this.modified);
       let result = await api(
         "PATCH",
-        `api/heedy/v1/user/${this.user.name}`,
+        `api/heedy/v1/user/${this.user.username}`,
         this.modified
       );
       if (!result.response.ok) {
@@ -118,7 +118,7 @@ export default {
         return;
       }
       this.$store.dispatch("readUser", {
-        name: this.user.name,
+        username: this.user.username,
         callback: () => {
           this.cancel();
         }
@@ -134,12 +134,12 @@ export default {
         this.modified.description = v;
       }
     },
-    fullname: {
+    name: {
       get() {
-        return this.modified["fullname"] || this.user.fullname;
+        return this.modified["name"] || this.user.name;
       },
       set(v) {
-        this.modified.fullname = v;
+        this.modified.name = v;
       }
     },
     sourceCreators() {

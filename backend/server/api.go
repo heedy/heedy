@@ -177,7 +177,7 @@ func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
 		"sources:delete": "Delete any sources belonging to you (of all types)",
 		"shared": "All permissions for sources shared with you (of all types)",
 		"shared:read": "Read sources of all types that were shared with you",
-		"self.sources": "Allows the connection to manage its own sources of all types",
+		"self.sources": "Allows the connection to create and manage its own sources of all types",
 	}
 
 	// Generate the source type scopes
@@ -189,7 +189,7 @@ func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
 		smap[fmt.Sprintf("shared.%s",stype)] = fmt.Sprintf("All permissions for sources of type '%s' that were shared with you",stype)
 		smap[fmt.Sprintf("shared.%s:read",stype)] = fmt.Sprintf("Read access for your sources of type '%s' that were shared with you",stype)
 		
-		smap[fmt.Sprintf("self.sources.%s",stype)] = fmt.Sprintf("Allows the connection to manage its own sources of type '%s'",stype)
+		smap[fmt.Sprintf("self.sources.%s",stype)] = fmt.Sprintf("Allows the connection to create and manage its own sources of type '%s'",stype)
 	
 		// And now generate the per-type scopes
 		stypemap := a.Config.SourceTypes[stype].Scopes

@@ -46,7 +46,7 @@ func (db *UserDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	if name == db.user {
 		return db.adb.ReadUser(name, o)
 	}
-	return readUser(db.adb, name, o, `SELECT * FROM users WHERE name=? AND (public_read OR users_read) LIMIT 1;`, name)
+	return readUser(db.adb, name, o, `SELECT * FROM users WHERE username=? AND (public_read OR users_read) LIMIT 1;`, name)
 }
 
 // UpdateUser updates the given portions of a user

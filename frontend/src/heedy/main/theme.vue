@@ -98,7 +98,7 @@
                 <span>Log In</span>
                 <v-icon>fas fa-sign-in-alt</v-icon>
             </v-btn>
-            <v-btn v-else :to="'/user/' + user.name">
+            <v-btn v-else :to="'/user/' + user.username">
                 <span>{{ username }}</span>
                 <avatar :image="user.avatar" :size="28"></avatar>
             </v-btn>
@@ -170,10 +170,10 @@ export default {
         },
         username() {
         let u = this.$store.state.app.info.user;
-        if (u.fullname.length == 0) {
-            return u.name;
+        if (u.name.length == 0) {
+            return u.username;
         }
-        return u.fullname.length > 10 ? u.fullname.split(" ")[0] : u.fullname;
+        return u.name.length > 10 ? u.name.split(" ")[0] : u.name;
         },
         alert() {
         return this.$store.state.heedy.alert;

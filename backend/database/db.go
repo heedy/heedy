@@ -163,7 +163,6 @@ type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
 	ID          string  `json:"id,omitempty" db:"id"`
 	Name        *string `json:"name" db:"name"`
-	FullName    *string `json:"fullname" db:"fullname"`
 	Description *string `json:"description" db:"description"`
 	Avatar      *string `json:"avatar" db:"avatar"`
 }
@@ -171,6 +170,8 @@ type Details struct {
 // User holds a user's data
 type User struct {
 	Details
+
+	UserName    *string `json:"username" db:"username"`
 
 	PublicRead *bool `json:"public_read" db:"public_read"`
 	UsersRead  *bool `json:"users_read" db:"users_read"`
@@ -234,7 +235,7 @@ type ListSourcesOptions struct {
 	// Whether to include avatars
 	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
 	// Limit results to the given user's sources.
-	User *string `json:"user,omitempty" schema:"user"`
+	UserName *string `json:"username,omitempty" schema:"username"`
 	// Limit the results to the given connection's sources
 	Connection *string `json:"connection,omitempty" schema:"connection"`
 	// Limit results to sources of the given type
@@ -306,6 +307,7 @@ var (
 	ErrNoUpdate        = errors.New("Nothing to update")
 	ErrNoPasswordGiven = errors.New("A user cannot have an empty password")
 	ErrUserNotFound    = errors.New("User was not found")
+	ErrInvalidUserName = errors.New("Invalid Username")
 	ErrInvalidName     = errors.New("Invalid name")
 	ErrInvalidQuery    = errors.New("Invalid query")
 )
@@ -341,11 +343,7 @@ func extractPointers(o interface{}) (columns []string, values []interface{}) {
 // -------------------------------------------------------------------------------------
 
 func extractDetails(d *Details) (columns []string, values []interface{}, err error) {
-	if d.Name != nil {
-		if err = ValidName(*d.Name); err != nil {
-			return
-		}
-	}
+	
 	if d.Avatar != nil {
 		if err = ValidAvatar(*d.Avatar); err != nil {
 			return
@@ -361,6 +359,11 @@ func extractUser(u *User) (userColumns []string, userValues []interface{}, err e
 	userColumns, userValues, err = extractDetails(&u.Details)
 	if err != nil {
 		return
+	}
+	if u.UserName != nil {
+		if err = ValidUserName(*u.UserName); err != nil {
+			return
+		}
 	}
 	if u.Password != nil {
 		var password string
@@ -386,7 +389,7 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 		return
 	}
 	if c.Owner != nil {
-		if err = ValidName(*c.Owner); err != nil {
+		if err = ValidUserName(*c.Owner); err != nil {
 			return
 		}
 	}
@@ -418,7 +421,7 @@ func extractSource(s *Source) (sColumns []string, sValues []interface{}, err err
 		return
 	}
 	if s.Owner != nil {
-		if err = ValidName(*s.Owner); err != nil {
+		if err = ValidUserName(*s.Owner); err != nil {
 			return
 		}
 	}
@@ -444,8 +447,8 @@ func sqlIn(s string, v []string) string {
 }
 
 func userCreateQuery(u *User) (string, []interface{}, error) {
-	if u.Name == nil {
-		return "", nil, ErrInvalidName
+	if u.UserName == nil {
+		return "", nil, ErrInvalidUserName
 	}
 	if u.Password == nil || "" == *u.Password {
 		return "", nil, ErrNoPasswordGiven
@@ -460,7 +463,7 @@ func userCreateQuery(u *User) (string, []interface{}, error) {
 }
 
 func userUpdateQuery(u *User) (string, []interface{}, error) {
-	if err := ValidName(u.ID); err != nil {
+	if err := ValidUserName(u.ID); err != nil {
 		return "", nil, err
 	}
 	uColumns, userValues, err := extractUser(u)
@@ -574,9 +577,9 @@ func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
 	pretext := ""
 	if o != nil {
 
-		if o.User != nil {
+		if o.UserName != nil {
 			sColumns = append(sColumns, "owner")
-			sValues = append(sValues, *o.User)
+			sValues = append(sValues, *o.UserName)
 		}
 		if o.Connection != nil {
 			if *o.Connection == "none" {

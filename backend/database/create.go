@@ -30,8 +30,8 @@ INSERT INTO heedy VALUES ("heedy",1);
 -- A user is a group with an additional password. The id is a group id, we will
 -- add the foreign key constraint once the groups table is created.
 CREATE TABLE users (
-	name VARCHAR(36) PRIMARY KEY NOT NULL,
-	fullname VARCHAR NOT NULL DEFAULT '',
+	username VARCHAR(36) PRIMARY KEY NOT NULL,
+	name VARCHAR NOT NULL DEFAULT '',
 	description VARCHAR NOT NULL DEFAULT '',
 	avatar VARCHAR NOT NULL DEFAULT '',
 
@@ -41,7 +41,7 @@ CREATE TABLE users (
 
 	password VARCHAR NOT NULL,
 
-	UNIQUE(name)
+	UNIQUE(username)
 );
 
 CREATE INDEX useraccess ON users(public_read,users_read);
@@ -50,7 +50,6 @@ CREATE TABLE connections (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 
 	name VARCHAR NOT NULL,
-	fullname VARCHAR NOT NULL DEFAULT '',
 	description VARCHAR NOT NULL DEFAULT '',
 	avatar VARCHAR NOT NULL DEFAULT '',
 
@@ -69,7 +68,7 @@ CREATE TABLE connections (
 
 	CONSTRAINT connectionowner
 		FOREIGN KEY(owner) 
-		REFERENCES users(name)
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
@@ -82,7 +81,6 @@ CREATE INDEX connectionapikey ON connections(apikey);
 CREATE TABLE sources (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
-	fullname VARCHAR NOT NULL DEFAULT '',
 	description VARCHAR NOT NULL DEFAULT '',
 	avatar VARCHAR NOT NULL DEFAULT '',
 	connection VARCHAR(36) DEFAULT NULL,
@@ -102,7 +100,7 @@ CREATE TABLE sources (
 
 	CONSTRAINT sourceowner
 		FOREIGN KEY(owner) 
-		REFERENCES users(name)
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
@@ -124,7 +122,7 @@ CREATE TABLE shared_sources (
 
 	CONSTRAINT sourceuser
 		FOREIGN KEY(username)
-		REFERENCES users(name)
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
@@ -147,12 +145,12 @@ CREATE INDEX share_sourceid on shared_sources(sourceid);
 -- so that we don't need to put passwords in cookies
 
 CREATE TABLE user_logintokens (
-	user VARCHAR(36) NOT NULL,
+	username VARCHAR(36) NOT NULL,
 	token VARCHAR UNIQUE NOT NULL,
 
 	CONSTRAINT fk_user
-		FOREIGN KEY(user) 
-		REFERENCES users(name)
+		FOREIGN KEY(username) 
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
@@ -175,7 +173,7 @@ CREATE TABLE frontend_kv (
 
 	CONSTRAINT kvuser
 		FOREIGN KEY(user) 
-		REFERENCES users(name)
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
@@ -194,7 +192,7 @@ CREATE TABLE plugin_kv (
 
 	CONSTRAINT kvuser
 		FOREIGN KEY(user) 
-		REFERENCES users(name)
+		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
@@ -218,7 +216,7 @@ CREATE VIEW user_source_scopes(user,source,scope) AS
 -- Database Default Users
 ------------------------------------------------------------------
 
-INSERT INTO users (name,fullname,description,avatar,password) VALUES 
+INSERT INTO users (username,name,description,avatar,password) VALUES 
 -- The public/users virtual users are created by default, and cannot be deleted,
 -- as they represent the database view that someone not logged in will get,
 -- and the sources accessible to a user who is logged in

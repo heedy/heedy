@@ -30,6 +30,7 @@ type setupMessage struct {
 	Config    *assets.Configuration `json:"config,omitempty"`
 	Directory *string               `json:"directory,omitempty"`
 	User      struct {
+		UserName string `json:"username"`
 		Name     string `json:"name"`
 		Password string `json:"password"`
 	} `json:"user,omitempty"`
@@ -156,6 +157,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			Details: database.Details{
 				Name: &sm.User.Name,
 			},
+			UserName: &sm.User.UserName,
 			Password: &sm.User.Password,
 		}); err != nil {
 			writeSetupError(w,r,http.StatusBadRequest,err)

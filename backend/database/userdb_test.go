@@ -14,9 +14,7 @@ func TestUserUser(t *testing.T) {
 	name := "testy"
 	passwd := "testpass"
 	require.NoError(t, adb.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}))
 
@@ -25,17 +23,13 @@ func TestUserUser(t *testing.T) {
 	// Can't create users
 	name2 := "testy2"
 	require.Error(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name2,
-		},
+		UserName: &name2,
 		Password: &passwd,
 	}))
 
 	// Admin create the user
 	require.NoError(t, adb.CreateUser(&User{
-		Details: Details{
-			Name: &name2,
-		},
+		UserName: &name2,
 		Password: &passwd,
 	}))
 
@@ -44,7 +38,7 @@ func TestUserUser(t *testing.T) {
 
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
-	require.Equal(t, *u.Name, "testy")
+	require.Equal(t, *u.UserName, "testy")
 
 	_, err = db.ReadUser("testy2", nil)
 	require.Error(t, err)
@@ -60,7 +54,7 @@ func TestUserUser(t *testing.T) {
 
 	u, err = db.ReadUser("testy2", nil)
 	require.NoError(t, err)
-	require.Equal(t, *u.Name, "testy2")
+	require.Equal(t, *u.UserName, "testy2")
 
 	passwd = "mypass2"
 	require.NoError(t, db.UpdateUser(&User{
@@ -92,9 +86,7 @@ func TestAdminUser(t *testing.T) {
 	name := "testy"
 	passwd := "testpass"
 	require.NoError(t, adb.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}))
 
@@ -105,9 +97,7 @@ func TestAdminUser(t *testing.T) {
 
 	name2 := "testy2"
 	require.NoError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name2,
-		},
+		UserName: &name2,
 		Password: &passwd,
 	}))
 
@@ -147,7 +137,7 @@ func TestUserSource(t *testing.T) {
 	require.NoError(t, db.UpdateSource(&Source{
 		Details: Details{
 			ID:       sid,
-			FullName: &name2,
+			Name: &name2,
 		},
 		Meta: &SourceMeta{
 			"schema": 4,
@@ -155,7 +145,7 @@ func TestUserSource(t *testing.T) {
 	}))
 	s, err := db.ReadSource(sid, nil)
 	require.NoError(t, err)
-	require.Equal(t, *s.FullName, name2)
+	require.Equal(t, *s.Name, name2)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))

@@ -39,12 +39,12 @@ func (db *AdminDB) User() (*User, error) {
 }
 
 // AuthUser returns the user corresponding to the username and password, or an authentication error
-func (db *AdminDB) AuthUser(name string, password string) (string, string, error) {
+func (db *AdminDB) AuthUser(username string, password string) (string, string, error) {
 	var selectResult struct {
-		Name     string
+		UserName     string
 		Password string
 	}
-	err := db.Get(&selectResult, "SELECT name,password FROM users WHERE name = ? LIMIT 1;", name)
+	err := db.Get(&selectResult, "SELECT username,password FROM users WHERE username = ? LIMIT 1;", username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", "", ErrUserNotFound
@@ -54,26 +54,26 @@ func (db *AdminDB) AuthUser(name string, password string) (string, string, error
 	if err = CheckPassword(password, selectResult.Password); err != nil {
 		return "", "", ErrUserNotFound
 	}
-	return selectResult.Name, selectResult.Password, nil
+	return selectResult.UserName, selectResult.Password, nil
 }
 
 // LoginToken gets an active login token's username
 func (db *AdminDB) LoginToken(token string) (string, error) {
 	var selectResult struct {
-		User string
+		UserName string
 	}
-	err := db.Get(&selectResult, "SELECT user FROM user_logintokens WHERE token=?;", token)
-	return selectResult.User, err
+	err := db.Get(&selectResult, "SELECT username FROM user_logintokens WHERE token=?;", token)
+	return selectResult.UserName, err
 }
 
 
 // AddLoginToken gets the token for a given user
-func (db *AdminDB) AddLoginToken(user string) (token string, err error) {
+func (db *AdminDB) AddLoginToken(username string) (token string, err error) {
 	token, err = GenerateKey(15)
 	if err != nil {
 		return
 	}
-	result, err2 := db.Exec("INSERT INTO user_logintokens (user,token) VALUES (?,?);", user, token)
+	result, err2 := db.Exec("INSERT INTO user_logintokens (username,token) VALUES (?,?);", username, token)
 	err = getExecError(result, err2)
 	return
 }
@@ -100,7 +100,7 @@ func (db *AdminDB) CreateUser(u *User) error {
 // ReadUser reads a user
 func (db *AdminDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	u := &User{}
-	err := db.Get(u, "SELECT * FROM users WHERE name=?LIMIT 1;", name)
+	err := db.Get(u, "SELECT * FROM users WHERE username=? LIMIT 1;", name)
 
 	u.Password = nil
 
@@ -124,7 +124,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded to group owners
 	if len(userValues) > 1 {
 		// This uses a join to make sure that the group is in fact an existing user
-		result, err := db.DB.Exec(fmt.Sprintf("UPDATE users SET %s WHERE name=?;", userColumns), userValues...)
+		result, err := db.DB.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
 		return getExecError(result, err)
 
 	}
@@ -135,7 +135,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 // DelUser deletes the given user
 func (db *AdminDB) DelUser(name string) error {
 	// The user's group will be deleted by cascade on group owner
-	result, err := db.Exec("DELETE FROM users WHERE name=?;", name)
+	result, err := db.Exec("DELETE FROM users WHERE username=?;", name)
 	return getExecError(result, err)
 }
 

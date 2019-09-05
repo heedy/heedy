@@ -42,11 +42,7 @@ func newDBWithUser(t *testing.T) (*AdminDB, func()) {
 	name := "testy"
 	passwd := "testpass"
 	require.NoError(t, adb.CreateUser(&User{
-
-		Details: Details{
-			Name: &name,
-		},
-
+		UserName: &name,
 		Password: &passwd,
 	}))
 	return adb, cleanup
@@ -59,36 +55,26 @@ func TestAdminDBUser(t *testing.T) {
 	name := "testy"
 	passwd := "testpass"
 	require.NoError(t, db.CreateUser(&User{
-
-		Details: Details{
-			Name: &name,
-		},
-
+		UserName: &name,
 		Password: &passwd,
 	}))
 
 	name = "test2"
 	require.EqualError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 	}), ErrNoPasswordGiven.Error())
 
 	name = "tee hee"
 	passwd = "mypass"
 	require.Error(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}), "Bad name must fail validation")
 
 	name = "testy"
 	require.Error(t, db.CreateUser(&User{
 
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}), "Should fail to add existing user")
 
@@ -97,7 +83,7 @@ func TestAdminDBUser(t *testing.T) {
 
 	u, err := db.ReadUser("testy", nil)
 	require.NoError(t, err)
-	require.Equal(t, *u.Name, "testy")
+	require.Equal(t, *u.UserName, "testy")
 	// users don't have access
 	//require.Equal(t, u.Access.String(), "read update update:password delete")
 	require.Nil(t, u.Password, "The password should never be read back")
@@ -143,15 +129,15 @@ func TestAdminDBUser(t *testing.T) {
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
 			ID:   name,
-			Name: &name2,
 		},
+		UserName: &name2,
 	}), "User name should update")
 
 	_, err = db.ReadUser(name, nil)
 	require.Error(t, err)
 	u, err = db.ReadUser(name2, nil)
 	require.NoError(t, err)
-	require.Equal(t, *u.Name, name2)
+	require.Equal(t, *u.UserName, name2)
 
 	require.NoError(t, db.DelUser(name2))
 
@@ -169,9 +155,7 @@ func TestAdminConnection(t *testing.T) {
 	name := "testy"
 	passwd := "testpass"
 	require.NoError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}))
 
@@ -222,9 +206,7 @@ func TestAdminSource(t *testing.T) {
 	passwd := "testpass"
 	stype := "stream"
 	require.NoError(t, db.CreateUser(&User{
-		Details: Details{
-			Name: &name,
-		},
+		UserName: &name,
 		Password: &passwd,
 	}))
 
@@ -249,7 +231,7 @@ func TestAdminSource(t *testing.T) {
 	require.NoError(t, db.UpdateSource(&Source{
 		Details: Details{
 			ID:       sid,
-			FullName: &badname,
+			Name: &badname,
 		},
 
 		Meta: &SourceMeta{
@@ -263,7 +245,7 @@ func TestAdminSource(t *testing.T) {
 
 	s, err := db.ReadSource(sid, nil)
 	require.NoError(t, err)
-	require.Equal(t, *s.FullName, badname)
+	require.Equal(t, *s.Name, badname)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
 	require.Equal(t, len((*s.Scopes).Scopes), 2)

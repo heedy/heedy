@@ -44,7 +44,7 @@ func TestConnectionSource(t *testing.T) {
 	require.NoError(t, cdb.UpdateSource(&Source{
 		Details: Details{
 			ID:       sid,
-			FullName: &name2,
+			Name: &name2,
 		},
 		Meta: &SourceMeta{
 			"schema": 4,
@@ -53,7 +53,7 @@ func TestConnectionSource(t *testing.T) {
 
 	s, err := cdb.ReadSource(sid, nil)
 	require.NoError(t, err)
-	require.Equal(t, *s.FullName, name2)
+	require.Equal(t, *s.Name, name2)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))

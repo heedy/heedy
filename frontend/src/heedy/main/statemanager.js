@@ -39,7 +39,7 @@ export default {
           };
         },
         setUser(state, v) {
-          Vue.set(state.users, v.name, v);
+          Vue.set(state.users, v.username, v);
         },
         setSource(state, v) {
           Vue.set(state.sources,v.id, v);
@@ -68,8 +68,8 @@ export default {
           }
         },
         readUser: async function({ commit, rootState }, q) {
-          console.log("Reading user", q.name);
-          let res = await api("GET", `api/heedy/v1/user/${q.name}`, {
+          console.log("Reading user", q.username);
+          let res = await api("GET", `api/heedy/v1/user/${q.username}`, {
             avatar: true
           });
           if (!res.response.ok) {
@@ -79,7 +79,7 @@ export default {
             });
             
           } else {
-            if (rootState.app.info.user!=null && rootState.app.info.user.name == q.name) {
+            if (rootState.app.info.user!=null && rootState.app.info.user.username == q.username) {
               commit("updateLoggedInUser",res.data);
             }
             commit("setUser", res.data);
@@ -111,10 +111,10 @@ export default {
         }
       },
       readUserSources: async function({commit,rootState}, q) {
-        console.log("Reading sources for user", q.name);
-        let query = {user: q.name};
+        console.log("Reading sources for user", q.username);
+        let query = {username: q.username};
 
-        if (rootState.app.info.user!=null && rootState.app.info.user.name == q.name) {
+        if (rootState.app.info.user!=null && rootState.app.info.user.username == q.username) {
           query["connection"] = "none";
         }
 
