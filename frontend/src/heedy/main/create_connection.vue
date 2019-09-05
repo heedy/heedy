@@ -11,15 +11,6 @@
                     <div style="padding: 10px; padding-bottom: 0;">
                         <v-alert v-if="alert.length>0" text outlined color="deep-orange" icon="error_outline">{{ alert }}</v-alert>
                     </div>
-                    
-                    <v-card-title>
-                        <v-text-field label="Connection Name" placeholder="My Connection" v-model="name"></v-text-field>
-                        <v-text-field label="Connection Name" placeholder="myconnection" v-model="name"></v-text-field>
-                    </v-card-title>
-                    <v-card-title>
-                        <scope-editor v-model="scopes"></scope-editor>
-                    </v-card-title>
-                    <v-card-text class="text--primary" v-if="advanced">
                     <v-container fluid grid-list-md>
                     <v-layout row >
                         <v-flex sm5 md4 xs12>
@@ -27,17 +18,15 @@
                         </v-flex>
                         <v-flex sm7 md8 xs12>
                         <v-container>
-                        <v-textarea solo label="Description" v-model="description"></v-textarea>
+                            <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
+                            <v-text-field label="Description" placeholder="This connection does stuff" v-model="description"></v-text-field>
+                            <scope-editor v-model="scopes"></scope-editor>
                         </v-container>
                         </v-flex>
                     </v-layout>
                     </v-container>
                     
-                    </v-card-text>
                     <v-card-actions>
-                        <v-btn text @click="advanced = !advanced">
-                            <v-icon left>{{advanced? "expand_less":"expand_more"}}</v-icon> Advanced
-                        </v-btn>
                         <v-spacer>
                         </v-spacer>
                         <v-btn dark color="blue" @click="create" :loading="loading">
@@ -65,7 +54,6 @@ export default {
         description: "",
         scopes: "",
         name: "",
-        advanced: false,
         loading: false,
         alert: ""
 
@@ -77,13 +65,37 @@ export default {
             this.loading = true;
             this.alert="";
 
-            this.alert = "Unimplemented";
-            console.log({
-                description: this.description,
+            let query = {
+                name: this.name.trim(),
+                description: this.description.trim(),
                 scopes: this.scopes,
-                name: this.name
-            });
+                avatar: this.$refs.avatarEditor.getImage()
+            };
+
+            if (query.name.length == 0) {
+                this.alert = "A name is required"
+                this.loading = false;
+                return;
+            }
+
+            let result = await api(
+                "POST",
+                `api/heedy/v1/connections`,
+                query
+            );
+
+            if (!result.response.ok) {
+                this.alert = result.data.error_description;
+                this.loading = false;
+                return;
+            }
+
+            // The result comes without the avatar, let's set it correctly
+            result.data.avatar = query.avatar;
+
+            this.$store.commit("setConnection",result.data);
             this.loading = false;
+            this.$router.push({path: `/connections/${result.data.id}`});
         }
     }
 }

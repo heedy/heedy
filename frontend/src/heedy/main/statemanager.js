@@ -17,6 +17,9 @@ export default {
         users: users,
         sources: {},
 
+        // The current user's connections
+        connections: null,
+
         // A list of IDs under each user's key
         userSources: {},
 
@@ -44,6 +47,15 @@ export default {
         setSource(state, v) {
           Vue.set(state.sources,v.id, v);
         },
+        setConnection(state,v) {
+          if (state.connections == null) {
+            state.connections = {};
+          }
+          Vue.set(state.connections,v.id, v);
+        },
+        setConnections(state,v) {
+          state.connections = v;
+        },
         setUserSources(state,v) {
           let srcidarray = [];
           for (let i=0;i < v.sources.length;i++) {
@@ -69,7 +81,7 @@ export default {
         },
         readUser: async function({ commit, rootState }, q) {
           console.log("Reading user", q.username);
-          let res = await api("GET", `api/heedy/v1/user/${q.username}`, {
+          let res = await api("GET", `api/heedy/v1/users/${q.username}`, {
             avatar: true
           });
           if (!res.response.ok) {
@@ -92,7 +104,7 @@ export default {
       },
       readSource: async function({ commit, rootState }, q) {
         console.log("Reading source", q.id);
-        let res = await api("GET", `api/heedy/v1/source/${q.id}`, {
+        let res = await api("GET", `api/heedy/v1/sources/${q.id}`, {
           avatar: true
         });
         if (!res.response.ok) {
@@ -118,7 +130,7 @@ export default {
           query["connection"] = "none";
         }
 
-        let res = await api("GET", `api/heedy/v1/source`, query);
+        let res = await api("GET", `api/heedy/v1/sources`, query);
         if (!res.response.ok) {
           commit("alert", {
             type: "error",
@@ -147,6 +159,20 @@ export default {
         } else {
           commit("setConnectionScopes", res.data);
         }
+      },
+      listConnections: async function({commit}) {
+        console.log("Loading connections");
+        let res = await api("GET", "api/heedy/v1/connections",{avatar: true});
+        if (!res.response.ok) {
+          commit("alert", {
+            type: "error",
+            text: res.data.error_description
+          });
+          return;
+        }
+        let cmap = {};
+        res.data.map(v => { cmap[v.id] = v });
+        commit("setConnections",cmap);
       }
 
     }

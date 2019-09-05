@@ -2,9 +2,9 @@
     <v-container >
         <v-layout column align-center style="border: 1px solid; border-radius: 4px; padding: 6px; border-color: #F0F0F0;">
         <template v-if="iconMode">
-             <avatar :size="size-30" defaultIcon="person" :colorHash="colorHash" :image="iconText" >
-            </avatar>
+             <avatar :size="size-30" defaultIcon="person" :colorHash="colorHash" :image="iconText" ></avatar>
             <v-text-field class="centered-input" label="Icon Name" placeholder="person" v-model="iconText"></v-text-field>
+            <a href="https://material.io/resources/icons/?style=baseline" target="_blank" style="font-size: 70%; margin-top: -15px; margin-bottom: 10px; color: gray; z-index: 1;">See available icons</a>
             <v-btn small text @click="iconMode = false" >Custom Image</v-btn>
         </template>
         <template v-else>

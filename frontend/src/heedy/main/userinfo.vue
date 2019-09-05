@@ -109,7 +109,7 @@ export default {
       console.log(this.modified);
       let result = await api(
         "PATCH",
-        `api/heedy/v1/user/${this.user.username}`,
+        `api/heedy/v1/users/${this.user.username}`,
         this.modified
       );
       if (!result.response.ok) {

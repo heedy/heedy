@@ -21,9 +21,9 @@
                             <v-list-item-subtitle>Access your Heedy account</v-list-item-subtitle>
                         </v-list-item-content>
                     </v-list-item>
-                    <v-list-item v-else two-line  :to="'/user/' + user.name">
+                    <v-list-item v-else two-line  :to="'/users/' + user.username">
                         <v-list-item-avatar>
-                            <avatar :image="user.avatar" :colorHash="user.name"></avatar>
+                            <avatar :image="user.avatar" :colorHash="user.username"></avatar>
                         </v-list-item-avatar>
 
                         <v-list-item-content>
@@ -98,9 +98,9 @@
                 <span>Log In</span>
                 <v-icon>fas fa-sign-in-alt</v-icon>
             </v-btn>
-            <v-btn v-else :to="'/user/' + user.username">
+            <v-btn v-else :to="'/users/' + user.username">
                 <span>{{ username }}</span>
-                <avatar :image="user.avatar" :size="28"></avatar>
+                <avatar :image="user.avatar" :colorHash="user.username" :size="28"></avatar>
             </v-btn>
 
             <v-btn v-for="item in menu" :key="item.key" :to="item.route">

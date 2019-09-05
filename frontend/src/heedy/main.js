@@ -8,6 +8,7 @@ import Settings from "./main/settings.vue";
 import User from "./main/user.vue";
 import Source from "./main/source.vue";
 import Connections from "./main/connections.vue";
+import Connection from "./main/connection.vue";
 import CreateConnection from "./main/create_connection.vue";
 import SourceRouter from "./main/source_router.vue";
 
@@ -48,6 +49,10 @@ function setup(app) {
             component: Connections
         });
         app.addRoute({
+            path: "/connections/:connectionid",
+            component: Connection
+        });
+        app.addRoute({
             path: "/create/connection",
             component: CreateConnection
         });
@@ -86,13 +91,13 @@ function setup(app) {
     // Pages that are active in all situations
 
     app.addRoute({
-        path: "/user/:username",
+        path: "/users/:username",
         props: true,
         component: User
     });
 
     app.addRoute({
-        path: "/source/:sourceid",
+        path: "/sources/:sourceid",
         props: true,
         component: SourceRouter,
         // The children are initialized by the injector.

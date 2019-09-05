@@ -220,20 +220,20 @@ func APIMux() (*chi.Mux, error) {
 
 	v1mux := chi.NewMux()
 
-	v1mux.Get("/user/{username}", ReadUser)
-	v1mux.Patch("/user/{username}", UpdateUser)
+	v1mux.Get("/users/{username}", ReadUser)
+	v1mux.Patch("/users/{username}", UpdateUser)
 
-	v1mux.Post("/source", CreateSource)
-	v1mux.Get("/source",ListSources)
-	v1mux.Get("/source/{sourceid}", ReadSource)
-	v1mux.Patch("/source/{sourceid}", UpdateSource)
-	v1mux.Delete("/source/{sourceid}", DeleteSource)
+	v1mux.Post("/sources", CreateSource)
+	v1mux.Get("/sources",ListSources)
+	v1mux.Get("/sources/{sourceid}", ReadSource)
+	v1mux.Patch("/sources/{sourceid}", UpdateSource)
+	v1mux.Delete("/sources/{sourceid}", DeleteSource)
 
-	v1mux.Post("/connection", CreateConnection)
-	v1mux.Get("/connection", ListConnections)
-	v1mux.Get("/connection/{connectionid}",ReadConnection)
-	v1mux.Patch("/connection/{connectionid}",UpdateConnection)
-	v1mux.Delete("/connection/{connectionid}",DeleteConnection)
+	v1mux.Post("/connections", CreateConnection)
+	v1mux.Get("/connections", ListConnections)
+	v1mux.Get("/connections/{connectionid}",ReadConnection)
+	v1mux.Patch("/connections/{connectionid}",UpdateConnection)
+	v1mux.Delete("/connections/{connectionid}",DeleteConnection)
 
 	v1mux.Get("/meta/scopes/{sourcetype}",GetSourceScopes)
 	v1mux.Get("/meta/scopes", GetConnectionScopes)

@@ -25,30 +25,28 @@
                                 
                             </v-card-title>
                             <v-container>
-                            <v-row no-gutters>
-                            <template v-for="n in 4">
-                                <v-col :key="n" sm="12" md="6" lg="4">
-                                <v-card
-                                    class="pa-2"
-                                    outlined
-                                    tile
-                                >
-                                    <v-list-item two-line subheader :to="`/connections/myid`">
-                                    <v-list-item-avatar>
-                                        <avatar image="person" colorHash="2" ></avatar>
-                                    </v-list-item-avatar>
-                                    <v-list-item-content>
-                                        <v-list-item-title>Fitbit</v-list-item-title>
-                                        <v-list-item-subtitle>Connection to the Fitbit Servers</v-list-item-subtitle>
-                                    </v-list-item-content>
-                                    </v-list-item>
-                                </v-card>
-                                </v-col>
-                                
-                            </template>
-
-                            </v-row>
-                        </v-container>
+                                <div v-if="loading" style="color: gray; text-align: center;">Loading...</div>
+                                <div v-else-if="connections.length==0" style="color: gray; text-align: center;">You don't have any connections.</div>
+                                <v-row no-gutters v-else>
+                                    <v-col v-for="c in connections" :key="c.id" xs="12" sm="12" md="6" lg="4" xl="4">
+                                        <v-card
+                                            class="pa-2"
+                                            outlined
+                                            tile
+                                        >
+                                            <v-list-item two-line subheader :to="`/connections/${c.id}`">
+                                                <v-list-item-avatar>
+                                                    <avatar :image="c.avatar" :colorHash="c.id" ></avatar>
+                                                </v-list-item-avatar>
+                                                <v-list-item-content>
+                                                    <v-list-item-title>{{ c.name }}</v-list-item-title>
+                                                    <v-list-item-subtitle>{{ c.description }}</v-list-item-subtitle>
+                                                </v-list-item-content>
+                                            </v-list-item>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
                         </v-card>
                     </v-flex>
                 </v-layout>
@@ -61,8 +59,21 @@
 import {Loading, Avatar} from "../components.mjs";
 export default {
     components: {
-    Loading,
-    Avatar
-  }
+        Loading,
+        Avatar
+    },
+    computed: {
+        loading() {
+            return this.$store.state.heedy.connections==null;
+        },
+        connections() {
+            let c = this.$store.state.heedy.connections;
+            
+            return Object.keys(c).map(k => c[k]);
+        }
+    },
+    created() {
+        this.$store.dispatch("listConnections");
+    }
 }
 </script>
