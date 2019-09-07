@@ -71,21 +71,21 @@ func NewAuth(db *database.AdminDB) *Auth {
 
 func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 	// First, try authenticating as a connection
-	apikey := r.Header.Get("Authorization")
-	if len(apikey) > 0 {
+	accessToken := r.Header.Get("Authorization")
+	if len(accessToken) > 0 {
 		const prefix = "Bearer "
-		if len(apikey) < len(prefix) || strings.EqualFold(apikey[:len(prefix)],prefix) {
+		if len(accessToken) < len(prefix) || strings.EqualFold(accessToken[:len(prefix)],prefix) {
 			return nil,errors.New("bad_request: Malformed authorization header")
 		}
-		apikey = apikey[len(prefix):]
+		accessToken = accessToken[len(prefix):]
 	} else {
 		// No authorization header. Check the url params for a token
-		apikey = r.URL.Query().Get("token")
+		accessToken = r.URL.Query().Get("token")
 	}
 
-	if len(apikey) > 0 {
+	if len(accessToken) > 0 {
 		// Try logging in as a connection
-		c,err := a.DB.GetConnectionByKey(apikey)
+		c,err := a.DB.GetConnectionByAccessToken(accessToken)
 		if err!=nil {
 			return nil,errors.New("access_denied: invalid API key")
 		}

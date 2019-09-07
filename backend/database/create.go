@@ -55,8 +55,8 @@ CREATE TABLE connections (
 
 	owner VARACHAR(36) NOT NULL,
 
-	-- Can (but does not have to) have an API key
-	apikey VARCHAR UNIQUE DEFAULT NULL,
+	-- Can (but does not have to) have an access token
+	access_token VARCHAR UNIQUE DEFAULT NULL,
 
 	-- Permissions are granted to a connection through scopes
 	scopes VARCHAR NOT NULL DEFAULT '[]',
@@ -65,6 +65,9 @@ CREATE TABLE connections (
 	setting_schema VARCHAR DEFAULT '{}',
 
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
+
+	CONSTRAINT valid_settings CHECK (json_valid(settings)),
+	CONSTRAINT valid_settings_schema CHECK (json_valid(setting_schema)),
 
 	CONSTRAINT connectionowner
 		FOREIGN KEY(owner) 
@@ -75,7 +78,7 @@ CREATE TABLE connections (
 -- We will want to list connections by owner 
 CREATE INDEX connectionowner ON connections(owner,name);
 -- A lot of querying will happen by API key
-CREATE INDEX connectionapikey ON connections(apikey);
+CREATE INDEX connectiontoken ON connections(access_token);
 
 
 CREATE TABLE sources (
@@ -85,6 +88,9 @@ CREATE TABLE sources (
 	avatar VARCHAR NOT NULL DEFAULT '',
 	connection VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
+
+	-- A key is used for connections to easily map sources to physical things
+	key VARCHAR(36) DEFAULT NULL,
 
 	type VARCHAR NOT NULL, 	            -- The source type
 	meta VARCHAR NOT NULL DEFAULT '{}', -- Metadata for the source
@@ -107,6 +113,9 @@ CREATE TABLE sources (
 	CONSTRAINT valid_scopes CHECK (json_valid(scopes)),
 	CONSTRAINT valid_meta CHECK (json_valid(meta))
 );
+
+-- Sources can be queried by key
+CREATE INDEX source_key ON sources(key,connection);
 
 ------------------------------------------------------------------------------------
 -- SHARING

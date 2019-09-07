@@ -6,14 +6,20 @@ import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
 import Settings from "./main/settings.vue";
 import User from "./main/user.vue";
+
 import Source from "./main/source.vue";
+import SourceRouter from "./main/source_router.vue";
+import SourceInjector, {sourceTypeRouter} from "./main/sourceInjector.js";
+
 import Connections from "./main/connections.vue";
 import Connection from "./main/connection.vue";
 import CreateConnection from "./main/create_connection.vue";
-import SourceRouter from "./main/source_router.vue";
+import UpdateConnection from "./main/update_connection.vue";
+import ConnectionRouter from "./main/connection_router.vue";
+
 
 import vuexModule from "./main/statemanager.js";
-import SourceInjector, {sourceTypeRouter} from "./main/sourceInjector.js";
+
 
 
 
@@ -50,7 +56,18 @@ function setup(app) {
         });
         app.addRoute({
             path: "/connections/:connectionid",
-            component: Connection
+            props: true,
+            component: ConnectionRouter,
+            children: [
+                {
+                    path: "",
+                    component: Connection
+                },
+                {
+                    path: "update",
+                    component: UpdateConnection
+                }
+            ]
         });
         app.addRoute({
             path: "/create/connection",
@@ -59,7 +76,7 @@ function setup(app) {
 
         app.addRoute({
             path: "/",
-            redirect: `/user/${app.info.user.username}`
+            redirect: `/users/${app.info.user.username}`
         });
 
         app.addMenuItem({

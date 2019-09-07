@@ -255,11 +255,11 @@ func (db *PluginDB) CreateConnection(c *database.Connection) (string,string,erro
 	}
 
 	err = db.UnmarshalRequest(&c, "POST", api, bytes.NewBuffer(b))
-	apikey := ""
-	if c.APIKey!=nil {
-		apikey = *c.APIKey
+	accessToken := ""
+	if c.AccessToken!=nil {
+		accessToken = *c.AccessToken
 	}
-	return c.ID,apikey,err
+	return c.ID,accessToken,err
 }
 func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection,error) {
 	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)

@@ -72,7 +72,8 @@ export default {
   },
   data: () => ({
       search: "",
-      customItems: []
+      customItems: [],
+      loading: true
   }),
   created() {
     if (this.$store.state.heedy.connectionScopes==null) {
@@ -84,6 +85,11 @@ export default {
       let cscopes = this.$store.state.heedy.connectionScopes;
       if (cscopes==null) {
         return [{ header: 'Loading...' }];
+      }
+      if (this.loading) {
+        // If it was loading earlier, it created custom items. We want to clear those now
+        this.customItems = [];
+        this.loading = false;
       }
 
       let recognizedSet = {};

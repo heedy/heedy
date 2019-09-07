@@ -29,7 +29,7 @@ export default {
             if (s==null) {
                 return "loading... | heedy";
             }
-            return s.fullname + " | heedy";
+            return s.name + " | heedy";
         }
     },
     created() {

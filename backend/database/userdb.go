@@ -1,5 +1,6 @@
 package database
 
+
 type UserDB struct {
 	adb *AdminDB
 
@@ -138,6 +139,9 @@ func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, er
 
 // ListSources lists the given sources
 func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	if o!=nil && o.UserName!=nil && *o.UserName=="self" {
+		o.UserName = &db.user
+	}
 	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
 		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`, db.user)
 }

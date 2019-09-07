@@ -138,11 +138,11 @@ func (s *ConnectionScopeArray) HasScope(sv string) (ok bool) {
 	return
 }
 
-// SourceMeta represents a json column in the table. To handle it correctly, we need to manually scan it
+// JSONObject represents a json column in the table. To handle it correctly, we need to manually scan it
 // and output the relevant values
-type SourceMeta map[string]interface{}
+type JSONObject map[string]interface{}
 
-func (s *SourceMeta) Scan(val interface{}) error {
+func (s *JSONObject) Scan(val interface{}) error {
 	switch v := val.(type) {
 	case []byte:
 		json.Unmarshal(v, &s)
@@ -151,10 +151,10 @@ func (s *SourceMeta) Scan(val interface{}) error {
 		json.Unmarshal([]byte(v), &s)
 		return nil
 	default:
-		return fmt.Errorf("Can't unmarshal source meta, unsupported type: %T", v)
+		return fmt.Errorf("Can't unmarshal json object, unsupported type: %T", v)
 	}
 }
-func (s *SourceMeta) Value() (driver.Value, error) {
+func (s *JSONObject) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
@@ -162,9 +162,9 @@ func (s *SourceMeta) Value() (driver.Value, error) {
 type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
 	ID          string  `json:"id,omitempty" db:"id"`
-	Name        *string `json:"name" db:"name"`
-	Description *string `json:"description" db:"description"`
-	Avatar      *string `json:"avatar" db:"avatar"`
+	Name        *string `json:"name,omitempty" db:"name"`
+	Description *string `json:"description,omitempty" db:"description"`
+	Avatar      *string `json:"avatar,omitempty" db:"avatar"`
 }
 
 // User holds a user's data
@@ -185,12 +185,12 @@ type Connection struct {
 
 	Enabled *bool	`json:"enabled,omitempty" db:"enabled"`
 
-	APIKey *string `json:"apikey,omitempty" db:"apikey"`
+	AccessToken *string `json:"access_token,omitempty" db:"access_token"`
 
 	Scopes *ConnectionScopeArray `json:"scopes" db:"scopes"`
 
-	Settings      *string `json:"settings" db:"settings"`
-	SettingSchema *string `json:"setting_schema" db:"setting_schema"`
+	Settings      *JSONObject `json:"settings" db:"settings"`
+	SettingSchema *JSONObject `json:"setting_schema" db:"setting_schema"`
 }
 
 type Source struct {
@@ -199,8 +199,10 @@ type Source struct {
 	Owner      *string `json:"owner,omitempty" db:"owner"`
 	Connection *string `json:"connection,omitempty" db:"connection"`
 
+	Key *string `json:"key,omitempty" db:"key"`
+
 	Type *string     `json:"type,omitempty" db:"type"`
-	Meta *SourceMeta `json:"meta,omitempty" db:"meta"`
+	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
 
 	Scopes *ScopeArray `json:"scopes" db:"scopes"`
 
@@ -222,7 +224,7 @@ type ReadUserOptions struct {
 // ReadConnectionOptions gives options for reading
 type ReadConnectionOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
-	APIKey bool `json:"apikey,omitempty" schema:"apikey"`
+	AccessToken bool `json:"access_token,omitempty" schema:"access_token"`
 }
 
 // ReadSourceOptions gives options for reading
@@ -238,6 +240,8 @@ type ListSourcesOptions struct {
 	UserName *string `json:"username,omitempty" schema:"username"`
 	// Limit the results to the given connection's sources
 	Connection *string `json:"connection,omitempty" schema:"connection"`
+	// Get sources with the given key
+	Key *string `json:"key,omitempty" schema:"key"`
 	// Limit results to sources of the given type
 	Type *string `json:"type,omitempty" schema:"type"`
 	// Maximum number of results to return
@@ -394,16 +398,16 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 		}
 	}
 
-	if c.APIKey != nil {
+	if c.AccessToken != nil {
 
-		if *c.APIKey != "" {
-			// Anything else we replace with a new API key
-			var apikey string
-			apikey, err = GenerateKey(15)
+		if *c.AccessToken != "" {
+			// Anything else we replace with a new token
+			var token string
+			token, err = GenerateKey(15)
 			if err != nil {
 				return
 			}
-			c.APIKey = &apikey // Write the API key back to the connection object
+			c.AccessToken = &token // Write the token back to the connection object
 		}
 
 	}
@@ -493,12 +497,16 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 		return "", nil, err
 	}
 
-	if c.APIKey == nil {
-		apikey, err := GenerateKey(15)
+	if c.AccessToken == nil {
+		accessToken, err := GenerateKey(15)
 		if err != nil {
 			return "", nil, err
 		}
-		c.APIKey = &apikey
+		c.AccessToken = &accessToken
+
+		// Add the token to things we set
+		cColumns = append(cColumns, "access_token")
+		cValues = append(cValues, accessToken)
 	}
 
 	// We create an ID for the connection. Guaranteed to be last element
@@ -592,6 +600,10 @@ func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
 		if o.Type != nil {
 			sColumns = append(sColumns, "type")
 			sValues = append(sValues, *o.Type)
+		}
+		if o.Key !=nil {
+			sColumns = append(sColumns,"key")
+			sValues = append(sValues, *o.Key)
 		}
 	}
 	if len(sColumns) == 0 {

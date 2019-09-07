@@ -103,7 +103,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c2, err := db.ReadConnection(cid,&database.ReadConnectionOptions{
-		APIKey: true,
+		AccessToken: true,
 	})
 	WriteJSON(w,r,c2,err)
 }

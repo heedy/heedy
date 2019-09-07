@@ -83,8 +83,8 @@ func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectSt
 	if o == nil || !o.Avatar {
 		c.Avatar = nil
 	}
-	if o==nil || !o.APIKey {
-		c.APIKey = nil
+	if o==nil || !o.AccessToken {
+		c.AccessToken = nil
 	}
 
 	return c, err
@@ -249,7 +249,7 @@ func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement str
 		}
 	}
 	for r := range res {
-		res[r].APIKey = nil
+		res[r].AccessToken = nil
 	}
 	return res,nil
 }

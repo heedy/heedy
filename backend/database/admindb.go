@@ -225,9 +225,9 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	// id is last, apikey is second to last
+	// id is last, accessToken is second to last
 	connectionid := c.ID
-	apikey := *c.APIKey
+	accessToken := *c.AccessToken
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -251,7 +251,7 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 		}
 	}
 
-	return connectionid, apikey, tx.Commit()
+	return connectionid, accessToken, tx.Commit()
 
 }
 
@@ -268,13 +268,13 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 	return c, err
 }
 
-// GetConnectionByKey reads the connection corresponding to the given api key
-func (db *AdminDB) GetConnectionByKey(apikey string) (*Connection, error) {
-	if apikey == "" {
+// GetConnectionByAccessToken reads the connection corresponding to the given access token
+func (db *AdminDB) GetConnectionByAccessToken(accessToken string) (*Connection, error) {
+	if accessToken == "" {
 		return nil, ErrNotFound
 	}
 	c := &Connection{}
-	err := db.Get(c, "SELECT * FROM connections WHERE (apikey=?) LIMIT 1;", apikey)
+	err := db.Get(c, "SELECT * FROM connections WHERE (access_token=?) LIMIT 1;", accessToken)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}

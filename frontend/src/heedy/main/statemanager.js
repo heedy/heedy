@@ -173,6 +173,26 @@ export default {
         let cmap = {};
         res.data.map(v => { cmap[v.id] = v });
         commit("setConnections",cmap);
+      },
+      readConnection: async function({ commit, rootState }, q) {
+        console.log("Reading connection", q.id);
+        let res = await api("GET", `api/heedy/v1/connections/${q.id}`, {
+          avatar: true
+        });
+        if (!res.response.ok) {
+          commit("alert", {
+            type: "error",
+            text: res.data.error_description
+          });
+          
+        } else {
+          commit("setConnection", res.data);
+        }
+        
+        
+        if (q.hasOwnProperty("callback")) {
+          q.callback();
+        }
       }
 
     }

@@ -250,6 +250,9 @@ func (db *ConnectionDB) GetSourceShares(sourceid string) (m map[string]*ScopeArr
 
 // ListSources lists the given sources
 func (db *ConnectionDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	if o!=nil && o.Connection!=nil && *o.Connection=="self" {
+		o.Connection = &db.c.ID
+	}
 	s,err := NewUserDB(db.adb,*db.c.Owner).ListSources(o)
 	if err!=nil {
 		return nil,err
