@@ -18,7 +18,11 @@ const (
 
 // CTX gets the heedy request context from an http.Request
 func CTX(r *http.Request) *Context {
-	return r.Context().Value(HeedyContext).(*Context)
+	hc := r.Context().Value(HeedyContext)
+	if hc==nil {
+		return nil
+	}
+	return hc.(*Context)
 }
 
 // A Context is generated for all requests, and holds all the info necessary for completing it.

@@ -65,6 +65,7 @@ func (er *ErrorResponse) Error() string {
 // WriteJSONError writes an error message as json. It is assumed that the resulting
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	c := CTX(r)
 
 	es := ErrorResponse{
@@ -92,6 +93,7 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 		} else {
 			logrus.Errorf("Failed to write error message: %s", err)
 		}
+		return
 	}
 
 	if c != nil {
@@ -126,13 +128,13 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 			jdata = []byte("[]")
 		} 
 	}
-
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
 	w.WriteHeader(http.StatusOK)
 	w.Write(jdata)
 }
 
-// WriteResult writes "ok" if the command succeeded, and outputs an error if it didn't
+// WriteResult writes empty object if the command succeeded, and outputs an error if it didn't
 func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 	if err != nil {
 		// By default, an error returns 400
@@ -140,8 +142,9 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	// success :)
-	w.Header().Set("Content-Length", "4")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", "15")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`"ok"`))
+	w.Write([]byte(`{"result":"ok"}`))
 
 }

@@ -272,7 +272,13 @@ func (db *ConnectionDB) CreateConnection(c *Connection) (string, string, error) 
 	return "", "", ErrUnimplemented
 }
 func (db *ConnectionDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
-	return nil, ErrUnimplemented
+	if cid == "self" {
+		cid = db.c.ID
+	}
+	if cid!= db.c.ID {
+		return nil, ErrAccessDenied("Can't read other connections")
+	}
+	return NewUserDB(db.adb,*db.c.Owner).ReadConnection(cid,o)
 }
 func (db *ConnectionDB) UpdateConnection(c *Connection) error {
 	return ErrUnimplemented

@@ -99,10 +99,11 @@ export default {
     },
     methods: {
         getKey: async function() {
+            console.log("Reading access token for",this.connection.id);
             let result = await api(
                     "GET",
                     `api/heedy/v1/connections/${this.connection.id}`,
-                    {access_token: true}
+                    {token: true}
                 );
             if (!result.response.ok) {
                 this.token = result.data.error_description;

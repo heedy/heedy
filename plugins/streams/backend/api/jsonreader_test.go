@@ -32,6 +32,23 @@ func TestJsonReader(t *testing.T) {
 
 }
 
+func TestJsonArrayZeroRead(t *testing.T) {
+	dpa := DatapointArray{}
+	dpi:= NewDatapointArrayIterator(dpa)
+	jr, err := NewJsonArrayReader(dpi)
+	require.NoError(t,err)
+
+	databytes := make([]byte, 5000)
+
+	n,err := jr.Read(databytes)
+	require.EqualError(t,err,io.EOF.Error())
+	require.Equal(t,2,n)
+	if databytes[0]!='[' || databytes[1]!=']' {
+		t.Error("Zero array invalid")
+	}
+
+
+}
 func TestJsonArrayReader(t *testing.T) {
 	timestamps := []float64{1000, 1500, 2001, 2500, 3000}
 

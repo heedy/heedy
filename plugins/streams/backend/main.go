@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"path"
 
-	"github.com/heedy/heedy/backend/plugin"
+	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/plugins/streams/backend/api"
 	log "github.com/sirupsen/logrus"
 )

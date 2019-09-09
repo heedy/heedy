@@ -224,7 +224,7 @@ type ReadUserOptions struct {
 // ReadConnectionOptions gives options for reading
 type ReadConnectionOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
-	AccessToken bool `json:"access_token,omitempty" schema:"access_token"`
+	AccessToken bool `json:"token,omitempty" schema:"token"` // using "token" instead of access_token, since the API uses access_token param
 }
 
 // ReadSourceOptions gives options for reading
@@ -543,8 +543,10 @@ func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{
 	if s.Meta != nil {
 		err = c.ValidateSourceMetaWithDefaults(*s.Type, *s.Meta)
 	} else {
-		m := map[string]interface{}{}
+		// Validate will set up default meta values
+		m := JSONObject{}
 		err = c.ValidateSourceMetaWithDefaults(*s.Type, m)
+		s.Meta = &m
 	}
 	if err != nil {
 		return "", nil, err

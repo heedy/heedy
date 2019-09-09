@@ -39,7 +39,7 @@ func (r *JsonReader) Read(p []byte) (n int, err error) {
 		}
 
 		if len(r.currentbuffer) > 0 {
-			// There is still some stuf left in the current buffer - first copy that
+			// There is still some stuff left in the current buffer - first copy that
 			i := copy(p, r.currentbuffer)
 			r.currentbuffer = r.currentbuffer[i:]
 			p = p[i:]
@@ -83,7 +83,8 @@ func NewJsonReader(data DatapointIterator, starter string, separator string, foo
 		return nil, err
 	}
 	if dp == nil {
-		return nil, io.EOF
+		// If there is no data, read as an empty array
+		return &JsonReader{nil,[]byte(starter+footer),[]byte(separator),[]byte(footer),len(separator)},nil
 	}
 	v, err := json.Marshal(dp)
 	if err != nil {

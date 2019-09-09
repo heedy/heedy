@@ -95,7 +95,7 @@ export default {
                 this.modified.access_token = "reset";
             }
 
-            console.log(this.modified);
+            console.log("Update connection",this.connection.id,{ ...this.modified});
             
             if (Object.keys(this.modified).length>0) {
                 let result = await api(

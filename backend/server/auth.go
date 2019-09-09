@@ -74,13 +74,13 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 	accessToken := r.Header.Get("Authorization")
 	if len(accessToken) > 0 {
 		const prefix = "Bearer "
-		if len(accessToken) < len(prefix) || strings.EqualFold(accessToken[:len(prefix)],prefix) {
+		if len(accessToken) < len(prefix) || !strings.EqualFold(accessToken[:len(prefix)],prefix) {
 			return nil,errors.New("bad_request: Malformed authorization header")
 		}
 		accessToken = accessToken[len(prefix):]
 	} else {
 		// No authorization header. Check the url params for a token
-		accessToken = r.URL.Query().Get("token")
+		accessToken = r.URL.Query().Get("access_token")
 	}
 
 	if len(accessToken) > 0 {

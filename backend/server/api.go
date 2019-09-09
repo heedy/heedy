@@ -10,6 +10,8 @@ import (
 	"github.com/heedy/heedy/backend/buildinfo"
 )
 
+var ErrNotFound = errors.New("not_found: The given endpoint is not available")
+
 func ReadUser(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadUserOptions
 	username := chi.URLParam(r, "username")
@@ -212,7 +214,7 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func APINotFound(w http.ResponseWriter, r *http.Request) {
-	WriteJSONError(w, r, http.StatusNotFound, errors.New("not_found: The given endpoint is not available"))
+	WriteJSONError(w, r, http.StatusNotFound, ErrNotFound)
 }
 
 // APIMux gives the REST API

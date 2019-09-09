@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/plugin"
+	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/backend/server"
 )
 
@@ -205,51 +205,43 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-func DataMux() *chi.Mux {
-	m := chi.NewMux()
-
-	m.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		ReadData(w, r, false)
-	})
-	m.Delete("/", func(w http.ResponseWriter, r *http.Request) {
-		DeleteData(w, r, false)
-	})
-	m.Post("/", func(w http.ResponseWriter, r *http.Request) {
-		WriteData(w, r, false)
-	})
-	m.Get("/length", func(w http.ResponseWriter, r *http.Request) {
-		DataLength(w, r, false)
-	})
-
-	return m
-}
-
-func ActionMux() *chi.Mux {
-	m := chi.NewMux()
-
-	m.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		ReadData(w, r, true)
-	})
-	m.Delete("/", func(w http.ResponseWriter, r *http.Request) {
-		DeleteData(w, r, true)
-	})
-	m.Post("/", func(w http.ResponseWriter, r *http.Request) {
-		WriteData(w, r, true)
-	})
-	m.Get("/length", func(w http.ResponseWriter, r *http.Request) {
-		DataLength(w, r, true)
-	})
-
-	return m
-}
-
 // Handler is the global router for the stream API
 var Handler = func() *chi.Mux {
 	m := chi.NewMux()
 
-	m.Mount("/data", DataMux())
-	m.Mount("/actions", ActionMux())
+	m.Get("/data", func(w http.ResponseWriter, r *http.Request) {
+		ReadData(w, r, false)
+	})
+	m.Delete("/data", func(w http.ResponseWriter, r *http.Request) {
+		DeleteData(w, r, false)
+	})
+	m.Post("/data", func(w http.ResponseWriter, r *http.Request) {
+		WriteData(w, r, false)
+	})
+	m.Get("/data/length", func(w http.ResponseWriter, r *http.Request) {
+		DataLength(w, r, false)
+	})
+
+
+	m.Get("/actions", func(w http.ResponseWriter, r *http.Request) {
+		ReadData(w, r, true)
+	})
+	m.Delete("/actions", func(w http.ResponseWriter, r *http.Request) {
+		DeleteData(w, r, true)
+	})
+	m.Post("/actions", func(w http.ResponseWriter, r *http.Request) {
+		WriteData(w, r, true)
+	})
+	m.Get("/actions/length", func(w http.ResponseWriter, r *http.Request) {
+		DataLength(w, r, true)
+	})
+
+
 	m.Post("/act", Act)
+
+	m.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		server.WriteJSONError(w,r,http.StatusNotFound, server.ErrNotFound)
+	})
 
 	return m
 }()
