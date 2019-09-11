@@ -66,6 +66,9 @@ CREATE TABLE connections (
 
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 
+	-- the "plugin key" of the connection if it was generated for a plugin
+	plugin VARCHAR DEFAULT NULL,
+
 	CONSTRAINT valid_settings CHECK (json_valid(settings)),
 	CONSTRAINT valid_settings_schema CHECK (json_valid(setting_schema)),
 

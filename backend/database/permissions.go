@@ -130,6 +130,9 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 }
 
 func updateConnection(adb *AdminDB, c *Connection, whereStatement string, args ...interface{}) error {
+	
+	// TODO: need to check if connection belongs to plugin, and determine if any of the fields are readonly
+
 	cColumns, cValues, err := connectionUpdateQuery(c)
 	cValues = append(cValues,args...)
 	result,err := adb.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE %s",cColumns,whereStatement),cValues...)
@@ -235,6 +238,7 @@ func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string,arg
 	return res,nil
 }
 
+// TODO: Needs to be redone for plugin connections
 func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement string, args ...interface{}) ([]*Connection, error) {
 	var res []*Connection
 	err := adb.Select(&res,selectStatement,args...)

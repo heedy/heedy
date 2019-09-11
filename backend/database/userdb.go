@@ -165,6 +165,7 @@ func (db *UserDB) UpdateConnection(c *Connection) error {
 	return updateConnection(db.adb,c,`id=? AND owner=?`,c.ID,db.user)
 }
 func (db *UserDB) DelConnection(cid string) error {
+	// Can only delete connections that are not plugin-generated, unless the plugin is no longer active
 	result, err := db.adb.Exec("DELETE FROM connections WHERE id=? AND owner=?;", cid, db.user)
 	return getExecError(result, err)
 }

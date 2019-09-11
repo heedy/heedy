@@ -24,6 +24,33 @@ type Setting struct {
 	Value            interface{} `json:"value,omitempty"`
 }
 
+// Source represents a source that is to be auto-created inside a connection on behalf of a plugin
+type Source struct{
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Description *string `json:"description,omitempty"`
+	Avatar *string `json:"avatar,omitempty"`
+	Meta *map[string]interface{} `json:"meta,omitempty"`
+	Scopes *[]string `json:"scopes,omitempty"`
+}
+
+// Connection represents a connection that is to be created on behalf of a plugin
+type Connection struct {
+	Name string `json:"name"`
+
+	Description *string `json:"description,omitempty" hcl:"description"`
+	Avatar *string `json:"avatar,omitempty" hcl:"avatar"`
+	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
+	Scopes *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Enabled *bool `json:"enabled,omitempty" hcl:"enabled"`
+	Readonly *[]string `json:"readonly,omitempty" hcl:"readonly"`
+
+	Settings *map[string]interface{} `json:"settings,omitempty"`
+	SettingSchema *map[string]interface{} `json:"setting_schema,omitempty"`
+	
+	Sources map[string]*Source `json:"sources,omitempty"`
+}
+
 type Exec struct {
 	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
@@ -42,6 +69,8 @@ type Plugin struct {
 
 	Exec     map[string]*Exec    `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
+
+	Connections map[string]*Connection `json:"connections,omitempty"`
 }
 
 func (p *Plugin) Copy() *Plugin {
@@ -231,6 +260,16 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
+	for p,v := range c.Plugins {
+		for conn,v2 := range v.Connections {
+			for s,v3 := range v2.Sources {
+				if _,ok := c.SourceTypes[v3.Type]; !ok {
+					return fmt.Errorf("[plugin: %s, connection: %s, source: %s] unrecognized type (%s)",p,conn,s,v3.Type)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -271,6 +310,13 @@ func NewPlugin() *Plugin {
 	return &Plugin{
 		Exec:     make(map[string]*Exec),
 		Settings: make(map[string]*Setting),
+		Connections: make(map[string]*Connection),
+	}
+}
+
+func NewConnection() *Connection {
+	return &Connection{
+		Sources: make(map[string]*Source),
 	}
 }
 
@@ -415,6 +461,23 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 					bplugin.Exec[execName] = oexecValue
 				} else {
 					CopyStructIfPtrSet(bexecValue, oexecValue)
+				}
+			}
+
+			for cName, ocValue := range oplugin.Connections {
+				bcValue, ok := bplugin.Connections[cName]
+				if !ok {
+					bplugin.Connections[cName] = ocValue
+				} else {
+					CopyStructIfPtrSet(bcValue,ocValue)
+					for sName,sValue := range ocValue.Sources {
+						bsValue, ok := bcValue.Sources[sName]
+						if !ok {
+							bcValue.Sources[sName] = sValue
+						} else {
+							CopyStructIfPtrSet(bsValue,sValue)
+						}
+					}
 				}
 			}
 

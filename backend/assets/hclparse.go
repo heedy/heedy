@@ -35,9 +35,38 @@ type hclExec struct {
 	Name string `hcl:"name,label"`
 
 	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
-	Cron      *string   `hcl:"cron" json: "cron,omitempty"`
+	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive"`
-	Cmd       *[]string `hcl:"cmd" json: "cmd,omitempty"`
+	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
+}
+
+type hclSource struct {
+	Key string `hcl:"key,label"`
+	Name string `hcl:"name"`
+	Type string `hcl:"type"`
+
+	Description *string `hcl:"description"`
+	Avatar *string `hcl:"avatar"`
+	Scopes *[]string `hcl:"scopes"`
+	Meta *cty.Value `hcl:"meta,attr"`
+}
+
+type hclConnection struct {
+	Plugin string `hcl:"plugin,label"`
+	Name string `hcl:"name"`
+
+	Description *string `json:"description" hcl:"description"`
+	Avatar *string `json:"avatar" hcl:"avatar"`
+	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
+	Scopes *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Enabled *bool `json:"enabled,omitempty" hcl:"enabled"`
+	Readonly *[]string `json:"readonly,omitempty" hcl:"readonly"`
+
+	Settings *cty.Value `hcl:"settings,attr"`
+	SettingSchema *cty.Value `hcl:"setting_schema,attr"`
+
+	Sources []hclSource `hcl:"source,block"`
+
 }
 
 type hclPlugin struct {
@@ -54,6 +83,8 @@ type hclPlugin struct {
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 
 	Exec []hclExec `hcl:"exec,block"`
+
+	Connections []hclConnection `hcl:"connection,block"`
 
 	// The remaining stuff is plugin-specific settings
 	// that will be passed to the plugin executables,
@@ -109,7 +140,7 @@ func preprocess(i interface{}) (reflect.Value, reflect.Kind) {
 	return v, k
 }
 
-// CopyIfSet copies all pointer params from overlay to base
+// CopyStructIfPtrSet copies all pointer params from overlay to base
 // Does not touch arrays and things that don't have identical types
 func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 	bv, _ := preprocess(base)
@@ -139,6 +170,19 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 
 }
 
+func loadJSONObject(v *cty.Value) (*map[string]interface{},error) {
+	if v==nil {
+		return nil,nil
+	}
+	var obj map[string]interface{}
+	b, err := json.Marshal(ctyjson.SimpleJSONValue{Value: *v})
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &obj)
+	return &obj,err
+}
+
 func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// The configuration is initially unmarshalled into the hclConfiguration
 	// object, which then needs extra processing to get into the format that heedy
@@ -162,18 +206,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 		CopyStructIfPtrSet(&t, ht)
 
-		if ht.Meta != nil {
-			var metaMap map[string]interface{}
-			b, err := json.Marshal(ctyjson.SimpleJSONValue{Value: *ht.Meta})
-			if err != nil {
-				return nil, err
-			}
-			err = json.Unmarshal(b, &metaMap)
-			if err != nil {
-				return nil, err
-			}
-			t.Meta = &metaMap
+		var err error
+		t.Meta,err = loadJSONObject(ht.Meta)
+		if err!=nil {
+			return nil,err
 		}
+
 
 		c.SourceTypes[ht.Label] = t
 	}
@@ -213,6 +251,50 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				p.Settings[k] = setting
 			}
 		}
+
+		// Load the connections that the plugin wants to set up
+		for j := range hp.Connections {
+			hc := hp.Connections[j]
+			if _,ok := p.Connections[hc.Plugin]; ok {
+				return nil, fmt.Errorf("%s: Plugin %s connection %s defined twice", filename, hp.Name, hc.Plugin)
+			}
+			conn := NewConnection()
+			conn.Name = hp.Connections[j].Name
+			CopyStructIfPtrSet(conn,&hc)
+			var err error 
+			conn.Settings,err = loadJSONObject(hc.Settings)
+			if err!=nil {
+				return nil,err
+			}
+			conn.SettingSchema,err = loadJSONObject(hc.SettingSchema)
+			if err!=nil {
+				return nil,err
+			}
+			for k := range hc.Sources {
+				hs := hc.Sources[k]
+				if hs.Key == "" {
+					return nil,fmt.Errorf("%s: Plugin %s connection %s source with no label", filename, hp.Name, hc.Plugin)
+				}
+				if _,ok := conn.Sources[hs.Key]; ok {
+					return nil, fmt.Errorf("%s: Plugin %s connection %s source %s defined twice", filename, hp.Name, hc.Plugin,hs.Key)
+				}
+				s := &Source{
+					Name: hs.Name,
+					Type: hs.Type,
+				}
+				CopyStructIfPtrSet(s,&hs)
+				s.Meta,err = loadJSONObject(hs.Meta)
+				if err!=nil {
+					return nil,err
+				}
+
+				conn.Sources[hs.Key] = s
+			}
+
+			p.Connections[hc.Plugin] = conn
+		}
+
+
 		/*
 			for j := range hp.SettingSchema {
 				if hp.SettingSchema[j].Name == "" {

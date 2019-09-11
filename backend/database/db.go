@@ -182,6 +182,7 @@ type User struct {
 type Connection struct {
 	Details
 	Owner *string `json:"owner" db:"owner"`
+	Plugin *string `json:"plugin" db:"plugin"`
 
 	Enabled *bool	`json:"enabled,omitempty" db:"enabled"`
 
@@ -258,6 +259,8 @@ type ListConnectionOptions struct {
 	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
 	// Limit results to the given user's connections
 	User *string `json:"user,omitempty" schema:"user"`
+	// Find the connections with the given plugin key
+	Plugin *string `json:"plugin,omitempty" schema:"plugin"`
 }
 
 // DB represents the database. This interface is implemented in many ways:
