@@ -39,12 +39,12 @@ func NewOverlayManager(a *assets.Assets, h http.Handler) (*OverlayManager, error
 				return nil, fmt.Errorf("Plugin %s configuration not found", pname)
 			}
 
-			if psettings.Backend != nil && len(*psettings.Backend) > 0 {
+			if psettings.Routes != nil && len(*psettings.Routes) > 0 {
 				log.Debugf("Preparing routes for %s", pname)
 
 				mux := chi.NewMux()
 
-				for rname, redirect := range *psettings.Backend {
+				for rname, redirect := range *psettings.Routes {
 					revproxy, err := NewReverseProxy(a.DataDir(), redirect)
 					if err != nil {
 						return nil, err

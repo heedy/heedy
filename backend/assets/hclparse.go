@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hclparse"
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/gocty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
@@ -47,7 +48,8 @@ type hclPlugin struct {
 	License     *string `hcl:"license" json:"license"`
 
 	Frontend *string            `hcl:"frontend" json:"frontend"`
-	Backend  *map[string]string `hcl:"backend" json:"backend"`
+
+	Routes  *map[string]string `hcl:"routes" json:"routes"`
 
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 
@@ -64,7 +66,7 @@ type hclSourceType struct {
 
 	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
 
-	Backend *map[string]string `json:"backend,omitempty" hcl:"backend" cty:"backend"`
+	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
 	Meta   *cty.Value         `hcl:"meta,attr"`
 	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
@@ -255,7 +257,9 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				return nil, diag
 			}
 
-			currentSetting.Value = val.AsString()
+			if err := gocty.FromCtyValue(val,&currentSetting.Value); err!=nil {
+				return nil, fmt.Errorf("%s: Plugin %s attribute '%s' interpreted as custom string setting value, but got error: %w", filename, hp.Name, key, err)
+			}
 
 			p.Settings[key] = currentSetting
 		}

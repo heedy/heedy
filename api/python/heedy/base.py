@@ -136,18 +136,21 @@ class AsyncSession(Session):
     async def delete(self,path,params={},f=lambda x: x):
         self.initSession()
         return f(await (await self.handleResponse(await self.s.delete(urljoin(self.url,path),params=params,headers=self.headers))).json())
+    async def raw(self,method,path,data=None,params={},headers={}):
+        self.initSession()
+        return await self.s.request(method,urljoin(self.url,path),headers={**self.headers, **headers},data=data)
     async def close(self):
         if self.s is not None:
             await self.s.close()
     
-def getSessionType(sessionType : str) -> Session:
+def getSessionType(sessionType : str,url: str = DEFAULT_URL) -> Session:
     """
     This function is given a string, either "sync" or "async", and it returns a SyncSession or AsyncSession respectively.
     """
     if sessionType == "sync":
-        return SyncSession()
+        return SyncSession(url)
     if sessionType == "async":
-        return AsyncSession()
+        return AsyncSession(url)
     raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
 
 class APIObject:

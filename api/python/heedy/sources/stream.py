@@ -6,7 +6,18 @@ import json
 import os.path
 from urllib.parse import urljoin
 
-DATAPOINT_INSERT_LIMIT = 10000
+# Allows querying by string times
+from dateparser import parse
+
+
+def parseTime(t):
+    if isinstance(t,str):
+        t = parse(t)
+        if t is None:
+            raise AttributeError("Could not parse timestamp")
+    if isinstance(t,datetime.datetime):
+        t = datetime.timestamp(t)
+    return t
 
 class DatapointArray(list):
     """
@@ -120,6 +131,17 @@ class DatapointArray(list):
 class Stream(Source):
     
     def __call__(self,actions = False, **kwargs):
+        """
+        Gets stream data. You can query by index with i1 and i2, or by timestamp by t1 and t2.
+        Timestamps can be strings such as "last month", "1pm" or "jun 5, 2019, 1pm", which will be
+        parsed and converted to the corresponding unix timestamps
+        """
+        if "t1" in kwargs:
+            kwargs["t1"] = parseTime(kwargs["t1"])
+        if "t2" in kwargs:
+            kwargs["t2"] = parseTime(kwargs["t2"])
+        if "t" in kwargs:
+            kwargs["t"] = parseTime(kwargs["t"])
         urimod = "/data"
         if actions:
             urimod = "/actions"

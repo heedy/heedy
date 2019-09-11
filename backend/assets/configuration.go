@@ -38,7 +38,7 @@ type Plugin struct {
 	License     *string `hcl:"license" json:"license,omitempty"`
 
 	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Backend  *map[string]string `json:"backend,omitempty"`
+	Routes  *map[string]string `json:"routes,omitempty"`
 
 	Exec     map[string]*Exec    `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
@@ -63,7 +63,7 @@ func (p *Plugin) Copy() *Plugin {
 
 type SourceType struct {
 	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Backend  *map[string]string `json:"backend,omitempty" hcl:"backend" cty:"backend"`
+	Routes  *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
 	Meta *map[string]interface{} `json:"meta,omitempty"`
 
@@ -76,12 +76,12 @@ type SourceType struct {
 func (s *SourceType) Copy() SourceType {
 	snew := SourceType{}
 	CopyStructIfPtrSet(&snew, s)
-	if s.Backend != nil {
+	if s.Routes != nil {
 		newRoutes := make(map[string]string)
-		for k, v := range *(s.Backend) {
+		for k, v := range *(s.Routes) {
 			newRoutes[k] = v
 		}
-		snew.Backend = &newRoutes
+		snew.Routes = &newRoutes
 	}
 
 	return snew
@@ -375,11 +375,11 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				av.Scopes = cv.Scopes
 			}
 			// Copy the routes to av
-			if av.Backend != nil && cv.Backend != nil {
-				for rk, rv := range *av.Backend {
-					(*cv.Backend)[rk] = rv
+			if av.Routes != nil && cv.Routes != nil {
+				for rk, rv := range *av.Routes {
+					(*cv.Routes)[rk] = rv
 				}
-				av.Backend = cv.Backend
+				av.Routes = cv.Routes
 			}
 
 			// Update only the set values
