@@ -2,17 +2,25 @@
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import postcss from "rollup-plugin-postcss";
+
+import url from "rollup-plugin-url";
 import json from "rollup-plugin-json";
 //import externalGlobals from "rollup-plugin-external-globals";
 import VuePlugin from "rollup-plugin-vue";
 import replace from "rollup-plugin-replace";
 import { terser } from "rollup-plugin-terser";
 
+import postcss_url from "postcss-url";
+import path from "path";
+import fs from "fs";
+
 /*
 let globals = {
   vue: "Vue"
 };
 */
+let fontFolder = "../assets/public/static/fonts";
+fs.mkdirSync(fontFolder, { recursive: true });
 
 const production = !process.env.ROLLUP_WATCH;
 const plugins = [
@@ -28,10 +36,31 @@ const plugins = [
     preferBuiltins: false
   }),
   postcss({
-    minimize: true
+    minimize: production,
+    plugins: [postcss_url({
+      // copy ALMOST does what we want - it renames the asset files... however,
+      // what we ACTUALLY want is to move the files AND rename them relative to the root
+      // so let's do that here
+      url: function(asset, dir, options, decl, warn, result, addDependency) {
+        if (!asset.url.startsWith("data:")) {
+          let toURL = fontFolder + "/" + path.basename(asset.absolutePath);
+          fs.copyFile(asset.absolutePath, toURL, (err) => {
+            if (err) throw err;
+            console.log(asset.relativePath," -> ",toURL);
+          });
+          
+          return "/static/fonts/" + path.basename(asset.url);
+        }
+      },
+    })]
   }),
   json({
-    compact: true
+    compact: production
+  }),
+  url({
+    limit:0,
+    fileName: "fonts/[name][extname]",
+    include: ["**/*.woff3"]
   }),
   replace({
     "process.env.NODE_ENV": JSON.stringify(production ? "production" : "debug")

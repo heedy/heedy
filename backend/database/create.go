@@ -69,6 +69,8 @@ CREATE TABLE connections (
 	-- the "plugin key" of the connection if it was generated for a plugin
 	plugin VARCHAR DEFAULT NULL,
 
+	UNIQUE(owner,plugin),
+
 	CONSTRAINT valid_settings CHECK (json_valid(settings)),
 	CONSTRAINT valid_settings_schema CHECK (json_valid(setting_schema)),
 
