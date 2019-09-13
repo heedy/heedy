@@ -8,13 +8,15 @@
     "build:js": "rollup -c",
     "sync:html": "rsync -r ./public/ ../assets/public/",
     "build:html": "npm run sync:html && html-minifier --file-ext html --input-dir ../assets/public --output-dir ../assets/public --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags",
-    "debug:js": "rollup -c -w",
-    "debug:html": "nodemon --watch public -e html,css,js,json --exec \"npm run sync:html\"",
-    "debug": "run-p 'debug:js' 'debug:html'"
+    "debug:js": "rollup -c -m --environment NODE_ENV:debug",
+    "watch:js": "rollup -c -w -m --environment NODE_ENV:debug",
+    "watch:html": "nodemon --watch public -e html,css,js,json --exec \"npm run sync:html\"",
+    "mkdebug": "run-p 'debug:js' 'sync:html'",
+    "debug": "run-p 'watch:js' 'watch:html'"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/heedy/heedy.git"
+    "url": "git+https://github.com/heedyserver/heedy.git"
   },
   "keywords": [
     "heedy"
@@ -22,29 +24,23 @@
   "author": "heedy Contributors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/heedy/heedy/issues"
+    "url": "https://github.com/heedyserver/heedy/issues"
   },
   "homepage": "https://heedy.org",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.10.2",
-    "@handsontable/vue": "^4.1.0",
-    "@mdi/font": "^3.8.95",
     "color-hash": "^1.0.3",
-    "glob": "^7.1.4",
-    "handsontable": "^7.1.0",
     "material-design-icons-iconfont": "^5.0.1",
-    "nodemon": "^1.19.1",
+    "nodemon": "^1.19.2",
     "npm-run-all": "^4.1.5",
     "postcss-url": "^8.0.0",
-    "rollup": "^1.17.0",
-    "rollup-plugin-commonjs": "^10.0.1",
-    "rollup-plugin-external-globals": "^0.3.1",
+    "rollup": "^1.21.2",
+    "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-resolve": "5.0.3",
     "rollup-plugin-postcss": "^2.0.3",
     "rollup-plugin-replace": "^2.2.0",
-    "rollup-plugin-terser": "^5.1.1",
-    "rollup-plugin-url": "^2.2.2",
+    "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-vue": "^5.0.1",
     "typeface-roboto": "0.0.75",
     "vue": "^2.6.10",
@@ -52,10 +48,10 @@
     "vue-codemirror": "^4.0.6",
     "vue-croppa": "^1.3.8",
     "vue-headful": "^2.0.1",
-    "vue-meta": "^2.1.0",
-    "vue-router": "^3.0.7",
+    "vue-meta": "^2.2.2",
+    "vue-router": "^3.1.3",
     "vue-template-compiler": "^2.6.10",
-    "vuetify": "^2.0.0",
+    "vuetify": "^2.0.17",
     "vuex": "^3.1.1"
   }
 }

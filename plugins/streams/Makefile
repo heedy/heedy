@@ -20,7 +20,7 @@ builtin:
 	ln -s ../../../assets/public assets/public
 	
 debug:
-	cd frontend; npm run debug
+	cd frontend; npm run mkdebug
 
 clean:
 	# $(GO) clean
