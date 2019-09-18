@@ -1,10 +1,10 @@
-package server
+package rest
 
 import (
 	"net/http"
 	"github.com/heedy/heedy/backend/database"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // notABasicType is there because the context package doesn't like basic indices, so we use a constant that is
@@ -28,7 +28,7 @@ func CTX(r *http.Request) *Context {
 // A Context is generated for all requests, and holds all the info necessary for completing it.
 // This object can be extracted from a request with the CTX function.
 type Context struct {
-	Log       *log.Entry  // The request's logger
+	Log       *logrus.Entry  // The request's logger
 	DB        database.DB // The authenticated database object
 	RequestID string      // The ID of the original query to the API
 

@@ -2,6 +2,7 @@ package assets
 
 import (
 	"fmt"
+	"time"
 )
 
 func (c *Configuration) GetRequestBodyByteLimit() int64 {
@@ -86,4 +87,16 @@ func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string,er
 		return make(map[string]string),nil
 	}
 	return *s.Scopes, nil
+}
+
+// GetExecTimeout gets timeout for exec
+func (c *Configuration) GetExecTimeout() time.Duration {
+	if c.ExecTimeout!=nil {
+		d, err := time.ParseDuration(*c.ExecTimeout)
+		if err!=nil {
+			return d
+		}
+	}
+	d, _ := time.ParseDuration(("5s"))
+	return d
 }

@@ -1,4 +1,4 @@
-package server
+package plugins
 
 import (
 	"bytes"
@@ -10,12 +10,12 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
 type Source struct {
@@ -114,7 +114,7 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 	//Limit requests to the limit given in configuration
 	data, err := ioutil.ReadAll(io.LimitReader(r.Body, *assets.Config().RequestBodyByteLimit))
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
 		return
 	}
 	r.Body.Close()
@@ -122,16 +122,16 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 	var src database.Source
 
 	if err = json.Unmarshal(data, &src); err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
 		return
 	}
 	if src.Type == nil {
-		WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: must specify a type of source to create"))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: must specify a type of source to create"))
 		return
 	}
 	s, ok := sm.Sources[*src.Type]
 	if !ok {
-		WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: unrecognized source type"))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: unrecognized source type"))
 		return
 	}
 
@@ -146,9 +146,9 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 	// There is a forward for this source type. First check if we have permission to create the source in the first place,
 	// and then forward.
-	err = CTX(r).DB.CanCreateSource(&src)
+	err = rest.CTX(r).DB.CanCreateSource(&src)
 	if err != nil {
-		WriteJSONError(w, r, http.StatusForbidden, err)
+		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
 	}
 
@@ -159,11 +159,11 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	// Get the source from the database, and find its type. Then, extract the scopes available for us
 	// and set the X-Heedy-Scopes and X-Heedy-Source headers, and forward to the source API.
-	ctx := CTX(r)
+	ctx := rest.CTX(r)
 	srcid := chi.URLParam(r, "sourceid")
 	s, err := ctx.DB.ReadSource(srcid, nil)
 	if err != nil {
-		WriteJSONError(w, r, http.StatusForbidden, err)
+		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
 	}
 	r.Header["X-Heedy-Source"] = []string{srcid}
@@ -172,7 +172,7 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(s.Meta)
 	if err != nil {
-		WriteJSONError(w, r, http.StatusInternalServerError, err)
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -197,13 +197,8 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 func (sm *SourceManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v := r.Header.Get("X-Heedy-Overlay")
 	if len(v) > 0 {
-		oindex, err := strconv.Atoi(v)
-		if err != nil {
-			WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid X-Heedy-Overlay"))
-			return
-		}
-		if oindex <= -1 {
-			// The overlay is negative, meaning that we skip all source implementations
+		if v=="none" {
+			// No overlay, meaning that we skip all source implementations
 			sm.handler.ServeHTTP(w, r)
 			return
 		}

@@ -1,4 +1,4 @@
-package server
+package plugins
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
 // BuiltinRoutes holds routes for APIs for sources and routes that are directly compiled into the core heedy executable.
@@ -30,7 +32,7 @@ func (d *unixDialer) DialContext(ctx context.Context, network, address string) (
 func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 
 	gatewayError := func(w http.ResponseWriter, r *http.Request, err error) {
-		WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s",err.Error()))
+		rest.WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s",err.Error()))
 	}
 
 	if strings.HasPrefix(uri, "builtin://") {

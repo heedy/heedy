@@ -16,6 +16,8 @@ import (
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
 type oauthErrorResponse struct {
@@ -26,7 +28,7 @@ type oauthErrorResponse struct {
 // Oauth errors are of a specific format that we will follow, just to make sure we never break it:
 // https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
 func writeAuthError(w http.ResponseWriter, r *http.Request, status int, errVal, errDescription string) {
-	c := CTX(r)
+	c := rest.CTX(r)
 
 	er := oauthErrorResponse{
 		Error:            errVal,
@@ -184,7 +186,7 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 		})
 
 		// ... and also return the json response
-		WriteJSON(w, r, &tokenResponse{
+		rest.WriteJSON(w, r, &tokenResponse{
 			AccessToken: tok,
 			TokenType:   "bearer",
 		}, nil)
@@ -241,7 +243,7 @@ func AuthMux(a *Auth) (*chi.Mux, error) {
 		// Disallow clickjacking
 		// https://www.oauth.com/oauth2-servers/authorization/security-considerations/
 		w.Header().Add("X-Frame-Options", "DENY")
-		ctx := CTX(r)
+		ctx := rest.CTX(r)
 		ctx.Log.Debug("Running auth template")
 		aTemplate.Execute(w, &aContext{
 			User:    nil,
@@ -251,7 +253,7 @@ func AuthMux(a *Auth) (*chi.Mux, error) {
 	})
 
 	mux.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
-		c := CTX(r)
+		c := rest.CTX(r)
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     "token",

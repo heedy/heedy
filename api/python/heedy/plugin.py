@@ -32,9 +32,9 @@ class Plugin:
         headers = {**request.headers, **headers}
 
         if overlay is None:
-            overlay = self.config["overlay"]
+            overlay = "next"
 
-        headers["X-Heedy-Overlay"] = str(overlay)
+        headers["X-Heedy-Overlay"] = overlay
 
         return await self.session.raw(request.method,request.path,headers=headers,data=data,params=request.query)
 

@@ -2,166 +2,167 @@ package server
 
 import (
 	"fmt"
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/buildinfo"
+
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
-var ErrNotFound = errors.New("not_found: The given endpoint is not available")
+
 
 func ReadUser(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadUserOptions
 	username := chi.URLParam(r, "username")
-	err := queryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	u, err := CTX(r).DB.ReadUser(username, &o)
-	WriteJSON(w, r, u, err)
+	u, err := rest.CTX(r).DB.ReadUser(username, &o)
+	rest.WriteJSON(w, r, u, err)
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var u database.User
 
-	if err := UnmarshalRequest(r, &u); err != nil {
-		WriteJSONError(w, r, 400, err)
+	if err := rest.UnmarshalRequest(r, &u); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	u.ID = chi.URLParam(r, "username")
-	WriteResult(w, r, CTX(r).DB.UpdateUser(&u))
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateUser(&u))
 }
 
 func ListSources(w http.ResponseWriter,r *http.Request) {
 	var o database.ListSourcesOptions
-	err := queryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	sl,err := CTX(r).DB.ListSources(&o)
-	WriteJSON(w, r, sl, err)
+	sl,err := rest.CTX(r).DB.ListSources(&o)
+	rest.WriteJSON(w, r, sl, err)
 }
 
 func CreateSource(w http.ResponseWriter, r *http.Request) {
 	var s database.Source
-	err := UnmarshalRequest(r, &s)
+	err := rest.UnmarshalRequest(r, &s)
 	if err != nil {
-		WriteJSONError(w, r, 400, err)
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	adb := CTX(r).DB
+	adb := rest.CTX(r).DB
 
 	sid, err := adb.CreateSource(&s)
 	if err != nil {
-		WriteJSONError(w, r, 400, err)
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	s2, err := adb.ReadSource(sid, nil)
 
-	WriteJSON(w, r, s2, err)
+	rest.WriteJSON(w, r, s2, err)
 }
 
 func ReadSource(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadSourceOptions
 	srcid := chi.URLParam(r, "sourceid")
-	err := queryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	s, err := CTX(r).DB.ReadSource(srcid, &o)
-	WriteJSON(w, r, s, err)
+	s, err := rest.CTX(r).DB.ReadSource(srcid, &o)
+	rest.WriteJSON(w, r, s, err)
 }
 
 func UpdateSource(w http.ResponseWriter, r *http.Request) {
 	var s database.Source
 
-	if err := UnmarshalRequest(r, &s); err != nil {
-		WriteJSONError(w, r, 400, err)
+	if err := rest.UnmarshalRequest(r, &s); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	s.ID = chi.URLParam(r, "sourceid")
-	WriteResult(w, r, CTX(r).DB.UpdateSource(&s))
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateSource(&s))
 }
 
 func DeleteSource(w http.ResponseWriter, r *http.Request) {
 	sid := chi.URLParam(r, "sourceid")
-	WriteResult(w, r, CTX(r).DB.DelSource(sid))
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelSource(sid))
 }
 
 func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	var c database.Connection
-	if err := UnmarshalRequest(r, &c); err != nil {
-		WriteJSONError(w, r, 400, err)
+	if err := rest.UnmarshalRequest(r, &c); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	db := CTX(r).DB
+	db := rest.CTX(r).DB
 	cid,_, err := db.CreateConnection(&c)
 	if err != nil {
-		WriteJSONError(w, r, 400, err)
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	c2, err := db.ReadConnection(cid,&database.ReadConnectionOptions{
 		AccessToken: true,
 	})
-	WriteJSON(w,r,c2,err)
+	rest.WriteJSON(w,r,c2,err)
 }
 
 func ReadConnection(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadConnectionOptions
 	cid := chi.URLParam(r, "connectionid")
-	err := queryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	s, err := CTX(r).DB.ReadConnection(cid, &o)
-	WriteJSON(w, r, s, err)
+	s, err := rest.CTX(r).DB.ReadConnection(cid, &o)
+	rest.WriteJSON(w, r, s, err)
 }
 
 
 func UpdateConnection(w http.ResponseWriter, r *http.Request) {
 	var c database.Connection
 
-	if err := UnmarshalRequest(r, &c); err != nil {
-		WriteJSONError(w, r, 400, err)
+	if err := rest.UnmarshalRequest(r, &c); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	c.ID = chi.URLParam(r, "connectionid")
-	WriteResult(w, r, CTX(r).DB.UpdateConnection(&c))
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateConnection(&c))
 }
 
 func DeleteConnection(w http.ResponseWriter, r *http.Request) {
 	cid := chi.URLParam(r, "connectionid")
-	WriteResult(w, r, CTX(r).DB.DelConnection(cid))
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelConnection(cid))
 }
 
 
 func ListConnections(w http.ResponseWriter,r *http.Request) {
 	var o database.ListConnectionOptions
-	err := queryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
-		WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	cl,err := CTX(r).DB.ListConnections(&o)
-	WriteJSON(w, r, cl, err)
+	cl,err := rest.CTX(r).DB.ListConnections(&o)
+	rest.WriteJSON(w, r, cl, err)
 }
 
 
 func GetSourceScopes(w http.ResponseWriter, r *http.Request) {
 	// TODO: figure out whether to require auth for this
-	a := CTX(r).DB.AdminDB().Assets()
+	a := rest.CTX(r).DB.AdminDB().Assets()
 	stype := chi.URLParam(r, "sourcetype")
 	scopes, err := a.Config.GetSourceScopes(stype)
-	WriteJSON(w,r,scopes,err)
+	rest.WriteJSON(w,r,scopes,err)
 }
 
 func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
-	a := CTX(r).DB.AdminDB().Assets()
+	a := rest.CTX(r).DB.AdminDB().Assets()
 	// Now our job is to generate all of the scopes
 	// TODO: language support
 	// TODO: maybe require auth for this?
@@ -204,7 +205,7 @@ func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	WriteJSON(w,r,smap,nil)
+	rest.WriteJSON(w,r,smap,nil)
 	
 }
 
@@ -214,7 +215,7 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func APINotFound(w http.ResponseWriter, r *http.Request) {
-	WriteJSONError(w, r, http.StatusNotFound, ErrNotFound)
+	rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 }
 
 // APIMux gives the REST API

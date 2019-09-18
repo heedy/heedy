@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/backend/plugins"
 )
 
 
@@ -21,7 +21,7 @@ func SQLUpdater(db *database.AdminDB, curversion int) error {
 func init() {
 	// Add the main handler to the server's builtin routes. The builtin heedy.conf will refer
 	// to builtin://streams to access the handler
-	server.BuiltinRoutes["streams"] = Handler
+	plugins.BuiltinRoutes["streams"] = Handler
 	
 	// Register the sql updater, so that the tables for streams are automatically created
 	// and updated on database open

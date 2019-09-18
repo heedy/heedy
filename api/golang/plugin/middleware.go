@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
 // Middleware constructs a Heedy server context for an http handler, allowing
@@ -23,17 +23,17 @@ func NewMiddleware(p *Plugin, h http.Handler) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger := server.RequestLogger(r)
+	logger := rest.RequestLogger(r)
 	logger = logger.WithField("exec", m.P.Meta.Plugin+"/"+m.P.Meta.Exec)
 	// Read out the header values necessary to generate a context
 
-	c := server.Context{
+	c := rest.Context{
 		Log:       logger,
 		RequestID: r.Header.Get("X-Heedy-RequestID"),
 		ID:        r.Header.Get("X-Heedy-ID"),
 		DB:        m.P.As(r.Header.Get("X-Heedy-Auth")),
 	}
 
-	r = r.WithContext(context.WithValue(r.Context(), server.HeedyContext, &c))
+	r = r.WithContext(context.WithValue(r.Context(), rest.HeedyContext, &c))
 	m.H.ServeHTTP(w, r)
 }

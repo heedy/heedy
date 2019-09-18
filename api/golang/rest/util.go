@@ -1,4 +1,4 @@
-package server
+package rest
 
 import (
 	"io"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"bytes"
 	"reflect"
+	"errors"
 
 	"encoding/json"
 
@@ -17,7 +18,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var queryDecoder = schema.NewDecoder()
+var QueryDecoder = schema.NewDecoder()
+var ErrNotFound = errors.New("not_found: The given endpoint is not available")
 
 // apiHeaders writes headers that need to be present in all API requests
 func apiHeaders(w http.ResponseWriter) {

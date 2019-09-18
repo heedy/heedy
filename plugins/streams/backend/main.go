@@ -9,19 +9,19 @@ import (
 
 	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/plugins/streams/backend/api"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	log.Info("Streams plugin starting")
+	logrus.Info("Streams plugin starting")
 	p, err := plugin.Init()
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		os.Exit(1)
 	}
 	err = p.InitSQL("streams", api.SQLVersion, api.SQLUpdater)
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		os.Exit(1)
 	}
 	pluginMiddleware := plugin.NewMiddleware(p, api.Handler)

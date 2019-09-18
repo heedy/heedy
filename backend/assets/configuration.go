@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -267,6 +268,13 @@ func (c *Configuration) Validate() error {
 					return fmt.Errorf("[plugin: %s, connection: %s, source: %s] unrecognized type (%s)",p,conn,s,v3.Type)
 				}
 			}
+		}
+	}
+
+	if c.ExecTimeout!=nil {
+		_, err := time.ParseDuration(*c.ExecTimeout)
+		if err!=nil {
+			return errors.New("Invalid exec_timeout")
 		}
 	}
 

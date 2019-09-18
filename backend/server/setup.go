@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"encoding/json"
-	"strconv"
 	"errors"
 	"sync"
 	"context"
@@ -15,6 +13,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/spf13/afero"
 
 	log "github.com/sirupsen/logrus"
@@ -34,23 +33,6 @@ type setupMessage struct {
 		Name     string `json:"name"`
 		Password string `json:"password"`
 	} `json:"user,omitempty"`
-}
-
-func writeSetupError(w http.ResponseWriter, r *http.Request, status int, err error) {
-	log.Error(err)
-	es := ErrorResponse{
-		ErrorName: "setup_error",
-		ErrorDescription: err.Error(),
-	}
-	jes, err := json.Marshal(&es)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "server_error", "error_description": "Failed to create error message"}`))
-		log.Errorf("Failed to write error message: %s", err)
-	}
-	w.Header().Set("Content-Length", strconv.Itoa(len(jes)))
-	w.WriteHeader(status)
-	w.Write(jes)
 }
 
 // Setup runs the setup server. All of the arguments are optional - include empty strings
@@ -112,18 +94,18 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		setupMutex.Lock()
 		defer setupMutex.Unlock()
 		if setupSuccess {
-			writeSetupError(w,r,http.StatusBadRequest,errors.New("Setup is already complete"))
+			rest.WriteJSONError(w,r,http.StatusBadRequest,errors.New("Setup is already complete"))
 			return
 		}
 		log.Debug("Got create request")
 		sm := &setupMessage{}
-		err := UnmarshalRequest(r, sm)
+		err := rest.UnmarshalRequest(r, sm)
 		if err != nil {
-			writeSetupError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
 			return
 		}
 		if sm.Directory != nil {
-			writeSetupError(w,r,http.StatusBadRequest,errors.New("The directory cannot be set from the web setup for security purposes"))
+			rest.WriteJSONError(w,r,http.StatusBadRequest,errors.New("The directory cannot be set from the web setup for security purposes"))
 			return
 		}
 
@@ -135,18 +117,18 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		log.Infof("Creating database in '%s'", directory)
 		a, err := assets.Create(directory, sm.Config, configFile)
 		if err != nil {
-			writeSetupError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
 			return
 		}
 		if err = database.Create(a); err != nil {
 			os.RemoveAll(directory)
-			writeSetupError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
 			return
 		}
 
 		db, err := database.Open(a)
 		if err != nil {
-			writeSetupError(w,r,http.StatusInternalServerError,err)
+			rest.WriteJSONError(w,r,http.StatusInternalServerError,err)
 			os.RemoveAll(directory)
 			return
 		}
@@ -160,7 +142,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			UserName: &sm.User.UserName,
 			Password: &sm.User.Password,
 		}); err != nil {
-			writeSetupError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
 			db.Close()
 			os.RemoveAll(directory)
 			return
@@ -171,7 +153,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		// Now we load the main server, as if run was called
 		a, err = assets.Open(directory, nil)
 		if err != nil {
-			writeSetupError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
 			os.RemoveAll(directory)
 		}
 		assets.SetGlobal(a)

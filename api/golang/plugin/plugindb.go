@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/schema"
 
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/api/golang/rest"
 )
 
 var ErrUnimplemented = errors.New("unimplemented")
@@ -72,7 +72,7 @@ func (db *PluginDB) BasicRequest(method, api string, body io.Reader) error {
 	}
 
 	// The response is an error, so unmarshal into the error struct
-	var eresp server.ErrorResponse
+	var eresp rest.ErrorResponse
 	err = json.Unmarshal(b, &eresp)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (db *PluginDB) UnmarshalRequest(obj interface{}, method, api string, body i
 
 	if resp.StatusCode >= 400 {
 		// The response is an error, so unmarshal into the error struct
-		var eresp server.ErrorResponse
+		var eresp rest.ErrorResponse
 		err = json.Unmarshal(b, &eresp)
 		if err != nil {
 			return err
@@ -127,7 +127,7 @@ func (db *PluginDB) StringRequest(method, api string, body io.Reader) (string, e
 
 	if resp.StatusCode >= 400 {
 		// The response is an error, so unmarshal into the error struct
-		var eresp server.ErrorResponse
+		var eresp rest.ErrorResponse
 		err = json.Unmarshal(b, &eresp)
 		if err != nil {
 			return "", err

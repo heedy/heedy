@@ -9,7 +9,7 @@ import (
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/backend/plugins"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -17,14 +17,14 @@ import (
 // Plugin contains methods that can be used when generating golang heedy plugins
 // it is the main interface with the main server
 type Plugin struct {
-	Meta *server.Exec
+	Meta *plugins.Exec
 	ADB  *database.AdminDB
 }
 
 // Init is to be run right at the start of the plugin, and it can only be run once.
 // It parses the information incoming from heedy, and prepares the relevant methods
 func Init() (*Plugin, error) {
-	var ex server.Exec
+	var ex plugins.Exec
 	reader := bufio.NewReader(os.Stdin)
 	b, err := reader.ReadBytes('\n')
 	if err != nil {
@@ -65,7 +65,7 @@ func (p *Plugin) AdminDB() (*database.AdminDB, error) {
 		return p.ADB, nil
 	}
 	db, err := database.Open(&assets.Assets{
-		FolderPath: p.Meta.MainDir,
+		FolderPath: p.Meta.RootDir,
 		Config:     p.Meta.Config,
 	})
 	p.ADB = db
@@ -80,7 +80,6 @@ func (p *Plugin) As(entity string) *PluginDB {
 			Timeout: time.Duration(5 * time.Second),
 		},
 		Entity:  entity,
-		Overlay: p.Meta.Overlay,
 	}
 }
 

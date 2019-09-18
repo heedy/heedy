@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/plugins"
 	"github.com/heedy/heedy/backend/database"
 
 	log "github.com/sirupsen/logrus"
@@ -47,43 +48,24 @@ func Run(r *RunOptions) error {
 	mux.Mount("/auth", authMux)
 	mux.Mount("/", fMux)
 
-	// Get assets directly for the main files
-
-	//mux.Handle("/app", assetFS)
-	//mux.Handle("/www/*", assetFS)
-	/*
-		mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/app/", http.StatusFound)
-		})
-	*/
-	sm, err := NewSourceManager(assets.Get(), http.Handler(mux))
+	pm, err := plugins.NewPluginManager(db,http.Handler(mux))
 	if err != nil {
 		return err
 	}
 
-	om, err := NewOverlayManager(assets.Get(), sm)
-	if err != nil {
-		return err
-	}
-	em := NewExecManager(assets.Get())
-	err = em.Start()
-	if err != nil {
-		return err
-	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			log.Info("Cleanup...")
-			em.Stop()
-			db.Close()
+			pm.Close()
 			log.Info("Done")
 			os.Exit(0)
 		}
 	}()
 
-	requestHandler := http.Handler(NewRequestHandler(auth, em, om))
+	requestHandler := http.Handler(NewRequestHandler(auth, pm))
 
 	if r != nil && r.Verbose {
 		log.Warn("Running in verbose mode")

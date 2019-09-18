@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/spf13/afero"
 )
 
@@ -50,7 +51,7 @@ func FrontendMux() (*chi.Mux, error) {
 		w.Header().Add("X-Frame-Options", "DENY")
 		w.Header().Add("Cache-Control", "private, no-cache")
 
-		ctx := CTX(r)
+		ctx := rest.CTX(r)
 		var u *database.User
 		var err error
 
@@ -59,7 +60,7 @@ func FrontendMux() (*chi.Mux, error) {
 				Avatar: true,
 			})
 			if err != nil {
-				WriteJSONError(w, r, http.StatusInternalServerError, err)
+				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 				return
 			}
 		}
@@ -76,7 +77,7 @@ func FrontendMux() (*chi.Mux, error) {
 		for _, p := range cfg.GetActivePlugins() {
 			v, ok := cfg.Plugins[p]
 			if !ok {
-				WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Failed to find plugin in configuration"))
+				rest.WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Failed to find plugin in configuration"))
 				return
 			}
 			if v.Frontend != nil {
@@ -102,7 +103,7 @@ func FrontendMux() (*chi.Mux, error) {
 				Frontend: frontendPlugins,
 			})
 			if err != nil {
-				WriteJSONError(w, r, http.StatusInternalServerError, err)
+				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 			}
 			return
 		}
@@ -113,7 +114,7 @@ func FrontendMux() (*chi.Mux, error) {
 			Frontend: frontendPlugins,
 		})
 		if err != nil {
-			WriteJSONError(w, r, http.StatusInternalServerError, err)
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		}
 		return
 

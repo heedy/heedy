@@ -12,6 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/xid"
 	"github.com/sirupsen/logrus"
+
+	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/plugins"
 )
 
 // RequestHandler is a middleware that authenticates requests and generates a Context object containing
@@ -19,8 +22,7 @@ import (
 // that
 type RequestHandler struct {
 	auth    *Auth
-	plugins *ExecManager
-	handler http.Handler
+	plugins *plugins.PluginManager
 
 	// The auth system also allows special token-based access. This is specifically built
 	// to support plugins. Each request that is forwarded through the plugin system
@@ -28,24 +30,23 @@ type RequestHandler struct {
 	// with that auth token which will have the same permissions, and be linked to the original
 	// request.
 	sync.RWMutex
-	activeRequests map[string]*Context
+	activeRequests map[string]*rest.Context
 }
 
 // NewRequestHandler generates a new Auth middleware
-func NewRequestHandler(auth *Auth, m *ExecManager, h http.Handler) *RequestHandler {
+func NewRequestHandler(auth *Auth,p *plugins.PluginManager) *RequestHandler {
 	return &RequestHandler{
 		auth:           auth,
-		plugins:        m,
-		activeRequests: make(map[string]*Context),
-		handler:        h,
+		plugins:        p,
+		activeRequests: make(map[string]*rest.Context),
 	}
 }
 
-func (a *RequestHandler) serve(w http.ResponseWriter, r *http.Request, requestStart time.Time, c *Context) {
+func (a *RequestHandler) serve(w http.ResponseWriter, r *http.Request, requestStart time.Time, c *rest.Context) {
 	a.Lock()
 	a.activeRequests[c.ID] = c
 	a.Unlock()
-	a.handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), HeedyContext, c)))
+	a.plugins.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), rest.HeedyContext, c)))
 	a.Lock()
 	delete(a.activeRequests, c.ID)
 	a.Unlock()
@@ -55,21 +56,20 @@ func (a *RequestHandler) serve(w http.ResponseWriter, r *http.Request, requestSt
 
 // ServeHTTP - http.Handler implementation
 func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var c *Context
-	var err error
+	var c *rest.Context
 
 	requestStart := time.Now()
 
-	logger := RequestLogger(r)
+	logger := rest.RequestLogger(r)
 
 	// First check if the request is coming from a plugin
 	pluginKey := r.Header.Get("X-Heedy-Key")
 	if len(pluginKey) > 0 {
 		// There is a plugin key present, make sure it was given to one of the plugin processes
-		proc, ok := a.plugins.Processes[pluginKey]
-		if !ok {
+		proc, err := a.plugins.GetProcessByKey(pluginKey)
+		if err!=nil {
 			time.Sleep(time.Second)
-			WriteJSONError(w, r, http.StatusUnauthorized, errors.New("access_denied: invalid heedy plugin key"))
+			rest.WriteJSONError(w, r, http.StatusUnauthorized, errors.New("access_denied: invalid heedy plugin key"))
 			return
 		}
 
@@ -82,12 +82,12 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			curRequest, ok := a.activeRequests[ID]
 			a.RUnlock()
 			if !ok {
-				WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid X-Heedy-Id"))
+				rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid X-Heedy-Id"))
 				return
 			}
 
 			// It is a continuing request! Let's pre-populate a bunch of values
-			c = &Context{
+			c = &rest.Context{
 				RequestID: curRequest.RequestID,
 				DB:        curRequest.DB,
 			}
@@ -96,14 +96,14 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Remove the X-Heedy-Id
 
 		} else {
-			c = &Context{
+			c = &rest.Context{
 				RequestID: xid.New().String(),
 				DB:        a.auth.DB,
 			}
 
 		}
 
-		c.Plugin = proc.Plugin + "/" + proc.Exec
+		c.Plugin = proc.Plugin
 		c.ID = uuid.New().String()
 
 		// Now check if we are to update the context based on the X-Heedy headers
@@ -111,7 +111,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if len(authVal) > 0 && authVal != c.DB.ID() {
 			c.DB, err = a.auth.As(authVal)
 			if err != nil {
-				WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("plugin_error: Could not auth as %s: %s", authVal, err.Error()))
+				rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("plugin_error: Could not auth as %s: %s", authVal, err.Error()))
 				return
 			}
 		}
@@ -130,14 +130,14 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// are allowed to use those headers
 		for header := range r.Header {
 			if strings.HasPrefix(header, "X-Heedy") {
-				WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: X-Heedy headers are only permitted with a valid X-Heedy-Key"))
+				rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: X-Heedy headers are only permitted with a valid X-Heedy-Key"))
 				return
 			}
 		}
 
 		// No X-Heedy headers were found, this looks like a new request direct from the user
 		id := xid.New().String()
-		c = &Context{
+		c = &rest.Context{
 			Log:       logger.WithField("id", id),
 			RequestID: id,
 			ID:        uuid.New().String(),
@@ -147,7 +147,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Authentication failed. This means that it was an illegal request, and we treat it as such
 			time.Sleep(time.Second)
-			WriteJSONError(w, r, http.StatusUnauthorized, fmt.Errorf("access_denied: %s", err.Error()))
+			rest.WriteJSONError(w, r, http.StatusUnauthorized, fmt.Errorf("access_denied: %s", err.Error()))
 
 			return
 		}
