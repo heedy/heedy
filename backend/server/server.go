@@ -72,6 +72,16 @@ func Run(r *RunOptions) error {
 		requestHandler = VerboseLoggingMiddleware(requestHandler)
 	}
 
+	// Now load the plugins (so taat the server is ready when they are loaded)
+	go func() {
+		err := pm.Reload()
+		if err!=nil {
+			log.Error(err)
+			pm.Close()
+			os.Exit(1)
+		}
+	}()
+
 	err = http.ListenAndServe(serverAddress, requestHandler)
 	/*
 		srv := &http.Server{

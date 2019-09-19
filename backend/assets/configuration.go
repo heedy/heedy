@@ -271,6 +271,13 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
+	// Make sure all the active plugins have an associated configuration
+	for _,ap := range c.GetActivePlugins() {
+		if _,ok := c.Plugins[ap]; !ok {
+			return fmt.Errorf("Plugin '%s' config not found",ap)
+		}
+	}
+
 	if c.ExecTimeout!=nil {
 		_, err := time.ParseDuration(*c.ExecTimeout)
 		if err!=nil {

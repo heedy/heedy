@@ -34,18 +34,17 @@ type Plugin struct {
 	cron *cron.Cron
 }
 
-func NewPlugin(db *database.AdminDB, pname string) (*Plugin,error) {
-	a := db.Assets()
+func NewPlugin(db *database.AdminDB,a *assets.Assets, pname string) (*Plugin,error) {
 	p := &Plugin{
 		Processes: make(map[string]*Exec),
 		Assets:    a,
 		Name: pname,
 	}
+	logrus.Debugf("Loading plugin '%s'",pname)
 	
 	psettings := a.Config.Plugins[pname]
 
 	if psettings.Routes != nil && len(*psettings.Routes) > 0 {
-		logrus.Debugf("Preparing routes for %s", pname)
 
 		mux := chi.NewMux()
 
@@ -106,10 +105,10 @@ func (p *Plugin) Start() error {
 			p.Processes[e.APIKey] = e
 
 			if ev.Cron != nil && len(*ev.Cron) > 0 {
-				logrus.Debugf("Enabling cron job %s/%s", pname, ename)
+				logrus.Debugf("%s: Enabling cron job %s", pname, ename)
 				err = p.cron.AddJob(*ev.Cron, e)
 			} else {
-				logrus.Debugf("Running %s/%s", pname, ename)
+				logrus.Debugf("%s: Running %s", pname, ename)
 				err = e.Start()
 			}
 			if err != nil {
@@ -122,6 +121,15 @@ func (p *Plugin) Start() error {
 	}
 	return nil
 }
+
+
+func (p *Plugin) BeforeStart() error {
+	return nil
+}
+func (p *Plugin) AfterStart() error {
+	return nil
+}
+
 
 // HasKey checks whether the plugin has defined the given api key
 func (p *Plugin) GetProcessByKey(key string) (*Exec,error) {
@@ -160,7 +168,7 @@ func (p *Plugin) HasProcess() bool {
 func (p *Plugin) Kill() {
 	for _, e := range p.Processes {
 		if e.IsRunning() {
-			logrus.Warnf("Killing %s/%s", e.Plugin, e.Exec)
+			logrus.Warnf("%s: Killing %s", e.Exec)
 			e.Kill()
 		}
 	}

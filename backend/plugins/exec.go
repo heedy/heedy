@@ -36,7 +36,7 @@ type Exec struct {
 }
 
 func (e *Exec) Run() {
-	log.Debugf("Running cron job %s/%s", e.Plugin, e.Exec)
+	log.Debugf("%s: Running cron job %s", e.Plugin, e.Exec)
 	err := e.Start()
 	if err != nil {
 		log.Error(err)
@@ -97,9 +97,9 @@ func (e *Exec) Start() error {
 
 		e.Lock()
 		if err != nil && !e.isStopping {
-			log.Errorf("%s/%s finished with error %s", e.Plugin, e.Exec, err.Error())
+			log.Errorf("%s: %s finished with error %s", e.Plugin, e.Exec, err.Error())
 		} else {
-			log.Debugf("%s/%s finished", e.Plugin, e.Exec)
+			log.Debugf("%s: %s closed", e.Plugin, e.Exec)
 		}
 		e.proc = nil
 		e.isStopping = false
