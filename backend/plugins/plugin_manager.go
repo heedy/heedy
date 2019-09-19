@@ -4,9 +4,12 @@ import (
 	"sync"
 	"errors"
 	"net/http"
+	"fmt"
 
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/api/golang/rest"
+
+	"github.com/sirupsen/logrus"
 	
 )
 
@@ -43,6 +46,9 @@ type PluginManager struct {
 	start string
 	order []string
 	SourceManager *SourceManager
+
+	// This is the plugin that is currently being set up
+	initializingPlugin *Plugin
 }
 
 // NewPluginManager is given assets and the "backend" handler, and returns a plugin manager
@@ -78,6 +84,30 @@ func (pm *PluginManager) Reload() error {
 	pm.status = statusLoading
 	pm.Unlock()
 
+	// First, perform a cleanup operation: find any connections that are owned by inactive plugins,
+	// and remove them if they don't have sources
+	pluginexclusion := ""
+	neworder := []interface{}{}
+	for _,pname := range order {
+		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
+		neworder = append(neworder,pname + ":%")
+	}
+	
+
+	r,err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id);",pluginexclusion),neworder...)
+	if err!=nil {
+		pm.Close()
+		return err
+	}
+	rows,err := r.RowsAffected()
+	if err!=nil {
+		pm.Close()
+		return err
+	}
+	if rows > 0 {
+		logrus.Debug("Cleared database of connections from inactive plugins")
+	}
+	// Now actually initialize the plugins
 	for _,pname := range order {
 		p,err := NewPlugin(pm.ADB,a,pname)
 		if err!=nil {
@@ -89,6 +119,14 @@ func (pm *PluginManager) Reload() error {
 			pm.Close()
 			return err
 		}
+		pm.Lock()
+		pm.initializingPlugin = p
+		if pm.status!=statusLoading {
+			pm.Unlock()
+			pm.Close()
+			return errors.New("Plugins manager closed")
+		}
+		pm.Unlock()
 		err = p.Start()
 		if err!=nil {
 			pm.Close()
@@ -117,6 +155,7 @@ func (pm *PluginManager) Reload() error {
 			}
 			pm.start = pname
 		}
+		pm.initializingPlugin = nil
 		pm.Unlock()
 
 		// Now this plugin's API is active. Run the AfterStart handler
@@ -172,7 +211,14 @@ func (pm *PluginManager) Close() error {
 	pm.order = []string{}
 	pm.status = statusClosed
 	pm.start = "none"
-	pm.Unlock()
+	if pm.initializingPlugin!=nil {
+		ip := pm.initializingPlugin
+		pm.Unlock()
+		ip.Close()
+	} else {
+		pm.Unlock()
+	}
+	
 	return nil
 }
 

@@ -160,18 +160,18 @@ func TestAdminConnection(t *testing.T) {
 	}))
 
 	badname := "derp"
-	noapikey := ""
-	conn, apikey, err := db.CreateConnection(&Connection{
+	noAccessToken := ""
+	conn, AccessToken, err := db.CreateConnection(&Connection{
 		Details: Details{
 			Name: &name,
 		},
 		Owner: &name,
-		APIKey: &noapikey,
+		AccessToken: &noAccessToken,
 	})
 	require.NoError(t, err)
-	require.Equal(t, apikey, "")
+	require.Equal(t, AccessToken, "")
 
-	_, err = db.GetConnectionByKey("")
+	_, err = db.GetConnectionByAccessToken("")
 	require.Error(t, err)
 
 	c, err := db.ReadConnection(conn, nil)
@@ -183,12 +183,12 @@ func TestAdminConnection(t *testing.T) {
 		Details: Details{
 			ID: conn,
 		},
-		APIKey: &badname, // can be anything
+		AccessToken: &badname, // can be anything
 	}
 	require.NoError(t, db.UpdateConnection(c))
-	require.NotEqual(t, badname, *c.APIKey, "The API key should have been changed during update")
+	require.NotEqual(t, badname, *c.AccessToken, "The API key should have been changed during update")
 
-	c2, err := db.GetConnectionByKey(*c.APIKey)
+	c2, err := db.GetConnectionByAccessToken(*c.AccessToken)
 	require.NoError(t, err)
 	require.Equal(t, c2.ID, c.ID)
 
@@ -234,7 +234,7 @@ func TestAdminSource(t *testing.T) {
 			Name: &badname,
 		},
 
-		Meta: &SourceMeta{
+		Meta: &JSONObject{
 			"schema": 4,
 		},
 

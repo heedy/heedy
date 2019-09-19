@@ -139,7 +139,7 @@ func TestUserSource(t *testing.T) {
 			ID:       sid,
 			Name: &name2,
 		},
-		Meta: &SourceMeta{
+		Meta: &JSONObject{
 			"schema": 4,
 		},
 	}))

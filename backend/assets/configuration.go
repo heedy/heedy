@@ -33,6 +33,7 @@ type Source struct{
 	Avatar *string `json:"avatar,omitempty"`
 	Meta *map[string]interface{} `json:"meta,omitempty"`
 	Scopes *[]string `json:"scopes,omitempty"`
+	Defer *bool `json:"defer" hcl:"defer"`
 }
 
 // Connection represents a connection that is to be created on behalf of a plugin
@@ -57,6 +58,7 @@ type Exec struct {
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
 	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
+	Endpoint *string 	`hcl:"endpoint" json:"endpoint,omitempty"`
 }
 
 type Plugin struct {

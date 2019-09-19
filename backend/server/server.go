@@ -72,7 +72,7 @@ func Run(r *RunOptions) error {
 		requestHandler = VerboseLoggingMiddleware(requestHandler)
 	}
 
-	// Now load the plugins (so taat the server is ready when they are loaded)
+	// Now load the plugins (so that the server is ready when they are loaded)
 	go func() {
 		err := pm.Reload()
 		if err!=nil {
@@ -80,6 +80,7 @@ func Run(r *RunOptions) error {
 			pm.Close()
 			os.Exit(1)
 		}
+		log.Infof("Running heedy on %s",serverAddress)
 	}()
 
 	err = http.ListenAndServe(serverAddress, requestHandler)

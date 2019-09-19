@@ -23,6 +23,9 @@ type Plugin struct {
 	// The assets that are used by the server
 	Assets *assets.Assets
 
+	// The database
+	DB *database.AdminDB
+
 	// Name of the plugin
 	Name string
 
@@ -36,6 +39,7 @@ type Plugin struct {
 
 func NewPlugin(db *database.AdminDB,a *assets.Assets, pname string) (*Plugin,error) {
 	p := &Plugin{
+		DB: db,
 		Processes: make(map[string]*Exec),
 		Assets:    a,
 		Name: pname,
@@ -119,19 +123,117 @@ func (p *Plugin) Start() error {
 		}
 
 	}
+
+	// Now wait until all the endpoints are open
+	for ename,ev := range pv.Exec {
+		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
+			if ev.Endpoint!=nil {
+				logrus.Debugf("%s: Waiting for endpoint %s (%s)",pname,*ev.Endpoint,ename)
+				method,host,err := GetEndpoint(p.Assets.DataDir(),*ev.Endpoint)
+				if err!=nil {
+					p.Stop()
+					return err
+				}
+				if err = WaitForEndpoint(method,host); err!=nil {
+					p.Stop()
+					return err
+				}
+				logrus.Debugf("%s: Endpoint %s open",pname,*ev.Endpoint)
+				
+			}
+		}
+	}
 	return nil
 }
 
+func processConnection(pluginKey string,owner string,cv *assets.Connection) *database.Connection {
+	c := &database.Connection{
+		Details: database.Details{
+			Name: &cv.Name,
+			Description: cv.Description,
+			Avatar: cv.Avatar,
+		},
+		Enabled: cv.Enabled,
+		Plugin: &pluginKey,
+		Owner: &owner,
+	}
+	if cv.Scopes!=nil {
+		c.Scopes = &database.ConnectionScopeArray{
+			ScopeArray: database.ScopeArray{
+				Scopes: *cv.Scopes,
+			},
+		}
+	}
+	if cv.AccessToken==nil || !(*cv.AccessToken) {
+		empty := ""
+		c.AccessToken = &empty
+	}
+	if cv.SettingSchema!=nil {
+		jo := database.JSONObject(*cv.SettingSchema)
+		c.SettingSchema = &jo
+	}
+	if cv.Settings!=nil {
+		jo := database.JSONObject(*cv.Settings)
+		c.Settings = &jo
+	}
+	return c
+}
 
+// BeforeStart is run before any of the plugin's executables are run.
+// This function is used to check if we're to create connections/sources
+// for the plugin
 func (p *Plugin) BeforeStart() error {
+	psettings := p.Assets.Config.Plugins[p.Name]
+	for cname,cv := range psettings.Connections {
+		// For each connection
+		// Check if the connection exists for all users
+		var res []string
+
+		pluginKey := p.Name+":"+cname
+
+		err := p.DB.DB.Select(&res,"SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);",pluginKey)
+		if err!=nil {
+			return err
+		}
+		if len(res) > 0 {
+			logrus.Debugf("%s: Creating '%s' connection for all users",p.Name,pluginKey)
+
+			// aaand how exactly do I achieve this?
+
+			for _,uname := range res {
+				
+				_,_,err = p.DB.CreateConnection(processConnection(pluginKey,uname,cv))
+				if err!=nil {
+					return err
+				}
+			}
+		}
+
+		for skey,sv := range cv.Sources {
+			res = []string{}
+			err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
+			if err!=nil {
+				return err
+			}
+			if len(res) > 0 {
+				logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
+
+				for _,cid := range res {
+					logrus.Debug(cid,sv.Name)
+				}
+			}
+		}
+	}
 	return nil
 }
+
+// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections
 func (p *Plugin) AfterStart() error {
 	return nil
 }
 
 
-// HasKey checks whether the plugin has defined the given api key
+// GetProcessByKey gets the process associated with a given API key
 func (p *Plugin) GetProcessByKey(key string) (*Exec,error) {
 	v, ok := p.Processes[key]
 	if ok {
@@ -140,7 +242,7 @@ func (p *Plugin) GetProcessByKey(key string) (*Exec,error) {
 	return nil,errors.New("No such key")
 }
 
-// Signals all processes to stop
+// Interrupt signals all processes to stop
 func (p *Plugin) Interrupt() error {
 	p.cron.Stop()
 	for _,e := range p.Processes {

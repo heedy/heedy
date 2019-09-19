@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -55,18 +54,9 @@ func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 	}
 
 	// Otherwise, we set up a unix domain socket.
-
-	splitopath := strings.SplitAfterN(uri[7:], ".sock", 2)
-	host := splitopath[0]
-	if !strings.HasSuffix(host, ".sock") {
-		return nil, fmt.Errorf("A unix socket must have its file end with .sock ('%s')", uri)
-	}
-	path := splitopath[1]
-	if path == "" {
-		path = "/"
-	}
-	if !strings.HasPrefix(path, "/") {
-		return nil, fmt.Errorf("The url after .sock must start with / ('%s')", uri)
+	host,path, err := ParseUnixSock(datadir,uri)
+	if err!=nil {
+		return nil,err
 	}
 	u := &url.URL{
 		Host:   host,
@@ -80,10 +70,6 @@ func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 
 	p := httputil.NewSingleHostReverseProxy(parsedURL)
 	p.ErrorHandler = gatewayError
-
-	if !filepath.IsAbs(host) {
-		host = filepath.Join(datadir, host)
-	}
 
 	p.Transport = &http.Transport{
 		DialContext: (&unixDialer{

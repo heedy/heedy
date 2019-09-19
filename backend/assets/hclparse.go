@@ -38,6 +38,7 @@ type hclExec struct {
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive"`
 	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
+	Endpoint *string 	`hcl:"endpoint" json:"endpoint,omitempty"`
 }
 
 type hclSource struct {
@@ -49,6 +50,7 @@ type hclSource struct {
 	Avatar *string `hcl:"avatar"`
 	Scopes *[]string `hcl:"scopes"`
 	Meta *cty.Value `hcl:"meta,attr"`
+	Defer *bool `json:"defer" hcl:"defer"`
 }
 
 type hclConnection struct {
