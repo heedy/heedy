@@ -20,6 +20,10 @@ const (
 	statusReady
 )
 
+// InternalRequester allows to serve internal requests
+type InternalRequester interface{
+	ServeInternal(w http.ResponseWriter, r *http.Request, plugin string)
+}
 
 type pluginElement struct {
 	// The plugin object
@@ -32,6 +36,10 @@ type pluginElement struct {
 //PluginManager handles all aspects of plugin backends
 type PluginManager struct {
 	sync.RWMutex
+
+	// The internal request handler that handles 
+	// heedy's server context and whatnot
+	IR InternalRequester
 
 	// The default handler to use
 	Handler http.Handler
@@ -114,7 +122,7 @@ func (pm *PluginManager) Reload() error {
 			pm.Close()
 			return err
 		}
-		err = p.BeforeStart()
+		err = p.BeforeStart(pm.IR)
 		if err!=nil {
 			pm.Close()
 			return err
@@ -159,7 +167,7 @@ func (pm *PluginManager) Reload() error {
 		pm.Unlock()
 
 		// Now this plugin's API is active. Run the AfterStart handler
-		err = p.AfterStart()
+		err = p.AfterStart(pm.IR)
 		if err!=nil {
 			pm.Close()
 			return err

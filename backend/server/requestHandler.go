@@ -35,11 +35,15 @@ type RequestHandler struct {
 
 // NewRequestHandler generates a new Auth middleware
 func NewRequestHandler(auth *Auth,p *plugins.PluginManager) *RequestHandler {
-	return &RequestHandler{
+	
+	rh := &RequestHandler{
 		auth:           auth,
 		plugins:        p,
 		activeRequests: make(map[string]*rest.Context),
 	}
+	// Allow the plugin handler to make internal requests
+	p.IR = rh
+	return rh
 }
 
 func (a *RequestHandler) serve(w http.ResponseWriter, r *http.Request, requestStart time.Time, c *rest.Context) {
@@ -163,4 +167,31 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	a.serve(w, r, requestStart, c)
 
+}
+
+// ServeInternal does everything EXCEPT auth - it assumes admin. It is used to
+// run queries over the full system
+func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request,plugin string) {
+	// The remote address is heedy for internal requests
+	r.RemoteAddr = "heedy"
+
+	requestStart := time.Now()
+	id := xid.New().String()
+	c := &rest.Context{
+		RequestID: id,
+		Plugin: plugin,
+		ID:        uuid.New().String(),
+		DB: a.auth.DB, // Run as admin
+		Log: rest.RequestLogger(r).WithFields(logrus.Fields{
+			"id":   id,
+			"auth": a.auth.DB.ID(),
+		}),
+	}
+
+	// Set the appropriate X-Heedy Headers
+	r.Header["X-Heedy-Auth"] = []string{c.DB.ID()}
+	r.Header["X-Heedy-Id"] = []string{c.ID}
+	r.Header["X-Heedy-Request"] = []string{c.RequestID}
+
+	a.serve(w, r, requestStart, c)
 }

@@ -265,6 +265,28 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 	if o != nil && o.Avatar {
 		c.Avatar = nil
 	}
+	if o == nil || !o.Avatar {
+		c.Avatar = nil
+	}
+	if o==nil || !o.AccessToken {
+		if c.AccessToken!=nil {
+			c.AccessToken = nil
+		} else {
+			// Make empty access token show up as empty, so services can know
+			// that no access token is available
+			if c.AccessToken==nil {
+				emptyString := ""
+				c.AccessToken = &emptyString
+			}
+		}
+		
+	} else {
+		// Make empty access token show up as empty
+		if c.AccessToken==nil {
+			emptyString := ""
+			c.AccessToken = &emptyString
+		}
+	}
 	return c, err
 }
 

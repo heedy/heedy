@@ -2,13 +2,20 @@ package plugins
 
 import (
 	"fmt"
+	"io"
 	"time"
 	"errors"
 	"path"
 	"encoding/base64"
+	"encoding/json"
 	"crypto/rand"
+	"bytes"
+	"net/http"
+	"net/http/httptest"
+	
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/api/golang/rest"
 
 	"github.com/robfig/cron"
 	"github.com/go-chi/chi"
@@ -179,10 +186,62 @@ func processConnection(pluginKey string,owner string,cv *assets.Connection) *dat
 	return c
 }
 
+func processSource(connection string,key string, as *assets.Source) *database.Source {
+	s := &database.Source{
+		Details: database.Details{
+			Name: &as.Name,
+			Description: as.Description,
+			Avatar: as.Avatar,
+		},
+		Connection: &connection,
+		Key: &key,
+		Type: &as.Type,
+	}
+	if as.Meta!=nil {
+		jo := database.JSONObject(*as.Meta)
+		s.Meta = &jo
+	}
+	if as.Scopes!=nil {
+		s.Scopes = &database.ScopeArray{
+			Scopes: *as.Scopes,
+		}
+	}
+
+	return s
+}
+
+func internalRequest(ir InternalRequester,method,path,plugin string, body interface{}) error {
+	var bodybuffer io.Reader
+	if body!=nil {
+		b,err := json.Marshal(body)
+		if err!=nil {
+			return err
+		}
+		bodybuffer = bytes.NewBuffer(b)
+	}
+
+	req,err := http.NewRequest(method,path,bodybuffer)
+	if err!=nil {
+		return err
+	}
+
+	rec := httptest.NewRecorder()
+	ir.ServeInternal(rec,req,plugin)
+	if rec.Code!=http.StatusOK {
+		var er rest.ErrorResponse
+		err = json.Unmarshal(rec.Body.Bytes(),&er)
+		if err!=nil {
+			return err
+		}
+		return &er
+	}
+	return nil
+}
+
 // BeforeStart is run before any of the plugin's executables are run.
 // This function is used to check if we're to create connections/sources
 // for the plugin
-func (p *Plugin) BeforeStart() error {
+func (p *Plugin) BeforeStart(ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
 	for cname,cv := range psettings.Connections {
 		// For each connection
@@ -210,25 +269,61 @@ func (p *Plugin) BeforeStart() error {
 		}
 
 		for skey,sv := range cv.Sources {
-			res = []string{}
-			err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
-			if err!=nil {
-				return err
-			}
-			if len(res) > 0 {
-				logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
+			if sv.Defer==nil || !*sv.Defer {
+				res = []string{}
+				err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
+				if err!=nil {
+					return err
+				}
+				if len(res) > 0 {
+					logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
 
-				for _,cid := range res {
-					logrus.Debug(cid,sv.Name)
+					for _,cid := range res {
+						s := processSource(cid,skey,sv)
+						err = internalRequest(ir,"POST","/api/heedy/v1/sources",p.Name,s)
+						if err!=nil {
+							return err
+						}
+					}
 				}
 			}
+			
 		}
 	}
 	return nil
 }
 
 // AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections
-func (p *Plugin) AfterStart() error {
+func (p *Plugin) AfterStart(ir InternalRequester) error {
+	psettings := p.Assets.Config.Plugins[p.Name]
+	for cname,cv := range psettings.Connections {
+		// For each connection
+		// Check if the connection exists for all users
+		var res []string
+
+		pluginKey := p.Name+":"+cname
+
+		for skey,sv := range cv.Sources {
+			if sv.Defer!=nil && *sv.Defer {
+				err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
+				if err!=nil {
+					return err
+				}
+				if len(res) > 0 {
+					logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
+
+					for _,cid := range res {
+						s := processSource(cid,skey,sv)
+						err = internalRequest(ir,"POST","/api/heedy/v1/sources",p.Name,s)
+						if err!=nil {
+							return err
+						}
+					}
+				}
+			}
+			
+		}
+	}
 	return nil
 }
 

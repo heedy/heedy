@@ -44,8 +44,8 @@ func VerboseLoggingMiddleware(h http.Handler) http.Handler {
 			headers += curheader + "\n"
 		}
 
-		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] == "gzip" {
-			logrus.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY GZIPPED - NOT LOGGING (length: %d)\nIf you want to log response content, disable gzip_static in connectordb.conf\n\n", rec.Code, headers, len(response))
+		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] != "identity" {
+			logrus.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY COMPRESSED - NOT LOGGING (length: %d)", rec.Code, headers, len(response))
 		} else {
 			// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
 			logrus.Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))

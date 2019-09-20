@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/heedy/heedy/backend/assets"
+
 )
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
@@ -63,7 +64,12 @@ func (s *ScopeArray) MarshalJSON() ([]byte, error) {
 func (s *ScopeArray) UnmarshalJSON(b []byte) error {
 	var total string
 	err := json.Unmarshal(b, &total)
-	s.Scopes = strings.Split(total, " ")
+	total = strings.TrimSpace(total)
+	if len(total)==0 {
+		s.Scopes = []string{}
+	} else {
+		s.Scopes = strings.Split(total, " ")
+	}
 	s.Update()
 	return err
 }
@@ -401,6 +407,7 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 		}
 	}
 
+	noToken := false
 	if c.AccessToken != nil {
 
 		if *c.AccessToken != "" {
@@ -411,6 +418,13 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 				return
 			}
 			c.AccessToken = &token // Write the token back to the connection object
+		} else {
+			noToken = true
+			// Make the pointer not extact
+			c.AccessToken = nil
+			// set the access token to NULL
+			cColumns = append(cColumns,"access_token")
+			cValues = append(cValues,nil)
 		}
 
 	}
@@ -418,6 +432,12 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 	c2, g2 := extractPointers(c)
 	cColumns = append(cColumns, c2...)
 	cValues = append(cValues, g2...)
+
+	if noToken {
+		// Needed to stop generating a key for connections that don't want one
+		emptystring := ""
+		c.AccessToken = &emptystring
+	}
 
 	return
 }
