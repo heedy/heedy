@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/heedy/heedy/backend/assets"
-
 )
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
@@ -65,7 +64,7 @@ func (s *ScopeArray) UnmarshalJSON(b []byte) error {
 	var total string
 	err := json.Unmarshal(b, &total)
 	total = strings.TrimSpace(total)
-	if len(total)==0 {
+	if len(total) == 0 {
 		s.Scopes = []string{}
 	} else {
 		s.Scopes = strings.Split(total, " ")
@@ -177,7 +176,7 @@ type Details struct {
 type User struct {
 	Details
 
-	UserName    *string `json:"username" db:"username"`
+	UserName *string `json:"username" db:"username"`
 
 	PublicRead *bool `json:"public_read" db:"public_read"`
 	UsersRead  *bool `json:"users_read" db:"users_read"`
@@ -187,10 +186,10 @@ type User struct {
 
 type Connection struct {
 	Details
-	Owner *string `json:"owner" db:"owner"`
+	Owner  *string `json:"owner" db:"owner"`
 	Plugin *string `json:"plugin" db:"plugin"`
 
-	Enabled *bool	`json:"enabled,omitempty" db:"enabled"`
+	Enabled *bool `json:"enabled,omitempty" db:"enabled"`
 
 	AccessToken *string `json:"access_token,omitempty" db:"access_token"`
 
@@ -230,7 +229,7 @@ type ReadUserOptions struct {
 
 // ReadConnectionOptions gives options for reading
 type ReadConnectionOptions struct {
-	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
+	Avatar      bool `json:"avatar,omitempty" schema:"avatar"`
 	AccessToken bool `json:"token,omitempty" schema:"token"` // using "token" instead of access_token, since the API uses access_token param
 }
 
@@ -356,7 +355,7 @@ func extractPointers(o interface{}) (columns []string, values []interface{}) {
 // -------------------------------------------------------------------------------------
 
 func extractDetails(d *Details) (columns []string, values []interface{}, err error) {
-	
+
 	if d.Avatar != nil {
 		if err = ValidAvatar(*d.Avatar); err != nil {
 			return
@@ -423,8 +422,8 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 			// Make the pointer not extact
 			c.AccessToken = nil
 			// set the access token to NULL
-			cColumns = append(cColumns,"access_token")
-			cValues = append(cValues,nil)
+			cColumns = append(cColumns, "access_token")
+			cValues = append(cValues, nil)
 		}
 
 	}
@@ -626,8 +625,8 @@ func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
 			sColumns = append(sColumns, "type")
 			sValues = append(sValues, *o.Type)
 		}
-		if o.Key !=nil {
-			sColumns = append(sColumns,"key")
+		if o.Key != nil {
+			sColumns = append(sColumns, "key")
 			sValues = append(sValues, *o.Key)
 		}
 	}

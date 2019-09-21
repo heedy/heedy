@@ -34,8 +34,8 @@ type RequestHandler struct {
 }
 
 // NewRequestHandler generates a new Auth middleware
-func NewRequestHandler(auth *Auth,p *plugins.PluginManager) *RequestHandler {
-	
+func NewRequestHandler(auth *Auth, p *plugins.PluginManager) *RequestHandler {
+
 	rh := &RequestHandler{
 		auth:           auth,
 		plugins:        p,
@@ -71,7 +71,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(pluginKey) > 0 {
 		// There is a plugin key present, make sure it was given to one of the plugin processes
 		proc, err := a.plugins.GetProcessByKey(pluginKey)
-		if err!=nil {
+		if err != nil {
 			time.Sleep(time.Second)
 			rest.WriteJSONError(w, r, http.StatusUnauthorized, errors.New("access_denied: invalid heedy plugin key"))
 			return
@@ -171,7 +171,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // ServeInternal does everything EXCEPT auth - it assumes admin. It is used to
 // run queries over the full system
-func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request,plugin string) {
+func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request, plugin string) {
 	// The remote address is heedy for internal requests
 	r.RemoteAddr = "heedy"
 
@@ -179,9 +179,9 @@ func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request,pl
 	id := xid.New().String()
 	c := &rest.Context{
 		RequestID: id,
-		Plugin: plugin,
+		Plugin:    plugin,
 		ID:        uuid.New().String(),
-		DB: a.auth.DB, // Run as admin
+		DB:        a.auth.DB, // Run as admin
 		Log: rest.RequestLogger(r).WithFields(logrus.Fields{
 			"id":   id,
 			"auth": a.auth.DB.ID(),

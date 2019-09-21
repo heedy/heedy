@@ -2,6 +2,7 @@
 /assets/public
 /assets/setup
 
+.vscode
 # test text file
 backend/server/tests/exec/data/test.txt
 

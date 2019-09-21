@@ -1,24 +1,24 @@
 package plugins
 
 import (
-	"fmt"
-	"io"
-	"time"
-	"errors"
-	"path"
+	"bytes"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"crypto/rand"
-	"bytes"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	
-	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/api/golang/rest"
+	"path"
+	"time"
 
-	"github.com/robfig/cron"
+	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database"
+
 	"github.com/go-chi/chi"
+	"github.com/robfig/cron"
 
 	"github.com/sirupsen/logrus"
 )
@@ -44,15 +44,15 @@ type Plugin struct {
 	cron *cron.Cron
 }
 
-func NewPlugin(db *database.AdminDB,a *assets.Assets, pname string) (*Plugin,error) {
+func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, error) {
 	p := &Plugin{
-		DB: db,
+		DB:        db,
 		Processes: make(map[string]*Exec),
 		Assets:    a,
-		Name: pname,
+		Name:      pname,
 	}
-	logrus.Debugf("Loading plugin '%s'",pname)
-	
+	logrus.Debugf("Loading plugin '%s'", pname)
+
 	psettings := a.Config.Plugins[pname]
 
 	if psettings.Routes != nil && len(*psettings.Routes) > 0 {
@@ -72,7 +72,7 @@ func NewPlugin(db *database.AdminDB,a *assets.Assets, pname string) (*Plugin,err
 	}
 
 	// Initialize the plugin
-	return p,nil
+	return p, nil
 }
 
 // Start the backend executables
@@ -84,7 +84,6 @@ func (p *Plugin) Start() error {
 	p.cron.Start()
 	pname := p.Name
 	pv := p.Assets.Config.Plugins[pname]
-
 
 	for ename, ev := range pv.Exec {
 		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
@@ -132,76 +131,76 @@ func (p *Plugin) Start() error {
 	}
 
 	// Now wait until all the endpoints are open
-	for ename,ev := range pv.Exec {
+	for ename, ev := range pv.Exec {
 		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
-			if ev.Endpoint!=nil {
-				logrus.Debugf("%s: Waiting for endpoint %s (%s)",pname,*ev.Endpoint,ename)
-				method,host,err := GetEndpoint(p.Assets.DataDir(),*ev.Endpoint)
-				if err!=nil {
+			if ev.Endpoint != nil {
+				logrus.Debugf("%s: Waiting for endpoint %s (%s)", pname, *ev.Endpoint, ename)
+				method, host, err := GetEndpoint(p.Assets.DataDir(), *ev.Endpoint)
+				if err != nil {
 					p.Stop()
 					return err
 				}
-				if err = WaitForEndpoint(method,host); err!=nil {
+				if err = WaitForEndpoint(method, host); err != nil {
 					p.Stop()
 					return err
 				}
-				logrus.Debugf("%s: Endpoint %s open",pname,*ev.Endpoint)
-				
+				logrus.Debugf("%s: Endpoint %s open", pname, *ev.Endpoint)
+
 			}
 		}
 	}
 	return nil
 }
 
-func processConnection(pluginKey string,owner string,cv *assets.Connection) *database.Connection {
+func processConnection(pluginKey string, owner string, cv *assets.Connection) *database.Connection {
 	c := &database.Connection{
 		Details: database.Details{
-			Name: &cv.Name,
+			Name:        &cv.Name,
 			Description: cv.Description,
-			Avatar: cv.Avatar,
+			Avatar:      cv.Avatar,
 		},
 		Enabled: cv.Enabled,
-		Plugin: &pluginKey,
-		Owner: &owner,
+		Plugin:  &pluginKey,
+		Owner:   &owner,
 	}
-	if cv.Scopes!=nil {
+	if cv.Scopes != nil {
 		c.Scopes = &database.ConnectionScopeArray{
 			ScopeArray: database.ScopeArray{
 				Scopes: *cv.Scopes,
 			},
 		}
 	}
-	if cv.AccessToken==nil || !(*cv.AccessToken) {
+	if cv.AccessToken == nil || !(*cv.AccessToken) {
 		empty := ""
 		c.AccessToken = &empty
 	}
-	if cv.SettingSchema!=nil {
+	if cv.SettingSchema != nil {
 		jo := database.JSONObject(*cv.SettingSchema)
 		c.SettingSchema = &jo
 	}
-	if cv.Settings!=nil {
+	if cv.Settings != nil {
 		jo := database.JSONObject(*cv.Settings)
 		c.Settings = &jo
 	}
 	return c
 }
 
-func processSource(connection string,key string, as *assets.Source) *database.Source {
+func processSource(connection string, key string, as *assets.Source) *database.Source {
 	s := &database.Source{
 		Details: database.Details{
-			Name: &as.Name,
+			Name:        &as.Name,
 			Description: as.Description,
-			Avatar: as.Avatar,
+			Avatar:      as.Avatar,
 		},
 		Connection: &connection,
-		Key: &key,
-		Type: &as.Type,
+		Key:        &key,
+		Type:       &as.Type,
 	}
-	if as.Meta!=nil {
+	if as.Meta != nil {
 		jo := database.JSONObject(*as.Meta)
 		s.Meta = &jo
 	}
-	if as.Scopes!=nil {
+	if as.Scopes != nil {
 		s.Scopes = &database.ScopeArray{
 			Scopes: *as.Scopes,
 		}
@@ -210,27 +209,27 @@ func processSource(connection string,key string, as *assets.Source) *database.So
 	return s
 }
 
-func internalRequest(ir InternalRequester,method,path,plugin string, body interface{}) error {
+func internalRequest(ir InternalRequester, method, path, plugin string, body interface{}) error {
 	var bodybuffer io.Reader
-	if body!=nil {
-		b,err := json.Marshal(body)
-		if err!=nil {
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
 			return err
 		}
 		bodybuffer = bytes.NewBuffer(b)
 	}
 
-	req,err := http.NewRequest(method,path,bodybuffer)
-	if err!=nil {
+	req, err := http.NewRequest(method, path, bodybuffer)
+	if err != nil {
 		return err
 	}
 
 	rec := httptest.NewRecorder()
-	ir.ServeInternal(rec,req,plugin)
-	if rec.Code!=http.StatusOK {
+	ir.ServeInternal(rec, req, plugin)
+	if rec.Code != http.StatusOK {
 		var er rest.ErrorResponse
-		err = json.Unmarshal(rec.Body.Bytes(),&er)
-		if err!=nil {
+		err = json.Unmarshal(rec.Body.Bytes(), &er)
+		if err != nil {
 			return err
 		}
 		return &er
@@ -243,51 +242,51 @@ func internalRequest(ir InternalRequester,method,path,plugin string, body interf
 // for the plugin
 func (p *Plugin) BeforeStart(ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname,cv := range psettings.Connections {
+	for cname, cv := range psettings.Connections {
 		// For each connection
 		// Check if the connection exists for all users
 		var res []string
 
-		pluginKey := p.Name+":"+cname
+		pluginKey := p.Name + ":" + cname
 
-		err := p.DB.DB.Select(&res,"SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);",pluginKey)
-		if err!=nil {
+		err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);", pluginKey)
+		if err != nil {
 			return err
 		}
 		if len(res) > 0 {
-			logrus.Debugf("%s: Creating '%s' connection for all users",p.Name,pluginKey)
+			logrus.Debugf("%s: Creating '%s' connection for all users", p.Name, pluginKey)
 
 			// aaand how exactly do I achieve this?
 
-			for _,uname := range res {
-				
-				_,_,err = p.DB.CreateConnection(processConnection(pluginKey,uname,cv))
-				if err!=nil {
+			for _, uname := range res {
+
+				_, _, err = p.DB.CreateConnection(processConnection(pluginKey, uname, cv))
+				if err != nil {
 					return err
 				}
 			}
 		}
 
-		for skey,sv := range cv.Sources {
-			if sv.Defer==nil || !*sv.Defer {
+		for skey, sv := range cv.Sources {
+			if sv.Defer == nil || !*sv.Defer {
 				res = []string{}
-				err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
-				if err!=nil {
+				err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
+				if err != nil {
 					return err
 				}
 				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
+					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
 
-					for _,cid := range res {
-						s := processSource(cid,skey,sv)
-						err = internalRequest(ir,"POST","/api/heedy/v1/sources",p.Name,s)
-						if err!=nil {
+					for _, cid := range res {
+						s := processSource(cid, skey, sv)
+						err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+						if err != nil {
 							return err
 						}
 					}
 				}
 			}
-			
+
 		}
 	}
 	return nil
@@ -296,51 +295,50 @@ func (p *Plugin) BeforeStart(ir InternalRequester) error {
 // AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections
 func (p *Plugin) AfterStart(ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname,cv := range psettings.Connections {
+	for cname, cv := range psettings.Connections {
 		// For each connection
 		// Check if the connection exists for all users
 		var res []string
 
-		pluginKey := p.Name+":"+cname
+		pluginKey := p.Name + ":" + cname
 
-		for skey,sv := range cv.Sources {
-			if sv.Defer!=nil && *sv.Defer {
-				err := p.DB.DB.Select(&res,"SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);",pluginKey,skey)
-				if err!=nil {
+		for skey, sv := range cv.Sources {
+			if sv.Defer != nil && *sv.Defer {
+				err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
+				if err != nil {
 					return err
 				}
 				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s/%s' source for all users",p.Name,pluginKey,skey)
+					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
 
-					for _,cid := range res {
-						s := processSource(cid,skey,sv)
-						err = internalRequest(ir,"POST","/api/heedy/v1/sources",p.Name,s)
-						if err!=nil {
+					for _, cid := range res {
+						s := processSource(cid, skey, sv)
+						err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+						if err != nil {
 							return err
 						}
 					}
 				}
 			}
-			
+
 		}
 	}
 	return nil
 }
 
-
 // GetProcessByKey gets the process associated with a given API key
-func (p *Plugin) GetProcessByKey(key string) (*Exec,error) {
+func (p *Plugin) GetProcessByKey(key string) (*Exec, error) {
 	v, ok := p.Processes[key]
 	if ok {
-		return v,nil
+		return v, nil
 	}
-	return nil,errors.New("No such key")
+	return nil, errors.New("No such key")
 }
 
 // Interrupt signals all processes to stop
 func (p *Plugin) Interrupt() error {
 	p.cron.Stop()
-	for _,e := range p.Processes {
+	for _, e := range p.Processes {
 		e.Interrupt()
 	}
 	return nil
@@ -353,12 +351,12 @@ func (p *Plugin) AnyRunning() bool {
 			anyrunning = true
 		}
 	}
-	
+
 	return anyrunning
 }
 
 func (p *Plugin) HasProcess() bool {
-	return len(p.Processes)==0
+	return len(p.Processes) == 0
 }
 
 // Kill kills all processes

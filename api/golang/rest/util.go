@@ -1,13 +1,13 @@
 package rest
 
 import (
+	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strconv"
 	"strings"
-	"bytes"
-	"reflect"
-	"errors"
 
 	"encoding/json"
 
@@ -125,10 +125,10 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 	// golang json unmarshal encodes empty arrays as null
 	// https://github.com/golang/go/issues/27589
 	// This detects that, and fixes the problem.
-	if bytes.Equal(jdata,[]byte("null")) {
-		if k := reflect.TypeOf(data).Kind(); (k== reflect.Slice || k==reflect.Array) && reflect.ValueOf(data).Len()==0 {
+	if bytes.Equal(jdata, []byte("null")) {
+		if k := reflect.TypeOf(data).Kind(); (k == reflect.Slice || k == reflect.Array) && reflect.ValueOf(data).Len() == 0 {
 			jdata = []byte("[]")
-		} 
+		}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))

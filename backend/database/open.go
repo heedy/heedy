@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,6 +30,17 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 
 	if sqltype != "sqlite3" {
 		return nil, fmt.Errorf("Database type '%s' not supported", sqltype)
+	}
+
+	drv := sql.Drivers()
+	for _, d := range drv {
+		// The events module registered sqlite3_heedy to hook into database modifications,
+		// that way events can be auto-dispatched withot worrying about cascade and extra stuff.
+		// Plugins are also free to register _heedy versions of database drivers, so that
+		// they can hook into events of their own.
+		if sqltype+"_heedy" == d {
+			sqltype = sqltype + "_heedy"
+		}
 	}
 
 	// We use the sql as location of our sqlite database

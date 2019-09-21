@@ -16,10 +16,10 @@ import (
 // The struct is marshalled to json and sent to the executable
 // when run
 type Exec struct {
-	Plugin  string                `json:"plugin"`
-	Exec    string                `json:"exec"`
-	APIKey  string                `json:"apikey"`
-	Config  *assets.Configuration `json:"config"`
+	Plugin string                `json:"plugin"`
+	Exec   string                `json:"exec"`
+	APIKey string                `json:"apikey"`
+	Config *assets.Configuration `json:"config"`
 
 	RootDir   string `json:"root_dir"`
 	DataDir   string `json:"data_dir"`

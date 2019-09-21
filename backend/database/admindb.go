@@ -41,7 +41,7 @@ func (db *AdminDB) User() (*User, error) {
 // AuthUser returns the user corresponding to the username and password, or an authentication error
 func (db *AdminDB) AuthUser(username string, password string) (string, string, error) {
 	var selectResult struct {
-		UserName     string
+		UserName string
 		Password string
 	}
 	err := db.Get(&selectResult, "SELECT username,password FROM users WHERE username = ? LIMIT 1;", username)
@@ -65,7 +65,6 @@ func (db *AdminDB) LoginToken(token string) (string, error) {
 	err := db.Get(&selectResult, "SELECT username FROM user_logintokens WHERE token=?;", token)
 	return selectResult.UserName, err
 }
-
 
 // AddLoginToken gets the token for a given user
 func (db *AdminDB) AddLoginToken(username string) (token string, err error) {
@@ -214,10 +213,9 @@ func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, e
 }
 
 // ListSources lists the given sources
-func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source,error) {
-	return listSources(db,o,`SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
+func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	return listSources(db, o, `SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
 }
-
 
 // CreateConnection creates a new connection. Nuff said.
 func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
@@ -268,21 +266,21 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 	if o == nil || !o.Avatar {
 		c.Avatar = nil
 	}
-	if o==nil || !o.AccessToken {
-		if c.AccessToken!=nil {
+	if o == nil || !o.AccessToken {
+		if c.AccessToken != nil {
 			c.AccessToken = nil
 		} else {
 			// Make empty access token show up as empty, so services can know
 			// that no access token is available
-			if c.AccessToken==nil {
+			if c.AccessToken == nil {
 				emptyString := ""
 				c.AccessToken = &emptyString
 			}
 		}
-		
+
 	} else {
 		// Make empty access token show up as empty
-		if c.AccessToken==nil {
+		if c.AccessToken == nil {
 			emptyString := ""
 			c.AccessToken = &emptyString
 		}
@@ -326,6 +324,6 @@ func (db *AdminDB) DelConnection(id string) error {
 }
 
 // ListConnections lists connections
-func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection,error) {
-	return nil,ErrUnimplemented
+func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
+	return nil, ErrUnimplemented
 }

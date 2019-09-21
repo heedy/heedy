@@ -17,6 +17,8 @@ import (
 	"github.com/spf13/afero"
 
 	log "github.com/sirupsen/logrus"
+
+	_ "github.com/heedy/heedy/backend/events"
 )
 
 type setupContext struct {
