@@ -38,37 +38,39 @@ type hclExec struct {
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive"`
 	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
-	Endpoint *string 	`hcl:"endpoint" json:"endpoint,omitempty"`
+	Endpoint  *string   `hcl:"endpoint" json:"endpoint,omitempty"`
 }
 
 type hclSource struct {
-	Key string `hcl:"key,label"`
+	Key  string `hcl:"key,label"`
 	Name string `hcl:"name"`
 	Type string `hcl:"type"`
 
-	Description *string `hcl:"description"`
-	Avatar *string `hcl:"avatar"`
-	Scopes *[]string `hcl:"scopes"`
-	Meta *cty.Value `hcl:"meta,attr"`
-	Defer *bool `json:"defer" hcl:"defer"`
+	Description *string    `hcl:"description"`
+	Avatar      *string    `hcl:"avatar"`
+	Scopes      *[]string  `hcl:"scopes"`
+	Meta        *cty.Value `hcl:"meta,attr"`
+	Defer       *bool      `json:"defer" hcl:"defer"`
+
+	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
 
 type hclConnection struct {
 	Plugin string `hcl:"plugin,label"`
-	Name string `hcl:"name"`
+	Name   string `hcl:"name"`
 
-	Description *string `json:"description" hcl:"description"`
-	Avatar *string `json:"avatar" hcl:"avatar"`
-	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
-	Scopes *[]string `json:"scopes,omitempty" hcl:"scopes"`
-	Enabled *bool `json:"enabled,omitempty" hcl:"enabled"`
-	Readonly *[]string `json:"readonly,omitempty" hcl:"readonly"`
+	Description *string   `json:"description" hcl:"description"`
+	Avatar      *string   `json:"avatar" hcl:"avatar"`
+	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
+	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
+	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 
-	Settings *cty.Value `hcl:"settings,attr"`
+	Settings      *cty.Value `hcl:"settings,attr"`
 	SettingSchema *cty.Value `hcl:"setting_schema,attr"`
 
 	Sources []hclSource `hcl:"source,block"`
-
+	On      []Event     `hcl:"on,block" json:"on,omitempty"`
 }
 
 type hclPlugin struct {
@@ -78,15 +80,17 @@ type hclPlugin struct {
 	Homepage    *string `hcl:"homepage" json:"homepage"`
 	License     *string `hcl:"license" json:"license"`
 
-	Frontend *string            `hcl:"frontend" json:"frontend"`
+	Frontend *string `hcl:"frontend" json:"frontend"`
 
-	Routes  *map[string]string `hcl:"routes" json:"routes"`
+	Routes *map[string]string `hcl:"routes" json:"routes"`
+	Events *map[string]string `hcl:"events" json:"events,omitempty"`
 
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 
 	Exec []hclExec `hcl:"exec,block"`
 
 	Connections []hclConnection `hcl:"connection,block"`
+	On          []Event         `hcl:"on,block" json:"on,omitempty"`
 
 	// The remaining stuff is plugin-specific settings
 	// that will be passed to the plugin executables,
@@ -172,9 +176,9 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 
 }
 
-func loadJSONObject(v *cty.Value) (*map[string]interface{},error) {
-	if v==nil {
-		return nil,nil
+func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {
+	if v == nil {
+		return nil, nil
 	}
 	var obj map[string]interface{}
 	b, err := json.Marshal(ctyjson.SimpleJSONValue{Value: *v})
@@ -182,7 +186,7 @@ func loadJSONObject(v *cty.Value) (*map[string]interface{},error) {
 		return nil, err
 	}
 	err = json.Unmarshal(b, &obj)
-	return &obj,err
+	return &obj, err
 }
 
 func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
@@ -209,11 +213,10 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		CopyStructIfPtrSet(&t, ht)
 
 		var err error
-		t.Meta,err = loadJSONObject(ht.Meta)
-		if err!=nil {
-			return nil,err
+		t.Meta, err = loadJSONObject(ht.Meta)
+		if err != nil {
+			return nil, err
 		}
-
 
 		c.SourceTypes[ht.Label] = t
 	}
@@ -245,6 +248,15 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			CopyStructIfPtrSet(ej, &hp.Exec[j])
 			p.Exec[hp.Exec[j].Name] = ej
 		}
+		for _, o := range hp.On {
+			if o.Event == "" {
+				return nil, fmt.Errorf("%s: Plugin %s 'on' without event", filename, hp.Name)
+			}
+			if _, ok := p.On[o.Event]; ok {
+				return nil, fmt.Errorf("%s: Plugin %s on %s defined twice", filename, hp.Name, o.Event)
+			}
+			p.On[o.Event] = &o
+		}
 		if hp.SettingSchemas != nil {
 			for k, v := range *hp.SettingSchemas {
 				setting := &Setting{}
@@ -257,37 +269,55 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		// Load the connections that the plugin wants to set up
 		for j := range hp.Connections {
 			hc := hp.Connections[j]
-			if _,ok := p.Connections[hc.Plugin]; ok {
+			if _, ok := p.Connections[hc.Plugin]; ok {
 				return nil, fmt.Errorf("%s: Plugin %s connection %s defined twice", filename, hp.Name, hc.Plugin)
 			}
 			conn := NewConnection()
 			conn.Name = hp.Connections[j].Name
-			CopyStructIfPtrSet(conn,&hc)
-			var err error 
-			conn.Settings,err = loadJSONObject(hc.Settings)
-			if err!=nil {
-				return nil,err
+			CopyStructIfPtrSet(conn, &hc)
+			var err error
+			conn.Settings, err = loadJSONObject(hc.Settings)
+			if err != nil {
+				return nil, err
 			}
-			conn.SettingSchema,err = loadJSONObject(hc.SettingSchema)
-			if err!=nil {
-				return nil,err
+			conn.SettingSchema, err = loadJSONObject(hc.SettingSchema)
+			if err != nil {
+				return nil, err
+			}
+			for _, o := range hc.On {
+				if o.Event == "" {
+					return nil, fmt.Errorf("%s: Plugin %s connection %s 'on' without event", filename, hp.Name, conn.Name)
+				}
+				if _, ok := p.On[o.Event]; ok {
+					return nil, fmt.Errorf("%s: Plugin %s connection %s on %s defined twice", filename, hp.Name, conn.Name, o.Event)
+				}
+				conn.On[o.Event] = &o
 			}
 			for k := range hc.Sources {
 				hs := hc.Sources[k]
 				if hs.Key == "" {
-					return nil,fmt.Errorf("%s: Plugin %s connection %s source with no label", filename, hp.Name, hc.Plugin)
+					return nil, fmt.Errorf("%s: Plugin %s connection %s source with no label", filename, hp.Name, hc.Plugin)
 				}
-				if _,ok := conn.Sources[hs.Key]; ok {
-					return nil, fmt.Errorf("%s: Plugin %s connection %s source %s defined twice", filename, hp.Name, hc.Plugin,hs.Key)
+				if _, ok := conn.Sources[hs.Key]; ok {
+					return nil, fmt.Errorf("%s: Plugin %s connection %s source %s defined twice", filename, hp.Name, hc.Plugin, hs.Key)
 				}
-				s := &Source{
-					Name: hs.Name,
-					Type: hs.Type,
+				s := NewSource()
+				s.Name = hs.Name
+				s.Type = hs.Type
+
+				CopyStructIfPtrSet(s, &hs)
+				s.Meta, err = loadJSONObject(hs.Meta)
+				if err != nil {
+					return nil, err
 				}
-				CopyStructIfPtrSet(s,&hs)
-				s.Meta,err = loadJSONObject(hs.Meta)
-				if err!=nil {
-					return nil,err
+				for _, o := range hs.On {
+					if o.Event == "" {
+						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
+					}
+					if _, ok := p.On[o.Event]; ok {
+						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
+					}
+					s.On[o.Event] = &o
 				}
 
 				conn.Sources[hs.Key] = s
@@ -295,7 +325,6 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 			p.Connections[hc.Plugin] = conn
 		}
-
 
 		/*
 			for j := range hp.SettingSchema {
@@ -341,7 +370,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				return nil, diag
 			}
 
-			if err := gocty.FromCtyValue(val,&currentSetting.Value); err!=nil {
+			if err := gocty.FromCtyValue(val, &currentSetting.Value); err != nil {
 				return nil, fmt.Errorf("%s: Plugin %s attribute '%s' interpreted as custom string setting value, but got error: %w", filename, hp.Name, key, err)
 			}
 

@@ -286,6 +286,8 @@ func Create(a *assets.Assets) error {
 		return err
 	}
 
+	// Notice we don't open the _heedy database here, since we don't want events
+	// to fire while creating the database!
 	db, err := sqlx.Open(sqltype, sqlpath)
 	if err != nil {
 		return err

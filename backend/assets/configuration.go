@@ -25,32 +25,42 @@ type Setting struct {
 	Value            interface{} `json:"value,omitempty"`
 }
 
+type Event struct {
+	Event string    `hcl:"event,label" json:"-"`
+	Post  *string   `hcl:"post" json:"post,omitempty"`
+	Cmd   *[]string `hcl:"cmd" json:"cmd,omitempty"`
+}
+
 // Source represents a source that is to be auto-created inside a connection on behalf of a plugin
-type Source struct{
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Description *string `json:"description,omitempty"`
-	Avatar *string `json:"avatar,omitempty"`
-	Meta *map[string]interface{} `json:"meta,omitempty"`
-	Scopes *[]string `json:"scopes,omitempty"`
-	Defer *bool `json:"defer" hcl:"defer"`
+type Source struct {
+	Name        string                  `json:"name"`
+	Type        string                  `json:"type"`
+	Description *string                 `json:"description,omitempty"`
+	Avatar      *string                 `json:"avatar,omitempty"`
+	Meta        *map[string]interface{} `json:"meta,omitempty"`
+	Scopes      *[]string               `json:"scopes,omitempty"`
+	Defer       *bool                   `json:"defer,omitempty" hcl:"defer"`
+
+	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
 
 // Connection represents a connection that is to be created on behalf of a plugin
 type Connection struct {
 	Name string `json:"name"`
 
-	Description *string `json:"description,omitempty" hcl:"description"`
-	Avatar *string `json:"avatar,omitempty" hcl:"avatar"`
-	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
-	Scopes *[]string `json:"scopes,omitempty" hcl:"scopes"`
-	Enabled *bool `json:"enabled,omitempty" hcl:"enabled"`
-	Readonly *[]string `json:"readonly,omitempty" hcl:"readonly"`
+	Description *string   `json:"description,omitempty" hcl:"description"`
+	Avatar      *string   `json:"avatar,omitempty" hcl:"avatar"`
+	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
+	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
+	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 
-	Settings *map[string]interface{} `json:"settings,omitempty"`
+	Settings      *map[string]interface{} `json:"settings,omitempty"`
 	SettingSchema *map[string]interface{} `json:"setting_schema,omitempty"`
-	
+
 	Sources map[string]*Source `json:"sources,omitempty"`
+
+	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
 
 type Exec struct {
@@ -58,7 +68,7 @@ type Exec struct {
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
 	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
-	Endpoint *string 	`hcl:"endpoint" json:"endpoint,omitempty"`
+	Endpoint  *string   `hcl:"endpoint" json:"endpoint,omitempty"`
 }
 
 type Plugin struct {
@@ -68,7 +78,10 @@ type Plugin struct {
 	License     *string `hcl:"license" json:"license,omitempty"`
 
 	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Routes  *map[string]string `json:"routes,omitempty"`
+	Routes   *map[string]string `json:"routes,omitempty"`
+	Events   *map[string]string `json:"events,omitempty"`
+
+	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 
 	Exec     map[string]*Exec    `json:"exec,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
@@ -95,7 +108,7 @@ func (p *Plugin) Copy() *Plugin {
 
 type SourceType struct {
 	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Routes  *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+	Routes   *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
 	Meta *map[string]interface{} `json:"meta,omitempty"`
 
@@ -263,26 +276,26 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
-	for p,v := range c.Plugins {
-		for conn,v2 := range v.Connections {
-			for s,v3 := range v2.Sources {
-				if _,ok := c.SourceTypes[v3.Type]; !ok {
-					return fmt.Errorf("[plugin: %s, connection: %s, source: %s] unrecognized type (%s)",p,conn,s,v3.Type)
+	for p, v := range c.Plugins {
+		for conn, v2 := range v.Connections {
+			for s, v3 := range v2.Sources {
+				if _, ok := c.SourceTypes[v3.Type]; !ok {
+					return fmt.Errorf("[plugin: %s, connection: %s, source: %s] unrecognized type (%s)", p, conn, s, v3.Type)
 				}
 			}
 		}
 	}
 
 	// Make sure all the active plugins have an associated configuration
-	for _,ap := range c.GetActivePlugins() {
-		if _,ok := c.Plugins[ap]; !ok {
-			return fmt.Errorf("Plugin '%s' config not found",ap)
+	for _, ap := range c.GetActivePlugins() {
+		if _, ok := c.Plugins[ap]; !ok {
+			return fmt.Errorf("Plugin '%s' config not found", ap)
 		}
 	}
 
-	if c.ExecTimeout!=nil {
+	if c.ExecTimeout != nil {
 		_, err := time.ParseDuration(*c.ExecTimeout)
-		if err!=nil {
+		if err != nil {
 			return errors.New("Invalid exec_timeout")
 		}
 	}
@@ -325,15 +338,22 @@ func NewConfiguration() *Configuration {
 
 func NewPlugin() *Plugin {
 	return &Plugin{
-		Exec:     make(map[string]*Exec),
-		Settings: make(map[string]*Setting),
+		Exec:        make(map[string]*Exec),
+		Settings:    make(map[string]*Setting),
 		Connections: make(map[string]*Connection),
+		On:          make(map[string]*Event),
 	}
 }
 
 func NewConnection() *Connection {
 	return &Connection{
 		Sources: make(map[string]*Source),
+		On:      make(map[string]*Event),
+	}
+}
+func NewSource() *Source {
+	return &Source{
+		On: make(map[string]*Event),
 	}
 }
 
@@ -480,19 +500,43 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 					CopyStructIfPtrSet(bexecValue, oexecValue)
 				}
 			}
+			for oName, oV := range oplugin.On {
+				bV, ok := bplugin.On[oName]
+				if !ok {
+					bplugin.On[oName] = oV
+				} else {
+					CopyStructIfPtrSet(bV, oV)
+				}
+			}
 
 			for cName, ocValue := range oplugin.Connections {
 				bcValue, ok := bplugin.Connections[cName]
 				if !ok {
 					bplugin.Connections[cName] = ocValue
 				} else {
-					CopyStructIfPtrSet(bcValue,ocValue)
-					for sName,sValue := range ocValue.Sources {
+					for oName, oV := range ocValue.On {
+						bV, ok := bcValue.On[oName]
+						if !ok {
+							bcValue.On[oName] = oV
+						} else {
+							CopyStructIfPtrSet(bV, oV)
+						}
+					}
+					CopyStructIfPtrSet(bcValue, ocValue)
+					for sName, sValue := range ocValue.Sources {
 						bsValue, ok := bcValue.Sources[sName]
 						if !ok {
 							bcValue.Sources[sName] = sValue
 						} else {
-							CopyStructIfPtrSet(bsValue,sValue)
+							for oName, oV := range sValue.On {
+								bV, ok := bsValue.On[oName]
+								if !ok {
+									bsValue.On[oName] = oV
+								} else {
+									CopyStructIfPtrSet(bV, oV)
+								}
+							}
+							CopyStructIfPtrSet(bsValue, sValue)
 						}
 					}
 				}
