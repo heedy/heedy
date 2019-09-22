@@ -249,6 +249,9 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			p.Exec[hp.Exec[j].Name] = ej
 		}
 		for _, o := range hp.On {
+			if err := o.Validate(); err != nil {
+				return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
+			}
 			if o.Event == "" {
 				return nil, fmt.Errorf("%s: Plugin %s 'on' without event", filename, hp.Name)
 			}
@@ -285,10 +288,13 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				return nil, err
 			}
 			for _, o := range hc.On {
+				if err := o.Validate(); err != nil {
+					return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
+				}
 				if o.Event == "" {
 					return nil, fmt.Errorf("%s: Plugin %s connection %s 'on' without event", filename, hp.Name, conn.Name)
 				}
-				if _, ok := p.On[o.Event]; ok {
+				if _, ok := conn.On[o.Event]; ok {
 					return nil, fmt.Errorf("%s: Plugin %s connection %s on %s defined twice", filename, hp.Name, conn.Name, o.Event)
 				}
 				conn.On[o.Event] = &o
@@ -311,10 +317,13 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 					return nil, err
 				}
 				for _, o := range hs.On {
+					if err := o.Validate(); err != nil {
+						return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
+					}
 					if o.Event == "" {
 						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
 					}
-					if _, ok := p.On[o.Event]; ok {
+					if _, ok := s.On[o.Event]; ok {
 						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
 					}
 					s.On[o.Event] = &o

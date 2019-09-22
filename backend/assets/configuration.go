@@ -26,9 +26,15 @@ type Setting struct {
 }
 
 type Event struct {
-	Event string    `hcl:"event,label" json:"-"`
-	Post  *string   `hcl:"post" json:"post,omitempty"`
-	Cmd   *[]string `hcl:"cmd" json:"cmd,omitempty"`
+	Event string  `hcl:"event,label" json:"-"`
+	Post  *string `hcl:"post" json:"post,omitempty"`
+}
+
+func (e *Event) Validate() error {
+	if e.Post == nil {
+		return errors.New("'on' must have post specified")
+	}
+	return nil
 }
 
 // Source represents a source that is to be auto-created inside a connection on behalf of a plugin

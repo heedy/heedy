@@ -16,6 +16,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 
 	"github.com/go-chi/chi"
 	"github.com/robfig/cron"
@@ -42,19 +43,23 @@ type Plugin struct {
 
 	// The cron daemon to run in the background for cron processes
 	cron *cron.Cron
+
+	EventRouter *events.Router
 }
 
 func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, error) {
 	p := &Plugin{
-		DB:        db,
-		Processes: make(map[string]*Exec),
-		Assets:    a,
-		Name:      pname,
+		DB:          db,
+		Processes:   make(map[string]*Exec),
+		Assets:      a,
+		Name:        pname,
+		EventRouter: events.NewRouter(),
 	}
 	logrus.Debugf("Loading plugin '%s'", pname)
 
 	psettings := a.Config.Plugins[pname]
 
+	// Set up API forwards
 	if psettings.Routes != nil && len(*psettings.Routes) > 0 {
 
 		mux := chi.NewMux()
@@ -71,7 +76,47 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 		p.Mux = mux
 	}
 
-	// Initialize the plugin
+	// Set up events
+	for ename, ev := range psettings.On {
+		peh, err := PluginEventHandler(pname, ev)
+		if err != nil {
+			return nil, err
+		}
+		logrus.Debugf("%s: Forwarding event '%s' -> %s", pname, ename, peh.Post)
+		p.EventRouter.Subscribe(events.Event{
+			Event: ename,
+			User:  "*",
+		}, peh)
+	}
+	for cplugin, cv := range psettings.Connections {
+		for ename, ev := range cv.On {
+			peh, err := PluginEventHandler(pname, ev)
+			if err != nil {
+				return nil, err
+			}
+			cpn := pname + ":" + cplugin
+			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", pname, cpn, ename, peh.Post)
+			p.EventRouter.Subscribe(events.Event{
+				Event:  ename,
+				Plugin: cpn,
+			}, peh)
+		}
+		for skey, sv := range cv.Sources {
+			for ename, ev := range sv.On {
+				peh, err := PluginEventHandler(pname, ev)
+				if err != nil {
+					return nil, err
+				}
+				cpn := pname + ":" + cplugin
+				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", pname, cpn, skey, ename, peh.Post)
+				p.EventRouter.Subscribe(events.Event{
+					Event:  ename,
+					Plugin: cpn,
+					Key:    skey,
+				}, peh)
+			}
+		}
+	}
 	return p, nil
 }
 
@@ -292,7 +337,8 @@ func (p *Plugin) BeforeStart(ir InternalRequester) error {
 	return nil
 }
 
-// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections
+// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections.
+// It also sets up all event callbacks
 func (p *Plugin) AfterStart(ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
 	for cname, cv := range psettings.Connections {
@@ -323,6 +369,9 @@ func (p *Plugin) AfterStart(ir InternalRequester) error {
 
 		}
 	}
+
+	// Finally, attach the event router to the event system
+	events.AddHandler(p.EventRouter)
 	return nil
 }
 
@@ -388,6 +437,7 @@ func (p *Plugin) Stop() error {
 }
 
 func (p *Plugin) Close() error {
+	events.RemoveHandler(p.EventRouter)
 	if p.AnyRunning() {
 		p.Stop()
 	}

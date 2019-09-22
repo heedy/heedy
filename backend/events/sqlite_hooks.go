@@ -3,35 +3,11 @@ package events
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
+
 	"fmt"
 	"github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
-	//"github.com/heedy/heedy/backend/database"
 )
-
-const sqlSchema = `
-	CREATE TABLE subscriptions (
-
-	)
-`
-
-type Event struct {
-	Event      string `json:"event"`
-	User       string `json:"user,omitempty"`
-	Connection string `json:"connection,omitempty"`
-	Source     string `json:"source,omitempty"`
-	Key        string `json:"key,omitempty"`
-	Type       string `json:"type,omitempty"`
-}
-
-func (e *Event) String() string {
-	b, err := json.Marshal(e)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
-}
 
 type sqliteEvent struct {
 	TableName string // The table
@@ -50,8 +26,6 @@ var sqliteEventType = map[sqliteEvent]string{
 	sqliteEvent{"sources", 9}:      "source_delete",
 }
 
-var dbEvents = make(chan *Event, 1000)
-
 // getIDs returns the username, connection id, and source id associated with the given event.
 // The associated stmt should automatically return empty strings for inapplicable values
 func getEvent(stmt driver.Stmt, rowid int64) (*Event, error) {
@@ -59,8 +33,8 @@ func getEvent(stmt driver.Stmt, rowid int64) (*Event, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Sqlite hook error %w", err)
 	}
-	vals := make([]driver.Value, 5)
-	for i := 0; i < 5; i++ {
+	vals := make([]driver.Value, 6)
+	for i := 0; i < 6; i++ {
 		var v interface{}
 		vals[i] = v
 
@@ -69,7 +43,7 @@ func getEvent(stmt driver.Stmt, rowid int64) (*Event, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error reading row from sqlite hook %w", err)
 	}
-	if len(vals) != 5 {
+	if len(vals) != 6 {
 		return nil, fmt.Errorf("Sqlite hook: Incorrect number of returned results")
 	}
 
@@ -87,22 +61,23 @@ func getEvent(stmt driver.Stmt, rowid int64) (*Event, error) {
 	return &Event{
 		User:       tsel(vals[0]),
 		Connection: tsel(vals[1]),
-		Source:     tsel(vals[2]),
-		Key:        tsel(vals[3]),
-		Type:       tsel(vals[4]),
+		Plugin:     tsel(vals[2]),
+		Source:     tsel(vals[3]),
+		Key:        tsel(vals[4]),
+		Type:       tsel(vals[5]),
 	}, nil
 }
 
 func connectHook(conn *sqlite3.SQLiteConn) error {
-	username, err := conn.Prepare("SELECT username,'','','','' FROM users WHERE rowid=?")
+	username, err := conn.Prepare("SELECT username,'','','','','' FROM users WHERE rowid=?")
 	if err != nil {
 		return err
 	}
-	connection, err := conn.Prepare("SELECT owner,id,'',plugin,'' FROM connections WHERE rowid=?")
+	connection, err := conn.Prepare("SELECT owner,id,plugin,'','','' FROM connections WHERE rowid=?")
 	if err != nil {
 		return err
 	}
-	source, err := conn.Prepare("SELECT owner,connection,id,key,type FROM sources WHERE rowid=?")
+	source, err := conn.Prepare("SELECT sources.owner,sources.connection,connections.plugin,sources.id,sources.key,sources.type FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.rowid=?")
 	if err != nil {
 		return err
 	}
@@ -135,7 +110,7 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 
 			}
 			evt.Event = ename
-			dbEvents <- evt
+			go Fire(evt)
 		}
 	})
 
@@ -155,24 +130,14 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 
 			}
 			evt.Event = ename
-			dbEvents <- evt
+			go Fire(evt)
 		}
 	})
 	return nil
-}
-
-func eventLoop() {
-	for {
-		select {
-		case evt := <-dbEvents:
-			logrus.Debug(evt.String())
-		}
-	}
 }
 
 func init() {
 	sql.Register("sqlite3_heedy", &sqlite3.SQLiteDriver{
 		ConnectHook: connectHook,
 	})
-	go eventLoop()
 }
