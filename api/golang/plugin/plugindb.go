@@ -13,8 +13,9 @@ import (
 
 	"github.com/gorilla/schema"
 
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 )
 
 var ErrUnimplemented = errors.New("unimplemented")
@@ -60,6 +61,7 @@ func (db *PluginDB) BasicRequest(method, api string, body io.Reader) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 400 {
 		return nil
@@ -90,6 +92,7 @@ func (db *PluginDB) UnmarshalRequest(obj interface{}, method, api string, body i
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -119,6 +122,7 @@ func (db *PluginDB) StringRequest(method, api string, body io.Reader) (string, e
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -135,6 +139,21 @@ func (db *PluginDB) StringRequest(method, api string, body io.Reader) (string, e
 		return "", &eresp
 	}
 	return string(b), nil
+}
+
+// Fire allows PluginDB to conform to the events.Handler interface, which is used to fire events
+func (db *PluginDB) Fire(e *events.Event) {
+	api := "/api/heedy/v1/events"
+	b, err := json.Marshal(e)
+	if err != nil {
+		db.P.Logger().Warnf("Failed to fire event: %s", err.Error())
+		return
+	}
+
+	err = db.BasicRequest("POST", api, bytes.NewBuffer(b))
+	if err != nil {
+		db.P.Logger().Warnf("Failed to fire event: %s", err.Error())
+	}
 }
 
 func (db *PluginDB) AdminDB() *database.AdminDB {
@@ -234,7 +253,7 @@ func (db *PluginDB) GetSourceShares(sourceid string) (m map[string]*database.Sco
 }
 
 // ListSources lists the given sources
-func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Source,error) {
+func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Source, error) {
 	var sl []*database.Source
 	api := "/api/heedy/v1/source"
 
@@ -243,25 +262,25 @@ func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Sou
 		queryEncoder.Encode(o, form)
 		api = api + "?" + form.Encode()
 	}
-	err := db.UnmarshalRequest(&sl,"GET",api,nil)
-	return sl,err
+	err := db.UnmarshalRequest(&sl, "GET", api, nil)
+	return sl, err
 }
 
-func (db *PluginDB) CreateConnection(c *database.Connection) (string,string,error) {
+func (db *PluginDB) CreateConnection(c *database.Connection) (string, string, error) {
 	api := "/api/heedy/v1/connection"
 	b, err := json.Marshal(c)
 	if err != nil {
-		return "","", err
+		return "", "", err
 	}
 
 	err = db.UnmarshalRequest(&c, "POST", api, bytes.NewBuffer(b))
 	accessToken := ""
-	if c.AccessToken!=nil {
+	if c.AccessToken != nil {
 		accessToken = *c.AccessToken
 	}
-	return c.ID,accessToken,err
+	return c.ID, accessToken, err
 }
-func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection,error) {
+func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection, error) {
 	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
 
 	if o != nil {
@@ -287,7 +306,7 @@ func (db *PluginDB) DelConnection(id string) error {
 	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
-func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*database.Connection,error) {
+func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*database.Connection, error) {
 	var cl []*database.Connection
 	api := "/api/heedy/v1/connection"
 
@@ -296,6 +315,6 @@ func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*datab
 		queryEncoder.Encode(o, form)
 		api = api + "?" + form.Encode()
 	}
-	err := db.UnmarshalRequest(&cl,"GET",api,nil)
-	return cl,err
+	err := db.UnmarshalRequest(&cl, "GET", api, nil)
+	return cl, err
 }

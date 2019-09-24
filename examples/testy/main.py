@@ -1,3 +1,4 @@
+import asyncio
 from aiohttp import web
 
 from heedy import Plugin
@@ -18,6 +19,7 @@ async def index(request):
 async def index(request):
     print("REQUEST", request.headers)
     print("GOT", await request.json())
+
     return web.Response(text="OK")
 
 
@@ -25,6 +27,20 @@ app = web.Application()
 app.add_routes(routes)
 
 
-# Runs the server over a unix domain socket. The socket is automatically placed in the data folder,
-# and not the plugin folder.
-web.run_app(app, path=f"{p.name}.sock")
+async def runme():
+    await p.fire({
+        "user": "test",
+        "event": "LOL"
+    })
+
+    # Runs the server over a unix domain socket. The socket is automatically placed in the data folder,
+    # and not the plugin folder.
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.UnixSite(runner, path=f"{p.name}.sock")
+    await site.start()
+    print("Plugin Ready")
+
+
+asyncio.ensure_future(runme())
+asyncio.get_event_loop().run_forever()

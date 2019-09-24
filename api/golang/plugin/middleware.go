@@ -25,13 +25,16 @@ func NewMiddleware(p *Plugin, h http.Handler) *Middleware {
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := rest.RequestLogger(r)
 	logger = logger.WithField("exec", m.P.Meta.Plugin+"/"+m.P.Meta.Exec)
-	// Read out the header values necessary to generate a context
+
+	// Create the appropriate PluginDB
+	pdb := m.P.As(r.Header.Get("X-Heedy-Auth"))
 
 	c := rest.Context{
 		Log:       logger,
 		RequestID: r.Header.Get("X-Heedy-Request"),
 		ID:        r.Header.Get("X-Heedy-ID"),
-		DB:        m.P.As(r.Header.Get("X-Heedy-Auth")),
+		DB:        pdb,
+		Events:    pdb, // PluginDB conforms to events.Handler
 	}
 
 	r = r.WithContext(context.WithValue(r.Context(), rest.HeedyContext, &c))

@@ -136,7 +136,10 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 	return nil
 }
 
-func init() {
+// RegisterHooks is needed to run before the database is opened, because sqlite3 can only hold a single global
+// change listener for each connection, and it must be registered here, rather than on database open, since
+// we don't have access to the go-sqlite3 api when opening the database
+func RegisterHooks() {
 	sql.Register("sqlite3_heedy", &sqlite3.SQLiteDriver{
 		ConnectHook: connectHook,
 	})

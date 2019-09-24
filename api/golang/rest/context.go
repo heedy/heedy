@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -28,9 +29,10 @@ func CTX(r *http.Request) *Context {
 // A Context is generated for all requests, and holds all the info necessary for completing it.
 // This object can be extracted from a request with the CTX function.
 type Context struct {
-	Log       *logrus.Entry // The request's logger
-	DB        database.DB   // The authenticated database object
-	RequestID string        // The ID of the original query to the API
+	Log       *logrus.Entry  // The request's logger
+	DB        database.DB    // The authenticated database object
+	Events    events.Handler // The event handler (must be set here for plugins)
+	RequestID string         // The ID of the original query to the API
 
 	ID     string // The ID sent to plugins in X-Heedy-ID header, and is used for all internal requests
 	Plugin string // The plugin that sent the request

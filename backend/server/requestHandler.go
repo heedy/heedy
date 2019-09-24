@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins"
 )
 
@@ -94,6 +95,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: curRequest.RequestID,
 				DB:        curRequest.DB,
+				Events:    events.GlobalHandler,
 			}
 			logger = logger.WithField("addr", curRequest.Log.Data["addr"])
 
@@ -103,6 +105,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: xid.New().String(),
 				DB:        a.auth.DB,
+				Events:    events.GlobalHandler,
 			}
 
 		}
@@ -145,6 +148,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Log:       logger.WithField("id", id),
 			RequestID: id,
 			ID:        uuid.New().String(),
+			Events:    events.GlobalHandler,
 		}
 
 		db, err := a.auth.Authenticate(r)
@@ -182,6 +186,7 @@ func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request, p
 		Plugin:    plugin,
 		ID:        uuid.New().String(),
 		DB:        a.auth.DB, // Run as admin
+		Events:    events.GlobalHandler,
 		Log: rest.RequestLogger(r).WithFields(logrus.Fields{
 			"id":   id,
 			"auth": a.auth.DB.ID(),

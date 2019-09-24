@@ -1,16 +1,15 @@
 package plugins
 
 import (
-	"sync"
 	"errors"
-	"net/http"
 	"fmt"
+	"net/http"
+	"sync"
 
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
 
 	"github.com/sirupsen/logrus"
-	
 )
 
 const (
@@ -21,7 +20,7 @@ const (
 )
 
 // InternalRequester allows to serve internal requests
-type InternalRequester interface{
+type InternalRequester interface {
 	ServeInternal(w http.ResponseWriter, r *http.Request, plugin string)
 }
 
@@ -37,7 +36,7 @@ type pluginElement struct {
 type PluginManager struct {
 	sync.RWMutex
 
-	// The internal request handler that handles 
+	// The internal request handler that handles
 	// heedy's server context and whatnot
 	IR InternalRequester
 
@@ -51,8 +50,8 @@ type PluginManager struct {
 
 	Plugins map[string]*pluginElement
 
-	start string
-	order []string
+	start         string
+	order         []string
 	SourceManager *SourceManager
 
 	// This is the plugin that is currently being set up
@@ -60,29 +59,29 @@ type PluginManager struct {
 }
 
 // NewPluginManager is given assets and the "backend" handler, and returns a plugin manager
-func NewPluginManager(db *database.AdminDB,h http.Handler) (*PluginManager,error) {
+func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, error) {
 	return &PluginManager{
-		Plugins: make(map[string]*pluginElement),
-		Handler: h,
-		ADB: db,
+		Plugins:       make(map[string]*pluginElement),
+		Handler:       h,
+		ADB:           db,
 		SourceManager: nil,
-		status: statusClosed,
-		start: "none", // Start without any plugins
-		order: []string{},
-	},nil
+		status:        statusClosed,
+		start:         "none", // Start without any plugins
+		order:         []string{},
+	}, nil
 }
 
 func (pm *PluginManager) Reload() error {
 	pm.Close()
 	pm.Lock()
-	if pm.status!=statusClosed || len(pm.Plugins) > 0 {
+	if pm.status != statusClosed || len(pm.Plugins) > 0 {
 		pm.Unlock()
 		return errors.New("Plugins already being reloaded by another thread")
 	}
-	
-	a :=  pm.ADB.Assets()
-	sm, err :=  NewSourceManager(a,pm.Handler)
-	if err!=nil {
+
+	a := pm.ADB.Assets()
+	sm, err := NewSourceManager(a, pm.Handler)
+	if err != nil {
 		pm.Unlock()
 		return err
 	}
@@ -96,19 +95,18 @@ func (pm *PluginManager) Reload() error {
 	// and remove them if they don't have sources
 	pluginexclusion := ""
 	neworder := []interface{}{}
-	for _,pname := range order {
+	for _, pname := range order {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
-		neworder = append(neworder,pname + ":%")
+		neworder = append(neworder, pname+":%")
 	}
-	
 
-	r,err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id);",pluginexclusion),neworder...)
-	if err!=nil {
+	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id);", pluginexclusion), neworder...)
+	if err != nil {
 		pm.Close()
 		return err
 	}
-	rows,err := r.RowsAffected()
-	if err!=nil {
+	rows, err := r.RowsAffected()
+	if err != nil {
 		pm.Close()
 		return err
 	}
@@ -116,34 +114,34 @@ func (pm *PluginManager) Reload() error {
 		logrus.Debug("Cleared database of connections from inactive plugins")
 	}
 	// Now actually initialize the plugins
-	for _,pname := range order {
-		p,err := NewPlugin(pm.ADB,a,pname)
-		if err!=nil {
+	for _, pname := range order {
+		p, err := NewPlugin(pm.ADB, a, pname)
+		if err != nil {
 			pm.Close()
 			return err
 		}
 		err = p.BeforeStart(pm.IR)
-		if err!=nil {
+		if err != nil {
 			pm.Close()
 			return err
 		}
 		pm.Lock()
 		pm.initializingPlugin = p
-		if pm.status!=statusLoading {
+		if pm.status != statusLoading {
 			pm.Unlock()
 			pm.Close()
 			return errors.New("Plugins manager closed")
 		}
 		pm.Unlock()
 		err = p.Start()
-		if err!=nil {
+		if err != nil {
 			pm.Close()
 			return err
 		}
-		
+
 		// The plugin is now ready to go! We add it to the sequence
 		pm.Lock()
-		if pm.status!= statusLoading {
+		if pm.status != statusLoading {
 			pm.Unlock()
 			p.Close()
 			pm.Close()
@@ -152,11 +150,11 @@ func (pm *PluginManager) Reload() error {
 
 		pm.Plugins[pname] = &pluginElement{
 			Plugin: p,
-			Next: pm.start,
+			Next:   pm.start,
 		}
-		if p.Mux!=nil {
+		if p.Mux != nil {
 			// The plugin has a router component
-			if pm.start=="none" {
+			if pm.start == "none" {
 				p.Mux.NotFound(pm.SourceManager.ServeHTTP)
 			} else {
 				p.Mux.NotFound(pm.Plugins[pm.start].Plugin.Mux.ServeHTTP)
@@ -168,7 +166,7 @@ func (pm *PluginManager) Reload() error {
 
 		// Now this plugin's API is active. Run the AfterStart handler
 		err = p.AfterStart(pm.IR)
-		if err!=nil {
+		if err != nil {
 			pm.Close()
 			return err
 		}
@@ -185,7 +183,7 @@ func (pm *PluginManager) Reload() error {
 // Close shuts down the plugins that are currently
 func (pm *PluginManager) Close() error {
 	pm.Lock()
-	if pm.status== statusClosing {
+	if pm.status == statusClosing {
 		pm.Unlock()
 		return errors.New("Already closing")
 	}
@@ -197,12 +195,12 @@ func (pm *PluginManager) Close() error {
 	// to the API if they need to save state to the database. We achieve this stepwise:
 	// first, we remove the plugin from the plugin map, and set the start point to
 	// the next plugin in series. We continue doing this until no plugins are left
-	for i:=len(order)-1; i>=0; i-- {
+	for i := len(order) - 1; i >= 0; i-- {
 		pm.Lock()
 		elem, ok := pm.Plugins[order[i]]
 		if ok {
-			delete(pm.Plugins,order[i])
-			if pm.start==order[i] {
+			delete(pm.Plugins, order[i])
+			if pm.start == order[i] {
 				pm.start = elem.Next
 			}
 			pm.Unlock()
@@ -211,32 +209,37 @@ func (pm *PluginManager) Close() error {
 		} else {
 			pm.Unlock()
 		}
-		
-	}
 
+	}
 
 	pm.Lock()
 	pm.order = []string{}
 	pm.status = statusClosed
 	pm.start = "none"
-	if pm.initializingPlugin!=nil {
+	if pm.initializingPlugin != nil {
 		ip := pm.initializingPlugin
 		pm.Unlock()
 		ip.Close()
 	} else {
 		pm.Unlock()
 	}
-	
+
 	return nil
 }
 
-func (p *PluginManager) GetProcessByKey(key string) (*Exec,error) {
+func (p *PluginManager) GetProcessByKey(key string) (*Exec, error) {
 	p.RLock()
 	defer p.RUnlock()
-	for _,v := range p.Plugins {
-		e,err := v.Plugin.GetProcessByKey(key)
-		if err==nil {
-			return e,nil
+	for _, v := range p.Plugins {
+		e, err := v.Plugin.GetProcessByKey(key)
+		if err == nil {
+			return e, nil
+		}
+	}
+	if p.initializingPlugin != nil {
+		e, err := p.initializingPlugin.GetProcessByKey(key)
+		if err == nil {
+			return e, nil
 		}
 	}
 	return nil, errors.New("The given plugin key was not found")
@@ -247,9 +250,9 @@ func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pm.RLock()
 
 	// If it is not a plugin request, and manager is not ready, return an error
-	if pm.status!=statusReady && len(ctx.Plugin) == 0 {
+	if pm.status != statusReady && len(ctx.Plugin) == 0 {
 		pm.RUnlock()
-		rest.WriteJSONError(w,r,http.StatusServiceUnavailable,errors.New("loading: heedy is currently loading plugins"))
+		rest.WriteJSONError(w, r, http.StatusServiceUnavailable, errors.New("loading: heedy is currently loading plugins"))
 		return
 	}
 
@@ -262,10 +265,10 @@ func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin_error: invalid overlay"))
 			return
 		}
-		if overlay[0]=="none" {
+		if overlay[0] == "none" {
 			serveKey = "none"
 		}
-		if overlay[0]=="next" {
+		if overlay[0] == "next" {
 			// The overlay is next, so find which plugin we're coming from
 			serveKey = pm.Plugins[ctx.Plugin].Next
 
@@ -275,11 +278,11 @@ func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The source manager gives the full API, with all sources well-defined
 	if serveKey == "none" {
 		var sm http.Handler = pm.SourceManager
-		if sm==nil {
+		if sm == nil {
 			sm = pm.Handler
 		}
 		pm.RUnlock()
-		sm.ServeHTTP(w,r)
+		sm.ServeHTTP(w, r)
 		return
 	}
 	// If serveKey is not none, serve the given plugin
@@ -288,6 +291,6 @@ func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Delete the overlay header if we're going to pass through plugins
 	delete(r.Header, "X-Heedy-Overlay")
-	pmux.ServeHTTP(w,r)
+	pmux.ServeHTTP(w, r)
 
 }

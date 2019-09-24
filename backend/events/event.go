@@ -2,18 +2,21 @@ package events
 
 import (
 	"encoding/json"
+	"errors"
+
+	"github.com/heedy/heedy/backend/database"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Event struct {
 	Event      string `json:"event"`
-	User       string `json:"user,omitempty"`
-	Connection string `json:"connection,omitempty"`
-	Plugin     string `json:"plugin,omitempty"`
-	Source     string `json:"source,omitempty"`
-	Key        string `json:"key,omitempty"`
-	Type       string `json:"type,omitempty"`
+	User       string `json:"user,omitempty" db:"user"`
+	Connection string `json:"connection,omitempty" db:"connection"`
+	Plugin     string `json:"plugin,omitempty" db:"plugin"`
+	Source     string `json:"source,omitempty" db:"source"`
+	Key        string `json:"key,omitempty" db:"key"`
+	Type       string `json:"type,omitempty" db:"type"`
 
 	Data interface{} `json:"data,omitempty"`
 }
@@ -48,16 +51,40 @@ func (af AsyncFire) Fire(e *Event) {
 }
 
 // We require a global event manager for sqlite's global hooks
-var GlobalManager = EventLogger{NewMultiHandler()}
+var GlobalHandler = EventLogger{NewMultiHandler()}
 
 func Fire(e *Event) {
-	GlobalManager.Fire(e)
+	GlobalHandler.Fire(e)
 }
 
 func AddHandler(er Handler) {
-	GlobalManager.Handler.(*MultiHandler).AddHandler(er)
+	GlobalHandler.Handler.(*MultiHandler).AddHandler(er)
 }
 
 func RemoveHandler(er Handler) {
-	GlobalManager.Handler.(*MultiHandler).RemoveHandler(er)
+	GlobalHandler.Handler.(*MultiHandler).RemoveHandler(er)
+}
+
+// FillEvent fills in the event's targeting data
+func FillEvent(db *database.AdminDB, e *Event) error {
+	if e.Event == "" {
+		return errors.New("bad_request: No event type specified")
+	}
+	if e.Source != "" {
+		return db.Get(e, "SELECT sources.owner AS user,sources.connection,connections.plugin,sources.key,sources.type FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.id=? LIMIT 1", e.Source)
+	}
+	if e.Connection != "" {
+		e.Key = ""
+		e.Type = ""
+		return db.Get(e, "SELECT owner AS user,plugin FROM connections WHERE id=? LIMIT 1", e.Connection)
+	}
+	if e.User != "" {
+		e.Key = ""
+		e.Type = ""
+		e.Connection = ""
+		e.Plugin = ""
+		// This is only to make sure the user exists
+		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
+	}
+	return errors.New("bad_request: An event must target a specific user,connection or source")
 }
