@@ -1,4 +1,8 @@
-import Vue, {VueRouter,Vuex,Vuetify} from "./dist.mjs";
+import Vue, {
+  VueRouter,
+  Vuex,
+  Vuetify
+} from "./dist.mjs";
 
 var vuexPlugins = [];
 var vuexModules = {};
@@ -100,7 +104,13 @@ async function setup() {
 
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);
-    (await plugins[i]).default(new App(appinfo.frontend[i].name));
+    try {
+      (await plugins[i]).default(new App(appinfo.frontend[i].name));
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to load plugin '${appinfo.frontend[i].name}': ${err.message}`);
+    }
+
   }
 
   // Now go through the injected modules to run their onInit
@@ -108,7 +118,7 @@ async function setup() {
     // skip loop if the property is from prototype
     if (!injected.hasOwnProperty(key)) continue;
     (injected[key]["$onInit"] || (() => (1)))();
-  } 
+  }
 
   // There is a single built in vuex module, which holds 
   // the app info, the main menu, the extra menu, 
@@ -120,7 +130,7 @@ async function setup() {
       secondaryMenu: secondaryMenu
     },
     mutations: {
-      updateLoggedInUser(state,v) {
+      updateLoggedInUser(state, v) {
         state.info.user = v;
       }
     }
@@ -136,11 +146,14 @@ async function setup() {
   const router = new VueRouter({
     routes: Object.values(routes),
     // https://router.vuejs.org/guide/advanced/scroll-behavior.html#scroll-behavior
-    scrollBehavior (to, from, savedPosition) {
+    scrollBehavior(to, from, savedPosition) {
       if (savedPosition) {
         return savedPosition
       } else {
-        return { x: 0, y: 0 }
+        return {
+          x: 0,
+          y: 0
+        }
       }
     }
   });

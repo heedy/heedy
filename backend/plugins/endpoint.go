@@ -1,20 +1,19 @@
 package plugins
 
 import (
-	"strings"
+	"errors"
+	"fmt"
 	"net"
 	"net/url"
-	"fmt"
-	"time"
-	"errors"
 	"path/filepath"
-
+	"strings"
+	"time"
 )
 
 // Extracts the unix socket file and request path
-func ParseUnixSock(datadir string,uri string) (sockfile string, requestPath string,err error) {
-	if !strings.HasPrefix(uri,"unix://") {
-		err= errors.New("Not a unix socket")
+func ParseUnixSock(datadir string, uri string) (sockfile string, requestPath string, err error) {
+	if !strings.HasPrefix(uri, "unix://") {
+		err = errors.New("Not a unix socket")
 		return
 	}
 	// Otherwise, we set up a unix domain socket.
@@ -34,20 +33,20 @@ func ParseUnixSock(datadir string,uri string) (sockfile string, requestPath stri
 		requestPath = "/"
 	}
 	if !strings.HasPrefix(requestPath, "/") {
-		err= fmt.Errorf("The url after .sock must start with / ('%s')", uri)
+		err = fmt.Errorf("The url after .sock must start with / ('%s')", uri)
 	}
 	return
-} 
+}
 
 // GetEndpoint parses the given URI and returns an endpoint
-func GetEndpoint(datadir string, uri string) (method string,host string, err error) {
-	if strings.HasPrefix(uri,"unix://") {
-		method="unix"
-		host,_,err = ParseUnixSock(datadir, uri)
+func GetEndpoint(datadir string, uri string) (method string, host string, err error) {
+	if strings.HasPrefix(uri, "unix://") {
+		method = "unix"
+		host, _, err = ParseUnixSock(datadir, uri)
 	} else {
 		var u *url.URL
-		u,err = url.Parse(uri)
-		if err!=nil {
+		u, err = url.Parse(uri)
+		if err != nil {
 			return
 		}
 		host = u.Host
@@ -57,17 +56,20 @@ func GetEndpoint(datadir string, uri string) (method string,host string, err err
 }
 
 // WaitForEndpoint waits for the given endpoint
-func WaitForEndpoint(method string, host string) error {
+func WaitForEndpoint(method string, host string, e *Exec) error {
 	// The endpoint is not available, so let's keep checking it
-	d := 30*time.Second
-	sleepDuration := 100*time.Millisecond
-	for i := time.Duration(0); i < d; i+= sleepDuration {
+	d := 30 * time.Second
+	sleepDuration := 100 * time.Millisecond
+	for i := time.Duration(0); i < d; i += sleepDuration {
 		c, err := net.Dial(method, host)
-		if err==nil {
+		if err == nil {
 			c.Close()
 			return nil
 		}
+		if err = e.HadError(); err != nil {
+			return err
+		}
 		time.Sleep(sleepDuration)
 	}
-	return fmt.Errorf("Could not connect to %s using %s socket",host,method)
+	return fmt.Errorf("Could not connect to %s using %s socket", host, method)
 }

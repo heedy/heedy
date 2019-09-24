@@ -29,7 +29,7 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c := rest.Context{
 		Log:       logger,
-		RequestID: r.Header.Get("X-Heedy-RequestID"),
+		RequestID: r.Header.Get("X-Heedy-Request"),
 		ID:        r.Header.Get("X-Heedy-ID"),
 		DB:        m.P.As(r.Header.Get("X-Heedy-Auth")),
 	}

@@ -8,7 +8,7 @@ import {
   terser
 } from "rollup-plugin-terser";
 
-const plugin_name = "streams"
+const plugin_name = "notifications"
 
 const production = !process.env.NODE_ENV === 'debug';
 const plugins = [
@@ -61,6 +61,5 @@ function out(name, loc = "", format = "es") {
 }
 export default [
   // The base files
-  out("main.js"),
-  out("preprocessing.worker.js")
+  out("main.js")
 ];

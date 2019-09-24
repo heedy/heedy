@@ -9,7 +9,7 @@ import (
 	"path"
 
 	"github.com/heedy/heedy/api/golang/plugin"
-	"github.com/heedy/heedy/plugins/streams/backend/api"
+	"github.com/heedy/heedy/plugins/notifications/backend/api"
 	"github.com/sirupsen/logrus"
 )
 

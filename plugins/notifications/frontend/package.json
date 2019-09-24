@@ -1,0 +1,44 @@
+{
+  "name": "heedy-notifications",
+  "version": "0.1.0",
+  "description": "Support for notifications in heedy",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:html && npm run build:js",
+    "build:js": "rollup -c",
+    "sync:html": "rsync -r ./public/ ../assets/public/",
+    "build:html": "npm run sync:html && html-minifier --file-ext html --input-dir ../assets/public --output-dir ../assets/public --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags",
+    "debug:js": "rollup -c -m --environment NODE_ENV:debug",
+    "watch:js": "rollup -c -w -m --environment NODE_ENV:debug",
+    "watch:html": "nodemon --watch public -e html,css,js,json --exec \"npm run sync:html\"",
+    "mkdebug": "run-p 'debug:js' 'sync:html'",
+    "debug": "run-p 'watch:js' 'watch:html'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heedyserver/heedy.git"
+  },
+  "keywords": [
+    "heedy"
+  ],
+  "author": "heedy Contributors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/heedyserver/heedy/issues"
+  },
+  "homepage": "https://heedy.org",
+  "dependencies": {
+    "nodemon": "^1.19.2",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^1.21.4",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-postcss": "^2.0.3",
+    "rollup-plugin-replace": "^2.2.0",
+    "rollup-plugin-terser": "^5.1.2",
+    "rollup-plugin-vue": "^5.0.1",
+    "vue": "^2.6.10",
+    "vue-template-compiler": "^2.6.10"
+  }
+}

@@ -6,6 +6,7 @@ import (
 	"github.com/heedy/heedy/backend/cmd"
 
 	// Add the plugins, which will register their own routes
+	_ "github.com/heedy/heedy/plugins/notifications/backend/api"
 	_ "github.com/heedy/heedy/plugins/streams/backend/api"
 )
 

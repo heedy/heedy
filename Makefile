@@ -12,6 +12,7 @@ phony:
 frontend: phony
 	cd frontend; npm run build
 	cd plugins/streams; make builtin; make frontend
+	cd plugins/notifications; make builtin; make frontend
 
 heedy: backend/main.go phony # gencode
 	statik -src=./assets -dest=./backend -p assets -f
@@ -25,6 +26,7 @@ heedydbg: phony
 debug: heedydbg
 	cd frontend; npm run mkdebug
 	cd plugins/streams; make builtin; make debug
+	cd plugins/notifications; make builtin; make debug
 	
 
 clean:

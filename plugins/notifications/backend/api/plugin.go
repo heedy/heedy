@@ -5,7 +5,7 @@ import (
 	"github.com/heedy/heedy/backend/plugins"
 )
 
-const PluginName = "streams"
+const PluginName = "notifications"
 
 // This is not needed for normal plugins. The init simply registers the plugin with heedy internals
 // for when it is compiled directly into the main heedy executable.

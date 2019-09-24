@@ -31,6 +31,8 @@ type Exec struct {
 	isStopping bool
 	keepAlive  bool
 
+	err error
+
 	// Allows locking and unlocking the process
 	sync.Mutex
 }
@@ -47,6 +49,12 @@ func (e *Exec) IsRunning() bool {
 	e.Lock()
 	defer e.Unlock()
 	return e.proc != nil
+}
+
+func (e *Exec) HadError() error {
+	e.Lock()
+	defer e.Unlock()
+	return e.err
 }
 
 func (e *Exec) Start() error {
@@ -98,6 +106,7 @@ func (e *Exec) Start() error {
 		e.Lock()
 		if err != nil && !e.isStopping {
 			log.Errorf("%s: %s finished with error %s", e.Plugin, e.Exec, err.Error())
+			e.err = err
 		} else {
 			log.Debugf("%s: %s closed", e.Plugin, e.Exec)
 		}

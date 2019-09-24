@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/heedy/heedy/backend/database"
 )
 
 var SQLVersion = 1
@@ -190,6 +192,14 @@ func CreateSQLData(db *sqlx.DB) error {
 
 func OpenSQLData(db *sqlx.DB) *SQLData {
 	return &SQLData{db: db}
+}
+
+// SQLUpdater is in the format expected by Heedy to update the database
+func SQLUpdater(db *database.AdminDB, curversion int) error {
+	if curversion != 0 {
+		return errors.New("Streams database version too new")
+	}
+	return CreateSQLData(db.DB)
 }
 
 func (d *SQLData) StreamDataLength(sid string, actions bool) (l uint64, err error) {

@@ -130,6 +130,7 @@ func (p *Plugin) Start() error {
 	pname := p.Name
 	pv := p.Assets.Config.Plugins[pname]
 
+	endpoints := make(map[string]*Exec)
 	for ename, ev := range pv.Exec {
 		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
 			keepAlive := false
@@ -170,30 +171,29 @@ func (p *Plugin) Start() error {
 				p.Stop()
 				return err
 			}
+			if ev.Endpoint != nil {
+				endpoints[*ev.Endpoint] = e
+			}
 
 		}
 
 	}
 
 	// Now wait until all the endpoints are open
-	for ename, ev := range pv.Exec {
-		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
-			if ev.Endpoint != nil {
-				logrus.Debugf("%s: Waiting for endpoint %s (%s)", pname, *ev.Endpoint, ename)
-				method, host, err := GetEndpoint(p.Assets.DataDir(), *ev.Endpoint)
-				if err != nil {
-					p.Stop()
-					return err
-				}
-				if err = WaitForEndpoint(method, host); err != nil {
-					p.Stop()
-					return err
-				}
-				logrus.Debugf("%s: Endpoint %s open", pname, *ev.Endpoint)
-
-			}
+	for ep, e := range endpoints {
+		logrus.Debugf("%s: Waiting for endpoint %s", pname, ep)
+		method, host, err := GetEndpoint(p.Assets.DataDir(), ep)
+		if err != nil {
+			p.Stop()
+			return err
 		}
+		if err = WaitForEndpoint(method, host, e); err != nil {
+			p.Stop()
+			return err
+		}
+		logrus.Debugf("%s: Endpoint %s open", pname, ep)
 	}
+
 	return nil
 }
 
