@@ -78,11 +78,11 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 
 	// Set up events
 	for ename, ev := range psettings.On {
-		peh, err := PluginEventHandler(pname, ev)
+		peh, err := PluginEventHandler(a, pname, ev)
 		if err != nil {
 			return nil, err
 		}
-		logrus.Debugf("%s: Forwarding event '%s' -> %s", pname, ename, peh.Post)
+		logrus.Debugf("%s: Forwarding event '%s' -> %s", pname, ename, *ev.Post)
 		p.EventRouter.Subscribe(events.Event{
 			Event: ename,
 			User:  "*",
@@ -90,12 +90,12 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 	}
 	for cplugin, cv := range psettings.Connections {
 		for ename, ev := range cv.On {
-			peh, err := PluginEventHandler(pname, ev)
+			peh, err := PluginEventHandler(a, pname, ev)
 			if err != nil {
 				return nil, err
 			}
 			cpn := pname + ":" + cplugin
-			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", pname, cpn, ename, peh.Post)
+			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", pname, cpn, ename, *ev.Post)
 			p.EventRouter.Subscribe(events.Event{
 				Event:  ename,
 				Plugin: cpn,
@@ -103,12 +103,12 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 		}
 		for skey, sv := range cv.Sources {
 			for ename, ev := range sv.On {
-				peh, err := PluginEventHandler(pname, ev)
+				peh, err := PluginEventHandler(a, pname, ev)
 				if err != nil {
 					return nil, err
 				}
 				cpn := pname + ":" + cplugin
-				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", pname, cpn, skey, ename, peh.Post)
+				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", pname, cpn, skey, ename, *ev.Post)
 				p.EventRouter.Subscribe(events.Event{
 					Event:  ename,
 					Plugin: cpn,
