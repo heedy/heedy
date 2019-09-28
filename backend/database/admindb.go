@@ -91,7 +91,7 @@ func (db *AdminDB) CreateUser(u *User) error {
 	}
 
 	// Insert into user needs to be first, as group uses user as owner.
-	result, err := db.DB.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, qQ(len(userValues))), userValues...)
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, QQ(len(userValues))), userValues...)
 	return getExecError(result, err)
 
 }
@@ -123,7 +123,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded to group owners
 	if len(userValues) > 1 {
 		// This uses a join to make sure that the group is in fact an existing user
-		result, err := db.DB.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
+		result, err := db.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
 		return getExecError(result, err)
 
 	}
@@ -154,13 +154,13 @@ func (db *AdminDB) CreateSource(s *Source) (string, error) {
 	if s.Connection != nil {
 		// We must insert while also setting the owner to the connection's owner
 		sValues = append(sValues, *s.Connection)
-		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, qQ(len(sValues)-1)), sValues...)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
 		err = getExecError(result, err)
 
 		return s.ID, err
 	}
 
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, qQ(len(sValues))), sValues...)
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, QQ(len(sValues))), sValues...)
 	err = getExecError(result, err)
 
 	return s.ID, err
@@ -227,12 +227,12 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 	connectionid := c.ID
 	accessToken := *c.AccessToken
 
-	tx, err := db.DB.Beginx()
+	tx, err := db.Beginx()
 	if err != nil {
 		return "", "", err
 	}
 
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO connections (%s) VALUES (%s);", cColumns, qQ(len(cValues))), cValues...)
+	result, err := tx.Exec(fmt.Sprintf("INSERT INTO connections (%s) VALUES (%s);", cColumns, QQ(len(cValues))), cValues...)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
@@ -325,5 +325,35 @@ func (db *AdminDB) DelConnection(id string) error {
 
 // ListConnections lists connections
 func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
-	return nil, ErrUnimplemented
+	var c []*Connection
+	a := []interface{}{}
+	selectStmt := "SELECT * FROM connections"
+	if o != nil && (o.User != nil || o.Plugin != nil) {
+		selectStmt = selectStmt + " WHERE"
+		if o.User != nil {
+			selectStmt = selectStmt + " owner=?"
+			a = append(a, *o.User)
+		}
+		if o.Plugin != nil {
+			if o.User != nil {
+				selectStmt = selectStmt + " AND"
+			}
+			if *o.Plugin == "" {
+				selectStmt = selectStmt + " plugin IS NULL"
+			} else {
+				selectStmt = selectStmt + " plugin=?"
+				a = append(a, *o.Plugin)
+			}
+
+		}
+	}
+	err := db.Select(&c, selectStmt, a...)
+	if err == nil && o != nil {
+		if o.Avatar != nil && *o.Avatar == false {
+			for _, cc := range c {
+				cc.Avatar = nil
+			}
+		}
+	}
+	return c, err
 }

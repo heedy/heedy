@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/assets"
 
 	"github.com/sirupsen/logrus"
 )
@@ -38,7 +39,12 @@ type EventLogger struct {
 }
 
 func (el EventLogger) Fire(e *Event) {
-	logrus.Debugf("Event: %s", e.String())
+	if assets.Get().Config.Verbose {
+		logrus.WithField("stack",database.MiniStack(1)).Debugf(e.String())
+	} else {
+		logrus.Debugf(e.String())
+	}
+	
 	el.Handler.Fire(e)
 }
 
@@ -87,4 +93,25 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
 	}
 	return errors.New("bad_request: An event must target a specific user,connection or source")
+}
+
+type FilledHandler struct {
+	Handler
+	DB *database.AdminDB
+}
+
+func NewFilledHandler(db *database.AdminDB, h Handler) FilledHandler {
+	return FilledHandler{
+		Handler: h,
+		DB:      db,
+	}
+}
+
+func (fh FilledHandler) Fire(e *Event) {
+	if err := FillEvent(fh.DB, e); err != nil {
+		logrus.Error(err)
+	} else {
+		fh.Handler.Fire(e)
+	}
+
 }

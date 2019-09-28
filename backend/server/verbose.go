@@ -11,23 +11,26 @@ import (
 
 // VerboseLoggingMiddleware performs extremely verbose logging - including all incoming requests and responses.
 // This can be activated using --vvv on the server
-func VerboseLoggingMiddleware(h http.Handler) http.Handler {
+func VerboseLoggingMiddleware(h http.Handler, log *logrus.Entry) http.Handler {
+	if log == nil {
+		log = logrus.NewEntry(logrus.StandardLogger())
+	}
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// We don't want to mess with websocket connections
 		if request.Header.Get("Connection") == "Upgrade" {
-			logrus.Debug("Got Upgrade Header (probably starting a websocket connection)")
+			log.Debug("Got Upgrade Header (probably starting a websocket connection)")
 			h.ServeHTTP(writer, request)
 			return
 		}
 
 		req, err := httputil.DumpRequest(request, true)
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			http.Error(writer, fmt.Sprint(err), http.StatusInternalServerError)
 			return
 		}
-		logrus.Debugf("Request:\n\n%s\n\n", string(req))
+		log.Debugf("Request:\n\n%s\n\n", string(req))
 
 		rec := httptest.NewRecorder()
 
@@ -45,10 +48,10 @@ func VerboseLoggingMiddleware(h http.Handler) http.Handler {
 		}
 
 		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] != "identity" {
-			logrus.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY COMPRESSED - NOT LOGGING (length: %d)", rec.Code, headers, len(response))
+			log.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY COMPRESSED - NOT LOGGING (length: %d)", rec.Code, headers, len(response))
 		} else {
 			// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
-			logrus.Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))
+			log.Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))
 		}
 
 		// Now copy everything from response recorder to actual response writer

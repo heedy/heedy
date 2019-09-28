@@ -463,7 +463,7 @@ func extractSource(s *Source) (sColumns []string, sValues []interface{}, err err
 }
 
 // Insert the right amount of question marks for the given query
-func qQ(size int) string {
+func QQ(size int) string {
 	s := strings.Repeat("?,", size)
 	return s[:len(s)-1]
 }

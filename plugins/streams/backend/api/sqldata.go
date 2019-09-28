@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/heedy/heedy/backend/database"
 )
 
@@ -182,24 +180,23 @@ func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
 }
 
 type SQLData struct {
-	db *sqlx.DB
+	db *database.AdminDB
 }
 
-func CreateSQLData(db *sqlx.DB) error {
-	_, err := db.Exec(sqlSchema)
-	return err
-}
-
-func OpenSQLData(db *sqlx.DB) *SQLData {
+func OpenSQLData(db *database.AdminDB) *SQLData {
 	return &SQLData{db: db}
 }
 
 // SQLUpdater is in the format expected by Heedy to update the database
 func SQLUpdater(db *database.AdminDB, curversion int) error {
+	if curversion == SQLVersion {
+		return nil
+	}
 	if curversion != 0 {
 		return errors.New("Streams database version too new")
 	}
-	return CreateSQLData(db.DB)
+	_, err := db.ExecUncached(sqlSchema)
+	return err
 }
 
 func (d *SQLData) StreamDataLength(sid string, actions bool) (l uint64, err error) {
@@ -293,15 +290,15 @@ func (d *SQLData) ReadStreamData(sid string, q *Query) (DatapointIterator, error
 		return nil, err
 	}
 	if q.Actions != nil && *q.Actions {
-		rows, err := d.db.Query("SELECT timestamp,actor,data FROM "+query, values...)
+		rows, err := d.db.Queryx("SELECT timestamp,actor,data FROM "+query, values...)
 
 		// TODO: Add transform
-		return &SQLIterator{rows, true}, err
+		return &SQLIterator{rows.Rows, true}, err
 	}
-	rows, err := d.db.Query("SELECT timestamp,data FROM "+query, values...)
+	rows, err := d.db.Queryx("SELECT timestamp,data FROM "+query, values...)
 
 	// TODO: Add transform
-	return &SQLIterator{rows, false}, err
+	return &SQLIterator{rows.Rows, false}, err
 
 }
 

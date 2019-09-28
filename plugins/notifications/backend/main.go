@@ -21,6 +21,8 @@ func main() {
 		logrus.Error(err)
 		os.Exit(1)
 	}
+	api.RegisterNotificationHooks(p.As("heedy"))
+
 	err = p.InitSQL(api.PluginName, api.SQLVersion, api.SQLUpdater)
 	if err != nil {
 		p.Logger().Error(fmt.Errorf("Failed to set up database: %w", err))

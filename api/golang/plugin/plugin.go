@@ -98,6 +98,6 @@ func (p *Plugin) InitSQL(name string, version int, updater database.PluginFunc) 
 	return database.InitPlugin(adb, &database.PluginInfo{
 		Name:    name,
 		Version: version,
-		Updater: updater,
+		OnOpen: updater,
 	})
 }

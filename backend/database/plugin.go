@@ -1,25 +1,30 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/sirupsen/logrus"
+)
 
 // PluginFunc is the function that, when given an AdminDB, generates the necessary database tables
+// based on the version, and does all relevant initialization
 type PluginFunc func(*AdminDB, int) error
 
 // PluginInfo contains the information necessary to create a plugin's database tables
 type PluginInfo struct {
 	Name    string
 	Version int
-	Updater PluginFunc
+	OnOpen PluginFunc
 }
 
 var pluginArray = make([]*PluginInfo, 0)
 
 // RegisterPlugin adds the plugin so that its database tables are auto-created when the database is created
-func RegisterPlugin(pluginName string, dbversion int, updater PluginFunc) {
+func RegisterPlugin(pluginName string, dbversion int, onOpen PluginFunc) {
 	pluginArray = append(pluginArray, &PluginInfo{
 		Name:    pluginName,
 		Version: dbversion,
-		Updater: updater,
+		OnOpen: onOpen,
 	})
 }
 
@@ -33,21 +38,20 @@ func InitPlugin(db *AdminDB, p *PluginInfo) error {
 	if err == sql.ErrNoRows {
 		curVersion = 0
 	}
-	if curVersion == p.Version {
-		return nil
-	}
-
-	err = p.Updater(db, curVersion)
+	err = p.OnOpen(db, curVersion)
 	if err != nil {
 		return err
 	}
 	// Now update the version in heedy
-	_, err = db.Exec(`INSERT OR REPLACE INTO heedy(name,version) VALUES (?,?)`, p.Name, p.Version)
+	if p.Version!=curVersion {
+		_, err = db.Exec(`INSERT OR REPLACE INTO heedy(name,version) VALUES (?,?)`, p.Name, p.Version)
+	}
 	return err
 }
 
 func initRegisteredPlugins(db *AdminDB) error {
 	for _, v := range pluginArray {
+		logrus.Debugf("Initializing %s plugin backend (v%d)",v.Name,v.Version)
 		if err := InitPlugin(db, v); err != nil {
 			return err
 		}

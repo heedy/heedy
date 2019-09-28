@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/dkumor/revhttpfs"
 	"github.com/rakyll/statik/fs"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
@@ -40,7 +41,7 @@ func BuiltinAssets() afero.Fs {
 				_, err = os.Stat(filepath.Join(assetPath, "heedy.conf"))
 			}
 
-			log.Warnf("Debug mode: using assets from %s", assetPath)
+			logrus.Warnf("Debug mode: using assets from %s", assetPath)
 
 			builtinAssets = afero.NewBasePathFs(afero.NewOsFs(), assetPath)
 		} else {
@@ -183,6 +184,14 @@ func (a *Assets) Reload() error {
 	a.Config = mergedConfiguration
 	a.FS = FS
 	a.Stack = assetStack
+
+	if a.Config.Verbose {
+		b, err := json.MarshalIndent(a.Config, "", " ")
+		if err != nil {
+			return err
+		}
+		logrus.Debug(string(b))
+	}
 
 	// Validate the configuration
 	return a.Config.Validate()

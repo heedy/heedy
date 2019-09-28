@@ -2,13 +2,37 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 )
+
+// MiniStack generates a tiny stack trace
+func MiniStack(skip int) string {
+	stackSize := 3
+	stack := make([]uintptr, stackSize)
+	stackSize = runtime.Callers(skip+2, stack[:])
+
+	stackString := make([]string, stackSize)
+	for i := 0; i < stackSize; i++ {
+		f := runtime.FuncForPC(stack[i])
+		n := f.Name()
+		if j := strings.LastIndex(n, "/"); j > 0 {
+			n = n[j+1:]
+		}
+		_, line := f.FileLine(stack[i] - 1)
+		stackString[i] = fmt.Sprintf("%s:%d", n, line)
+	}
+	return strings.Join(stackString, ";")
+}
 
 type SqlxCache struct {
 	DB                     *sqlx.DB
+	Verbose                bool
 	preparedStmtCache      map[string]*sqlx.Stmt
 	preparedNamedStmtCache map[string]*sqlx.NamedStmt
 	lock                   sync.RWMutex
@@ -25,6 +49,10 @@ func (c *SqlxCache) InitCache(sqldb *sqlx.DB) {
 // stores it and returns it
 func (db *SqlxCache) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 	var err error
+
+	if db.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
 
 	db.lock.RLock()
 	prepared, ok := db.preparedStmtCache[query]
@@ -49,6 +77,10 @@ func (db *SqlxCache) GetOrPrepare(query string) (*sqlx.Stmt, error) {
 // stores it and returns it
 func (db *SqlxCache) GetOrPrepareNamed(query string) (*sqlx.NamedStmt, error) {
 	var err error
+
+	if db.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
 
 	db.lock.RLock()
 	prepared, ok := db.preparedNamedStmtCache[query]
@@ -117,6 +149,13 @@ func (db *SqlxCache) Exec(query string, args ...interface{}) (sql.Result, error)
 	return prep.Exec(args...)
 }
 
+func (db *SqlxCache) ExecUncached(query string, args ...interface{}) (sql.Result, error) {
+	if db.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
+	return db.DB.Exec(query, args...)
+}
+
 func (db *SqlxCache) NamedExec(query string, arg interface{}) (sql.Result, error) {
 	prep, err := db.GetOrPrepareNamed(query)
 
@@ -125,4 +164,73 @@ func (db *SqlxCache) NamedExec(query string, arg interface{}) (sql.Result, error
 	}
 
 	return prep.Exec(arg)
+}
+
+func (db *SqlxCache) Queryx(query string, args ...interface{}) (*sqlx.Rows, error) {
+	prep, err := db.GetOrPrepare(query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return prep.Queryx(args...)
+}
+
+type TxWrapper struct {
+	*sqlx.Tx
+	Verbose bool
+}
+
+func (tx TxWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
+	return tx.Tx.Exec(query, args...)
+}
+func (tx TxWrapper) Select(dest interface{}, query string, args ...interface{}) error {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
+	return tx.Tx.Select(dest, query, args...)
+}
+
+func (tx TxWrapper) Get(dest interface{}, query string, args ...interface{}) error {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
+
+	return tx.Tx.Get(dest, query, args...)
+}
+
+func (tx TxWrapper) Queryx(query string, args ...interface{}) (*sqlx.Rows, error) {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug(query)
+	}
+
+	return tx.Tx.Queryx(query, args...)
+}
+
+func (tx TxWrapper) Rollback() error {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug("ROLLBACK")
+	}
+	return tx.Rollback()
+}
+
+func (tx TxWrapper) Commit() error {
+	if tx.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug("COMMIT")
+	}
+	return tx.Tx.Commit()
+}
+
+func (db *SqlxCache) Beginx() (TxWrapper, error) {
+	if db.Verbose {
+		logrus.WithField("stack", MiniStack(2)).Debug("BEGIN TRANSACTION")
+	}
+	tx, err := db.DB.Beginx()
+	return TxWrapper{
+		Tx:      tx,
+		Verbose: db.Verbose,
+	}, err
 }

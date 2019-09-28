@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/server"
 )
 
 // Middleware constructs a Heedy server context for an http handler, allowing
@@ -15,11 +16,15 @@ type Middleware struct {
 	H http.Handler
 }
 
-func NewMiddleware(p *Plugin, h http.Handler) *Middleware {
-	return &Middleware{
+func NewMiddleware(p *Plugin, h http.Handler) http.Handler {
+	m := &Middleware{
 		P: p,
 		H: h,
 	}
+	if p.Meta.Config.Verbose {
+		return server.VerboseLoggingMiddleware(m, m.P.Logger())
+	}
+	return m
 }
 
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
-	"path/filepath"
-	"path"
 	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/server"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 )
-
-var verbose bool
 
 var RunCmd = &cobra.Command{
 	Use:   "run [location of database]",
@@ -28,38 +25,29 @@ var RunCmd = &cobra.Command{
 			directory = args[0]
 		} else {
 			f, err := os.UserConfigDir()
-			if err!=nil {
+			if err != nil {
 				return err
 			}
-			directory = path.Join(f,"heedy")
+			directory = path.Join(f, "heedy")
 		}
 		var err error
 		directory, err = filepath.Abs(directory)
-		if err!=nil {
+		if err != nil {
 			return err
 		}
-		logrus.Infof("Using database at %s",directory)
-		
-		a, err := assets.Open(directory, nil)
+		logrus.Infof("Using database at %s", directory)
+		c := assets.NewConfiguration()
+		c.Verbose = verbose
+		a, err := assets.Open(directory, c)
 		if err != nil {
 			return err
 		}
 		assets.SetGlobal(a)
 
-		b, err := json.MarshalIndent(a.Config, "", " ")
-		if err != nil {
-			return err
-		}
-		logrus.Debug(string(b))
-
-		return server.Run(&server.RunOptions{
-			Verbose: verbose,
-		})
+		return server.Run(a, nil)
 	},
 }
 
 func init() {
-	RunCmd.Flags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
 	RootCmd.AddCommand(RunCmd)
-
 }

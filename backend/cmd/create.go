@@ -46,12 +46,12 @@ It is recommended that new users use the web setup, which will guide you in prep
 		var directory string
 		if len(args) == 1 {
 			directory = args[0]
-		} else if len(args)==0 {
+		} else if len(args) == 0 {
 			f, err := os.UserConfigDir()
-			if err!=nil {
+			if err != nil {
 				return err
 			}
-			directory = path.Join(f,"heedy")
+			directory = path.Join(f, "heedy")
 		}
 		c := assets.NewConfiguration()
 		if port != 0 {
@@ -60,6 +60,7 @@ It is recommended that new users use the web setup, which will guide you in prep
 		if host != "_" {
 			c.Host = &host
 		}
+		c.Verbose = verbose
 
 		if nosetup {
 			a, err := assets.Create(directory, c, configFile)

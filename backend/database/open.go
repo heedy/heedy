@@ -55,6 +55,9 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 		a: a,
 	}
 	adminDB.SqlxCache.InitCache(db)
+	if a.Config.Verbose {
+		adminDB.SqlxCache.Verbose = true
+	}
 
 	// Need to initialize all registered plugins, just in case they want to update their schemas
 	err = initRegisteredPlugins(adminDB)

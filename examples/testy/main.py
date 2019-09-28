@@ -23,6 +23,19 @@ async def index(request):
     return web.Response(text="OK")
 
 
+@routes.get("/api/testy/lol")
+async def lol(request):
+    myc = await p.listConnections(avatar="false", plugin="testy:tree")
+    await p.notify({"key": "lol", "type": "info", "title": "Test Notification", "description": "A description", "connection": myc[0]["id"]})
+    return web.Response(text="lol")
+
+
+@routes.get("/api/testy/lol2")
+async def lol(request):
+    myc = await p.listConnections(avatar="false", plugin="testy:tree")
+    await p.delete_notification({"key": "lol", "connection": myc[0]["id"]})
+    return web.Response(text="lol")
+
 app = web.Application()
 app.add_routes(routes)
 

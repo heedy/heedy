@@ -95,7 +95,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: curRequest.RequestID,
 				DB:        curRequest.DB,
-				Events:    events.GlobalHandler,
+				Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 			}
 			logger = logger.WithField("addr", curRequest.Log.Data["addr"])
 
@@ -105,7 +105,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: xid.New().String(),
 				DB:        a.auth.DB,
-				Events:    events.GlobalHandler,
+				Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 			}
 
 		}
@@ -148,7 +148,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Log:       logger.WithField("id", id),
 			RequestID: id,
 			ID:        uuid.New().String(),
-			Events:    events.GlobalHandler,
+			Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 		}
 
 		db, err := a.auth.Authenticate(r)
@@ -186,7 +186,7 @@ func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request, p
 		Plugin:    plugin,
 		ID:        uuid.New().String(),
 		DB:        a.auth.DB, // Run as admin
-		Events:    events.GlobalHandler,
+		Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 		Log: rest.RequestLogger(r).WithFields(logrus.Fields{
 			"id":   id,
 			"auth": a.auth.DB.ID(),

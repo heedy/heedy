@@ -134,6 +134,9 @@ type hclConfiguration struct {
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 
 	Plugins []hclPlugin `hcl:"plugin,block"`
+
+	LogLevel *string `json:"log_level" hcl:"log_level"`
+	LogFile  *string `json:"log_file" hcl:"log_file"`
 }
 
 func preprocess(i interface{}) (reflect.Value, reflect.Kind) {

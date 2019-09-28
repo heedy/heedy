@@ -9,26 +9,25 @@ import (
 	"github.com/go-chi/chi"
 
 	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/backend/plugins"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/plugins"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // RunOptions give special options for running
 type RunOptions struct {
-	Verbose bool
 }
 
-func Run(r *RunOptions) error {
-	db, err := database.Open(assets.Get())
+func Run(a *assets.Assets, o *RunOptions) error {
+	db, err := database.Open(a)
 	if err != nil {
 		return err
 	}
 
 	auth := NewAuth(db)
 
-	serverAddress := fmt.Sprintf("%s:%d", assets.Config().GetHost(), assets.Config().GetPort())
+	serverAddress := fmt.Sprintf("%s:%d", a.Config.GetHost(), a.Config.GetPort())
 
 	apiMux, err := APIMux()
 	if err != nil {
@@ -48,11 +47,10 @@ func Run(r *RunOptions) error {
 	mux.Mount("/auth", authMux)
 	mux.Mount("/", fMux)
 
-	pm, err := plugins.NewPluginManager(db,http.Handler(mux))
+	pm, err := plugins.NewPluginManager(db, http.Handler(mux))
 	if err != nil {
 		return err
 	}
-
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -67,20 +65,20 @@ func Run(r *RunOptions) error {
 
 	requestHandler := http.Handler(NewRequestHandler(auth, pm))
 
-	if r != nil && r.Verbose {
+	if a.Config.Verbose {
 		log.Warn("Running in verbose mode")
-		requestHandler = VerboseLoggingMiddleware(requestHandler)
+		requestHandler = VerboseLoggingMiddleware(requestHandler, nil)
 	}
 
 	// Now load the plugins (so that the server is ready when they are loaded)
 	go func() {
 		err := pm.Reload()
-		if err!=nil {
+		if err != nil {
 			log.Error(err)
 			pm.Close()
 			os.Exit(1)
 		}
-		log.Infof("Running heedy on %s",serverAddress)
+		log.Infof("Running heedy on %s", serverAddress)
 	}()
 
 	err = http.ListenAndServe(serverAddress, requestHandler)

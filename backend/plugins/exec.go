@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	"github.com/heedy/heedy/backend/assets"
 
@@ -69,6 +70,10 @@ func (e *Exec) Start() error {
 	e.proc.Stdout = os.Stdout
 	e.proc.Stderr = os.Stderr
 	e.proc.Dir = e.PluginDir
+	// An interrupt on the main process shouldn't interrupt the plugins, since we need to shut them down in order.
+	e.proc.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
 	stdin, err := e.proc.StdinPipe()
 	if err != nil {
 		e.proc = nil

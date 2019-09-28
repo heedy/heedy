@@ -1,22 +1,22 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"html/template"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
-	"errors"
 	"sync"
-	"context"
 
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/spf13/afero"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/heedy/heedy/backend/events"
 )
@@ -43,7 +43,6 @@ type setupMessage struct {
 // This will load the default config, overwritten with configFile, overwritten with c, and use that
 // as the "defaults" for fields given to the user.
 func Setup(directory string, c *assets.Configuration, configFile string, setupBind string) error {
-	
 
 	frontendFS := afero.NewBasePathFs(assets.FS(), "/public")
 	setupbytes, err := afero.ReadFile(frontendFS, "/setup.html")
@@ -73,11 +72,15 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 	mux := chi.NewMux()
 
 	setupServer := &http.Server{
-		Addr: setupBind,
+		Addr:    setupBind,
 		Handler: mux,
 	}
 
-	
+	if c.Verbose {
+		logrus.Warn("Running in verbose mode")
+		setupServer.Handler = VerboseLoggingMiddleware(mux, nil)
+	}
+
 	mux.Get("/setup", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/", http.StatusFound)
 	})
@@ -96,18 +99,18 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		setupMutex.Lock()
 		defer setupMutex.Unlock()
 		if setupSuccess {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,errors.New("Setup is already complete"))
+			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("Setup is already complete"))
 			return
 		}
-		log.Debug("Got create request")
+		logrus.Debug("Got create request")
 		sm := &setupMessage{}
 		err := rest.UnmarshalRequest(r, sm)
 		if err != nil {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		if sm.Directory != nil {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,errors.New("The directory cannot be set from the web setup for security purposes"))
+			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The directory cannot be set from the web setup for security purposes"))
 			return
 		}
 
@@ -116,25 +119,28 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			sm.Config.AdminUsers = &[]string{sm.User.Name}
 		}
 
-		log.Infof("Creating database in '%s'", directory)
+
+		logrus.Infof("Creating database in '%s'", directory)
 		a, err := assets.Create(directory, sm.Config, configFile)
 		if err != nil {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
+		a.Config.Verbose = c.Verbose
+		assets.SetGlobal(a) // Set global assets
+
 		if err = database.Create(a); err != nil {
 			os.RemoveAll(directory)
-			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		db, err := database.Open(a)
 		if err != nil {
-			rest.WriteJSONError(w,r,http.StatusInternalServerError,err)
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 			os.RemoveAll(directory)
 			return
 		}
-		
 
 		// Now add the default user
 		if err = db.CreateUser(&database.User{
@@ -144,7 +150,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			UserName: &sm.User.UserName,
 			Password: &sm.User.Password,
 		}); err != nil {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			db.Close()
 			os.RemoveAll(directory)
 			return
@@ -155,14 +161,16 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		// Now we load the main server, as if run was called
 		a, err = assets.Open(directory, nil)
 		if err != nil {
-			rest.WriteJSONError(w,r,http.StatusBadRequest,err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			os.RemoveAll(directory)
 		}
+		a.Config.Verbose = c.Verbose
+		// Reset the global assets
 		assets.SetGlobal(a)
 
 		// OK, setup was successfully completed.
 		setupSuccess = true
-		log.Info("Database Created!")
+		logrus.Info("Database Created!")
 		w.WriteHeader(http.StatusOK)
 
 		go setupServer.Shutdown(context.TODO())
@@ -174,7 +182,6 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		http.Redirect(w, r, "/setup/", http.StatusFound)
 	})
 
-	
 	host, port, err := net.SplitHostPort(setupBind)
 	if err != nil {
 		return err
@@ -184,7 +191,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		host = "localhost"
 	}
 
-	log.Infof("Open 'http://%s:%s' in your browser to set up heedy", host, port)
+	logrus.Infof("Open 'http://%s:%s' in your browser to set up heedy", host, port)
 
 	err = setupServer.ListenAndServe()
 	if err != http.ErrServerClosed {
@@ -195,7 +202,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 	if !setupSuccess {
 		return err
 	}
-	log.Info("Running Heedy Server")
+	logrus.Info("Running Heedy Server")
 	// Setup was successful. Run the full server
-	return Run(nil)
+	return Run(assets.Get(), nil)
 }

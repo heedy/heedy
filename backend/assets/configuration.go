@@ -268,6 +268,12 @@ type Configuration struct {
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
+
+	LogLevel *string `json:"log_level" hcl:"log_level"`
+	LogFile  *string `json:"log_file" hcl:"log_file"`
+
+	// The verbose option is not possible to set in config, it is passed as an arg. It is only here so that it is passed to plugins
+	Verbose bool `json:"verbose"`
 }
 
 func (c *Configuration) Validate() error {
@@ -566,6 +572,10 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				}
 			}
 		}
+	}
+
+	if overlay.Verbose {
+		base.Verbose = true
 	}
 
 	return base

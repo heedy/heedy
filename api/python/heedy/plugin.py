@@ -61,3 +61,12 @@ class Plugin:
         Fires the given event
         """
         return self.session.post("/api/heedy/v1/events", event)
+
+    def listConnections(self, **kwargs):
+        return self.session.get("api/heedy/v1/connections", params=kwargs)
+
+    def notify(self, n, **kwargs):
+        return self.session.post("/api/heedy/v1/notifications", n, params=kwargs)
+
+    def delete_notification(self, n):
+        return self.session.delete("/api/heedy/v1/notifications", params=n)

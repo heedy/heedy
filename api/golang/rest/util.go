@@ -150,3 +150,4 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 	w.Write([]byte(`{"result":"ok"}`))
 
 }
+

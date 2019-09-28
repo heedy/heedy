@@ -82,7 +82,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Actions = &action
 
-	di, err := OpenSQLData(c.DB.AdminDB().DB).ReadStreamData(si.SourceInfo.ID, &q)
+	di, err := OpenSQLData(c.DB.AdminDB()).ReadStreamData(si.SourceInfo.ID, &q)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
@@ -117,7 +117,7 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Actions = &action
 
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB().DB).RemoveStreamData(si.SourceInfo.ID, &q))
+	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.SourceInfo.ID, &q))
 }
 
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
@@ -157,7 +157,7 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB().DB).WriteStreamData(si.SourceInfo.ID, dv, &iq))
+	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq))
 }
 
 func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
@@ -170,7 +170,7 @@ func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, ErrNotActor)
 		return
 	}
-	l, err := OpenSQLData(c.DB.AdminDB().DB).StreamDataLength(si.SourceInfo.ID, action)
+	l, err := OpenSQLData(c.DB.AdminDB()).StreamDataLength(si.SourceInfo.ID, action)
 	rest.WriteJSON(w, r, l, err)
 }
 
@@ -199,7 +199,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	}
 	t := "append"
 	a := true
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB().DB).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
+	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
 		Type:    &t,
 		Actions: &a,
 	}))

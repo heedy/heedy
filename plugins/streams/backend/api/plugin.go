@@ -16,5 +16,5 @@ func init() {
 
 	// Register the sql updater, so that the tables for the plugin are automatically created
 	// and updated on database open
-	database.RegisterPlugin(PluginName, SQLVersion, SQLUpdater)
+	database.RegisterPlugin(PluginName, SQLVersion,SQLUpdater)
 }

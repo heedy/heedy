@@ -25,7 +25,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 		return err
 	}
 
-	tx, err := adb.DB.Beginx()
+	tx, err := adb.Beginx()
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 	return tx.Commit()
 }
 func delUser(adb *AdminDB, name string, sqlStatement string, args ...interface{}) error {
-	result, err := adb.DB.Exec(sqlStatement, args...)
+	result, err := adb.Exec(sqlStatement, args...)
 	return getExecError(result, err)
 }
 

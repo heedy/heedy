@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins"
+	"github.com/heedy/heedy/backend/events"
 )
 
 const PluginName = "notifications"
@@ -16,5 +17,10 @@ func init() {
 
 	// Register the sql updater, so that the tables for the plugin are automatically created
 	// and updated on database open
-	database.RegisterPlugin(PluginName, SQLVersion, SQLUpdater)
+	database.RegisterPlugin(PluginName, SQLVersion, func(db *database.AdminDB,sqlVersion int) error {
+		e := events.NewFilledHandler(db, events.GlobalHandler)
+		RegisterNotificationHooks(e)
+
+		return SQLUpdater(db,sqlVersion)
+	})
 }
