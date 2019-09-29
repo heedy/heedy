@@ -1,5 +1,5 @@
 <template>
-  <h-page-container>
+  <v-flex>
     <v-card>
       <v-card-title>
         <v-list-item two-line style="margin-top: -8px;">
@@ -78,12 +78,12 @@
         </v-list-item>
       </v-card-title>
     </v-card>
-  </h-page-container>
+  </v-flex>
 </template>
 
 <script>
-import api from "../../api.mjs";
-import { moment } from "../../dist.mjs";
+import api from "../../../api.mjs";
+import { Moment } from "../../../dist.mjs";
 export default {
   data: () => ({
     showkey: false,
@@ -98,11 +98,11 @@ export default {
     }
   },
   computed: {
-    accessed: function() {
+    accessed() {
       if (this.connection.last_access_date == null) {
         return "never";
       }
-      return moment(this.connection.last_access_date).calendar(null, {
+      return Moment(this.connection.last_access_date).calendar(null, {
         sameDay: "[Today]",
         nextDay: "[Tomorrow]",
         nextWeek: "dddd",

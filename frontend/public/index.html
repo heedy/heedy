@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <link rel="modulepreload" href="./static/app.mjs">
   <link rel="modulepreload" href="./static/dist.mjs">
+  <link rel="modulepreload" href="./static/api.mjs">
 
-  {{range .Frontend}}<link rel="modulepreload" href="./static/{{.Path}}">
+  {{range .Frontend}}
+  <link rel="modulepreload" href="./static/{{.Path}}">
   {{end}}
-  <link rel="preload" href="./static/fonts/MaterialIcons-Regular.woff2">
-  <link rel="preload" href="./static/fonts/fa-solid-900.woff2">
-  <link rel="preload" href="./static/fonts/roboto-latin-400.woff2">
-  <link rel="preload" href="./static/fonts/roboto-latin-700.woff2">
-  <link rel="preload" href="./static/fonts/roboto-latin-500.woff2">
+
+  <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/MaterialIcons-Regular.woff2">
+  <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/roboto-latin-400.woff2">
+  <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/roboto-latin-700.woff2">
+  <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/roboto-latin-500.woff2">
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -18,6 +22,7 @@
   <!--<link rel="icon" href="./favicon.ico" />-->
   <title>heedy</title>
 </head>
+
 <body>
   <noscript>
     <strong>
@@ -37,4 +42,5 @@
     setup({{.}});
   </script>
 </body>
+
 </html>

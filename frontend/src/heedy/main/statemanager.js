@@ -9,13 +9,23 @@ export default {
       type: ""
     },
     users: {},
+    // Components to show for a user
+    user_components: [],
+
     sources: {},
+    // Components to show for a source
+    source_components: [],
+    // The custom pages to show for the given source type
+    source_custom_pages: {},
 
     // The current user's connections
     connections: null,
+    // Components to show in the connection
+    connection_components: [],
 
     // A list of IDs under each user's key
     userSources: {},
+    connectionSources: {},
 
     // The following are initialized by the sourceInjector
     sourceCreators: [],
@@ -57,6 +67,14 @@ export default {
         srcidarray.push(v.sources[i].id);
       }
       Vue.set(state.userSources, v.user, srcidarray);
+    },
+    setConnectionSources(state, v) {
+      let srcidarray = [];
+      for (let i = 0; i < v.sources.length; i++) {
+        Vue.set(state.sources, v.sources[i].id, v.sources[i]);
+        srcidarray.push(v.sources[i].id);
+      }
+      Vue.set(state.connectionSources, v.id, srcidarray);
     },
     setConnectionScopes(state, v) {
       state.connectionScopes = v;
@@ -146,7 +164,37 @@ export default {
 
       } else {
         commit("setUserSources", {
-          user: q.name,
+          user: q.username,
+          sources: res.data
+        });
+      }
+
+
+      if (q.hasOwnProperty("callback")) {
+        q.callback();
+      }
+
+    },
+    readConnectionSources: async function ({
+      commit,
+      rootState
+    }, q) {
+      console.log("Reading sources for connection", q.id);
+      let query = {
+        connection: q.id
+      };
+
+
+      let res = await api("GET", `api/heedy/v1/sources`, query);
+      if (!res.response.ok) {
+        commit("alert", {
+          type: "error",
+          text: res.data.error_description
+        });
+
+      } else {
+        commit("setConnectionSources", {
+          id: q.id,
           sources: res.data
         });
       }

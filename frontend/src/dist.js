@@ -17,7 +17,12 @@ import 'codemirror/mode/python/python.js';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
 
-import moment from "moment";
+import Moment from "moment";
+import MarkdownIt from 'markdown-it';
+
+let md = new MarkdownIt({
+    html: false
+});
 
 // Disable the vue console messages
 Vue.config.productionTip = false;
@@ -37,7 +42,9 @@ export {
     Vuetify,
     VueCodemirror,
     mapState,
-    moment
+    Moment,
+    MarkdownIt,
+    md
 };
 
 export default Vue;

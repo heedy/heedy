@@ -1,5 +1,5 @@
 <template>
-  <h-page-container>
+  <v-flex>
     <v-card>
       <v-container grid-list-md>
         <v-layout row wrap>
@@ -23,7 +23,7 @@
         </v-layout>
       </v-container>
     </v-card>
-  </h-page-container>
+  </v-flex>
 </template>
 <script>
 export default {

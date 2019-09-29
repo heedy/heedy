@@ -188,7 +188,7 @@ export default {
         return true;
       }
       // Otherwise, only show it if there are menu items for it
-      return this.secondaryMenu().length > 0;
+      return this.secondaryMenu.length > 0;
     },
     username() {
       let u = this.$store.state.app.info.user;

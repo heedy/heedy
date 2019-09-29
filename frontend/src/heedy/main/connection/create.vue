@@ -1,6 +1,11 @@
 <template>
-  <h-page-container>
-    <v-flex justify-center align-center text-center style="padding: 10px; padding-bottom: 20px;">
+  <h-page-container noflex>
+    <v-flex
+      justify-center
+      align-center
+      text-center
+      style="padding: 10px; padding-bottom: 20px;padding-top:20px;"
+    >
       <h1 style="color:#1976d2;">Create a new Connection</h1>
     </v-flex>
     <v-flex>
@@ -42,7 +47,7 @@
   </h-page-container>
 </template>
 <script>
-import api from "../../api.mjs";
+import api from "../../../api.mjs";
 export default {
   data: () => ({
     description: "",

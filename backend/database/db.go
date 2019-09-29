@@ -214,9 +214,9 @@ type Source struct {
 	Details
 
 	Owner      *string `json:"owner,omitempty" db:"owner"`
-	Connection *string `json:"connection,omitempty" db:"connection"`
+	Connection *string `json:"connection" db:"connection"`
 
-	Key *string `json:"key,omitempty" db:"key"`
+	Key *string `json:"key" db:"key"`
 
 	Type *string     `json:"type,omitempty" db:"type"`
 	Meta *JSONObject `json:"meta,omitempty" db:"meta"`

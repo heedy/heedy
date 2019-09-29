@@ -6,31 +6,50 @@ import PublicHome from "./main/public_home.vue";
 import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
 import Settings from "./main/settings.vue";
-import User from "./main/user.vue";
 
-import Source from "./main/source.vue";
-import SourceRouter from "./main/source_router.vue";
+
+import UserInjector, {
+    userRoutes
+} from "./main/user/injector.js";
+import UserRouter from "./main/user/router.vue";
+import User from "./main/user/index.vue";
+import UserHeader from "./main/user/header.vue";
+import UserSources from "./main/user/sources.vue";
+
 import SourceInjector, {
-    sourceTypeRouter
-} from "./main/sourceInjector.js";
+    sourceRoutes
+} from "./main/source/injector.js";
+import Source from "./main/source/index.vue";
+import SourceRouter from "./main/source/router.vue";
+import SourceHeader from "./main/source/header.vue";
+import SourceList from "./main/source/list.vue";
+
+import ConnectionInjector, {
+    connectionRoutes
+} from "./main/connection/injector.js";
+import ConnectionRouter from "./main/connection/router.vue";
+import Connection from "./main/connection/index.vue";
+import ConnectionHeader from "./main/connection/header.vue";
+import ConnectionCreate from "./main/connection/create.vue";
+import ConnectionUpdate from "./main/connection/update.vue";
+import ConnectionSources from "./main/connection/sources.vue";
 
 import Connections from "./main/connections.vue";
-import Connection from "./main/connection.vue";
-import CreateConnection from "./main/create_connection.vue";
-import UpdateConnection from "./main/update_connection.vue";
-import ConnectionRouter from "./main/connection_router.vue";
+
 
 import vuexModule from "./main/statemanager.js";
-
-import registerComponents from "./main/components.js";
+import registerCoreComponents from "./main/components.js";
 
 
 function setup(app) {
 
     // Adds the components that are used throughout the UI
-    registerComponents(Vue);
+    registerCoreComponents(Vue);
+    Vue.component("h-source-list", SourceList);
 
-    // Inject the source handler to the app
+    // Inject the user/connection/source handlers into the app
+    app.inject("user", UserInjector);
+    app.inject("connection", ConnectionInjector);
     app.inject("source", SourceInjector);
 
     // Add the current user to the cache
@@ -40,6 +59,21 @@ function setup(app) {
     app.addVuexModule(vuexModule);
 
     app.setTheme(Theme);
+
+    app.user.addComponent({
+        key: "header",
+        weight: 0,
+        component: UserHeader
+    });
+    app.user.addComponent({
+        key: "sources",
+        weight: 1,
+        component: UserSources
+    });
+    app.user.addRoute({
+        path: "/",
+        component: User
+    });
 
 
     if (app.info.user != null) {
@@ -69,19 +103,38 @@ function setup(app) {
             path: "/connections/:connectionid",
             props: true,
             component: ConnectionRouter,
-            children: [{
-                    path: "",
-                    component: Connection
-                },
-                {
-                    path: "update",
-                    component: UpdateConnection
-                }
-            ]
+            children: connectionRoutes
         });
+
+        app.connection.addRoute({
+            path: "",
+            component: Connection
+        })
+
+        app.connection.addRoute({
+            path: "update",
+            component: ConnectionUpdate
+        })
+
+
+        // Add the default connection UI
+        app.connection.addComponent({
+            key: "header",
+            weight: 0,
+            component: ConnectionHeader
+        });
+        app.connection.addComponent({
+            key: "sources",
+            weight: 1,
+            component: ConnectionSources
+        });
+
+
+
+
         app.addRoute({
             path: "/create/connection",
-            component: CreateConnection
+            component: ConnectionCreate
         });
 
         app.addRoute({
@@ -122,23 +175,27 @@ function setup(app) {
     app.addRoute({
         path: "/users/:username",
         props: true,
-        component: User
+        component: UserRouter,
+        children: userRoutes
     });
 
     app.addRoute({
         path: "/sources/:sourceid",
         props: true,
         component: SourceRouter,
-        // The children are initialized by the injector.
-        children: sourceTypeRouter
+        children: sourceRoutes
     });
 
-    // Add the root source router
-    sourceTypeRouter.push({
-        path: '',
-        props: true,
+    app.source.addRoute({
+        path: "/",
         component: Source
-    });
+    })
+
+    app.source.addComponent({
+        key: "header",
+        weight: 0,
+        component: SourceHeader
+    })
 
 }
 

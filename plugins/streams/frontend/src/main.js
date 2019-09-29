@@ -1,15 +1,9 @@
 import Create from "./main/create.vue";
-import Stream from "./main/stream.vue";
+import StreamHeader from "./main/stream_header.vue";
 
 function setup(app) {
 
-  if (app.info.user!=null) {
-    app.source.addCreator({
-      key: "stars",
-      text: "Star Rating",
-      icon: "star",
-      route: "/create/source/stream/stars"
-    });
+  if (app.info.user != null) {
 
     app.source.addCreator({
       key: "rawstream",
@@ -23,8 +17,15 @@ function setup(app) {
       component: Create
     });
   }
-
-  app.source.typeComponent("stream",Stream);
+  /* Will want to have a better replacement header once 
+  start adding stream visualizations.
+  app.source.addComponent({
+    component: StreamHeader,
+    type: "stream",
+    key: "header"
+  })
+  */
+  //app.source.replacePage("stream", Stream);
 }
 
 export default setup;

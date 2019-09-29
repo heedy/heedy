@@ -64,8 +64,8 @@
   </h-page-container>
 </template>
 <script>
-import Vue from "../../dist.mjs";
-import api from "../../api.mjs";
+import Vue from "../../../dist.mjs";
+import api from "../../../api.mjs";
 
 export default {
   props: {
