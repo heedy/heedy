@@ -61,13 +61,14 @@ type hclConnection struct {
 
 	Description *string   `json:"description" hcl:"description"`
 	Avatar      *string   `json:"avatar" hcl:"avatar"`
+	Type        *string   `json:"type" hcl:"type"`
 	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 
-	Settings      *cty.Value `hcl:"settings,attr"`
-	SettingSchema *cty.Value `hcl:"setting_schema,attr"`
+	Settings       *cty.Value `hcl:"settings,attr"`
+	SettingsSchema *cty.Value `hcl:"settings_schema,attr"`
 
 	Sources []hclSource `hcl:"source,block"`
 	On      []Event     `hcl:"on,block" json:"on,omitempty"`
@@ -286,7 +287,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			if err != nil {
 				return nil, err
 			}
-			conn.SettingSchema, err = loadJSONObject(hc.SettingSchema)
+			conn.SettingsSchema, err = loadJSONObject(hc.SettingsSchema)
 			if err != nil {
 				return nil, err
 			}

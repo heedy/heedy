@@ -71,13 +71,13 @@ func NewAuth(db *database.AdminDB) *Auth {
 	}
 }
 
-func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
+func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB, error) {
 	// First, try authenticating as a connection
 	accessToken := r.Header.Get("Authorization")
 	if len(accessToken) > 0 {
 		const prefix = "Bearer "
-		if len(accessToken) < len(prefix) || !strings.EqualFold(accessToken[:len(prefix)],prefix) {
-			return nil,errors.New("bad_request: Malformed authorization header")
+		if len(accessToken) < len(prefix) || !strings.EqualFold(accessToken[:len(prefix)], prefix) {
+			return nil, errors.New("bad_request: Malformed authorization header")
 		}
 		accessToken = accessToken[len(prefix):]
 	} else {
@@ -87,14 +87,14 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 
 	if len(accessToken) > 0 {
 		// Try logging in as a connection
-		c,err := a.DB.GetConnectionByAccessToken(accessToken)
-		if err!=nil {
-			return nil,errors.New("access_denied: invalid API key")
+		c, err := a.DB.GetConnectionByAccessToken(accessToken)
+		if err != nil {
+			return nil, errors.New("access_denied: invalid API key")
 		}
 		if !*c.Enabled {
 			return nil, errors.New("connection_disabled: the connection was disabled")
 		}
-		return database.NewConnectionDB(a.DB,c),nil
+		return database.NewConnectionDB(a.DB, c), nil
 
 	}
 
@@ -110,6 +110,13 @@ func (a *Auth) Authenticate(r *http.Request) (database.DB, error) {
 				// Return the logged in user database
 				return database.NewUserDB(a.DB, username), nil
 			}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "token",
+				Value:    "",
+				MaxAge:   -1,
+				SameSite: http.SameSiteLaxMode,
+				Path:     "/",
+			})
 		}
 	}
 
@@ -168,7 +175,7 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Add the token
-		tok, err := a.DB.AddLoginToken(uname)
+		tok, err := a.DB.AddLoginToken(uname, r.Header.Get("User-Agent"))
 		if err != nil {
 			writeAuthError(w, r, 400, "server_error", err.Error())
 			return

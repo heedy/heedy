@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-
 var databaseEventType = map[SqliteHook]string{
 	SqliteHook{"users", SQL_CREATE}:       "user_create",
 	SqliteHook{"connections", SQL_CREATE}: "connection_create",
@@ -16,15 +15,15 @@ var databaseEventType = map[SqliteHook]string{
 	SqliteHook{"users", SQL_UPDATE}:       "user_update",
 	SqliteHook{"connections", SQL_UPDATE}: "connection_update",
 	SqliteHook{"sources", SQL_UPDATE}:     "source_update",
-	SqliteHook{"users", SQL_DELETE}:        "user_delete",
-	SqliteHook{"connections", SQL_DELETE}:  "connection_delete",
-	SqliteHook{"sources", SQL_DELETE}:      "source_delete",
+	SqliteHook{"users", SQL_DELETE}:       "user_delete",
+	SqliteHook{"connections", SQL_DELETE}: "connection_delete",
+	SqliteHook{"sources", SQL_DELETE}:     "source_delete",
 }
 
 // getEvent returns the username, connection id, and source id associated with the given event.
 // The associated stmt should automatically return empty strings for inapplicable values
 func getEvent(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Event, error) {
-	rows, err := SQLiteSelectConn(c,stmt,rowid)
+	rows, err := SQLiteSelectConn(c, stmt, rowid)
 	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("Sqlite hook error %w", err)
@@ -54,10 +53,12 @@ func getEvent(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Event, error) {
 		}
 	}
 
+	plugin := tsel(vals[2])
+
 	return &Event{
 		User:       tsel(vals[0]),
 		Connection: tsel(vals[1]),
-		Plugin:     tsel(vals[2]),
+		Plugin:     &plugin,
 		Source:     tsel(vals[3]),
 		Key:        tsel(vals[4]),
 		Type:       tsel(vals[5]),
@@ -79,28 +80,25 @@ func databaseHook(s SqliteHookData) {
 		}
 	}
 
-	evt, err := getEvent(s.Conn,getStmt(s.Table), s.RowID)
+	evt, err := getEvent(s.Conn, getStmt(s.Table), s.RowID)
 	if err != nil {
 		logrus.Error(err)
 		return
 
 	}
-	evt.Event = databaseEventType[SqliteHook{s.Table,s.Type}]
+	evt.Event = databaseEventType[SqliteHook{s.Table, s.Type}]
 	go Fire(evt)
-
 
 }
 
 func RegisterDatabaseHooks() {
-	AddSQLHook("users",SQL_CREATE,databaseHook)
-	AddSQLHook("connections",SQL_CREATE,databaseHook)
-	AddSQLHook("sources",SQL_CREATE,databaseHook)
-	AddSQLHook("users",SQL_UPDATE,databaseHook)
-	AddSQLHook("connections",SQL_UPDATE,databaseHook)
-	AddSQLHook("sources",SQL_UPDATE,databaseHook)
-	AddSQLHook("users",SQL_DELETE,databaseHook)
-	AddSQLHook("connections",SQL_DELETE,databaseHook)
-	AddSQLHook("sources",SQL_DELETE,databaseHook)
+	AddSQLHook("users", SQL_CREATE, databaseHook)
+	AddSQLHook("connections", SQL_CREATE, databaseHook)
+	AddSQLHook("sources", SQL_CREATE, databaseHook)
+	AddSQLHook("users", SQL_UPDATE, databaseHook)
+	AddSQLHook("connections", SQL_UPDATE, databaseHook)
+	AddSQLHook("sources", SQL_UPDATE, databaseHook)
+	AddSQLHook("users", SQL_DELETE, databaseHook)
+	AddSQLHook("connections", SQL_DELETE, databaseHook)
+	AddSQLHook("sources", SQL_DELETE, databaseHook)
 }
-
-

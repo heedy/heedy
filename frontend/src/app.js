@@ -7,8 +7,7 @@ import Vue, {
 var vuexPlugins = [];
 var vuexModules = {};
 
-var appMenu = [];
-var secondaryMenu = [];
+var appMenu = {};
 
 var injected = {};
 
@@ -20,7 +19,7 @@ var routes = {};
 var currentTheme = null;
 
 class App {
-  constructor(pluginName) {
+  constructor(appinfo, pluginName) {
     this.info = appinfo;
     this.pluginName = pluginName;
 
@@ -76,18 +75,16 @@ class App {
    * @param {*} m Menu item to add. It is given an object
    *        with items "key", which is a unique ID, text, the text to display,
    *        icon, the icon to show, and route, which is the route to navigate to.
+   *        Optionally also has a "location" attribute which hints at where the user
+   *        might want the menu (primary,secondary,spaced_primary). 
+   *        Can also have "component" which is a vue component to display instead of icon.
+   *        Be aware that the component must have a "state" prop, where it is told how to behave
+   *        i.e. whether the menu is small, on bottom, etc.
    */
   addMenuItem(m) {
-    appMenu.push(m);
+    appMenu[m.key] = m;
   }
 
-  /**
-   * Adds an item to the secondary menu
-   * @param {*} m The menu itm to add. Same exact concept as addMenuItem.
-   */
-  addSecondaryMenuItem(m) {
-    secondaryMenu.push(m);
-  }
 
   inject(name, p) {
     injected[name] = p;
@@ -96,7 +93,7 @@ class App {
 
 }
 
-async function setup() {
+async function setup(appinfo) {
   console.log("Setting up...");
 
   // Start running the import statements
@@ -105,7 +102,7 @@ async function setup() {
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);
     try {
-      (await plugins[i]).default(new App(appinfo.frontend[i].name));
+      (await plugins[i]).default(new App(appinfo, appinfo.frontend[i].name));
     } catch (err) {
       console.error(err);
       alert(`Failed to load plugin '${appinfo.frontend[i].name}': ${err.message}`);
@@ -126,8 +123,8 @@ async function setup() {
   vuexModules["app"] = {
     state: {
       info: appinfo,
-      menu: appMenu,
-      secondaryMenu: secondaryMenu
+      // menu_items gives all the defined menu items
+      menu_items: appMenu,
     },
     mutations: {
       updateLoggedInUser(state, v) {
@@ -177,4 +174,4 @@ async function setup() {
 
 }
 
-setup();
+export default setup;

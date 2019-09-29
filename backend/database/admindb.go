@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/heedy/heedy/backend/assets"
 )
@@ -57,22 +58,49 @@ func (db *AdminDB) AuthUser(username string, password string) (string, string, e
 	return selectResult.UserName, selectResult.Password, nil
 }
 
-// LoginToken gets an active login token's username
+func shouldUpdateLastUsed(d Date) bool {
+	cy, cm, cd := time.Now().Date()
+	dy, dm, dd := time.Time(d).Date()
+	return cd > dd || cm > dm || cy > dy
+}
+
+// LoginToken gets an active login token's username, and sets the last acces date if not today
 func (db *AdminDB) LoginToken(token string) (string, error) {
 	var selectResult struct {
-		UserName string
+		UserName     string `db:"username"`
+		DateLastUsed Date   `db:"last_access_date"`
 	}
-	err := db.Get(&selectResult, "SELECT username FROM user_logintokens WHERE token=?;", token)
+	err := db.Get(&selectResult, "SELECT username,last_access_date FROM user_logintokens WHERE token=?;", token)
+	if err == nil && shouldUpdateLastUsed(selectResult.DateLastUsed) {
+		_, err = db.Exec("UPDATE user_logintokens SET last_access_date=DATE('now') WHERE token=?;", token)
+	}
 	return selectResult.UserName, err
 }
 
+// GetConnectionByAccessToken reads the connection corresponding to the given access token,
+// and sets the last access date if not today
+func (db *AdminDB) GetConnectionByAccessToken(accessToken string) (*Connection, error) {
+	if accessToken == "" {
+		return nil, ErrNotFound
+	}
+	c := &Connection{}
+	err := db.Get(c, "SELECT * FROM connections WHERE (access_token=?) LIMIT 1;", accessToken)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	if err == nil && (c.LastAccessDate == nil || shouldUpdateLastUsed(*c.LastAccessDate)) {
+		_, err = db.Exec("UPDATE connections SET last_access_date=DATE('now') WHERE id=?;", c.ID)
+	}
+	return c, err
+}
+
 // AddLoginToken gets the token for a given user
-func (db *AdminDB) AddLoginToken(username string) (token string, err error) {
+func (db *AdminDB) AddLoginToken(username string, description string) (token string, err error) {
 	token, err = GenerateKey(15)
 	if err != nil {
 		return
 	}
-	result, err2 := db.Exec("INSERT INTO user_logintokens (username,token) VALUES (?,?);", username, token)
+	result, err2 := db.Exec("INSERT INTO user_logintokens (username,token,description) VALUES (?,?,?);", username, token, description)
 	err = getExecError(result, err2)
 	return
 }
@@ -284,19 +312,6 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 			emptyString := ""
 			c.AccessToken = &emptyString
 		}
-	}
-	return c, err
-}
-
-// GetConnectionByAccessToken reads the connection corresponding to the given access token
-func (db *AdminDB) GetConnectionByAccessToken(accessToken string) (*Connection, error) {
-	if accessToken == "" {
-		return nil, ErrNotFound
-	}
-	c := &Connection{}
-	err := db.Get(c, "SELECT * FROM connections WHERE (access_token=?) LIMIT 1;", accessToken)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
 	}
 	return c, err
 }

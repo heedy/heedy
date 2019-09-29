@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/heedy/heedy/backend/database"
 )
@@ -22,9 +23,10 @@ const sqlSchema = `
 		title VARCHAR NOT NULL,
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
+		timestamp REAL NOT NULL,
 
-		-- User notifications are notify=true
-		-- notify BOOLEAN NOT NULL DEFAULT false,
+		-- User notifications are global=true
+		global BOOLEAN NOT NULL DEFAULT true,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,key),
@@ -44,8 +46,9 @@ const sqlSchema = `
 		title VARCHAR NOT NULL,
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
+		timestamp REAL NOT NULL,
 
-		notify BOOLEAN NOT NULL DEFAULT false,
+		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,connection,key),
@@ -72,8 +75,9 @@ const sqlSchema = `
 		title VARCHAR NOT NULL,
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
+		timestamp REAL NOT NULL,
 
-		notify BOOLEAN NOT NULL DEFAULT false,
+		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,connection,source,key),
@@ -113,7 +117,8 @@ func SQLUpdater(db *database.AdminDB, curversion int) error {
 var ErrAccessDenied = errors.New("access_denied: You don't have necessary permissions for the given query")
 
 type Notification struct {
-	Key string `json:"key,omitempty"`
+	Key       string  `json:"key,omitempty"`
+	Timestamp float64 `json:"timestamp,omitempty"`
 
 	User       *string `json:"user,omitempty"`
 	Connection *string `json:"connection,omitempty"`
@@ -124,7 +129,7 @@ type Notification struct {
 	Description *string `json:"description,omitempty"`
 
 	Seen   *bool `json:"seen,omitempty"`
-	Notify *bool `json:"notify,omitempty"`
+	Global *bool `json:"global,omitempty"`
 }
 
 type NotificationsQuery struct {
@@ -132,7 +137,7 @@ type NotificationsQuery struct {
 	Connection *string `json:"connection,omitempty" schema:"connection"`
 	Source     *string `json:"source,omitempty" schema:"source"`
 
-	Notify *bool   `json:"notify,omitempty" schema:"notify"`
+	Global *bool   `json:"global,omitempty" schema:"global"`
 	Seen   *bool   `json:"seen,omitempty" schema:"seen"`
 	Key    *string `json:"key,omitempty" schema:"key"`
 
@@ -189,9 +194,9 @@ func extractQueryBasics(o *NotificationsQuery) ([]string, []interface{}) {
 		cNames = append(cNames, "seen")
 		cValues = append(cValues, *o.Seen)
 	}
-	if o.Notify != nil {
-		cNames = append(cNames, "notify")
-		cValues = append(cValues, *o.Notify)
+	if o.Global != nil {
+		cNames = append(cNames, "global")
+		cValues = append(cValues, *o.Global)
 	}
 	if o.Key != nil {
 		cNames = append(cNames, "key")
@@ -314,9 +319,9 @@ func extractNotificationBasics(n *Notification) ([]string, []interface{}) {
 		cNames = append(cNames, "seen")
 		cValues = append(cValues, *n.Seen)
 	}
-	if n.Notify != nil {
-		cNames = append(cNames, "notify")
-		cValues = append(cValues, *n.Notify)
+	if n.Global != nil {
+		cNames = append(cNames, "global")
+		cValues = append(cValues, *n.Global)
 	}
 	if n.Type != nil {
 		cNames = append(cNames, "type")
@@ -340,9 +345,24 @@ func WriteNotification(db database.DB, n *Notification) error {
 	if n.Key == "" || n.Title == nil || *n.Title == "" {
 		return errors.New("bad_request: Notifications must have a valid key and title")
 	}
+	if n.Timestamp != 0 {
+		return errors.New("bad_request: timestamps are set automatically")
+	}
+	if n.User == nil && n.Connection == nil && n.Source == nil && dbid != "heedy" {
+		// The notification is to be inserted to itself
+		i := strings.Index(dbid, "/")
+		if i > -1 {
+			conn := dbid[i+1:]
+			n.Connection = &conn
+		} else {
+			n.User = &dbid
+		}
+	}
 
 	// Set up the columns that will be set on the notification
 	cNames, cValues := extractNotificationBasics(n)
+	cNames = append(cNames, "timestamp")
+	cValues = append(cValues, float64(time.Now().UnixNano())*1e-9)
 	eS := excludeStmt(cNames)
 
 	if n.Source != nil {
@@ -401,6 +421,9 @@ func WriteNotification(db database.DB, n *Notification) error {
 // UpdateNotification is a special version that modifies all notifications satisfying the constraints given in NotificationsQuery
 func UpdateNotification(db database.DB, n *Notification, o *NotificationsQuery) error {
 	includeUser, includeConnection, includeSource := includeTable(o)
+	if n.Timestamp != 0 {
+		return errors.New("bad_request: timestamps are set automatically")
+	}
 
 	o, err := queryAllowed(db, o)
 	if err != nil {

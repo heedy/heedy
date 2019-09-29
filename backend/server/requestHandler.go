@@ -151,7 +151,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 		}
 
-		db, err := a.auth.Authenticate(r)
+		db, err := a.auth.Authenticate(w, r)
 		if err != nil {
 			// Authentication failed. This means that it was an illegal request, and we treat it as such
 			time.Sleep(time.Second)

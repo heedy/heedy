@@ -5,59 +5,45 @@
         <v-icon style="color:lightgray;opacity:0.3">edit</v-icon>
       </v-btn>
     </div>
-    <v-speed-dial bottom right absolute v-if="editable && !editing"
+    <v-speed-dial
+      bottom
+      right
+      absolute
+      v-if="editable && !editing"
       direction="left"
       v-model="fab"
       transition="slide-x-reverse-transition"
       open-on-hover
     >
-        <template v-slot:activator>
-        <v-btn
-          v-model="fab"
-          color="blue darken-2"
-          dark
-          fab
-        >
+      <template v-slot:activator>
+        <v-btn v-model="fab" color="blue darken-2" dark fab>
           <v-icon v-if="fab">close</v-icon>
           <v-icon v-else>add</v-icon>
         </v-btn>
       </template>
       <v-tooltip v-for="item in sourceCreators" :key="item.key" bottom>
         <template v-slot:activator="{ on }">
-          <v-btn
-            fab
-            dark
-            small
-            color="green"
-            v-on="on"
-            :to="item.route"
-          >
+          <v-btn fab dark small color="green" v-on="on" :to="item.route">
             <v-icon>{{ item.icon }}</v-icon>
           </v-btn>
         </template>
         <span>{{ item.text }}</span>
       </v-tooltip>
-      
     </v-speed-dial>
     <v-container grid-list-md>
       <v-layout row wrap>
         <v-flex xs12 sm4 md3 lg2 text-center justify-center>
           <template v-if="!editing">
-            <avatar :size="120" :image="user.avatar" :colorHash="user.username" ></avatar>
+            <h-avatar :size="120" :image="user.avatar" :colorHash="user.username"></h-avatar>
             <h5 style="color:gray;padding-top:10px">{{user.username}}</h5>
           </template>
           <template v-else>
-            <avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.username" ></avatar-editor>
+            <h-avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.username"></h-avatar-editor>
           </template>
         </v-flex>
         <v-flex xs12 sm8 md9 lg10>
           <h2 v-if="!editing">{{ user.name==""?user.username:user.name}}</h2>
-          <v-text-field
-            v-else
-            :label="user.name==''?user.username:user.name"
-            solo
-            v-model="name"
-          ></v-text-field>
+          <v-text-field v-else :label="user.name==''?user.username:user.name" solo v-model="name"></v-text-field>
           <v-textarea v-if="editing" solo label="No description given." v-model="description"></v-textarea>
           <p v-else-if="user.description!=''">{{ user.description }}</p>
           <p v-else style="color:lightgray;">No description given.</p>
@@ -73,16 +59,9 @@
 </template>
 
 <script>
-
-import {Avatar, AvatarEditor} from "../components.mjs";
-
-import api from "../api.mjs";
+import api from "../../api.mjs";
 
 export default {
-  components: {
-    Avatar,
-    AvatarEditor
-  },
   data: () => ({
     editing: false,
     modified: {},

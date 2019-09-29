@@ -1,3 +1,4 @@
+import Vue from "../dist.mjs";
 
 import Theme from "./main/theme.vue";
 
@@ -9,7 +10,9 @@ import User from "./main/user.vue";
 
 import Source from "./main/source.vue";
 import SourceRouter from "./main/source_router.vue";
-import SourceInjector, {sourceTypeRouter} from "./main/sourceInjector.js";
+import SourceInjector, {
+    sourceTypeRouter
+} from "./main/sourceInjector.js";
 
 import Connections from "./main/connections.vue";
 import Connection from "./main/connection.vue";
@@ -17,30 +20,38 @@ import CreateConnection from "./main/create_connection.vue";
 import UpdateConnection from "./main/update_connection.vue";
 import ConnectionRouter from "./main/connection_router.vue";
 
-
 import vuexModule from "./main/statemanager.js";
 
-
+import registerComponents from "./main/components.js";
 
 
 function setup(app) {
-    // Inject the source handler to the app
-    app.inject("source",SourceInjector);
 
+    // Adds the components that are used throughout the UI
+    registerComponents(Vue);
+
+    // Inject the source handler to the app
+    app.inject("source", SourceInjector);
+
+    // Add the current user to the cache
+    if (app.info.user != null) {
+        vuexModule.state.users[app.info.user.name] = app.info.user;
+    }
     app.addVuexModule(vuexModule);
-    
+
     app.setTheme(Theme);
 
-    
-    if (app.info.user!=null) {
+
+    if (app.info.user != null) {
         // Pages to set up when user is logged in
-        app.addSecondaryMenuItem({
+        app.addMenuItem({
             key: "heedySettings",
             text: "Settings",
             icon: "settings",
-            route: "/settings"
+            route: "/settings",
+            location: "secondary"
         });
-        
+
 
         app.addRoute({
             path: "/logout",
@@ -58,8 +69,7 @@ function setup(app) {
             path: "/connections/:connectionid",
             props: true,
             component: ConnectionRouter,
-            children: [
-                {
+            children: [{
                     path: "",
                     component: Connection
                 },
@@ -83,7 +93,8 @@ function setup(app) {
             key: "connections",
             text: "Connections",
             icon: "settings_input_component",
-            route: "/connections"
+            route: "/connections",
+            location: "primary",
         });
 
     } else {
@@ -101,10 +112,11 @@ function setup(app) {
             key: "heedyHome",
             text: "Home",
             icon: "home",
-            route: "/"
+            route: "/",
+            location: "primary"
         });
-    } 
-    
+    }
+
     // Pages that are active in all situations
 
     app.addRoute({
@@ -127,7 +139,7 @@ function setup(app) {
         props: true,
         component: Source
     });
-    
+
 }
 
 export default setup;

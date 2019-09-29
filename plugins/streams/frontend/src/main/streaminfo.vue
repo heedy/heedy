@@ -1,5 +1,5 @@
 <template>
-    <v-card>
+  <v-card>
     <div style="position:absolute;top:2px;right:16px;" v-if="editable && !editing">
       <v-btn icon @click="editing=true">
         <v-icon style="color:lightgray;opacity:0.3">edit</v-icon>
@@ -9,11 +9,11 @@
       <v-layout row wrap>
         <v-flex xs12 sm4 md3 lg2 text-center justify-center>
           <template v-if="!editing">
-            <avatar :size="120" :image="stream.avatar" :colorHash="stream.id" ></avatar>
+            <h-avatar :size="120" :image="stream.avatar" :colorHash="stream.id"></h-avatar>
             <h5 style="color:gray;padding-top:10px">{{stream.name}}</h5>
           </template>
           <template v-else>
-            <avatar-editor ref="avatarEditor" :image="stream.avatar" :colorHash="stream.id" ></avatar-editor>
+            <h-avatar-editor ref="avatarEditor" :image="stream.avatar" :colorHash="stream.id"></h-avatar-editor>
           </template>
         </v-flex>
         <v-flex xs12 sm8 md9 lg10>
@@ -38,26 +38,19 @@
   </v-card>
 </template>
 <script>
-
-import {Avatar, AvatarEditor} from "../../heedy/components.mjs";
-
-import api from "../../heedy/api.mjs";
+import api from "../../api.mjs";
 
 export default {
-    components: {
-        Avatar,
-        AvatarEditor
-    },
-    data: () => ({
-        editing: false,
-        modified: {},
-        loading: false
-    }),
-    props: {
-        stream: Object,
-        editable: Boolean
-    },
-    methods: {
+  data: () => ({
+    editing: false,
+    modified: {},
+    loading: false
+  }),
+  props: {
+    stream: Object,
+    editable: Boolean
+  },
+  methods: {
     cancel() {
       this.loading = false;
       this.editing = false;
@@ -107,5 +100,5 @@ export default {
       }
     }
   }
-}
+};
 </script>

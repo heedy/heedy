@@ -1,6 +1,8 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Vuex, { mapState } from "vuex";
+import Vuex, {
+    mapState
+} from "vuex";
 import VueHeadful from "vue-headful";
 
 import Vuetify from "vuetify";
@@ -15,6 +17,8 @@ import 'codemirror/mode/python/python.js';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
 
+import moment from "moment";
+
 // Disable the vue console messages
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
@@ -28,7 +32,12 @@ Vue.use(VueCodemirror);
 Vue.component('vue-headful', VueHeadful);
 
 export {
-    VueRouter,Vuex,Vuetify,VueCodemirror,mapState
+    VueRouter,
+    Vuex,
+    Vuetify,
+    VueCodemirror,
+    mapState,
+    moment
 };
 
 export default Vue;

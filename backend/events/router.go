@@ -104,25 +104,25 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		e.Type = ""
 		return em.Subscribe(e, h)
 	}
-	if e.User != "" && e.Plugin != "" && e.Key != "" {
+	if e.User != "" && e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
 		if er.UserPluginKey == nil {
 			er.UserPluginKey = make(map[idKey3]Map)
 		}
-		em, ok := er.UserPluginKey[idKey3{e.User, e.Plugin, e.Key}]
+		em, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
 		if !ok {
 			em = NewMap()
-			er.UserPluginKey[idKey3{e.User, e.Plugin, e.Key}] = em
+			er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Plugin != "" && e.Key != "" {
+	if e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
 		if er.PluginKey == nil {
 			er.PluginKey = make(map[idKey2]Map)
 		}
-		em, ok := er.PluginKey[idKey2{e.Plugin, e.Key}]
+		em, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
 		if !ok {
 			em = NewMap()
-			er.PluginKey[idKey2{e.Plugin, e.Key}] = em
+			er.PluginKey[idKey2{*e.Plugin, e.Key}] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -137,14 +137,14 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Plugin != "" && e.User != "" {
+	if e.Plugin != nil && *e.Plugin != "" && e.User != "" {
 		if er.UserPlugin == nil {
 			er.UserPlugin = make(map[idKey2]Map)
 		}
-		em, ok := er.UserPlugin[idKey2{e.User, e.Plugin}]
+		em, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
 		if !ok {
 			em = NewMap()
-			er.UserPlugin[idKey2{e.User, e.Plugin}] = em
+			er.UserPlugin[idKey2{e.User, *e.Plugin}] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -159,14 +159,14 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Plugin != "" {
+	if e.Plugin != nil && *e.Plugin != "" {
 		if er.PluginEvents == nil {
 			er.PluginEvents = make(map[string]Map)
 		}
-		em, ok := er.PluginEvents[e.Plugin]
+		em, ok := er.PluginEvents[*e.Plugin]
 		if !ok {
 			em = NewMap()
-			er.PluginEvents[e.Plugin] = em
+			er.PluginEvents[*e.Plugin] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -211,21 +211,21 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		e.Type = ""
 		return em.Unsubscribe(e, h)
 	}
-	if e.User != "" && e.Plugin != "" && e.Key != "" {
+	if e.User != "" && e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
 		if er.UserPluginKey == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.UserPluginKey[idKey3{e.User, e.Plugin, e.Key}]
+		em, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
 		if !ok {
 			return ErrNotSubscribed
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Plugin != "" && e.Key != "" {
+	if e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
 		if er.PluginKey == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.PluginKey[idKey2{e.Plugin, e.Key}]
+		em, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -241,11 +241,11 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Plugin != "" && e.User != "" {
+	if e.Plugin != nil && *e.Plugin != "" && e.User != "" {
 		if er.UserPlugin == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.UserPlugin[idKey2{e.User, e.Plugin}]
+		em, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -261,11 +261,11 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Plugin != "" {
+	if e.Plugin != nil && *e.Plugin != "" {
 		if er.PluginEvents == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.PluginEvents[e.Plugin]
+		em, ok := er.PluginEvents[*e.Plugin]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -325,15 +325,15 @@ func (er *Router) Fire(e *Event) {
 			h.Fire(e)
 		}
 	}
-	if e.Plugin != "" {
+	if e.Plugin != nil && *e.Plugin != "" {
 		if er.PluginEvents != nil {
-			h, ok := er.PluginEvents[e.Plugin]
+			h, ok := er.PluginEvents[*e.Plugin]
 			if ok {
 				h.Fire(e)
 			}
 		}
 		if er.UserPlugin != nil {
-			h, ok := er.UserPlugin[idKey2{e.User, e.Plugin}]
+			h, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
 			if ok {
 				h.Fire(e)
 			}
@@ -372,17 +372,17 @@ func (er *Router) Fire(e *Event) {
 			h.Fire(e)
 		}
 	}
-	if e.Plugin == "" {
+	if e.Plugin == nil || *e.Plugin == "" {
 		return
 	}
 	if er.PluginKey != nil {
-		h, ok := er.PluginKey[idKey2{e.Plugin, e.Key}]
+		h, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
 		if ok {
 			h.Fire(e)
 		}
 	}
 	if er.UserPluginKey != nil {
-		h, ok := er.UserPluginKey[idKey3{e.User, e.Plugin, e.Key}]
+		h, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
 		if ok {
 			h.Fire(e)
 		}

@@ -58,11 +58,12 @@ type Connection struct {
 	Avatar      *string   `json:"avatar,omitempty" hcl:"avatar"`
 	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Type        *string   `json:"type" hcl:"type"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 
-	Settings      *map[string]interface{} `json:"settings,omitempty"`
-	SettingSchema *map[string]interface{} `json:"setting_schema,omitempty"`
+	Settings       *map[string]interface{} `json:"settings,omitempty"`
+	SettingsSchema *map[string]interface{} `json:"settings_schema,omitempty"`
 
 	Sources map[string]*Source `json:"sources,omitempty"`
 

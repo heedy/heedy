@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <!--<link rel="icon" href="./favicon.ico" />-->
-    <title>heedy</title>
-  </head>
-  <body>
-    <noscript>
-      <strong>
-        heedy doesn't work properly without JavaScript enabled. Please enable it
-        to continue.
-      </strong>
-    </noscript>
-    <div id="app">
-      <div style="width:100%;height:100vh;text-align: center;background:#fafafa;padding-top:7%;">
-        <!--<h1 style="color:#c9c9c9;">Loading...</h1>-->
-      </div>
+<head>
+  <link rel="modulepreload" href="./static/app.mjs">
+  <link rel="modulepreload" href="./static/dist.mjs">
+
+  {{range .Frontend}}<link rel="modulepreload" href="./static/{{.Path}}">
+  {{end}}
+  <link rel="preload" href="./static/fonts/MaterialIcons-Regular.woff2">
+  <link rel="preload" href="./static/fonts/fa-solid-900.woff2">
+  <link rel="preload" href="./static/fonts/roboto-latin-400.woff2">
+  <link rel="preload" href="./static/fonts/roboto-latin-700.woff2">
+  <link rel="preload" href="./static/fonts/roboto-latin-500.woff2">
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <!--<link rel="icon" href="./favicon.ico" />-->
+  <title>heedy</title>
+</head>
+<body>
+  <noscript>
+    <strong>
+      heedy doesn't work properly without JavaScript enabled. Please enable it
+      to continue.
+    </strong>
+  </noscript>
+  <div id="app">
+    <div style="width:100%;height:100vh;text-align: center;background:#fafafa;padding-top:7%;">
+      <!--<h1 style="color:#c9c9c9;">Loading...</h1>-->
     </div>
+  </div>
 
-    <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
-    <script>
-      const appinfo = {{ . }};
-    </script>
-
-    <!-- TODO: embed app.mjs here directly -->
-    <script src="./static/app.mjs" type="module"></script>
-  </body>
+  <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
+  <script type="module">
+    import setup from "./static/app.mjs";
+    setup({{.}});
+  </script>
+</body>
 </html>

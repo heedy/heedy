@@ -98,7 +98,7 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", pname, cpn, ename, *ev.Post)
 			p.EventRouter.Subscribe(events.Event{
 				Event:  ename,
-				Plugin: cpn,
+				Plugin: &cpn,
 			}, peh)
 		}
 		for skey, sv := range cv.Sources {
@@ -111,7 +111,7 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", pname, cpn, skey, ename, *ev.Post)
 				p.EventRouter.Subscribe(events.Event{
 					Event:  ename,
-					Plugin: cpn,
+					Plugin: &cpn,
 					Key:    skey,
 				}, peh)
 			}
@@ -219,13 +219,16 @@ func processConnection(pluginKey string, owner string, cv *assets.Connection) *d
 		empty := ""
 		c.AccessToken = &empty
 	}
-	if cv.SettingSchema != nil {
-		jo := database.JSONObject(*cv.SettingSchema)
-		c.SettingSchema = &jo
+	if cv.SettingsSchema != nil {
+		jo := database.JSONObject(*cv.SettingsSchema)
+		c.SettingsSchema = &jo
 	}
 	if cv.Settings != nil {
 		jo := database.JSONObject(*cv.Settings)
 		c.Settings = &jo
+	}
+	if cv.Type != nil {
+		c.Type = cv.Type
 	}
 	return c
 }

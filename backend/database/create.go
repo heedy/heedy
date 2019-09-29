@@ -60,11 +60,18 @@ CREATE TABLE connections (
 	-- Can (but does not have to) have an access token
 	access_token VARCHAR UNIQUE DEFAULT NULL,
 
+	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
+	last_access_date DATE DEFAULT NULL, -- connections without access tokens don't have access dates
+
 	-- Permissions are granted to a connection through scopes
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
 	settings VARCHAR DEFAULT '{}',
-	setting_schema VARCHAR DEFAULT '{}',
+	settings_schema VARCHAR DEFAULT '{}',
+
+	-- Connections can have types, which allow the UI to know what type of
+	-- data it holds, for showing appropriate visualizations
+	type VARCHAR(36) NOT NULL DEFAULT '',
 
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -74,7 +81,7 @@ CREATE TABLE connections (
 	UNIQUE(owner,plugin),
 
 	CONSTRAINT valid_settings CHECK (json_valid(settings)),
-	CONSTRAINT valid_settings_schema CHECK (json_valid(setting_schema)),
+	CONSTRAINT valid_settings_schema CHECK (json_valid(settings_schema)),
 
 	CONSTRAINT connectionowner
 		FOREIGN KEY(owner) 
@@ -163,6 +170,10 @@ CREATE INDEX share_sourceid on shared_sources(sourceid);
 CREATE TABLE user_logintokens (
 	username VARCHAR(36) NOT NULL,
 	token VARCHAR UNIQUE NOT NULL,
+
+	description VARCHAR,
+	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
+	last_access_date DATE NOT NULL DEFAULT CURRENT_DATE,
 
 	CONSTRAINT fk_user
 		FOREIGN KEY(username) 

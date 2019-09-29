@@ -1,7 +1,7 @@
 <template >
   <div>
     <vue-headful :title="title"></vue-headful>
-    <loading v-if="user==null"></loading>
+    <h-loading v-if="user==null"></h-loading>
     <v-content v-else>
       <v-container grid-list-xl>
         <v-layout fill-height column>
@@ -13,7 +13,7 @@
               <v-list two-line subheader>
                 <v-list-item v-for="item in sources" :key="item.id" :to="`/source/${item.id}`">
                   <v-list-item-avatar>
-                    <avatar :image="item.avatar" :colorHash="item.id" ></avatar>
+                    <h-avatar :image="item.avatar" :colorHash="item.id"></h-avatar>
                   </v-list-item-avatar>
                   <v-list-item-content>
                     <v-list-item-title>{{ item.name }}</v-list-item-title>
@@ -24,20 +24,16 @@
             </v-card>
           </v-flex>
         </v-layout>
-        
       </v-container>
     </v-content>
   </div>
 </template>
 
 <script>
-import {Loading, Avatar} from "../components.mjs";
 import UserInfo from "./userinfo.vue";
 export default {
   components: {
-    UserInfo,
-    Loading,
-    Avatar
+    UserInfo
   },
   data: () => ({}),
 
@@ -64,25 +60,27 @@ export default {
       return usr;
     },
     sources() {
-      return (this.$store.state.heedy.userSources[this.username] || []).map((id)=> this.$store.state.heedy.sources[id]);
+      return (this.$store.state.heedy.userSources[this.username] || []).map(
+        id => this.$store.state.heedy.sources[id]
+      );
     },
     editable() {
       if (this.$store.state.app.info.user == null) {
-          return false;
-        }
+        return false;
+      }
       return this.username == this.$store.state.app.info.user.username;
     },
     title() {
-            let u = this.user;
-            if (u==null) {
-                return "loading... | heedy";
-            }
-            let n = u.name;
-            if (n=="") {
-              n = u.username;
-            }
-            return n + " | heedy";
-        }
+      let u = this.user;
+      if (u == null) {
+        return "loading... | heedy";
+      }
+      let n = u.name;
+      if (n == "") {
+        n = u.username;
+      }
+      return n + " | heedy";
+    }
   },
   created() {
     this.$store.dispatch("readUser", { username: this.username });

@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Event struct {
-	Event      string `json:"event"`
-	User       string `json:"user,omitempty" db:"user"`
-	Connection string `json:"connection,omitempty" db:"connection"`
-	Plugin     string `json:"plugin,omitempty" db:"plugin"`
-	Source     string `json:"source,omitempty" db:"source"`
-	Key        string `json:"key,omitempty" db:"key"`
-	Type       string `json:"type,omitempty" db:"type"`
+	Event      string  `json:"event"`
+	User       string  `json:"user,omitempty" db:"user"`
+	Connection string  `json:"connection,omitempty" db:"connection"`
+	Plugin     *string `json:"plugin,omitempty" db:"plugin"`
+	Source     string  `json:"source,omitempty" db:"source"`
+	Key        string  `json:"key,omitempty" db:"key"`
+	Type       string  `json:"type,omitempty" db:"type"`
 
 	Data interface{} `json:"data,omitempty"`
 }
@@ -40,11 +40,11 @@ type EventLogger struct {
 
 func (el EventLogger) Fire(e *Event) {
 	if assets.Get().Config.Verbose {
-		logrus.WithField("stack",database.MiniStack(1)).Debugf(e.String())
+		logrus.WithField("stack", database.MiniStack(1)).Debug(e)
 	} else {
-		logrus.Debugf(e.String())
+		logrus.Debug(e)
 	}
-	
+
 	el.Handler.Fire(e)
 }
 
@@ -88,7 +88,8 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		e.Key = ""
 		e.Type = ""
 		e.Connection = ""
-		e.Plugin = ""
+		es := ""
+		e.Plugin = &es
 		// This is only to make sure the user exists
 		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
 	}

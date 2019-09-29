@@ -5,10 +5,19 @@
  */
 
 import Loading from "./components/loading.vue";
-import Avatar from  "./components/avatar.vue";
+import Avatar from "./components/avatar.vue";
 import AvatarEditor from "./components/avatar_editor.vue";
 import ScopeEditor from "./components/scope_editor.vue";
 import PageContainer from "./components/page_container.vue";
 import NotFound from "./components/404.vue";
 
-export {Loading, NotFound, Avatar, AvatarEditor,ScopeEditor, PageContainer};
+function register(Vue) {
+    Vue.component("h-loading", Loading);
+    Vue.component("h-avatar", Avatar);
+    Vue.component("h-avatar-editor", AvatarEditor);
+    Vue.component("h-scope-editor", ScopeEditor);
+    Vue.component("h-page-container", PageContainer);
+    Vue.component("h-not-found", NotFound);
+}
+
+export default register;

@@ -1,5 +1,3 @@
-
-import api from "../heedy/api.mjs";
+import api from "../api.mjs";
 
 console.log("Im in api!");
-

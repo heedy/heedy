@@ -6,6 +6,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dkumor/revhttpfs v0.0.0-20190804203940-8dd55c115095
 	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/hcl2 v0.0.0-20190909202536-66c59f909e25
@@ -24,4 +25,5 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/zclconf/go-cty v1.1.0
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 )

@@ -7,10 +7,18 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/heedy/heedy/backend/assets"
 )
+
+type Date time.Time
+
+func (d Date) MarshalJSON() ([]byte, error) {
+	t := fmt.Sprintf("\"%s\"", time.Time(d).Format("2006-01-02"))
+	return []byte(t), nil
+}
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
@@ -188,15 +196,18 @@ type Connection struct {
 	Details
 	Owner  *string `json:"owner" db:"owner"`
 	Plugin *string `json:"plugin" db:"plugin"`
+	Type   *string `json:"type" db:"type"`
 
 	Enabled *bool `json:"enabled,omitempty" db:"enabled"`
 
-	AccessToken *string `json:"access_token,omitempty" db:"access_token"`
+	AccessToken    *string `json:"access_token,omitempty" db:"access_token"`
+	CreatedDate    Date    `json:"created_date,omitempty" db:"created_date"`
+	LastAccessDate *Date   `json:"last_access_date" db:"last_access_date"`
 
 	Scopes *ConnectionScopeArray `json:"scopes" db:"scopes"`
 
-	Settings      *JSONObject `json:"settings" db:"settings"`
-	SettingSchema *JSONObject `json:"setting_schema" db:"setting_schema"`
+	Settings       *JSONObject `json:"settings" db:"settings"`
+	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
 }
 
 type Source struct {
@@ -396,6 +407,8 @@ func extractUser(u *User) (userColumns []string, userValues []interface{}, err e
 }
 
 func extractConnection(c *Connection) (cColumns []string, cValues []interface{}, err error) {
+	// We don't allow modifying last access date
+	c.LastAccessDate = nil
 	cColumns, cValues, err = extractDetails(&c.Details)
 	if err != nil {
 		return

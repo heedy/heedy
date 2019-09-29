@@ -12,7 +12,10 @@ const plugin_name = "streams"
 
 const production = !process.env.NODE_ENV === 'debug';
 const plugins = [
-  VuePlugin(),
+  VuePlugin({
+    // https://github.com/vuejs/rollup-plugin-vue/issues/238
+    needMap: false
+  }),
   commonjs(),
   resolve({
     browser: true,
