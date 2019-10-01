@@ -18,12 +18,6 @@ func VerboseLoggingMiddleware(h http.Handler, log *logrus.Entry) http.Handler {
 	}
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		// We don't want to mess with websocket connections
-		if request.Header.Get("Connection") == "Upgrade" {
-			log.Debug("Got Upgrade Header (probably starting a websocket connection)")
-			h.ServeHTTP(writer, request)
-			return
-		}
 
 		req, err := httputil.DumpRequest(request, true)
 		if err != nil {
@@ -32,6 +26,12 @@ func VerboseLoggingMiddleware(h http.Handler, log *logrus.Entry) http.Handler {
 			return
 		}
 		log.Debugf("Request:\n\n%s\n\n", string(req))
+
+		// We don't want to mess with websocket connections
+		if request.Header.Get("Connection") == "Upgrade" {
+			h.ServeHTTP(writer, request)
+			return
+		}
 
 		rec := httptest.NewRecorder()
 

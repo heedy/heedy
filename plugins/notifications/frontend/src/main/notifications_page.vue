@@ -20,6 +20,7 @@
             :key="n.key+'.'+n.user + '.' + n.connection + '.' + n.source"
             :n="n"
             link
+            seen
           />
         </div>
       </v-container>
@@ -34,7 +35,9 @@ export default {
       return this.$store.state.notifications.global == null;
     },
     notifications() {
-      return this.$store.state.notifications.global;
+      let v = Object.values(this.$store.state.notifications.global);
+      v.sort((a, b) => b.timestamp - a.timestamp);
+      return v;
     }
   },
   created() {

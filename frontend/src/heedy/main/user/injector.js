@@ -1,11 +1,8 @@
-import vuexModule from "../statemanager.js";
-var components = {};
-
 var userRoutesMap = {};
 var userRoutes = [];
 class User {
-    constructor(pluginName) {
-
+    constructor(store) {
+        this.store = store;
     }
 
     addRoute(r) {
@@ -13,12 +10,10 @@ class User {
     }
 
     addComponent(c) {
-        components[c.key] = c;
+        this.store.commit("addUserComponent", c);
     }
 
-    static $onInit() {
-        vuexModule.state.user_components = Object.values(components).sort((a, b) => a.weight - b.weight);
-
+    $onInit() {
         Object.values(userRoutesMap).reduce((_, r) => {
             if (r.path.startsWith("/")) {
                 r.path = r.path.substring(1, r.path.length);

@@ -133,6 +133,7 @@ type hclConfiguration struct {
 	SourceTypes []hclSourceType `json:"source_types" hcl:"source,block"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
+	AllowPublicWebsocket *bool  `hcl:"allow_public_websocket" json:"allow_public_websocket,omitempty"`
 
 	Plugins []hclPlugin `hcl:"plugin,block"`
 

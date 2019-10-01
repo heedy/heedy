@@ -267,6 +267,7 @@ type Configuration struct {
 	SourceTypes map[string]SourceType `json:"source" hcl:"source_types"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
+	AllowPublicWebsocket *bool  `hcl:"allow_public_websocket" json:"allow_public_websocket,omitempty"`
 
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 

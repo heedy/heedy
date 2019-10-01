@@ -1,5 +1,3 @@
-import Vue from "../dist.mjs";
-
 import Theme from "./main/theme.vue";
 
 import PublicHome from "./main/public_home.vue";
@@ -40,25 +38,29 @@ import Connections from "./main/connections.vue";
 import vuexModule from "./main/statemanager.js";
 import registerCoreComponents from "./main/components.js";
 
+import EventSubscriber from "./main/websocket.js";
+
 
 function setup(app) {
+    app.theme = Theme;
+
+    // Add the current user to the vuex module
+    if (app.info.user != null) {
+        vuexModule.state.users[app.info.user.username] = app.info.user;
+    }
+    app.store.registerModule("heedy", vuexModule);
 
     // Adds the components that are used throughout the UI
-    registerCoreComponents(Vue);
-    Vue.component("h-source-list", SourceList);
+    registerCoreComponents(app.vue);
+    app.vue.component("h-source-list", SourceList);
 
     // Inject the user/connection/source handlers into the app
-    app.inject("user", UserInjector);
-    app.inject("connection", ConnectionInjector);
-    app.inject("source", SourceInjector);
+    app.inject("user", new UserInjector(app.store));
+    app.inject("connection", new ConnectionInjector(app.store));
+    app.inject("source", new SourceInjector(app.store));
 
-    // Add the current user to the cache
-    if (app.info.user != null) {
-        vuexModule.state.users[app.info.user.name] = app.info.user;
-    }
-    app.addVuexModule(vuexModule);
+    app.inject("events", new EventSubscriber(app.info.user != null));
 
-    app.setTheme(Theme);
 
     app.user.addComponent({
         key: "header",

@@ -3,6 +3,8 @@ import VueRouter from "vue-router";
 import Vuex, {
     mapState
 } from "vuex";
+import createLogger from 'vuex/dist/logger'
+
 import VueHeadful from "vue-headful";
 
 import Vuetify from "vuetify";
@@ -44,7 +46,7 @@ export {
     mapState,
     Moment,
     MarkdownIt,
-    md
+    md,
+    createLogger
 };
-
 export default Vue;

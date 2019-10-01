@@ -10,7 +10,7 @@ function setup(app) {
     Vue.component("h-notification", Notification)
 
     if (app.info.user != null) {
-        app.addVuexModule(vuexModule);
+        app.store.registerModule("notifications", vuexModule);
 
         app.connection.addComponent({
             key: "notifications",
@@ -35,6 +35,25 @@ function setup(app) {
             route: "/notifications",
             location: "primary_bottom"
         });
+
+        let notifier = (e) => {
+            if (e.event.includes("delete")) {
+                app.store.commit("deleteNotification", e.data);
+            } else {
+                app.store.commit("setNotification", e.data);
+            }
+        }
+
+        let types = ["user", "connection", "source"];
+        let etypes = ["create", "update", "delete"]
+        types.forEach((t) => etypes.forEach((et => {
+
+            let etype = `${t}_notification_${et}`;
+            app.events.subscribe(etype, {
+                event: etype,
+                user: app.info.user.username
+            }, notifier);
+        })));
     }
 
 }

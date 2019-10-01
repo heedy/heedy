@@ -1,51 +1,24 @@
 import Vue, {
   VueRouter,
   Vuex,
-  Vuetify
+  Vuetify,
+  createLogger
 } from "./dist.mjs";
 
-var vuexPlugins = [];
-var vuexModules = {};
 
-var appMenu = {};
-
-var injected = {};
-
-
-
-// routes need pre-processing
-var routes = {};
-
-var currentTheme = null;
 
 class App {
-  constructor(appinfo, pluginName) {
+  constructor(appinfo, store) {
+    // Allows registration of components
+    this.vue = Vue;
+    // Allows setting stuff in the store
+    this.store = store;
+
     this.info = appinfo;
-    this.pluginName = pluginName;
 
-    // Add all injected subclasses to the global app object
-    for (let key in injected) {
-      // skip loop if the property is from prototype
-      if (!injected.hasOwnProperty(key)) continue;
-      this[key] = new injected[key](pluginName);
-    }
-
-  }
-
-  /**
-   * Adds a vuex module to the main app store.
-   * 
-   * @param {*} module Vuex module to add
-   */
-  addVuexModule(module) {
-    vuexModules[this.pluginName] = module;
-  }
-  /**
-   * Adds a vuex plugin to the main store.
-   * @param {*} p plugin
-   */
-  addVuexPlugin(p) {
-    vuexPlugins.push(p)
+    this.theme = null;
+    this.injected = {};
+    this.routes = {};
   }
 
   /**
@@ -58,16 +31,9 @@ class App {
    * @param {*} r a single route element.
    */
   addRoute(r) {
-    routes[r.path] = r;
+    this.routes[r.path] = r;
   }
 
-  /**
-   * The theme for the app.
-   * @param {*} t vue object for the main theme
-   */
-  setTheme(t) {
-    currentTheme = t;
-  }
 
   /**
    * Add an item to the main app menu. 
@@ -82,13 +48,13 @@ class App {
    *        i.e. whether the menu is small, on bottom, etc.
    */
   addMenuItem(m) {
-    appMenu[m.key] = m;
+    this.store.commit('addMenuItem', m);
   }
 
 
   inject(name, p) {
-    injected[name] = p;
-    this[name] = new injected[name](this.pluginName);
+    this.injected[name] = p;
+    this[name] = p;
   }
 
 }
@@ -99,10 +65,34 @@ async function setup(appinfo) {
   // Start running the import statements
   let plugins = appinfo.frontend.map(f => import("./" + f.path));
 
+  // Prepare the vuex store
+  const store = new Vuex.Store({
+    modules: {
+      app: {
+        state: {
+          info: appinfo,
+          // menu_items gives all the defined menu items
+          menu_items: {},
+        },
+        mutations: {
+          updateLoggedInUser(state, v) {
+            state.info.user = v;
+          },
+          addMenuItem(state, m) {
+            state.menu_items[m.key] = m;
+          }
+        }
+      }
+    },
+    plugins: [createLogger()]
+  });
+
+  let app = new App(appinfo, store);
+
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);
     try {
-      (await plugins[i]).default(new App(appinfo, appinfo.frontend[i].name));
+      (await plugins[i]).default(app);
     } catch (err) {
       console.error(err);
       alert(`Failed to load plugin '${appinfo.frontend[i].name}': ${err.message}`);
@@ -111,37 +101,15 @@ async function setup(appinfo) {
   }
 
   // Now go through the injected modules to run their onInit
-  for (let key in injected) {
+  for (let key in app.injected) {
     // skip loop if the property is from prototype
-    if (!injected.hasOwnProperty(key)) continue;
-    (injected[key]["$onInit"] || (() => (1)))();
+    if (!app.injected.hasOwnProperty(key)) continue;
+    (app.injected[key]["$onInit"] || (() => (1)))();
   }
-
-  // There is a single built in vuex module, which holds 
-  // the app info, the main menu, the extra menu, 
-  // and other core information.
-  vuexModules["app"] = {
-    state: {
-      info: appinfo,
-      // menu_items gives all the defined menu items
-      menu_items: appMenu,
-    },
-    mutations: {
-      updateLoggedInUser(state, v) {
-        state.info.user = v;
-      }
-    }
-  };
-
-  // Prepare the vuex store
-  const store = new Vuex.Store({
-    modules: vuexModules,
-    plugins: vuexPlugins
-  });
 
   // Set up the app routes
   const router = new VueRouter({
-    routes: Object.values(routes),
+    routes: Object.values(app.routes),
     // https://router.vuejs.org/guide/advanced/scroll-behavior.html#scroll-behavior
     scrollBehavior(to, from, savedPosition) {
       if (savedPosition) {
@@ -161,17 +129,26 @@ async function setup(appinfo) {
     },
   });
 
+  const heedyMixin = {
+    computed: {
+      $heedy() {
+        return app;
+      }
+    }
+  }
+
   const vue = new Vue({
+    mixins: [heedyMixin],
     router: router,
     store: store,
     vuetify: vuetify,
-    render: h => h(currentTheme)
+    render: h => h(app.theme)
   })
 
   // Mount it
   vue.$mount("#app");
 
-
+  return app;
 }
 
 export default setup;

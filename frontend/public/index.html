@@ -39,7 +39,7 @@
   <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
   <script type="module">
     import setup from "./static/app.mjs";
-    setup({{.}});
+    window.app = setup({{.}});
   </script>
 </body>
 

@@ -12,7 +12,7 @@ export default {
       if (gn == null) {
         return 0;
       }
-      return gn.reduce((i, n) => (n.seen ? i : i + 1), 0);
+      return Object.values(gn).reduce((i, n) => (n.seen ? i : i + 1), 0);
     }
   },
   created() {

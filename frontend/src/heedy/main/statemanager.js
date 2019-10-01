@@ -37,6 +37,21 @@ export default {
     connectionScopes: null
   },
   mutations: {
+    addConnectionComponent(state, v) {
+      state.connection_components.push(v);
+    },
+    addUserComponent(state, v) {
+      state.user_components.push(v);
+    },
+    addSourceComponent(state, v) {
+      state.source_components.push(v);
+    },
+    addSourceCustomPage(state, p) {
+      state.source_custom_pages[p.t] = p.c;
+    },
+    addSourceCreator(state, c) {
+      state.sourceCreators.push(c);
+    },
     alert(state, v) {
       state.alert = {
         value: true,

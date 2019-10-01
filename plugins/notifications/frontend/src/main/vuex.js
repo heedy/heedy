@@ -1,6 +1,11 @@
 import Vue from "../../dist.mjs";
 import api from "../../api.mjs";
 
+// The notification key
+function nKey(n) {
+    return `${n.key}.${n.user}.${n.connection}.${n.source}`
+}
+
 export default {
     state: {
         global: null,
@@ -9,8 +14,68 @@ export default {
     },
     mutations: {
         setGlobalNotifications(state, v) {
-            v.sort((a, b) => b.timestamp - a.timestamp);
-            state.global = v;
+            state.global = v.reduce((o, n) => {
+                o[nKey(n)] = n;
+                return o;
+            }, {});
+            v.forEach((n) => {
+                if (n.source !== undefined) {
+                    if (state.sources[n.source] !== undefined) {
+                        Vue.set(state.sources, n.key, n);
+                    }
+
+                    return;
+                }
+                if (n.connection !== undefined) {
+                    if (state.connections[n.connection] !== undefined) {
+                        Vue.set(state.connections, n.key, n);
+                    }
+
+                    return;
+                }
+            });
+
+        },
+        deleteNotification(state, n) {
+            if (state.global[nKey(n)] !== undefined) {
+                Vue.delete(state.global, nKey(n));
+            }
+
+            if (n.source !== undefined) {
+                if (state.sources[n.source] !== undefined && state.sources[n.source][n.key] !== undefined) {
+                    Vue.delete(state.sources[n.source], n.key);
+                }
+                return
+            }
+            if (n.connection !== undefined) {
+                if (state.connections[n.connection] !== undefined && state.connections[n.connection][n.key] !== undefined) {
+                    Vue.delete(state.connections[n.connection], n.key);
+                }
+                return;
+            }
+        },
+        setNotification(state, n) {
+            if (state.global[nKey(n)] !== undefined || n.global) {
+                if (!n.global) {
+                    Vue.delete(state.global, nKey(n))
+                } else {
+                    Vue.set(state.global, nKey(n), n);
+                }
+
+            }
+            if (n.source !== undefined) {
+                if (state.sources[n.source] !== undefined) {
+                    Vue.set(state.sources[n.source], n.key, n);
+                }
+                return
+            }
+            if (n.connection !== undefined) {
+                if (state.connections[n.connection] !== undefined) {
+                    Vue.set(state.connections[n.connection], n.key, n);
+                }
+
+                return;
+            }
         },
         setConnectionNotifications(state, v) {
             let nmap = v.data.reduce((map, o) => {

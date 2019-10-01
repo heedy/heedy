@@ -239,6 +239,7 @@ func APIMux() (*chi.Mux, error) {
 
 	v1mux := chi.NewMux()
 
+	v1mux.Get("/events", EventWebsocket)
 	v1mux.Post("/events", FireEvent)
 
 	v1mux.Get("/users/{username}", ReadUser)

@@ -1,20 +1,20 @@
-import vuexModule from "../statemanager.js";
-
 var sourceRoutesMap = {};
 var sourceRoutes = [];
 
 class Source {
-    constructor(pluginName) {}
+    constructor(store) {
+        this.store = store;
+    }
 
     /**
      * Identical to a menu item, it is displayed in a special source creation menu
      * @param {*} c The creator to add
      */
     addCreator(c) {
-        vuexModule.state.sourceCreators.push(c);
+        this.store.commit("addSourceCreator", c);
     }
     addComponent(c) {
-        vuexModule.state.source_components.push(c);
+        this.store.commit("addSourceComponent", c);
     }
     /**
      * Replace the page shown for the given source type with a custom component
@@ -22,7 +22,10 @@ class Source {
      * @param {*} c Custom component to use
      */
     replacePage(t, c) {
-        vuexModule.state.source_custom_pages[t] = c;
+        this.store.commit("addSourceCustomPage", {
+            t: t,
+            c: c
+        });
     }
 
     /**
@@ -36,7 +39,7 @@ class Source {
         sourceRoutesMap[r.path] = r;
     }
 
-    static $onInit() {
+    $onInit() {
         // Need to set the sourceRoutes with the right values:
         Object.values(sourceRoutesMap).reduce((_, r) => {
             if (r.path.startsWith("/")) {

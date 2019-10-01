@@ -5,6 +5,7 @@
       :key="n.key+'.'+n.user + '.' + n.connection + '.' + n.source"
       :n="n"
       small
+      seen
     />
   </v-flex>
 </template>
