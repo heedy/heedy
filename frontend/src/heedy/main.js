@@ -31,6 +31,7 @@ import ConnectionHeader from "./main/connection/header.vue";
 import ConnectionCreate from "./main/connection/create.vue";
 import ConnectionUpdate from "./main/connection/update.vue";
 import ConnectionSources from "./main/connection/sources.vue";
+import ConnectionSettings from "./main/connection/settings.vue";
 
 import Connections from "./main/connections.vue";
 
@@ -111,12 +112,16 @@ function setup(app) {
         app.connection.addRoute({
             path: "",
             component: Connection
-        })
+        });
 
         app.connection.addRoute({
             path: "update",
             component: ConnectionUpdate
-        })
+        });
+        app.connection.addRoute({
+            path: "settings",
+            component: ConnectionSettings
+        });
 
 
         // Add the default connection UI

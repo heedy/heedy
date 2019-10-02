@@ -82,6 +82,8 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 	if e.Connection != "" {
 		e.Key = ""
 		e.Type = ""
+		es := ""
+		e.Plugin = &es
 		return db.Get(e, "SELECT owner AS user,plugin FROM connections WHERE id=? LIMIT 1", e.Connection)
 	}
 	if e.User != "" {

@@ -5,7 +5,7 @@ import Vue, {
   createLogger
 } from "./dist.mjs";
 
-
+import api from "./api.js";
 
 class App {
   constructor(appinfo, store) {
@@ -89,6 +89,8 @@ async function setup(appinfo) {
 
   let app = new App(appinfo, store);
 
+  app.api = api;
+
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);
     try {
@@ -129,16 +131,15 @@ async function setup(appinfo) {
     },
   });
 
-  const heedyMixin = {
+  Vue.mixin({
     computed: {
       $heedy() {
         return app;
       }
     }
-  }
+  });
 
   const vue = new Vue({
-    mixins: [heedyMixin],
     router: router,
     store: store,
     vuetify: vuetify,

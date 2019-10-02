@@ -150,7 +150,15 @@ func UpdateConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c.ID = chi.URLParam(r, "connectionid")
-	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateConnection(&c))
+	err := rest.CTX(r).DB.UpdateConnection(&c)
+	if err == nil && c.Settings != nil {
+		rest.CTX(r).Events.Fire(&events.Event{
+			Connection: c.ID,
+			Event:      "connection_settings_update",
+		})
+	}
+	rest.WriteResult(w, r, err)
+
 }
 
 func DeleteConnection(w http.ResponseWriter, r *http.Request) {

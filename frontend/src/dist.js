@@ -19,6 +19,11 @@ import 'codemirror/mode/python/python.js';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
 
+import VJsonschemaForm from '@koumoul/vuetify-jsonschema-form';
+import '@koumoul/vuetify-jsonschema-form/dist/main.css';
+import Draggable from 'vuedraggable';
+
+
 import Moment from "moment";
 import MarkdownIt from 'markdown-it';
 
@@ -37,6 +42,8 @@ Vue.use(VueCodemirror);
 
 // Setting the title component
 Vue.component('vue-headful', VueHeadful);
+Vue.component('v-jsonschema-form', VJsonschemaForm);
+Vue.component('draggable', Draggable);
 
 export {
     VueRouter,
