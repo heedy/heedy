@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
 )
 
 var queryDecoder = schema.NewDecoder()
@@ -157,7 +157,19 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq))
+	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
+	if err == nil && !si.NonEmpty {
+		ne := true
+		// The stream is now non-empty, so label it as such
+		err = c.DB.AdminDB().UpdateSource(&database.Source{
+			Details: database.Details{
+				ID: si.ID,
+			},
+			NonEmpty: &ne,
+		})
+	}
+
+	rest.WriteResult(w, r, err)
 }
 
 func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
@@ -199,10 +211,23 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	}
 	t := "append"
 	a := true
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
+
+	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
 		Type:    &t,
 		Actions: &a,
-	}))
+	})
+
+	if err == nil && !si.NonEmpty {
+		ne := true
+		// The stream is now non-empty, so label it as such
+		err = c.DB.AdminDB().UpdateSource(&database.Source{
+			Details: database.Details{
+				ID: si.ID,
+			},
+			NonEmpty: &ne,
+		})
+	}
+	rest.WriteResult(w, r, err)
 }
 
 // Handler is the global router for the stream API
@@ -222,7 +247,6 @@ var Handler = func() *chi.Mux {
 		DataLength(w, r, false)
 	})
 
-
 	m.Get("/actions", func(w http.ResponseWriter, r *http.Request) {
 		ReadData(w, r, true)
 	})
@@ -236,11 +260,10 @@ var Handler = func() *chi.Mux {
 		DataLength(w, r, true)
 	})
 
-
 	m.Post("/act", Act)
 
 	m.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		rest.WriteJSONError(w,r,http.StatusNotFound, rest.ErrNotFound)
+		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 	})
 
 	return m

@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/api/golang/rest"
 )
 
 type Source struct {
@@ -166,8 +166,13 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
 	}
+	nonempty := "false"
+	if *s.NonEmpty {
+		nonempty = "true"
+	}
 	r.Header["X-Heedy-Source"] = []string{srcid}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
+	r.Header["X-Heedy-NonEmpty"] = []string{nonempty}
 	r.Header["X-Heedy-Access"] = s.Access.Scopes
 
 	b, err := json.Marshal(s.Meta)
@@ -197,7 +202,7 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 func (sm *SourceManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v := r.Header.Get("X-Heedy-Overlay")
 	if len(v) > 0 {
-		if v=="none" {
+		if v == "none" {
 			// No overlay, meaning that we skip all source implementations
 			sm.handler.ServeHTTP(w, r)
 			return

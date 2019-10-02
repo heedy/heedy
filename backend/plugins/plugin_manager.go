@@ -92,15 +92,19 @@ func (pm *PluginManager) Reload() error {
 	pm.Unlock()
 
 	// First, perform a cleanup operation: find any connections that are owned by inactive plugins,
-	// and remove them if they don't have sources
+	// and remove them if they have empty sources
 	pluginexclusion := ""
 	neworder := []interface{}{}
 	for _, pname := range order {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-
-	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id);", pluginexclusion), neworder...)
+	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE nonempty=FALSE AND EXISTS (SELECT 1 FROM connections WHERE plugin IS NOT NULL %s AND connections.id=sources.connection);", pluginexclusion), neworder...)
+	if err != nil {
+		pm.Close()
+		return err
+	}
+	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND nonempty=TRUE);", pluginexclusion), neworder...)
 	if err != nil {
 		pm.Close()
 		return err

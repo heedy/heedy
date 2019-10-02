@@ -218,8 +218,9 @@ type Source struct {
 
 	Key *string `json:"key" db:"key"`
 
-	Type *string     `json:"type,omitempty" db:"type"`
-	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
+	Type     *string     `json:"type,omitempty" db:"type"`
+	Meta     *JSONObject `json:"meta,omitempty" db:"meta"`
+	NonEmpty *bool       `json:"nonempty" db:"nonempty"`
 
 	Scopes *ScopeArray `json:"scopes" db:"scopes"`
 
@@ -263,6 +264,8 @@ type ListSourcesOptions struct {
 	Type *string `json:"type,omitempty" schema:"type"`
 	// Maximum number of results to return
 	Limit *int `json:"limit,omitempty" schema:"limit"`
+	// Whether to query by emptiness
+	NonEmpty *bool `json:"nonempty,omitempty" schema:"nonempty"`
 
 	// Whether to include shared sources (not belonging to the user)
 	// This is only allowed for user==current user
@@ -641,6 +644,10 @@ func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
 		if o.Key != nil {
 			sColumns = append(sColumns, "key")
 			sValues = append(sValues, *o.Key)
+		}
+		if o.NonEmpty != nil {
+			sColumns = append(sColumns, "nonempty")
+			sValues = append(sValues, *o.NonEmpty)
 		}
 	}
 	if len(sColumns) == 0 {

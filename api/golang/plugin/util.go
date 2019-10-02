@@ -50,10 +50,11 @@ func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
 // SourceInfo holds the information sent from heedy as http headers about a source.
 // These headers are only present in requests for source API
 type SourceInfo struct {
-	Type   string
-	ID     string
-	Meta   map[string]interface{}
-	Access database.ScopeArray
+	Type     string
+	ID       string
+	NonEmpty bool
+	Meta     map[string]interface{}
+	Access   database.ScopeArray
 }
 
 // GetSourceInfo prepares all source details that come in as part of a source request
@@ -65,6 +66,12 @@ func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
 	if si.Type == "" || si.ID == "" {
 		return nil, ErrPlugin("No type or ID headers were present in source request")
 	}
+	ne, ok := r.Header["X-Heedy-NonEmpty"]
+	if !ok || len(ne) != 1 {
+		return nil, ErrPlugin("No NonEmpty in source request")
+	}
+	si.NonEmpty = ne[0] == "true"
+
 	a, ok := r.Header["X-Heedy-Access"]
 	if !ok {
 		return nil, ErrPlugin("No access scopes were present in source request")

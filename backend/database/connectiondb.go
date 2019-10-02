@@ -168,6 +168,9 @@ func (db *ConnectionDB) CreateSource(s *Source) (string, error) {
 	if s.Connection == nil {
 		s.Connection = &db.c.ID
 	}
+	if s.NonEmpty != nil {
+		return "", ErrAccessDenied("Empty status of source is readonly")
+	}
 	if *s.Connection != db.c.ID {
 		return "", ErrAccessDenied("Can't create a source for a different connection")
 	}
@@ -195,6 +198,9 @@ func (db *ConnectionDB) ReadSource(id string, o *ReadSourceOptions) (*Source, er
 
 // UpdateSource allows editing a source
 func (db *ConnectionDB) UpdateSource(s *Source) error {
+	if s.NonEmpty != nil {
+		return ErrAccessDenied("Empty status of source is readonly")
+	}
 	curs, err := db.ReadSource(s.ID, &ReadSourceOptions{
 		Avatar: false,
 	})

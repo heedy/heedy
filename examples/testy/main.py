@@ -11,14 +11,17 @@ routes = web.RouteTableDef()
 @routes.post("/cupdate")
 async def index(request):
     print("REQUEST", request.headers)
-    print("GOT", await request.json())
+    r = await request.json()
+    print("GOT", r)
+    await p.notify({"key": "settings_updated", "title": "Settings were updated!", "connection": r["connection"]})
     return web.Response(text="OK")
 
 
 @routes.post("/supdate")
 async def index(request):
     print("REQUEST", request.headers)
-    print("GOT", await request.json())
+    r = await request.json()
+    print("GOT", r)
 
     return web.Response(text="OK")
 

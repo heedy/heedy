@@ -106,8 +106,9 @@ CREATE TABLE sources (
 	-- A key is used for connections to easily map sources to physical things
 	key VARCHAR(36) DEFAULT NULL,
 
-	type VARCHAR NOT NULL, 	            -- The source type
-	meta VARCHAR NOT NULL DEFAULT '{}', -- Metadata for the source
+	type VARCHAR NOT NULL, 	                 -- The source type
+	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the source
+	nonempty BOOLEAN NOT NULL DEFAULT FALSE, -- Whether the source contains data
 
 	-- Maximal scopes that can be given. The * represents all scopes possible for the given source type
 	scopes VARCHAR NOT NULL DEFAULT '["*"]',

@@ -1,6 +1,5 @@
 package database
 
-
 type UserDB struct {
 	adb *AdminDB
 
@@ -90,6 +89,9 @@ func (db *UserDB) CreateSource(s *Source) (string, error) {
 	if s.Connection != nil {
 		return "", ErrAccessDenied("You cannot create sources belonging to a connection")
 	}
+	if s.NonEmpty != nil {
+		return "", ErrAccessDenied("Empty status of source is readonly")
+	}
 	if s.Owner == nil {
 		// If no owner is specified, assume the current user
 		s.Owner = &db.user
@@ -108,6 +110,9 @@ func (db *UserDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
 
 // UpdateSource allows editing a source
 func (db *UserDB) UpdateSource(s *Source) error {
+	if s.NonEmpty != nil {
+		return ErrAccessDenied("Empty status of source is readonly")
+	}
 	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
 		WHERE sources.id=? AND ss.user IN (?,'public','users') AND ss.source=sources.id;`, s.ID, db.user)
 }
@@ -139,7 +144,7 @@ func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, er
 
 // ListSources lists the given sources
 func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
-	if o!=nil && o.UserName!=nil && *o.UserName=="self" {
+	if o != nil && o.UserName != nil && *o.UserName == "self" {
 		o.UserName = &db.user
 	}
 	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
@@ -159,10 +164,10 @@ func (db *UserDB) CreateConnection(c *Connection) (string, string, error) {
 }
 func (db *UserDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
 	// Can only read connections that belong to us
-	return readConnection(db.adb,cid,o,`SELECT * FROM connections WHERE owner=? AND id=?;`,db.user,cid)
+	return readConnection(db.adb, cid, o, `SELECT * FROM connections WHERE owner=? AND id=?;`, db.user, cid)
 }
 func (db *UserDB) UpdateConnection(c *Connection) error {
-	return updateConnection(db.adb,c,`id=? AND owner=?`,c.ID,db.user)
+	return updateConnection(db.adb, c, `id=? AND owner=?`, c.ID, db.user)
 }
 func (db *UserDB) DelConnection(cid string) error {
 	// Can only delete connections that are not plugin-generated, unless the plugin is no longer active
@@ -170,8 +175,8 @@ func (db *UserDB) DelConnection(cid string) error {
 	return getExecError(result, err)
 }
 func (db *UserDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
-	if o!=nil && o.User!=nil && *o.User!=db.user {
-		return nil,ErrAccessDenied("Can only list your own connections")
+	if o != nil && o.User != nil && *o.User != db.user {
+		return nil, ErrAccessDenied("Can only list your own connections")
 	}
-	return listConnections(db.adb,o,`SELECT * FROM connections WHERE owner=?`,db.user)
+	return listConnections(db.adb, o, `SELECT * FROM connections WHERE owner=?`, db.user)
 }
