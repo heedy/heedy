@@ -53,7 +53,12 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 }
 func delUser(adb *AdminDB, name string, sqlStatement string, args ...interface{}) error {
 	result, err := adb.Exec(sqlStatement, args...)
-	return getExecError(result, err)
+	err = getExecError(result, err)
+	if err == nil {
+		// When deleting a user, we also remove the user from the list of admins
+		err = adb.Assets().RemAdmin(name)
+	}
+	return err
 }
 
 func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectStatement string, args ...interface{}) (*Source, error) {
@@ -73,7 +78,7 @@ func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectState
 	return s, err
 }
 
-func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectStatement string, args ...interface{}) (*Connection,error) {
+func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectStatement string, args ...interface{}) (*Connection, error) {
 	c := &Connection{}
 	err := adb.Get(c, selectStatement, args...)
 	if err == sql.ErrNoRows {
@@ -83,21 +88,21 @@ func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectSt
 	if o == nil || !o.Avatar {
 		c.Avatar = nil
 	}
-	if o==nil || !o.AccessToken {
-		if c.AccessToken!=nil {
+	if o == nil || !o.AccessToken {
+		if c.AccessToken != nil {
 			c.AccessToken = nil
 		} else {
 			// Make empty access token show up as empty, so services can know
 			// that no access token is available
-			if c.AccessToken==nil {
+			if c.AccessToken == nil {
 				emptyString := ""
 				c.AccessToken = &emptyString
 			}
 		}
-		
+
 	} else {
 		// Make empty access token show up as empty
-		if c.AccessToken==nil {
+		if c.AccessToken == nil {
 			emptyString := ""
 			c.AccessToken = &emptyString
 		}
@@ -146,12 +151,12 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 }
 
 func updateConnection(adb *AdminDB, c *Connection, whereStatement string, args ...interface{}) error {
-	
+
 	// TODO: need to check if connection belongs to plugin, and determine if any of the fields are readonly
 
 	cColumns, cValues, err := connectionUpdateQuery(c)
-	cValues = append(cValues,args...)
-	result,err := adb.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE %s",cColumns,whereStatement),cValues...)
+	cValues = append(cValues, args...)
+	result, err := adb.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE %s", cColumns, whereStatement), cValues...)
 	return getExecError(result, err)
 }
 
@@ -223,46 +228,46 @@ func getSourceShares(adb *AdminDB, sourceid, selectStatement string, args ...int
 	return m, err
 }
 
-func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string,args ...interface{}) ([]*Source,error) {
+func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string, args ...interface{}) ([]*Source, error) {
 	var res []*Source
-	q,v,err := listSourcesQuery(o)
-	if err!=nil {
-		return nil,err
+	q, v, err := listSourcesQuery(o)
+	if err != nil {
+		return nil, err
 	}
 
-	v = append(v,args...)
+	v = append(v, args...)
 	limitString := ""
-	if o!=nil && o.Limit!=nil {
-		limitString =  fmt.Sprintf("LIMIT %d",*o.Limit)
+	if o != nil && o.Limit != nil {
+		limitString = fmt.Sprintf("LIMIT %d", *o.Limit)
 	} else {
 		// If no limit is given, use limit of 1000
-		limitString =  fmt.Sprintf("LIMIT %d",1000)
+		limitString = fmt.Sprintf("LIMIT %d", 1000)
 	}
-	qstring := fmt.Sprintf(selectStatement,q,limitString)
-	
-	err = adb.Select(&res,qstring,v...)
-	if err!=nil {
-		return nil,err
+	qstring := fmt.Sprintf(selectStatement, q, limitString)
+
+	err = adb.Select(&res, qstring, v...)
+	if err != nil {
+		return nil, err
 	}
 
 	// Clear avatars if not needed
-	if o!=nil && o.Avatar!=nil && !(*o.Avatar) {
+	if o != nil && o.Avatar != nil && !(*o.Avatar) {
 		for r := range res {
 			res[r].Avatar = nil
 		}
 	}
-	return res,nil
+	return res, nil
 }
 
 // TODO: Needs to be redone for plugin connections
 func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement string, args ...interface{}) ([]*Connection, error) {
 	var res []*Connection
-	err := adb.Select(&res,selectStatement,args...)
-	if err!=nil {
-		return nil,err
+	err := adb.Select(&res, selectStatement, args...)
+	if err != nil {
+		return nil, err
 	}
-	if o!=nil {
-		if o.Avatar!=nil && !(*o.Avatar) {
+	if o != nil {
+		if o.Avatar != nil && !(*o.Avatar) {
 			for r := range res {
 				res[r].Avatar = nil
 			}
@@ -271,5 +276,5 @@ func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement str
 	for r := range res {
 		res[r].AccessToken = nil
 	}
-	return res,nil
+	return res, nil
 }

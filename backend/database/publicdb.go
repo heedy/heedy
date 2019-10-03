@@ -40,6 +40,10 @@ func (db *PublicDB) DelUser(name string) error {
 	return ErrAccessDenied("You must be logged in to delete your user")
 }
 
+func (db *PublicDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
+	return nil, ErrUnimplemented
+}
+
 // CanCreateSource returns whether the given source can be
 func (db *PublicDB) CanCreateSource(s *Source) error {
 	if s.Type == nil {

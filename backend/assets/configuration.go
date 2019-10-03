@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -245,6 +246,8 @@ func (s *SourceType) ValidateMetaWithDefaults(meta map[string]interface{}) (err 
 }
 
 type Configuration struct {
+	sync.RWMutex
+
 	SiteURL        *string   `hcl:"site_url" json:"site_url,omitempty"`
 	Host           *string   `hcl:"host" json:"host,omitempty"`
 	Port           *uint16   `hcl:"port" json:"port,omitempty"`
@@ -279,6 +282,8 @@ type Configuration struct {
 }
 
 func (c *Configuration) Validate() error {
+	c.RLock()
+	defer c.RUnlock()
 	if c.SQL == nil {
 		return fmt.Errorf("No SQL database was specified")
 	}

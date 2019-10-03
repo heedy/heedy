@@ -340,6 +340,36 @@ func (p *Plugin) BeforeStart(ir InternalRequester) error {
 	return nil
 }
 
+func (p *Plugin) OnUserCreate(username string, ir InternalRequester) error {
+	psettings := p.Assets.Config.Plugins[p.Name]
+	for cname, cv := range psettings.Connections {
+		// For each connection
+
+		pluginKey := p.Name + ":" + cname
+
+		logrus.Debugf("%s: Creating '%s' connection for user '%s'", p.Name, pluginKey, username)
+
+		// aaand how exactly do I achieve this?
+
+		cid, _, err := p.DB.CreateConnection(processConnection(pluginKey, username, cv))
+		if err != nil {
+			return err
+		}
+
+		for skey, sv := range cv.Sources {
+			logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
+
+			s := processSource(cid, skey, sv)
+			err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
 // AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections.
 // It also sets up all event callbacks
 func (p *Plugin) AfterStart(ir InternalRequester) error {

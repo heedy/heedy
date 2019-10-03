@@ -148,6 +148,10 @@ func (db *ConnectionDB) DelUser(name string) error {
 	return ErrAccessDenied("Insufficient access to delete the given user")
 }
 
+func (db *ConnectionDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
+	return nil, ErrUnimplemented
+}
+
 // CanCreateSource returns whether the given source can be
 func (db *ConnectionDB) CanCreateSource(s *Source) error {
 	_, _, err := sourceCreateQuery(db.adb.Assets().Config, s)

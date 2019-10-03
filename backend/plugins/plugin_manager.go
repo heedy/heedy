@@ -8,6 +8,7 @@ import (
 
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 
 	"github.com/sirupsen/logrus"
 )
@@ -89,6 +90,8 @@ func (pm *PluginManager) Reload() error {
 	pm.order = a.Config.GetActivePlugins()
 	order := pm.order
 	pm.status = statusLoading
+
+	events.AddHandler(pm)
 	pm.Unlock()
 
 	// First, perform a cleanup operation: find any connections that are owned by inactive plugins,
@@ -184,6 +187,23 @@ func (pm *PluginManager) Reload() error {
 	return nil
 }
 
+func (pm *PluginManager) Fire(e *events.Event) {
+	if e.Event == "user_create" {
+		// A user was created - run user creation code for each plugin
+		pm.RLock()
+		defer pm.RUnlock()
+		for pname, p := range pm.Plugins {
+			err := p.Plugin.OnUserCreate(e.User, pm.IR)
+			if err != nil {
+				logrus.Errorf("User creation failed %s (%s)", err.Error(), pname)
+				// Delete the user on failure
+				go pm.ADB.DelUser(e.User)
+				return
+			}
+		}
+	}
+}
+
 // Close shuts down the plugins that are currently
 func (pm *PluginManager) Close() error {
 	pm.Lock()
@@ -191,6 +211,7 @@ func (pm *PluginManager) Close() error {
 		pm.Unlock()
 		return errors.New("Already closing")
 	}
+	events.RemoveHandler(pm)
 	pm.status = statusClosing
 	order := pm.order
 	pm.Unlock()

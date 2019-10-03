@@ -250,6 +250,9 @@ type ReadSourceOptions struct {
 	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
 }
 
+type ListUsersOptions struct {
+}
+
 // ListSourcesOptions shows the options for listing sources
 type ListSourcesOptions struct {
 	// Whether to include avatars
@@ -298,6 +301,7 @@ type DB interface {
 	ReadUser(name string, o *ReadUserOptions) (*User, error)
 	UpdateUser(u *User) error
 	DelUser(name string) error
+	ListUsers(o *ListUsersOptions) ([]*User, error)
 
 	CreateConnection(c *Connection) (string, string, error)
 	ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error)

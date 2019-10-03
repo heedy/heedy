@@ -43,6 +43,15 @@ func ReadUser(w http.ResponseWriter, r *http.Request) {
 	u, err := rest.CTX(r).DB.ReadUser(username, &o)
 	rest.WriteJSON(w, r, u, err)
 }
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	var u database.User
+
+	if err := rest.UnmarshalRequest(r, &u); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
+		return
+	}
+	rest.WriteResult(w, r, rest.CTX(r).DB.CreateUser(&u))
+}
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var u database.User
 
@@ -52,6 +61,21 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	u.ID = chi.URLParam(r, "username")
 	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateUser(&u))
+}
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelUser(username))
+}
+
+func ListUsers(w http.ResponseWriter, r *http.Request) {
+	var o database.ListUsersOptions
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	sl, err := rest.CTX(r).DB.ListUsers(&o)
+	rest.WriteJSON(w, r, sl, err)
 }
 
 func ListSources(w http.ResponseWriter, r *http.Request) {
@@ -238,6 +262,45 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(buildinfo.Version))
 }
 
+func GetAdminUsers(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can list admins"))
+		return
+	}
+	if a.Config.AdminUsers == nil {
+		rest.WriteJSON(w, r, []string{}, nil)
+		return
+	}
+	rest.WriteJSON(w, r, *a.Config.AdminUsers, nil)
+}
+
+func AddAdminUser(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add admin users"))
+		return
+	}
+	username := chi.URLParam(r, "username")
+	_, err := rest.CTX(r).DB.ReadUser(username, nil)
+	if err == nil {
+		err = a.AddAdmin(username)
+	}
+	rest.WriteResult(w, r, err)
+}
+func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add remove admin status"))
+		return
+	}
+	username := chi.URLParam(r, "username")
+	rest.WriteResult(w, r, a.RemAdmin(username))
+}
+
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 }
@@ -250,8 +313,11 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Get("/events", EventWebsocket)
 	v1mux.Post("/events", FireEvent)
 
+	v1mux.Post("/users", CreateUser)
+	v1mux.Get("/users", ListUsers)
 	v1mux.Get("/users/{username}", ReadUser)
 	v1mux.Patch("/users/{username}", UpdateUser)
+	v1mux.Delete("/users/{username}", DeleteUser)
 
 	v1mux.Post("/sources", CreateSource)
 	v1mux.Get("/sources", ListSources)
@@ -268,6 +334,10 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Get("/meta/scopes/{sourcetype}", GetSourceScopes)
 	v1mux.Get("/meta/scopes", GetConnectionScopes)
 	v1mux.Get("/meta/version", GetVersion)
+
+	v1mux.Get("/settings/admin", GetAdminUsers)
+	v1mux.Post("/settings/admin/{username}", AddAdminUser)
+	v1mux.Delete("/settings/admin/{username}", RemoveAdminUser)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

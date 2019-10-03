@@ -43,7 +43,7 @@ func (db *UserDB) CreateUser(u *User) error {
 
 func (db *UserDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	// A user can be read if it is the current user, OR if the user gave read access to itself
-	if name == db.user {
+	if name == db.user || db.isAdmin() {
 		return db.adb.ReadUser(name, o)
 	}
 	return readUser(db.adb, name, o, `SELECT * FROM users WHERE username=? AND (public_read OR users_read) LIMIT 1;`, name)
@@ -51,7 +51,7 @@ func (db *UserDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 
 // UpdateUser updates the given portions of a user
 func (db *UserDB) UpdateUser(u *User) error {
-	if u.ID == db.user {
+	if u.ID == db.user || db.isAdmin() {
 		return db.adb.UpdateUser(u)
 	}
 
@@ -65,6 +65,13 @@ func (db *UserDB) DelUser(name string) error {
 	}
 
 	return ErrAccessDenied("You cannot delete other users")
+}
+
+func (db *UserDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
+	if db.isAdmin() {
+		return db.adb.ListUsers(o)
+	}
+	return nil, ErrUnimplemented
 }
 
 // CanCreateSource returns whether the given source can be

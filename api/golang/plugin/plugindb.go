@@ -174,7 +174,7 @@ func (db *PluginDB) CreateUser(u *database.User) error {
 }
 
 func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*database.User, error) {
-	api := fmt.Sprintf("/api/heedy/v1/user/%s", name)
+	api := fmt.Sprintf("/api/heedy/v1/users/%s", name)
 
 	if o != nil {
 		form := url.Values{}
@@ -187,7 +187,7 @@ func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*databas
 	return &u, err
 }
 func (db *PluginDB) UpdateUser(u *database.User) error {
-	api := fmt.Sprintf("/api/heedy/v1/user/%s", u.ID)
+	api := fmt.Sprintf("/api/heedy/v1/users/%s", u.ID)
 	b, err := json.Marshal(u)
 	if err != nil {
 		return err
@@ -196,14 +196,28 @@ func (db *PluginDB) UpdateUser(u *database.User) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelUser(name string) error {
-	return database.ErrBadQuery("Can't delete users through the REST API")
+	api := fmt.Sprintf("/api/heedy/v1/users/%s", name)
+	return db.BasicRequest("DELETE", api, nil)
+}
+
+func (db *PluginDB) ListUsers(o *database.ListUsersOptions) ([]*database.User, error) {
+	var sl []*database.User
+	api := "/api/heedy/v1/users"
+
+	if o != nil {
+		form := url.Values{}
+		queryEncoder.Encode(o, form)
+		api = api + "?" + form.Encode()
+	}
+	err := db.UnmarshalRequest(&sl, "GET", api, nil)
+	return sl, err
 }
 
 func (db *PluginDB) CanCreateSource(s *database.Source) error {
 	return ErrUnimplemented
 }
 func (db *PluginDB) CreateSource(s *database.Source) (string, error) {
-	api := "/api/heedy/v1/source"
+	api := "/api/heedy/v1/sources"
 	b, err := json.Marshal(s)
 	if err != nil {
 		return "", err
@@ -213,7 +227,7 @@ func (db *PluginDB) CreateSource(s *database.Source) (string, error) {
 	return s.ID, err
 }
 func (db *PluginDB) ReadSource(id string, o *database.ReadSourceOptions) (*database.Source, error) {
-	api := fmt.Sprintf("/api/heedy/v1/source/%s", id)
+	api := fmt.Sprintf("/api/heedy/v1/sources/%s", id)
 
 	if o != nil {
 		form := url.Values{}
@@ -226,7 +240,7 @@ func (db *PluginDB) ReadSource(id string, o *database.ReadSourceOptions) (*datab
 	return &s, err
 }
 func (db *PluginDB) UpdateSource(s *database.Source) error {
-	api := fmt.Sprintf("/api/heedy/v1/source/%s", s.ID)
+	api := fmt.Sprintf("/api/heedy/v1/sources/%s", s.ID)
 	b, err := json.Marshal(s)
 	if err != nil {
 		return err
@@ -235,7 +249,7 @@ func (db *PluginDB) UpdateSource(s *database.Source) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelSource(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/source/%s", id)
+	api := fmt.Sprintf("/api/heedy/v1/sources/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
 
@@ -255,7 +269,7 @@ func (db *PluginDB) GetSourceShares(sourceid string) (m map[string]*database.Sco
 // ListSources lists the given sources
 func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Source, error) {
 	var sl []*database.Source
-	api := "/api/heedy/v1/source"
+	api := "/api/heedy/v1/sources"
 
 	if o != nil {
 		form := url.Values{}
@@ -267,7 +281,7 @@ func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Sou
 }
 
 func (db *PluginDB) CreateConnection(c *database.Connection) (string, string, error) {
-	api := "/api/heedy/v1/connection"
+	api := "/api/heedy/v1/connections"
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", "", err
@@ -281,7 +295,7 @@ func (db *PluginDB) CreateConnection(c *database.Connection) (string, string, er
 	return c.ID, accessToken, err
 }
 func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection, error) {
-	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
+	api := fmt.Sprintf("/api/heedy/v1/connections/%s", id)
 
 	if o != nil {
 		form := url.Values{}
@@ -294,7 +308,7 @@ func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions)
 	return &c, err
 }
 func (db *PluginDB) UpdateConnection(c *database.Connection) error {
-	api := fmt.Sprintf("/api/heedy/v1/connection/%s", c.ID)
+	api := fmt.Sprintf("/api/heedy/v1/connections/%s", c.ID)
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -303,12 +317,12 @@ func (db *PluginDB) UpdateConnection(c *database.Connection) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelConnection(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/connection/%s", id)
+	api := fmt.Sprintf("/api/heedy/v1/connections/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
 func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*database.Connection, error) {
 	var cl []*database.Connection
-	api := "/api/heedy/v1/connection"
+	api := "/api/heedy/v1/connections"
 
 	if o != nil {
 		form := url.Values{}

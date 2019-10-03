@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/spf13/afero"
 )
 
@@ -110,7 +110,7 @@ func FrontendMux() (*chi.Mux, error) {
 
 		err = fTemplate.Execute(w, &fContext{
 			User:     u,
-			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.Name),
+			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
 			Frontend: frontendPlugins,
 		})
 		if err != nil {

@@ -118,7 +118,6 @@ func (db *AdminDB) CreateUser(u *User) error {
 		return err
 	}
 
-	// Insert into user needs to be first, as group uses user as owner.
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, QQ(len(userValues))), userValues...)
 	return getExecError(result, err)
 
@@ -164,6 +163,12 @@ func (db *AdminDB) DelUser(name string) error {
 	// The user's group will be deleted by cascade on group owner
 	result, err := db.Exec("DELETE FROM users WHERE username=?;", name)
 	return getExecError(result, err)
+}
+
+func (db *AdminDB) ListUsers(o *ListUsersOptions) (u []*User, err error) {
+	err = db.Select(&u, "SELECT * FROM users WHERE username NOT IN ('heedy', 'users', 'public');")
+
+	return u, err
 }
 
 // CanCreateSource returns whether the given source can be

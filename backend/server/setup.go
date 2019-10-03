@@ -115,10 +115,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		}
 
 		// Add the user to admins
-		if sm.Config.AdminUsers == nil || len(*sm.Config.AdminUsers) == 0 {
-			sm.Config.AdminUsers = &[]string{sm.User.Name}
-		}
-
+		sm.Config.AdminUsers = &[]string{sm.User.UserName}
 
 		logrus.Infof("Creating database in '%s'", directory)
 		a, err := assets.Create(directory, sm.Config, configFile)

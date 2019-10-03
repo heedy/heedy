@@ -6,6 +6,8 @@ import (
 )
 
 func (c *Configuration) GetRequestBodyByteLimit() int64 {
+	c.RLock()
+	defer c.RUnlock()
 	if c.RequestBodyByteLimit != nil {
 		return *c.RequestBodyByteLimit
 	}
@@ -13,6 +15,8 @@ func (c *Configuration) GetRequestBodyByteLimit() int64 {
 }
 
 func (c *Configuration) GetHost() string {
+	c.RLock()
+	defer c.RUnlock()
 	if c.Host != nil {
 		return *c.Host
 	}
@@ -20,6 +24,8 @@ func (c *Configuration) GetHost() string {
 }
 
 func (c *Configuration) GetPort() uint16 {
+	c.RLock()
+	defer c.RUnlock()
 	if c.Port != nil {
 		return *c.Port
 	}
@@ -27,6 +33,8 @@ func (c *Configuration) GetPort() uint16 {
 }
 
 func (c *Configuration) GetNewConnectionScopes() []string {
+	c.RLock()
+	defer c.RUnlock()
 	if c.NewConnectionScopes != nil {
 		return *c.NewConnectionScopes
 	}
@@ -34,6 +42,8 @@ func (c *Configuration) GetNewConnectionScopes() []string {
 }
 
 func (c *Configuration) GetActivePlugins() []string {
+	c.RLock()
+	defer c.RUnlock()
 	if c.ActivePlugins == nil {
 		return []string{}
 	}
@@ -42,6 +52,8 @@ func (c *Configuration) GetActivePlugins() []string {
 
 // UserIsAdmin checks if the given user is an admin
 func (c *Configuration) UserIsAdmin(username string) bool {
+	c.RLock()
+	defer c.RUnlock()
 	if c.AdminUsers == nil {
 		return false
 	}
@@ -55,12 +67,16 @@ func (c *Configuration) UserIsAdmin(username string) bool {
 
 // GetSourceType returns the given source type
 func (c *Configuration) GetSourceType(sourcetype string) (*SourceType, bool) {
+	c.RLock()
+	defer c.RUnlock()
 	s, ok := c.SourceTypes[sourcetype]
 	return &s, ok
 }
 
 // ValidateSourceMeta makes sure that sources have valid metadata
 func (c *Configuration) ValidateSourceMeta(sourcetype string, meta *map[string]interface{}) error {
+	c.RLock()
+	defer c.RUnlock()
 	s, ok := c.SourceTypes[sourcetype]
 	if !ok {
 		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
@@ -70,6 +86,8 @@ func (c *Configuration) ValidateSourceMeta(sourcetype string, meta *map[string]i
 
 // ValidateSourceMetaWithDefaults validates the source, additionally setting required values to defaults
 func (c *Configuration) ValidateSourceMetaWithDefaults(sourcetype string, meta map[string]interface{}) error {
+	c.RLock()
+	defer c.RUnlock()
 	s, ok := c.SourceTypes[sourcetype]
 	if !ok {
 		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
@@ -78,22 +96,26 @@ func (c *Configuration) ValidateSourceMetaWithDefaults(sourcetype string, meta m
 }
 
 // GetSourceScopes returns the map of scopes
-func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string,error) {
-	s,ok := c.SourceTypes[sourcetype]
+func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string, error) {
+	c.RLock()
+	defer c.RUnlock()
+	s, ok := c.SourceTypes[sourcetype]
 	if !ok {
-		return nil,fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+		return nil, fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
 	}
-	if s.Scopes==nil {
-		return make(map[string]string),nil
+	if s.Scopes == nil {
+		return make(map[string]string), nil
 	}
 	return *s.Scopes, nil
 }
 
 // GetExecTimeout gets timeout for exec
 func (c *Configuration) GetExecTimeout() time.Duration {
-	if c.ExecTimeout!=nil {
+	c.RLock()
+	defer c.RUnlock()
+	if c.ExecTimeout != nil {
 		d, err := time.ParseDuration(*c.ExecTimeout)
-		if err!=nil {
+		if err != nil {
 			return d
 		}
 	}

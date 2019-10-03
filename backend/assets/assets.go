@@ -56,6 +56,7 @@ func BuiltinAssets() afero.Fs {
 // Assets holds the information that comes from loading the database folder,
 // merging it with the built-in assets, and combining
 type Assets struct {
+
 	// FolderPath is the path where the database is installed.
 	// it can be "" if we are running heedy in setup mode,
 	// in which case it runs solely on builtin assets
@@ -225,6 +226,67 @@ func (a *Assets) DataDir() string {
 // PluginDir returns the directory where plugin data is stored
 func (a *Assets) PluginDir() string {
 	return path.Join(a.FolderPath, "plugins")
+}
+
+func (a *Assets) AddAdmin(username string) error {
+	a.Config.Lock()
+	defer a.Config.Unlock()
+	if a.Config.AdminUsers == nil {
+		au := []string{}
+		a.Config.AdminUsers = &au
+	}
+
+	// Check if the admin user already exists
+	for _, v := range *a.Config.AdminUsers {
+		if v == username {
+			return nil
+		}
+	}
+
+	// Append the user to current configuration
+	au := append(*a.Config.AdminUsers, username)
+	a.Config.AdminUsers = &au
+
+	c := NewConfiguration()
+	c.AdminUsers = &au
+
+	err := WriteConfig(path.Join(a.FolderPath, "heedy.conf"), c)
+	if err != nil {
+		au = au[:len(au)-1]
+	}
+
+	return err
+}
+
+func (a *Assets) RemAdmin(username string) error {
+	a.Config.Lock()
+	defer a.Config.Unlock()
+	if a.Config.AdminUsers == nil {
+		return nil
+	}
+
+	// Check if the admin user already exists
+	for i, v := range *a.Config.AdminUsers {
+		if v == username {
+			// The username exists
+			au := *a.Config.AdminUsers
+			au[len(au)-1], au[i] = au[i], au[len(au)-1]
+			au = au[:len(au)-1]
+
+			a.Config.AdminUsers = &au
+
+			c := NewConfiguration()
+			c.AdminUsers = &au
+
+			err := WriteConfig(path.Join(a.FolderPath, "heedy.conf"), c)
+			if err != nil {
+				au = append(au, username)
+			}
+			return err
+		}
+	}
+	// The username didn't exist
+	return nil
 }
 
 // Open opens the assets in a given configuration path
