@@ -106,7 +106,9 @@ async function setup(appinfo) {
   for (let key in app.injected) {
     // skip loop if the property is from prototype
     if (!app.injected.hasOwnProperty(key)) continue;
-    (app.injected[key]["$onInit"] || (() => (1)))();
+    if (app.injected[key].$onInit !== undefined) {
+      app.injected[key].$onInit();
+    }
   }
 
   // Set up the app routes
@@ -133,7 +135,7 @@ async function setup(appinfo) {
 
   Vue.mixin({
     computed: {
-      $heedy() {
+      $app() {
         return app;
       }
     }

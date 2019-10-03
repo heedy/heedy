@@ -3,7 +3,13 @@ import Theme from "./main/theme.vue";
 import PublicHome from "./main/public_home.vue";
 import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
-import Settings from "./main/settings.vue";
+
+import SettingsPage from "./main/settings/index.vue";
+import SettingsInjector, {
+    settingsRoutes
+} from "./main/settings/injector.js";
+import SettingsPlugins from "./main/settings/plugins.vue";
+import SettingsServer from "./main/settings/server.vue";
 
 
 import UserInjector, {
@@ -59,7 +65,7 @@ function setup(app) {
     app.inject("user", new UserInjector(app.store));
     app.inject("connection", new ConnectionInjector(app.store));
     app.inject("source", new SourceInjector(app.store));
-
+    app.inject("settings", new SettingsInjector(app.store));
     app.inject("events", new EventSubscriber(app.info.user != null));
 
 
@@ -81,23 +87,39 @@ function setup(app) {
 
     if (app.info.user != null) {
         // Pages to set up when user is logged in
-        app.addMenuItem({
-            key: "heedySettings",
-            text: "Settings",
-            icon: "settings",
-            route: "/settings",
-            location: "secondary"
-        });
+        if (app.info.admin) {
+            app.addMenuItem({
+                key: "heedySettings",
+                text: "Settings",
+                icon: "settings",
+                route: "/settings/plugins",
+                location: "secondary"
+            });
+            app.addRoute({
+                path: "/settings",
+                component: SettingsPage,
+                children: settingsRoutes
+            });
+            app.settings.addPage({
+                path: "plugins",
+                component: SettingsPlugins,
+                title: "Plugins"
+            });
+            app.settings.addPage({
+                path: "server",
+                component: SettingsServer,
+                title: "Server"
+            });
+        }
+
 
 
         app.addRoute({
             path: "/logout",
             component: Logout
         });
-        app.addRoute({
-            path: "/settings",
-            component: Settings
-        });
+
+
         app.addRoute({
             path: "/connections",
             component: Connections

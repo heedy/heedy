@@ -1,44 +1,28 @@
 <template>
-  <h-page-container>
-    <v-flex justify-center align-center text-center style="padding: 10px; padding-bottom: 20px;">
-      <h1 style="color:#1976d2;">Update {{ connection.name }} Settings</h1>
-    </v-flex>
-    <v-flex>
-      <v-card>
-        <div style="padding: 10px; padding-bottom: 0;">
-          <v-alert
-            v-if="alert.length>0"
-            text
-            outlined
-            color="deep-orange"
-            icon="error_outline"
-          >{{ alert }}</v-alert>
-        </div>
-        <v-form @submit="update" v-model="formValid">
-          <v-container fluid grid-list-md>
-            <v-layout row>
-              <v-flex>
-                <v-jsonschema-form
-                  :schema="schema"
-                  :model="modified"
-                  :options="options"
-                  @error="show"
-                  @change="show"
-                  @input="show"
-                />
-              </v-flex>
-            </v-layout>
-          </v-container>
+  <h-card-page :title="'Update ' + connection.name + ' Settings'" :alert="alert">
+    <v-form @submit="update" v-model="formValid">
+      <v-container fluid grid-list-md>
+        <v-layout row>
+          <v-flex>
+            <v-jsonschema-form
+              :schema="schema"
+              :model="modified"
+              :options="options"
+              @error="show"
+              @change="show"
+              @input="show"
+            />
+          </v-flex>
+        </v-layout>
+      </v-container>
 
-          <v-card-actions>
-            <v-spacer></v-spacer>
+      <v-card-actions>
+        <v-spacer></v-spacer>
 
-            <v-btn dark color="info" type="submit" :loading="loading">Update Settings</v-btn>
-          </v-card-actions>
-        </v-form>
-      </v-card>
-    </v-flex>
-  </h-page-container>
+        <v-btn dark color="info" type="submit" :loading="loading">Update Settings</v-btn>
+      </v-card-actions>
+    </v-form>
+  </h-card-page>
 </template>
 <script>
 export default {
@@ -107,7 +91,7 @@ export default {
       console.log("Update connection settings", this.connection.id);
 
       if (Object.keys(this.modified).length > 0) {
-        let result = await this.$heedy.api(
+        let result = await this.$app.api(
           "PATCH",
           `api/heedy/v1/connections/${this.connection.id}`,
           modified

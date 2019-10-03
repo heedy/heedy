@@ -60,6 +60,7 @@ func EventWebsocket(w http.ResponseWriter, r *http.Request) {
 	ws, err := websocket.Accept(w, r, nil)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
 	}
 
 	haderror := make(chan error, 1)

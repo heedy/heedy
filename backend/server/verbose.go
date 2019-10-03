@@ -28,7 +28,8 @@ func VerboseLoggingMiddleware(h http.Handler, log *logrus.Entry) http.Handler {
 		log.Debugf("Request:\n\n%s\n\n", string(req))
 
 		// We don't want to mess with websocket connections
-		if request.Header.Get("Connection") == "Upgrade" {
+		if request.Header.Get("Upgrade") == "websocket" {
+			log.Debug("Websocket request - not logging raw response")
 			h.ServeHTTP(writer, request)
 			return
 		}

@@ -1,50 +1,29 @@
 <template>
-  <h-page-container noflex>
-    <v-flex
-      justify-center
-      align-center
-      text-center
-      style="padding: 10px; padding-bottom: 20px;padding-top:20px;"
-    >
-      <h1 style="color:#1976d2;">Create a new Connection</h1>
-    </v-flex>
-    <v-flex>
-      <v-card>
-        <div style="padding: 10px; padding-bottom: 0;">
-          <v-alert
-            v-if="alert.length>0"
-            text
-            outlined
-            color="deep-orange"
-            icon="error_outline"
-          >{{ alert }}</v-alert>
-        </div>
-        <v-container fluid grid-list-md>
-          <v-layout row>
-            <v-flex sm5 md4 xs12>
-              <h-avatar-editor ref="avatarEditor" image="settings_input_component"></h-avatar-editor>
-            </v-flex>
-            <v-flex sm7 md8 xs12>
-              <v-container>
-                <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
-                <v-text-field
-                  label="Description"
-                  placeholder="This connection does stuff"
-                  v-model="description"
-                ></v-text-field>
-                <h-scope-editor v-model="scopes"></h-scope-editor>
-              </v-container>
-            </v-flex>
-          </v-layout>
-        </v-container>
+  <h-card-page title="Create a new Connection" :alert="alert">
+    <v-container fluid grid-list-md>
+      <v-layout row>
+        <v-flex sm5 md4 xs12>
+          <h-avatar-editor ref="avatarEditor" image="settings_input_component"></h-avatar-editor>
+        </v-flex>
+        <v-flex sm7 md8 xs12>
+          <v-container>
+            <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
+            <v-text-field
+              label="Description"
+              placeholder="This connection does stuff"
+              v-model="description"
+            ></v-text-field>
+            <h-scope-editor v-model="scopes"></h-scope-editor>
+          </v-container>
+        </v-flex>
+      </v-layout>
+    </v-container>
 
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-flex>
-  </h-page-container>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
+    </v-card-actions>
+  </h-card-page>
 </template>
 <script>
 import api from "../../../api.mjs";

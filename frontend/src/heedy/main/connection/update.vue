@@ -1,67 +1,47 @@
 <template>
-  <h-page-container>
-    <v-flex justify-center align-center text-center style="padding: 10px; padding-bottom: 20px;">
-      <h1 style="color:#1976d2;">Update {{ connection.name }}</h1>
-    </v-flex>
-    <v-flex>
-      <v-card>
-        <div style="padding: 10px; padding-bottom: 0;">
-          <v-alert
-            v-if="alert.length>0"
-            text
-            outlined
-            color="deep-orange"
-            icon="error_outline"
-          >{{ alert }}</v-alert>
-        </div>
-        <v-container fluid grid-list-md>
-          <v-layout row>
-            <v-flex sm5 md4 xs12>
-              <h-avatar-editor
-                ref="avatarEditor"
-                :image="connection.avatar"
-                :colorHash="connection.id"
-              ></h-avatar-editor>
-            </v-flex>
-            <v-flex sm7 md8 xs12>
-              <v-container>
-                <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
-                <v-text-field
-                  label="Description"
-                  placeholder="This connection does stuff"
-                  v-model="description"
-                ></v-text-field>
-                <h-scope-editor v-model="scopes"></h-scope-editor>
-                <v-layout row style="padding:0; margin-top:-25px; ">
-                  <v-flex style="padding-right: 0; margin-bottom: -40px;">
-                    <v-checkbox
-                      style="margin-top: 0; padding-bottom: 0; padding-top:0; margin-bottom:0; padding-right: 0;"
-                      v-model="reset_token"
-                      label="Reset Token"
-                    ></v-checkbox>
-                  </v-flex>
-                  <v-flex style="text-align: right; padding-left: 0; margin-bottom: -40px;">
-                    <v-checkbox
-                      style="margin-top: 0; padding-bottom: 0; padding-top:0; margin-bottom:0; padding-right: 0;float: right;"
-                      v-model="enabled"
-                      label="Enabled"
-                    ></v-checkbox>
-                  </v-flex>
-                </v-layout>
-              </v-container>
-            </v-flex>
-          </v-layout>
-        </v-container>
+  <h-card-page :title="'Update '+ connection.name" :alert="alert">
+    <v-container fluid grid-list-md>
+      <v-layout row>
+        <v-flex sm5 md4 xs12>
+          <h-avatar-editor ref="avatarEditor" :image="connection.avatar" :colorHash="connection.id"></h-avatar-editor>
+        </v-flex>
+        <v-flex sm7 md8 xs12>
+          <v-container>
+            <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
+            <v-text-field
+              label="Description"
+              placeholder="This connection does stuff"
+              v-model="description"
+            ></v-text-field>
+            <h-scope-editor v-model="scopes"></h-scope-editor>
+            <v-layout row style="padding:0; margin-top:-25px; ">
+              <v-flex style="padding-right: 0; margin-bottom: -40px;">
+                <v-checkbox
+                  style="margin-top: 0; padding-bottom: 0; padding-top:0; margin-bottom:0; padding-right: 0;"
+                  v-model="reset_token"
+                  label="Reset Token"
+                ></v-checkbox>
+              </v-flex>
+              <v-flex style="text-align: right; padding-left: 0; margin-bottom: -40px;">
+                <v-checkbox
+                  style="margin-top: 0; padding-bottom: 0; padding-top:0; margin-bottom:0; padding-right: 0;float: right;"
+                  v-model="enabled"
+                  label="Enabled"
+                ></v-checkbox>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </v-flex>
+      </v-layout>
+    </v-container>
 
-        <v-card-actions>
-          <v-btn v-if="!enabled" dark color="red" @click="del" :loading="loading">Delete</v-btn>
-          <v-spacer></v-spacer>
+    <v-card-actions>
+      <v-btn v-if="!enabled" dark color="red" @click="del" :loading="loading">Delete</v-btn>
+      <v-spacer></v-spacer>
 
-          <v-btn dark color="blue" @click="update" :loading="loading">Update</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-flex>
-  </h-page-container>
+      <v-btn dark color="blue" @click="update" :loading="loading">Update</v-btn>
+    </v-card-actions>
+  </h-card-page>
 </template>
 <script>
 import Vue from "../../../dist.mjs";

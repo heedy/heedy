@@ -34,9 +34,14 @@ export default {
     typePaths: {},
 
     // The map of connection scopes along with their descriptions
-    connectionScopes: null
+    connectionScopes: null,
+
+    settings_routes: []
   },
   mutations: {
+    setSettingsRoutes(state, v) {
+      state.settings_routes = v;
+    },
     addConnectionComponent(state, v) {
       state.connection_components.push(v);
     },

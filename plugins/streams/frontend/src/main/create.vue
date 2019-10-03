@@ -1,79 +1,56 @@
 <template>
-  <h-page-container noflex>
-    <v-flex
-      justify-center
-      align-center
-      text-center
-      style="padding: 10px; padding-bottom: 20px;padding-top:20px;"
-    >
-      <h1 style="color:#1976d2;">Create a new Stream</h1>
-    </v-flex>
-    <v-flex>
-      <v-card>
-        <div style="padding: 10px; padding-bottom: 0;">
-          <v-alert
-            v-if="alert.length>0"
-            text
-            outlined
-            color="deep-orange"
-            icon="error_outline"
-          >{{ alert }}</v-alert>
-        </div>
-        <v-container fluid grid-list-md>
-          <v-layout row>
-            <v-flex sm5 md4 xs12>
-              <h-avatar-editor ref="avatarEditor" image="timeline"></h-avatar-editor>
-            </v-flex>
-            <v-flex sm7 md8 xs12>
-              <v-container>
-                <v-text-field label="Name" placeholder="My Stream" v-model="name"></v-text-field>
-                <v-text-field
-                  label="Description"
-                  placeholder="This streams holds my data"
-                  v-model="description"
-                ></v-text-field>
-                <v-text-field label="Subtype" placeholder></v-text-field>
-              </v-container>
-            </v-flex>
-          </v-layout>
-        </v-container>
-        <v-container v-if="advanced">
-          <v-row>
-            <v-flex sm5 md4 xs12>
-              <v-container>
-                <v-radio-group :value="curRadio" @change="setRadio">
-                  <v-radio
-                    v-for="item in schemaTypes"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  ></v-radio>
-                </v-radio-group>
-              </v-container>
-            </v-flex>
-            <v-flex sm7 md8 xs12>
-              <v-container>
-                <h5>JSON Schema</h5>
-                <codemirror v-model="code" :options="cmOptions"></codemirror>
-              </v-container>
-            </v-flex>
-          </v-row>
-        </v-container>
+  <h-card-page title="Create a new Stream" :alert="alert">
+    <v-container fluid grid-list-md>
+      <v-layout row>
+        <v-flex sm5 md4 xs12>
+          <h-avatar-editor ref="avatarEditor" image="timeline"></h-avatar-editor>
+        </v-flex>
+        <v-flex sm7 md8 xs12>
+          <v-container>
+            <v-text-field label="Name" placeholder="My Stream" v-model="name"></v-text-field>
+            <v-text-field
+              label="Description"
+              placeholder="This streams holds my data"
+              v-model="description"
+            ></v-text-field>
+            <v-text-field label="Subtype" placeholder></v-text-field>
+          </v-container>
+        </v-flex>
+      </v-layout>
+    </v-container>
+    <v-container v-if="advanced">
+      <v-row>
+        <v-flex sm5 md4 xs12>
+          <v-container>
+            <v-radio-group :value="curRadio" @change="setRadio">
+              <v-radio
+                v-for="item in schemaTypes"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></v-radio>
+            </v-radio-group>
+          </v-container>
+        </v-flex>
+        <v-flex sm7 md8 xs12>
+          <v-container>
+            <h5>JSON Schema</h5>
+            <codemirror v-model="code" :options="cmOptions"></codemirror>
+          </v-container>
+        </v-flex>
+      </v-row>
+    </v-container>
 
-        <v-card-actions>
-          <v-btn text @click="advanced = !advanced">
-            <v-icon left>{{advanced? "expand_less":"expand_more"}}</v-icon>Advanced
-          </v-btn>
-          <v-spacer></v-spacer>
-          <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-flex>
-  </h-page-container>
+    <v-card-actions>
+      <v-btn text @click="advanced = !advanced">
+        <v-icon left>{{advanced? "expand_less":"expand_more"}}</v-icon>Advanced
+      </v-btn>
+      <v-spacer></v-spacer>
+      <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
+    </v-card-actions>
+  </h-card-page>
 </template>
 <script>
-import api from "../../api.mjs";
-
 export default {
   data: () => ({
     alert: "",
@@ -140,6 +117,11 @@ export default {
         name: this.name,
         type: "stream"
       };
+      toCreate.description = this.description;
+      toCreate.meta = {
+        subtype: this.subtype
+      };
+      toCreate.avatar = this.$refs.avatarEditor.getImage();
       if (this.advanced) {
         try {
           var s = JSON.parse(this.code);
@@ -148,14 +130,13 @@ export default {
           this.loading = false;
           return;
         }
-        toCreate.meta = {
-          schema: s,
-          subtype: this.subtype
-        };
-        toCreate.description = this.description;
-        toCreate.avatar = this.$refs.avatarEditor.getImage();
+        toCreate.meta.schema = s;
       }
-      let result = await api("POST", `api/heedy/v1/sources`, toCreate);
+      let result = await this.$app.api(
+        "POST",
+        `api/heedy/v1/sources`,
+        toCreate
+      );
 
       if (!result.response.ok) {
         this.alert = result.data.error_description;
