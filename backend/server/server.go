@@ -20,6 +20,7 @@ type RunOptions struct {
 }
 
 func Run(a *assets.Assets, o *RunOptions) error {
+	//return fmt.Errorf("TESTING REVERT")
 	db, err := database.Open(a)
 	if err != nil {
 		return err
@@ -52,17 +53,6 @@ func Run(a *assets.Assets, o *RunOptions) error {
 		return err
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			log.Info("Cleanup...")
-			pm.Close()
-			log.Info("Done")
-			os.Exit(0)
-		}
-	}()
-
 	requestHandler := http.Handler(NewRequestHandler(auth, pm))
 
 	if a.Config.Verbose {
@@ -70,54 +60,37 @@ func Run(a *assets.Assets, o *RunOptions) error {
 		requestHandler = VerboseLoggingMiddleware(requestHandler, nil)
 	}
 
+	err = nil
+	srv := &http.Server{
+		Addr:    serverAddress,
+		Handler: requestHandler,
+	}
+
 	// Now load the plugins (so that the server is ready when they are loaded)
 	go func() {
-		err := pm.Reload()
+		err = pm.Reload()
 		if err != nil {
-			log.Error(err)
-			pm.Close()
-			os.Exit(1)
+			srv.Close()
+			return
 		}
 		log.Infof("Running heedy on %s", serverAddress)
 	}()
 
-	err = http.ListenAndServe(serverAddress, requestHandler)
-	/*
-		srv := &http.Server{
-			Addr:    serverAddress,
-			Handler: mergeHandler,
-			 TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{*crt},
-				NextProtos:   []string{"h2"},
-				//InsecureSkipVerify: true,
-			},
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			log.Info("Cleanup...")
+			srv.Close()
+			log.Info("Done")
+			return
 		}
+	}()
 
-
-
-		// Set up a http listener
-
-			if *a.Config.HTTPPort > 0 {
-				httpServer := fmt.Sprintf("%s:%d", *a.Config.Host, *a.Config.HTTPPort)
-				log.Infof("Starting http server at %s", httpServer)
-				go http.ListenAndServe(httpServer, handler)
-			}
-
-		// start listening on the socket
-		// Note that if you listen on localhost:<port> you'll not be able to accept
-		// connections over the network. Change it to ":port"  if you want it.
-		conn, err := net.Listen("tcp", serverAddress)
-		if err != nil {
-			return err
-		}
-
-		// start the server
-		log.Infof("starting on %s", serverAddress)
-		err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
-	*/
-	if err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	serr := srv.ListenAndServe()
+	if serr != http.ErrServerClosed {
+		err = serr
 	}
+	pm.Close()
 	return err
-
 }

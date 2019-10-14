@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl"
-	"github.com/hashicorp/hcl2/hclparse"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
@@ -34,6 +34,8 @@ type hclJSONSchema struct {
 type hclExec struct {
 	Name string `hcl:"name,label"`
 
+	Type *string `hcl:"type"`
+
 	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive"`
@@ -50,7 +52,6 @@ type hclSource struct {
 	Avatar      *string    `hcl:"avatar"`
 	Scopes      *[]string  `hcl:"scopes"`
 	Meta        *cty.Value `hcl:"meta,attr"`
-	Defer       *bool      `json:"defer" hcl:"defer"`
 
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
@@ -88,7 +89,7 @@ type hclPlugin struct {
 
 	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
 
-	Exec []hclExec `hcl:"exec,block"`
+	Run []hclExec `hcl:"run,block"`
 
 	Connections []hclConnection `hcl:"connection,block"`
 	On          []Event         `hcl:"on,block" json:"on,omitempty"`
@@ -125,7 +126,7 @@ type hclConfiguration struct {
 
 	Frontend *string `hcl:"frontend"`
 
-	ExecTimeout *string `hcl:"exec_timeout"`
+	RunTimeout *string `hcl:"run_timeout"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
@@ -241,17 +242,17 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 		CopyStructIfPtrSet(p, hp)
 
-		for j := range hp.Exec {
-			if hp.Exec[j].Name == "" {
+		for j := range hp.Run {
+			if hp.Run[j].Name == "" {
 				return nil, fmt.Errorf("%s: Plugin %s no label on exec", filename, hp.Name)
 			}
-			if _, ok := p.Exec[hp.Exec[j].Name]; ok {
-				return nil, fmt.Errorf("%s: Plugin %s exec %s defined twice", filename, hp.Name, hp.Exec[j].Name)
+			if _, ok := p.Run[hp.Run[j].Name]; ok {
+				return nil, fmt.Errorf("%s: Plugin %s exec %s defined twice", filename, hp.Name, hp.Run[j].Name)
 			}
 
 			ej := &Exec{}
-			CopyStructIfPtrSet(ej, &hp.Exec[j])
-			p.Exec[hp.Exec[j].Name] = ej
+			CopyStructIfPtrSet(ej, &hp.Run[j])
+			p.Run[hp.Run[j].Name] = ej
 		}
 		for _, o := range hp.On {
 			if err := o.Validate(); err != nil {

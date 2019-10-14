@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/heedy/heedy/backend/database"
 )
@@ -50,11 +51,11 @@ func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
 // SourceInfo holds the information sent from heedy as http headers about a source.
 // These headers are only present in requests for source API
 type SourceInfo struct {
-	Type     string
-	ID       string
-	NonEmpty bool
-	Meta     map[string]interface{}
-	Access   database.ScopeArray
+	Type         string
+	ID           string
+	LastModified float64
+	Meta         map[string]interface{}
+	Access       database.ScopeArray
 }
 
 // GetSourceInfo prepares all source details that come in as part of a source request
@@ -66,11 +67,17 @@ func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
 	if si.Type == "" || si.ID == "" {
 		return nil, ErrPlugin("No type or ID headers were present in source request")
 	}
-	ne, ok := r.Header["X-Heedy-NonEmpty"]
+	ne, ok := r.Header["X-Heedy-Last-Modified"]
 	if !ok || len(ne) != 1 {
-		return nil, ErrPlugin("No NonEmpty in source request")
+		return nil, ErrPlugin("No Last-Modified in source request")
 	}
-	si.NonEmpty = ne[0] == "true"
+	if ne[0] != "null" {
+		var err error
+		si.LastModified, err = strconv.ParseFloat(ne[0], 64)
+		if err != nil {
+			return nil, ErrPlugin("Last-Modified was not a timestamp")
+		}
+	}
 
 	a, ok := r.Header["X-Heedy-Access"]
 	if !ok {

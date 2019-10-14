@@ -131,7 +131,7 @@ func (p *Plugin) Start() error {
 	pv := p.Assets.Config.Plugins[pname]
 
 	endpoints := make(map[string]*Exec)
-	for ename, ev := range pv.Exec {
+	for ename, ev := range pv.Run {
 		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
 			keepAlive := false
 			if ev.KeepAlive != nil {
@@ -289,54 +289,6 @@ func internalRequest(ir InternalRequester, method, path, plugin string, body int
 // This function is used to check if we're to create connections/sources
 // for the plugin
 func (p *Plugin) BeforeStart(ir InternalRequester) error {
-	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname, cv := range psettings.Connections {
-		// For each connection
-		// Check if the connection exists for all users
-		var res []string
-
-		pluginKey := p.Name + ":" + cname
-
-		err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);", pluginKey)
-		if err != nil {
-			return err
-		}
-		if len(res) > 0 {
-			logrus.Debugf("%s: Creating '%s' connection for all users", p.Name, pluginKey)
-
-			// aaand how exactly do I achieve this?
-
-			for _, uname := range res {
-
-				_, _, err = p.DB.CreateConnection(processConnection(pluginKey, uname, cv))
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		for skey, sv := range cv.Sources {
-			if sv.Defer == nil || !*sv.Defer {
-				res = []string{}
-				err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
-				if err != nil {
-					return err
-				}
-				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
-
-					for _, cid := range res {
-						s := processSource(cid, skey, sv)
-						err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
-						if err != nil {
-							return err
-						}
-					}
-				}
-			}
-
-		}
-	}
 	return nil
 }
 
@@ -381,21 +333,38 @@ func (p *Plugin) AfterStart(ir InternalRequester) error {
 
 		pluginKey := p.Name + ":" + cname
 
-		for skey, sv := range cv.Sources {
-			if sv.Defer != nil && *sv.Defer {
-				err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
+		err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);", pluginKey)
+		if err != nil {
+			return err
+		}
+		if len(res) > 0 {
+			logrus.Debugf("%s: Creating '%s' connection for all users", p.Name, pluginKey)
+
+			// aaand how exactly do I achieve this?
+
+			for _, uname := range res {
+
+				_, _, err = p.DB.CreateConnection(processConnection(pluginKey, uname, cv))
 				if err != nil {
 					return err
 				}
-				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
+			}
+		}
 
-					for _, cid := range res {
-						s := processSource(cid, skey, sv)
-						err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
-						if err != nil {
-							return err
-						}
+		for skey, sv := range cv.Sources {
+			res = []string{}
+			err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
+			if err != nil {
+				return err
+			}
+			if len(res) > 0 {
+				logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
+
+				for _, cid := range res {
+					s := processSource(cid, skey, sv)
+					err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+					if err != nil {
+						return err
 					}
 				}
 			}
@@ -454,7 +423,7 @@ func (p *Plugin) Kill() {
 func (p *Plugin) Stop() error {
 	p.Interrupt()
 
-	d := assets.Get().Config.GetExecTimeout()
+	d := assets.Get().Config.GetRunTimeout()
 
 	sleepDuration := 50 * time.Millisecond
 

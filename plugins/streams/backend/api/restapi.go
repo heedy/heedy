@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
@@ -158,14 +159,14 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 
 	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
-	if err == nil && !si.NonEmpty {
-		ne := true
+	if err == nil {
+		ne := float64(time.Now().UnixNano()) * 1e-9
 		// The stream is now non-empty, so label it as such
 		err = c.DB.AdminDB().UpdateSource(&database.Source{
 			Details: database.Details{
 				ID: si.ID,
 			},
-			NonEmpty: &ne,
+			LastModified: &ne,
 		})
 	}
 
@@ -217,16 +218,17 @@ func Act(w http.ResponseWriter, r *http.Request) {
 		Actions: &a,
 	})
 
-	if err == nil && !si.NonEmpty {
-		ne := true
+	if err == nil {
+		ne := float64(time.Now().UnixNano()) * 1e-9
 		// The stream is now non-empty, so label it as such
 		err = c.DB.AdminDB().UpdateSource(&database.Source{
 			Details: database.Details{
 				ID: si.ID,
 			},
-			NonEmpty: &ne,
+			LastModified: &ne,
 		})
 	}
+
 	rest.WriteResult(w, r, err)
 }
 

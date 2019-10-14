@@ -46,7 +46,6 @@ type Source struct {
 	Avatar      *string                 `json:"avatar,omitempty"`
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
 	Scopes      *[]string               `json:"scopes,omitempty"`
-	Defer       *bool                   `json:"defer,omitempty" hcl:"defer"`
 
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
@@ -72,6 +71,7 @@ type Connection struct {
 }
 
 type Exec struct {
+	Type      *string   `hcl:"type" json:"enabled,omitempty"`
 	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
 	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
 	KeepAlive *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
@@ -91,7 +91,7 @@ type Plugin struct {
 
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 
-	Exec     map[string]*Exec    `json:"exec,omitempty"`
+	Run      map[string]*Exec    `json:"run,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
 
 	Connections map[string]*Connection `json:"connections,omitempty"`
@@ -99,12 +99,12 @@ type Plugin struct {
 
 func (p *Plugin) Copy() *Plugin {
 	np := *p
-	np.Exec = make(map[string]*Exec)
+	np.Run = make(map[string]*Exec)
 	np.Settings = make(map[string]*Setting)
 
-	for ekey, eval := range p.Exec {
+	for ekey, eval := range p.Run {
 		newe := *eval
-		np.Exec[ekey] = &newe
+		np.Run[ekey] = &newe
 	}
 	for skey, sval := range p.Settings {
 		news := *sval
@@ -262,7 +262,7 @@ type Configuration struct {
 
 	Frontend *string `json:"frontend"`
 
-	ExecTimeout *string `json:"exec_timeout,omitempty"`
+	RunTimeout *string `json:"run_timeout,omitempty"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
@@ -312,8 +312,8 @@ func (c *Configuration) Validate() error {
 		}
 	}
 
-	if c.ExecTimeout != nil {
-		_, err := time.ParseDuration(*c.ExecTimeout)
+	if c.RunTimeout != nil {
+		_, err := time.ParseDuration(*c.RunTimeout)
 		if err != nil {
 			return errors.New("Invalid exec_timeout")
 		}
@@ -357,7 +357,7 @@ func NewConfiguration() *Configuration {
 
 func NewPlugin() *Plugin {
 	return &Plugin{
-		Exec:        make(map[string]*Exec),
+		Run:         make(map[string]*Exec),
 		Settings:    make(map[string]*Setting),
 		Connections: make(map[string]*Connection),
 		On:          make(map[string]*Event),
@@ -511,10 +511,10 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 			CopyStructIfPtrSet(bplugin, oplugin)
 
 			// Exec jobs
-			for execName, oexecValue := range oplugin.Exec {
-				bexecValue, ok := bplugin.Exec[execName]
+			for execName, oexecValue := range oplugin.Run {
+				bexecValue, ok := bplugin.Run[execName]
 				if !ok {
-					bplugin.Exec[execName] = oexecValue
+					bplugin.Run[execName] = oexecValue
 				} else {
 					CopyStructIfPtrSet(bexecValue, oexecValue)
 				}

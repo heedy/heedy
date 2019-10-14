@@ -3,9 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,6 +15,7 @@ import (
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/buildinfo"
 	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/backend/updater"
 )
 
 var (
@@ -22,6 +25,7 @@ var (
 )
 
 var verbose bool
+var revert bool
 
 // RootCmd is the root command under which all other commands are placed.
 // It is used to initialize all variables that are global for the whole app
@@ -50,15 +54,13 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 		logrus.Infof("Using database at %s", directory)
+		writepid(directory)
 
-		a, err := assets.Open(directory, c)
-		if err != nil {
-			return err
-		}
-		assets.SetGlobal(a)
-
-		// heedy.conf exists. Run the database
-		return server.Run(a, nil)
+		return updater.Run(updater.Options{
+			ConfigDir:   directory,
+			AddonConfig: c,
+			Revert:      revert,
+		})
 	},
 }
 
@@ -70,6 +72,13 @@ func Execute() {
 	}
 }
 
+func writepid(cdir string) {
+	// Create pid
+	ioutil.WriteFile(path.Join(cdir, "heedy.pid"), []byte(strconv.Itoa(os.Getpid())), os.ModePerm)
+}
+
 func init() {
 	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
+	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
+
 }

@@ -109,12 +109,12 @@ func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string, e
 	return *s.Scopes, nil
 }
 
-// GetExecTimeout gets timeout for exec
-func (c *Configuration) GetExecTimeout() time.Duration {
+// GetRunTimeout gets timeout for exec
+func (c *Configuration) GetRunTimeout() time.Duration {
 	c.RLock()
 	defer c.RUnlock()
-	if c.ExecTimeout != nil {
-		d, err := time.ParseDuration(*c.ExecTimeout)
+	if c.RunTimeout != nil {
+		d, err := time.ParseDuration(*c.RunTimeout)
 		if err != nil {
 			return d
 		}

@@ -102,12 +102,12 @@ func (pm *PluginManager) Reload() error {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE nonempty=FALSE AND EXISTS (SELECT 1 FROM connections WHERE plugin IS NOT NULL %s AND connections.id=sources.connection);", pluginexclusion), neworder...)
+	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM connections WHERE plugin IS NOT NULL %s AND connections.id=sources.connection);", pluginexclusion), neworder...)
 	if err != nil {
 		pm.Close()
 		return err
 	}
-	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND nonempty=TRUE);", pluginexclusion), neworder...)
+	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
 	if err != nil {
 		pm.Close()
 		return err
@@ -190,17 +190,20 @@ func (pm *PluginManager) Reload() error {
 func (pm *PluginManager) Fire(e *events.Event) {
 	if e.Event == "user_create" {
 		// A user was created - run user creation code for each plugin
-		pm.RLock()
-		defer pm.RUnlock()
-		for pname, p := range pm.Plugins {
-			err := p.Plugin.OnUserCreate(e.User, pm.IR)
-			if err != nil {
-				logrus.Errorf("User creation failed %s (%s)", err.Error(), pname)
-				// Delete the user on failure
-				go pm.ADB.DelUser(e.User)
-				return
+		go func() {
+			pm.RLock()
+			defer pm.RUnlock()
+			for pname, p := range pm.Plugins {
+				err := p.Plugin.OnUserCreate(e.User, pm.IR)
+				if err != nil {
+					logrus.Errorf("User creation failed %s (%s)", err.Error(), pname)
+					// Delete the user on failure
+					pm.ADB.DelUser(e.User)
+					return
+				}
 			}
-		}
+		}()
+
 	}
 }
 

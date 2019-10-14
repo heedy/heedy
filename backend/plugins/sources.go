@@ -166,13 +166,13 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
 	}
-	nonempty := "false"
-	if *s.NonEmpty {
-		nonempty = "true"
+	lastModified := "null"
+	if s.LastModified != nil {
+		lastModified = fmt.Sprintf("%f", *s.LastModified)
 	}
 	r.Header["X-Heedy-Source"] = []string{srcid}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
-	r.Header["X-Heedy-NonEmpty"] = []string{nonempty}
+	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
 	r.Header["X-Heedy-Access"] = s.Access.Scopes
 
 	b, err := json.Marshal(s.Meta)

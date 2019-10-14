@@ -67,8 +67,8 @@ func (db *PublicDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error)
 
 // UpdateSource allows editing a source
 func (db *PublicDB) UpdateSource(s *Source) error {
-	if s.NonEmpty != nil {
-		return ErrAccessDenied("Empty status of source is readonly")
+	if s.LastModified != nil {
+		return ErrAccessDenied("Last Modified of source is readonly")
 	}
 	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
 		WHERE sources.id=? AND ss.user='public' AND ss.source=sources.id;`, s.ID)

@@ -96,8 +96,8 @@ func (db *UserDB) CreateSource(s *Source) (string, error) {
 	if s.Connection != nil {
 		return "", ErrAccessDenied("You cannot create sources belonging to a connection")
 	}
-	if s.NonEmpty != nil {
-		return "", ErrAccessDenied("Empty status of source is readonly")
+	if s.LastModified != nil {
+		return "", ErrAccessDenied("Last Modified status of source is readonly")
 	}
 	if s.Owner == nil {
 		// If no owner is specified, assume the current user
@@ -117,7 +117,7 @@ func (db *UserDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
 
 // UpdateSource allows editing a source
 func (db *UserDB) UpdateSource(s *Source) error {
-	if s.NonEmpty != nil {
+	if s.LastModified != nil {
 		return ErrAccessDenied("Empty status of source is readonly")
 	}
 	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss

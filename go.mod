@@ -9,7 +9,7 @@ require (
 	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/schema v1.1.0
-	github.com/hashicorp/hcl2 v0.0.0-20190909202536-66c59f909e25
+	github.com/hashicorp/hcl/v2 v2.0.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.1-0.20190822125511-d3c690956bde
 	github.com/patrickmn/go-cache v2.1.0+incompatible

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/backend/server"
+	"github.com/heedy/heedy/backend/updater"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -38,13 +38,14 @@ var RunCmd = &cobra.Command{
 		logrus.Infof("Using database at %s", directory)
 		c := assets.NewConfiguration()
 		c.Verbose = verbose
-		a, err := assets.Open(directory, c)
-		if err != nil {
-			return err
-		}
-		assets.SetGlobal(a)
 
-		return server.Run(a, nil)
+		writepid(directory)
+
+		return updater.Run(updater.Options{
+			ConfigDir:   directory,
+			AddonConfig: c,
+			Revert:      revert,
+		})
 	},
 }
 
