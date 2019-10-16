@@ -36,7 +36,12 @@ export default {
     // The map of connection scopes along with their descriptions
     connectionScopes: null,
 
-    settings_routes: []
+    settings_routes: [],
+    updates: {
+      heedy: false,
+      plugins: [],
+      config: false
+    }
   },
   mutations: {
     setSettingsRoutes(state, v) {
@@ -98,6 +103,9 @@ export default {
     },
     setConnectionScopes(state, v) {
       state.connectionScopes = v;
+    },
+    setUpdates(state, v) {
+      state.updates = v;
     }
   },
   actions: {
@@ -229,7 +237,7 @@ export default {
       commit
     }) {
       console.log("Loading available connection scopes");
-      let res = await api("GET", "api/heedy/v1/meta/scopes");
+      let res = await api("GET", "api/heedy/v1/server/scopes");
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -281,6 +289,15 @@ export default {
 
       if (q.hasOwnProperty("callback")) {
         q.callback();
+      }
+    },
+    getUpdates: async function ({
+      commit
+    }) {
+      console.log("Checking if updates ready");
+      let res = await api("GET", "api/heedy/v1/server/updates");
+      if (!res.response.ok) {} else {
+        commit("setUpdates", res.data);
       }
     }
 

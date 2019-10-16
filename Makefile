@@ -13,6 +13,7 @@ frontend: phony
 	cd frontend; npm run build
 	cd plugins/streams; make builtin; make frontend
 	cd plugins/notifications; make builtin; make frontend
+	cd plugins/registry; make builtin; make frontend
 
 heedy: backend/main.go phony # gencode
 	statik -src=./assets -dest=./backend -p assets -f
@@ -27,6 +28,7 @@ debug: heedydbg
 	cd frontend; npm run mkdebug
 	cd plugins/streams; make builtin; make debug
 	cd plugins/notifications; make builtin; make debug
+	cd plugins/registry; make builtin; make debug
 	
 
 clean:
@@ -39,3 +41,8 @@ clean:
 
 	# Clear any assets packed by statik
 	rm -f ./backend/assets/statik.go
+
+	# Clear the plugins
+	cd plugins/streams; make clean
+	cd plugins/notifications; make clean
+	cd plugins/registry; make clean

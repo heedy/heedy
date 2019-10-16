@@ -60,6 +60,9 @@ var RootCmd = &cobra.Command{
 			ConfigDir:   directory,
 			AddonConfig: c,
 			Revert:      revert,
+			Runner: func(a *assets.Assets) error {
+				return server.Run(a, nil)
+			},
 		})
 	},
 }
@@ -70,6 +73,29 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func GetDirectory(args []string) (string, error) {
+	if len(args) > 1 {
+		return "", ErrTooManyArgs
+	}
+	var directory string
+	if len(args) == 1 {
+		directory = args[0]
+	} else {
+		f, err := os.UserConfigDir()
+		if err != nil {
+			return "", err
+		}
+		directory = path.Join(f, "heedy")
+	}
+	var err error
+	directory, err = filepath.Abs(directory)
+	if err == nil {
+		logrus.Infof("Using database at %s", directory)
+	}
+
+	return directory, err
 }
 
 func writepid(cdir string) {

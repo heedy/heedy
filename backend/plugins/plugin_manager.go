@@ -255,6 +255,15 @@ func (pm *PluginManager) Close() error {
 	return nil
 }
 
+func (pm *PluginManager) Kill() error {
+	pm.Lock()
+	defer pm.Unlock()
+	for _, p := range pm.Plugins {
+		p.Plugin.Kill()
+	}
+	return nil
+}
+
 func (p *PluginManager) GetProcessByKey(key string) (*Exec, error) {
 	p.RLock()
 	defer p.RUnlock()

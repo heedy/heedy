@@ -242,7 +242,7 @@ export default {
       if (this.updating.admin != this.updating.id_admin) {
         let res = await this.$app.api(
           this.updating.admin ? "POST" : "DELETE",
-          `/api/heedy/v1/settings/admin/${this.updating.username}`
+          `/api/heedy/v1/server/admin/${this.updating.username}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -262,7 +262,7 @@ export default {
         console.log("users", res.data);
         this.users = res.data;
       });
-      let a = this.$app.api("GET", "/api/heedy/v1/settings/admin").then(res => {
+      let a = this.$app.api("GET", "/api/heedy/v1/server/admin").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.admin = [];

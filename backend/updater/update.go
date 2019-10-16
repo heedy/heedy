@@ -2,6 +2,7 @@ package updater
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -49,12 +50,23 @@ func Update(configDir string) (bool, error) {
 	if err = UpdateHeedy(configDir, updateDir, backupDir); err != nil {
 		return true, err
 	}
+	if err = UpdateConfig(configDir, updateDir, backupDir); err != nil {
+		return true, err
+	}
+
+	// Remove the revert directory, to avoid confusion: the update will be successful
+	revertDir := path.Join(configDir, "updates.reverted")
+	if _, err := os.Stat(revertDir); !os.IsNotExist(err) {
+		if err = os.RemoveAll(revertDir); err != nil {
+			return true, err
+		}
+	}
 
 	return true, os.RemoveAll(updateDir)
 
 }
 
-func Revert(configDir string) error {
+func Revert(configDir string, failure error) error {
 	logrus.Warn("Reverting update")
 	configDir, err := filepath.Abs(configDir)
 	if err != nil {
@@ -77,6 +89,10 @@ func Revert(configDir string) error {
 		return err
 	}
 
+	if err = ioutil.WriteFile(path.Join(revertDir, "ERROR"), []byte(failure.Error()), os.ModePerm); err != nil {
+		return err
+	}
+
 	// Start by reverting the data directory to the backed-up version
 	if err = RevertData(configDir, backupDir, revertDir); err != nil {
 		return err
@@ -88,7 +104,12 @@ func Revert(configDir string) error {
 	}
 
 	// Finally, revert the heedy executable if possible
-	err = RevertHeedy(configDir, backupDir, revertDir)
+	if err = RevertHeedy(configDir, backupDir, revertDir); err != nil {
+		return err
+	}
+
+	// Revert the heedy.conf file
+	err = RevertConfig(configDir, backupDir, revertDir)
 	if err == nil {
 		return os.RemoveAll(backupDir)
 	}

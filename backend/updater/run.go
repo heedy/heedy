@@ -2,36 +2,18 @@ package updater
 
 import (
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/backend/server"
 	"github.com/sirupsen/logrus"
 )
 
 type Options struct {
 	ConfigDir   string
 	AddonConfig *assets.Configuration
-	RunOptions  *server.RunOptions
+	Runner      func(a *assets.Assets) error
 	Revert      bool
-}
-
-func StartProcess(heedyPath string, args ...string) error {
-	logrus.Debugf("Starting Process: %s %s", heedyPath, strings.Join(args, " "))
-	cmd := exec.Command(heedyPath, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	// Release the process, let it be freeeeee
-	return cmd.Process.Release()
 }
 
 func Run(o Options) error {
@@ -65,27 +47,25 @@ func Run(o Options) error {
 		return StartProcess(heedyPath, a...)
 
 	}
+	if hadUpdate {
+		o.Revert = true
+	}
 
 	// Actually run it
 	a, err := assets.Open(o.ConfigDir, o.AddonConfig)
 	if err == nil {
 		assets.SetGlobal(a)
-		err = server.Run(a, o.RunOptions)
+		err = o.Runner(a)
 	}
 
 	if o.Revert && err != nil {
 		logrus.Error(err)
-		err = Revert(o.ConfigDir)
+		err = Revert(o.ConfigDir, err)
 		if err != nil {
 			return err
 		}
 
-		_, err = os.Stat(heedyPath)
-		restartHeedy = !os.IsNotExist(err)
-		if restartHeedy {
-			return StartProcess(heedyPath, os.Args[1:]...)
-		}
-
+		return RunHeedy(o.ConfigDir)
 	}
 
 	return err

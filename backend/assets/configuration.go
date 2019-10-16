@@ -3,12 +3,16 @@ package assets
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/xeipuuv/gojsonschema"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 type Setting struct {
@@ -591,18 +595,16 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 // LoadConfigFile loads configuration from file
 func LoadConfigFile(filename string) (*Configuration, error) {
-
-	f, diag := configparser.ParseHCLFile(filename)
-	if diag != nil {
-		return nil, diag
+	src, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
-
-	return loadConfigFromHcl(f, filename)
+	return LoadConfigBytes(src, filename)
 }
 
 // LoadConfigBytes loads the configuration from bytes
 func LoadConfigBytes(src []byte, filename string) (*Configuration, error) {
-	f, diag := configparser.ParseHCL(src, filename)
+	f, diag := hclsyntax.ParseConfig(src, filename, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 	if diag != nil {
 		return nil, diag
 	}

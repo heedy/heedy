@@ -3,12 +3,16 @@ package server
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/buildinfo"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
+	"github.com/heedy/heedy/backend/updater"
 
 	"github.com/heedy/heedy/api/golang/rest"
 )
@@ -301,6 +305,88 @@ func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResult(w, r, a.RemAdmin(username))
 }
 
+func GetUpdates(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	ui := updater.GetInfo(a.FolderPath)
+	rest.WriteJSON(w, r, ui, nil)
+}
+
+func GetConfigFile(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	b, err := updater.ReadConfigFile(a.FolderPath)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+}
+
+func PostConfigFile(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	defer r.Body.Close()
+
+	//Limit requests to the limit given in configuration
+	b, err := ioutil.ReadAll(io.LimitReader(r.Body, *a.Config.RequestBodyByteLimit))
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+	}
+	rest.WriteResult(w, r, updater.SetConfigFile(a.FolderPath, b))
+}
+
+func PatchUConfig(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	defer r.Body.Close()
+
+	c := assets.NewConfiguration()
+	err := rest.UnmarshalRequest(r, c)
+	if err == nil {
+		err = updater.ModifyConfigFile(a.FolderPath, c)
+	}
+
+	rest.WriteResult(w, r, err)
+}
+
+func GetUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	rest.WriteResult(w, r, updater.Status(a.FolderPath))
+}
+
+func GetUConfig(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	c, err := updater.ReadConfig(a)
+	rest.WriteJSON(w, r, c, err)
+}
+
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 }
@@ -331,13 +417,20 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/connections/{connectionid}", UpdateConnection)
 	v1mux.Delete("/connections/{connectionid}", DeleteConnection)
 
-	v1mux.Get("/meta/scopes/{sourcetype}", GetSourceScopes)
-	v1mux.Get("/meta/scopes", GetConnectionScopes)
-	v1mux.Get("/meta/version", GetVersion)
+	v1mux.Get("/server/scopes/{sourcetype}", GetSourceScopes)
+	v1mux.Get("/server/scopes", GetConnectionScopes)
+	v1mux.Get("/server/version", GetVersion)
 
-	v1mux.Get("/settings/admin", GetAdminUsers)
-	v1mux.Post("/settings/admin/{username}", AddAdminUser)
-	v1mux.Delete("/settings/admin/{username}", RemoveAdminUser)
+	v1mux.Get("/server/admin", GetAdminUsers)
+	v1mux.Post("/server/admin/{username}", AddAdminUser)
+	v1mux.Delete("/server/admin/{username}", RemoveAdminUser)
+
+	v1mux.Get("/server/updates", GetUpdates)
+	v1mux.Get("/server/updates/status", GetUpdateStatus)
+	v1mux.Get("/server/updates/heedy.conf", GetConfigFile)
+	v1mux.Post("/server/updates/heedy.conf", PostConfigFile)
+	v1mux.Get("/server/updates/config", GetUConfig)
+	v1mux.Patch("/server/updates/config", PatchUConfig)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

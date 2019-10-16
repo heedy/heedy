@@ -8,7 +8,6 @@ import SettingsPage from "./main/settings/index.vue";
 import SettingsInjector, {
     settingsRoutes
 } from "./main/settings/injector.js";
-import SettingsPlugins from "./main/settings/plugins.vue";
 import SettingsServer from "./main/settings/server.vue";
 import SettingsUsers from "./main/settings/users.vue";
 
@@ -100,11 +99,6 @@ function setup(app) {
                 path: "/settings",
                 component: SettingsPage,
                 children: settingsRoutes
-            });
-            app.settings.addPage({
-                path: "plugins",
-                component: SettingsPlugins,
-                title: "Plugins"
             });
             app.settings.addPage({
                 path: "users",
