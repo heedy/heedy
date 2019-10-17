@@ -86,6 +86,8 @@ type Exec struct {
 type Plugin struct {
 	Version     *string `hcl:"version" json:"version,omitempty"`
 	Description *string `hcl:"description" json:"description,omitempty"`
+	Avatar      *string `hcl:"avatar" json:"avatar,omitempty"`
+	Readme      *string `hcl:"readme" json:"readme,omitempty"`
 	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
 	License     *string `hcl:"license" json:"license,omitempty"`
 

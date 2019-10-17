@@ -1,13 +1,21 @@
 package assets
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"mime"
+	"path"
+	"path/filepath"
 	"reflect"
+	"runtime"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/function"
+	"github.com/zclconf/go-cty/cty/function/stdlib"
 	"github.com/zclconf/go-cty/cty/gocty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
@@ -72,8 +80,10 @@ type hclConnection struct {
 
 type hclPlugin struct {
 	Name        string  `hcl:"name,label"`
+	Avatar      *string `hcl:"avatar" json:"avatar"`
 	Version     *string `hcl:"version" json:"version"`
 	Description *string `hcl:"description" json:"description"`
+	Readme      *string `hcl:"readme" json:"readme"`
 	Homepage    *string `hcl:"homepage" json:"homepage"`
 	License     *string `hcl:"license" json:"license"`
 
@@ -198,7 +208,58 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// 			rather than messing with a bunch of workarounds?
 	hc := &hclConfiguration{}
 
-	diag := gohcl.DecodeBody(f.Body, nil, hc)
+	// We set up the parsing context with the useful variables and functions
+	ctx := &hcl.EvalContext{
+		Variables: map[string]cty.Value{
+			"os": cty.StringVal(runtime.GOOS),
+		},
+		Functions: map[string]function.Function{
+			"jsondecode": stdlib.JSONDecodeFunc,
+			"jsonencode": stdlib.JSONEncodeFunc,
+			"int":        stdlib.IntFunc,
+			"file": function.New(&function.Spec{
+				Params: []function.Parameter{
+					{
+						Name: "filename",
+						Type: cty.String,
+					},
+				},
+				Type: function.StaticReturnType(cty.String),
+				Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+					readFile := args[0].AsString()
+					readFile = path.Join(path.Dir(filename), readFile)
+					b, err := ioutil.ReadFile(readFile)
+					if err != nil {
+						return cty.StringVal(""), err
+					}
+					return cty.StringVal(string(b)), nil
+				},
+			}),
+			"datauri": function.New(&function.Spec{
+				Params: []function.Parameter{
+					{
+						Name: "filename",
+						Type: cty.String,
+					},
+				},
+				Type: function.StaticReturnType(cty.String),
+				Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+					readFile := args[0].AsString()
+					readFile = path.Join(path.Dir(filename), readFile)
+					b, err := ioutil.ReadFile(readFile)
+					if err != nil {
+						return cty.StringVal(""), err
+					}
+
+					datauri := fmt.Sprintf("data:%s;base64,%s", mime.TypeByExtension(filepath.Ext(readFile)), base64.StdEncoding.EncodeToString(b))
+
+					return cty.StringVal(datauri), nil
+				},
+			}),
+		},
+	}
+
+	diag := gohcl.DecodeBody(f.Body, ctx, hc)
 	if diag != nil {
 		return nil, diag
 	}
@@ -364,7 +425,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 		// Now, there will be an error talking about "no exec block allowed blah blah"
 		// This is BS, and we don't care.
-		gohcl.DecodeBody(hp.Settings, nil, &settings)
+		gohcl.DecodeBody(hp.Settings, ctx, &settings)
 
 		for key, attr := range settings {
 

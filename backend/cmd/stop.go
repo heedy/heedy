@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
-	"path"
-	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -20,19 +17,11 @@ var StopCmd = &cobra.Command{
 			return err
 		}
 
-		b, err := ioutil.ReadFile(path.Join(directory, "heedy.pid"))
+		p, err := getpid(directory)
 		if err != nil {
 			return err
 		}
-		pid, err := strconv.Atoi(string(b))
-		if err != nil {
-			return err
-		}
-		p, err := os.FindProcess(pid)
-		if err != nil {
-			return err
-		}
-		logrus.Infof("Sending SIGINT to %d", pid)
+		logrus.Infof("Sending SIGINT to %d", p.Pid)
 		return p.Signal(os.Interrupt)
 	},
 }

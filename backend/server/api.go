@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
@@ -387,6 +388,58 @@ func GetUConfig(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, c, err)
 }
 
+func GetAllPlugins(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	p, err := updater.ListPlugins(a.FolderPath)
+	rest.WriteJSON(w, r, p, err)
+}
+
+func PostPlugin(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	r.ParseMultipartForm(50 << 20)
+	file, _, err := r.FormFile("zipfile")
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	defer file.Close()
+
+	// Upload the zip file
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "heedy-plugin-*.zip")
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	zipFile := tmpFile.Name()
+	defer func() {
+		tmpFile.Close()
+		os.Remove(zipFile)
+	}()
+
+	_, err = io.Copy(tmpFile, file)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+
+	if err = tmpFile.Close(); err != nil {
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	rest.WriteResult(w, r, updater.UpdatePlugin(a.FolderPath, zipFile))
+}
+
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 }
@@ -431,6 +484,8 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Post("/server/updates/heedy.conf", PostConfigFile)
 	v1mux.Get("/server/updates/config", GetUConfig)
 	v1mux.Patch("/server/updates/config", PatchUConfig)
+	v1mux.Get("/server/updates/plugins", GetAllPlugins)
+	v1mux.Post("/server/updates/plugins", PostPlugin)
 
 	apiMux := chi.NewMux()
 	apiMux.NotFound(APINotFound)

@@ -60,7 +60,7 @@ func OverwriteFile(in, out string) error {
 func CopyFile(in, out string) error {
 	logrus.Debugf("Copying %s -> %s", in, out)
 
-	err := os.MkdirAll(path.Dir(out), os.ModeDir)
+	err := os.MkdirAll(path.Dir(out), os.ModePerm)
 	if err != nil {
 		return err
 	}

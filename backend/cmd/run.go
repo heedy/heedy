@@ -20,7 +20,9 @@ var RunCmd = &cobra.Command{
 		c := assets.NewConfiguration()
 		c.Verbose = verbose
 
-		writepid(directory)
+		if err = writepid(directory); err != nil {
+			return err
+		}
 
 		return updater.Run(updater.Options{
 			ConfigDir:   directory,

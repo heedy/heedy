@@ -1,8 +1,12 @@
 <template>
   <v-avatar :size="size" :color="color">
     <img v-if="image.startsWith('data:image/')" :src="image" />
-    <v-icon v-else-if="image.length > 0" :size="iconSize">{{ image }}</v-icon>
-    <v-icon v-else :size="iconSize">{{ defaultIcon }}</v-icon>
+    <v-icon
+      v-else-if="image.length > 0"
+      :size="iconSize"
+      :style="{'fontSize': fontSize}"
+    >{{ image }}</v-icon>
+    <v-icon v-else :size="iconSize" :style="{'fontSize': fontSize}">{{ defaultIcon }}</v-icon>
   </v-avatar>
 </template>
 
@@ -33,6 +37,12 @@ export default {
     },
     iconSize() {
       return Math.round(0.7 * this.size);
+    },
+    fontSize() {
+      if (this.image.includes("fa-")) {
+        return Math.round(0.7 * this.iconSize) + "px";
+      }
+      return Math.round(0.9 * this.iconSize) + "px";
     }
     /*
     imageStyle() {

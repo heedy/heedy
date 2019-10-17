@@ -10,6 +10,7 @@ import SettingsInjector, {
 } from "./main/settings/injector.js";
 import SettingsServer from "./main/settings/server.vue";
 import SettingsUsers from "./main/settings/users.vue";
+import SettingsPlugins from "./main/settings/plugins.vue";
 
 
 import UserInjector, {
@@ -109,6 +110,11 @@ function setup(app) {
                 path: "server",
                 component: SettingsServer,
                 title: "Server"
+            });
+            app.settings.addPage({
+                path: "plugins",
+                component: SettingsPlugins,
+                title: "Plugins"
             });
         }
 

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/sirupsen/logrus"
 )
 
 type UpdateInfo struct {
@@ -102,4 +103,94 @@ func Status(configDir string) error {
 		return err
 	}
 	return errors.New(string(b))
+}
+
+// Lists ALL plugins (including those that are not active, and those that are currently pending restart)
+func ListPlugins(configDir string) (map[string]*assets.Plugin, error) {
+	pluginDir := path.Join(configDir, "plugins")
+	pluginUpdateDir := path.Join(configDir, "updates", "plugins")
+
+	p := make(map[string]*assets.Plugin)
+
+	d, err := ioutil.ReadDir(pluginDir)
+	if err == nil {
+		for _, v := range d {
+			pFile := path.Join(pluginDir, v.Name(), "heedy.conf")
+			c, err := assets.LoadConfigFile(pFile)
+			if err == nil {
+				pv, ok := c.Plugins[v.Name()]
+				if ok {
+					p[v.Name()] = pv
+				}
+			}
+		}
+	}
+	d, err = ioutil.ReadDir(pluginUpdateDir)
+	if err == nil {
+		for _, v := range d {
+			pFile := path.Join(pluginUpdateDir, v.Name(), "heedy.conf")
+			c, err := assets.LoadConfigFile(pFile)
+			if err == nil {
+				pv, ok := c.Plugins[v.Name()]
+				if ok {
+					p[v.Name()] = pv
+				}
+			}
+		}
+	}
+	return p, nil
+}
+
+func UpdatePlugin(configDir string, zipFile string) error {
+	// Extract the file into a temporary directory
+	tmpDir, err := ioutil.TempDir(configDir, "tmp-plugin-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	logrus.Debugf("Unzipping %s -> %s", zipFile, tmpDir)
+	if err = UnzipDirectory(zipFile, tmpDir); err != nil {
+		return err
+	}
+
+	// The plugin is unzipped. Check the folder
+	d, err := ioutil.ReadDir(tmpDir)
+	if err != nil {
+		return err
+	}
+	if len(d) == 0 {
+		return errors.New("Empty zip file")
+	}
+	if len(d) > 1 {
+		return errors.New("Only a single plugin folder per zip file is supported")
+	}
+
+	if !d[0].IsDir() {
+		return errors.New("The plugin must be in a folder")
+	}
+	pn := d[0].Name()
+	pfile := path.Join(tmpDir, pn, "heedy.conf")
+	c, err := assets.LoadConfigFile(pfile)
+	if err != nil {
+		return err
+	}
+	if _, ok := c.Plugins[d[0].Name()]; !ok {
+		return errors.New("The plugin folder and name must match")
+	}
+
+	// OK, looks like the plugin passed sanity checks. Let's copy it over to the updates folder
+	if err = os.MkdirAll(path.Join(configDir, "updates", "plugins"), os.ModePerm); err != nil {
+		return err
+	}
+	outFolder := path.Join(configDir, "updates", "plugins", d[0].Name())
+	if _, err := os.Stat(outFolder); !os.IsNotExist(err) {
+		logrus.Debugf("Removing %s", outFolder)
+		if err = os.RemoveAll(outFolder); err != nil {
+			return err
+		}
+	}
+	tmpFolder := path.Join(tmpDir, pn)
+	logrus.Debugf("Moving %s -> %s", tmpFolder, outFolder)
+	return os.Rename(tmpFolder, outFolder)
 }

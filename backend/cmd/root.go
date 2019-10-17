@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -54,7 +55,9 @@ var RootCmd = &cobra.Command{
 			return err
 		}
 		logrus.Infof("Using database at %s", directory)
-		writepid(directory)
+		if err = writepid(directory); err != nil {
+			return err
+		}
 
 		return updater.Run(updater.Options{
 			ConfigDir:   directory,
@@ -98,9 +101,30 @@ func GetDirectory(args []string) (string, error) {
 	return directory, err
 }
 
-func writepid(cdir string) {
+func getpid(directory string) (*os.Process, error) {
+	b, err := ioutil.ReadFile(path.Join(directory, "heedy.pid"))
+	if err != nil {
+		return nil, err
+	}
+	pid, err := strconv.Atoi(string(b))
+	if err != nil {
+		return nil, err
+	}
+	return os.FindProcess(pid)
+}
+
+func writepid(cdir string) error {
+	// First check if the pid exists and is running
+	p, err := getpid(cdir)
+	if err == nil {
+		err = p.Signal(syscall.Signal(0))
+		if err == nil {
+			return fmt.Errorf("Heedy is already running at pid %d", p.Pid)
+		}
+	}
+
 	// Create pid
-	ioutil.WriteFile(path.Join(cdir, "heedy.pid"), []byte(strconv.Itoa(os.Getpid())), os.ModePerm)
+	return ioutil.WriteFile(path.Join(cdir, "heedy.pid"), []byte(strconv.Itoa(os.Getpid())), os.ModePerm)
 }
 
 func init() {

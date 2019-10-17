@@ -37,14 +37,23 @@ func WriteConfig(filename string, c *Configuration) error {
 		for i := range *c.ActivePlugins {
 			plist = append(plist, cty.StringVal((*c.ActivePlugins)[i]))
 		}
-		body.SetAttributeValue("plugins", cty.ListVal(plist))
+		if len(plist) > 0 {
+			body.SetAttributeValue("plugins", cty.ListVal(plist))
+		} else {
+			body.SetAttributeValue("plugins", cty.ListValEmpty(cty.String))
+		}
 	}
 	if c.AdminUsers != nil {
 		alist := make([]cty.Value, 0)
 		for i := range *c.AdminUsers {
 			alist = append(alist, cty.StringVal((*c.AdminUsers)[i]))
 		}
-		body.SetAttributeValue("admin_users", cty.ListVal(alist))
+		if len(alist) > 0 {
+			body.SetAttributeValue("admin_users", cty.ListVal(alist))
+		} else {
+			body.SetAttributeValue("admin_users", cty.ListValEmpty(cty.String))
+		}
+
 	}
 
 	return ioutil.WriteFile(filename, writer.Bytes(), 0755)
