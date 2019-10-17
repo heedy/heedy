@@ -9,7 +9,10 @@ all: frontend heedy
 #Empty rule for forcing rebuilds
 phony:
 
-frontend: phony
+frontend/node_modules:
+	cd frontend; npm i
+
+frontend: phony frontend/node_modules
 	cd frontend; npm run build
 	cd plugins/streams; make builtin; make frontend
 	cd plugins/notifications; make builtin; make frontend
@@ -24,7 +27,7 @@ heedy: backend/main.go phony # gencode
 heedydbg: phony
 	cd backend; $(GO) build --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook" -o ../heedy -ldflags "-X \"github.com/heedy/heedy/backend/buildinfo.BuildTimestamp=`date -u '+%Y-%m-%d %H:%M:%S'`\" -X github.com/heedy/heedy/backend/buildinfo.GitHash=`git rev-parse HEAD` -X github.com/heedy/heedy/backend/buildinfo.Version=`cat ../VERSION`-debug.`git rev-list --count HEAD`"
 
-debug: heedydbg
+debug: heedydbg frontend/node_modules
 	cd frontend; npm run mkdebug
 	cd plugins/streams; make builtin; make debug
 	cd plugins/notifications; make builtin; make debug

@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:html && npm run build:js",
     "build:js": "rollup -c",
-    "sync:html": "test -d ./public && rsync -r ./public/ ../assets/public/",
+    "sync:html": "test -d ./public && rsync -r ./public/ ../assets/public/ || echo 'Skipping public'",
     "build:html": "test -d ./public && npm run sync:html && html-minifier --file-ext html --input-dir ../assets/public --output-dir ../assets/public --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags  || echo 'Skipping public'",
     "debug:js": "rollup -c -m --environment NODE_ENV:debug",
     "watch:js": "rollup -c -w -m --environment NODE_ENV:debug",

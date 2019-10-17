@@ -7,7 +7,10 @@ all:
 #Empty rule for forcing rebuilds
 phony:
 
-frontend: phony
+frontend/node_modules:
+	cd frontend; npm i
+
+frontend: phony frontend/node_modules
 	cd frontend; npm run build
 
 server: backend/main.go phony # gencode
@@ -19,7 +22,7 @@ builtin:
 	rm -rf ./assets/public
 	ln -s ../../../assets/public assets/public
 	
-debug:
+debug: phony frontend/node_modules
 	cd frontend; npm run mkdebug
 
 clean:
