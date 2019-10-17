@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/heedy/heedy/backend/buildinfo"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/zclconf/go-cty/cty"
@@ -211,7 +213,9 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// We set up the parsing context with the useful variables and functions
 	ctx := &hcl.EvalContext{
 		Variables: map[string]cty.Value{
-			"os": cty.StringVal(runtime.GOOS),
+			"os":      cty.StringVal(runtime.GOOS),
+			"arch":    cty.StringVal(runtime.GOARCH),
+			"version": cty.StringVal(buildinfo.Version),
 		},
 		Functions: map[string]function.Function{
 			"jsondecode": stdlib.JSONDecodeFunc,

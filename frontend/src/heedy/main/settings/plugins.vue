@@ -6,9 +6,9 @@
       </div>
     </v-flex>
     <v-toolbar flat color="white">
-      <v-toolbar-title>Enabled Plugins</v-toolbar-title>
+      <v-toolbar-title>Installed Plugins</v-toolbar-title>
       <v-spacer />
-      <v-dialog v-model="uploader" width="500" persistent>
+      <v-dialog v-model="uploader" width="500" :persistent="uploading">
         <template v-slot:activator="{ on }">
           <v-btn outlined class="mb-2" v-on="on">Upload</v-btn>
         </template>
