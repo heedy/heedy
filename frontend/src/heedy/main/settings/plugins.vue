@@ -8,7 +8,7 @@
     <v-toolbar flat color="white">
       <v-toolbar-title>Installed Plugins</v-toolbar-title>
       <v-spacer />
-      <v-dialog v-model="uploader" width="500" :persistent="uploading">
+      <v-dialog v-model="uploader" width="500" persistent>
         <template v-slot:activator="{ on }">
           <v-btn outlined class="mb-2" v-on="on">Upload</v-btn>
         </template>
@@ -32,30 +32,37 @@
         </v-card>
       </v-dialog>
     </v-toolbar>
-    <v-list>
-      <v-list-item v-for="pi in pluginItems" :key="pi.name" two-line>
-        <v-list-item-action>
-          <v-checkbox :input-value="pi.active" @change="(v) => changeActive(pi.name,v)"></v-checkbox>
-        </v-list-item-action>
+    <div v-if="pluginItems.length > 0">
+      <v-list>
+        <v-list-item v-for="pi in pluginItems" :key="pi.name" two-line>
+          <v-list-item-action>
+            <v-checkbox :input-value="pi.active" @change="(v) => changeActive(pi.name,v)"></v-checkbox>
+          </v-list-item-action>
 
-        <v-list-item-content>
-          <v-list-item-title>{{ pi.name }}</v-list-item-title>
-          <v-list-item-subtitle>{{ pi.description }}</v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-btn icon style="padding-right: 15px" @click="() => showDetails(pi)">
-            <v-icon color="grey lighten-1">fas fa-info-circle</v-icon>
-          </v-btn>
-        </v-list-item-action>
-        <v-list-item-avatar style="padding-right: 30px;">
-          <h-avatar :image="pi.avatar" :colorHash="pi.name"></h-avatar>
-        </v-list-item-avatar>
-      </v-list-item>
-    </v-list>
-    <v-flex row>
-      <div class="flex-grow-1"></div>
-      <v-btn color="primary" dark class="mb-2" @click="update">Update</v-btn>
-    </v-flex>
+          <v-list-item-content>
+            <v-list-item-title>{{ pi.name }}</v-list-item-title>
+            <v-list-item-subtitle>{{ pi.description }}</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-btn icon style="padding-right: 15px" @click="() => showDetails(pi)">
+              <v-icon color="grey lighten-1">fas fa-info-circle</v-icon>
+            </v-btn>
+          </v-list-item-action>
+          <v-list-item-avatar style="padding-right: 30px;">
+            <h-avatar :image="pi.avatar" :colorHash="pi.name"></h-avatar>
+          </v-list-item-avatar>
+        </v-list-item>
+      </v-list>
+
+      <v-flex row>
+        <div class="flex-grow-1"></div>
+        <v-btn color="primary" dark class="mb-2" @click="update">Update</v-btn>
+      </v-flex>
+    </div>
+    <div
+      v-else
+      style="color: gray; text-align: center; padding: 1cm;"
+    >You don't have any plugins installed.</div>
     <v-dialog v-model="dialog" max-width="1024px">
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>

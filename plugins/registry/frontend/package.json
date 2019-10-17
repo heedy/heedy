@@ -10,7 +10,7 @@
     "build:html": "test -d ./public && npm run sync:html && html-minifier --file-ext html --input-dir ../assets/public --output-dir ../assets/public --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags  || echo 'Skipping public'",
     "debug:js": "rollup -c -m --environment NODE_ENV:debug",
     "watch:js": "rollup -c -w -m --environment NODE_ENV:debug",
-    "watch:html": "test -d ./public && nodemon --watch public -e html,css,js,json --exec \"npm run sync:html\" || echo 'Skipping public'",
+    "watch:html": "test -d ./public && nodemon --watch public -e html,css,js,json,svg,png --exec \"npm run sync:html\" || echo 'Skipping public'",
     "mkdebug": "run-p 'debug:js' 'sync:html'",
     "debug": "run-p 'watch:js' 'watch:html'"
   },

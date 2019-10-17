@@ -163,11 +163,45 @@ func UpdatePlugin(configDir string, zipFile string) error {
 		return errors.New("Empty zip file")
 	}
 	if len(d) > 1 {
-		return errors.New("Only a single plugin folder per zip file is supported")
+		// WHY ON EARTH does mac have to include garbage in its zip files
+		if len(d) > 2 || d[0].Name() != "__MACOSX" && d[1].Name() != "__MACOSX" {
+			return errors.New("Only a single plugin folder per zip file is supported")
+		}
+		if d[0].Name() == "__MACOSX" {
+			d[0] = d[1]
+		}
 	}
 
 	if !d[0].IsDir() {
-		return errors.New("The plugin must be in a folder")
+		// HACK: update the main heedy executable
+		if d[0].Name() != "heedy" && d[0].Name() != "heedy.exe" {
+			return errors.New("The plugin must be in a folder")
+		}
+
+		if err = os.MkdirAll(path.Join(configDir, "updates"), os.ModePerm); err != nil {
+			return err
+		}
+		outName := path.Join(configDir, "updates", "heedy")
+		if _, err := os.Stat(outName); !os.IsNotExist(err) {
+			logrus.Debugf("Removing %s", outName)
+			if err = os.Remove(outName); err != nil {
+				return err
+			}
+		}
+		tmpName := path.Join(tmpDir, "heedy")
+
+		// Make it executable
+		f, err := os.Open(tmpName)
+		if err != nil {
+			return err
+		}
+		if err = f.Chmod(0554); err != nil {
+			return err
+		}
+
+		logrus.Debugf("Moving %s -> %s", tmpName, outName)
+		return os.Rename(tmpName, outName)
+
 	}
 	pn := d[0].Name()
 	pfile := path.Join(tmpDir, pn, "heedy.conf")

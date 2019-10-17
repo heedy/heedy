@@ -1,6 +1,7 @@
 import SettingsPage from "./main/settings_page.vue";
 
 function setup(app) {
+    /*
     if (app.info.admin) {
         app.settings.addPage({
             path: "registry",
@@ -8,6 +9,7 @@ function setup(app) {
             title: "Registry"
         });
     }
+    */
 }
 
 export default setup;
