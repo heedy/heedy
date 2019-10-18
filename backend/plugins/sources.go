@@ -168,7 +168,7 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	lastModified := "null"
 	if s.LastModified != nil {
-		lastModified = fmt.Sprintf("%f", *s.LastModified)
+		lastModified = (*s.LastModified).String()
 	}
 	r.Header["X-Heedy-Source"] = []string{srcid}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}

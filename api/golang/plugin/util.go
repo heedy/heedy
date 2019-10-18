@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/heedy/heedy/backend/database"
 )
@@ -53,7 +52,7 @@ func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
 type SourceInfo struct {
 	Type         string
 	ID           string
-	LastModified float64
+	LastModified *string
 	Meta         map[string]interface{}
 	Access       database.ScopeArray
 }
@@ -72,11 +71,7 @@ func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
 		return nil, ErrPlugin("No Last-Modified in source request")
 	}
 	if ne[0] != "null" {
-		var err error
-		si.LastModified, err = strconv.ParseFloat(ne[0], 64)
-		if err != nil {
-			return nil, ErrPlugin("Last-Modified was not a timestamp")
-		}
+		si.LastModified = &ne[0]
 	}
 
 	a, ok := r.Header["X-Heedy-Access"]

@@ -121,6 +121,19 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.SourceInfo.ID, &q))
 }
 
+func shouldUpdateModifed(d *string) bool {
+	if d == nil {
+		return true
+	}
+	t, err := time.Parse("2006-01-02", *d)
+	if err != nil {
+		return true
+	}
+	cy, cm, cd := time.Now().UTC().Date()
+	dy, dm, dd := t.Date()
+	return cd > dd || cm > dm || cy > dy
+}
+
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	c := rest.CTX(r)
 	si, ok := validateRequest(w, r, "write")
@@ -159,8 +172,8 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 
 	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
-	if err == nil {
-		ne := float64(time.Now().UnixNano()) * 1e-9
+	if err == nil && shouldUpdateModifed(si.LastModified) {
+		ne := database.Date(time.Now().UTC())
 		// The stream is now non-empty, so label it as such
 		err = c.DB.AdminDB().UpdateSource(&database.Source{
 			Details: database.Details{
@@ -218,8 +231,8 @@ func Act(w http.ResponseWriter, r *http.Request) {
 		Actions: &a,
 	})
 
-	if err == nil {
-		ne := float64(time.Now().UnixNano()) * 1e-9
+	if err == nil && shouldUpdateModifed(si.LastModified) {
+		ne := database.Date(time.Now().UTC())
 		// The stream is now non-empty, so label it as such
 		err = c.DB.AdminDB().UpdateSource(&database.Source{
 			Details: database.Details{

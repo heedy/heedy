@@ -22,7 +22,7 @@
               accept="application/zip"
               label="Zipped Plugin Folder"
             ></v-file-input>
-            <v-progress-linear v-else value="15"></v-progress-linear>
+            <v-progress-linear v-else :value="uploadPercent"></v-progress-linear>
           </v-card-text>
           <v-card-actions>
             <v-btn text @click="cancelUpload">Cancel</v-btn>
@@ -208,7 +208,7 @@ export default {
         "progress",
         evt => {
           if (evt.lengthComputable) {
-            this.uploadPercent = evt.loaded / evt.total;
+            this.uploadPercent = Math.floor((100 * evt.loaded) / evt.total);
           }
         },
         false

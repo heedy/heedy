@@ -108,7 +108,8 @@ CREATE TABLE sources (
 
 	type VARCHAR NOT NULL, 	                 -- The source type
 	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the source
-	last_modified REAL DEFAULT NULL,		 -- Modification date for the source. This is used for heartbeats
+	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
+	last_modified DATE DEFAULT NULL,		 -- Modification date for the source
 
 	-- Maximal scopes that can be given. The * represents all scopes possible for the given source type
 	scopes VARCHAR NOT NULL DEFAULT '["*"]',

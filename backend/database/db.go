@@ -16,8 +16,16 @@ import (
 type Date time.Time
 
 func (d Date) MarshalJSON() ([]byte, error) {
-	t := fmt.Sprintf("\"%s\"", time.Time(d).Format("2006-01-02"))
+	t := fmt.Sprintf("\"%s\"", d.String())
 	return []byte(t), nil
+}
+
+func (d Date) String() string {
+	return time.Time(d).Format("2006-01-02")
+}
+
+func (d Date) Value() (driver.Value, error) {
+	return d.String(), nil
 }
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
@@ -218,9 +226,11 @@ type Source struct {
 
 	Key *string `json:"key" db:"key"`
 
-	Type         *string     `json:"type,omitempty" db:"type"`
-	Meta         *JSONObject `json:"meta,omitempty" db:"meta"`
-	LastModified *float64    `json:"last_modified" db:"last_modified"`
+	Type *string     `json:"type,omitempty" db:"type"`
+	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
+
+	CreatedDate  Date  `json:"created_date,omitempty" db:"created_date"`
+	LastModified *Date `json:"last_modified" db:"last_modified"`
 
 	Scopes *ScopeArray `json:"scopes" db:"scopes"`
 
