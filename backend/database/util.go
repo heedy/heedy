@@ -41,14 +41,14 @@ func ValidUserName(name string) error {
 	return ErrInvalidUserName
 }
 
-// Ensures that the avatar is in a valid format
-func ValidAvatar(avatar string) error {
-	if avatar == "" {
+// Ensures that the icon is in a valid format
+func ValidIcon(icon string) error {
+	if icon == "" {
 		return nil
 	}
-	if !strings.HasPrefix(avatar, "data:image/") {
-		if len(avatar) > 30 {
-			return errors.New("bad_request: avatar icon name can't be more than 30 characters unless it is an image")
+	if !strings.HasPrefix(icon, "data:image/") {
+		if len(icon) > 30 {
+			return errors.New("bad_request: icon name can't be more than 30 characters unless it is an image")
 		}
 		return nil
 	}

@@ -206,7 +206,7 @@ func (db *ConnectionDB) UpdateSource(s *Source) error {
 		return ErrAccessDenied("Empty status of source is readonly")
 	}
 	curs, err := db.ReadSource(s.ID, &ReadSourceOptions{
-		Avatar: false,
+		Icon: false,
 	})
 	if err != nil {
 		return err
@@ -228,7 +228,7 @@ func (db *ConnectionDB) UpdateSource(s *Source) error {
 // Can only delete sources that belong to *us*
 func (db *ConnectionDB) DelSource(id string) error {
 	curs, err := db.ReadSource(id, &ReadSourceOptions{
-		Avatar: false,
+		Icon: false,
 	})
 	if err != nil {
 		return err

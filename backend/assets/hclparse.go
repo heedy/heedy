@@ -54,7 +54,7 @@ type hclSource struct {
 	Type string `hcl:"type"`
 
 	Description *string    `hcl:"description"`
-	Avatar      *string    `hcl:"avatar"`
+	Icon        *string    `hcl:"icon"`
 	Scopes      *[]string  `hcl:"scopes"`
 	Meta        *cty.Value `hcl:"meta,attr"`
 
@@ -66,7 +66,7 @@ type hclConnection struct {
 	Name   string `hcl:"name"`
 
 	Description *string   `json:"description" hcl:"description"`
-	Avatar      *string   `json:"avatar" hcl:"avatar"`
+	Icon        *string   `json:"icon" hcl:"icon"`
 	Type        *string   `json:"type" hcl:"type"`
 	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
@@ -82,7 +82,7 @@ type hclConnection struct {
 
 type hclPlugin struct {
 	Name        string  `hcl:"name,label"`
-	Avatar      *string `hcl:"avatar" json:"avatar"`
+	Icon        *string `hcl:"icon" json:"icon"`
 	Version     *string `hcl:"version" json:"version"`
 	Description *string `hcl:"description" json:"description"`
 	Readme      *string `hcl:"readme" json:"readme"`

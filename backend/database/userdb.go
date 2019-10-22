@@ -25,7 +25,7 @@ func (db *UserDB) ID() string {
 // User returns the user that is logged in
 func (db *UserDB) User() (*User, error) {
 	return db.ReadUser(db.user, &ReadUserOptions{
-		Avatar: true,
+		Icon: true,
 	})
 }
 

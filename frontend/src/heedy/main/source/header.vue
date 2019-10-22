@@ -4,12 +4,12 @@
       <v-container grid-list-md>
         <v-layout row wrap>
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
-            <h-avatar
+            <h-icon
               :size="120"
-              :image="source.avatar"
+              :image="source.icon"
               defaultIcon="assignment"
               :colorHash="source.name"
-            ></h-avatar>
+            ></h-icon>
             <h5 style="color:gray;padding-top:10px">{{source.name}}</h5>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>

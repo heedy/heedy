@@ -3,7 +3,7 @@
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
-          <h-avatar-editor ref="avatarEditor" image="timeline"></h-avatar-editor>
+          <h-icon-editor ref="iconEditor" image="timeline"></h-icon-editor>
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
@@ -121,7 +121,7 @@ export default {
       toCreate.meta = {
         subtype: this.subtype
       };
-      toCreate.avatar = this.$refs.avatarEditor.getImage();
+      toCreate.icon = this.$refs.iconEditor.getImage();
       if (this.advanced) {
         try {
           var s = JSON.parse(this.code);
@@ -143,8 +143,8 @@ export default {
         this.loading = false;
         return;
       }
-      // The result comes without the avatar, let's set it correctly
-      result.data.avatar = toCreate.avatar;
+      // The result comes without the icon, let's set it correctly
+      result.data.icon = toCreate.icon;
 
       this.$store.commit("setSource", result.data);
       this.loading = false;

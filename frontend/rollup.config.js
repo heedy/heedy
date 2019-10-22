@@ -11,6 +11,7 @@ import {
 import postcss_url from "postcss-url";
 import path from "path";
 import fs from "fs";
+import glob from "glob";
 
 let fontFolder = "../assets/public/static/fonts";
 fs.mkdirSync(fontFolder, {
@@ -76,14 +77,14 @@ function checkExternal(modid, parent, isResolved) {
 }
 
 function out(name, loc = "", format = "es") {
-  let filename = name.split(".");
+  let filename = name.slice(0, name.lastIndexOf("."))
   return {
     input: "src/" + name,
     output: {
-      name: filename[0],
+      name: filename,
       file: "../assets/public/static/" +
         loc +
-        filename[0] +
+        filename +
         (format == "es" ? ".mjs" : ".js"),
       format: format
     },
@@ -94,14 +95,16 @@ function out(name, loc = "", format = "es") {
 export default [
   // The base files
   out("app.js"),
+  out("worker.js"),
   out("auth.js"),
   out("setup.js"),
-  out("dist.js"),
   out("api.js"),
   // The main app's files
   out("heedy/main.js")
-]
-/*.concat(glob.sync("heedy/*.vue", { cwd: "./src" }).map(a => out(a)))
+].concat(glob.sync("dist/*.js", {
+  cwd: "./src"
+}).map(a => out(a)));
+/*
 .concat(
   glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
 );*/

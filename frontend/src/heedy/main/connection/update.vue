@@ -3,7 +3,7 @@
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
-          <h-avatar-editor ref="avatarEditor" :image="connection.avatar" :colorHash="connection.id"></h-avatar-editor>
+          <h-icon-editor ref="iconEditor" :image="connection.icon" :colorHash="connection.id"></h-icon-editor>
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
@@ -44,9 +44,6 @@
   </h-card-page>
 </template>
 <script>
-import Vue from "../../../dist.mjs";
-import api from "../../../api.mjs";
-
 export default {
   props: {
     connection: Object
@@ -64,9 +61,9 @@ export default {
       this.loading = true;
       this.alert = "";
 
-      if (this.$refs.avatarEditor.hasImage()) {
+      if (this.$refs.iconEditor.hasImage()) {
         // We are in the image picker, and an image was chosen
-        this.modified.avatar = this.$refs.avatarEditor.getImage();
+        this.modified.icon = this.$refs.iconEditor.getImage();
       }
       if (this.reset_token) {
         this.modified.access_token = "reset";
@@ -77,7 +74,7 @@ export default {
       });
 
       if (Object.keys(this.modified).length > 0) {
-        let result = await api(
+        let result = await this.$app.api(
           "PATCH",
           `api/heedy/v1/connections/${this.connection.id}`,
           this.modified
@@ -105,7 +102,7 @@ export default {
         return this.modified.description || this.connection.description;
       },
       set(v) {
-        Vue.set(this.modified, "description", v);
+        this.$app.vue.set(this.modified, "description", v);
       }
     },
     name: {
@@ -113,7 +110,7 @@ export default {
         return this.modified["name"] || this.connection.name;
       },
       set(v) {
-        Vue.set(this.modified, "name", v);
+        this.$app.vue.set(this.modified, "name", v);
       }
     },
     scopes: {
@@ -121,7 +118,7 @@ export default {
         return this.modified["scopes"] || this.connection.scopes;
       },
       set(v) {
-        Vue.set(this.modified, "scopes", v);
+        this.$app.vue.set(this.modified, "scopes", v);
       }
     },
     enabled: {
@@ -132,7 +129,7 @@ export default {
         return this.modified["enabled"];
       },
       set(v) {
-        Vue.set(this.modified, "enabled", v);
+        this.$app.vue.set(this.modified, "enabled", v);
       }
     }
   }

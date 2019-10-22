@@ -49,7 +49,7 @@
             </v-btn>
           </v-list-item-action>
           <v-list-item-avatar style="padding-right: 30px;">
-            <h-avatar :image="pi.avatar" :colorHash="pi.name"></h-avatar>
+            <h-icon :image="pi.icon" :colorHash="pi.name"></h-icon>
           </v-list-item-avatar>
         </v-list-item>
       </v-list>
@@ -68,7 +68,7 @@
         <v-card-title class="headline grey lighten-2" primary-title>
           <v-list-item two-line>
             <v-list-item-avatar style="padding-right: 30px;">
-              <h-avatar :image="dvalue.avatar" :colorHash="dvalue.name"></h-avatar>
+              <h-icon :image="dvalue.icon" :colorHash="dvalue.name"></h-icon>
             </v-list-item-avatar>
             <v-list-item-content>
               <v-list-item-title>{{ dvalue.name }}</v-list-item-title>
@@ -106,7 +106,7 @@
   </div>
 </template>
 <script>
-import { md } from "../../../dist.mjs";
+import { md } from "../../../dist/markdown-it.mjs";
 
 export default {
   data: () => ({
@@ -126,7 +126,7 @@ export default {
       license: "",
       homepage: "",
       version: "",
-      avatar: ""
+      icon: ""
     }
   }),
   computed: {
@@ -152,9 +152,9 @@ export default {
           this.plugins[k].homepage !== undefined
             ? this.plugins[k].homepage
             : "",
-        avatar:
-          this.plugins[k].avatar !== undefined
-            ? this.plugins[k].avatar
+        icon:
+          this.plugins[k].icon !== undefined
+            ? this.plugins[k].icon
             : "fas fa-puzzle-piece",
         active: this.active.includes(k)
       }));

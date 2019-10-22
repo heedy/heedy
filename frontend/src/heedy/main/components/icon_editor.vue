@@ -6,7 +6,12 @@
       style="border: 1px solid; border-radius: 4px; padding: 6px; border-color: #F0F0F0;"
     >
       <template v-if="iconMode">
-        <h-avatar :size="size-30" defaultIcon="person" :colorHash="colorHash" :image="iconText"></h-avatar>
+        <h-icon
+          :size="size-30"
+          :defaultIcon="defaultIcon"
+          :colorHash="colorHash"
+          :image="iconText"
+        ></h-icon>
         <v-text-field
           class="centered-input"
           label="Icon Name"
@@ -50,6 +55,10 @@ export default {
     colorHash: {
       type: String,
       default: ""
+    },
+    defaultIcon: {
+      type: String,
+      default: "person"
     }
   },
   watch: {

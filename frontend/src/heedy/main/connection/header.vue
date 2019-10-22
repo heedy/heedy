@@ -1,6 +1,6 @@
 <template>
   <h-header
-    :avatar="connection.avatar"
+    :icon="connection.icon"
     :colorHash="connection.id"
     :name="connection.name"
     :description="connection.description"
@@ -64,7 +64,7 @@
 
 <script>
 import api from "../../../api.mjs";
-import { Moment } from "../../../dist.mjs";
+import Moment from "../../../dist/moment.mjs";
 export default {
   data: () => ({
     showkey: false,

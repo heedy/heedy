@@ -134,7 +134,7 @@ func (a *Auth) As(identifier string) (database.DB, error) {
 		return database.NewPublicDB(a.DB), nil
 	}
 	_, err := a.DB.ReadUser(identifier, &database.ReadUserOptions{
-		Avatar: false,
+		Icon: false,
 	})
 	if err != nil {
 		return nil, err

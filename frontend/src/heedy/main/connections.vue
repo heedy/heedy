@@ -23,7 +23,7 @@
             <v-card class="pa-2" outlined tile>
               <v-list-item two-line subheader :to="`/connections/${c.id}`">
                 <v-list-item-avatar>
-                  <h-avatar :image="c.avatar" :colorHash="c.id"></h-avatar>
+                  <h-icon :image="c.icon" :colorHash="c.id"></h-icon>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>{{ c.name }}</v-list-item-title>

@@ -65,5 +65,5 @@ function out(name, loc = "", format = "es") {
 export default [
   // The base files
   out("main.js"),
-  out("preprocessing.worker.js")
+  out("worker.js")
 ];

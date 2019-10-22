@@ -2,9 +2,9 @@
   <v-flex>
     <v-card>
       <v-card-title>
-        <v-list-item two-line style="margin-top: -8px;">
+        <v-list-item two-line style="margin-top: -10px;margin-bottom: -8px">
           <v-list-item-avatar>
-            <h-avatar :image="avatar" :colorHash="colorHash" />
+            <h-icon :image="icon" :colorHash="colorHash" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title class="headline mb-1">{{ name }}</v-list-item-title>
@@ -25,7 +25,7 @@
 <script>
 export default {
   props: {
-    avatar: String,
+    icon: String,
     colorHash: {
       type: String,
       default: ""

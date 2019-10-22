@@ -47,7 +47,7 @@ type Source struct {
 	Name        string                  `json:"name"`
 	Type        string                  `json:"type"`
 	Description *string                 `json:"description,omitempty"`
-	Avatar      *string                 `json:"avatar,omitempty"`
+	Icon        *string                 `json:"icon,omitempty"`
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
 	Scopes      *[]string               `json:"scopes,omitempty"`
 
@@ -59,7 +59,7 @@ type Connection struct {
 	Name string `json:"name"`
 
 	Description *string   `json:"description,omitempty" hcl:"description"`
-	Avatar      *string   `json:"avatar,omitempty" hcl:"avatar"`
+	Icon        *string   `json:"icon,omitempty" hcl:"icon"`
 	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
 	Type        *string   `json:"type" hcl:"type"`
@@ -86,7 +86,7 @@ type Exec struct {
 type Plugin struct {
 	Version     *string `hcl:"version" json:"version,omitempty"`
 	Description *string `hcl:"description" json:"description,omitempty"`
-	Avatar      *string `hcl:"avatar" json:"avatar,omitempty"`
+	Icon        *string `hcl:"icon" json:"icon,omitempty"`
 	Readme      *string `hcl:"readme" json:"readme,omitempty"`
 	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
 	License     *string `hcl:"license" json:"license,omitempty"`

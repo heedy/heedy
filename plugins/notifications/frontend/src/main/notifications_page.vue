@@ -28,7 +28,7 @@
   </h-page-container>
 </template>
 <script>
-import { md } from "../../dist.mjs";
+import { md } from "../../dist/markdown-it.mjs";
 export default {
   computed: {
     loading() {

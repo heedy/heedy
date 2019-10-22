@@ -17,7 +17,7 @@ CREATE TABLE groups (
 	name VARCHAR NOT NULL,
 	fullname VARCHAR NOT NULL DEFAULT '',
 	description VARCHAR NOT NULL DEFAULT '',
-	avatar VARCHAR NOT NULL DEFAULT '',
+	icon VARCHAR NOT NULL DEFAULT '',
 
 	owner VARCHAR(36) NOT NULL,
 
@@ -200,7 +200,7 @@ CREATE VIEW user_groupscopes(username,groupid,scope) AS
 
 // ReadGroupOptions gives options for reading
 type ReadGroupOptions struct {
-	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
+	Icon bool `json:"icon,omitempty" schema:"icon"`
 }
 
 // Group holds a group's details
@@ -219,8 +219,8 @@ func readGroup(adb *AdminDB, id string, o *ReadGroupOptions, selectStatement str
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
-	if o == nil || !o.Avatar {
-		g.Avatar = nil
+	if o == nil || !o.Icon {
+		g.Icon = nil
 	}
 	return g, err
 }
@@ -320,8 +320,8 @@ func (db *AdminDB) ReadGroup(id string, o *ReadGroupOptions) (*Group, error) {
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
-	if o != nil && o.Avatar {
-		g.Avatar = nil
+	if o != nil && o.Icon {
+		g.Icon = nil
 	}
 
 	return g, err

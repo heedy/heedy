@@ -35,11 +35,11 @@
         <v-layout row wrap>
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
             <template v-if="!editing">
-              <h-avatar :size="120" :image="user.avatar" :colorHash="user.username"></h-avatar>
+              <h-icon :size="120" :image="user.icon" :colorHash="user.username"></h-icon>
               <h5 style="color:gray;padding-top:10px">{{user.username}}</h5>
             </template>
             <template v-else>
-              <h-avatar-editor ref="avatarEditor" :image="user.avatar" :colorHash="user.username"></h-avatar-editor>
+              <h-icon-editor ref="iconEditor" :image="user.icon" :colorHash="user.username"></h-icon-editor>
             </template>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>
@@ -82,9 +82,9 @@ export default {
     save: async function() {
       if (this.loading) return;
       this.loading = true;
-      if (this.$refs.avatarEditor.hasImage()) {
+      if (this.$refs.iconEditor.hasImage()) {
         // We are in the image picker, and an image was chosen
-        this.modified.avatar = this.$refs.avatarEditor.getImage();
+        this.modified.icon = this.$refs.iconEditor.getImage();
       }
       console.log(this.modified);
       let result = await api(

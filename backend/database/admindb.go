@@ -133,8 +133,8 @@ func (db *AdminDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
-	if o == nil || !o.Avatar {
-		u.Avatar = nil
+	if o == nil || !o.Icon {
+		u.Icon = nil
 	}
 
 	return u, err
@@ -293,11 +293,11 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
-	if o != nil && o.Avatar {
-		c.Avatar = nil
+	if o != nil && o.Icon {
+		c.Icon = nil
 	}
-	if o == nil || !o.Avatar {
-		c.Avatar = nil
+	if o == nil || !o.Icon {
+		c.Icon = nil
 	}
 	if o == nil || !o.AccessToken {
 		if c.AccessToken != nil {
@@ -369,9 +369,9 @@ func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection, err
 	}
 	err := db.Select(&c, selectStmt, a...)
 	if err == nil && o != nil {
-		if o.Avatar != nil && *o.Avatar == false {
+		if o.Icon != nil && *o.Icon == false {
 			for _, cc := range c {
-				cc.Avatar = nil
+				cc.Icon = nil
 			}
 		}
 	}

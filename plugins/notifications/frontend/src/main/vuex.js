@@ -1,4 +1,4 @@
-import Vue from "../../dist.mjs";
+import Vue from "../../dist/vue.mjs";
 import api from "../../api.mjs";
 
 // The notification key

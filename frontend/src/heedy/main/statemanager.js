@@ -1,4 +1,4 @@
-import Vue from "../../dist.mjs";
+import Vue from "../../dist/vue.mjs";
 import api from "../../api.mjs";
 
 export default {
@@ -127,7 +127,7 @@ export default {
     }, q) {
       console.log("Reading user", q.username);
       let res = await api("GET", `api/heedy/v1/users/${q.username}`, {
-        avatar: true
+        icon: true
       });
       if (!res.response.ok) {
         commit("alert", {
@@ -153,7 +153,7 @@ export default {
     }, q) {
       console.log("Reading source", q.id);
       let res = await api("GET", `api/heedy/v1/sources/${q.id}`, {
-        avatar: true
+        icon: true
       });
       if (!res.response.ok) {
         commit("alert", {
@@ -253,7 +253,7 @@ export default {
     }) {
       console.log("Loading connections");
       let res = await api("GET", "api/heedy/v1/connections", {
-        avatar: true
+        icon: true
       });
       if (!res.response.ok) {
         commit("alert", {
@@ -274,7 +274,7 @@ export default {
     }, q) {
       console.log("Reading connection", q.id);
       let res = await api("GET", `api/heedy/v1/connections/${q.id}`, {
-        avatar: true
+        icon: true
       });
       if (!res.response.ok) {
         commit("alert", {

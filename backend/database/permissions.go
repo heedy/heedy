@@ -12,8 +12,8 @@ func readUser(adb *AdminDB, name string, o *ReadUserOptions, selectStatement str
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
-	if o == nil || !o.Avatar {
-		u.Avatar = nil
+	if o == nil || !o.Icon {
+		u.Icon = nil
 	}
 	return u, err
 }
@@ -71,8 +71,8 @@ func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectState
 		return nil, ErrNotFound
 	}
 
-	if o == nil || !o.Avatar {
-		s.Avatar = nil
+	if o == nil || !o.Icon {
+		s.Icon = nil
 	}
 
 	return s, err
@@ -85,8 +85,8 @@ func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectSt
 		return nil, ErrNotFound
 	}
 
-	if o == nil || !o.Avatar {
-		c.Avatar = nil
+	if o == nil || !o.Icon {
+		c.Icon = nil
 	}
 	if o == nil || !o.AccessToken {
 		if c.AccessToken != nil {
@@ -250,10 +250,10 @@ func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string, ar
 		return nil, err
 	}
 
-	// Clear avatars if not needed
-	if o != nil && o.Avatar != nil && !(*o.Avatar) {
+	// Clear icons if not needed
+	if o != nil && o.Icon != nil && !(*o.Icon) {
 		for r := range res {
-			res[r].Avatar = nil
+			res[r].Icon = nil
 		}
 	}
 	return res, nil
@@ -267,9 +267,9 @@ func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement str
 		return nil, err
 	}
 	if o != nil {
-		if o.Avatar != nil && !(*o.Avatar) {
+		if o.Icon != nil && !(*o.Icon) {
 			for r := range res {
-				res[r].Avatar = nil
+				res[r].Icon = nil
 			}
 		}
 	}

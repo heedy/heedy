@@ -1,3 +1,8 @@
+import VueCodemirror from "../dist/codemirror.mjs";
+import Draggable from "../dist/draggable.mjs";
+import VJsonschemaForm from "../dist/vuetify-jsonschema-form.mjs";
+
+
 import Theme from "./main/theme.vue";
 
 import PublicHome from "./main/public_home.vue";
@@ -50,6 +55,11 @@ import EventSubscriber from "./main/websocket.js";
 
 
 function setup(app) {
+
+    app.vue.use(VueCodemirror);
+    app.vue.component('v-jsonschema-form', VJsonschemaForm);
+    app.vue.component('draggable', Draggable);
+
     app.theme = Theme;
 
     // Add the current user to the vuex module

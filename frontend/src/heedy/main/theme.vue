@@ -23,7 +23,7 @@
           </v-list-item>
           <v-list-item v-else two-line :to="'/users/' + user.username">
             <v-list-item-avatar>
-              <h-avatar :image="user.avatar" :colorHash="user.username"></h-avatar>
+              <h-icon :image="user.icon" :colorHash="user.username"></h-icon>
             </v-list-item-avatar>
 
             <v-list-item-content>
@@ -48,10 +48,10 @@
         <v-spacer></v-spacer>
         <v-list dense nav class="py-0">
           <v-list-item v-for="item in bottomMenu" :key="item.key" :to="item.route">
-            <v-list-item-avatar>
+            <v-list-item-icon>
               <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
               <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
-            </v-list-item-avatar>
+            </v-list-item-icon>
 
             <v-list-item-content>
               <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -61,9 +61,9 @@
           <v-menu right v-if="showSecondaryMenu">
             <template #activator="{ on }">
               <v-list-item v-on="on" height="30px">
-                <v-list-item-avatar>
+                <v-list-item-icon>
                   <v-icon>more_vert</v-icon>
-                </v-list-item-avatar>
+                </v-list-item-icon>
 
                 <v-list-item-content>
                   <v-list-item-title>More</v-list-item-title>
@@ -72,16 +72,16 @@
             </template>
             <v-list dense nav width="200px">
               <v-list-item v-for="item in secondaryMenu" :key="item.key" :to="item.route">
-                <v-list-item-avatar>
+                <v-list-item-icon>
                   <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
                   <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
-                </v-list-item-avatar>
+                </v-list-item-icon>
                 <v-list-item-title>{{ item.text }}</v-list-item-title>
               </v-list-item>
               <v-list-item v-if="user!=null" to="/logout">
-                <v-list-item-avatar>
+                <v-list-item-icon>
                   <v-icon>fas fa-sign-out-alt</v-icon>
-                </v-list-item-avatar>
+                </v-list-item-icon>
                 <v-list-item-title>Log Out</v-list-item-title>
               </v-list-item>
             </v-list>
@@ -110,7 +110,7 @@
       </v-btn>
       <v-btn v-else :to="'/users/' + user.username">
         <span v-if="!small">{{ username }}</span>
-        <h-avatar :image="user.avatar" :colorHash="user.username" :size="28"></h-avatar>
+        <h-icon :image="user.icon" :colorHash="user.username" :size="28"></h-icon>
       </v-btn>
 
       <v-btn v-for="item in menu" :key="item.key" :to="item.route">

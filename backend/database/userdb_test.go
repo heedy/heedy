@@ -104,16 +104,16 @@ func TestAdminUser(t *testing.T) {
 	require.NoError(t, db.DelUser("testy2"))
 }
 
-func TestUserUpdateAvatar(t *testing.T) {
+func TestUserUpdateIcon(t *testing.T) {
 	adb, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	db := NewUserDB(adb, "testy")
-	avatar := "mi:lol"
+	icon := "mi:lol"
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
 			ID:     "testy",
-			Avatar: &avatar,
+			Icon: &icon,
 		},
 	}))
 }

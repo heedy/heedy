@@ -35,7 +35,7 @@ CREATE TABLE users (
 	username VARCHAR(36) PRIMARY KEY NOT NULL,
 	name VARCHAR NOT NULL DEFAULT '',
 	description VARCHAR NOT NULL DEFAULT '',
-	avatar VARCHAR NOT NULL DEFAULT '',
+	icon VARCHAR NOT NULL DEFAULT '',
 
 	-- whether the public or users can read the user
 	public_read BOOLEAN NOT NULL DEFAULT FALSE,
@@ -53,7 +53,7 @@ CREATE TABLE connections (
 
 	name VARCHAR NOT NULL,
 	description VARCHAR NOT NULL DEFAULT '',
-	avatar VARCHAR NOT NULL DEFAULT '',
+	icon VARCHAR NOT NULL DEFAULT '',
 
 	owner VARACHAR(36) NOT NULL,
 
@@ -99,7 +99,7 @@ CREATE TABLE sources (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
 	description VARCHAR NOT NULL DEFAULT '',
-	avatar VARCHAR NOT NULL DEFAULT '',
+	icon VARCHAR NOT NULL DEFAULT '',
 	connection VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
@@ -206,7 +206,7 @@ CREATE VIEW user_source_scopes(user,source,scope) AS
 -- Database Default Users
 ------------------------------------------------------------------
 
-INSERT INTO users (username,name,description,avatar,password) VALUES 
+INSERT INTO users (username,name,description,icon,password) VALUES 
 -- The public/users virtual users are created by default, and cannot be deleted,
 -- as they represent the database view that someone not logged in will get,
 -- and the sources accessible to a user who is logged in

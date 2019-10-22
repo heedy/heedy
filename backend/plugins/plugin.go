@@ -202,7 +202,7 @@ func processConnection(pluginKey string, owner string, cv *assets.Connection) *d
 		Details: database.Details{
 			Name:        &cv.Name,
 			Description: cv.Description,
-			Avatar:      cv.Avatar,
+			Icon:      cv.Icon,
 		},
 		Enabled: cv.Enabled,
 		Plugin:  &pluginKey,
@@ -238,7 +238,7 @@ func processSource(connection string, key string, as *assets.Source) *database.S
 		Details: database.Details{
 			Name:        &as.Name,
 			Description: as.Description,
-			Avatar:      as.Avatar,
+			Icon:      as.Icon,
 		},
 		Connection: &connection,
 		Key:        &key,

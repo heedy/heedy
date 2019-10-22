@@ -57,7 +57,7 @@ func FrontendMux() (*chi.Mux, error) {
 
 		if _, ok := ctx.DB.(*database.UserDB); ok {
 			u, err = ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
-				Avatar: true,
+				Icon: true,
 			})
 			if err != nil {
 				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)

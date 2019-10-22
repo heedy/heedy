@@ -3,9 +3,64 @@ import Vue, {
   Vuex,
   Vuetify,
   createLogger
-} from "./dist.mjs";
+} from "./dist/vue.mjs";
 
 import api from "./api.js";
+
+import worker from "./worker.mjs"
+class WorkerInjector {
+  constructor() {
+    this.handlers = {};
+
+    worker.postMessage = (key, msg) => {
+      return this._onMessage({
+        data: {
+          key: key,
+          msg: msg
+        }
+      });
+    }
+
+    this.worker = {
+      postMessage: (msg) => worker._onMessage({
+        data: msg
+      })
+    };
+  }
+  addHandler(key, f) {
+    this.handlers[key] = f;
+  }
+
+  /**
+   * Sends a message with the given key to the worker
+   * @param {*} key 
+   * @param {*} msg 
+   */
+  postMessage(key, msg) {
+    this.worker.postMessage({
+      key: key,
+      msg: msg
+    });
+  }
+
+  add(filename) {
+    this.postMessage("import", filename);
+  }
+
+
+  async _onMessage(e) {
+    let msg = e.data;
+    console.log("App:", msg);
+    if (this.handlers[msg.key] !== undefined) {
+      let ctx = {
+        key: msg.key
+      }
+      await this.handlers[msg.key](ctx, msg.msg);
+    } else {
+      console.error(`Unknown message key ${msg.key}`);
+    }
+  }
+}
 
 class App {
   constructor(appinfo, store) {
@@ -19,6 +74,9 @@ class App {
     this.theme = null;
     this.injected = {};
     this.routes = {};
+
+
+    this.worker = new WorkerInjector();
   }
 
   /**
@@ -50,7 +108,6 @@ class App {
   addMenuItem(m) {
     this.store.commit('addMenuItem', m);
   }
-
 
   inject(name, p) {
     this.injected[name] = p;
@@ -146,7 +203,7 @@ async function setup(appinfo) {
     store: store,
     vuetify: vuetify,
     render: h => h(app.theme)
-  })
+  });
 
   // Mount it
   vue.$mount("#app");

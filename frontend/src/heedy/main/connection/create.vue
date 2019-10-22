@@ -3,7 +3,7 @@
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
-          <h-avatar-editor ref="avatarEditor" image="settings_input_component"></h-avatar-editor>
+          <h-icon-editor ref="iconEditor" image="settings_input_component"></h-icon-editor>
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
@@ -46,7 +46,7 @@ export default {
         name: this.name.trim(),
         description: this.description.trim(),
         scopes: this.scopes,
-        avatar: this.$refs.avatarEditor.getImage()
+        icon: this.$refs.iconEditor.getImage()
       };
 
       if (query.name.length == 0) {
@@ -63,8 +63,8 @@ export default {
         return;
       }
 
-      // The result comes without the avatar, let's set it correctly
-      result.data.avatar = query.avatar;
+      // The result comes without the icon, let's set it correctly
+      result.data.icon = query.icon;
 
       this.$store.commit("setConnection", result.data);
       this.loading = false;

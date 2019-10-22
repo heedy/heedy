@@ -185,7 +185,7 @@ type Details struct {
 	ID          string  `json:"id,omitempty" db:"id"`
 	Name        *string `json:"name,omitempty" db:"name"`
 	Description *string `json:"description,omitempty" db:"description"`
-	Avatar      *string `json:"avatar,omitempty" db:"avatar"`
+	Icon        *string `json:"icon,omitempty" db:"icon"`
 }
 
 // User holds a user's data
@@ -246,18 +246,18 @@ func (s *Source) String() string {
 
 // ReadUserOptions gives options for reading a user
 type ReadUserOptions struct {
-	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
+	Icon bool `json:"icon,omitempty" schema:"icon"`
 }
 
 // ReadConnectionOptions gives options for reading
 type ReadConnectionOptions struct {
-	Avatar      bool `json:"avatar,omitempty" schema:"avatar"`
+	Icon        bool `json:"icon,omitempty" schema:"icon"`
 	AccessToken bool `json:"token,omitempty" schema:"token"` // using "token" instead of access_token, since the API uses access_token param
 }
 
 // ReadSourceOptions gives options for reading
 type ReadSourceOptions struct {
-	Avatar bool `json:"avatar,omitempty" schema:"avatar"`
+	Icon bool `json:"icon,omitempty" schema:"icon"`
 }
 
 type ListUsersOptions struct {
@@ -265,8 +265,8 @@ type ListUsersOptions struct {
 
 // ListSourcesOptions shows the options for listing sources
 type ListSourcesOptions struct {
-	// Whether to include avatars
-	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
+	// Whether to include icons
+	Icon *bool `json:"icon,omitempty" schema:"icon"`
 	// Limit results to the given user's sources.
 	UserName *string `json:"username,omitempty" schema:"username"`
 	// Limit the results to the given connection's sources
@@ -285,8 +285,8 @@ type ListSourcesOptions struct {
 
 // ListConnectionOptions holds the options associated with listing connections
 type ListConnectionOptions struct {
-	// Whether to include avatars
-	Avatar *bool `json:"avatar,omitempty" schema:"avatar"`
+	// Whether to include icons
+	Icon *bool `json:"icon,omitempty" schema:"icon"`
 	// Limit results to the given user's connections
 	User *string `json:"user,omitempty" schema:"user"`
 	// Find the connections with the given plugin key
@@ -382,8 +382,8 @@ func extractPointers(o interface{}) (columns []string, values []interface{}) {
 
 func extractDetails(d *Details) (columns []string, values []interface{}, err error) {
 
-	if d.Avatar != nil {
-		if err = ValidAvatar(*d.Avatar); err != nil {
+	if d.Icon != nil {
+		if err = ValidIcon(*d.Icon); err != nil {
 			return
 		}
 	}

@@ -1,4 +1,4 @@
-import Vue from "../dist.mjs";
+import Vue from "../dist/vue.mjs";
 import vuexModule from "./main/vuex.js";
 import Notification from "./main/notification.vue";
 import NotificationsPage from "./main/notifications_page.vue";

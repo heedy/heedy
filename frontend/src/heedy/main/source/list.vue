@@ -7,7 +7,7 @@
           <v-card class="pa-2" outlined tile>
             <v-list-item two-line subheader :to="`/sources/${s.id}`">
               <v-list-item-avatar>
-                <h-avatar :image="s.avatar" :colorHash="s.id"></h-avatar>
+                <h-icon :image="s.icon" :colorHash="s.id"></h-icon>
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title>{{ s.name }}</v-list-item-title>
