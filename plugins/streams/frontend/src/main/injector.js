@@ -6,8 +6,8 @@ class StreamInjector {
         app.worker.addHandler("stream_query", (c, m) => this._onQuery(c, m))
     }
 
-    addVisualization(name, obj) {
-        this.app.store.commit("addVisualization", {
+    addView(name, obj) {
+        this.app.store.commit("addView", {
             key: name,
             component: obj
         });

@@ -3,8 +3,9 @@
     <v-row>
       <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="4">
         <v-card>
+          <v-card-title v-if="d.title!==undefined">{{ d.title }}</v-card-title>
           <v-card-text>
-            <component :is="visualizations[d.component]" />
+            <component :is="view(d.view)" :data="d.data" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -12,16 +13,14 @@
   </v-flex>
 </template>
 <script>
+import ViewNotFound from "./view_notfound.vue";
 export default {
   props: {
     source: Object
   },
   computed: {
-    visualizations() {
-      return this.$store.state.streams.visualizations;
-    },
     datavis() {
-      let dv = this.$store.state.streams.datavis;
+      let dv = this.$store.state.streams.streams;
       if (dv[this.source.id] === undefined) {
         console.log("dataviz null");
         return null;
@@ -31,6 +30,15 @@ export default {
       v.sort((a, b) => a.weight - b.weight);
       console.log("dataviz", v);
       return v;
+    }
+  },
+  methods: {
+    view(v) {
+      let vs = this.$store.state.streams.views;
+      if (vs[v] === undefined) {
+        return ViewNotFound;
+      }
+      return vs[v];
     }
   },
   created() {

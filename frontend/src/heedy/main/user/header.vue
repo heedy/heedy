@@ -31,7 +31,7 @@
           <span>{{ item.text }}</span>
         </v-tooltip>
       </v-speed-dial>
-      <v-container grid-list-md>
+      <v-container grid-list-md fluid>
         <v-layout row wrap>
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
             <template v-if="!editing">

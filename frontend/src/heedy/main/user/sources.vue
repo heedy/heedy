@@ -10,8 +10,8 @@ export default {
   },
   computed: {
     sources() {
-      return (
-        this.$store.state.heedy.userSources[this.user.username] || []
+      return Object.keys(
+        this.$store.state.heedy.userSources[this.user.username] || {}
       ).map(id => this.$store.state.heedy.sources[id]);
     }
   },

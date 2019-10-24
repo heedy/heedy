@@ -7,26 +7,31 @@
 </template>
 <script>
 export default {
-  data: () => ({}),
+  data: () => ({
+    loading: true
+  }),
   props: {
     connectionid: String
   },
   watch: {
     connectionid(newValue) {
-      this.$store.dispatch("readConnection", { id: newValue });
+      this.loading = true;
+      this.$store.dispatch("readConnection", {
+        id: newValue,
+        callback: () => (this.loading = false)
+      });
     }
   },
   computed: {
     connection() {
-      let c = this.$store.state.heedy.connections[this.connectionid] || null;
-      return c;
-    },
-    loading() {
-      return this.$store.state.heedy.connections == null;
+      return this.$store.state.heedy.connections[this.connectionid] || null;
     }
   },
   created() {
-    this.$store.dispatch("readConnection", { id: this.connectionid });
+    this.$store.dispatch("readConnection", {
+      id: this.connectionid,
+      callback: () => (this.loading = false)
+    });
   }
 };
 </script>

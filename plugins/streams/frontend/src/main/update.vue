@@ -153,7 +153,29 @@ export default {
       this.loading = false;
       this.$router.push({ path: `/sources/${this.source.id}` });
     },
-    del: async function() {}
+    del: async function() {
+      let s = this.source;
+      if (
+        confirm(
+          `Are you sure you want to delete '${this.source.name}'? This deletes all associated data.`
+        )
+      ) {
+        let res = await this.$app.api(
+          "DELETE",
+          `/api/heedy/v1/sources/${this.source.id}`
+        );
+        if (!res.response.ok) {
+          this.alert = res.data.error_description;
+        } else {
+          this.alert = "";
+          if (s.connection != null) {
+            this.$router.push(`/connections/${s.connection}`);
+          } else {
+            this.$router.push(`/users/${s.owner}`);
+          }
+        }
+      }
+    }
   },
   computed: {
     curRadio() {

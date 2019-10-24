@@ -4,16 +4,16 @@ import Vue from "../../dist/vue.mjs";
 
 export default {
     state: {
-        visualizations: {},
-        datavis: {}
+        views: {},
+        streams: {}
     },
     mutations: {
-        addVisualization(state, v) {
-            Vue.set(state.visualizations, v.key, v.component);
+        addView(state, v) {
+            Vue.set(state.views, v.key, v.component);
         },
         setData(state, v) {
             console.log("setdata", v);
-            Vue.set(state.datavis, v.id, v.data);
+            Vue.set(state.streams, v.id, v.data);
         }
     }
 };

@@ -12,7 +12,7 @@
           </v-list-item-content>
         </v-list-item>
       </v-card-title>
-      <v-container>
+      <v-container fluid>
         <div v-if="loading" style="color: gray; text-align: center;">Loading...</div>
         <div
           v-else-if="connections.length==0"

@@ -1,5 +1,8 @@
-class EventSubscriber {
-    constructor(retryConnect) {
+import moment from "../../dist/moment.mjs";
+
+class WebsocketSubscriber {
+    constructor(app) {
+        this.store = app.store;
         // Get subscriptions by key
         this.subscriptions = {};
 
@@ -11,12 +14,16 @@ class EventSubscriber {
 
         this.loc = wsproto + "//" + location.host + location.pathname + "api/heedy/v1/events";
 
-        this.retryConnect = retryConnect;
-        this.isopen = false;
+        // The websocket server might be disabled for non-logged-in users
+        this.retryConnect = app.info.user != null;
 
         this.resetTimeout = 200;
         this.retryTimeout = 200;
         this.retryTimeoutDelta = 1000;
+
+        // Whether the socket is opwn, and when it was connected. This allows
+        // the app to check if it needs to query for stuff
+        this.isopen = false;
 
         this.connect();
     }
@@ -41,10 +48,16 @@ class EventSubscriber {
             console.log("<-", m);
             this.ws.send(JSON.stringify(m))
         });
+
+        // Set the websocket connection time
+        this.store.commit("setWebsocket", moment());
+
     }
     onclose(e) {
         console.log("Websocket closed");
         this.isopen = false;
+        // Set the websocket as disconnected
+        this.store.commit("setWebsocket", null);
         if (this.retryConnect) {
             setTimeout(() => this.connect(), this.retryTimeout);
             this.retryTimeout += this.retryTimeoutDelta;
@@ -99,4 +112,4 @@ class EventSubscriber {
     }
 }
 
-export default EventSubscriber
+export default WebsocketSubscriber

@@ -1,6 +1,5 @@
 import VueCodemirror from "../dist/codemirror.mjs";
 import Draggable from "../dist/draggable.mjs";
-import VJsonschemaForm from "../dist/vuetify-jsonschema-form.mjs";
 
 
 import Theme from "./main/theme.vue";
@@ -51,13 +50,12 @@ import Connections from "./main/connections.vue";
 import vuexModule from "./main/statemanager.js";
 import registerCoreComponents from "./main/components.js";
 
-import EventSubscriber from "./main/websocket.js";
+import WebsocketSubscriber from "./main/websocket.js";
 
 
 function setup(app) {
 
     app.vue.use(VueCodemirror);
-    app.vue.component('v-jsonschema-form', VJsonschemaForm);
     app.vue.component('draggable', Draggable);
 
     app.theme = Theme;
@@ -72,12 +70,16 @@ function setup(app) {
     registerCoreComponents(app.vue);
     app.vue.component("h-source-list", SourceList);
 
+    // The event handler needs to be injected first, since it is used 
+    // in the other injectors
+    app.inject("websocket", new WebsocketSubscriber(app));
+
     // Inject the user/connection/source handlers into the app
-    app.inject("user", new UserInjector(app.store));
-    app.inject("connection", new ConnectionInjector(app.store));
-    app.inject("source", new SourceInjector(app.store));
-    app.inject("settings", new SettingsInjector(app.store));
-    app.inject("events", new EventSubscriber(app.info.user != null));
+    app.inject("user", new UserInjector(app));
+    app.inject("connection", new ConnectionInjector(app));
+    app.inject("source", new SourceInjector(app));
+    app.inject("settings", new SettingsInjector(app));
+
 
 
     app.user.addComponent({

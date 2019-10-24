@@ -2,8 +2,40 @@ var sourceRoutesMap = {};
 var sourceRoutes = [];
 
 class Source {
-    constructor(store) {
-        this.store = store;
+    constructor(app) {
+        this.store = app.store;
+
+        let querySource = (e) => {
+            if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.connection !== undefined && this.store.state.heedy.connectionSources[e.connection] !== undefined) {
+                this.store.dispatch("readSource_", {
+                    id: e.source
+                });
+            }
+        }
+        // Subscribe to all source events, so that the source list
+        // can be kept up-to-date
+        if (app.info.user != null) {
+            app.websocket.subscribe("source_create", {
+                event: "source_create",
+                user: app.info.user.username
+            }, querySource);
+            app.websocket.subscribe("source_update", {
+                event: "source_update",
+                user: app.info.user.username
+            }, querySource);
+            app.websocket.subscribe("source_delete", {
+                event: "source_delete",
+                user: app.info.user.username
+            }, (e) => {
+                if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.connection !== undefined && this.store.state.heedy.connectionSources[e.connection] !== undefined) {
+                    this.store.commit("setSource", {
+                        id: e.source,
+                        isNull: true
+                    });
+                }
+            });
+        }
+
     }
 
     /**

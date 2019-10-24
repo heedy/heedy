@@ -14,9 +14,6 @@ export default {
       }
       return Object.values(gn).reduce((i, n) => (n.seen ? i : i + 1), 0);
     }
-  },
-  created() {
-    this.$store.dispatch("readGlobalNotifications");
   }
 };
 </script>

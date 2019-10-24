@@ -49,11 +49,13 @@ function setup(app) {
         types.forEach((t) => etypes.forEach((et => {
 
             let etype = `${t}_notification_${et}`;
-            app.events.subscribe(etype, {
+            app.websocket.subscribe(etype, {
                 event: etype,
                 user: app.info.user.username
             }, notifier);
         })));
+
+        app.store.dispatch("readGlobalNotifications");
     }
 
 }

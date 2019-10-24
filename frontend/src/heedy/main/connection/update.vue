@@ -94,7 +94,24 @@ export default {
       this.loading = false;
       this.$router.push({ path: `/connections/${this.connection.id}` });
     },
-    del: async function() {}
+    del: async function() {
+      if (
+        confirm(
+          `Are you sure you want to delete '${this.connection.name}'? You can disable it instead, which will keep any data this connection has gathered.`
+        )
+      ) {
+        let res = await this.$app.api(
+          "DELETE",
+          `/api/heedy/v1/connections/${this.connection.id}`
+        );
+        if (!res.response.ok) {
+          this.alert = res.data.error_description;
+        } else {
+          this.alert = "";
+          this.$router.push("/connections");
+        }
+      }
+    }
   },
   computed: {
     description: {

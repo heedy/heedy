@@ -8,6 +8,8 @@ import {
   terser
 } from "rollup-plugin-terser";
 
+import glob from "glob";
+
 const plugin_name = "streams"
 
 const production = !process.env.NODE_ENV === 'debug';
@@ -66,4 +68,6 @@ export default [
   // The base files
   out("main.js"),
   out("worker.js")
-];
+].concat(glob.sync("views/*.vue", {
+  cwd: "./src"
+}).map(a => out(a)));;

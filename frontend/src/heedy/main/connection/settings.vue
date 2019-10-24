@@ -25,7 +25,11 @@
   </h-card-page>
 </template>
 <script>
+import VJsonschemaForm from "../../../dist/vuetify-jsonschema-form.mjs";
 export default {
+  components: {
+    VJsonschemaForm
+  },
   props: {
     connection: Object
   },

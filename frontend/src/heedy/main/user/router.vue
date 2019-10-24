@@ -7,7 +7,9 @@
 </template>
 <script>
 export default {
-  data: () => ({}),
+  data: () => ({
+    loading: true
+  }),
   props: {
     username: {
       type: String,
@@ -21,20 +23,23 @@ export default {
   },
   watch: {
     username(newValue) {
-      this.$store.dispatch("readUser", { username: newValue });
+      this.loading = true;
+      this.$store.dispatch("readUser", {
+        username: newValue,
+        callback: () => (this.loading = false)
+      });
     }
   },
   computed: {
     user() {
-      let c = this.$store.state.heedy.users[this.username] || null;
-      return c;
-    },
-    loading() {
-      return this.user == null;
+      return this.$store.state.heedy.users[this.username] || null;
     }
   },
   created() {
-    this.$store.dispatch("readUser", { username: this.username });
+    this.$store.dispatch("readUser", {
+      username: this.username,
+      callback: () => (this.loading = false)
+    });
   }
 };
 </script>

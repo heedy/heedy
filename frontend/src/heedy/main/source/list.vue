@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-container>
+    <v-container fluid>
       <div v-if="sources.length==0" style="color: gray; text-align: center;">No Sources Found</div>
       <v-row no-gutters v-else>
         <v-col v-for="s in sources" :key="s.id" xs="12" sm="12" md="6" lg="4" xl="4">

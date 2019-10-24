@@ -2,8 +2,8 @@ var settingsPageMap = {};
 var settingsRoutes = [];
 
 class Settings {
-    constructor(store) {
-        this.store = store;
+    constructor(app) {
+        this.store = app.store;
     }
     addPage(p) {
         settingsPageMap[p.path] = p;

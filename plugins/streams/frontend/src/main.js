@@ -1,12 +1,9 @@
 import Create from "./main/create.vue";
-import DataVis from "./main/datavis.vue";
+import Views from "./main/views.vue";
 import Header from "./main/header.vue";
 import vuexModule from "./main/vuex.js";
 import StreamInjector from "./main/injector";
 import Update from "./main/update.vue";
-
-import DataTable from "./main/visualizations/datatable.vue";
-import Insert from "./main/visualizations/insert.vue";
 
 function setup(app) {
 
@@ -36,14 +33,14 @@ function setup(app) {
   app.worker.add("streams/worker.mjs");
 
   app.source.addComponent({
-    component: DataVis,
+    component: Views,
     type: "stream",
-    key: "visualization",
+    key: "views",
     weight: 5
   });
 
-  app.streams.addVisualization("datatable", DataTable);
-  app.streams.addVisualization("insert", Insert);
+  app.streams.addView("datatable", () => import("./views/datatable.mjs"));
+  app.streams.addView("insert", () => import("./views/insert.mjs"));
 
 
   app.source.addComponent({

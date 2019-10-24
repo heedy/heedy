@@ -10,8 +10,8 @@ export default {
   },
   computed: {
     sources() {
-      return (
-        this.$store.state.heedy.connectionSources[this.connection.id] || []
+      return Object.keys(
+        this.$store.state.heedy.connectionSources[this.connection.id] || {}
       ).map(id => this.$store.state.heedy.sources[id]);
     }
   },
