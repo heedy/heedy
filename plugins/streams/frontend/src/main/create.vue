@@ -148,7 +148,7 @@ export default {
 
       this.$store.commit("setSource", result.data);
       this.loading = false;
-      this.$router.push({ path: `/sources/${result.data.id}` });
+      this.$router.replace({ path: `/sources/${result.data.id}` });
     }
   }
 };

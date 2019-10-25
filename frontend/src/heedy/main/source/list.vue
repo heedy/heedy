@@ -1,29 +1,51 @@
 <template>
-  <v-card>
-    <v-container fluid>
-      <div v-if="sources.length==0" style="color: gray; text-align: center;">No Sources Found</div>
-      <v-row no-gutters v-else>
-        <v-col v-for="s in sources" :key="s.id" xs="12" sm="12" md="6" lg="4" xl="4">
-          <v-card class="pa-2" outlined tile>
-            <v-list-item two-line subheader :to="`/sources/${s.id}`">
-              <v-list-item-avatar>
-                <h-icon :image="s.icon" :colorHash="s.id"></h-icon>
-              </v-list-item-avatar>
-              <v-list-item-content>
-                <v-list-item-title>{{ s.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ s.description }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-  </v-card>
+  <v-list flat style="background: none;padding-top: 0px; margin-top: -5px;" dense>
+    <v-list-group
+      color="secondary lighten-2"
+      v-for="item in items"
+      :key="item.type"
+      :ripple="false"
+      value="true"
+      no-action
+    >
+      <template v-slot:activator>
+        <v-list-item-content>
+          <v-list-item-title>
+            <v-icon v-if="item.icon!==undefined" style="margin-right: 5px">{{ item.icon }}</v-icon>
+            {{ item.list_title}}
+          </v-list-item-title>
+        </v-list-item-content>
+      </template>
+      <component :is="item.list_component" :sources="item.sources" />
+    </v-list-group>
+  </v-list>
 </template>
 <script>
+import ListDefault from "./list_default.vue";
 export default {
   props: {
     sources: Array
+  },
+  computed: {
+    items() {
+      let srcobj = this.sources.reduce((o, s) => {
+        if (o[s.type] === undefined) {
+          o[s.type] = [];
+        }
+        o[s.type].push(s);
+        return o;
+      }, {});
+
+      let srcType = this.$store.state.heedy.source_types;
+
+      return Object.keys(srcobj).map(k => ({
+        type: k,
+        list_title: k.charAt(0).toUpperCase() + k.substring(1) + "s",
+        sources: srcobj[k],
+        list_component: ListDefault,
+        ...(srcType[k] || {})
+      }));
+    }
   }
 };
 </script>

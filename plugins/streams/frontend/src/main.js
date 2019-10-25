@@ -49,6 +49,13 @@ function setup(app) {
     key: "header"
   });
 
+  app.source.addType({
+    type: "stream",
+    title: "Stream",
+    list_title: "Streams",
+    icon: "timeline"
+  });
+
 
   //app.source.replacePage("stream", Stream);
 }

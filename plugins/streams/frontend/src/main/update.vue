@@ -151,7 +151,7 @@ export default {
       }
 
       this.loading = false;
-      this.$router.push({ path: `/sources/${this.source.id}` });
+      this.$router.go(-1);
     },
     del: async function() {
       let s = this.source;

@@ -48,6 +48,9 @@ class Source {
     addComponent(c) {
         this.store.commit("addSourceComponent", c);
     }
+    addType(c) {
+        this.store.commit("addSourceType", c);
+    }
     /**
      * Replace the page shown for the given source type with a custom component
      * @param {*} t The source type

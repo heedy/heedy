@@ -92,7 +92,7 @@ export default {
       }
 
       this.loading = false;
-      this.$router.push({ path: `/connections/${this.connection.id}` });
+      this.$router.go(-1);
     },
     del: async function() {
       if (

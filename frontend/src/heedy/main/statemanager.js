@@ -30,6 +30,8 @@ export default {
     source_components: [],
     // The custom pages to show for the given source type
     source_custom_pages: {},
+    // Source types tell how to list the sources
+    source_types: {},
 
     // a map keyed by username, where each element is a map of ids to null
     userSources: {},
@@ -67,6 +69,9 @@ export default {
     },
     addUserComponent(state, v) {
       state.user_components.push(v);
+    },
+    addSourceType(state, v) {
+      state.source_types[v.type] = v;
     },
     addSourceComponent(state, v) {
       state.source_components.push(v);

@@ -8,7 +8,7 @@
           </v-btn>
           <v-list-item-content>
             <v-list-item-title class="headline mb-1">Connections</v-list-item-title>
-            <v-list-item-subtitle>External services and apps connected to heedy</v-list-item-subtitle>
+            <v-list-item-subtitle>Services and apps connected to heedy</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
       </v-card-title>
@@ -19,7 +19,7 @@
           style="color: gray; text-align: center;"
         >You don't have any connections.</div>
         <v-row no-gutters v-else>
-          <v-col v-for="c in connections" :key="c.id" xs="12" sm="12" md="6" lg="4" xl="4">
+          <v-col v-for="c in connections" :key="c.id" cols="12" xs="12" sm="6" md="6" lg="4" xl="3">
             <v-card class="pa-2" outlined tile>
               <v-list-item two-line subheader :to="`/connections/${c.id}`">
                 <v-list-item-avatar>

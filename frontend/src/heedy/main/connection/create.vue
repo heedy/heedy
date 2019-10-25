@@ -68,7 +68,7 @@ export default {
 
       this.$store.commit("setConnection", result.data);
       this.loading = false;
-      this.$router.push({ path: `/connections/${result.data.id}` });
+      this.$router.replace({ path: `/connections/${result.data.id}` });
     }
   }
 };
