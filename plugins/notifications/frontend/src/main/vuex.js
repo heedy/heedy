@@ -115,7 +115,7 @@ export default {
             state,
             rootState
         }) {
-            if (state.global != null && rootState.heedy.websocket != null && rootState.heedy.websocket.isBefore(state.global_qtime)) {
+            if (state.global != null && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.global_qtime)) {
                 console.log("Not querying global notifications - websocket active");
                 return;
             }
@@ -138,7 +138,7 @@ export default {
             state,
             rootState
         }, q) {
-            if (state.connections[q.id] !== undefined && rootState.heedy.websocket != null && rootState.heedy.websocket.isBefore(state.connections_qtime[q.id])) {
+            if (state.connections[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.connections_qtime[q.id])) {
                 console.log(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
@@ -164,7 +164,7 @@ export default {
             state,
             rootState
         }, q) {
-            if (state.sources[q.id] !== undefined && rootState.heedy.websocket != null && rootState.heedy.websocket.isBefore(state.sources_qtime[q.id])) {
+            if (state.sources[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.sources_qtime[q.id])) {
                 console.log(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }

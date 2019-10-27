@@ -6,7 +6,7 @@ import datatable from "./worker/processors/datatable.js";
 import insert from "./worker/processors/insert.js";
 
 function setup(wkr) {
-    console.log("Streams worker");
+    console.log("stream_worker: starting");
 
     wkr.inject("streams", new StreamInjector(wkr));
 

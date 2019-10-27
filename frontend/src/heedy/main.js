@@ -47,14 +47,10 @@ import ConnectionSettings from "./main/connection/settings.vue";
 import Connections from "./main/connections.vue";
 
 
-import vuexModule from "./main/statemanager.js";
+import vuexModule from "./main/vuex.js";
 import registerCoreComponents from "./main/components.js";
 
-import WebsocketSubscriber from "./main/websocket.js";
-
-
 function setup(app) {
-
     app.vue.use(VueCodemirror);
     app.vue.component('draggable', Draggable);
 
@@ -69,10 +65,6 @@ function setup(app) {
     // Adds the components that are used throughout the UI
     registerCoreComponents(app.vue);
     app.vue.component("h-source-list", SourceList);
-
-    // The event handler needs to be injected first, since it is used 
-    // in the other injectors
-    app.inject("websocket", new WebsocketSubscriber(app));
 
     // Inject the user/connection/source handlers into the app
     app.inject("user", new UserInjector(app));

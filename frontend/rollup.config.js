@@ -100,7 +100,7 @@ export default [
   out("setup.js"),
   out("api.js"),
   // The main app's files
-  out("heedy/main.js")
+  out("heedy/main.js"),
 ].concat(glob.sync("dist/*.js", {
   cwd: "./src"
 }).map(a => out(a)));

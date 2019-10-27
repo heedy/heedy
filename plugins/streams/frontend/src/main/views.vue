@@ -18,6 +18,10 @@ export default {
   props: {
     source: Object
   },
+  data: () => ({
+    datavis: null
+  }),
+  /*
   computed: {
     datavis() {
       let dv = this.$store.state.streams.streams;
@@ -31,7 +35,7 @@ export default {
       console.log("dataviz", v);
       return v;
     }
-  },
+  },*/
   methods: {
     view(v) {
       let vs = this.$store.state.streams.views;
@@ -42,7 +46,20 @@ export default {
     }
   },
   created() {
-    this.$app.worker.postMessage("stream_query", { source: this.source });
+    this.$app.streams.subscribeQuery(
+      this.source,
+      "mainviews",
+      { i1: -100 },
+      dv => {
+        let v = Object.keys(dv).map(k => ({ key: k, ...dv[k] }));
+        v.sort((a, b) => a.weight - b.weight);
+        console.log("datavis", v);
+        this.datavis = v;
+      }
+    );
+  },
+  beforeDestroy() {
+    this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
   }
 };
 </script>

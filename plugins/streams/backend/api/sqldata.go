@@ -208,7 +208,7 @@ func (d *SQLData) StreamDataLength(sid string, actions bool) (l uint64, err erro
 	return
 }
 
-func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQuery) error {
+func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQuery) (*Datapoint, float64, float64, int64, error) {
 	table := "streamdata"
 	insert := "INSERT"
 	ts := float64(-999999999)
@@ -221,12 +221,15 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 
 	dp, err := data.Next()
 	if err != nil || dp == nil {
-		return err
+		return dp, ts, ts, 0, err
 	}
+	tstart := dp.Timestamp
+	tend := dp.Timestamp
+	count := int64(0)
 
 	tx, err := d.db.Beginx()
 	if err != nil {
-		return err
+		return dp, tstart, tend, count, err
 	}
 
 	if q.Type != nil && *q.Type != "INSERT" {
@@ -235,7 +238,7 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 			if err != nil {
 				if err != sql.ErrNoRows {
 					tx.Rollback()
-					return err
+					return dp, tstart, tend, count, err
 				}
 				ts = 0
 			} else {
@@ -247,18 +250,21 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 	if actions {
 		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?)", insert, table)
 	}
-
+	dp2 := dp
 	for dp != nil {
+		count++
+		dp2 = dp
+
 		if dp.Timestamp <= ts {
 			tx.Rollback()
-			return errors.New("bad_query: datapoint older than existing data")
+			return dp, tstart, tend, count, errors.New("bad_query: datapoint older than existing data")
 		}
 		// github.com/vmihailenco/msgpack
 		// b, err := msgpack.Marshal(dp.Data)
 		b, err := json.Marshal(dp.Data)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return dp, tstart, tend, count, err
 		}
 		if actions {
 			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Actor, b)
@@ -268,18 +274,19 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 
 		if err != nil {
 			tx.Rollback()
-			return err
+			return dp, tstart, tend, count, err
 		}
+		tend := dp.Timestamp
 
 		dp, err = data.Next()
 		if err != nil {
 			tx.Rollback()
-			return err
+			return dp, tstart, tend, count, err
 		}
 
 	}
 
-	return tx.Commit()
+	return dp2, tstart, tend, count, tx.Commit()
 
 }
 

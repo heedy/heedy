@@ -4,9 +4,7 @@ import api from "../../api.mjs";
 
 export default {
   state: {
-    // The status of the websocket. null means disconnected, and a moment() object
-    // gives the time from which it was connected
-    websocket: null,
+
 
     alert: {
       value: false,
@@ -58,9 +56,6 @@ export default {
     }
   },
   mutations: {
-    setWebsocket(state, v) {
-      state.websocket = v;
-    },
     setSettingsRoutes(state, v) {
       state.settings_routes = v;
     },
@@ -289,8 +284,7 @@ export default {
       }
     },
     readSource_: async function ({
-      commit,
-      rootState
+      commit
     }, q) {
       console.log("Reading source", q.id);
       let res = await api("GET", `api/heedy/v1/sources/${q.id}`, {
@@ -320,11 +314,12 @@ export default {
 
     readUser({
       state,
+      rootState,
       dispatch
     }, q) {
       let username = q.username;
       if (state.users[username] !== undefined && state.users[username] != null) {
-        if (state.websocket != null && state.websocket.isBefore(state.users[username].qtime)) {
+        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.users[username].qtime)) {
           console.log(`Not querying ${username} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
@@ -338,13 +333,14 @@ export default {
     },
     readConnection: async function ({
       state,
+      rootState,
       dispatch
     }, q) {
       if (state.connections == null) {
         dispatch("listConnections", q);
         return;
       }
-      if (state.connections[q.id] !== undefined && state.websocket != null && state.websocket.isBefore(state.connections[q.id].qtime)) {
+      if (state.connections[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.connections[q.id].qtime)) {
         console.log(`Not querying ${q.id} - websocket active`);
         if (q.hasOwnProperty("callback")) {
           q.callback();
@@ -355,10 +351,11 @@ export default {
     },
     readSource: async function ({
       state,
+      rootState,
       dispatch
     }, q) {
       if (state.sources[q.id] !== undefined && state.sources[q.id] !== null) {
-        if (state.websocket != null && state.websocket.isBefore(state.sources[q.id].qtime)) {
+        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.sources[q.id].qtime)) {
           console.log(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
@@ -374,7 +371,7 @@ export default {
       rootState
     }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.userSources[q.username] !== undefined && state.websocket !== null && state.websocket.isBefore(state.userSources_qtime[q.username])) {
+      if (state.userSources[q.username] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.userSources_qtime[q.username])) {
         console.log(`Not reading ${q.username} sources - websocket active`);
         return;
       }
@@ -409,10 +406,11 @@ export default {
     },
     readConnectionSources: async function ({
       commit,
-      state
+      state,
+      rootState
     }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.connectionSources[q.id] !== undefined && state.websocket !== null && state.websocket.isBefore(state.connectionSources_qtime[q.id])) {
+      if (state.connectionSources[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.connectionSources_qtime[q.id])) {
         console.log(`Not reading ${q.id} sources - websocket active`);
         return;
       }
@@ -459,10 +457,11 @@ export default {
     },
     listConnections: async function ({
       commit,
-      state
+      state,
+      rootState
     }, q) {
       // Only list connections if they are not being kept up-to-date by the websocket
-      if (state.connections !== null && state.websocket !== null && state.websocket.isBefore(state.connections_qtime)) {
+      if (state.connections !== null && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.connections_qtime)) {
         console.log("Not listing connections - websocket active");
         return;
       }

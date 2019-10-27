@@ -7,8 +7,8 @@
   >
     <v-select
       :items="queryOptions"
-      v-model="qValue"
-      style="padding-top: 13px;padding-right: 10px; max-width: 250px;"
+      v-model="query"
+      style="padding-top: 17px;padding-right: 10px; max-width: 250px;"
       prepend-icon="event"
     ></v-select>
     <v-dialog v-model="dialog" max-width="500">
@@ -50,6 +50,18 @@
     </v-dialog>
     <v-tooltip bottom>
       <template #activator="{on}">
+        <v-btn icon v-on="on" @click="live = !live">
+          <v-icon v-if="live" style="font-size: 1.25em;">fas fa-wifi</v-icon>
+          <span v-else class="fa-stack fa-2x" style="font-size: 1.15em">
+            <i class="fas fa-wifi fa-stack-1x"></i>
+            <i class="fas fa-ban fa-stack-2x" style="color:Tomato"></i>
+          </span>
+        </v-btn>
+      </template>
+      <span>{{ live? "Disable live update": "Enable live update"}}</span>
+    </v-tooltip>
+    <v-tooltip bottom>
+      <template #activator="{on}">
         <v-btn icon v-on="on" :to="`/sources/${source.id}/stream/update`">
           <v-icon>edit</v-icon>
         </v-btn>
@@ -70,18 +82,40 @@ export default {
   },
   data: () => ({
     dialog: false,
-    qValue: "last100",
+    live: true,
     queryOptions: [
-      { text: "Last 100 Datapoints", value: "last100" },
+      { text: "Last 100 Datapoints", value: 0, q: { i1: -100 } },
       {
         text: "Last Week",
-        value: "lastweek"
+        value: 1,
+        q: {
+          t1: -1000
+        }
       },
       {
         text: "Custom",
         value: "custom"
       }
     ]
-  })
+  }),
+  computed: {
+    query: {
+      get() {
+        console.log(this.$route.query);
+        if (this.$route.query.q === undefined) {
+          return 0;
+        }
+        return this.$route.query.q;
+      },
+      set(v) {
+        if (v == "custom") {
+          console.log("CUSTOM!");
+        }
+        this.$router.replace({ query: this.queryOptions[v].q });
+      }
+    }
+  },
+
+  created() {}
 };
 </script>

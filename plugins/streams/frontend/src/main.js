@@ -30,7 +30,7 @@ function setup(app) {
     });
   }
 
-  app.worker.add("streams/worker.mjs");
+  app.worker.import("streams/worker.mjs");
 
   app.source.addComponent({
     component: Views,

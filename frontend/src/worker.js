@@ -1,9 +1,26 @@
+import WebsocketInjector from "./worker/websocket.js";
+
 class Wrkr {
     constructor() {
-        console.log("Running worker");
+        console.log("worker: starting");
+
+        // app info goes here
+        this.info = null;
+
         this.handlers = {
-            'import': (ctx, data) => this._importHandler(ctx, data)
+            'import': (ctx, data) => this._importHandler(ctx, data),
+            'info': (ctx, data) => this.info = data
         };
+
+
+
+
+        // The worker needs to enforce an import ordering, because a message
+        // might use stuff from a just-imported worker. Therefore, we keep a
+        // queue of messages that need to be executed in order
+        this.messageQueue = [];
+
+        this.inject("websocket", new WebsocketInjector(this));
     }
 
     addHandler(key, f) {
@@ -13,7 +30,7 @@ class Wrkr {
 
     async _importHandler(ctx, msg) {
         try {
-            (await import("./" + msg)).default(this);
+            (await msg).default(this);
         } catch (err) {
             console.error(err);
         }
@@ -25,18 +42,37 @@ class Wrkr {
             msg: msg
         });
     }
+    async queueHandler() {
+        while (this.messageQueue.length > 0) {
+            let msg = this.messageQueue[0];
 
-    async _onMessage(e) {
-        let msg = e.data;
-        console.log("Worker:", msg);
-        if (this.handlers[msg.key] !== undefined) {
-            let ctx = {
-                key: msg.key,
-            };
-            await this.handlers[msg.key](ctx, msg.msg);
-        } else {
-            console.error(`Unknown message key ${msg.key}`);
+            console.log("worker: processing ", msg);
+            if (this.handlers[msg.key] !== undefined) {
+                let ctx = {
+                    key: msg.key,
+                };
+                await this.handlers[msg.key](ctx, msg.msg);
+            } else {
+                console.error(`worker: unknown handler ${msg.key}`);
+            }
+            this.messageQueue.shift();
         }
+    }
+
+    _onMessage(e) {
+        let msg = e.data;
+        console.log("worker: received ", msg);
+
+        // We use special handling for import messages, so that they start loading right away
+        if (msg.key == "import") {
+            console.log("worker: import", msg.msg);
+            msg.msg = import("./" + msg.msg);
+        }
+        this.messageQueue.push(msg);
+        if (this.messageQueue.length > 1) {
+            return;
+        }
+        this.queueHandler();
     }
 
     inject(name, p) {

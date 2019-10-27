@@ -11,6 +11,7 @@ import (
 	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 )
 
 var queryDecoder = schema.NewDecoder()
@@ -118,7 +119,15 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Actions = &action
 
-	rest.WriteResult(w, r, OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.SourceInfo.ID, &q))
+	err = OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.SourceInfo.ID, &q)
+	if err == nil {
+		c.Events.Fire(&events.Event{
+			Event:  "stream_data_delete",
+			Source: si.SourceInfo.ID,
+			Data:   q,
+		})
+	}
+	rest.WriteResult(w, r, err)
 }
 
 func shouldUpdateModifed(d *string) bool {
@@ -132,6 +141,13 @@ func shouldUpdateModifed(d *string) bool {
 	cy, cm, cd := time.Now().UTC().Date()
 	dy, dm, dd := t.Date()
 	return cd > dd || cm > dm || cy > dy
+}
+
+type StreamWriteEvent struct {
+	T1    float64    `json:"t1"`
+	T2    float64    `json:"t2"`
+	Count int64      `json:"count"`
+	DP    *Datapoint `json:"dp,omitempty"`
 }
 
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
@@ -171,15 +187,31 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 
-	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
-	if err == nil && shouldUpdateModifed(si.LastModified) {
-		ne := database.Date(time.Now().UTC())
-		// The stream is now non-empty, so label it as such
-		err = c.DB.AdminDB().UpdateSource(&database.Source{
-			Details: database.Details{
-				ID: si.ID,
+	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
+	if err == nil && count > 0 {
+		if shouldUpdateModifed(si.LastModified) {
+			ne := database.Date(time.Now().UTC())
+			// The stream is now non-empty, so label it as such
+			err = c.DB.AdminDB().UpdateSource(&database.Source{
+				Details: database.Details{
+					ID: si.ID,
+				},
+				LastModified: &ne,
+			})
+		}
+		evt := "stream_data_write"
+		if action {
+			evt = "stream_actions_write"
+		}
+		c.Events.Fire(&events.Event{
+			Event:  evt,
+			Source: si.SourceInfo.ID,
+			Data: &StreamWriteEvent{
+				T1:    tstart,
+				T2:    tend,
+				Count: count,
+				DP:    dp,
 			},
-			LastModified: &ne,
 		})
 	}
 
@@ -226,19 +258,31 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	t := "append"
 	a := true
 
-	err = OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
+	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
 		Type:    &t,
 		Actions: &a,
 	})
 
-	if err == nil && shouldUpdateModifed(si.LastModified) {
-		ne := database.Date(time.Now().UTC())
-		// The stream is now non-empty, so label it as such
-		err = c.DB.AdminDB().UpdateSource(&database.Source{
-			Details: database.Details{
-				ID: si.ID,
+	if err == nil && count > 0 {
+		if shouldUpdateModifed(si.LastModified) {
+			ne := database.Date(time.Now().UTC())
+			// The stream is now non-empty, so label it as such
+			err = c.DB.AdminDB().UpdateSource(&database.Source{
+				Details: database.Details{
+					ID: si.ID,
+				},
+				LastModified: &ne,
+			})
+		}
+		c.Events.Fire(&events.Event{
+			Event:  "stream_actions_write",
+			Source: si.SourceInfo.ID,
+			Data: &StreamWriteEvent{
+				T1:    tstart,
+				T2:    tend,
+				Count: count,
+				DP:    dp,
 			},
-			LastModified: &ne,
 		})
 	}
 

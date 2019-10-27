@@ -1,8 +1,9 @@
-import moment from "../../dist/moment.mjs";
+import moment from "../dist/moment.mjs";
 
 class WebsocketSubscriber {
     constructor(app) {
         this.store = app.store;
+        this.app = app;
         // Get subscriptions by key
         this.subscriptions = {};
 
@@ -21,9 +22,15 @@ class WebsocketSubscriber {
         this.retryTimeout = 200;
         this.retryTimeoutDelta = 1000;
 
-        // Whether the socket is opwn, and when it was connected. This allows
+        // Whether the socket is open, and when it was connected. This allows
         // the app to check if it needs to query for stuff
         this.isopen = false;
+
+        app.worker.addHandler("websocket_subscribe", (ctx, msg) => this.subscribe(msg.key, msg.event, (e) => app.worker.postMessage("websocket_event", {
+            key: msg.key,
+            event: e
+        })));
+        app.worker.addHandler("websocket_unsubscribe", (ctx, msg) => this.unsubscribe(msg.key));
 
         this.connect();
     }
@@ -50,7 +57,9 @@ class WebsocketSubscriber {
         });
 
         // Set the websocket connection time
-        this.store.commit("setWebsocket", moment());
+        let m = moment();
+        this.store.commit("setWebsocket", m);
+        this.app.worker.postMessage("websocket_status", m.unix());
 
     }
     onclose(e) {
@@ -58,6 +67,7 @@ class WebsocketSubscriber {
         this.isopen = false;
         // Set the websocket as disconnected
         this.store.commit("setWebsocket", null);
+        this.app.worker.postMessage("websocket_status", null);
         if (this.retryConnect) {
             setTimeout(() => this.connect(), this.retryTimeout);
             this.retryTimeout += this.retryTimeoutDelta;
