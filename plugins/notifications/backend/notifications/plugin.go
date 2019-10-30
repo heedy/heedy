@@ -1,4 +1,4 @@
-package api
+package notifications
 
 import (
 	"github.com/heedy/heedy/backend/database"

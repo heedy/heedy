@@ -1,8 +1,9 @@
-package api
+package notifications
 
 import (
 	"database/sql/driver"
 	"fmt"
+
 	"github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 

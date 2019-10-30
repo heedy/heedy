@@ -1,4 +1,4 @@
-package api
+package streams
 
 import (
 	"database/sql"
@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/heedy/heedy/backend/database"
+	"github.com/karrick/tparse/v2"
 )
 
 var SQLVersion = 1
@@ -128,8 +130,12 @@ func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
 	}
 
 	if q.T != nil {
+		t, err := tparse.ParseNow(time.RFC3339, *q.T)
+		if err != nil {
+			return "", nil, err
+		}
 		constraints = append(constraints, "timestamp=?")
-		cValues = append(cValues, *q.T)
+		cValues = append(cValues, Unix(t))
 		if q.I != nil || q.I1 != nil || q.I2 != nil || q.T1 != nil || q.T2 != nil {
 			return "", nil, errors.New("bad_query: Cannot query by range and by single timestamp at the same time")
 		}
@@ -143,12 +149,20 @@ func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
 	} else {
 		// Otherwise, we're querying a range
 		if q.T1 != nil {
+			t, err := tparse.ParseNow(time.RFC3339, *q.T1)
+			if err != nil {
+				return "", nil, err
+			}
 			constraints = append(constraints, "timestamp>=?")
-			cValues = append(cValues, *q.T1)
+			cValues = append(cValues, Unix(t))
 		}
 		if q.T2 != nil {
+			t, err := tparse.ParseNow(time.RFC3339, *q.T2)
+			if err != nil {
+				return "", nil, err
+			}
 			constraints = append(constraints, "timestamp<?")
-			cValues = append(cValues, *q.T2)
+			cValues = append(cValues, Unix(t))
 		}
 		if q.I1 != nil {
 			c, v := getSQLIndexTimestamp(table, sid, *q.I1)

@@ -9,29 +9,29 @@ import (
 	"path"
 
 	"github.com/heedy/heedy/api/golang/plugin"
-	"github.com/heedy/heedy/plugins/streams/backend/api"
+	"github.com/heedy/heedy/plugins/streams/backend/streams"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	logrus.Info(fmt.Sprintf("%s plugin starting", api.PluginName))
+	logrus.Info(fmt.Sprintf("%s plugin starting", streams.PluginName))
 	p, err := plugin.Init()
 	if err != nil {
 		logrus.Error(err)
 		os.Exit(1)
 	}
-	err = p.InitSQL(api.PluginName, api.SQLVersion, api.SQLUpdater)
+	err = p.InitSQL(streams.PluginName, streams.SQLVersion, streams.SQLUpdater)
 	if err != nil {
 		p.Logger().Error(fmt.Errorf("Failed to set up database: %w", err))
 		os.Exit(1)
 	}
-	pluginMiddleware := plugin.NewMiddleware(p, api.Handler)
+	pluginMiddleware := plugin.NewMiddleware(p, streams.Handler)
 
 	server := http.Server{
 		Handler: pluginMiddleware,
 	}
 
-	sockPath := fmt.Sprintf("%s.sock", api.PluginName)
+	sockPath := fmt.Sprintf("%s.sock", streams.PluginName)
 	unixListener, err := net.Listen("unix", path.Join(p.Meta.DataDir, sockPath))
 	if err != nil {
 		p.Logger().Error(fmt.Errorf("Failed to listen on socket: %w", err))

@@ -19,7 +19,8 @@ export default {
     source: Object
   },
   data: () => ({
-    datavis: null
+    datavis: null,
+    subscribed: false
   }),
   /*
   computed: {
@@ -43,20 +44,42 @@ export default {
         return ViewNotFound;
       }
       return vs[v];
-    }
-  },
-  created() {
-    this.$app.streams.subscribeQuery(
-      this.source,
-      "mainviews",
-      { i1: -100 },
-      dv => {
+    },
+    subscribe(q) {
+      if (this.subscribed) {
+        this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+      }
+      this.subscribed = true;
+      this.$app.streams.subscribeQuery(this.source, "mainviews", q, dv => {
         let v = Object.keys(dv).map(k => ({ key: k, ...dv[k] }));
         v.sort((a, b) => a.weight - b.weight);
         console.log("datavis", v);
         this.datavis = v;
+      });
+    }
+  },
+  watch: {
+    "$route.query": function(n, o) {
+      if (this.subscribed) {
+        this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
       }
-    );
+      this.subscribe(n);
+    },
+    source(n, o) {
+      if (n.id != o.id) {
+        if (this.subscribed) {
+          this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+          this.subscribed = false;
+          this.subscribe(this.$route.query);
+        }
+      }
+    }
+  },
+  created() {
+    // Only subscribe if non-empty query, since the header will fire a default query if it is empty
+    if (Object.keys(this.$route.query).length > 0) {
+      this.subscribe(this.$route.query);
+    }
   },
   beforeDestroy() {
     this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");

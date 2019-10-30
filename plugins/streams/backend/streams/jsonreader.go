@@ -1,4 +1,4 @@
-package api
+package streams
 
 import (
 	"encoding/json"
@@ -84,7 +84,7 @@ func NewJsonReader(data DatapointIterator, starter string, separator string, foo
 	}
 	if dp == nil {
 		// If there is no data, read as an empty array
-		return &JsonReader{nil,[]byte(starter+footer),[]byte(separator),[]byte(footer),len(separator)},nil
+		return &JsonReader{nil, []byte(starter + footer), []byte(separator), []byte(footer), len(separator)}, nil
 	}
 	v, err := json.Marshal(dp)
 	if err != nil {

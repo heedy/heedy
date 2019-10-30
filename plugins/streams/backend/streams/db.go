@@ -1,4 +1,4 @@
-package api
+package streams
 
 import (
 	"encoding/json"
@@ -59,16 +59,16 @@ type DatapointIterator interface {
 }
 
 type Query struct {
-	T1        *float64 `json:"t1,omitempty"`
-	T2        *float64 `json:"t2,omitempty"`
-	I1        *int64   `json:"i1,omitempty"`
-	I2        *int64   `json:"i2,omitempty"`
-	Limit     *int64   `json:"limit,omitempty"`
-	Reversed  *bool    `json:"reversed,omitempty"`
-	T         *float64 `json:"t,omitempty"`
-	I         *int64   `json:"i,omitempty"`
-	Transform *string  `json:"transform,omitempty"`
-	Actions   *bool    `json:"actions,omitempty"`
+	T1        *string `json:"t1,omitempty"`
+	T2        *string `json:"t2,omitempty"`
+	I1        *int64  `json:"i1,omitempty"`
+	I2        *int64  `json:"i2,omitempty"`
+	Limit     *int64  `json:"limit,omitempty"`
+	Reversed  *bool   `json:"reversed,omitempty"`
+	T         *string `json:"t,omitempty"`
+	I         *int64  `json:"i,omitempty"`
+	Transform *string `json:"transform,omitempty"`
+	Actions   *bool   `json:"actions,omitempty"`
 }
 
 type InsertQuery struct {
@@ -78,10 +78,6 @@ type InsertQuery struct {
 	Type *string `json:"type,omitempty"`
 }
 
-// StreamDB is the interface for storage of stream datapoints
-type StreamDB interface {
-	WriteStreamData(StreamID string, data DatapointIterator, q *InsertQuery) error
-	RemoveStreamData(StreamID string, q *Query) error
-	ReadStreamData(StreamID string, q *Query) (DatapointIterator, error)
-	StreamDataLength(StreamID string, actor bool) (uint64, error)
+func Unix(t time.Time) float64 {
+	return float64(t.UnixNano()) * 1e-9
 }

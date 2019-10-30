@@ -213,7 +213,10 @@ export default {
     },
     description: {
       get() {
-        return this.modified.description || this.source.description;
+        if (this.modified.description !== undefined) {
+          return this.modified.description;
+        }
+        return this.source.description;
       },
       set(v) {
         this.$app.vue.set(this.modified, "description", v);
@@ -221,7 +224,10 @@ export default {
     },
     name: {
       get() {
-        return this.modified["name"] || this.source.name;
+        if (this.modified.name !== undefined) {
+          return this.modified.name;
+        }
+        return this.source.name;
       },
       set(v) {
         this.$app.vue.set(this.modified, "name", v);

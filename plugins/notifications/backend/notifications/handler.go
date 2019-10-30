@@ -1,4 +1,4 @@
-package api
+package notifications
 
 import (
 	"net/http"
