@@ -77,7 +77,7 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		return errors.New("bad_request: No event type specified")
 	}
 	if e.Source != "" {
-		return db.Get(e, "SELECT sources.owner AS user,sources.connection,connections.plugin,COALESCE(sources.key,'') AS key,sources.type FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.id=? LIMIT 1", e.Source)
+		return db.Get(e, "SELECT sources.owner AS user,COALESCE(sources.connection,'') AS connection,connections.plugin,COALESCE(sources.key,'') AS key,sources.type FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.id=? LIMIT 1", e.Source)
 	}
 	if e.Connection != "" {
 		e.Key = ""

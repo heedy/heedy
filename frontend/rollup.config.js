@@ -92,19 +92,14 @@ function out(name, loc = "", format = "es") {
     external: checkExternal
   };
 }
-export default [
-  // The base files
-  out("app.js"),
-  out("worker.js"),
-  out("auth.js"),
-  out("setup.js"),
-  out("api.js"),
-  // The main app's files
-  out("heedy/main.js"),
-].concat(glob.sync("dist/*.js", {
+
+// g allows using globs to define output files
+let g = (x) => glob.sync(x, {
   cwd: "./src"
-}).map(a => out(a)));
-/*
-.concat(
-  glob.sync("heedy/components/*.vue", { cwd: "./src" }).map(a => out(a))
-);*/
+}).map(a => out(a));
+
+export default [
+  ...g("*.js"),
+  ...g("dist/*.js"),
+  ...g("heedy/*.js")
+];

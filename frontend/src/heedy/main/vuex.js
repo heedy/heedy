@@ -171,7 +171,7 @@ export default {
       if (v.connection != null && state.connectionSources[v.connection] !== undefined) {
         Vue.set(state.connectionSources[v.connection], v.id, null);
       }
-      if (state.userSources[v.owner] !== undefined) {
+      if (state.userSources[v.owner] !== undefined && v.connection == null) {
         Vue.set(state.userSources[v.owner], v.id, null);
       }
     },

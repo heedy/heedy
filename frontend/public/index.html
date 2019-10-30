@@ -5,6 +5,7 @@
   <link rel="modulepreload" href="./static/app.mjs">
   <link rel="modulepreload" href="./static/dist/vue.mjs">
   <link rel="modulepreload" href="./static/api.mjs">
+  <link rel="modulepreload" href="./static/worker.mjs">
 
   {{range .Frontend}}
   <link rel="modulepreload" href="./static/{{.Path}}">
@@ -23,15 +24,15 @@
   <title>heedy</title>
 </head>
 
-<body>
-  <noscript>
-    <strong>
-      heedy doesn't work properly without JavaScript enabled. Please enable it
-      to continue.
-    </strong>
-  </noscript>
+<body style="margin: 0">
   <div id="app">
     <div style="width:100%;height:100vh;text-align: center;background:#fafafa;padding-top:7%;">
+      <noscript>
+        <h4>
+          Heedy doesn't work without Javascript enabled. Please enable it
+          to continue.
+        </h4>
+      </noscript>
       <!--<h1 style="color:#c9c9c9;">Loading...</h1>-->
     </div>
   </div>

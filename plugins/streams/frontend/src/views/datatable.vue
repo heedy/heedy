@@ -1,5 +1,5 @@
 <template>
-  <div ref="tablediv" style="max-height: 400px; overflow-y: auto">
+  <div style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
     <table style="width: 100%; overflow: auto">
       <thead class="v-data-table-header">
         <tr>
@@ -26,10 +26,6 @@ export default {
     ts(t) {
       return moment.unix(t).calendar();
     }
-  },
-  mounted() {
-    let td = this.$refs.tablediv;
-    td.scrollTop = td.scrollHeight;
   }
 };
 </script>
