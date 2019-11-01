@@ -20,11 +20,6 @@ const (
 	statusReady
 )
 
-// InternalRequester allows to serve internal requests
-type InternalRequester interface {
-	ServeInternal(w http.ResponseWriter, r *http.Request, plugin string)
-}
-
 type pluginElement struct {
 	// The plugin object
 	Plugin *Plugin
@@ -94,7 +89,7 @@ func (pm *PluginManager) Reload() error {
 	events.AddHandler(pm)
 	pm.Unlock()
 
-	// First, perform a cleanup operation: find any connections that are owned by inactive plugins,
+	// First, perform a cleanup operation: find any apps that are owned by inactive plugins,
 	// and remove them if they have empty sources
 	pluginexclusion := ""
 	neworder := []interface{}{}
@@ -102,12 +97,12 @@ func (pm *PluginManager) Reload() error {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM connections WHERE plugin IS NOT NULL %s AND connections.id=sources.connection);", pluginexclusion), neworder...)
+	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=sources.app);", pluginexclusion), neworder...)
 	if err != nil {
 		pm.Close()
 		return err
 	}
-	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM connections WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
+	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
 	if err != nil {
 		pm.Close()
 		return err
@@ -118,7 +113,7 @@ func (pm *PluginManager) Reload() error {
 		return err
 	}
 	if rows > 0 {
-		logrus.Debug("Cleared database of connections from inactive plugins")
+		logrus.Debug("Cleared database of apps from inactive plugins")
 	}
 	// Now actually initialize the plugins
 	for _, pname := range order {

@@ -32,11 +32,11 @@ func (c *Configuration) GetPort() uint16 {
 	return 0
 }
 
-func (c *Configuration) GetNewConnectionScopes() []string {
+func (c *Configuration) GetNewAppScopes() []string {
 	c.RLock()
 	defer c.RUnlock()
-	if c.NewConnectionScopes != nil {
-		return *c.NewConnectionScopes
+	if c.NewAppScopes != nil {
+		return *c.NewAppScopes
 	}
 	return []string{}
 }

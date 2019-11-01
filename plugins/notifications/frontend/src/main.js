@@ -2,7 +2,7 @@ import Vue from "../dist/vue.mjs";
 import vuexModule from "./main/vuex.js";
 import Notification from "./main/notification.vue";
 import NotificationsPage from "./main/notifications_page.vue";
-import ConnectionComponent from "./main/connection_component.vue";
+import AppComponent from "./main/app_component.vue";
 import SourceComponent from "./main/source_component.vue";
 import MenuIcon from "./main/menu_icon.vue";
 
@@ -12,10 +12,10 @@ function setup(app) {
     if (app.info.user != null) {
         app.store.registerModule("notifications", vuexModule);
 
-        app.connection.addComponent({
+        app.app.addComponent({
             key: "notifications",
             weight: 0.1,
-            component: ConnectionComponent
+            component: AppComponent
         });
         app.source.addComponent({
             key: "notifications",
@@ -44,7 +44,7 @@ function setup(app) {
             }
         }
 
-        let types = ["user", "connection", "source"];
+        let types = ["user", "app", "source"];
         let etypes = ["create", "update", "delete"]
         types.forEach((t) => etypes.forEach((et => {
 

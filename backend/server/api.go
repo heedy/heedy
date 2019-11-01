@@ -21,7 +21,7 @@ import (
 func FireEvent(w http.ResponseWriter, r *http.Request) {
 	var err error
 	c := rest.CTX(r)
-	if c.DB.ID() != "heedy" {
+	if c.DB.Type() != database.AdminType {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only plugins may fire events"))
 		return
 	}
@@ -141,81 +141,116 @@ func DeleteSource(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResult(w, r, rest.CTX(r).DB.DelSource(sid))
 }
 
-func CreateConnection(w http.ResponseWriter, r *http.Request) {
-	var c database.Connection
+func CreateApp(w http.ResponseWriter, r *http.Request) {
+	var c database.App
 	if err := rest.UnmarshalRequest(r, &c); err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
 	db := rest.CTX(r).DB
-	cid, _, err := db.CreateConnection(&c)
+	cid, _, err := db.CreateApp(&c)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	c2, err := db.ReadConnection(cid, &database.ReadConnectionOptions{
+	c2, err := db.ReadApp(cid, &database.ReadAppOptions{
 		AccessToken: true,
 	})
 	rest.WriteJSON(w, r, c2, err)
 }
 
-func ReadConnection(w http.ResponseWriter, r *http.Request) {
-	var o database.ReadConnectionOptions
-	cid := chi.URLParam(r, "connectionid")
+func ReadApp(w http.ResponseWriter, r *http.Request) {
+	var o database.ReadAppOptions
+	cid := chi.URLParam(r, "appid")
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	s, err := rest.CTX(r).DB.ReadConnection(cid, &o)
+	s, err := rest.CTX(r).DB.ReadApp(cid, &o)
 	rest.WriteJSON(w, r, s, err)
 }
 
-func UpdateConnection(w http.ResponseWriter, r *http.Request) {
-	var c database.Connection
+func UpdateApp(w http.ResponseWriter, r *http.Request) {
+	var c database.App
 
 	if err := rest.UnmarshalRequest(r, &c); err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	c.ID = chi.URLParam(r, "connectionid")
-	err := rest.CTX(r).DB.UpdateConnection(&c)
+	c.ID = chi.URLParam(r, "appid")
+	err := rest.CTX(r).DB.UpdateApp(&c)
 	if err == nil && c.Settings != nil {
 		rest.CTX(r).Events.Fire(&events.Event{
-			Connection: c.ID,
-			Event:      "connection_settings_update",
+			App: c.ID,
+			Event:      "app_settings_update",
 		})
 	}
 	rest.WriteResult(w, r, err)
 
 }
 
-func DeleteConnection(w http.ResponseWriter, r *http.Request) {
-	cid := chi.URLParam(r, "connectionid")
-	rest.WriteResult(w, r, rest.CTX(r).DB.DelConnection(cid))
+func DeleteApp(w http.ResponseWriter, r *http.Request) {
+	cid := chi.URLParam(r, "appid")
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelApp(cid))
 }
 
-func ListConnections(w http.ResponseWriter, r *http.Request) {
-	var o database.ListConnectionOptions
+func ListApps(w http.ResponseWriter, r *http.Request) {
+	var o database.ListAppOptions
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	cl, err := rest.CTX(r).DB.ListConnections(&o)
+	cl, err := rest.CTX(r).DB.ListApps(&o)
 	rest.WriteJSON(w, r, cl, err)
 }
 
+/*
+type appStruct {
+	*database.App
+
+	Unique bool `json:"unique"`
+}
+
+func GetPluginApps(w http.ResponseWriter, r *http.Request) {
+	// Get all the apps available for creation
+	a := rest.CTX(r).DB.AdminDB().Assets()
+
+	db := rest.CTX(r).DB
+	if db.Type() == database.PublicType || db.Type() == database.AppType {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list plugin apps"))
+		return
+	}
+
+
+
+	m := make(map[string]appStruct)
+
+
+}
+*/
+
 func GetSourceScopes(w http.ResponseWriter, r *http.Request) {
-	// TODO: figure out whether to require auth for this
+	db := rest.CTX(r).DB
+	if db.Type() == database.PublicType || db.Type() == database.AppType {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scopes"))
+		return
+	}
 	a := rest.CTX(r).DB.AdminDB().Assets()
 	stype := chi.URLParam(r, "sourcetype")
 	scopes, err := a.Config.GetSourceScopes(stype)
 	rest.WriteJSON(w, r, scopes, err)
 }
 
-func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
+func GetAppScopes(w http.ResponseWriter, r *http.Request) {
 	a := rest.CTX(r).DB.AdminDB().Assets()
+
+	db := rest.CTX(r).DB
+	if db.Type() == database.PublicType || db.Type() == database.AppType {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scopes"))
+		return
+	}
 	// Now our job is to generate all of the scopes
 	// TODO: language support
 	// TODO: maybe require auth for this?
@@ -233,7 +268,7 @@ func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
 		"sources:delete": "Delete any sources belonging to you (of all types)",
 		"shared":         "All permissions for sources shared with you (of all types)",
 		"shared:read":    "Read sources of all types that were shared with you",
-		"self.sources":   "Allows the connection to create and manage its own sources of all types",
+		"self.sources":   "Allows the app to create and manage its own sources of all types",
 	}
 
 	// Generate the source type scopes
@@ -245,7 +280,7 @@ func GetConnectionScopes(w http.ResponseWriter, r *http.Request) {
 		smap[fmt.Sprintf("shared.%s", stype)] = fmt.Sprintf("All permissions for sources of type '%s' that were shared with you", stype)
 		smap[fmt.Sprintf("shared.%s:read", stype)] = fmt.Sprintf("Read access for your sources of type '%s' that were shared with you", stype)
 
-		smap[fmt.Sprintf("self.sources.%s", stype)] = fmt.Sprintf("Allows the connection to create and manage its own sources of type '%s'", stype)
+		smap[fmt.Sprintf("self.sources.%s", stype)] = fmt.Sprintf("Allows the app to create and manage its own sources of type '%s'", stype)
 
 		// And now generate the per-type scopes
 		stypemap := a.Config.SourceTypes[stype].Scopes
@@ -270,7 +305,7 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 func GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can list admins"))
 		return
 	}
@@ -284,7 +319,7 @@ func GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 func AddAdminUser(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add admin users"))
 		return
 	}
@@ -298,7 +333,7 @@ func AddAdminUser(w http.ResponseWriter, r *http.Request) {
 func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add remove admin status"))
 		return
 	}
@@ -309,7 +344,7 @@ func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
 func GetUpdates(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -320,7 +355,7 @@ func GetUpdates(w http.ResponseWriter, r *http.Request) {
 func GetConfigFile(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -335,7 +370,7 @@ func GetConfigFile(w http.ResponseWriter, r *http.Request) {
 func PostConfigFile(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -352,7 +387,7 @@ func PostConfigFile(w http.ResponseWriter, r *http.Request) {
 func PatchUConfig(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -370,7 +405,7 @@ func PatchUConfig(w http.ResponseWriter, r *http.Request) {
 func GetUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -380,7 +415,7 @@ func GetUpdateStatus(w http.ResponseWriter, r *http.Request) {
 func GetUConfig(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -391,7 +426,7 @@ func GetUConfig(w http.ResponseWriter, r *http.Request) {
 func GetAllPlugins(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -402,7 +437,7 @@ func GetAllPlugins(w http.ResponseWriter, r *http.Request) {
 func PostPlugin(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
-	if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
@@ -464,14 +499,14 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/sources/{sourceid}", UpdateSource)
 	v1mux.Delete("/sources/{sourceid}", DeleteSource)
 
-	v1mux.Post("/connections", CreateConnection)
-	v1mux.Get("/connections", ListConnections)
-	v1mux.Get("/connections/{connectionid}", ReadConnection)
-	v1mux.Patch("/connections/{connectionid}", UpdateConnection)
-	v1mux.Delete("/connections/{connectionid}", DeleteConnection)
+	v1mux.Post("/apps", CreateApp)
+	v1mux.Get("/apps", ListApps)
+	v1mux.Get("/apps/{appid}", ReadApp)
+	v1mux.Patch("/apps/{appid}", UpdateApp)
+	v1mux.Delete("/apps/{appid}", DeleteApp)
 
 	v1mux.Get("/server/scopes/{sourcetype}", GetSourceScopes)
-	v1mux.Get("/server/scopes", GetConnectionScopes)
+	v1mux.Get("/server/scopes", GetAppScopes)
 	v1mux.Get("/server/version", GetVersion)
 
 	v1mux.Get("/server/admin", GetAdminUsers)

@@ -4,15 +4,15 @@ import api from "../../api.mjs";
 
 // The notification key
 function nKey(n) {
-    return `${n.key}.${n.user}.${n.connection}.${n.source}`
+    return `${n.key}.${n.user}.${n.app}.${n.source}`
 }
 
 export default {
     state: {
         global: null,
         global_qtime: null,
-        connections: {},
-        connections_qtime: {},
+        apps: {},
+        apps_qtime: {},
         sources: {},
         sources_qtime: {}
     },
@@ -32,9 +32,9 @@ export default {
                 }
                 return
             }
-            if (n.connection !== undefined) {
-                if (state.connections[n.connection] !== undefined) {
-                    Vue.set(state.connections[n.connection], n.key, n);
+            if (n.app !== undefined) {
+                if (state.apps[n.app] !== undefined) {
+                    Vue.set(state.apps[n.app], n.key, n);
                 }
 
                 return;
@@ -51,9 +51,9 @@ export default {
                 }
                 return
             }
-            if (n.connection !== undefined) {
-                if (state.connections[n.connection] !== undefined && state.connections[n.connection][n.key] !== undefined) {
-                    Vue.delete(state.connections[n.connection], n.key);
+            if (n.app !== undefined) {
+                if (state.apps[n.app] !== undefined && state.apps[n.app][n.key] !== undefined) {
+                    Vue.delete(state.apps[n.app], n.key);
                 }
                 return;
             }
@@ -69,7 +69,7 @@ export default {
             }, {});
             state.global_qtime = qtime;
 
-            // Make sure to update all relevant notifications in the sources and connections
+            // Make sure to update all relevant notifications in the sources and apps
             v.forEach((n) => {
                 if (n.source !== undefined) {
                     if (state.sources[n.source] !== undefined) {
@@ -78,9 +78,9 @@ export default {
 
                     return;
                 }
-                if (n.connection !== undefined) {
-                    if (state.connections[n.connection] !== undefined) {
-                        Vue.set(state.connections, n.key, n);
+                if (n.app !== undefined) {
+                    if (state.apps[n.app] !== undefined) {
+                        Vue.set(state.apps, n.key, n);
                     }
 
                     return;
@@ -88,15 +88,15 @@ export default {
             });
 
         },
-        setConnectionNotifications(state, v) {
+        setAppNotifications(state, v) {
             let qtime = moment();
             let nmap = v.data.reduce((map, o) => {
                 o.qtime = qtime;
                 map[o.key] = o;
                 return map;
             }, {});
-            Vue.set(state.connections, v.id, nmap);
-            Vue.set(state.connections_qtime, v.id, qtime);
+            Vue.set(state.apps, v.id, nmap);
+            Vue.set(state.apps_qtime, v.id, qtime);
         },
         setSourceNotifications(state, v) {
             let qtime = moment();
@@ -133,18 +133,18 @@ export default {
                 commit("setGlobalNotifications", res.data);
             }
         },
-        readConnectionNotifications: async function ({
+        readAppNotifications: async function ({
             commit,
             state,
             rootState
         }, q) {
-            if (state.connections[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.connections_qtime[q.id])) {
+            if (state.apps[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.apps_qtime[q.id])) {
                 console.log(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
             console.log("Reading notifications for", q.id);
             let res = await api("GET", `api/heedy/v1/notifications`, {
-                connection: q.id
+                app: q.id
             });
             if (!res.response.ok) {
                 commit("alert", {
@@ -153,7 +153,7 @@ export default {
                 });
 
             } else {
-                commit("setConnectionNotifications", {
+                commit("setAppNotifications", {
                     id: q.id,
                     data: res.data
                 });

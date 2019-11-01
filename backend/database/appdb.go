@@ -7,26 +7,26 @@ import (
 
 var ErrUnimplemented = errors.New("The given functionality is currently unimplemented")
 
-type ConnectionDB struct {
+type AppDB struct {
 	adb *AdminDB
-	c   *Connection
+	c   *App
 }
 
-func NewConnectionDB(adb *AdminDB, c *Connection) *ConnectionDB {
-	return &ConnectionDB{
+func NewAppDB(adb *AdminDB, c *App) *AppDB {
+	return &AppDB{
 		adb: adb,
 		c:   c,
 	}
 }
 
 // GetSourceAccess returns a ScopeArray that merges the current access
-func (c *ConnectionDB) GetSourceAccess(s *Source) (sa ScopeArray) {
+func (c *AppDB) GetSourceAccess(s *Source) (sa ScopeArray) {
 	// It is assumed that s was retreived by calling ReadSource on a UserDB
 	// and that s.Access holds the user's access permissions
 
 	// First, we check if maybe we have full access to the source, which would make life so easy
 	// If we own the source, we don't need to look at the user's access, since ours is *more*
-	if s.Connection != nil && *s.Connection == c.c.ID {
+	if s.App != nil && *s.App == c.c.ID {
 
 		// If we have full access, we give full access
 		if c.c.Scopes.HasScope("self.sources") || c.c.Scopes.HasScope("self.sources."+*s.Type) {
@@ -58,8 +58,8 @@ func (c *ConnectionDB) GetSourceAccess(s *Source) (sa ScopeArray) {
 	sprefix := "sources"
 	if *s.Owner != *c.c.Owner {
 		sprefix = "shared"
-	} else if s.Connection == nil {
-		// The connection is nil, meaning that the source is totally owned by the user. The scopes need to be replaced:
+	} else if s.App == nil {
+		// The app is nil, meaning that the source is totally owned by the user. The scopes need to be replaced:
 		access = *s.Scopes
 	}
 
@@ -101,25 +101,29 @@ func (c *ConnectionDB) GetSourceAccess(s *Source) (sa ScopeArray) {
 	return
 }
 
-func (db *ConnectionDB) AdminDB() *AdminDB {
+func (db *AppDB) AdminDB() *AdminDB {
 	return db.adb
 }
 
-func (db *ConnectionDB) ID() string {
+func (db *AppDB) ID() string {
 	return *db.c.Owner + "/" + db.c.ID
 }
 
-func (db *ConnectionDB) User() (*User, error) {
+func (db *AppDB) Type() DBType {
+	return AppType
+}
+
+func (db *AppDB) User() (*User, error) {
 	// Read the owner
 	return db.ReadUser(*db.c.Owner, nil)
 }
 
-func (db *ConnectionDB) CreateUser(u *User) error {
-	return ErrAccessDenied("A connection cannot create a user")
+func (db *AppDB) CreateUser(u *User) error {
+	return ErrAccessDenied("A app cannot create a user")
 }
 
-func (db *ConnectionDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
-	// A connection can read a user:
+func (db *AppDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
+	// A app can read a user:
 	//	if the user is its owner, and owner:read scope
 	//	if the user can be read by the owner, and has users:read scope
 	if db.c.Scopes.HasScope("users:read") || name == *db.c.Owner && db.c.Scopes.HasScope("owner:read") {
@@ -130,8 +134,8 @@ func (db *ConnectionDB) ReadUser(name string, o *ReadUserOptions) (*User, error)
 }
 
 // UpdateUser updates the given portions of a user
-func (db *ConnectionDB) UpdateUser(u *User) error {
-	// A connection can read a user:
+func (db *AppDB) UpdateUser(u *User) error {
+	// A app can read a user:
 	//	if the user is its owner, and owner:read scope
 	//	if the user can be read by the owner, and has users:read scope
 	if db.c.Scopes.HasScope("users:update") || u.ID == *db.c.Owner && db.c.Scopes.HasScope("owner:update") {
@@ -140,7 +144,7 @@ func (db *ConnectionDB) UpdateUser(u *User) error {
 
 	return ErrAccessDenied("Insufficient access to update the given user")
 }
-func (db *ConnectionDB) DelUser(name string) error {
+func (db *AppDB) DelUser(name string) error {
 	if db.c.Scopes.HasScope("users:delete") || name == *db.c.Owner && db.c.Scopes.HasScope("owner:delete") {
 		return NewUserDB(db.adb, *db.c.Owner).DelUser(name)
 	}
@@ -148,18 +152,18 @@ func (db *ConnectionDB) DelUser(name string) error {
 	return ErrAccessDenied("Insufficient access to delete the given user")
 }
 
-func (db *ConnectionDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
+func (db *AppDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 	return nil, ErrUnimplemented
 }
 
 // CanCreateSource returns whether the given source can be
-func (db *ConnectionDB) CanCreateSource(s *Source) error {
+func (db *AppDB) CanCreateSource(s *Source) error {
 	_, _, err := sourceCreateQuery(db.adb.Assets().Config, s)
 	if err != nil {
 		return err
 	}
-	if s.Connection != nil && *s.Connection != db.c.ID {
-		return ErrAccessDenied("Can't create a source for a different connection")
+	if s.App != nil && *s.App != db.c.ID {
+		return ErrAccessDenied("Can't create a source for a different app")
 	}
 	if !db.c.Scopes.HasScope("self.sources:create") && !db.c.Scopes.HasScope("self.sources."+*s.Type+":create") {
 		return ErrAccessDenied("Insufficient access to create a source of this type")
@@ -168,15 +172,15 @@ func (db *ConnectionDB) CanCreateSource(s *Source) error {
 }
 
 // CreateSource creates the source.
-func (db *ConnectionDB) CreateSource(s *Source) (string, error) {
-	if s.Connection == nil {
-		s.Connection = &db.c.ID
+func (db *AppDB) CreateSource(s *Source) (string, error) {
+	if s.App == nil {
+		s.App = &db.c.ID
 	}
 	if s.LastModified != nil {
 		return "", ErrAccessDenied("Last Modified for source is readonly")
 	}
-	if *s.Connection != db.c.ID {
-		return "", ErrAccessDenied("Can't create a source for a different connection")
+	if *s.App != db.c.ID {
+		return "", ErrAccessDenied("Can't create a source for a different app")
 	}
 	if s.Owner != nil && *s.Owner != *db.c.Owner {
 		return "", ErrAccessDenied("Can't create a source for a different user")
@@ -190,7 +194,7 @@ func (db *ConnectionDB) CreateSource(s *Source) (string, error) {
 }
 
 // ReadSource reads the given source if the user has sufficient permissions
-func (db *ConnectionDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
+func (db *AppDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
 	s, err := NewUserDB(db.adb, *db.c.Owner).ReadSource(id, o)
 	if err != nil {
 		return nil, err
@@ -201,7 +205,7 @@ func (db *ConnectionDB) ReadSource(id string, o *ReadSourceOptions) (*Source, er
 }
 
 // UpdateSource allows editing a source
-func (db *ConnectionDB) UpdateSource(s *Source) error {
+func (db *AppDB) UpdateSource(s *Source) error {
 	if s.LastModified != nil {
 		return ErrAccessDenied("Empty status of source is readonly")
 	}
@@ -212,7 +216,7 @@ func (db *ConnectionDB) UpdateSource(s *Source) error {
 		return err
 	}
 
-	if s.Name != nil || s.Owner != nil || s.Connection != nil || s.Scopes != nil {
+	if s.Name != nil || s.Owner != nil || s.App != nil || s.Scopes != nil {
 		if !curs.Access.HasScope("update") {
 			return ErrNotFound
 		}
@@ -226,7 +230,7 @@ func (db *ConnectionDB) UpdateSource(s *Source) error {
 }
 
 // Can only delete sources that belong to *us*
-func (db *ConnectionDB) DelSource(id string) error {
+func (db *AppDB) DelSource(id string) error {
 	curs, err := db.ReadSource(id, &ReadSourceOptions{
 		Icon: false,
 	})
@@ -241,26 +245,26 @@ func (db *ConnectionDB) DelSource(id string) error {
 	return getExecError(result, err)
 }
 
-func (db *ConnectionDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+func (db *AppDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
 	return ErrUnimplemented
 }
 
-func (db *ConnectionDB) UnshareSourceFromUser(sourceid, userid string) error {
+func (db *AppDB) UnshareSourceFromUser(sourceid, userid string) error {
 	return ErrUnimplemented
 }
 
-func (db *ConnectionDB) UnshareSource(sourceid string) error {
+func (db *AppDB) UnshareSource(sourceid string) error {
 	return ErrUnimplemented
 }
 
-func (db *ConnectionDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+func (db *AppDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
 	return nil, ErrUnimplemented
 }
 
 // ListSources lists the given sources
-func (db *ConnectionDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
-	if o != nil && o.Connection != nil && *o.Connection == "self" {
-		o.Connection = &db.c.ID
+func (db *AppDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+	if o != nil && o.App != nil && *o.App == "self" {
+		o.App = &db.c.ID
 	}
 	s, err := NewUserDB(db.adb, *db.c.Owner).ListSources(o)
 	if err != nil {
@@ -277,33 +281,33 @@ func (db *ConnectionDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
 	return ns, nil
 }
 
-func (db *ConnectionDB) CreateConnection(c *Connection) (string, string, error) {
+func (db *AppDB) CreateApp(c *App) (string, string, error) {
 	return "", "", ErrUnimplemented
 }
-func (db *ConnectionDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
+func (db *AppDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
 	if cid == "self" {
 		cid = db.c.ID
 	}
 	if cid != db.c.ID {
-		return nil, ErrAccessDenied("Can't read other connections")
+		return nil, ErrAccessDenied("Can't read other apps")
 	}
-	return NewUserDB(db.adb, *db.c.Owner).ReadConnection(cid, o)
+	return NewUserDB(db.adb, *db.c.Owner).ReadApp(cid, o)
 }
-func (db *ConnectionDB) UpdateConnection(c *Connection) error {
+func (db *AppDB) UpdateApp(c *App) error {
 	if c.ID == "self" {
 		c.ID = db.c.ID
 	}
 	if c.ID != db.c.ID {
-		return ErrAccessDenied("Can't modify other connections")
+		return ErrAccessDenied("Can't modify other apps")
 	}
 	if c.Scopes != nil {
 		return ErrAccessDenied("Can't change own scopes")
 	}
-	return updateConnection(db.adb, c, "id=?", c.ID)
+	return updateApp(db.adb, c, "id=?", c.ID)
 }
-func (db *ConnectionDB) DelConnection(cid string) error {
+func (db *AppDB) DelApp(cid string) error {
 	return ErrUnimplemented
 }
-func (db *ConnectionDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
+func (db *AppDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	return nil, ErrUnimplemented
 }

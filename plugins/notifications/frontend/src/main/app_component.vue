@@ -2,7 +2,7 @@
   <v-flex v-if="hasNotifications">
     <h-notification
       v-for="n in notifications"
-      :key="n.key+'.'+n.user + '.' + n.connection + '.' + n.source"
+      :key="n.key+'.'+n.user + '.' + n.app + '.' + n.source"
       :n="n"
       small
       seen
@@ -12,7 +12,7 @@
 <script>
 export default {
   props: {
-    connection: Object
+    app: Object
   },
   computed: {
     hasNotifications() {
@@ -20,8 +20,7 @@ export default {
       return narr != null && narr.length > 0;
     },
     notifications() {
-      let n =
-        this.$store.state.notifications.connections[this.connection.id] || null;
+      let n = this.$store.state.notifications.apps[this.app.id] || null;
       if (n == null) return null;
       let narr = Object.values(n);
       narr.sort((a, b) => b.timestamp - a.timestamp);
@@ -29,13 +28,13 @@ export default {
     }
   },
   watch: {
-    connection: function(newValue) {
-      this.$store.dispatch("readConnectionNotifications", { id: newValue.id });
+    app: function(newValue) {
+      this.$store.dispatch("readAppNotifications", { id: newValue.id });
     }
   },
   created() {
-    this.$store.dispatch("readConnectionNotifications", {
-      id: this.connection.id
+    this.$store.dispatch("readAppNotifications", {
+      id: this.app.id
     });
   }
 };

@@ -34,6 +34,10 @@ func (db *AdminDB) ID() string {
 	return "heedy" // An administrative database acts as heedy
 }
 
+func (db *AdminDB) Type() DBType {
+	return AdminType
+}
+
 // User returns the user that is logged in
 func (db *AdminDB) User() (*User, error) {
 	return nil, nil
@@ -77,19 +81,19 @@ func (db *AdminDB) LoginToken(token string) (string, error) {
 	return selectResult.UserName, err
 }
 
-// GetConnectionByAccessToken reads the connection corresponding to the given access token,
+// GetAppByAccessToken reads the app corresponding to the given access token,
 // and sets the last access date if not today
-func (db *AdminDB) GetConnectionByAccessToken(accessToken string) (*Connection, error) {
+func (db *AdminDB) GetAppByAccessToken(accessToken string) (*App, error) {
 	if accessToken == "" {
 		return nil, ErrNotFound
 	}
-	c := &Connection{}
-	err := db.Get(c, "SELECT * FROM connections WHERE (access_token=?) LIMIT 1;", accessToken)
+	c := &App{}
+	err := db.Get(c, "SELECT * FROM apps WHERE (access_token=?) LIMIT 1;", accessToken)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
 	if err == nil && (c.LastAccessDate == nil || shouldUpdateLastUsed(*c.LastAccessDate)) {
-		_, err = db.Exec("UPDATE connections SET last_access_date=DATE('now') WHERE id=?;", c.ID)
+		_, err = db.Exec("UPDATE apps SET last_access_date=DATE('now') WHERE id=?;", c.ID)
 	}
 	return c, err
 }
@@ -184,10 +188,10 @@ func (db *AdminDB) CreateSource(s *Source) (string, error) {
 		return "", err
 	}
 
-	if s.Connection != nil {
-		// We must insert while also setting the owner to the connection's owner
-		sValues = append(sValues, *s.Connection)
-		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM connections WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
+	if s.App != nil {
+		// We must insert while also setting the owner to the app's owner
+		sValues = append(sValues, *s.App)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM apps WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
 		err = getExecError(result, err)
 
 		return s.ID, err
@@ -250,14 +254,14 @@ func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
 	return listSources(db, o, `SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
 }
 
-// CreateConnection creates a new connection. Nuff said.
-func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
-	cColumns, cValues, err := connectionCreateQuery(c)
+// CreateApp creates a new app. Nuff said.
+func (db *AdminDB) CreateApp(c *App) (string, string, error) {
+	cColumns, cValues, err := appCreateQuery(c)
 	if err != nil {
 		return "", "", err
 	}
 	// id is last, accessToken is second to last
-	connectionid := c.ID
+	appid := c.ID
 	accessToken := *c.AccessToken
 
 	tx, err := db.Beginx()
@@ -265,16 +269,16 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 		return "", "", err
 	}
 
-	result, err := tx.Exec(fmt.Sprintf("INSERT INTO connections (%s) VALUES (%s);", cColumns, QQ(len(cValues))), cValues...)
+	result, err := tx.Exec(fmt.Sprintf("INSERT INTO apps (%s) VALUES (%s);", cColumns, QQ(len(cValues))), cValues...)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
 		return "", "", err
 	}
 
-	scopes := db.Assets().Config.GetNewConnectionScopes()
+	scopes := db.Assets().Config.GetNewAppScopes()
 	for i := range scopes {
-		result, err := tx.Exec("INSERT INTO connection_scopes(connectionid,scope) VALUES (?,?);", connectionid, scopes[i])
+		result, err := tx.Exec("INSERT INTO app_scopes(appid,scope) VALUES (?,?);", appid, scopes[i])
 		err = getExecError(result, err)
 		if err != nil && err != ErrNotFound {
 			tx.Rollback()
@@ -282,14 +286,14 @@ func (db *AdminDB) CreateConnection(c *Connection) (string, string, error) {
 		}
 	}
 
-	return connectionid, accessToken, tx.Commit()
+	return appid, accessToken, tx.Commit()
 
 }
 
-// ReadConnection gets the connection associated with the given API key
-func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connection, error) {
-	c := &Connection{}
-	err := db.Get(c, "SELECT * FROM connections WHERE (id=?) LIMIT 1;", id)
+// ReadApp gets the app associated with the given API key
+func (db *AdminDB) ReadApp(id string, o *ReadAppOptions) (*App, error) {
+	c := &App{}
+	err := db.Get(c, "SELECT * FROM apps WHERE (id=?) LIMIT 1;", id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -321,10 +325,10 @@ func (db *AdminDB) ReadConnection(id string, o *ReadConnectionOptions) (*Connect
 	return c, err
 }
 
-// UpdateConnection updates the given connection (by ID). Note that the inserted values will be written directly to
+// UpdateApp updates the given app (by ID). Note that the inserted values will be written directly to
 // the object.
-func (db *AdminDB) UpdateConnection(c *Connection) error {
-	cColumns, cValues, err := connectionUpdateQuery(c)
+func (db *AdminDB) UpdateApp(c *App) error {
+	cColumns, cValues, err := appUpdateQuery(c)
 	if err != nil {
 		return err
 	}
@@ -332,22 +336,22 @@ func (db *AdminDB) UpdateConnection(c *Connection) error {
 	cValues = append(cValues, c.ID)
 
 	// Allow updating groups that are not users
-	result, err := db.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE id=?;", cColumns), cValues...)
+	result, err := db.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE id=?;", cColumns), cValues...)
 	return getExecError(result, err)
 
 }
 
-// DelConnection deletes the given connection.
-func (db *AdminDB) DelConnection(id string) error {
-	result, err := db.Exec("DELETE FROM connections WHERE id=?;", id)
+// DelApp deletes the given app.
+func (db *AdminDB) DelApp(id string) error {
+	result, err := db.Exec("DELETE FROM apps WHERE id=?;", id)
 	return getExecError(result, err)
 }
 
-// ListConnections lists connections
-func (db *AdminDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
-	var c []*Connection
+// ListApps lists apps
+func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
+	var c []*App
 	a := []interface{}{}
-	selectStmt := "SELECT * FROM connections"
+	selectStmt := "SELECT * FROM apps"
 	if o != nil && (o.User != nil || o.Plugin != nil) {
 		selectStmt = selectStmt + " WHERE"
 		if o.User != nil {

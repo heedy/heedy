@@ -168,8 +168,8 @@ export default {
           this.alert = res.data.error_description;
         } else {
           this.alert = "";
-          if (s.connection != null) {
-            this.$router.push(`/connections/${s.connection}`);
+          if (s.app != null) {
+            this.$router.push(`/apps/${s.app}`);
           } else {
             this.$router.push(`/users/${s.owner}`);
           }

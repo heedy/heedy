@@ -21,7 +21,7 @@ type unixDialer struct {
 	net.Dialer
 }
 
-// overriding net.Dialer.Dial to force unix socket connection
+// overriding net.Dialer.Dial to force unix socket app
 func (d *unixDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	return d.Dialer.DialContext(ctx, "unix", d.Location)
 }

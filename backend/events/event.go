@@ -13,7 +13,7 @@ import (
 type Event struct {
 	Event      string  `json:"event"`
 	User       string  `json:"user,omitempty" db:"user"`
-	Connection string  `json:"connection,omitempty" db:"connection"`
+	App string  `json:"app,omitempty" db:"app"`
 	Plugin     *string `json:"plugin,omitempty" db:"plugin"`
 	Source     string  `json:"source,omitempty" db:"source"`
 	Key        string  `json:"key,omitempty" db:"key"`
@@ -77,25 +77,25 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		return errors.New("bad_request: No event type specified")
 	}
 	if e.Source != "" {
-		return db.Get(e, "SELECT sources.owner AS user,COALESCE(sources.connection,'') AS connection,connections.plugin,COALESCE(sources.key,'') AS key,sources.type FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.id=? LIMIT 1", e.Source)
+		return db.Get(e, "SELECT sources.owner AS user,COALESCE(sources.app,'') AS app,apps.plugin,COALESCE(sources.key,'') AS key,sources.type FROM sources LEFT JOIN apps ON sources.app=apps.id WHERE sources.id=? LIMIT 1", e.Source)
 	}
-	if e.Connection != "" {
+	if e.App != "" {
 		e.Key = ""
 		e.Type = ""
 		es := ""
 		e.Plugin = &es
-		return db.Get(e, "SELECT owner AS user,plugin FROM connections WHERE id=? LIMIT 1", e.Connection)
+		return db.Get(e, "SELECT owner AS user,plugin FROM apps WHERE id=? LIMIT 1", e.App)
 	}
 	if e.User != "" {
 		e.Key = ""
 		e.Type = ""
-		e.Connection = ""
+		e.App = ""
 		es := ""
 		e.Plugin = &es
 		// This is only to make sure the user exists
 		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
 	}
-	return errors.New("bad_request: An event must target a specific user,connection or source")
+	return errors.New("bad_request: An event must target a specific user,app or source")
 }
 
 type FilledHandler struct {

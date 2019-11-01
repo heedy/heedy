@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/schema"
 
@@ -169,6 +170,20 @@ func (db *PluginDB) ID() string {
 	return db.Entity
 }
 
+func (db *PluginDB) Type() database.DBType {
+	if db.Entity == "heedy" {
+		return database.AdminType
+	}
+	if db.Entity == "public" {
+		return database.PublicType
+	}
+	i := strings.Index(db.Entity, "/")
+	if i > -1 {
+		return database.UserType
+	}
+	return database.AppType
+}
+
 func (db *PluginDB) CreateUser(u *database.User) error {
 	return database.ErrBadQuery("Can't create users through the REST API")
 }
@@ -280,8 +295,8 @@ func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Sou
 	return sl, err
 }
 
-func (db *PluginDB) CreateConnection(c *database.Connection) (string, string, error) {
-	api := "/api/heedy/v1/connections"
+func (db *PluginDB) CreateApp(c *database.App) (string, string, error) {
+	api := "/api/heedy/v1/apps"
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", "", err
@@ -294,21 +309,21 @@ func (db *PluginDB) CreateConnection(c *database.Connection) (string, string, er
 	}
 	return c.ID, accessToken, err
 }
-func (db *PluginDB) ReadConnection(id string, o *database.ReadConnectionOptions) (*database.Connection, error) {
-	api := fmt.Sprintf("/api/heedy/v1/connections/%s", id)
+func (db *PluginDB) ReadApp(id string, o *database.ReadAppOptions) (*database.App, error) {
+	api := fmt.Sprintf("/api/heedy/v1/apps/%s", id)
 
 	if o != nil {
 		form := url.Values{}
 		queryEncoder.Encode(o, form)
 		api = api + "?" + form.Encode()
 	}
-	var c database.Connection
+	var c database.App
 
 	err := db.UnmarshalRequest(&c, "GET", api, nil)
 	return &c, err
 }
-func (db *PluginDB) UpdateConnection(c *database.Connection) error {
-	api := fmt.Sprintf("/api/heedy/v1/connections/%s", c.ID)
+func (db *PluginDB) UpdateApp(c *database.App) error {
+	api := fmt.Sprintf("/api/heedy/v1/apps/%s", c.ID)
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -316,13 +331,13 @@ func (db *PluginDB) UpdateConnection(c *database.Connection) error {
 
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
-func (db *PluginDB) DelConnection(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/connections/%s", id)
+func (db *PluginDB) DelApp(id string) error {
+	api := fmt.Sprintf("/api/heedy/v1/apps/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
-func (db *PluginDB) ListConnections(o *database.ListConnectionOptions) ([]*database.Connection, error) {
-	var cl []*database.Connection
-	api := "/api/heedy/v1/connections"
+func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error) {
+	var cl []*database.App
+	api := "/api/heedy/v1/apps"
 
 	if o != nil {
 		form := url.Values{}

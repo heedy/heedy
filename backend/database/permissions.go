@@ -78,8 +78,8 @@ func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectState
 	return s, err
 }
 
-func readConnection(adb *AdminDB, cid string, o *ReadConnectionOptions, selectStatement string, args ...interface{}) (*Connection, error) {
-	c := &Connection{}
+func readApp(adb *AdminDB, cid string, o *ReadAppOptions, selectStatement string, args ...interface{}) (*App, error) {
+	c := &App{}
 	err := adb.Get(c, selectStatement, args...)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -128,7 +128,7 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 	}
 
 	// Now check which scope we require for the update to succeed
-	if s.Name != nil || s.Owner != nil || s.Connection != nil || s.Scopes != nil {
+	if s.Name != nil || s.Owner != nil || s.App != nil || s.Scopes != nil {
 		if !sv.Access.HasScope("update") {
 			return ErrNotFound
 		}
@@ -150,13 +150,13 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 	return getExecError(result, err)
 }
 
-func updateConnection(adb *AdminDB, c *Connection, whereStatement string, args ...interface{}) error {
+func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) error {
 
-	// TODO: need to check if connection belongs to plugin, and determine if any of the fields are readonly
+	// TODO: need to check if app belongs to plugin, and determine if any of the fields are readonly
 
-	cColumns, cValues, err := connectionUpdateQuery(c)
+	cColumns, cValues, err := appUpdateQuery(c)
 	cValues = append(cValues, args...)
-	result, err := adb.Exec(fmt.Sprintf("UPDATE connections SET %s WHERE %s", cColumns, whereStatement), cValues...)
+	result, err := adb.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE %s", cColumns, whereStatement), cValues...)
 	return getExecError(result, err)
 }
 
@@ -259,9 +259,9 @@ func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string, ar
 	return res, nil
 }
 
-// TODO: Needs to be redone for plugin connections
-func listConnections(adb *AdminDB, o *ListConnectionOptions, selectStatement string, args ...interface{}) ([]*Connection, error) {
-	var res []*Connection
+// TODO: Needs to be redone for plugin apps
+func listApps(adb *AdminDB, o *ListAppOptions, selectStatement string, args ...interface{}) ([]*App, error) {
+	var res []*App
 	err := adb.Select(&res, selectStatement, args...)
 	if err != nil {
 		return nil, err

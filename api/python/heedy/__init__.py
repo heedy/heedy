@@ -1,5 +1,5 @@
 
-from .connection import Connection
+from .app import App
 from .plugin import Plugin
 
 # Import the source types

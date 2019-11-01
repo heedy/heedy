@@ -105,18 +105,18 @@ func (s *ScopeArray) HasScope(sv string) (ok bool) {
 	return
 }
 
-func connectionParentScope(s string) string {
+func appParentScope(s string) string {
 	r := strings.SplitN(s, ":", 2)
 	return r[0]
 }
 
-// ConnectionScopeArray works with connection scopes, which have different details than source scopes
-type ConnectionScopeArray struct {
+// AppScopeArray works with app scopes, which have different details than source scopes
+type AppScopeArray struct {
 	ScopeArray
 }
 
 // Update cleans out the scopes to remove repeated items
-func (s *ConnectionScopeArray) Update() {
+func (s *AppScopeArray) Update() {
 	scopeMap := make(map[string]bool)
 	for _, v := range s.Scopes {
 		scopeMap[v] = true
@@ -133,7 +133,7 @@ func (s *ConnectionScopeArray) Update() {
 	}
 
 	for _, v := range s.Scopes {
-		if _, ok := scopeMap[connectionParentScope(v)]; !ok {
+		if _, ok := scopeMap[appParentScope(v)]; !ok {
 			s.scopeMap[v] = true
 		}
 	}
@@ -145,13 +145,13 @@ func (s *ConnectionScopeArray) Update() {
 }
 
 // HasScope checks if the given scope is present
-func (s *ConnectionScopeArray) HasScope(sv string) (ok bool) {
+func (s *AppScopeArray) HasScope(sv string) (ok bool) {
 	if s.scopeMap == nil {
 		s.Update()
 	}
 	_, ok = s.scopeMap[sv]
 	if !ok {
-		_, ok = s.scopeMap[connectionParentScope(sv)]
+		_, ok = s.scopeMap[appParentScope(sv)]
 		if !ok {
 			_, ok = s.scopeMap["*"]
 		}
@@ -179,7 +179,7 @@ func (s *JSONObject) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
-// Details is used in groups, users, connections and sources to hold info
+// Details is used in groups, users, apps and sources to hold info
 type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
 	ID          string  `json:"id,omitempty" db:"id"`
@@ -200,7 +200,7 @@ type User struct {
 	Password *string `json:"password,omitempty" db:"password"`
 }
 
-type Connection struct {
+type App struct {
 	Details
 	Owner  *string `json:"owner" db:"owner"`
 	Plugin *string `json:"plugin" db:"plugin"`
@@ -212,7 +212,7 @@ type Connection struct {
 	CreatedDate    Date    `json:"created_date,omitempty" db:"created_date"`
 	LastAccessDate *Date   `json:"last_access_date" db:"last_access_date"`
 
-	Scopes *ConnectionScopeArray `json:"scopes" db:"scopes"`
+	Scopes *AppScopeArray `json:"scopes" db:"scopes"`
 
 	Settings       *JSONObject `json:"settings" db:"settings"`
 	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
@@ -222,7 +222,7 @@ type Source struct {
 	Details
 
 	Owner      *string `json:"owner,omitempty" db:"owner"`
-	Connection *string `json:"connection" db:"connection"`
+	App *string `json:"app" db:"app"`
 
 	Key *string `json:"key" db:"key"`
 
@@ -249,8 +249,8 @@ type ReadUserOptions struct {
 	Icon bool `json:"icon,omitempty" schema:"icon"`
 }
 
-// ReadConnectionOptions gives options for reading
-type ReadConnectionOptions struct {
+// ReadAppOptions gives options for reading
+type ReadAppOptions struct {
 	Icon        bool `json:"icon,omitempty" schema:"icon"`
 	AccessToken bool `json:"token,omitempty" schema:"token"` // using "token" instead of access_token, since the API uses access_token param
 }
@@ -269,8 +269,8 @@ type ListSourcesOptions struct {
 	Icon *bool `json:"icon,omitempty" schema:"icon"`
 	// Limit results to the given user's sources.
 	UserName *string `json:"username,omitempty" schema:"username"`
-	// Limit the results to the given connection's sources
-	Connection *string `json:"connection,omitempty" schema:"connection"`
+	// Limit the results to the given app's sources
+	App *string `json:"app,omitempty" schema:"app"`
 	// Get sources with the given key
 	Key *string `json:"key,omitempty" schema:"key"`
 	// Limit results to sources of the given type
@@ -283,24 +283,34 @@ type ListSourcesOptions struct {
 	Shared *bool
 }
 
-// ListConnectionOptions holds the options associated with listing connections
-type ListConnectionOptions struct {
+// ListAppOptions holds the options associated with listing apps
+type ListAppOptions struct {
 	// Whether to include icons
 	Icon *bool `json:"icon,omitempty" schema:"icon"`
-	// Limit results to the given user's connections
+	// Limit results to the given user's apps
 	User *string `json:"user,omitempty" schema:"user"`
-	// Find the connections with the given plugin key
+	// Find the apps with the given plugin key
 	Plugin *string `json:"plugin,omitempty" schema:"plugin"`
 }
+
+type DBType int
+
+const (
+	PublicType DBType = iota
+	AppType
+	UserType
+	AdminType
+)
 
 // DB represents the database. This interface is implemented in many ways:
 //	once for admin
 //	once for users
-//	once for connections
+//	once for apps
 //	once for public
 type DB interface {
 	AdminDB() *AdminDB // Returns the underlying administrative database
-	ID() string        // This is an identifier for the database. empty string is public access
+	ID() string        // This is an identifier for the database
+	Type() DBType      // Returns the database type
 
 	// Currently logged in user
 	// User() (*User, error)
@@ -311,11 +321,11 @@ type DB interface {
 	DelUser(name string) error
 	ListUsers(o *ListUsersOptions) ([]*User, error)
 
-	CreateConnection(c *Connection) (string, string, error)
-	ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error)
-	UpdateConnection(c *Connection) error
-	DelConnection(cid string) error
-	ListConnections(o *ListConnectionOptions) ([]*Connection, error)
+	CreateApp(c *App) (string, string, error)
+	ReadApp(cid string, o *ReadAppOptions) (*App, error)
+	UpdateApp(c *App) error
+	DelApp(cid string) error
+	ListApps(o *ListAppOptions) ([]*App, error)
 
 	CanCreateSource(s *Source) error
 	CreateSource(s *Source) (string, error)
@@ -421,7 +431,7 @@ func extractUser(u *User) (userColumns []string, userValues []interface{}, err e
 	return
 }
 
-func extractConnection(c *Connection) (cColumns []string, cValues []interface{}, err error) {
+func extractApp(c *App) (cColumns []string, cValues []interface{}, err error) {
 	// We don't allow modifying last access date
 	c.LastAccessDate = nil
 	cColumns, cValues, err = extractDetails(&c.Details)
@@ -444,7 +454,7 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 			if err != nil {
 				return
 			}
-			c.AccessToken = &token // Write the token back to the connection object
+			c.AccessToken = &token // Write the token back to the app object
 		} else {
 			noToken = true
 			// Make the pointer not extact
@@ -461,7 +471,7 @@ func extractConnection(c *Connection) (cColumns []string, cValues []interface{},
 	cValues = append(cValues, g2...)
 
 	if noToken {
-		// Needed to stop generating a key for connections that don't want one
+		// Needed to stop generating a key for apps that don't want one
 		emptystring := ""
 		c.AccessToken = &emptystring
 	}
@@ -535,14 +545,14 @@ func userUpdateQuery(u *User) (string, []interface{}, error) {
 	return userColumns, userValues, err
 }
 
-func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
+func appCreateQuery(c *App) (string, []interface{}, error) {
 	if c.Name == nil {
 		return "", nil, ErrInvalidName
 	}
 	if c.Owner == nil {
 		return "", nil, ErrInvalidQuery
 	}
-	cColumns, cValues, err := extractConnection(c)
+	cColumns, cValues, err := extractApp(c)
 	if err != nil {
 		return "", nil, err
 	}
@@ -559,7 +569,7 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 		cValues = append(cValues, accessToken)
 	}
 
-	// We create an ID for the connection. Guaranteed to be last element
+	// We create an ID for the app. Guaranteed to be last element
 	cColumns = append(cColumns, "id")
 	cid := uuid.New().String()
 	cValues = append(cValues, cid)
@@ -568,8 +578,8 @@ func connectionCreateQuery(c *Connection) (string, []interface{}, error) {
 	return strings.Join(cColumns, ","), cValues, err
 }
 
-func connectionUpdateQuery(c *Connection) (string, []interface{}, error) {
-	cColumns, cValues, err := extractConnection(c)
+func appUpdateQuery(c *App) (string, []interface{}, error) {
+	cColumns, cValues, err := extractApp(c)
 	if len(cValues) == 0 {
 		return "", nil, ErrNoUpdate
 	}
@@ -581,11 +591,11 @@ func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
-	if s.Owner == nil && s.Connection == nil {
-		return "", nil, ErrBadQuery("You must specify either an owner or a connection to which the source should belong")
+	if s.Owner == nil && s.App == nil {
+		return "", nil, ErrBadQuery("You must specify either an owner or a app to which the source should belong")
 	}
-	if s.Connection != nil && s.Owner != nil {
-		return "", nil, ErrBadQuery("When creating a source for a connection, you must not specify an owner")
+	if s.App != nil && s.Owner != nil {
+		return "", nil, ErrBadQuery("When creating a source for a app, you must not specify an owner")
 	}
 	if s.Type == nil {
 		return "", nil, ErrBadQuery("Must specify a source type")
@@ -607,7 +617,7 @@ func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{
 		return "", nil, err
 	}
 
-	// We create an ID for the connection. Guaranteed to be last element
+	// We create an ID for the app. Guaranteed to be last element
 	sColumns = append(sColumns, "id")
 	sid := uuid.New().String()
 	sValues = append(sValues, sid)
@@ -641,12 +651,12 @@ func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
 			sColumns = append(sColumns, "owner")
 			sValues = append(sValues, *o.UserName)
 		}
-		if o.Connection != nil {
-			if *o.Connection == "none" {
-				pretext = "connection IS NULL"
+		if o.App != nil {
+			if *o.App == "none" {
+				pretext = "app IS NULL"
 			} else {
-				sColumns = append(sColumns, "connection")
-				sValues = append(sValues, *o.Connection)
+				sColumns = append(sColumns, "app")
+				sValues = append(sValues, *o.App)
 			}
 		}
 		if o.Type != nil {

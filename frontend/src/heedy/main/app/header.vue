@@ -1,12 +1,7 @@
 <template>
-  <h-header
-    :icon="connection.icon"
-    :colorHash="connection.id"
-    :name="connection.name"
-    :description="connection.description"
-  >
+  <h-header :icon="app.icon" :colorHash="app.id" :name="app.name" :description="app.description">
     <v-dialog
-      v-if="connection.access_token===undefined || connection.access_token!=''"
+      v-if="app.access_token===undefined || app.access_token!=''"
       v-model="showkey"
       width="500"
     >
@@ -45,19 +40,19 @@
     </v-dialog>
     <v-tooltip bottom>
       <template #activator="{on}">
-        <v-btn icon v-on="on" :to="`/connections/${connection.id}/update`">
+        <v-btn icon v-on="on" :to="`/apps/${app.id}/update`">
           <v-icon>edit</v-icon>
         </v-btn>
       </template>
-      <span>Edit Connection</span>
+      <span>Edit App</span>
     </v-tooltip>
-    <v-tooltip bottom v-if="Object.keys(connection.settings_schema).length > 0">
+    <v-tooltip bottom v-if="Object.keys(app.settings_schema).length > 0">
       <template #activator="{on}">
-        <v-btn icon v-on="on" color="blue darken-2" :to="`/connections/${connection.id}/settings`">
+        <v-btn icon v-on="on" color="blue darken-2" :to="`/apps/${app.id}/settings`">
           <v-icon>fas fa-cog</v-icon>
         </v-btn>
       </template>
-      <span>Connection Settings</span>
+      <span>App Settings</span>
     </v-tooltip>
   </h-header>
 </template>
@@ -71,7 +66,7 @@ export default {
     token: "..."
   }),
   props: {
-    connection: Object
+    app: Object
   },
   watch: {
     showkey(newv) {
@@ -80,10 +75,10 @@ export default {
   },
   computed: {
     accessed() {
-      if (this.connection.last_access_date == null) {
+      if (this.app.last_access_date == null) {
         return "never";
       }
-      return Moment(this.connection.last_access_date).calendar(null, {
+      return Moment(this.app.last_access_date).calendar(null, {
         sameDay: "[Today]",
         nextDay: "[Tomorrow]",
         nextWeek: "dddd",
@@ -95,12 +90,10 @@ export default {
   },
   methods: {
     getKey: async function() {
-      console.log("Reading access token for", this.connection.id);
-      let result = await api(
-        "GET",
-        `api/heedy/v1/connections/${this.connection.id}`,
-        { token: true }
-      );
+      console.log("Reading access token for", this.app.id);
+      let result = await api("GET", `api/heedy/v1/apps/${this.app.id}`, {
+        token: true
+      });
       if (!result.response.ok) {
         this.token = result.data.error_description;
         return;

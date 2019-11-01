@@ -33,18 +33,18 @@ import SourceRouter from "./main/source/router.vue";
 import SourceHeader from "./main/source/header.vue";
 import SourceList from "./main/source/list.vue";
 
-import ConnectionInjector, {
-    connectionRoutes
-} from "./main/connection/injector.js";
-import ConnectionRouter from "./main/connection/router.vue";
-import Connection from "./main/connection/index.vue";
-import ConnectionHeader from "./main/connection/header.vue";
-import ConnectionCreate from "./main/connection/create.vue";
-import ConnectionUpdate from "./main/connection/update.vue";
-import ConnectionSources from "./main/connection/sources.vue";
-import ConnectionSettings from "./main/connection/settings.vue";
+import AppInjector, {
+    appRoutes
+} from "./main/app/injector.js";
+import AppRouter from "./main/app/router.vue";
+import App from "./main/app/index.vue";
+import AppHeader from "./main/app/header.vue";
+import AppCreate from "./main/app/create.vue";
+import AppUpdate from "./main/app/update.vue";
+import AppSources from "./main/app/sources.vue";
+import AppSettings from "./main/app/settings.vue";
 
-import Connections from "./main/connections.vue";
+import Apps from "./main/apps.vue";
 
 
 import vuexModule from "./main/vuex.js";
@@ -66,9 +66,9 @@ function setup(app) {
     registerCoreComponents(app.vue);
     app.vue.component("h-source-list", SourceList);
 
-    // Inject the user/connection/source handlers into the app
+    // Inject the user/app/source handlers into the app
     app.inject("user", new UserInjector(app));
-    app.inject("connection", new ConnectionInjector(app));
+    app.inject("app", new AppInjector(app));
     app.inject("source", new SourceInjector(app));
     app.inject("settings", new SettingsInjector(app));
 
@@ -131,49 +131,49 @@ function setup(app) {
 
 
         app.addRoute({
-            path: "/connections",
-            component: Connections
+            path: "/apps",
+            component: Apps
         });
         app.addRoute({
-            path: "/connections/:connectionid",
+            path: "/apps/:appid",
             props: true,
-            component: ConnectionRouter,
-            children: connectionRoutes
+            component: AppRouter,
+            children: appRoutes
         });
 
-        app.connection.addRoute({
+        app.app.addRoute({
             path: "",
-            component: Connection
+            component: App
         });
 
-        app.connection.addRoute({
+        app.app.addRoute({
             path: "update",
-            component: ConnectionUpdate
+            component: AppUpdate
         });
-        app.connection.addRoute({
+        app.app.addRoute({
             path: "settings",
-            component: ConnectionSettings
+            component: AppSettings
         });
 
 
-        // Add the default connection UI
-        app.connection.addComponent({
+        // Add the default app UI
+        app.app.addComponent({
             key: "header",
             weight: 0,
-            component: ConnectionHeader
+            component: AppHeader
         });
-        app.connection.addComponent({
+        app.app.addComponent({
             key: "sources",
             weight: 1,
-            component: ConnectionSources
+            component: AppSources
         });
 
 
 
 
         app.addRoute({
-            path: "/create/connection",
-            component: ConnectionCreate
+            path: "/create/app",
+            component: AppCreate
         });
 
         app.addRoute({
@@ -182,10 +182,10 @@ function setup(app) {
         });
 
         app.addMenuItem({
-            key: "connections",
-            text: "Connections",
+            key: "apps",
+            text: "Apps",
             icon: "settings_input_component",
-            route: "/connections",
+            route: "/apps",
             location: "primary",
         });
 

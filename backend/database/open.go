@@ -18,13 +18,13 @@ import (
 func Open(a *assets.Assets) (*AdminDB, error) {
 
 	if a.Config.SQL == nil {
-		return nil, errors.New("No SQL connection string specified")
+		return nil, errors.New("No SQL app string specified")
 	}
 
-	// Split the sql string into database type and connection string
+	// Split the sql string into database type and app string
 	sqlInfo := strings.SplitAfterN(*a.Config.SQL, "://", 2)
 	if len(sqlInfo) != 2 {
-		return nil, errors.New("Invalid sql connection string")
+		return nil, errors.New("Invalid sql app string")
 	}
 	sqltype := strings.TrimSuffix(sqlInfo[0], "://")
 

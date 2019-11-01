@@ -7,28 +7,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConnectionSource(t *testing.T) {
+func TestAppSource(t *testing.T) {
 	adb, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	udb := NewUserDB(adb, "testy")
 
 	cname := "conn"
-	cid,_, err := udb.CreateConnection(&Connection{
+	cid,_, err := udb.CreateApp(&App{
 		Details: Details{
 			ID: "conn",
 			Name: &cname,
 		},
-		Scopes: &ConnectionScopeArray{
+		Scopes: &AppScopeArray{
 			ScopeArray: ScopeArray{
 				Scopes: []string{"self.sources.stream","owner:read"},
 			},
 		},
 	})
 	require.NoError(t,err)
-	c,err := udb.ReadConnection(cid,nil)
+	c,err := udb.ReadApp(cid,nil)
 	require.NoError(t,err)
-	cdb := NewConnectionDB(adb,c)
+	cdb := NewAppDB(adb,c)
 
 	name := "tree"
 	stype := "stream"

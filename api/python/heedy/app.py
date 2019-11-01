@@ -4,12 +4,12 @@ from .source import getSourceObject
 from functools import partial
 
 
-class Connection(APIObject):
+class App(APIObject):
     def __init__(self, access_token: str, url: str = DEFAULT_URL, session: str = "sync"):
-        # Initialize the connection object
+        # Initialize the app object
         s = getSessionType(session)
         s.setAccessToken(access_token)
-        super().__init__(s, "api/heedy/v1/connections/self")
+        super().__init__(s, "api/heedy/v1/apps/self")
 
     def createSource(self, **kwargs):
         return self.session.post("api/heedy/v1/sources", data=kwargs, f=lambda x: getSourceObject(self.session, x))

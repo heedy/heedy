@@ -14,7 +14,7 @@ func CanSubscribe(db database.DB, e *Event) error {
 	if dbid == "heedy" {
 		return nil
 	}
-	if e.User == "" && e.Connection == "" && e.Source == "" {
+	if e.User == "" && e.App == "" && e.Source == "" {
 		return ErrAccessDenied
 	}
 
@@ -22,7 +22,7 @@ func CanSubscribe(db database.DB, e *Event) error {
 	if i > -1 {
 		//usr := dbid[:i]
 		conn := dbid[i+1:]
-		if e.User != "" || e.Connection != "" && e.Connection != conn {
+		if e.User != "" || e.App != "" && e.App != conn {
 			return ErrAccessDenied
 		}
 		if e.Source != "" {
@@ -35,8 +35,8 @@ func CanSubscribe(db database.DB, e *Event) error {
 		if e.User != "" && e.User != dbid {
 			return ErrAccessDenied
 		}
-		if e.Connection != "" {
-			_, err := db.ReadConnection(e.Connection, nil)
+		if e.App != "" {
+			_, err := db.ReadApp(e.App, nil)
 			if err != nil {
 				return err
 			}

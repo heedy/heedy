@@ -148,7 +148,7 @@ func TestAdminDBUser(t *testing.T) {
 
 }
 
-func TestAdminConnection(t *testing.T) {
+func TestAdminApp(t *testing.T) {
 	db, cleanup := newDB(t)
 	defer cleanup()
 
@@ -161,7 +161,7 @@ func TestAdminConnection(t *testing.T) {
 
 	badname := "derp"
 	noAccessToken := ""
-	conn, AccessToken, err := db.CreateConnection(&Connection{
+	conn, AccessToken, err := db.CreateApp(&App{
 		Details: Details{
 			Name: &name,
 		},
@@ -171,30 +171,30 @@ func TestAdminConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessToken, "")
 
-	_, err = db.GetConnectionByAccessToken("")
+	_, err = db.GetAppByAccessToken("")
 	require.Error(t, err)
 
-	c, err := db.ReadConnection(conn, nil)
+	c, err := db.ReadApp(conn, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, *c.Name, name)
 
-	c = &Connection{
+	c = &App{
 		Details: Details{
 			ID: conn,
 		},
 		AccessToken: &badname, // can be anything
 	}
-	require.NoError(t, db.UpdateConnection(c))
+	require.NoError(t, db.UpdateApp(c))
 	require.NotEqual(t, badname, *c.AccessToken, "The API key should have been changed during update")
 
-	c2, err := db.GetConnectionByAccessToken(*c.AccessToken)
+	c2, err := db.GetAppByAccessToken(*c.AccessToken)
 	require.NoError(t, err)
 	require.Equal(t, c2.ID, c.ID)
 
-	require.NoError(t, db.DelConnection(c.ID))
+	require.NoError(t, db.DelApp(c.ID))
 
-	_, err = db.ReadConnection(conn, nil)
+	_, err = db.ReadApp(conn, nil)
 	require.Error(t, err)
 }
 
@@ -211,7 +211,7 @@ func TestAdminSource(t *testing.T) {
 	}))
 
 	badname := "derp"
-	conn, _, err := db.CreateConnection(&Connection{
+	conn, _, err := db.CreateApp(&App{
 		Details: Details{
 			Name: &name,
 		},
@@ -223,7 +223,7 @@ func TestAdminSource(t *testing.T) {
 
 			Name: &name,
 		},
-		Connection: &conn,
+		App: &conn,
 		Type:       &stype,
 	})
 	require.NoError(t, err)

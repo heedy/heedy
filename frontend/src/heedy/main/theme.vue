@@ -28,7 +28,7 @@
 
             <v-list-item-content>
               <v-list-item-title>{{ username }}</v-list-item-title>
-              <v-list-item-subtitle>{{ user.name }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ user.username }}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
 

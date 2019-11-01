@@ -178,17 +178,17 @@ export default {
         }
       },
       {
-        text: "Last 1m",
+        text: "Last 1mo",
         value: 4,
         q: {
-          t1: "now-1m"
+          t1: "now-1mo"
         }
       },
       {
-        text: "Last 3m",
+        text: "Last 3mo",
         value: 5,
         q: {
-          t1: "now-3m"
+          t1: "now-3mo"
         }
       },
       {

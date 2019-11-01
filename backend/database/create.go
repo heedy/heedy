@@ -48,7 +48,7 @@ CREATE TABLE users (
 
 CREATE INDEX useraccess ON users(public_read,users_read);
 
-CREATE TABLE connections (
+CREATE TABLE apps (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 
 	name VARCHAR NOT NULL,
@@ -61,21 +61,21 @@ CREATE TABLE connections (
 	access_token VARCHAR UNIQUE DEFAULT NULL,
 
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
-	last_access_date DATE DEFAULT NULL, -- connections without access tokens don't have access dates
+	last_access_date DATE DEFAULT NULL, -- apps without access tokens don't have access dates
 
-	-- Permissions are granted to a connection through scopes
+	-- Permissions are granted to a app through scopes
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
 	settings VARCHAR DEFAULT '{}',
 	settings_schema VARCHAR DEFAULT '{}',
 
-	-- Connections can have types, which allow the UI to know what type of
+	-- Apps can have types, which allow the UI to know what type of
 	-- data it holds, for showing appropriate visualizations
 	type VARCHAR(36) NOT NULL DEFAULT '',
 
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 
-	-- the "plugin key" of the connection if it was generated for a plugin
+	-- the "plugin key" of the app if it was generated for a plugin
 	plugin VARCHAR DEFAULT NULL,
 
 	UNIQUE(owner,plugin),
@@ -83,16 +83,16 @@ CREATE TABLE connections (
 	CONSTRAINT valid_settings CHECK (json_valid(settings)),
 	CONSTRAINT valid_settings_schema CHECK (json_valid(settings_schema)),
 
-	CONSTRAINT connectionowner
+	CONSTRAINT appowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
--- We will want to list connections by owner 
-CREATE INDEX connectionowner ON connections(owner,name);
+-- We will want to list apps by owner 
+CREATE INDEX appowner ON apps(owner,name);
 -- A lot of querying will happen by API key
-CREATE INDEX connectiontoken ON connections(access_token);
+CREATE INDEX apptoken ON apps(access_token);
 
 
 CREATE TABLE sources (
@@ -100,10 +100,10 @@ CREATE TABLE sources (
 	name VARCHAR NOT NULL,
 	description VARCHAR NOT NULL DEFAULT '',
 	icon VARCHAR NOT NULL DEFAULT '',
-	connection VARCHAR(36) DEFAULT NULL,
+	app VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
-	-- A key is used for connections to easily map sources to physical things
+	-- A key is used for apps to easily map sources to physical things
 	key VARCHAR(36) DEFAULT NULL,
 
 	type VARCHAR NOT NULL, 	                 -- The source type
@@ -114,9 +114,9 @@ CREATE TABLE sources (
 	-- Maximal scopes that can be given. The * represents all scopes possible for the given source type
 	scopes VARCHAR NOT NULL DEFAULT '["*"]',
 
-	CONSTRAINT sourceconnection
-		FOREIGN KEY(connection) 
-		REFERENCES connections(id)
+	CONSTRAINT sourceapp
+		FOREIGN KEY(app) 
+		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
@@ -131,7 +131,7 @@ CREATE TABLE sources (
 );
 
 -- Sources can be queried by key
-CREATE INDEX source_key ON sources(key,connection);
+CREATE INDEX source_key ON sources(key,app);
 
 ------------------------------------------------------------------------------------
 -- SHARING
@@ -192,9 +192,9 @@ CREATE INDEX login_tokens ON user_logintokens(token);
 ------------------------------------------------------------------
 
 CREATE VIEW user_source_scopes(user,source,scope) AS
-	SELECT sources.owner,sources.id,'*' FROM sources WHERE sources.connection IS NULL
+	SELECT sources.owner,sources.id,'*' FROM sources WHERE sources.app IS NULL
 	UNION ALL
-	SELECT sources.owner,sources.id,value FROM sources,json_each(sources.scopes) WHERE sources.connection IS NOT NULL
+	SELECT sources.owner,sources.id,value FROM sources,json_each(sources.scopes) WHERE sources.app IS NOT NULL
 	UNION ALL
 	SELECT shared_sources.username,sources.id,ss.value FROM sources,shared_sources,json_each(shared_sources.scopes) AS ss WHERE shared_sources.sourceid=sources.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(sources.scopes) AS sss WHERE sss.value=ss.value OR sss.value='*')
 	UNION ALL
@@ -242,10 +242,10 @@ func Create(a *assets.Assets) error {
 		return errors.New("Configuration does not specify an sql database")
 	}
 
-	// Split the sql string into database type and connection string
+	// Split the sql string into database type and app string
 	sqlInfo := strings.SplitAfterN(*a.Config.SQL, "://", 2)
 	if len(sqlInfo) != 2 {
-		return errors.New("Invalid sql connection string")
+		return errors.New("Invalid sql app string")
 	}
 	sqltype := strings.TrimSuffix(sqlInfo[0], "://")
 

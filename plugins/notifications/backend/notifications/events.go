@@ -59,8 +59,8 @@ func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notifica
 	global := vals[7].(bool)
 	n.Global = &global
 	if vals[8] != nil {
-		connection := tsel(vals[8])
-		n.Connection = &connection
+		app := tsel(vals[8])
+		n.App = &app
 	}
 	if vals[9] != nil {
 		source := tsel(vals[9])
@@ -72,13 +72,13 @@ func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notifica
 
 var notificationEventType = map[events.SqliteHook]string{
 	events.SqliteHook{"notifications_user", events.SQL_CREATE}:       "user_notification_create",
-	events.SqliteHook{"notifications_connection", events.SQL_CREATE}: "connection_notification_create",
+	events.SqliteHook{"notifications_app", events.SQL_CREATE}: "app_notification_create",
 	events.SqliteHook{"notifications_source", events.SQL_CREATE}:     "source_notification_create",
 	events.SqliteHook{"notifications_user", events.SQL_UPDATE}:       "user_notification_update",
-	events.SqliteHook{"notifications_connection", events.SQL_UPDATE}: "connection_notification_update",
+	events.SqliteHook{"notifications_app", events.SQL_UPDATE}: "app_notification_update",
 	events.SqliteHook{"notifications_source", events.SQL_UPDATE}:     "source_notification_update",
 	events.SqliteHook{"notifications_user", events.SQL_DELETE}:       "user_notification_delete",
-	events.SqliteHook{"notifications_connection", events.SQL_DELETE}: "connection_notification_delete",
+	events.SqliteHook{"notifications_app", events.SQL_DELETE}: "app_notification_delete",
 	events.SqliteHook{"notifications_source", events.SQL_DELETE}:     "source_notification_delete",
 }
 
@@ -89,10 +89,10 @@ func RegisterNotificationHooks(e events.Handler) {
 			switch tblname {
 			case "notifications_user":
 				return "SELECT key,timestamp,title,description,type,seen,user,global,NULL,NULL FROM notifications_user WHERE rowid=?"
-			case "notifications_connection":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,connection,NULL FROM notifications_connection WHERE rowid=?"
+			case "notifications_app":
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,NULL FROM notifications_app WHERE rowid=?"
 			case "notifications_source":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,connection,source FROM sources LEFT JOIN connections ON sources.connection=connections.id WHERE sources.rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,source FROM sources LEFT JOIN apps ON sources.app=apps.id WHERE sources.rowid=?"
 			default:
 				panic("Unrecognized table name in getStmt")
 
@@ -109,8 +109,8 @@ func RegisterNotificationHooks(e events.Handler) {
 		}
 		if n.Source != nil {
 			evt.Source = *n.Source
-		} else if n.Connection != nil {
-			evt.Connection = *n.Connection
+		} else if n.App != nil {
+			evt.App = *n.App
 		} else {
 			evt.User = *n.User
 		}
@@ -120,12 +120,12 @@ func RegisterNotificationHooks(e events.Handler) {
 	}
 
 	events.AddSQLHook("notifications_user", events.SQL_CREATE, databaseHook)
-	events.AddSQLHook("notifications_connection", events.SQL_CREATE, databaseHook)
+	events.AddSQLHook("notifications_app", events.SQL_CREATE, databaseHook)
 	events.AddSQLHook("notifications_source", events.SQL_CREATE, databaseHook)
 	events.AddSQLHook("notifications_user", events.SQL_UPDATE, databaseHook)
-	events.AddSQLHook("notifications_connection", events.SQL_UPDATE, databaseHook)
+	events.AddSQLHook("notifications_app", events.SQL_UPDATE, databaseHook)
 	events.AddSQLHook("notifications_source", events.SQL_UPDATE, databaseHook)
 	events.AddSQLHook("notifications_user", events.SQL_DELETE, databaseHook)
-	events.AddSQLHook("notifications_connection", events.SQL_DELETE, databaseHook)
+	events.AddSQLHook("notifications_app", events.SQL_DELETE, databaseHook)
 	events.AddSQLHook("notifications_source", events.SQL_DELETE, databaseHook)
 }

@@ -1,19 +1,13 @@
 package plugins
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"path"
 	"time"
 
-	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
@@ -88,7 +82,7 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 			User:  "*",
 		}, peh)
 	}
-	for cplugin, cv := range psettings.Connections {
+	for cplugin, cv := range psettings.Apps {
 		for ename, ev := range cv.On {
 			peh, err := PluginEventHandler(a, pname, ev)
 			if err != nil {
@@ -197,19 +191,19 @@ func (p *Plugin) Start() error {
 	return nil
 }
 
-func processConnection(pluginKey string, owner string, cv *assets.Connection) *database.Connection {
-	c := &database.Connection{
+func ProcessApp(pluginKey string, owner string, cv *assets.App) *database.App {
+	c := &database.App{
 		Details: database.Details{
 			Name:        &cv.Name,
 			Description: cv.Description,
-			Icon:      cv.Icon,
+			Icon:        cv.Icon,
 		},
 		Enabled: cv.Enabled,
 		Plugin:  &pluginKey,
 		Owner:   &owner,
 	}
 	if cv.Scopes != nil {
-		c.Scopes = &database.ConnectionScopeArray{
+		c.Scopes = &database.AppScopeArray{
 			ScopeArray: database.ScopeArray{
 				Scopes: *cv.Scopes,
 			},
@@ -233,14 +227,14 @@ func processConnection(pluginKey string, owner string, cv *assets.Connection) *d
 	return c
 }
 
-func processSource(connection string, key string, as *assets.Source) *database.Source {
+func processSource(app string, key string, as *assets.Source) *database.Source {
 	s := &database.Source{
 		Details: database.Details{
 			Name:        &as.Name,
 			Description: as.Description,
-			Icon:      as.Icon,
+			Icon:        as.Icon,
 		},
-		Connection: &connection,
+		App: &app,
 		Key:        &key,
 		Type:       &as.Type,
 	}
@@ -257,36 +251,8 @@ func processSource(connection string, key string, as *assets.Source) *database.S
 	return s
 }
 
-func internalRequest(ir InternalRequester, method, path, plugin string, body interface{}) error {
-	var bodybuffer io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
-		bodybuffer = bytes.NewBuffer(b)
-	}
-
-	req, err := http.NewRequest(method, path, bodybuffer)
-	if err != nil {
-		return err
-	}
-
-	rec := httptest.NewRecorder()
-	ir.ServeInternal(rec, req, plugin)
-	if rec.Code != http.StatusOK {
-		var er rest.ErrorResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &er)
-		if err != nil {
-			return err
-		}
-		return &er
-	}
-	return nil
-}
-
 // BeforeStart is run before any of the plugin's executables are run.
-// This function is used to check if we're to create connections/sources
+// This function is used to check if we're to create apps/sources
 // for the plugin
 func (p *Plugin) BeforeStart(ir InternalRequester) error {
 	return nil
@@ -294,81 +260,85 @@ func (p *Plugin) BeforeStart(ir InternalRequester) error {
 
 func (p *Plugin) OnUserCreate(username string, ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname, cv := range psettings.Connections {
-		// For each connection
+	for cname, cv := range psettings.Apps {
+		if cv.AutoCreate != nil && *cv.AutoCreate {
+			// For each app
 
-		pluginKey := p.Name + ":" + cname
+			pluginKey := p.Name + ":" + cname
 
-		logrus.Debugf("%s: Creating '%s' connection for user '%s'", p.Name, pluginKey, username)
+			logrus.Debugf("%s: Creating '%s' app for user '%s'", p.Name, pluginKey, username)
 
-		// aaand how exactly do I achieve this?
+			// aaand how exactly do I achieve this?
 
-		cid, _, err := p.DB.CreateConnection(processConnection(pluginKey, username, cv))
-		if err != nil {
-			return err
-		}
-
-		for skey, sv := range cv.Sources {
-			logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
-
-			s := processSource(cid, skey, sv)
-			err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+			cid, _, err := p.DB.CreateApp(ProcessApp(pluginKey, username, cv))
 			if err != nil {
 				return err
 			}
 
+			for skey, sv := range cv.Sources {
+				logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
+
+				s := processSource(cid, skey, sv)
+				err = InternalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+				if err != nil {
+					return err
+				}
+
+			}
 		}
 	}
 	return nil
 }
 
-// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/connections.
+// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/apps.
 // It also sets up all event callbacks
 func (p *Plugin) AfterStart(ir InternalRequester) error {
 	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname, cv := range psettings.Connections {
-		// For each connection
-		// Check if the connection exists for all users
-		var res []string
+	for cname, cv := range psettings.Apps {
+		if cv.AutoCreate != nil && *cv.AutoCreate {
+			// For each app
+			// Check if the app exists for all users
+			var res []string
 
-		pluginKey := p.Name + ":" + cname
+			pluginKey := p.Name + ":" + cname
 
-		err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM connections WHERE owner=users.username AND connections.plugin=?);", pluginKey)
-		if err != nil {
-			return err
-		}
-		if len(res) > 0 {
-			logrus.Debugf("%s: Creating '%s' connection for all users", p.Name, pluginKey)
-
-			// aaand how exactly do I achieve this?
-
-			for _, uname := range res {
-
-				_, _, err = p.DB.CreateConnection(processConnection(pluginKey, uname, cv))
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		for skey, sv := range cv.Sources {
-			res = []string{}
-			err := p.DB.DB.Select(&res, "SELECT id FROM connections WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE connection=connections.id AND key=?);", pluginKey, skey)
+			err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM apps WHERE owner=users.username AND apps.plugin=?);", pluginKey)
 			if err != nil {
 				return err
 			}
 			if len(res) > 0 {
-				logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
+				logrus.Debugf("%s: Creating '%s' app for all users", p.Name, pluginKey)
 
-				for _, cid := range res {
-					s := processSource(cid, skey, sv)
-					err = internalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+				// aaand how exactly do I achieve this?
+
+				for _, uname := range res {
+
+					_, _, err = p.DB.CreateApp(ProcessApp(pluginKey, uname, cv))
 					if err != nil {
 						return err
 					}
 				}
 			}
 
+			for skey, sv := range cv.Sources {
+				res = []string{}
+				err := p.DB.DB.Select(&res, "SELECT id FROM apps WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND key=?);", pluginKey, skey)
+				if err != nil {
+					return err
+				}
+				if len(res) > 0 {
+					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
+
+					for _, cid := range res {
+						s := processSource(cid, skey, sv)
+						err = InternalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+						if err != nil {
+							return err
+						}
+					}
+				}
+
+			}
 		}
 	}
 

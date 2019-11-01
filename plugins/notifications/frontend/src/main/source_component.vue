@@ -2,7 +2,7 @@
   <v-flex v-if="hasNotifications">
     <h-notification
       v-for="n in notifications"
-      :key="n.key+'.'+n.user + '.' + n.connection + '.' + n.source"
+      :key="n.key+'.'+n.user + '.' + n.app + '.' + n.source"
       :n="n"
       small
     />

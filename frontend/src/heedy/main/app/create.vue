@@ -1,5 +1,5 @@
 <template>
-  <h-card-page title="Create a new Connection" :alert="alert">
+  <h-card-page title="Create a new App" :alert="alert">
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
@@ -7,10 +7,10 @@
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field label="Name" placeholder="My Connection" v-model="name"></v-text-field>
+            <v-text-field label="Name" placeholder="My App" v-model="name"></v-text-field>
             <v-text-field
               label="Description"
-              placeholder="This connection does stuff"
+              placeholder="This app does stuff"
               v-model="description"
             ></v-text-field>
             <h-scope-editor v-model="scopes"></h-scope-editor>
@@ -55,7 +55,7 @@ export default {
         return;
       }
 
-      let result = await api("POST", `api/heedy/v1/connections`, query);
+      let result = await api("POST", `api/heedy/v1/apps`, query);
 
       if (!result.response.ok) {
         this.alert = result.data.error_description;
@@ -66,9 +66,9 @@ export default {
       // The result comes without the icon, let's set it correctly
       result.data.icon = query.icon;
 
-      this.$store.commit("setConnection", result.data);
+      this.$store.commit("setApp", result.data);
       this.loading = false;
-      this.$router.replace({ path: `/connections/${result.data.id}` });
+      this.$router.replace({ path: `/apps/${result.data.id}` });
     }
   }
 };

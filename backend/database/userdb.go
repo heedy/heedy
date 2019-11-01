@@ -22,6 +22,10 @@ func (db *UserDB) ID() string {
 	return db.user
 }
 
+func (db *UserDB) Type() DBType {
+	return UserType
+}
+
 // User returns the user that is logged in
 func (db *UserDB) User() (*User, error) {
 	return db.ReadUser(db.user, &ReadUserOptions{
@@ -85,16 +89,16 @@ func (db *UserDB) CanCreateSource(s *Source) error {
 			return ErrAccessDenied("Cannot create a source for another user")
 		}
 	}
-	if s.Connection != nil {
-		return ErrAccessDenied("Can't create a source for a connection")
+	if s.App != nil {
+		return ErrAccessDenied("Can't create a source for a app")
 	}
 	return nil
 }
 
 // CreateSource creates the source.
 func (db *UserDB) CreateSource(s *Source) (string, error) {
-	if s.Connection != nil {
-		return "", ErrAccessDenied("You cannot create sources belonging to a connection")
+	if s.App != nil {
+		return "", ErrAccessDenied("You cannot create sources belonging to a app")
 	}
 	if s.LastModified != nil {
 		return "", ErrAccessDenied("Last Modified status of source is readonly")
@@ -126,7 +130,7 @@ func (db *UserDB) UpdateSource(s *Source) error {
 
 // Can only delete sources that belong to *us*
 func (db *UserDB) DelSource(id string) error {
-	result, err := db.adb.Exec("DELETE FROM sources WHERE id=? AND owner=? AND connection IS NULL;", id, db.user)
+	result, err := db.adb.Exec("DELETE FROM sources WHERE id=? AND owner=? AND app IS NULL;", id, db.user)
 	return getExecError(result, err)
 }
 
@@ -158,32 +162,32 @@ func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
 		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`, db.user)
 }
 
-func (db *UserDB) CreateConnection(c *Connection) (string, string, error) {
+func (db *UserDB) CreateApp(c *App) (string, string, error) {
 
 	if c.Owner == nil {
 		// If no owner is specified, assume the current user
 		c.Owner = &db.user
 	}
 	if *c.Owner != db.user {
-		return "", "", ErrAccessDenied("Cannot create a connection belonging to someone else")
+		return "", "", ErrAccessDenied("Cannot create a app belonging to someone else")
 	}
-	return db.adb.CreateConnection(c)
+	return db.adb.CreateApp(c)
 }
-func (db *UserDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
-	// Can only read connections that belong to us
-	return readConnection(db.adb, cid, o, `SELECT * FROM connections WHERE owner=? AND id=?;`, db.user, cid)
+func (db *UserDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
+	// Can only read apps that belong to us
+	return readApp(db.adb, cid, o, `SELECT * FROM apps WHERE owner=? AND id=?;`, db.user, cid)
 }
-func (db *UserDB) UpdateConnection(c *Connection) error {
-	return updateConnection(db.adb, c, `id=? AND owner=?`, c.ID, db.user)
+func (db *UserDB) UpdateApp(c *App) error {
+	return updateApp(db.adb, c, `id=? AND owner=?`, c.ID, db.user)
 }
-func (db *UserDB) DelConnection(cid string) error {
-	// Can only delete connections that are not plugin-generated, unless the plugin is no longer active
-	result, err := db.adb.Exec("DELETE FROM connections WHERE id=? AND owner=?;", cid, db.user)
+func (db *UserDB) DelApp(cid string) error {
+	// Can only delete apps that are not plugin-generated, unless the plugin is no longer active
+	result, err := db.adb.Exec("DELETE FROM apps WHERE id=? AND owner=?;", cid, db.user)
 	return getExecError(result, err)
 }
-func (db *UserDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
+func (db *UserDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	if o != nil && o.User != nil && *o.User != db.user {
-		return nil, ErrAccessDenied("Can only list your own connections")
+		return nil, ErrAccessDenied("Can only list your own apps")
 	}
-	return listConnections(db.adb, o, `SELECT * FROM connections WHERE owner=?`, db.user)
+	return listApps(db.adb, o, `SELECT * FROM apps WHERE owner=?`, db.user)
 }

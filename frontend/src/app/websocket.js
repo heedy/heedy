@@ -56,7 +56,7 @@ class WebsocketSubscriber {
             this.ws.send(JSON.stringify(m))
         });
 
-        // Set the websocket connection time
+        // Set the websocket app time
         let m = moment();
         this.store.commit("setWebsocket", m);
         this.app.worker.postMessage("websocket_status", m.unix());
@@ -84,7 +84,7 @@ class WebsocketSubscriber {
             // Oh boy, we need to check if the given subscription should be given the event
             if (s.event != e.event && s.event != "*") return false;
             if (s.source !== undefined && s.source != "*" && (e.source === undefined || s.source != e.source)) return false;
-            if (s.connection !== undefined && s.connection != "*" && (e.connection === undefined || s.connection != e.connection)) return false;
+            if (s.app !== undefined && s.app != "*" && (e.app === undefined || s.app != e.app)) return false;
             if (s.user !== undefined && s.user != "*" && (e.user === undefined || s.user != e.user)) return false;
             if (s.plugin !== undefined && (e.plugin === undefined || e.plugin != s.plugin)) return false;
             if (s.key !== undefined && (e.key === undefined || e.key != s.key)) return false;

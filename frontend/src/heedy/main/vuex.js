@@ -15,12 +15,12 @@ export default {
     // Components to show for a user
     user_components: [],
 
-    // The current user's connections & time when they were queried
-    connections: null,
-    connections_qtime: null,
+    // The current user's apps & time when they were queried
+    apps: null,
+    apps_qtime: null,
 
-    // Components to show in the connection
-    connection_components: [],
+    // Components to show in the app
+    app_components: [],
 
     // A map of sources
     sources: {},
@@ -35,9 +35,9 @@ export default {
     userSources: {},
     userSources_qtime: {},
 
-    // a map keyed by connection id, where each element is a map of ids to null
-    connectionSources: {},
-    connectionSources_qtime: {},
+    // a map keyed by app id, where each element is a map of ids to null
+    appSources: {},
+    appSources_qtime: {},
 
     // The following are initialized by the sourceInjector
     sourceCreators: [],
@@ -45,8 +45,8 @@ export default {
     // Subpaths for each source type
     typePaths: {},
 
-    // The map of connection scopes along with their descriptions
-    connectionScopes: null,
+    // The map of app scopes along with their descriptions
+    appScopes: null,
 
     settings_routes: [],
     updates: {
@@ -59,8 +59,8 @@ export default {
     setSettingsRoutes(state, v) {
       state.settings_routes = v;
     },
-    addConnectionComponent(state, v) {
-      state.connection_components.push(v);
+    addAppComponent(state, v) {
+      state.app_components.push(v);
     },
     addUserComponent(state, v) {
       state.user_components.push(v);
@@ -98,25 +98,25 @@ export default {
         ...v
       });
     },
-    setConnection(state, v) {
-      if (state.connections == null) {
-        state.connections = {};
+    setApp(state, v) {
+      if (state.apps == null) {
+        state.apps = {};
       }
       if (v.isNull !== undefined) {
-        if (state.connectionSources[v.id] !== undefined) {
-          Vue.delete(state.connectionSources, v.id);
+        if (state.appSources[v.id] !== undefined) {
+          Vue.delete(state.appSources, v.id);
         }
-        if (state.connections[v.id] !== undefined) {
-          Vue.delete(state.connections, v.id);
+        if (state.apps[v.id] !== undefined) {
+          Vue.delete(state.apps, v.id);
         }
         return
       }
-      Vue.set(state.connections, v.id, {
+      Vue.set(state.apps, v.id, {
         qtime: moment(),
         ...v
       });
     },
-    setConnections(state, v) {
+    setApps(state, v) {
       let qtime = moment();
       Object.keys(v).forEach(k => {
         v[k] = {
@@ -124,13 +124,13 @@ export default {
           ...v[k]
         };
       });
-      Object.keys(state.connectionSources).forEach(k => {
+      Object.keys(state.appSources).forEach(k => {
         if (v[k] === undefined) {
-          Vue.delete(state.connectionSources, k);
+          Vue.delete(state.appSources, k);
         }
       })
-      state.connections = v;
-      state.connections_qtime = moment();
+      state.apps = v;
+      state.apps_qtime = moment();
     },
     setSource(state, v) {
       // First check if the source has existing value
@@ -138,9 +138,9 @@ export default {
       if (v.isNull !== undefined) {
         // The source is to be deleted - make sure to take care of all places it could be
         if (curs !== null) {
-          if (curs.connection !== null) {
-            if (state.connectionSources[curs.connection] !== undefined) {
-              Vue.delete(state.connectionSources[curs.connection], curs.id);
+          if (curs.app !== null) {
+            if (state.appSources[curs.app] !== undefined) {
+              Vue.delete(state.appSources[curs.app], curs.id);
             }
           } else if (state.userSources[curs.owner] !== undefined) {
             Vue.delete(state.userSources[curs.owner], curs.id);
@@ -156,9 +156,9 @@ export default {
       });
       // Delete from lists where changed
       if (curs != null) {
-        if (v.connection != curs.connection) {
-          if (state.connectionSources[curs.connection] !== undefined) {
-            Vue.delete(state.connectionSources[curs.connection], curs.id);
+        if (v.app != curs.app) {
+          if (state.appSources[curs.app] !== undefined) {
+            Vue.delete(state.appSources[curs.app], curs.id);
           }
         }
         if (v.owner != curs.owner) {
@@ -168,10 +168,10 @@ export default {
         }
       }
       // Make sure to set it in the appropriate lists
-      if (v.connection != null && state.connectionSources[v.connection] !== undefined) {
-        Vue.set(state.connectionSources[v.connection], v.id, null);
+      if (v.app != null && state.appSources[v.app] !== undefined) {
+        Vue.set(state.appSources[v.app], v.id, null);
       }
-      if (state.userSources[v.owner] !== undefined && v.connection == null) {
+      if (state.userSources[v.owner] !== undefined && v.app == null) {
         Vue.set(state.userSources[v.owner], v.id, null);
       }
     },
@@ -188,7 +188,7 @@ export default {
       Vue.set(state.userSources, v.user, srcidmap);
       Vue.set(state.userSources_qtime, v.user, qtime);
     },
-    setConnectionSources(state, v) {
+    setAppSources(state, v) {
       let srcidmap = {};
       let qtime = moment();
       v.sources.forEach(s => {
@@ -198,11 +198,11 @@ export default {
           ...s
         });
       });
-      Vue.set(state.connectionSources, v.id, srcidmap);
-      Vue.set(state.connectionSources_qtime, v.id, qtime);
+      Vue.set(state.appSources, v.id, srcidmap);
+      Vue.set(state.appSources_qtime, v.id, qtime);
     },
-    setConnectionScopes(state, v) {
-      state.connectionScopes = v;
+    setAppScopes(state, v) {
+      state.appScopes = v;
     },
     setUpdates(state, v) {
       state.updates = v;
@@ -255,16 +255,16 @@ export default {
         q.callback();
       }
     },
-    readConnection_: async function ({
+    readApp_: async function ({
       commit
     }, q) {
-      console.log("Reading connection", q.id);
-      let res = await api("GET", `api/heedy/v1/connections/${q.id}`, {
+      console.log("Reading app", q.id);
+      let res = await api("GET", `api/heedy/v1/apps/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
         if (res.response.status == 400 || res.response.status == 403) { // TODO: 404 should be returned
-          commit("setConnection", {
+          commit("setApp", {
             id: q.id,
             isNull: true
           });
@@ -275,7 +275,7 @@ export default {
           });
         }
       } else {
-        commit("setConnection", res.data);
+        commit("setApp", res.data);
       }
 
 
@@ -331,23 +331,23 @@ export default {
 
 
     },
-    readConnection: async function ({
+    readApp: async function ({
       state,
       rootState,
       dispatch
     }, q) {
-      if (state.connections == null) {
-        dispatch("listConnections", q);
+      if (state.apps == null) {
+        dispatch("listApps", q);
         return;
       }
-      if (state.connections[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.connections[q.id].qtime)) {
+      if (state.apps[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.apps[q.id].qtime)) {
         console.log(`Not querying ${q.id} - websocket active`);
         if (q.hasOwnProperty("callback")) {
           q.callback();
         }
         return;
       }
-      dispatch("readConnection_", q);
+      dispatch("readApp_", q);
     },
     readSource: async function ({
       state,
@@ -381,7 +381,7 @@ export default {
       };
 
       if (rootState.app.info.user != null && rootState.app.info.user.username == q.username) {
-        query["connection"] = "none";
+        query["app"] = "none";
       }
 
       let res = await api("GET", `api/heedy/v1/sources`, query);
@@ -404,19 +404,19 @@ export default {
       }
 
     },
-    readConnectionSources: async function ({
+    readAppSources: async function ({
       commit,
       state,
       rootState
     }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.connectionSources[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.connectionSources_qtime[q.id])) {
+      if (state.appSources[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.appSources_qtime[q.id])) {
         console.log(`Not reading ${q.id} sources - websocket active`);
         return;
       }
-      console.log("Reading sources for connection", q.id);
+      console.log("Reading sources for app", q.id);
       let query = {
-        connection: q.id
+        app: q.id
       };
 
 
@@ -428,7 +428,7 @@ export default {
         });
 
       } else {
-        commit("setConnectionSources", {
+        commit("setAppSources", {
           id: q.id,
           sources: res.data
         });
@@ -440,10 +440,10 @@ export default {
       }
 
     },
-    getConnectionScopes: async function ({
+    getAppScopes: async function ({
       commit
     }) {
-      console.log("Loading available connection scopes");
+      console.log("Loading available app scopes");
       let res = await api("GET", "api/heedy/v1/server/scopes");
       if (!res.response.ok) {
         commit("alert", {
@@ -452,21 +452,21 @@ export default {
         });
 
       } else {
-        commit("setConnectionScopes", res.data);
+        commit("setAppScopes", res.data);
       }
     },
-    listConnections: async function ({
+    listApps: async function ({
       commit,
       state,
       rootState
     }, q) {
-      // Only list connections if they are not being kept up-to-date by the websocket
-      if (state.connections !== null && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.connections_qtime)) {
-        console.log("Not listing connections - websocket active");
+      // Only list apps if they are not being kept up-to-date by the websocket
+      if (state.apps !== null && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.apps_qtime)) {
+        console.log("Not listing apps - websocket active");
         return;
       }
-      console.log("Loading connections");
-      let res = await api("GET", "api/heedy/v1/connections", {
+      console.log("Loading apps");
+      let res = await api("GET", "api/heedy/v1/apps", {
         icon: true
       });
       if (!res.response.ok) {
@@ -483,7 +483,7 @@ export default {
       res.data.map(v => {
         cmap[v.id] = v
       });
-      commit("setConnections", cmap);
+      commit("setApps", cmap);
       if (q !== undefined && q.hasOwnProperty("callback")) {
         q.callback();
       }

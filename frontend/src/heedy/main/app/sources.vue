@@ -6,23 +6,23 @@
 <script>
 export default {
   props: {
-    connection: Object
+    app: Object
   },
   computed: {
     sources() {
       return Object.keys(
-        this.$store.state.heedy.connectionSources[this.connection.id] || {}
+        this.$store.state.heedy.appSources[this.app.id] || {}
       ).map(id => this.$store.state.heedy.sources[id]);
     }
   },
   watch: {
-    connection: function(c) {
-      this.$store.dispatch("readConnectionSources", { id: c.id });
+    app: function(c) {
+      this.$store.dispatch("readAppSources", { id: c.id });
     }
   },
 
   created() {
-    this.$store.dispatch("readConnectionSources", { id: this.connection.id });
+    this.$store.dispatch("readAppSources", { id: this.app.id });
   }
 };
 </script>

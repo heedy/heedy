@@ -44,6 +44,7 @@ func NewRequestHandler(auth *Auth, p *plugins.PluginManager) *RequestHandler {
 	}
 	// Allow the plugin handler to make internal requests
 	p.IR = rh
+
 	return rh
 }
 
@@ -174,7 +175,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeInternal does everything EXCEPT auth - it assumes admin. It is used to
-// run queries over the full system
+// run queries over the full system. If plugin is empty string, it runs the full api
 func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request, plugin string) {
 	// The remote address is heedy for internal requests
 	r.RemoteAddr = "heedy"

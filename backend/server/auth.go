@@ -72,7 +72,7 @@ func NewAuth(db *database.AdminDB) *Auth {
 }
 
 func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB, error) {
-	// First, try authenticating as a connection
+	// First, try authenticating as a app
 	accessToken := r.Header.Get("Authorization")
 	if len(accessToken) > 0 {
 		const prefix = "Bearer "
@@ -86,15 +86,15 @@ func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB
 	}
 
 	if len(accessToken) > 0 {
-		// Try logging in as a connection
-		c, err := a.DB.GetConnectionByAccessToken(accessToken)
+		// Try logging in as a app
+		c, err := a.DB.GetAppByAccessToken(accessToken)
 		if err != nil {
 			return nil, errors.New("access_denied: invalid API key")
 		}
 		if !*c.Enabled {
-			return nil, errors.New("connection_disabled: the connection was disabled")
+			return nil, errors.New("app_disabled: the app was disabled")
 		}
-		return database.NewConnectionDB(a.DB, c), nil
+		return database.NewAppDB(a.DB, c), nil
 
 	}
 
@@ -125,7 +125,7 @@ func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB
 }
 
 // As creates a database As the given identifier. That is, if as is heedy, it returns an admin db,
-// if it is public, returns a public db, and if it is a username/connection then it returns those.
+// if it is public, returns a public db, and if it is a username/app then it returns those.
 func (a *Auth) As(identifier string) (database.DB, error) {
 	if identifier == "heedy" {
 		return a.DB, nil
@@ -211,9 +211,9 @@ func (a *Auth) ServeCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // CodeRequest is sent in by the client trying to
-// create a connection. It is identical to a standard oauth request authorization
+// create a app. It is identical to a standard oauth request authorization
 // code request if the client is known. If it is an unknown client,
-// allows the client to request creation of a specific connection on its behalf.
+// allows the client to request creation of a specific app on its behalf.
 type CodeRequest struct {
 	// These are parameters of an authorization request on Oauth2
 	// https://www.oauth.com/oauth2-servers/authorization/the-authorization-request/
@@ -222,8 +222,8 @@ type CodeRequest struct {
 	State       string `json:"state,omitempty"`
 	Scope       string `json:"scope,omitempty"`
 
-	// The connection object to create - if clientID is not set
-	Connection *database.Connection
+	// The app object to create - if clientID is not set
+	App *database.App
 }
 
 // RequestCode returns the information relevant to an authorization code request

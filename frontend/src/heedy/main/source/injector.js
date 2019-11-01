@@ -6,7 +6,7 @@ class Source {
         this.store = app.store;
 
         let querySource = (e) => {
-            if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.connection !== undefined && this.store.state.heedy.connectionSources[e.connection] !== undefined) {
+            if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.app !== undefined && this.store.state.heedy.appSources[e.app] !== undefined) {
                 this.store.dispatch("readSource_", {
                     id: e.source
                 });
@@ -27,7 +27,7 @@ class Source {
                 event: "source_delete",
                 user: app.info.user.username
             }, (e) => {
-                if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.connection !== undefined && this.store.state.heedy.connectionSources[e.connection] !== undefined) {
+                if (this.store.state.heedy.sources[e.source] !== undefined || this.store.state.heedy.userSources[e.user] !== undefined || e.app !== undefined && this.store.state.heedy.appSources[e.app] !== undefined) {
                     this.store.commit("setSource", {
                         id: e.source,
                         isNull: true

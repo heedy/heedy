@@ -1,5 +1,5 @@
 <template>
-  <h-card-page :title="'Update ' + connection.name + ' Settings'" :alert="alert">
+  <h-card-page :title="'Update ' + app.name + ' Settings'" :alert="alert">
     <v-form @submit="update" v-model="formValid">
       <v-container fluid grid-list-md>
         <v-layout row>
@@ -31,12 +31,12 @@ export default {
     VJsonschemaForm
   },
   props: {
-    connection: Object
+    app: Object
   },
   data: function() {
     return {
       formValid: false,
-      modified: { ...this.connection.settings },
+      modified: { ...this.app.settings },
       loading: false,
       alert: "",
       options: {
@@ -48,13 +48,13 @@ export default {
   },
   computed: {
     schema() {
-      if (this.connection.settings_schema.type !== undefined) {
-        return this.connection.settings_schema;
+      if (this.app.settings_schema.type !== undefined) {
+        return this.app.settings_schema;
       }
       let s = {
         type: "object",
         properties: {
-          ...this.connection.settings_schema
+          ...this.app.settings_schema
         }
       };
       if (s.properties.required !== undefined) {
@@ -92,12 +92,12 @@ export default {
           ...this.modified
         }
       };
-      console.log("Update connection settings", this.connection.id);
+      console.log("Update app settings", this.app.id);
 
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$app.api(
           "PATCH",
-          `api/heedy/v1/connections/${this.connection.id}`,
+          `api/heedy/v1/apps/${this.app.id}`,
           modified
         );
 
@@ -107,13 +107,13 @@ export default {
           return;
         }
 
-        this.$store.dispatch("readConnection", {
-          id: this.connection.id
+        this.$store.dispatch("readApp", {
+          id: this.app.id
         });
       }
 
       this.loading = false;
-      this.$router.push({ path: `/connections/${this.connection.id}` });
+      this.$router.push({ path: `/apps/${this.app.id}` });
     },
     del: async function() {}
   }

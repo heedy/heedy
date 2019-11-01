@@ -47,14 +47,14 @@ export default {
     },
     showlink() {
       if (!this.link) return false;
-      if (this.n.connection !== undefined) return true;
+      if (this.n.app !== undefined) return true;
       return false;
     },
     linkpath() {
       console.log(this.n);
       if (this.n.source !== undefined) return `/sources/${this.n.source}`;
-      if (this.n.connection !== undefined)
-        return `/connections/${this.n.connection}`;
+      if (this.n.app !== undefined)
+        return `/apps/${this.n.app}`;
       return `/users/${this.n.user}`;
     }
   },
@@ -63,8 +63,8 @@ export default {
       let nq = { key: this.n.key };
       if (this.n.source !== undefined) {
         nq.source = this.n.source;
-      } else if (this.n.connection !== undefined) {
-        nq.connection = this.n.connection;
+      } else if (this.n.app !== undefined) {
+        nq.app = this.n.app;
       } else {
         nq.user = this.n.user;
       }
@@ -77,8 +77,8 @@ export default {
         let nq = { key: newN.key };
         if (newN.source !== undefined) {
           nq.source = newN.source;
-        } else if (newN.connection !== undefined) {
-          nq.connection = newN.connection;
+        } else if (newN.app !== undefined) {
+          nq.app = newN.app;
         } else {
           nq.user = newN.user;
         }
@@ -94,8 +94,8 @@ export default {
       let nq = { key: this.n.key };
       if (this.n.source !== undefined) {
         nq.source = this.n.source;
-      } else if (this.n.connection !== undefined) {
-        nq.connection = this.n.connection;
+      } else if (this.n.app !== undefined) {
+        nq.app = this.n.app;
       } else {
         nq.user = this.n.user;
       }

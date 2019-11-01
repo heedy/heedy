@@ -61,14 +61,17 @@ type hclSource struct {
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
 
-type hclConnection struct {
+type hclApp struct {
 	Plugin string `hcl:"plugin,label"`
 	Name   string `hcl:"name"`
+
+	AutoCreate  *bool `json:"auto_create,omitempty" hcl:"auto_create"`
+	Unique      *bool `json:"unique,omitempty" hcl:"unique"`
+	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
 
 	Description *string   `json:"description" hcl:"description"`
 	Icon        *string   `json:"icon" hcl:"icon"`
 	Type        *string   `json:"type" hcl:"type"`
-	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
@@ -98,7 +101,7 @@ type hclPlugin struct {
 
 	Run []hclExec `hcl:"run,block"`
 
-	Connections []hclConnection `hcl:"connection,block"`
+	Apps []hclApp `hcl:"app,block"`
 	On          []Event         `hcl:"on,block" json:"on,omitempty"`
 
 	// The remaining stuff is plugin-specific settings
@@ -136,7 +139,7 @@ type hclConfiguration struct {
 	RunTimeout *string `hcl:"run_timeout"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
-	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
 	SourceTypes []hclSourceType `json:"source_types" hcl:"source,block"`
 
@@ -335,14 +338,14 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			}
 		}
 
-		// Load the connections that the plugin wants to set up
-		for j := range hp.Connections {
-			hc := hp.Connections[j]
-			if _, ok := p.Connections[hc.Plugin]; ok {
-				return nil, fmt.Errorf("%s: Plugin %s connection %s defined twice", filename, hp.Name, hc.Plugin)
+		// Load the apps that the plugin wants to set up
+		for j := range hp.Apps {
+			hc := hp.Apps[j]
+			if _, ok := p.Apps[hc.Plugin]; ok {
+				return nil, fmt.Errorf("%s: Plugin %s app %s defined twice", filename, hp.Name, hc.Plugin)
 			}
-			conn := NewConnection()
-			conn.Name = hp.Connections[j].Name
+			conn := NewApp()
+			conn.Name = hp.Apps[j].Name
 			CopyStructIfPtrSet(conn, &hc)
 			var err error
 			conn.Settings, err = loadJSONObject(hc.Settings)
@@ -358,20 +361,20 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 					return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
 				}
 				if o.Event == "" {
-					return nil, fmt.Errorf("%s: Plugin %s connection %s 'on' without event", filename, hp.Name, conn.Name)
+					return nil, fmt.Errorf("%s: Plugin %s app %s 'on' without event", filename, hp.Name, conn.Name)
 				}
 				if _, ok := conn.On[o.Event]; ok {
-					return nil, fmt.Errorf("%s: Plugin %s connection %s on %s defined twice", filename, hp.Name, conn.Name, o.Event)
+					return nil, fmt.Errorf("%s: Plugin %s app %s on %s defined twice", filename, hp.Name, conn.Name, o.Event)
 				}
 				conn.On[o.Event] = &o
 			}
 			for k := range hc.Sources {
 				hs := hc.Sources[k]
 				if hs.Key == "" {
-					return nil, fmt.Errorf("%s: Plugin %s connection %s source with no label", filename, hp.Name, hc.Plugin)
+					return nil, fmt.Errorf("%s: Plugin %s app %s source with no label", filename, hp.Name, hc.Plugin)
 				}
 				if _, ok := conn.Sources[hs.Key]; ok {
-					return nil, fmt.Errorf("%s: Plugin %s connection %s source %s defined twice", filename, hp.Name, hc.Plugin, hs.Key)
+					return nil, fmt.Errorf("%s: Plugin %s app %s source %s defined twice", filename, hp.Name, hc.Plugin, hs.Key)
 				}
 				s := NewSource()
 				s.Name = hs.Name
@@ -387,10 +390,10 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 						return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
 					}
 					if o.Event == "" {
-						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
+						return nil, fmt.Errorf("%s: Plugin %s app %s source %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
 					}
 					if _, ok := s.On[o.Event]; ok {
-						return nil, fmt.Errorf("%s: Plugin %s connection %s source %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
+						return nil, fmt.Errorf("%s: Plugin %s app %s source %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
 					}
 					s.On[o.Event] = &o
 				}
@@ -398,7 +401,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				conn.Sources[hs.Key] = s
 			}
 
-			p.Connections[hc.Plugin] = conn
+			p.Apps[hc.Plugin] = conn
 		}
 
 		/*

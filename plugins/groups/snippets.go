@@ -107,15 +107,15 @@ CREATE TABLE group_sources (
 
 /* COMMENTED OUT FOR NOW
 
--- Streams that the connection is permitted to access
-CREATE TABLE connection_streams (
-	connectionid VARCHAR(36),
+-- Streams that the app is permitted to access
+CREATE TABLE app_streams (
+	appid VARCHAR(36),
 	streamid VARCHAR(36),
 
 	access INTEGER DEFAULT 1, -- Same as stream access
 
-	UNIQUE(connectionid,streamid),
-	PRIMARY KEY (connectionid,streamid),
+	UNIQUE(appid,streamid),
+	PRIMARY KEY (appid,streamid),
 
 	CONSTRAINT cstreamid
 		FOREIGN KEY(streamid)
@@ -123,45 +123,45 @@ CREATE TABLE connection_streams (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
-	CONSTRAINT cconnectionid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
+	CONSTRAINT cappid
+		FOREIGN KEY(appid)
+		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
 
--- Other connections that the connection is permitted to access
-CREATE TABLE connection_connections (
-	connectionid VARCHAR(36),
+-- Other apps that the app is permitted to access
+CREATE TABLE app_apps (
+	appid VARCHAR(36),
 	otherid VARCHAR(36),
 
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	UNIQUE(connectionid,otherid),
-	PRIMARY KEY (connectionid,otherid),
+	UNIQUE(appid,otherid),
+	PRIMARY KEY (appid,otherid),
 
 	CONSTRAINT idid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
+		FOREIGN KEY(appid)
+		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
-	CONSTRAINT connectionid
+	CONSTRAINT appid
 		FOREIGN KEY(otherid)
-		REFERENCES connections(id)
+		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
 
--- Groups that the connection is permitted to access
-CREATE TABLE connection_groups (
-	connectionid VARCHAR(36),
+-- Groups that the app is permitted to access
+CREATE TABLE app_groups (
+	appid VARCHAR(36),
 	groupid VARCHAR(36),
 
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	UNIQUE(connection,id),
-	PRIMARY KEY (connection,id),
+	UNIQUE(app,id),
+	PRIMARY KEY (app,id),
 
 	CONSTRAINT groupid
 		FOREIGN KEY(groupid)
@@ -169,9 +169,9 @@ CREATE TABLE connection_groups (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	
-	CONSTRAINT connectionid
-		FOREIGN KEY(connectionid)
-		REFERENCES connections(id)
+	CONSTRAINT appid
+		FOREIGN KEY(appid)
+		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );

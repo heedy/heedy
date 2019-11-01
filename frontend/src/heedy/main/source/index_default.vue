@@ -10,12 +10,10 @@ export default {
     source: Object
   },
   computed: {
-    connection() {
-      if (this.source.connection == null) return null;
-      if (this.$store.state.heedy.connections == null) return null;
-      return (
-        this.$store.state.heedy.connections[this.source.connection] || null
-      );
+    app() {
+      if (this.source.app == null) return null;
+      if (this.$store.state.heedy.apps == null) return null;
+      return this.$store.state.heedy.apps[this.source.app] || null;
     },
     components() {
       return filterComponents(
@@ -30,8 +28,8 @@ export default {
           if (c.type !== undefined && c.type != this.source.type) return false;
           if (c.skey !== undefined && c.skey != this.source.key) return false;
           if (c.plugin !== undefined) {
-            if (this.connection == null) return false;
-            if (this.connection.plugin != c.plugin) return false;
+            if (this.app == null) return false;
+            if (this.app.plugin != c.plugin) return false;
           }
           return true;
         }
@@ -40,19 +38,19 @@ export default {
   },
   watch: {
     source(s) {
-      if (s.connection != null) {
-        let c = this.$store.state.heedy.connections;
-        if (c == null || c[s.connection] === undefined) {
-          this.$store.dispatch("readConnection", { id: s.connection });
+      if (s.app != null) {
+        let c = this.$store.state.heedy.apps;
+        if (c == null || c[s.app] === undefined) {
+          this.$store.dispatch("readApp", { id: s.app });
         }
       }
     }
   },
   created() {
-    if (this.source.connection != null) {
-      let c = this.$store.state.heedy.connections;
-      if (c == null || c[this.source.connection] === undefined) {
-        this.$store.dispatch("readConnection", { id: this.source.connection });
+    if (this.source.app != null) {
+      let c = this.$store.state.heedy.apps;
+      if (c == null || c[this.source.app] === undefined) {
+        this.$store.dispatch("readApp", { id: this.source.app });
       }
     }
   }

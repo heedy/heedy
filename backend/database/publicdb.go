@@ -16,6 +16,9 @@ func (db *PublicDB) AdminDB() *AdminDB {
 func (db *PublicDB) ID() string {
 	return "public" // The public db acts publically
 }
+func (db *PublicDB) Type() DBType {
+	return PublicType
+}
 
 // User returns the user that is logged in
 func (db *PublicDB) User() (*User, error) {
@@ -100,18 +103,18 @@ func (db *PublicDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
 		WHERE %s AND ss.user='public' AND ss.source=sources.id GROUP BY sources.id %s;`)
 }
 
-func (db *PublicDB) CreateConnection(c *Connection) (string, string, error) {
-	return "", "", ErrAccessDenied("You must be logged in to create connections")
+func (db *PublicDB) CreateApp(c *App) (string, string, error) {
+	return "", "", ErrAccessDenied("You must be logged in to create apps")
 }
-func (db *PublicDB) ReadConnection(cid string, o *ReadConnectionOptions) (*Connection, error) {
-	return nil, ErrAccessDenied("You must be logged in to read connections")
+func (db *PublicDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
+	return nil, ErrAccessDenied("You must be logged in to read apps")
 }
-func (db *PublicDB) UpdateConnection(c *Connection) error {
-	return ErrAccessDenied("You must be logged in to update connections")
+func (db *PublicDB) UpdateApp(c *App) error {
+	return ErrAccessDenied("You must be logged in to update apps")
 }
-func (db *PublicDB) DelConnection(cid string) error {
-	return ErrAccessDenied("You must be logged in to delete connections")
+func (db *PublicDB) DelApp(cid string) error {
+	return ErrAccessDenied("You must be logged in to delete apps")
 }
-func (db *PublicDB) ListConnections(o *ListConnectionOptions) ([]*Connection, error) {
-	return nil, ErrAccessDenied("You must be logged in to list connections")
+func (db *PublicDB) ListApps(o *ListAppOptions) ([]*App, error) {
+	return nil, ErrAccessDenied("You must be logged in to list apps")
 }

@@ -119,7 +119,7 @@ func SQLiteSelectConn(c *sqlite3.SQLiteConn, stmt string,vals ...driver.Value) (
 
 
 // This needs to run before the database is opened, because sqlite3 can only hold a single global
-// change listener for each connection, and it must be registered here, rather than on database open, since
+// change listener for each app, and it must be registered here, rather than on database open, since
 // we don't have access to the go-sqlite3 api when opening the database
 func init() {
 	sql.Register("sqlite3_heedy", &sqlite3.SQLiteDriver{

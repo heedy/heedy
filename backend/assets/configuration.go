@@ -42,7 +42,7 @@ func (e *Event) Validate() error {
 	return nil
 }
 
-// Source represents a source that is to be auto-created inside a connection on behalf of a plugin
+// Source represents a source that is to be auto-created inside a app on behalf of a plugin
 type Source struct {
 	Name        string                  `json:"name"`
 	Type        string                  `json:"type"`
@@ -54,13 +54,16 @@ type Source struct {
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
 
-// Connection represents a connection that is to be created on behalf of a plugin
-type Connection struct {
+// App represents a app that is to be created on behalf of a plugin
+type App struct {
 	Name string `json:"name"`
+
+	AutoCreate  *bool `json:"auto_create,omitempty" hcl:"auto_create"`
+	Unique      *bool `json:"unique,omitempty" hcl:"unique"`
+	AccessToken *bool `json:"access_token,omitempty" hcl:"access_token"`
 
 	Description *string   `json:"description,omitempty" hcl:"description"`
 	Icon        *string   `json:"icon,omitempty" hcl:"icon"`
-	AccessToken *bool     `json:"access_token,omitempty" hcl:"access_token"`
 	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
 	Type        *string   `json:"type" hcl:"type"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
@@ -100,7 +103,7 @@ type Plugin struct {
 	Run      map[string]*Exec    `json:"run,omitempty"`
 	Settings map[string]*Setting `json:"settings,omitempty"`
 
-	Connections map[string]*Connection `json:"connections,omitempty"`
+	Apps map[string]*App `json:"apps,omitempty"`
 }
 
 func (p *Plugin) Copy() *Plugin {
@@ -271,7 +274,7 @@ type Configuration struct {
 	RunTimeout *string `json:"run_timeout,omitempty"`
 
 	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
-	NewConnectionScopes *[]string          `json:"new_connection_scopes,omitempty" hcl:"new_connection_scopes"`
+	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
 	SourceTypes map[string]SourceType `json:"source" hcl:"source_types"`
 
@@ -302,10 +305,10 @@ func (c *Configuration) Validate() error {
 	}
 
 	for p, v := range c.Plugins {
-		for conn, v2 := range v.Connections {
+		for conn, v2 := range v.Apps {
 			for s, v3 := range v2.Sources {
 				if _, ok := c.SourceTypes[v3.Type]; !ok {
-					return fmt.Errorf("[plugin: %s, connection: %s, source: %s] unrecognized type (%s)", p, conn, s, v3.Type)
+					return fmt.Errorf("[plugin: %s, app: %s, source: %s] unrecognized type (%s)", p, conn, s, v3.Type)
 				}
 			}
 		}
@@ -365,13 +368,13 @@ func NewPlugin() *Plugin {
 	return &Plugin{
 		Run:         make(map[string]*Exec),
 		Settings:    make(map[string]*Setting),
-		Connections: make(map[string]*Connection),
+		Apps: make(map[string]*App),
 		On:          make(map[string]*Event),
 	}
 }
 
-func NewConnection() *Connection {
-	return &Connection{
+func NewApp() *App {
+	return &App{
 		Sources: make(map[string]*Source),
 		On:      make(map[string]*Event),
 	}
@@ -466,7 +469,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		}
 		overlay.Scopes = base.Scopes
 	}
-	overlay.NewConnectionScopes = MergeStringArrays(base.NewConnectionScopes, overlay.NewConnectionScopes)
+	overlay.NewAppScopes = MergeStringArrays(base.NewAppScopes, overlay.NewAppScopes)
 	overlay.ForbiddenUsers = MergeStringArrays(base.ForbiddenUsers, overlay.ForbiddenUsers)
 
 	CopyStructIfPtrSet(base, overlay)
@@ -534,10 +537,10 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				}
 			}
 
-			for cName, ocValue := range oplugin.Connections {
-				bcValue, ok := bplugin.Connections[cName]
+			for cName, ocValue := range oplugin.Apps {
+				bcValue, ok := bplugin.Apps[cName]
 				if !ok {
-					bplugin.Connections[cName] = ocValue
+					bplugin.Apps[cName] = ocValue
 				} else {
 					for oName, oV := range ocValue.On {
 						bV, ok := bcValue.On[oName]

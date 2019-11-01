@@ -13,7 +13,7 @@ var SQLVersion = 1
 
 const sqlSchema = `
 	-- We split up the schema into 3 tables due to issues with UNIQUE when certain values are NULL.
-	-- We need connections/sources to be nullable to represent notifications for users/connections
+	-- We need apps/sources to be nullable to represent notifications for users/apps
 	-- https://stackoverflow.com/questions/22699409/sqlite-null-and-unique
 
 	CREATE TABLE notifications_user (
@@ -38,9 +38,9 @@ const sqlSchema = `
 			ON DELETE CASCADE
 	);
 
-	CREATE TABLE notifications_connection (
+	CREATE TABLE notifications_app (
 		user VARCHAR NOT NULL,
-		connection VARCHAR NOT NULL,
+		app VARCHAR NOT NULL,
 		key VARCHAR NOT NULL,
 
 		title VARCHAR NOT NULL,
@@ -51,7 +51,7 @@ const sqlSchema = `
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
-		CONSTRAINT pk PRIMARY KEY (user,connection,key),
+		CONSTRAINT pk PRIMARY KEY (user,app,key),
 
 		CONSTRAINT user_c
 			FOREIGN KEY (user)
@@ -59,16 +59,16 @@ const sqlSchema = `
 			ON UPDATE CASCADE
 			ON DELETE CASCADE,
 
-		CONSTRAINT connection_c
-			FOREIGN KEY (connection)
-			REFERENCES connections(id)
+		CONSTRAINT app_c
+			FOREIGN KEY (app)
+			REFERENCES apps(id)
 			ON UPDATE CASCADE
 			ON DELETE CASCADE
 	);
 
 	CREATE TABLE notifications_source (
 		user VARCHAR NOT NULL,
-		connection VARCHAR NOT NULL,
+		app VARCHAR NOT NULL,
 		source VARCHAR NOT NULL,
 		key VARCHAR NOT NULL,
 
@@ -80,7 +80,7 @@ const sqlSchema = `
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
-		CONSTRAINT pk PRIMARY KEY (user,connection,source,key),
+		CONSTRAINT pk PRIMARY KEY (user,app,source,key),
 
 		CONSTRAINT user_c
 			FOREIGN KEY (user)
@@ -88,9 +88,9 @@ const sqlSchema = `
 			ON UPDATE CASCADE
 			ON DELETE CASCADE,
 
-		CONSTRAINT connection_c
-			FOREIGN KEY (connection)
-			REFERENCES connections(id)
+		CONSTRAINT app_c
+			FOREIGN KEY (app)
+			REFERENCES apps(id)
 			ON UPDATE CASCADE
 			ON DELETE CASCADE,
 
@@ -121,7 +121,7 @@ type Notification struct {
 	Timestamp float64 `json:"timestamp,omitempty"`
 
 	User       *string `json:"user,omitempty"`
-	Connection *string `json:"connection,omitempty"`
+	App *string `json:"app,omitempty"`
 	Source     *string `json:"source,omitempty"`
 
 	Type        *string `json:"type,omitempty"`
@@ -134,7 +134,7 @@ type Notification struct {
 
 type NotificationsQuery struct {
 	User       *string `json:"user,omitempty" schema:"user"`
-	Connection *string `json:"connection,omitempty" schema:"connection"`
+	App *string `json:"app,omitempty" schema:"app"`
 	Source     *string `json:"source,omitempty" schema:"source"`
 
 	Global *bool   `json:"global,omitempty" schema:"global"`
@@ -143,7 +143,7 @@ type NotificationsQuery struct {
 
 	Type *string `json:"type,omitempty"`
 
-	// Whether  or not to include self when * present. For example {user="test",connection="*"}
+	// Whether  or not to include self when * present. For example {user="test",app="*"}
 	// is unclear whether the user's notifications should be included or not. False by default
 	IncludeSelf *bool `json:"include_self,omitempty" schema:"include_self"`
 }
@@ -168,11 +168,11 @@ func queryAllowed(db database.DB, o *NotificationsQuery) (*NotificationsQuery, e
 		if i > -1 {
 			usr := dbid[:i]
 			conn := dbid[i+1:]
-			if o.User != nil || o.Connection != nil && *o.Connection != conn {
+			if o.User != nil || o.App != nil && *o.App != conn {
 				return nil, ErrAccessDenied
 			}
 			o.User = &usr
-			o.Connection = &conn
+			o.App = &conn
 		} else {
 			if o.User != nil && *o.User != dbid {
 				return nil, ErrAccessDenied
@@ -215,30 +215,30 @@ func includeTable(o *NotificationsQuery) (bool, bool, bool) {
 	}
 
 	includeUser := false
-	includeConnection := false
+	includeApp := false
 	includeSource := false
-	if o.User == nil && o.Connection == nil && o.Source == nil {
+	if o.User == nil && o.App == nil && o.Source == nil {
 		includeUser = true
-		includeConnection = true
+		includeApp = true
 		includeSource = true
 	} else {
 		if o.Source != nil {
 			includeSource = true
 		}
-		if o.Connection != nil && (*o.Connection == "*" || o.Source == nil || *o.IncludeSelf || *o.Source != "*") {
-			includeConnection = true
+		if o.App != nil && (*o.App == "*" || o.Source == nil || *o.IncludeSelf || *o.Source != "*") {
+			includeApp = true
 		}
-		if o.User != nil && (*o.User == "*" || (o.Source == nil && o.Connection == nil) || *o.IncludeSelf || o.Source != nil && *o.Source != "*" || o.Connection != nil && *o.Connection != "*") {
+		if o.User != nil && (*o.User == "*" || (o.Source == nil && o.App == nil) || *o.IncludeSelf || o.Source != nil && *o.Source != "*" || o.App != nil && *o.App != "*") {
 			includeUser = true
 		}
 	}
-	return includeUser, includeConnection, includeSource
+	return includeUser, includeApp, includeSource
 }
 
-// ReadNotifications reads the notifications associated with the given user/connection/source
+// ReadNotifications reads the notifications associated with the given user/app/source
 func ReadNotifications(db database.DB, o *NotificationsQuery) ([]Notification, error) {
 	// Figure out which tables to query for the results
-	includeUser, includeConnection, includeSource := includeTable(o)
+	includeUser, includeApp, includeSource := includeTable(o)
 
 	o, err := queryAllowed(db, o)
 	if err != nil {
@@ -265,15 +265,15 @@ func ReadNotifications(db database.DB, o *NotificationsQuery) ([]Notification, e
 		res = append(res, r...)
 	}
 
-	if o.Connection != nil && *o.Connection != "*" {
-		cNames = append(cNames, "connection")
-		cValues = append(cValues, *o.Connection)
+	if o.App != nil && *o.App != "*" {
+		cNames = append(cNames, "app")
+		cValues = append(cValues, *o.App)
 	}
 
-	if includeConnection {
+	if includeApp {
 		queryWhere := strings.Join(cNames, "=? AND ") + "=?"
 		var r []Notification
-		err := db.AdminDB().Select(&r, fmt.Sprintf("SELECT * FROM notifications_connection WHERE %s;", queryWhere), cValues...)
+		err := db.AdminDB().Select(&r, fmt.Sprintf("SELECT * FROM notifications_app WHERE %s;", queryWhere), cValues...)
 		if err != nil {
 			return nil, err
 		}
@@ -348,12 +348,12 @@ func WriteNotification(db database.DB, n *Notification) error {
 	if n.Timestamp != 0 {
 		return errors.New("bad_request: timestamps are set automatically")
 	}
-	if n.User == nil && n.Connection == nil && n.Source == nil && dbid != "heedy" {
+	if n.User == nil && n.App == nil && n.Source == nil && dbid != "heedy" {
 		// The notification is to be inserted to itself
 		i := strings.Index(dbid, "/")
 		if i > -1 {
 			conn := dbid[i+1:]
-			n.Connection = &conn
+			n.App = &conn
 		} else {
 			n.User = &dbid
 		}
@@ -371,20 +371,20 @@ func WriteNotification(db database.DB, n *Notification) error {
 		if err != nil {
 			return err
 		}
-		if dbid == "heedy" || dbid == *s.Owner && s.Connection == nil || s.Connection != nil && dbid == *s.Owner+"/"+*s.Connection {
+		if dbid == "heedy" || dbid == *s.Owner && s.App == nil || s.App != nil && dbid == *s.Owner+"/"+*s.App {
 			// Allow writing the notification
 			n.User = s.Owner
-			n.Connection = s.Connection
-			cNames = append(cNames, "user", "connection", "source")
-			cValues = append(cValues, *s.Owner, *s.Connection, s.ID)
+			n.App = s.App
+			cNames = append(cNames, "user", "app", "source")
+			cValues = append(cValues, *s.Owner, *s.App, s.ID)
 			_, err := db.AdminDB().Exec(fmt.Sprintf("INSERT INTO notifications_source(%s) VALUES (%s) ON CONFLICT(user,key) DO UPDATE SET %s;", strings.Join(cNames, ","), database.QQ(len(cNames)), eS),
 				cValues...)
 			return err
 		}
 		return database.ErrAccessDenied("Can't set notifications for this source")
 	}
-	if n.Connection != nil {
-		c, err := db.ReadConnection(*n.Connection, nil)
+	if n.App != nil {
+		c, err := db.ReadApp(*n.App, nil)
 		if err != nil {
 			return err
 		}
@@ -392,14 +392,14 @@ func WriteNotification(db database.DB, n *Notification) error {
 		if dbid == "heedy" || dbid == *c.Owner+"/"+c.ID {
 			// Allow writing the notification
 			n.User = c.Owner
-			n.Connection = &c.ID
-			cNames = append(cNames, "user", "connection")
+			n.App = &c.ID
+			cNames = append(cNames, "user", "app")
 			cValues = append(cValues, *c.Owner, c.ID)
-			_, err := db.AdminDB().Exec(fmt.Sprintf("INSERT INTO notifications_connection(%s) VALUES (%s) ON CONFLICT(user,connection,key) DO UPDATE SET %s;", strings.Join(cNames, ","), database.QQ(len(cNames)), eS),
+			_, err := db.AdminDB().Exec(fmt.Sprintf("INSERT INTO notifications_app(%s) VALUES (%s) ON CONFLICT(user,app,key) DO UPDATE SET %s;", strings.Join(cNames, ","), database.QQ(len(cNames)), eS),
 				cValues...)
 			return err
 		}
-		return database.ErrAccessDenied("Can't set notifications for this connection")
+		return database.ErrAccessDenied("Can't set notifications for this app")
 	}
 	if n.User == nil {
 		return errors.New("Must specify a target for the notification")
@@ -411,7 +411,7 @@ func WriteNotification(db database.DB, n *Notification) error {
 	if dbid == "heedy" || *u.UserName == dbid {
 		cNames = append(cNames, "user")
 		cValues = append(cValues, *u.UserName)
-		_, err := db.AdminDB().Exec(fmt.Sprintf("INSERT INTO notifications_user(%s) VALUES (%s) ON CONFLICT(user,connection,source,key) DO UPDATE SET %s;", strings.Join(cNames, ","), database.QQ(len(cNames)), eS),
+		_, err := db.AdminDB().Exec(fmt.Sprintf("INSERT INTO notifications_user(%s) VALUES (%s) ON CONFLICT(user,app,source,key) DO UPDATE SET %s;", strings.Join(cNames, ","), database.QQ(len(cNames)), eS),
 			cValues...)
 		return err
 	}
@@ -420,7 +420,7 @@ func WriteNotification(db database.DB, n *Notification) error {
 
 // UpdateNotification is a special version that modifies all notifications satisfying the constraints given in NotificationsQuery
 func UpdateNotification(db database.DB, n *Notification, o *NotificationsQuery) error {
-	includeUser, includeConnection, includeSource := includeTable(o)
+	includeUser, includeApp, includeSource := includeTable(o)
 	if n.Timestamp != 0 {
 		return errors.New("bad_request: timestamps are set automatically")
 	}
@@ -450,14 +450,14 @@ func UpdateNotification(db database.DB, n *Notification, o *NotificationsQuery) 
 		}
 	}
 
-	if o.Connection != nil && *o.Connection != "*" {
-		ocNames = append(ocNames, "connection")
-		ocValues = append(ocValues, *o.Connection)
+	if o.App != nil && *o.App != "*" {
+		ocNames = append(ocNames, "app")
+		ocValues = append(ocValues, *o.App)
 	}
 
-	if includeConnection {
+	if includeApp {
 		queryWhere := strings.Join(ocNames, "=? AND ") + "=?"
-		qstring := fmt.Sprintf("UPDATE notifications_connection SET %s WHERE %s", queryUpdate, queryWhere)
+		qstring := fmt.Sprintf("UPDATE notifications_app SET %s WHERE %s", queryUpdate, queryWhere)
 		vals := append(append([]interface{}{}, ncValues...), ocValues...)
 		_, err := db.AdminDB().Exec(qstring, vals...)
 		if err != nil {
@@ -485,7 +485,7 @@ func UpdateNotification(db database.DB, n *Notification, o *NotificationsQuery) 
 
 // DeleteNotification takes a queryer for notifications
 func DeleteNotification(db database.DB, o *NotificationsQuery) error {
-	includeUser, includeConnection, includeSource := includeTable(o)
+	includeUser, includeApp, includeSource := includeTable(o)
 	o, err := queryAllowed(db, o)
 	if err != nil {
 		return err
@@ -507,14 +507,14 @@ func DeleteNotification(db database.DB, o *NotificationsQuery) error {
 		}
 	}
 
-	if o.Connection != nil && *o.Connection != "*" {
-		ocNames = append(ocNames, "connection")
-		ocValues = append(ocValues, *o.Connection)
+	if o.App != nil && *o.App != "*" {
+		ocNames = append(ocNames, "app")
+		ocValues = append(ocValues, *o.App)
 	}
 
-	if includeConnection {
+	if includeApp {
 		queryWhere := strings.Join(ocNames, "=? AND ") + "=?"
-		qstring := fmt.Sprintf("DELETE FROM notifications_connection WHERE %s", queryWhere)
+		qstring := fmt.Sprintf("DELETE FROM notifications_app WHERE %s", queryWhere)
 		_, err := db.AdminDB().Exec(qstring, ocValues...)
 		if err != nil {
 			return err

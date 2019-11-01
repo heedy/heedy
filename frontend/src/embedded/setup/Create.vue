@@ -122,7 +122,7 @@
         <v-flex xs12>
         <h3>HTTPS</h3>
         <p>When accessing heedy over the internet, it is very important to 
-          have an encrypted connection, so that others can't see your info and passwords.
+          have an encrypted app, so that others can't see your info and passwords.
           If you have a domain name, heedy can automatically set up https for you using Let's Encrypt.</p>
           <v-radio-group v-model="tls" >
       <v-radio

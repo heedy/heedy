@@ -62,8 +62,8 @@ class Plugin:
         """
         return self.session.post("/api/heedy/v1/events", event)
 
-    def listConnections(self, **kwargs):
-        return self.session.get("api/heedy/v1/connections", params=kwargs)
+    def listApps(self, **kwargs):
+        return self.session.get("api/heedy/v1/apps", params=kwargs)
 
     def notify(self, n, **kwargs):
         return self.session.post("/api/heedy/v1/notifications", n, params=kwargs)

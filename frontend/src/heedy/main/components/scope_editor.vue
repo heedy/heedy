@@ -76,13 +76,13 @@ export default {
       loading: true
   }),
   created() {
-    if (this.$store.state.heedy.connectionScopes==null) {
-      this.$store.dispatch("getConnectionScopes")
+    if (this.$store.state.heedy.appScopes==null) {
+      this.$store.dispatch("getAppScopes")
     }
   },
   computed: {
     items() {
-      let cscopes = this.$store.state.heedy.connectionScopes;
+      let cscopes = this.$store.state.heedy.appScopes;
       if (cscopes==null) {
         return [{ header: 'Loading...' }];
       }
@@ -97,23 +97,23 @@ export default {
       // We can make the permissions look pretty by splitting them into subtypes
       [{
           name: "self",
-          description: "The connection's permissions for its own private data",
+          description: "The app's permissions for its own private data",
           color: "green"
         },{
           name: "sources",
-          description: "The connection's access to sources belonging to you",
+          description: "The app's access to sources belonging to you",
           color: "blue"
         },{
           name: "shared",
-          description: "The connection's access to sources shared with you",
+          description: "The app's access to sources shared with you",
           color: "purple"
         },{
           name: "owner",
-          description: "The connection's access to you",
+          description: "The app's access to you",
           color: "orange"
         },{
           name: "users",
-          description: "The connection's access to other users",
+          description: "The app's access to other users",
           color: "red"
         }].forEach( t => {
           let tScopes = Object.keys(cscopes).filter(v => v.startsWith(t.name));

@@ -45,10 +45,10 @@ func NewMap() Map {
 
 // Permitted queries:
 //	user
-//	connection
+//	app
 //	source
 //	plugin
-//	connection-key
+//	app-key
 // 	plugin-key
 // 	user-plugin
 //	user-plugin-key
@@ -67,12 +67,12 @@ type Router struct {
 	sync.RWMutex
 
 	UserEvents       map[string]Map
-	ConnectionEvents map[string]Map
+	AppEvents map[string]Map
 	PluginEvents     map[string]Map
 	SourceEvents     map[string]Map
 
 	UserPlugin    map[idKey2]Map
-	ConnectionKey map[idKey2]Map
+	AppKey map[idKey2]Map
 	PluginKey     map[idKey2]Map
 
 	UserPluginKey map[idKey3]Map
@@ -126,14 +126,14 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Connection != "" && e.Key != "" {
-		if er.ConnectionKey == nil {
-			er.ConnectionKey = make(map[idKey2]Map)
+	if e.App != "" && e.Key != "" {
+		if er.AppKey == nil {
+			er.AppKey = make(map[idKey2]Map)
 		}
-		em, ok := er.ConnectionKey[idKey2{e.Connection, e.Key}]
+		em, ok := er.AppKey[idKey2{e.App, e.Key}]
 		if !ok {
 			em = NewMap()
-			er.ConnectionKey[idKey2{e.Connection, e.Key}] = em
+			er.AppKey[idKey2{e.App, e.Key}] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -170,14 +170,14 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Connection != "" {
-		if er.ConnectionEvents == nil {
-			er.ConnectionEvents = make(map[string]Map)
+	if e.App != "" {
+		if er.AppEvents == nil {
+			er.AppEvents = make(map[string]Map)
 		}
-		em, ok := er.ConnectionEvents[e.Connection]
+		em, ok := er.AppEvents[e.App]
 		if !ok {
 			em = NewMap()
-			er.ConnectionEvents[e.Connection] = em
+			er.AppEvents[e.App] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -231,11 +231,11 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Connection != "" && e.Key != "" {
-		if er.ConnectionKey == nil {
+	if e.App != "" && e.Key != "" {
+		if er.AppKey == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.ConnectionKey[idKey2{e.Connection, e.Key}]
+		em, ok := er.AppKey[idKey2{e.App, e.Key}]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -271,11 +271,11 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Connection != "" {
-		if er.ConnectionEvents == nil {
+	if e.App != "" {
+		if er.AppEvents == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.ConnectionEvents[e.Connection]
+		em, ok := er.AppEvents[e.App]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -311,16 +311,16 @@ func (er *Router) Fire(e *Event) {
 		}
 	}
 
-	// Connection Subscriptions
-	if e.Connection == "" {
+	// App Subscriptions
+	if e.App == "" {
 		return
 	}
-	if er.ConnectionEvents != nil {
-		h, ok := er.ConnectionEvents[e.Connection]
+	if er.AppEvents != nil {
+		h, ok := er.AppEvents[e.App]
 		if ok {
 			h.Fire(e)
 		}
-		h, ok = er.ConnectionEvents["*"]
+		h, ok = er.AppEvents["*"]
 		if ok {
 			h.Fire(e)
 		}
@@ -366,8 +366,8 @@ func (er *Router) Fire(e *Event) {
 	if e.Key == "" {
 		return
 	}
-	if er.ConnectionKey != nil {
-		h, ok := er.ConnectionKey[idKey2{e.Connection, e.Key}]
+	if er.AppKey != nil {
+		h, ok := er.AppKey[idKey2{e.App, e.Key}]
 		if ok {
 			h.Fire(e)
 		}
