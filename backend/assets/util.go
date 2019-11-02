@@ -3,6 +3,8 @@ package assets
 import (
 	"io"
 	"path/filepath"
+	"reflect"
+	"strings"
 
 	"github.com/spf13/afero"
 
@@ -91,4 +93,117 @@ func CopyDir(srcFs afero.Fs, srcDirPath string, destFs afero.Fs, destDirPath str
 	}
 
 	return nil
+}
+
+// MergeStringArrays allows merging arrays of strings, with the result having each element
+// at most once, and special prefix of + being ignored, and - allowing removal from array
+func MergeStringArrays(base *[]string, overlay *[]string) *[]string {
+	if base == nil {
+		return overlay
+	}
+	if overlay == nil {
+		return base
+	}
+
+	output := make([]string, 0)
+	for _, d := range *base {
+		if !strings.HasPrefix(d, "-") {
+			if strings.HasPrefix(d, "+") {
+				d = d[1:len(d)]
+			}
+
+			// Check if the output aready contains it
+			contained := false
+			for _, bd := range output {
+				if bd == d {
+					contained = true
+					break
+				}
+			}
+			if !contained {
+				output = append(output, d)
+			}
+
+		}
+	}
+	for _, d := range *overlay {
+		if strings.HasPrefix(d, "-") {
+			if len(output) <= 0 {
+				break
+			}
+			d = d[1:len(d)]
+
+			// Remove element if contained
+			for j, bd := range output {
+				if bd == d {
+					if len(output) == j+1 {
+						output = output[:len(output)-1]
+					} else {
+						output[j] = output[len(output)-1]
+						output = output[:len(output)-1]
+						break
+					}
+
+				}
+			}
+		} else {
+			if strings.HasPrefix(d, "+") {
+				d = d[1:len(d)]
+			}
+
+			// Check if the output aready contains it
+			contained := false
+			for _, bd := range output {
+				if bd == d {
+					contained = true
+					break
+				}
+			}
+			if !contained {
+				output = append(output, d)
+			}
+		}
+	}
+	return &output
+}
+
+func preprocess(i interface{}) (reflect.Value, reflect.Kind) {
+	v := reflect.ValueOf(i)
+	k := v.Kind()
+	for k == reflect.Ptr {
+		v = reflect.Indirect(v)
+		k = v.Kind()
+	}
+	return v, k
+}
+
+// CopyStructIfPtrSet copies all pointer params from overlay to base
+// Does not touch arrays and things that don't have identical types
+func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
+
+	bv, _ := preprocess(base)
+	ov, _ := preprocess(overlay)
+
+	tot := ov.NumField()
+	for i := 0; i < tot; i++ {
+		// Now check if the field is of type ptr
+		fieldValue := ov.Field(i)
+
+		if fieldValue.Kind() == reflect.Ptr {
+			// Only if it is a ptr do we continue, since that's all that we care about
+			fieldName := ov.Type().Field(i).Name
+			//fmt.Println(fieldName)
+
+			baseFieldValue := bv.FieldByName(fieldName)
+			if baseFieldValue.IsValid() && baseFieldValue.Type() == fieldValue.Type() {
+				if !fieldValue.IsNil() {
+					//fmt.Printf("Setting %s\n", fieldName)
+					baseFieldValue.Set(fieldValue)
+				}
+
+			}
+
+		}
+	}
+
 }

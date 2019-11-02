@@ -8,7 +8,6 @@ import (
 	"mime"
 	"path"
 	"path/filepath"
-	"reflect"
 	"runtime"
 
 	"github.com/heedy/heedy/backend/buildinfo"
@@ -18,34 +17,18 @@ import (
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
-	"github.com/zclconf/go-cty/cty/gocty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-type hclJSONSchema struct {
-	Title       *string `hcl:"title" json:"title,omitempty" cty:"title"`
-	Type        *string `hcl:"type" json:"type,omitempty" cty:"type"`
-	Description *string `hcl:"description" json:"description,omitempty" cty:"description"`
-	//Minimum          *float64 `hcl:"minimum" json:"minimum,omitempty" cty:"minimum"`
-	//ExclusiveMinimum *float64 `hcl:"exclusiveMinimum" json:"exclusiveMinimum,omitempty" cty:"exclusiveMinimum"`
-	//Maximum          *float64 `hcl:"maximum" json:"maximum,omitempty" cty:"maximum"`
-	//ExclusiveMaximum *float64 `hcl:"exclusiveMaximum" json:"exclusiveMaximum,omitempty" cty:"exclusiveMaximum"`
-	//Items            *JSONSchema    `hcl:"items" json:"items,omitempty"`
-	//MinItems         *int           `hcl:"minItems" json:"minItems,omitempty"`
-	//UniqueItems      *bool          `hcl:"uniqueItems" json:"uniqueItems,omitempty"`
-	//Default *hcl.Attribute `hcl:"default"`
-}
-
-type hclExec struct {
-	Name string `hcl:"name,label"`
-
+type hclRun struct {
+	Name string  `hcl:"name,label"`
 	Type *string `hcl:"type"`
 
-	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
-	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
-	KeepAlive *bool     `hcl:"keepalive"`
-	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
-	Endpoint  *string   `hcl:"endpoint" json:"endpoint,omitempty"`
+	Enabled *bool   `hcl:"enabled" json:"enabled,omitempty"`
+	Cron    *string `hcl:"cron" json:"cron,omitempty"`
+
+	// Everything that remains is settings specific to the runner
+	Settings hcl.Body `hcl:",remain"`
 }
 
 type hclSource struct {
@@ -97,12 +80,12 @@ type hclPlugin struct {
 	Routes *map[string]string `hcl:"routes" json:"routes"`
 	Events *map[string]string `hcl:"events" json:"events,omitempty"`
 
-	SettingSchemas *map[string]hclJSONSchema `hcl:"settings"`
+	SettingSchema *cty.Value `hcl:"settings_schema"`
 
-	Run []hclExec `hcl:"run,block"`
+	Run []hclRun `hcl:"run,block"`
 
 	Apps []hclApp `hcl:"app,block"`
-	On          []Event         `hcl:"on,block" json:"on,omitempty"`
+	On   []Event  `hcl:"on,block" json:"on,omitempty"`
 
 	// The remaining stuff is plugin-specific settings
 	// that will be passed to the plugin executables,
@@ -119,6 +102,12 @@ type hclSourceType struct {
 
 	Meta   *cty.Value         `hcl:"meta,attr"`
 	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+}
+
+type hclRunType struct {
+	Label  string     `hcl:"label,label"`
+	Schema *cty.Value `hcl:"schema,attr"`
+	API    *string    `json:"api,omitempty" hcl:"api" cty:"api"`
 }
 
 type hclConfiguration struct {
@@ -138,10 +127,11 @@ type hclConfiguration struct {
 
 	RunTimeout *string `hcl:"run_timeout"`
 
-	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
 	SourceTypes []hclSourceType `json:"source_types" hcl:"source,block"`
+	RunTypes    []hclRunType    `json:"runtype" hcl:"runtype,block"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 	AllowPublicWebsocket *bool  `hcl:"allow_public_websocket" json:"allow_public_websocket,omitempty"`
@@ -150,46 +140,6 @@ type hclConfiguration struct {
 
 	LogLevel *string `json:"log_level" hcl:"log_level"`
 	LogFile  *string `json:"log_file" hcl:"log_file"`
-}
-
-func preprocess(i interface{}) (reflect.Value, reflect.Kind) {
-	v := reflect.ValueOf(i)
-	k := v.Kind()
-	for k == reflect.Ptr {
-		v = reflect.Indirect(v)
-		k = v.Kind()
-	}
-	return v, k
-}
-
-// CopyStructIfPtrSet copies all pointer params from overlay to base
-// Does not touch arrays and things that don't have identical types
-func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
-	bv, _ := preprocess(base)
-	ov, _ := preprocess(overlay)
-
-	tot := ov.NumField()
-	for i := 0; i < tot; i++ {
-		// Now check if the field is of type ptr
-		fieldValue := ov.Field(i)
-
-		if fieldValue.Kind() == reflect.Ptr {
-			// Only if it is a ptr do we continue, since that's all that we care about
-			fieldName := ov.Type().Field(i).Name
-			//fmt.Println(fieldName)
-
-			baseFieldValue := bv.FieldByName(fieldName)
-			if baseFieldValue.IsValid() && baseFieldValue.Type() == fieldValue.Type() {
-				if !fieldValue.IsNil() {
-					//fmt.Printf("Setting %s\n", fieldName)
-					baseFieldValue.Set(fieldValue)
-				}
-
-			}
-
-		}
-	}
-
 }
 
 func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {
@@ -203,6 +153,33 @@ func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {
 	}
 	err = json.Unmarshal(b, &obj)
 	return &obj, err
+}
+
+func loadJSONObjectBody(bdy hcl.Body, ctx *hcl.EvalContext) (map[string]interface{}, error) {
+	// And now, finally, read in the setting values for the plugin
+	settings := make(map[string]*hcl.Attribute)
+
+	// Now, there will be an error talking about "no exec block allowed blah blah"
+	// This is BS, and we don't care.
+	gohcl.DecodeBody(bdy, ctx, &settings)
+
+	jsonSettings := make(map[string]ctyjson.SimpleJSONValue)
+	for key, attr := range settings {
+		val, err := attr.Expr.Value(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jsonSettings[key] = ctyjson.SimpleJSONValue{Value: val}
+
+	}
+
+	var obj map[string]interface{}
+	b, err := json.Marshal(jsonSettings)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &obj)
+	return obj, err
 }
 
 func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
@@ -290,6 +267,23 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		c.SourceTypes[ht.Label] = t
 	}
 
+	for _, v := range hc.RunTypes {
+		r := RunType{}
+		CopyStructIfPtrSet(&r, &v)
+
+		if v.Schema != nil {
+			m, err := loadJSONObject(v.Schema)
+			if err != nil {
+				return nil, err
+			}
+			r.Schema = *m
+		} else {
+			r.Schema = make(map[string]interface{})
+		}
+
+		c.RunTypes[v.Label] = r
+	}
+
 	// Loop through the plugins
 	for i := range hc.Plugins {
 		hp := hc.Plugins[i]
@@ -307,14 +301,22 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 		for j := range hp.Run {
 			if hp.Run[j].Name == "" {
-				return nil, fmt.Errorf("%s: Plugin %s no label on exec", filename, hp.Name)
+				return nil, fmt.Errorf("%s: Plugin %s no label on run", filename, hp.Name)
 			}
 			if _, ok := p.Run[hp.Run[j].Name]; ok {
-				return nil, fmt.Errorf("%s: Plugin %s exec %s defined twice", filename, hp.Name, hp.Run[j].Name)
+				return nil, fmt.Errorf("%s: Plugin %s run %s defined twice", filename, hp.Name, hp.Run[j].Name)
 			}
 
-			ej := &Exec{}
-			CopyStructIfPtrSet(ej, &hp.Run[j])
+			ej := Run{}
+
+			CopyStructIfPtrSet(&ej, &hp.Run[j])
+
+			o, err := loadJSONObjectBody(hp.Run[j].Settings, ctx)
+			if err != nil {
+				return nil, err
+			}
+			ej.Settings = o
+
 			p.Run[hp.Run[j].Name] = ej
 		}
 		for _, o := range hp.On {
@@ -329,13 +331,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			}
 			p.On[o.Event] = &o
 		}
-		if hp.SettingSchemas != nil {
-			for k, v := range *hp.SettingSchemas {
-				setting := &Setting{}
-				//fmt.Println(k,v)
-				CopyStructIfPtrSet(setting, &v)
-				p.Settings[k] = setting
+		if hp.SettingSchema != nil {
+			sobj, err := loadJSONObject(hp.SettingSchema)
+			if err != nil {
+				return nil, err
 			}
+			p.SettingsSchema = *sobj
 		}
 
 		// Load the apps that the plugin wants to set up
@@ -404,60 +405,18 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			p.Apps[hc.Plugin] = conn
 		}
 
-		/*
-			for j := range hp.SettingSchema {
-				if hp.SettingSchema[j].Name == "" {
-					return nil, fmt.Errorf("%s: Plugin %s has missing label on setting", filename, hp.Name)
-				}
-
-				hj := hp.SettingSchema[j]
-
-				setting := &Setting{}
-				CopyStructIfPtrSet(setting, &hj)
-				if hj.Default != nil {
-					// There is an attribute there, so read it into a string
-					val, diag := hj.Default.Expr.Value(nil)
-					if diag != nil {
-						return nil, diag
-					}
-					setting.Default = val.AsString()
-				}
-
-				p.Settings[hp.SettingSchema[j].Name] = setting
-			}
-		*/
-
-		// And now, finally, read in the setting values
-		settings := make(map[string]*hcl.Attribute)
-
-		// Now, there will be an error talking about "no exec block allowed blah blah"
-		// This is BS, and we don't care.
-		gohcl.DecodeBody(hp.Settings, ctx, &settings)
-
-		for key, attr := range settings {
-
-			// Now we read in the actual settings. If the key does not exist, create one for this setting
-			currentSetting, ok := p.Settings[key]
-			if !ok {
-				// There is no such setting defined. Work around it by defining one
-				currentSetting = &Setting{}
-			}
-
-			val, diag := attr.Expr.Value(nil)
-			if diag != nil {
-				return nil, diag
-			}
-
-			if err := gocty.FromCtyValue(val, &currentSetting.Value); err != nil {
-				return nil, fmt.Errorf("%s: Plugin %s attribute '%s' interpreted as custom string setting value, but got error: %w", filename, hp.Name, key, err)
-			}
-
-			p.Settings[key] = currentSetting
+		obj, err := loadJSONObjectBody(hp.Settings, ctx)
+		if err != nil {
+			return nil, err
 		}
+		p.Settings = obj
 
 		c.Plugins[hp.Name] = p
 
 	}
+
+	//b, _ := json.MarshalIndent(c, "", "  ")
+	//fmt.Printf("\n%s\n\n", string(b))
 
 	return c, nil
 }

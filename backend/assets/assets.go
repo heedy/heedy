@@ -195,7 +195,7 @@ func (a *Assets) Reload() error {
 	}
 
 	// Validate the configuration
-	return a.Config.Validate()
+	return Validate(a.Config)
 }
 
 // Abs returns config-relative absolute paths

@@ -1,0 +1,27 @@
+{
+    "plugin": {
+        "yeet": {
+            "settings": {
+                "yeet": "hi",
+                "yo": true,
+                "yay": 5
+            },
+            "settings_schema": {
+                "yeet": {
+                    "type": "string"
+                },
+                "yo": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "yay": {
+                    "type": "number",
+                    "default": 1
+                },
+                "zee": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

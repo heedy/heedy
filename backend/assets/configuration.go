@@ -2,33 +2,12 @@ package assets
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
-	"reflect"
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
-
-type Setting struct {
-	Title            *string     `hcl:"title" json:"title,omitempty"`
-	Type             *string     `hcl:"type" json:"type,omitempty"`
-	Description      *string     `hcl:"description" json:"description,omitempty"`
-	Minimum          *float64    `hcl:"minimum" json:"minimum,omitempty"`
-	ExclusiveMinimum *float64    `hcl:"exclusiveMinimum" json:"exclusiveMinimum,omitempty"`
-	Maximum          *float64    `hcl:"maximum" json:"maximum,omitempty"`
-	ExclusiveMaximum *float64    `hcl:"exclusiveMaximum" json:"exclusiveMaximum,omitempty"`
-	Items            *Setting    `hcl:"items" json:"items,omitempty"`
-	MinItems         *int        `hcl:"minItems" json:"minItems,omitempty"`
-	UniqueItems      *bool       `hcl:"uniqueItems" json:"uniqueItems,omitempty"`
-	Default          interface{} `json:"default,omitempty"`
-	Value            interface{} `json:"value,omitempty"`
-}
 
 type Event struct {
 	Event string  `hcl:"event,label" json:"-"`
@@ -76,14 +55,11 @@ type App struct {
 
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
-
-type Exec struct {
-	Type      *string   `hcl:"type" json:"enabled,omitempty"`
-	Enabled   *bool     `hcl:"enabled" json:"enabled,omitempty"`
-	Cron      *string   `hcl:"cron" json:"cron,omitempty"`
-	KeepAlive *bool     `hcl:"keepalive" json:"keepalive,omitempty"`
-	Cmd       *[]string `hcl:"cmd" json:"cmd,omitempty"`
-	Endpoint  *string   `hcl:"endpoint" json:"endpoint,omitempty"`
+type Run struct {
+	Type     *string                `hcl:"type" json:"type,omitempty"`
+	Enabled  *bool                  `hcl:"enabled" json:"enabled,omitempty"`
+	Cron     *string                `hcl:"cron" json:"cron,omitempty"`
+	Settings map[string]interface{} `json:"settings,omitempty"`
 }
 
 type Plugin struct {
@@ -100,24 +76,35 @@ type Plugin struct {
 
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 
-	Run      map[string]*Exec    `json:"run,omitempty"`
-	Settings map[string]*Setting `json:"settings,omitempty"`
+	Run            map[string]Run         `json:"run,omitempty"`
+	Settings       map[string]interface{} `json:"settings,omitempty"`
+	SettingsSchema map[string]interface{} `json:"settings_schema,omitempty"`
 
 	Apps map[string]*App `json:"apps,omitempty"`
 }
 
 func (p *Plugin) Copy() *Plugin {
 	np := *p
-	np.Run = make(map[string]*Exec)
-	np.Settings = make(map[string]*Setting)
+	np.Run = make(map[string]Run)
+	np.Settings = make(map[string]interface{})
+	np.SettingsSchema = make(map[string]interface{})
 
 	for ekey, eval := range p.Run {
-		newe := *eval
-		np.Run[ekey] = &newe
+		newrun := Run{
+			Settings: make(map[string]interface{}),
+		}
+		CopyStructIfPtrSet(&newrun, &eval)
+		for k, v := range eval.Settings {
+			newrun.Settings[k] = v
+		}
+
+		np.Run[ekey] = newrun
 	}
 	for skey, sval := range p.Settings {
-		news := *sval
-		np.Settings[skey] = &news
+		np.Settings[skey] = sval
+	}
+	for skey, sval := range p.SettingsSchema {
+		np.SettingsSchema[skey] = sval
 	}
 
 	return &np
@@ -131,8 +118,7 @@ type SourceType struct {
 
 	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
 
-	metaSchema *gojsonschema.Schema
-	metaObj    map[string]interface{}
+	metaSchema *JSONSchema
 }
 
 func (s *SourceType) Copy() SourceType {
@@ -152,46 +138,18 @@ func (s *SourceType) Copy() SourceType {
 // ValidateMeta checks the given metadata is valid
 func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
 	if s.metaSchema == nil {
-		objectMap := make(map[string]interface{})
-		objectMap["type"] = "object"
-		objectMap["additionalProperties"] = false
-
 		if s.Meta != nil {
-			if v, ok := (*s.Meta)["type"]; ok {
-				if v != "object" {
-					return errors.New("Meta schema type must be object")
-				}
-				objectMap = *s.Meta
-			} else {
-				propMap := make(map[string]interface{})
-				for k, v := range *s.Meta {
-					if k == "additionalProperties" || k == "required" {
-						objectMap[k] = v
-					} else {
-						propMap[k] = v
-					}
-				}
-				objectMap["properties"] = propMap
-			}
+			s.metaSchema, err = NewSchema(*s.Meta)
+		} else {
+			s.metaSchema, err = NewSchema(make(map[string]interface{}))
 		}
-		s.metaObj = objectMap
-
-		// objectMap is now the schema
-		s.metaSchema, err = gojsonschema.NewSchema(gojsonschema.NewGoLoader(objectMap))
 		if err != nil {
-			s.metaSchema = nil
-			return err
+			return
 		}
 	}
 	if meta != nil {
 		// Validate the schema
-		res, err := (*s.metaSchema).Validate(gojsonschema.NewGoLoader(meta))
-		if err != nil {
-			return err
-		}
-		if !res.Valid() {
-			return errors.New(res.Errors()[0].String())
-		}
+		return s.metaSchema.Validate(*meta)
 	}
 
 	return nil
@@ -200,58 +158,30 @@ func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
 // ValidateMetaWithDefaults takes a meta value, and adds any required defaults to the root object
 // if a default is provided.
 func (s *SourceType) ValidateMetaWithDefaults(meta map[string]interface{}) (err error) {
-	err = s.ValidateMeta(&meta)
-	if err != nil {
-		// If there was an issue, we check if there are defaults in the schema for required values
-		// that we can set here
-		v, ok := s.metaObj["required"]
-		if !ok {
-			return err
+	if s.metaSchema == nil {
+		if s.Meta != nil {
+			s.metaSchema, err = NewSchema(*s.Meta)
+		} else {
+			s.metaSchema, err = NewSchema(make(map[string]interface{}))
 		}
-		va, ok := v.([]interface{})
-		if !ok {
-			return err
-		}
-
-		propObji, ok := s.metaObj["properties"]
-		if !ok {
-			return err
-		}
-		propObj, ok := propObji.(map[string]interface{})
-		if !ok {
-			return err
-		}
-
-		updated := false
-		for _, vav := range va {
-			vavs, ok := vav.(string)
-			if !ok {
-				return err
-			}
-			_, ok = meta[vavs]
-			if !ok {
-				// The meta doesn't have the required value. Check if a default is set
-				mov, ok := propObj[vavs]
-				if !ok {
-					return err
-				}
-				movm, ok := mov.(map[string]interface{})
-				if !ok {
-					return err
-				}
-				defaultval, ok := movm["default"]
-				if !ok {
-					return err
-				}
-				meta[vavs] = defaultval
-				updated = true
-			}
-		}
-		if updated {
-			err = s.ValidateMeta(&meta)
+		if err != nil {
+			return
 		}
 	}
-	return err
+	return s.metaSchema.ValidateWithDefaults(meta)
+}
+
+type RunType struct {
+	Schema map[string]interface{} `json:"schema,omitempty" hcl:"schema" cty:"schema"`
+	API    *string                `json:"api,omitempty" hcl:"api" cty:"api"`
+}
+
+func (r *RunType) Copy() RunType {
+	rnew := RunType{}
+	CopyStructIfPtrSet(&rnew, r)
+
+	rnew.Schema = r.Schema
+	return rnew
 }
 
 type Configuration struct {
@@ -269,66 +199,26 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Frontend *string `json:"frontend"`
+	Frontend *string `json:"frontend,omitempty"`
 
 	RunTimeout *string `json:"run_timeout,omitempty"`
 
-	Scopes              *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
+	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
-	SourceTypes map[string]SourceType `json:"source" hcl:"source_types"`
+	SourceTypes map[string]SourceType `json:"source,omitempty" hcl:"source_types"`
+	RunTypes    map[string]RunType    `json:"runtype,omitempty"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 	AllowPublicWebsocket *bool  `hcl:"allow_public_websocket" json:"allow_public_websocket,omitempty"`
 
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 
-	LogLevel *string `json:"log_level" hcl:"log_level"`
-	LogFile  *string `json:"log_file" hcl:"log_file"`
+	LogLevel *string `json:"log_level,omitempty" hcl:"log_level"`
+	LogFile  *string `json:"log_file,omitempty" hcl:"log_file"`
 
 	// The verbose option is not possible to set in config, it is passed as an arg. It is only here so that it is passed to plugins
-	Verbose bool `json:"verbose"`
-}
-
-func (c *Configuration) Validate() error {
-	c.RLock()
-	defer c.RUnlock()
-	if c.SQL == nil {
-		return fmt.Errorf("No SQL database was specified")
-	}
-
-	for k, v := range c.SourceTypes {
-		err := v.ValidateMeta(nil)
-		if err != nil {
-			return fmt.Errorf("source %s meta schema invalid: %s", k, err.Error())
-		}
-	}
-
-	for p, v := range c.Plugins {
-		for conn, v2 := range v.Apps {
-			for s, v3 := range v2.Sources {
-				if _, ok := c.SourceTypes[v3.Type]; !ok {
-					return fmt.Errorf("[plugin: %s, app: %s, source: %s] unrecognized type (%s)", p, conn, s, v3.Type)
-				}
-			}
-		}
-	}
-
-	// Make sure all the active plugins have an associated configuration
-	for _, ap := range c.GetActivePlugins() {
-		if _, ok := c.Plugins[ap]; !ok {
-			return fmt.Errorf("Plugin '%s' config not found", ap)
-		}
-	}
-
-	if c.RunTimeout != nil {
-		_, err := time.ParseDuration(*c.RunTimeout)
-		if err != nil {
-			return errors.New("Invalid exec_timeout")
-		}
-	}
-
-	return nil
+	Verbose bool `json:"verbose,omitempty"`
 }
 
 func copyStringArrayPtr(s *[]string) *[]string {
@@ -361,15 +251,16 @@ func NewConfiguration() *Configuration {
 	return &Configuration{
 		Plugins:     make(map[string]*Plugin),
 		SourceTypes: make(map[string]SourceType),
+		RunTypes:    make(map[string]RunType),
 	}
 }
 
 func NewPlugin() *Plugin {
 	return &Plugin{
-		Run:         make(map[string]*Exec),
-		Settings:    make(map[string]*Setting),
-		Apps: make(map[string]*App),
-		On:          make(map[string]*Event),
+		Run:      make(map[string]Run),
+		Settings: make(map[string]interface{}),
+		Apps:     make(map[string]*App),
+		On:       make(map[string]*Event),
 	}
 }
 
@@ -383,78 +274,6 @@ func NewSource() *Source {
 	return &Source{
 		On: make(map[string]*Event),
 	}
-}
-
-// MergeStringArrays allows merging arrays of strings, with the result having each element
-// at most once, and special prefix of + being ignored, and - allowing removal from array
-func MergeStringArrays(base *[]string, overlay *[]string) *[]string {
-	if base == nil {
-		return overlay
-	}
-	if overlay == nil {
-		return base
-	}
-
-	output := make([]string, 0)
-	for _, d := range *base {
-		if !strings.HasPrefix(d, "-") {
-			if strings.HasPrefix(d, "+") {
-				d = d[1:len(d)]
-			}
-
-			// Check if the output aready contains it
-			contained := false
-			for _, bd := range output {
-				if bd == d {
-					contained = true
-					break
-				}
-			}
-			if !contained {
-				output = append(output, d)
-			}
-
-		}
-	}
-	for _, d := range *overlay {
-		if strings.HasPrefix(d, "-") {
-			if len(output) <= 0 {
-				break
-			}
-			d = d[1:len(d)]
-
-			// Remove element if contained
-			for j, bd := range output {
-				if bd == d {
-					if len(output) == j+1 {
-						output = output[:len(output)-1]
-					} else {
-						output[j] = output[len(output)-1]
-						output = output[:len(output)-1]
-						break
-					}
-
-				}
-			}
-		} else {
-			if strings.HasPrefix(d, "+") {
-				d = d[1:len(d)]
-			}
-
-			// Check if the output aready contains it
-			contained := false
-			for _, bd := range output {
-				if bd == d {
-					contained = true
-					break
-				}
-			}
-			if !contained {
-				output = append(output, d)
-			}
-		}
-	}
-	return &output
 }
 
 // Merges two configurations together
@@ -501,6 +320,19 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		}
 	}
 
+	for k, v := range overlay.RunTypes {
+		bv, ok := base.RunTypes[k]
+		if ok {
+			CopyStructIfPtrSet(&bv, &v)
+			if len(v.Schema) > 0 {
+				bv.Schema = v.Schema
+			}
+			base.RunTypes[k] = bv
+		} else {
+			base.RunTypes[k] = v
+		}
+	}
+
 	// Now go into the plugins, and continue the good work
 	for pluginName, oplugin := range overlay.Plugins {
 		bplugin, ok := base.Plugins[pluginName]
@@ -508,13 +340,6 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 			// We take the overlay's plugin wholesale
 			base.Plugins[pluginName] = oplugin
 
-			// And any setting values automatically become the defaults, because it is assumed
-			// that this config file is defining the given plugin
-			for _, setting := range oplugin.Settings {
-				if setting.Value != nil {
-					setting.Default = setting.Value
-				}
-			}
 		} else {
 			// Need to continue settings merge into the children
 			CopyStructIfPtrSet(bplugin, oplugin)
@@ -525,8 +350,13 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				if !ok {
 					bplugin.Run[execName] = oexecValue
 				} else {
-					CopyStructIfPtrSet(bexecValue, oexecValue)
+					CopyStructIfPtrSet(&bexecValue, &oexecValue)
+					for rsn, rsv := range oexecValue.Settings {
+						bexecValue.Settings[rsn] = rsv
+					}
+					bplugin.Run[execName] = bexecValue
 				}
+
 			}
 			for oName, oV := range oplugin.On {
 				bV, ok := bplugin.On[oName]
@@ -572,20 +402,11 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 			// Settings copy
 			for settingName, osettingValue := range oplugin.Settings {
-				bsettingValue, ok := bplugin.Settings[settingName]
-				if !ok {
-					bplugin.Settings[settingName] = osettingValue
-				} else {
-					CopyStructIfPtrSet(bsettingValue, osettingValue)
-
-					// CopyStruct won't copy the interface values, since they might not be ptrs
-					if reflect.ValueOf(osettingValue.Default).IsValid() {
-						bsettingValue.Default = osettingValue.Default
-					}
-					if reflect.ValueOf(osettingValue.Value).IsValid() {
-						bsettingValue.Value = osettingValue.Value
-					}
-				}
+				bplugin.Settings[settingName] = osettingValue
+			}
+			// Schema copy
+			if len(oplugin.SettingsSchema) > 0 {
+				bplugin.SettingsSchema = oplugin.SettingsSchema
 			}
 		}
 	}

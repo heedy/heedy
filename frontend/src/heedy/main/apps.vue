@@ -56,7 +56,7 @@
                   </v-list-item-avatar>
                   <v-list-item-content>
                     <v-list-item-title>Custom App</v-list-item-title>
-                    <v-list-item-subtitle>Get an access token to use with custom software</v-list-item-subtitle>
+                    <v-list-item-subtitle>Get an access token to use with your own software</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
               </v-card>
