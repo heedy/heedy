@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/karrick/tparse/v2"
 )
 
@@ -202,7 +203,7 @@ func OpenSQLData(db *database.AdminDB) *SQLData {
 }
 
 // SQLUpdater is in the format expected by Heedy to update the database
-func SQLUpdater(db *database.AdminDB, curversion int) error {
+func SQLUpdater(db *database.AdminDB, i *run.Info, curversion int) error {
 	if curversion == SQLVersion {
 		return nil
 	}

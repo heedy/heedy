@@ -55,7 +55,7 @@ func updateNotification(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	rest.WriteResult(w, r, UpdateNotification(c.DB, &n,&o))
+	rest.WriteResult(w, r, UpdateNotification(c.DB, &n, &o))
 }
 
 // Handler is the main API handler

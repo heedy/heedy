@@ -29,7 +29,7 @@ func NewMiddleware(p *Plugin, h http.Handler) http.Handler {
 
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := rest.RequestLogger(r)
-	logger = logger.WithField("exec", m.P.Meta.Plugin+"/"+m.P.Meta.Exec)
+	logger = logger.WithField("run", m.P.Meta.Plugin+":"+m.P.Meta.Name)
 
 	// Create the appropriate PluginDB
 	pdb := m.P.As(r.Header.Get("X-Heedy-Auth"))

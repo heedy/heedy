@@ -16,18 +16,20 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/plugins/run"
+	"github.com/sirupsen/logrus"
 )
 
 type Source struct {
-	// Routes is nil if there is no backend routing
+	// Routes is nil if there is not backend routing
 	Routes *chi.Mux
 
-	// Create is nil if the source has no special creation handling
+	// Create is nil if there is no special creation handling
 	Create http.Handler
 }
-
-// SourceManager handles sources
 type SourceManager struct {
+	A       *assets.Assets
+	M       *run.Manager
 	Sources map[string]Source
 	mux     *chi.Mux
 	handler http.Handler
@@ -58,34 +60,36 @@ func clearChiContext(h http.Handler) http.HandlerFunc {
 	}
 }
 
-// NewSourceManager generates a source manager
-func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) {
+func NewSourceManager(a *assets.Assets, m *run.Manager, h http.Handler) (*SourceManager, error) {
 	sources := make(map[string]Source)
 
 	// The base handler is served from mounted handlers, so we need to make sure the chi context is cleared
 	// so that it restarts the mux
 	h = clearChiContext(h)
 
-	// Generate all handlers for the sources
+	// Generate all handlers for the sources that don't use any plugins
 	for sname, sv := range a.Config.SourceTypes {
 		s := Source{}
 
 		if sv.Routes != nil && len(*sv.Routes) > 0 {
-			// The source has a backend component, which we now construct
 			for r, uri := range *sv.Routes {
-				fwd, err := NewReverseProxy(a.DataDir(), uri)
-				if err != nil {
-					return nil, err
+				if r != "create" && s.Routes == nil {
+					s.Routes = chi.NewMux()
+					s.Routes.NotFound(h.ServeHTTP)
 				}
-				fwdstrip := stripRequestPrefix(fwd, 6)
-				if r == "create" {
-					s.Create = fwdstrip
-				} else {
-					if s.Routes == nil {
-						s.Routes = chi.NewMux()
-						s.Routes.NotFound(h.ServeHTTP)
+				plugin, _, _ := run.GetPlugin("", uri)
+				if plugin == "" {
+					h, err := m.GetHandler("", uri)
+					if err != nil {
+						return nil, err
 					}
-					s.Routes.Handle(r, fwdstrip)
+					fwdstrip := stripRequestPrefix(h, 6)
+					logrus.Debugf("sources.%s: Forwarding %s -> %s", sname, r, uri)
+					if r == "create" {
+						s.Create = fwdstrip
+					} else {
+						run.Route(s.Routes, r, fwdstrip)
+					}
 				}
 			}
 		}
@@ -93,6 +97,8 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 	}
 
 	sm := &SourceManager{
+		A:       a,
+		M:       m,
 		Sources: sources,
 		mux:     chi.NewMux(),
 		handler: h,
@@ -106,6 +112,35 @@ func NewSourceManager(a *assets.Assets, h http.Handler) (*SourceManager, error) 
 	sm.mux.NotFound(sm.handler.ServeHTTP)
 
 	return sm, nil
+}
+
+func (sm *SourceManager) PreparePlugin(plugin string) error {
+	// Generate the handlers for sources that explicitly use runs started by the given plugin
+	for sname, sv := range sm.A.Config.SourceTypes {
+		s := sm.Sources[sname]
+		if sv.Routes != nil && len(*sv.Routes) > 0 {
+			for r, uri := range *sv.Routes {
+				pname, _, _ := run.GetPlugin("", uri)
+				if pname == plugin {
+					h, err := sm.M.GetHandler("", uri)
+					if err != nil {
+						return err
+					}
+					fwdstrip := stripRequestPrefix(h, 6)
+					logrus.Debugf("sources.%s: Forwarding %s -> %s", sname, r, uri)
+					if r == "create" {
+						s.Create = fwdstrip
+					} else {
+						err := run.Route(s.Routes, r, fwdstrip)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {

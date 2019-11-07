@@ -1,9 +1,11 @@
 package rest
 
 import (
+	"io"
+	"net/http"
+
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
-	"net/http"
 
 	"github.com/sirupsen/logrus"
 )
@@ -26,9 +28,15 @@ func CTX(r *http.Request) *Context {
 	return hc.(*Context)
 }
 
+type Requester interface {
+	Request(c *Context, method, path string, body interface{}, header map[string]string) (io.Reader, error)
+}
+
 // A Context is generated for all requests, and holds all the info necessary for completing it.
 // This object can be extracted from a request with the CTX function.
 type Context struct {
+	Requester
+
 	Log       *logrus.Entry  // The request's logger
 	DB        database.DB    // The authenticated database object
 	Events    events.Handler // The event handler (must be set here for plugins)

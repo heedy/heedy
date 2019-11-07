@@ -221,15 +221,15 @@ type App struct {
 type Source struct {
 	Details
 
-	Owner      *string `json:"owner,omitempty" db:"owner"`
-	App *string `json:"app" db:"app"`
+	Owner *string `json:"owner,omitempty" db:"owner"`
+	App   *string `json:"app" db:"app"`
 
 	Key *string `json:"key" db:"key"`
 
 	Type *string     `json:"type,omitempty" db:"type"`
 	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
 
-	CreatedDate  Date  `json:"created_date,omitempty" db:"created_date"`
+	CreatedDate  *Date `json:"created_date,omitempty" db:"created_date"`
 	LastModified *Date `json:"last_modified" db:"last_modified"`
 
 	Scopes *ScopeArray `json:"scopes" db:"scopes"`

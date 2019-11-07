@@ -1,4 +1,5 @@
-package plugins
+package run
+
 /*
 import (
 	"net/http/httptest"

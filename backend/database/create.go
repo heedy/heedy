@@ -285,11 +285,5 @@ func Create(a *assets.Assets) error {
 		adb.SqlxCache.Verbose = true
 	}
 
-	// Need to initialize all registered plugins
-	err = initRegisteredPlugins(adb)
-	if err != nil {
-		return err
-	}
-
 	return adb.Close()
 }

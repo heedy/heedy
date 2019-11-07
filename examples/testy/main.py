@@ -60,3 +60,4 @@ async def runme():
 
 asyncio.ensure_future(runme())
 asyncio.get_event_loop().run_forever()
+print("FIN")

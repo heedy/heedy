@@ -1,4 +1,4 @@
-package plugins
+package run
 
 import (
 	"context"
@@ -12,9 +12,6 @@ import (
 
 	"github.com/heedy/heedy/api/golang/rest"
 )
-
-// BuiltinRoutes holds routes for APIs for sources and routes that are directly compiled into the core heedy executable.
-var BuiltinRoutes = make(map[string]http.Handler)
 
 type unixDialer struct {
 	Location string
@@ -31,16 +28,7 @@ func (d *unixDialer) DialContext(ctx context.Context, network, address string) (
 func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 
 	gatewayError := func(w http.ResponseWriter, r *http.Request, err error) {
-		rest.WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s",err.Error()))
-	}
-
-	if strings.HasPrefix(uri, "builtin://") {
-		// Use one of the built-in handlers
-		handler, ok := BuiltinRoutes[uri[len("builtin://"):]]
-		if !ok {
-			return nil, fmt.Errorf("Did not find handler '%s'", uri)
-		}
-		return handler, nil
+		rest.WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s", err.Error()))
 	}
 
 	if !strings.HasPrefix(uri, "unix://") {
@@ -54,9 +42,9 @@ func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 	}
 
 	// Otherwise, we set up a unix domain socket.
-	host,path, err := ParseUnixSock(datadir,uri)
-	if err!=nil {
-		return nil,err
+	host, path, err := ParseUnixSock(datadir, uri)
+	if err != nil {
+		return nil, err
 	}
 	u := &url.URL{
 		Host:   host,

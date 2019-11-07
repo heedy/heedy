@@ -73,7 +73,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	// Now load the plugins (so that the server is ready when they are loaded)
 	go func() {
 		logrus.Info("Initializing plugins...")
-		err = pm.Reload()
+		err = pm.Start(requestHandler)
 		if err != nil {
 			srv.Close()
 			return

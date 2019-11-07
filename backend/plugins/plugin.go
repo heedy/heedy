@@ -1,57 +1,57 @@
 package plugins
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"errors"
-	"fmt"
-	"path"
-	"time"
+	"net/http"
 
+	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
-
-	"github.com/go-chi/chi"
-	"github.com/robfig/cron"
-
+	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/sirupsen/logrus"
 )
 
 type Plugin struct {
-	// The mux that holds the overlay
-	Mux *chi.Mux
-
-	// The assets that are used by the server
-	Assets *assets.Assets
-
-	// The database
-	DB *database.AdminDB
-
-	// Name of the plugin
 	Name string
+	Mux  *chi.Mux
 
-	// Processes holds all the exec programs being handled by heedy.
-	// The map keys are their associated api keys
-	Processes map[string]*Exec `json:"exec"`
+	DB  *database.AdminDB
+	Run *run.Manager
 
-	// The cron daemon to run in the background for cron processes
-	cron *cron.Cron
+	// The root heedy server
+	Server http.Handler
 
 	EventRouter *events.Router
 }
 
-func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, error) {
+func NewPlugin(db *database.AdminDB, m *run.Manager, heedyServer http.Handler, pname string) (*Plugin, error) {
 	p := &Plugin{
 		DB:          db,
-		Processes:   make(map[string]*Exec),
-		Assets:      a,
 		Name:        pname,
+		Run:         m,
+		Server:      heedyServer,
 		EventRouter: events.NewRouter(),
 	}
 	logrus.Debugf("Loading plugin '%s'", pname)
 
-	psettings := a.Config.Plugins[pname]
+	return p, nil
+}
+
+func (p *Plugin) Start() error {
+
+	pv := p.DB.Assets().Config.Plugins[p.Name]
+	for rname, rv := range pv.Run {
+		rv2 := rv // we need to pass a pointer to start, so need to create a new copy
+		err := p.Run.Start(p.Name, rname, &rv2)
+		if err != nil {
+			p.Run.StopPlugin(p.Name)
+			return err
+		}
+	}
+
+	a := p.DB.Assets()
+
+	psettings := a.Config.Plugins[p.Name]
 
 	// Set up API forwards
 	if psettings.Routes != nil && len(*psettings.Routes) > 0 {
@@ -59,24 +59,29 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 		mux := chi.NewMux()
 
 		for rname, redirect := range *psettings.Routes {
-			revproxy, err := NewReverseProxy(a.DataDir(), redirect)
+			logrus.Debugf("%s: Forwarding %s -> %s ", p.Name, rname, redirect)
+			h, err := p.Run.GetHandler(p.Name, redirect)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			logrus.Debugf("%s: Forwarding %s -> %s ", pname, rname, redirect)
-			mux.Handle(rname, revproxy)
+			err = run.Route(mux, rname, h)
+			if err != nil {
+				return err
+			}
+
 		}
 
 		p.Mux = mux
 	}
 
-	// Set up events
+	// Set up events that are subscribed in the config with the "on" blocks
+
 	for ename, ev := range psettings.On {
-		peh, err := PluginEventHandler(a, pname, ev)
+		peh, err := NewPluginEventHandler(p, ev)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		logrus.Debugf("%s: Forwarding event '%s' -> %s", pname, ename, *ev.Post)
+		logrus.Debugf("%s: Forwarding event '%s' -> %s", p.Name, ename, *ev.Post)
 		p.EventRouter.Subscribe(events.Event{
 			Event: ename,
 			User:  "*",
@@ -84,12 +89,12 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 	}
 	for cplugin, cv := range psettings.Apps {
 		for ename, ev := range cv.On {
-			peh, err := PluginEventHandler(a, pname, ev)
+			peh, err := NewPluginEventHandler(p, ev)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			cpn := pname + ":" + cplugin
-			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", pname, cpn, ename, *ev.Post)
+			cpn := p.Name + ":" + cplugin
+			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", p.Name, cpn, ename, *ev.Post)
 			p.EventRouter.Subscribe(events.Event{
 				Event:  ename,
 				Plugin: &cpn,
@@ -97,12 +102,12 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 		}
 		for skey, sv := range cv.Sources {
 			for ename, ev := range sv.On {
-				peh, err := PluginEventHandler(a, pname, ev)
+				peh, err := NewPluginEventHandler(p, ev)
 				if err != nil {
-					return nil, err
+					return err
 				}
-				cpn := pname + ":" + cplugin
-				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", pname, cpn, skey, ename, *ev.Post)
+				cpn := p.Name + ":" + cplugin
+				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", p.Name, cpn, skey, ename, *ev.Post)
 				p.EventRouter.Subscribe(events.Event{
 					Event:  ename,
 					Plugin: &cpn,
@@ -111,82 +116,8 @@ func NewPlugin(db *database.AdminDB, a *assets.Assets, pname string) (*Plugin, e
 			}
 		}
 	}
-	return p, nil
-}
-
-// Start the backend executables
-func (p *Plugin) Start() error {
-	if len(p.Processes) > 0 {
-		return errors.New("Must first stop running processes to restart Plugin")
-	}
-	p.cron = cron.New()
-	p.cron.Start()
-	pname := p.Name
-	pv := p.Assets.Config.Plugins[pname]
-
-	endpoints := make(map[string]*Exec)
-	for ename, ev := range pv.Run {
-		if ev.Enabled == nil || ev.Enabled != nil && *ev.Enabled {
-			keepAlive := false
-			if ev.KeepAlive != nil {
-				keepAlive = *ev.KeepAlive
-			}
-			if ev.Cmd == nil || len(*ev.Cmd) == 0 {
-				p.Stop()
-				return fmt.Errorf("%s/%s has empty command", pname, ename)
-			}
-
-			// Create an API key for the exec
-			apikeybytes := make([]byte, 64)
-			_, err := rand.Read(apikeybytes)
-
-			e := &Exec{
-				Plugin:    pname,
-				Exec:      ename,
-				APIKey:    base64.StdEncoding.EncodeToString(apikeybytes),
-				Config:    p.Assets.Config,
-				RootDir:   p.Assets.FolderPath,
-				DataDir:   p.Assets.DataDir(),
-				PluginDir: path.Join(p.Assets.PluginDir(), pname),
-				keepAlive: keepAlive,
-				cmd:       *ev.Cmd, // TODO: Handle Python
-			}
-
-			p.Processes[e.APIKey] = e
-
-			if ev.Cron != nil && len(*ev.Cron) > 0 {
-				logrus.Debugf("%s: Enabling cron job %s", pname, ename)
-				err = p.cron.AddJob(*ev.Cron, e)
-			} else {
-				logrus.Debugf("%s: Running %s", pname, ename)
-				err = e.Start()
-			}
-			if err != nil {
-				p.Stop()
-				return err
-			}
-			if ev.Endpoint != nil {
-				endpoints[*ev.Endpoint] = e
-			}
-
-		}
-
-	}
-
-	// Now wait until all the endpoints are open
-	for ep, e := range endpoints {
-		logrus.Debugf("%s: Waiting for endpoint %s", pname, ep)
-		method, host, err := GetEndpoint(p.Assets.DataDir(), ep)
-		if err != nil {
-			p.Stop()
-			return err
-		}
-		if err = WaitForEndpoint(method, host, e); err != nil {
-			p.Stop()
-			return err
-		}
-		logrus.Debugf("%s: Endpoint %s open", pname, ep)
-	}
+	// Attach the event router to the event system
+	events.AddHandler(p.EventRouter)
 
 	return nil
 }
@@ -234,9 +165,9 @@ func processSource(app string, key string, as *assets.Source) *database.Source {
 			Description: as.Description,
 			Icon:        as.Icon,
 		},
-		App: &app,
-		Key:        &key,
-		Type:       &as.Type,
+		App:  &app,
+		Key:  &key,
+		Type: &as.Type,
 	}
 	if as.Meta != nil {
 		jo := database.JSONObject(*as.Meta)
@@ -251,49 +182,14 @@ func processSource(app string, key string, as *assets.Source) *database.Source {
 	return s
 }
 
-// BeforeStart is run before any of the plugin's executables are run.
-// This function is used to check if we're to create apps/sources
-// for the plugin
-func (p *Plugin) BeforeStart(ir InternalRequester) error {
-	return nil
-}
+func (p *Plugin) AfterStart() error {
 
-func (p *Plugin) OnUserCreate(username string, ir InternalRequester) error {
-	psettings := p.Assets.Config.Plugins[p.Name]
-	for cname, cv := range psettings.Apps {
-		if cv.AutoCreate != nil && *cv.AutoCreate {
-			// For each app
+	a := p.DB.Assets()
 
-			pluginKey := p.Name + ":" + cname
+	psettings := a.Config.Plugins[p.Name]
 
-			logrus.Debugf("%s: Creating '%s' app for user '%s'", p.Name, pluginKey, username)
+	// Make sure that all apps and sources that need to be auto-created are actually created
 
-			// aaand how exactly do I achieve this?
-
-			cid, _, err := p.DB.CreateApp(ProcessApp(pluginKey, username, cv))
-			if err != nil {
-				return err
-			}
-
-			for skey, sv := range cv.Sources {
-				logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
-
-				s := processSource(cid, skey, sv)
-				err = InternalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
-				if err != nil {
-					return err
-				}
-
-			}
-		}
-	}
-	return nil
-}
-
-// AfterStart is used for the same purpose as BeforeStart, but it creates deferred sources/apps.
-// It also sets up all event callbacks
-func (p *Plugin) AfterStart(ir InternalRequester) error {
-	psettings := p.Assets.Config.Plugins[p.Name]
 	for cname, cv := range psettings.Apps {
 		if cv.AutoCreate != nil && *cv.AutoCreate {
 			// For each app
@@ -331,7 +227,7 @@ func (p *Plugin) AfterStart(ir InternalRequester) error {
 
 					for _, cid := range res {
 						s := processSource(cid, skey, sv)
-						err = InternalRequest(ir, "POST", "/api/heedy/v1/sources", p.Name, s)
+						_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 						if err != nil {
 							return err
 						}
@@ -342,76 +238,42 @@ func (p *Plugin) AfterStart(ir InternalRequester) error {
 		}
 	}
 
-	// Finally, attach the event router to the event system
-	events.AddHandler(p.EventRouter)
 	return nil
 }
 
-// GetProcessByKey gets the process associated with a given API key
-func (p *Plugin) GetProcessByKey(key string) (*Exec, error) {
-	v, ok := p.Processes[key]
-	if ok {
-		return v, nil
-	}
-	return nil, errors.New("No such key")
-}
+func (p *Plugin) OnUserCreate(username string) error {
+	psettings := p.DB.Assets().Config.Plugins[p.Name]
+	for cname, cv := range psettings.Apps {
+		if cv.AutoCreate != nil && *cv.AutoCreate {
+			// For each app
 
-// Interrupt signals all processes to stop
-func (p *Plugin) Interrupt() error {
-	p.cron.Stop()
-	for _, e := range p.Processes {
-		e.Interrupt()
-	}
-	return nil
-}
+			pluginKey := p.Name + ":" + cname
 
-func (p *Plugin) AnyRunning() bool {
-	anyrunning := false
-	for _, e := range p.Processes {
-		if e.IsRunning() {
-			anyrunning = true
+			logrus.Debugf("%s: Creating '%s' app for user '%s'", p.Name, pluginKey, username)
+
+			// aaand how exactly do I achieve this?
+
+			cid, _, err := p.DB.CreateApp(ProcessApp(pluginKey, username, cv))
+			if err != nil {
+				return err
+			}
+
+			for skey, sv := range cv.Sources {
+				logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
+
+				s := processSource(cid, skey, sv)
+				_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
+				if err != nil {
+					return err
+				}
+
+			}
 		}
 	}
-
-	return anyrunning
-}
-
-func (p *Plugin) HasProcess() bool {
-	return len(p.Processes) == 0
-}
-
-// Kill kills all processes
-func (p *Plugin) Kill() {
-	for _, e := range p.Processes {
-		if e.IsRunning() {
-			logrus.Warnf("%s: Killing %s", e.Exec)
-			e.Kill()
-		}
-	}
-}
-
-func (p *Plugin) Stop() error {
-	p.Interrupt()
-
-	d := assets.Get().Config.GetRunTimeout()
-
-	sleepDuration := 50 * time.Millisecond
-
-	for i := time.Duration(0); i < d; i += sleepDuration {
-		if !p.AnyRunning() {
-			return nil
-		}
-		time.Sleep(sleepDuration)
-	}
-
-	p.Kill()
 	return nil
 }
 
 func (p *Plugin) Close() error {
 	events.RemoveHandler(p.EventRouter)
-	if p.AnyRunning() {
-		p.Stop()
-	}
-	return nil
+	return p.Run.StopPlugin(p.Name)
 }

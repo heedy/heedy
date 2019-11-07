@@ -17,6 +17,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rakyll/statik v0.1.6
 	github.com/robfig/cron v1.2.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2
@@ -28,5 +29,6 @@ require (
 	github.com/zclconf/go-cty v1.1.0
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	google.golang.org/appengine v1.4.0
 	nhooyr.io/websocket v1.6.5
 )

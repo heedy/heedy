@@ -27,6 +27,9 @@ var routePrefix = map[string]bool{
 
 func isValidRoute(s string) error {
 	ss := strings.Fields(s)
+	if len(ss) == 0 {
+		return errors.New("Empty route")
+	}
 	if len(ss) == 1 {
 		if !strings.HasPrefix(ss[0], "/") {
 			return fmt.Errorf("Route '%s' needs to start with a verb or /", s)
@@ -125,10 +128,18 @@ func Validate(c *Configuration) error {
 	// Now make sure all runners are set up correctly
 	runners := make(map[string]*JSONSchema)
 	for k, v := range c.RunTypes {
+		if v.API == nil && k != "exec" && k != "builtin" {
+			return fmt.Errorf("RunType '%s' doesn't specify an API target", k)
+		} else if v.API != nil {
+			if err := isValidTarget(c, "", *v.API); err != nil {
+				return err
+			}
+		}
 		s, err := NewSchema(v.Schema)
 		if err != nil {
 			return err
 		}
+
 		runners[k] = s
 	}
 
@@ -203,14 +214,6 @@ func Validate(c *Configuration) error {
 					return err
 				}
 			}
-		}
-	}
-	for rname, r := range c.RunTypes {
-		if r.API == nil {
-			return fmt.Errorf("RunType '%s' doesn't specify an API target", rname)
-		}
-		if err := isValidTarget(c, "", *r.API); err != nil {
-			return err
 		}
 	}
 

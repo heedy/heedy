@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins"
+	"github.com/heedy/heedy/backend/plugins/run"
 )
 
 // RequestHandler is a middleware that authenticates requests and generates a Context object containing
@@ -23,7 +25,7 @@ import (
 // that
 type RequestHandler struct {
 	auth    *Auth
-	plugins *plugins.PluginManager
+	Plugins *plugins.PluginManager
 
 	// The auth system also allows special token-based access. This is specifically built
 	// to support plugins. Each request that is forwarded through the plugin system
@@ -39,11 +41,9 @@ func NewRequestHandler(auth *Auth, p *plugins.PluginManager) *RequestHandler {
 
 	rh := &RequestHandler{
 		auth:           auth,
-		plugins:        p,
+		Plugins:        p,
 		activeRequests: make(map[string]*rest.Context),
 	}
-	// Allow the plugin handler to make internal requests
-	p.IR = rh
 
 	return rh
 }
@@ -52,7 +52,7 @@ func (a *RequestHandler) serve(w http.ResponseWriter, r *http.Request, requestSt
 	a.Lock()
 	a.activeRequests[c.ID] = c
 	a.Unlock()
-	a.plugins.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), rest.HeedyContext, c)))
+	a.Plugins.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), rest.HeedyContext, c)))
 	a.Lock()
 	delete(a.activeRequests, c.ID)
 	a.Unlock()
@@ -72,14 +72,14 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pluginKey := r.Header.Get("X-Heedy-Key")
 	if len(pluginKey) > 0 {
 		// There is a plugin key present, make sure it was given to one of the plugin processes
-		proc, err := a.plugins.GetProcessByKey(pluginKey)
+		proc, err := a.Plugins.GetInfoByKey(pluginKey)
 		if err != nil {
 			time.Sleep(time.Second)
 			rest.WriteJSONError(w, r, http.StatusUnauthorized, errors.New("access_denied: invalid heedy plugin key"))
 			return
 		}
 
-		logger = logger.WithField("plugin", proc.Plugin+"/"+proc.Exec)
+		logger = logger.WithField("plugin", proc.Plugin+":"+proc.Name)
 
 		// Now check if it is a continuing request
 		ID := r.Header.Get("X-Heedy-Id")
@@ -108,14 +108,13 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				DB:        a.auth.DB,
 				Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 			}
-
 		}
 
 		c.Plugin = proc.Plugin
 		c.ID = uuid.New().String()
 
 		// Now check if we are to update the context based on the X-Heedy headers
-		authVal := r.Header.Get("X-Heedy-Auth")
+		authVal := r.Header.Get("X-Heedy-As")
 		if len(authVal) > 0 && authVal != c.DB.ID() {
 			c.DB, err = a.auth.As(authVal)
 			if err != nil {
@@ -137,7 +136,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Make sure that there is no X-Heedy header in the request, because only plugins
 		// are allowed to use those headers
 		for header := range r.Header {
-			if strings.HasPrefix(header, "X-Heedy") {
+			if strings.HasPrefix(header, "X-Heedy-As") {
 				rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: X-Heedy headers are only permitted with a valid X-Heedy-Key"))
 				return
 			}
@@ -164,8 +163,10 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.Log = c.Log.WithField("auth", db.ID())
 	}
 
+	c.Requester = a
+
 	// Set the appropriate X-Heedy Headers
-	r.Header["X-Heedy-Auth"] = []string{c.DB.ID()}
+	r.Header["X-Heedy-As"] = []string{c.DB.ID()}
 	r.Header["X-Heedy-Id"] = []string{c.ID}
 	r.Header["X-Heedy-Request"] = []string{c.RequestID}
 	// Scopes?
@@ -174,30 +175,19 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// ServeInternal does everything EXCEPT auth - it assumes admin. It is used to
-// run queries over the full system. If plugin is empty string, it runs the full api
-func (a *RequestHandler) ServeInternal(w http.ResponseWriter, r *http.Request, plugin string) {
-	// The remote address is heedy for internal requests
-	r.RemoteAddr = "heedy"
+func (a *RequestHandler) Request(c *rest.Context, method, path string, body interface{}, header map[string]string) (io.Reader, error) {
+	_, ok := header["X-Heedy-Key"]
+	if !ok {
+		header["X-Heedy-Key"] = a.Plugins.RunManager.CoreKey
+	}
+	if c != nil {
+		_, ok = header["X-Heedy-As"]
+		if !ok {
+			header["X-Heedy-As"] = c.DB.ID()
+		}
 
-	requestStart := time.Now()
-	id := xid.New().String()
-	c := &rest.Context{
-		RequestID: id,
-		Plugin:    plugin,
-		ID:        uuid.New().String(),
-		DB:        a.auth.DB, // Run as admin
-		Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
-		Log: rest.RequestLogger(r).WithFields(logrus.Fields{
-			"id":   id,
-			"auth": a.auth.DB.ID(),
-		}),
+		header["X-Heedy-Id"] = c.ID
 	}
 
-	// Set the appropriate X-Heedy Headers
-	r.Header["X-Heedy-Auth"] = []string{c.DB.ID()}
-	r.Header["X-Heedy-Id"] = []string{c.ID}
-	r.Header["X-Heedy-Request"] = []string{c.RequestID}
-
-	a.serve(w, r, requestStart, c)
+	return run.Request(a, method, path, body, header)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
-
+	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,120 +21,124 @@ const (
 )
 
 type pluginElement struct {
-	// The plugin object
 	Plugin *Plugin
 
 	// The next plugin to call in overlay
 	Next string
 }
 
-//PluginManager handles all aspects of plugin backends
 type PluginManager struct {
 	sync.RWMutex
 
-	// The internal request handler that handles
-	// heedy's server context and whatnot
-	IR InternalRequester
+	Plugins map[string]*pluginElement
+
+	RunManager    *run.Manager
+	SourceManager *SourceManager
 
 	// The default handler to use
 	Handler http.Handler
 	// The admin database
 	ADB *database.AdminDB
 
-	// the plugin manager status
-	status int
-
-	Plugins map[string]*pluginElement
-
-	start         string
-	order         []string
-	SourceManager *SourceManager
-
 	// This is the plugin that is currently being set up
 	initializingPlugin *Plugin
+
+	// Which plugin the overlay starts with
+	start string
+	order []string
+
+	// the plugin manager status
+	status int
 }
 
-// NewPluginManager is given assets and the "backend" handler, and returns a plugin manager
 func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, error) {
-	return &PluginManager{
-		Plugins:       make(map[string]*pluginElement),
-		Handler:       h,
-		ADB:           db,
-		SourceManager: nil,
-		status:        statusClosed,
-		start:         "none", // Start without any plugins
-		order:         []string{},
-	}, nil
-}
-
-func (pm *PluginManager) Reload() error {
-	pm.Close()
-	pm.Lock()
-	if pm.status != statusClosed || len(pm.Plugins) > 0 {
-		pm.Unlock()
-		return errors.New("Plugins already being reloaded by another thread")
-	}
-
-	a := pm.ADB.Assets()
-	sm, err := NewSourceManager(a, pm.Handler)
+	m := run.NewManager(db)
+	sm, err := NewSourceManager(db.Assets(), m, h)
 	if err != nil {
-		pm.Unlock()
-		return err
+		return nil, err
 	}
-	pm.SourceManager = sm
-	pm.order = a.Config.GetActivePlugins()
-	order := pm.order
-	pm.status = statusLoading
 
-	events.AddHandler(pm)
-	pm.Unlock()
+	plugins := db.Assets().Config.GetActivePlugins()
 
 	// First, perform a cleanup operation: find any apps that are owned by inactive plugins,
 	// and remove them if they have empty sources
 	pluginexclusion := ""
 	neworder := []interface{}{}
-	for _, pname := range order {
+	for _, pname := range plugins {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-	r, err := pm.ADB.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=sources.app);", pluginexclusion), neworder...)
+	r, err := db.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=sources.app);", pluginexclusion), neworder...)
 	if err != nil {
-		pm.Close()
-		return err
+		return nil, err
 	}
-	r, err = pm.ADB.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
+	r, err = db.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
 	if err != nil {
-		pm.Close()
-		return err
+		return nil, err
 	}
 	rows, err := r.RowsAffected()
 	if err != nil {
-		pm.Close()
-		return err
+		return nil, err
 	}
 	if rows > 0 {
 		logrus.Debug("Cleared database of apps from inactive plugins")
 	}
-	// Now actually initialize the plugins
-	for _, pname := range order {
-		p, err := NewPlugin(pm.ADB, a, pname)
-		if err != nil {
-			pm.Close()
-			return err
-		}
-		err = p.BeforeStart(pm.IR)
+
+	pm := &PluginManager{
+		Plugins:       make(map[string]*pluginElement),
+		Handler:       h,
+		ADB:           db,
+		RunManager:    m,
+		SourceManager: sm,
+		start:         "none",
+		order:         []string{},
+		status:        statusLoading,
+	}
+
+	events.AddHandler(pm)
+
+	return pm, nil
+}
+
+func (pm *PluginManager) Fire(e *events.Event) {
+	if e.Event == "user_create" {
+		// A user was created - run user creation code for each plugin
+		go func() {
+			pm.RLock()
+			defer pm.RUnlock()
+			for pname, p := range pm.Plugins {
+
+				err := p.Plugin.OnUserCreate(e.User)
+				if err != nil {
+					logrus.Errorf("User creation failed %s (%s)", err.Error(), pname)
+					// Delete the user on failure
+					pm.ADB.DelUser(e.User)
+					return
+				}
+			}
+		}()
+
+	}
+}
+
+func (pm *PluginManager) Start(heedyServer http.Handler) error {
+	plugins := pm.ADB.Assets().Config.GetActivePlugins()
+
+	for _, pname := range plugins {
+		p, err := NewPlugin(pm.ADB, pm.RunManager, heedyServer, pname)
 		if err != nil {
 			pm.Close()
 			return err
 		}
 		pm.Lock()
-		pm.initializingPlugin = p
 		if pm.status != statusLoading {
 			pm.Unlock()
 			pm.Close()
-			return errors.New("Plugins manager closed")
+			return errors.New("Plugin manager closed")
 		}
+		pm.initializingPlugin = p
 		pm.Unlock()
+
 		err = p.Start()
 		if err != nil {
 			pm.Close()
@@ -164,10 +168,17 @@ func (pm *PluginManager) Reload() error {
 			pm.start = pname
 		}
 		pm.initializingPlugin = nil
+		pm.order = append(pm.order, pname)
 		pm.Unlock()
 
-		// Now this plugin's API is active. Run the AfterStart handler
-		err = p.AfterStart(pm.IR)
+		// Now this plugin's API is active. Set up the source forwards and run the AfterStart handler
+		err = pm.SourceManager.PreparePlugin(pname)
+		if err != nil {
+			pm.Close()
+			return err
+		}
+
+		err = p.AfterStart()
 		if err != nil {
 			pm.Close()
 			return err
@@ -182,37 +193,17 @@ func (pm *PluginManager) Reload() error {
 	return nil
 }
 
-func (pm *PluginManager) Fire(e *events.Event) {
-	if e.Event == "user_create" {
-		// A user was created - run user creation code for each plugin
-		go func() {
-			pm.RLock()
-			defer pm.RUnlock()
-			for pname, p := range pm.Plugins {
-				err := p.Plugin.OnUserCreate(e.User, pm.IR)
-				if err != nil {
-					logrus.Errorf("User creation failed %s (%s)", err.Error(), pname)
-					// Delete the user on failure
-					pm.ADB.DelUser(e.User)
-					return
-				}
-			}
-		}()
-
-	}
-}
-
-// Close shuts down the plugins that are currently
 func (pm *PluginManager) Close() error {
 	pm.Lock()
 	if pm.status == statusClosing {
 		pm.Unlock()
 		return errors.New("Already closing")
 	}
-	events.RemoveHandler(pm)
 	pm.status = statusClosing
-	order := pm.order
+	events.RemoveHandler(pm)
 	pm.Unlock()
+
+	order := pm.order
 
 	// Close plugins sequentially, in the reverse order of creation, so that they still have access
 	// to the API if they need to save state to the database. We achieve this stepwise:
@@ -227,7 +218,6 @@ func (pm *PluginManager) Close() error {
 				pm.start = elem.Next
 			}
 			pm.Unlock()
-
 			elem.Plugin.Close()
 		} else {
 			pm.Unlock()
@@ -236,6 +226,7 @@ func (pm *PluginManager) Close() error {
 	}
 
 	pm.Lock()
+
 	pm.order = []string{}
 	pm.status = statusClosed
 	pm.start = "none"
@@ -253,28 +244,24 @@ func (pm *PluginManager) Close() error {
 func (pm *PluginManager) Kill() error {
 	pm.Lock()
 	defer pm.Unlock()
-	for _, p := range pm.Plugins {
-		p.Plugin.Kill()
-	}
-	return nil
+
+	pm.order = []string{}
+	pm.status = statusClosed
+	pm.start = "none"
+	pm.initializingPlugin = nil
+
+	return pm.RunManager.Kill()
 }
 
-func (p *PluginManager) GetProcessByKey(key string) (*Exec, error) {
-	p.RLock()
-	defer p.RUnlock()
-	for _, v := range p.Plugins {
-		e, err := v.Plugin.GetProcessByKey(key)
-		if err == nil {
-			return e, nil
-		}
+func (pm *PluginManager) GetInfoByKey(apikey string) (*run.Info, error) {
+	pm.RunManager.RLock()
+	defer pm.RunManager.RUnlock()
+	r, ok := pm.RunManager.Runners[apikey]
+	if !ok {
+		return nil, errors.New("API key not found")
 	}
-	if p.initializingPlugin != nil {
-		e, err := p.initializingPlugin.GetProcessByKey(key)
-		if err == nil {
-			return e, nil
-		}
-	}
-	return nil, errors.New("The given plugin key was not found")
+	return r.I, nil
+
 }
 
 func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
