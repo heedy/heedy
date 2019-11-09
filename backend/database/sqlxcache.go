@@ -214,7 +214,7 @@ func (tx TxWrapper) Rollback() error {
 	if tx.Verbose {
 		logrus.WithField("stack", MiniStack(2)).Debug("ROLLBACK")
 	}
-	return tx.Rollback()
+	return tx.Tx.Rollback()
 }
 
 func (tx TxWrapper) Commit() error {

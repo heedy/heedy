@@ -70,4 +70,6 @@ export default [
   out("worker.js")
 ].concat(glob.sync("views/*.vue", {
   cwd: "./src"
-}).map(a => out(a)));;
+}).map(a => out(a))).concat(glob.sync("dist/*.js", {
+  cwd: "./src"
+}).map(a => out(a, "../")));;

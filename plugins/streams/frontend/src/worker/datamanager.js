@@ -40,7 +40,7 @@ class StreamDataManager {
     }
 
     clear() {
-        this.queries.forEach(q => q.close());
+        Object.values(this.queries).forEach(q => q.close());
         this.queries = {};
     }
 

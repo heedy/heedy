@@ -176,6 +176,9 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *RequestHandler) Request(c *rest.Context, method, path string, body interface{}, header map[string]string) (io.Reader, error) {
+	if header == nil {
+		header = make(map[string]string)
+	}
 	_, ok := header["X-Heedy-Key"]
 	if !ok {
 		header["X-Heedy-Key"] = a.Plugins.RunManager.CoreKey

@@ -36,6 +36,8 @@ type hclSource struct {
 	Name string `hcl:"name"`
 	Type string `hcl:"type"`
 
+	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
+
 	Description *string    `hcl:"description"`
 	Icon        *string    `hcl:"icon"`
 	Scopes      *[]string  `hcl:"scopes"`

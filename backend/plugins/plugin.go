@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
@@ -122,66 +121,6 @@ func (p *Plugin) Start() error {
 	return nil
 }
 
-func ProcessApp(pluginKey string, owner string, cv *assets.App) *database.App {
-	c := &database.App{
-		Details: database.Details{
-			Name:        &cv.Name,
-			Description: cv.Description,
-			Icon:        cv.Icon,
-		},
-		Enabled: cv.Enabled,
-		Plugin:  &pluginKey,
-		Owner:   &owner,
-	}
-	if cv.Scopes != nil {
-		c.Scopes = &database.AppScopeArray{
-			ScopeArray: database.ScopeArray{
-				Scopes: *cv.Scopes,
-			},
-		}
-	}
-	if cv.AccessToken == nil || !(*cv.AccessToken) {
-		empty := ""
-		c.AccessToken = &empty
-	}
-	if cv.SettingsSchema != nil {
-		jo := database.JSONObject(*cv.SettingsSchema)
-		c.SettingsSchema = &jo
-	}
-	if cv.Settings != nil {
-		jo := database.JSONObject(*cv.Settings)
-		c.Settings = &jo
-	}
-	if cv.Type != nil {
-		c.Type = cv.Type
-	}
-	return c
-}
-
-func processSource(app string, key string, as *assets.Source) *database.Source {
-	s := &database.Source{
-		Details: database.Details{
-			Name:        &as.Name,
-			Description: as.Description,
-			Icon:        as.Icon,
-		},
-		App:  &app,
-		Key:  &key,
-		Type: &as.Type,
-	}
-	if as.Meta != nil {
-		jo := database.JSONObject(*as.Meta)
-		s.Meta = &jo
-	}
-	if as.Scopes != nil {
-		s.Scopes = &database.ScopeArray{
-			Scopes: *as.Scopes,
-		}
-	}
-
-	return s
-}
-
 func (p *Plugin) AfterStart() error {
 
 	a := p.DB.Assets()
@@ -191,12 +130,11 @@ func (p *Plugin) AfterStart() error {
 	// Make sure that all apps and sources that need to be auto-created are actually created
 
 	for cname, cv := range psettings.Apps {
+		pluginKey := p.Name + ":" + cname
 		if cv.AutoCreate != nil && *cv.AutoCreate {
 			// For each app
 			// Check if the app exists for all users
 			var res []string
-
-			pluginKey := p.Name + ":" + cname
 
 			err := p.DB.DB.Select(&res, "SELECT username FROM users WHERE username NOT IN ('heedy', 'public', 'users') AND NOT EXISTS (SELECT 1 FROM apps WHERE owner=users.username AND apps.plugin=?);", pluginKey)
 			if err != nil {
@@ -209,32 +147,33 @@ func (p *Plugin) AfterStart() error {
 
 				for _, uname := range res {
 
-					_, _, err = p.DB.CreateApp(ProcessApp(pluginKey, uname, cv))
+					_, _, err = p.DB.CreateApp(App(pluginKey, uname, cv))
 					if err != nil {
 						return err
 					}
 				}
 			}
-
-			for skey, sv := range cv.Sources {
-				res = []string{}
+		}
+		for skey, sv := range cv.Sources {
+			if sv.AutoCreate == nil || *sv.AutoCreate == true {
+				res := []string{}
 				err := p.DB.DB.Select(&res, "SELECT id FROM apps WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND key=?);", pluginKey, skey)
 				if err != nil {
 					return err
 				}
 				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s/%s' source for all users", p.Name, pluginKey, skey)
+					logrus.Debugf("%s: Creating '%s' source for all users with app '%s'", p.Name, skey, pluginKey)
 
 					for _, cid := range res {
-						s := processSource(cid, skey, sv)
+						s := AppSource(cid, skey, sv)
 						_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 						if err != nil {
 							return err
 						}
 					}
 				}
-
 			}
+
 		}
 	}
 
@@ -253,7 +192,7 @@ func (p *Plugin) OnUserCreate(username string) error {
 
 			// aaand how exactly do I achieve this?
 
-			cid, _, err := p.DB.CreateApp(ProcessApp(pluginKey, username, cv))
+			cid, _, err := p.DB.CreateApp(App(pluginKey, username, cv))
 			if err != nil {
 				return err
 			}
@@ -261,7 +200,7 @@ func (p *Plugin) OnUserCreate(username string) error {
 			for skey, sv := range cv.Sources {
 				logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
 
-				s := processSource(cid, skey, sv)
+				s := AppSource(cid, skey, sv)
 				_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 				if err != nil {
 					return err

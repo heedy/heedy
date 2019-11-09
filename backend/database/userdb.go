@@ -169,7 +169,7 @@ func (db *UserDB) CreateApp(c *App) (string, string, error) {
 		c.Owner = &db.user
 	}
 	if *c.Owner != db.user {
-		return "", "", ErrAccessDenied("Cannot create a app belonging to someone else")
+		return "", "", ErrAccessDenied("Cannot create an app belonging to someone else")
 	}
 	return db.adb.CreateApp(c)
 }

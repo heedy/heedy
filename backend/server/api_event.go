@@ -12,8 +12,28 @@ import (
 	"nhooyr.io/websocket/wsjson"
 
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 )
+
+func FireEvent(w http.ResponseWriter, r *http.Request) {
+	var err error
+	c := rest.CTX(r)
+	if c.DB.Type() != database.AdminType {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only plugins may fire events"))
+		return
+	}
+	var e events.Event
+	if err = rest.UnmarshalRequest(r, &e); err != nil {
+		rest.WriteJSONError(w, r, 400, err)
+		return
+	}
+	if err = events.FillEvent(c.DB.AdminDB(), &e); err == nil {
+		events.Fire(&e)
+
+	}
+	rest.WriteResult(w, r, err)
+}
 
 type WebsocketEventHandler struct {
 	Ws       *websocket.Conn

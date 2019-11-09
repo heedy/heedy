@@ -19,6 +19,9 @@ export default {
     apps: null,
     apps_qtime: null,
 
+    // The map of available plugin apps
+    plugin_apps: null,
+
     // Components to show in the app
     app_components: [],
 
@@ -206,6 +209,9 @@ export default {
     },
     setUpdates(state, v) {
       state.updates = v;
+    },
+    setPluginApps(state, v) {
+      state.plugin_apps = v;
     }
   },
   actions: {
@@ -497,6 +503,19 @@ export default {
       if (!res.response.ok) {} else {
         commit("setUpdates", res.data);
       }
+    },
+    getPluginApps: async function ({
+      commit,
+      state
+    }) {
+      if (state.plugin_apps !== null) {
+        return;
+      }
+      let res = await api("GET", "api/heedy/v1/server/apps");
+      if (!res.response.ok) {} else {
+        commit("setPluginApps", res.data);
+      }
+
     }
 
   }

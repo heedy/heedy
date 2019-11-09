@@ -41,6 +41,7 @@ function setup(app) {
 
   app.streams.addView("datatable", () => import("./views/datatable.mjs"));
   app.streams.addView("insert", () => import("./views/insert.mjs"));
+  app.streams.addView("apexchart", () => import("./views/apexchart.mjs"));
 
 
   app.source.addComponent({

@@ -30,6 +30,8 @@ type Source struct {
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
 	Scopes      *[]string               `json:"scopes,omitempty"`
 
+	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
+
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
 
