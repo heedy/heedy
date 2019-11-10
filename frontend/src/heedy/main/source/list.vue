@@ -1,5 +1,5 @@
 <template>
-  <v-list flat style="background: none;padding-top: 0px; margin-top: -5px;" dense>
+  <v-list flat style="background: none;padding-top: 0px; margin-top: -5px;" dense expand>
     <v-list-group
       color="secondary lighten-2"
       v-for="item in items"

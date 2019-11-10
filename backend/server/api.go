@@ -8,31 +8,6 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 )
 
-/*
-type appStruct {
-	*database.App
-
-	Unique bool `json:"unique"`
-}
-
-func GetPluginApps(w http.ResponseWriter, r *http.Request) {
-	// Get all the apps available for creation
-	a := rest.CTX(r).DB.AdminDB().Assets()
-
-	db := rest.CTX(r).DB
-	if db.Type() == database.PublicType || db.Type() == database.AppType {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list plugin apps"))
-		return
-	}
-
-
-
-	m := make(map[string]appStruct)
-
-
-}
-*/
-
 func APINotFound(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 }

@@ -6,12 +6,7 @@
       style="border: 1px solid; border-radius: 4px; padding: 6px; border-color: #F0F0F0;"
     >
       <template v-if="iconMode">
-        <h-icon
-          :size="size-30"
-          :defaultIcon="defaultIcon"
-          :colorHash="colorHash"
-          :image="iconText"
-        ></h-icon>
+        <h-icon :size="size-30" :defaultIcon="defaultIcon" :colorHash="colorHash" :image="iconText"></h-icon>
         <v-text-field
           class="centered-input"
           label="Icon Name"
@@ -27,7 +22,7 @@
       </template>
       <template v-else>
         <v-flex style="margin-bottom: 5px">
-          <croppa :width="size" :height="size" ref="imageCropper"></croppa>
+          <croppa :width="size-30" :height="size-30" ref="imageCropper"></croppa>
         </v-flex>
         <v-btn small text @click="iconMode = true">Font Icons</v-btn>
       </template>

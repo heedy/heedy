@@ -20,7 +20,7 @@ function filterComponents(components, importance, filter) {
             o[v.key] = newv;
         }
         return o;
-    }, {}));
+    }, {})).filter((c) => c.component !== undefined && c.component !== null);
     cmps.sort((a, b) => a.weight - b.weight);
     return cmps;
 }

@@ -30,7 +30,7 @@ import api from "../../../api.mjs";
 export default {
   data: () => ({
     description: "",
-    scopes: "",
+    scopes: "self.sources",
     name: "",
     loading: false,
     alert: ""
