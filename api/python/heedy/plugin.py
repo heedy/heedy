@@ -3,6 +3,7 @@ import json
 import os
 import multidict
 import aiohttp
+import base64
 
 
 class Plugin:
@@ -55,6 +56,36 @@ class Plugin:
             await response.write(chunk)
         await response.write_eof()
         return response
+
+    def sourceRequest(self, request):
+        h = request.headers
+        last_modified = h["X-Heedy-Last-Modified"]
+        if last_modified == "null":
+            last_modified = None
+        return {
+            "request": h["X-Heedy-Request"],
+            "id": h["X-Heedy-Id"],
+            "last_modified": last_modified,
+            "meta": json.loads(base64.b64decode(h["X-Heedy-Meta"])),
+            "source": h["X-Heedy-Source"],
+            "owner": h["X-Heedy-Owner"],
+            "as": h["X-Heedy-As"],
+            "access": h["X-Heedy-Access"].split(" ")
+        }
+
+    def hasAccess(self, request, scope):
+        a = request.headers["X-Heedy-Access"].split(" ")
+        return "*" in a or scope in a
+
+    def isUser(self, request):
+        h = request.headers
+        return not "/" in h["X-Heedy-As"] and h["X-Heedy-As"] != "heedy" and h["X-Heedy-As"] != "public"
+
+    def isApp(self, request):
+        return "/" in request.headers["X-Heedy-As"]
+
+    def isAdmin(self, request):
+        request.headers["X-Heedy-As"] == "heedy"
 
     def fire(self, event):
         """

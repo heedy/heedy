@@ -12,7 +12,6 @@ export default {
             Vue.set(state.views, v.key, v.component);
         },
         setData(state, v) {
-            console.log("setdata", v);
             Vue.set(state.streams, v.id, v.data);
         }
     }

@@ -206,6 +206,7 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 		lastModified = (*s.LastModified).String()
 	}
 	r.Header["X-Heedy-Source"] = []string{srcid}
+	r.Header["X-Heedy-Owner"] = []string{*s.Owner}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
 	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
 	r.Header["X-Heedy-Access"] = s.Access.Scopes
