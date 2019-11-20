@@ -61,8 +61,8 @@ func delUser(adb *AdminDB, name string, sqlStatement string, args ...interface{}
 	return err
 }
 
-func readSource(adb *AdminDB, sourceid string, o *ReadSourceOptions, selectStatement string, args ...interface{}) (*Source, error) {
-	s := &Source{}
+func readObject(adb *AdminDB, objectid string, o *ReadObjectOptions, selectStatement string, args ...interface{}) (*Object, error) {
+	s := &Object{}
 	err := adb.Get(s, selectStatement, args...)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -111,9 +111,9 @@ func readApp(adb *AdminDB, cid string, o *ReadAppOptions, selectStatement string
 	return c, err
 }
 
-// updateSource uses a select statement that returns the source type if editing is permitted
-func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...interface{}) error {
-	// Get the source type and scopes
+// updateObject uses a select statement that returns the object type if editing is permitted
+func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...interface{}) error {
+	// Get the object type and scopes
 	var sv struct {
 		Stype  string     `db:"type"`
 		Access ScopeArray `db:"access"`
@@ -138,7 +138,7 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 		}
 	}
 
-	sColumns, sValues, err := sourceUpdateQuery(adb.Assets().Config, s, sv.Stype)
+	sColumns, sValues, err := objectUpdateQuery(adb.Assets().Config, s, sv.Stype)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func updateSource(adb *AdminDB, s *Source, selectStatement string, args ...inter
 	sValues = append(sValues, s.ID)
 
 	// Allow updating groups that are not users
-	result, err := adb.Exec(fmt.Sprintf("UPDATE sources SET %s WHERE id=?;", sColumns), sValues...)
+	result, err := adb.Exec(fmt.Sprintf("UPDATE objects SET %s WHERE id=?;", sColumns), sValues...)
 	return getExecError(result, err)
 }
 
@@ -161,14 +161,14 @@ func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{})
 }
 
 // Here db is different, since it calls unshare
-func shareSource(db DB, sourceid, username string, sa *ScopeArray, scopeSQL string, args ...interface{}) error {
+func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL string, args ...interface{}) error {
 	adb := db.AdminDB()
 	if len(sa.Scopes) == 0 {
-		return db.UnshareSourceFromUser(sourceid, username)
+		return db.UnshareObjectFromUser(objectid, username)
 	}
 
 	if !sa.HasScope("read") {
-		return ErrBadQuery("To share a source, it needs to have the read scope active")
+		return ErrBadQuery("To share a object, it needs to have the read scope active")
 	}
 
 	tx, err := adb.DB.Beginx()
@@ -185,10 +185,10 @@ func shareSource(db DB, sourceid, username string, sa *ScopeArray, scopeSQL stri
 	rows.Close()
 	if !canShare {
 		tx.Rollback()
-		return ErrAccessDenied("You do not have sufficient access to share this source")
+		return ErrAccessDenied("You do not have sufficient access to share this object")
 	}
 
-	result, err := adb.Exec("INSERT OR REPLACE INTO shared_sources(username,sourceid,scopes) VALUES (?,?,?);", username, sourceid, sa)
+	result, err := adb.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scopes) VALUES (?,?,?);", username, objectid, sa)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
@@ -199,17 +199,17 @@ func shareSource(db DB, sourceid, username string, sa *ScopeArray, scopeSQL stri
 
 }
 
-func unshareSourceFromUser(adb *AdminDB, sourceid, userid string, selectStatement string, args ...interface{}) error {
+func unshareObjectFromUser(adb *AdminDB, objectid, userid string, selectStatement string, args ...interface{}) error {
 	res, err := adb.Exec(selectStatement, args...)
 	return getExecError(res, err)
 }
 
-func unshareSource(adb *AdminDB, sourceid, selectStatement string, args ...interface{}) error {
+func unshareObject(adb *AdminDB, objectid, selectStatement string, args ...interface{}) error {
 	res, err := adb.Exec(selectStatement, args...)
 	return getExecError(res, err)
 }
 
-func getSourceShares(adb *AdminDB, sourceid, selectStatement string, args ...interface{}) (m map[string]*ScopeArray, err error) {
+func getObjectShares(adb *AdminDB, objectid, selectStatement string, args ...interface{}) (m map[string]*ScopeArray, err error) {
 	var res []struct {
 		Username string
 		Scopes   *ScopeArray
@@ -228,9 +228,9 @@ func getSourceShares(adb *AdminDB, sourceid, selectStatement string, args ...int
 	return m, err
 }
 
-func listSources(adb *AdminDB, o *ListSourcesOptions, selectStatement string, args ...interface{}) ([]*Source, error) {
-	var res []*Source
-	q, v, err := listSourcesQuery(o)
+func listObjects(adb *AdminDB, o *ListObjectsOptions, selectStatement string, args ...interface{}) ([]*Object, error) {
+	var res []*Object
+	q, v, err := listObjectsQuery(o)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@
 export default {
   data: () => ({}),
   props: {
-    source: String
+    object: String
   }
 };
 </script>

@@ -83,7 +83,7 @@ class WebsocketSubscriber {
             s = s.event;
             // Oh boy, we need to check if the given subscription should be given the event
             if (s.event != e.event && s.event != "*") return false;
-            if (s.source !== undefined && s.source != "*" && (e.source === undefined || s.source != e.source)) return false;
+            if (s.object !== undefined && s.object != "*" && (e.object === undefined || s.object != e.object)) return false;
             if (s.app !== undefined && s.app != "*" && (e.app === undefined || s.app != e.app)) return false;
             if (s.user !== undefined && s.user != "*" && (e.user === undefined || s.user != e.user)) return false;
             if (s.plugin !== undefined && (e.plugin === undefined || e.plugin != s.plugin)) return false;

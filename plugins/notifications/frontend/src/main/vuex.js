@@ -4,7 +4,7 @@ import api from "../../api.mjs";
 
 // The notification key
 function nKey(n) {
-    return `${n.key}.${n.user}.${n.app}.${n.source}`
+    return `${n.key}.${n.user}.${n.app}.${n.object}`
 }
 
 export default {
@@ -13,8 +13,8 @@ export default {
         global_qtime: null,
         apps: {},
         apps_qtime: {},
-        sources: {},
-        sources_qtime: {}
+        objects: {},
+        objects_qtime: {}
     },
     mutations: {
         setNotification(state, n) {
@@ -26,9 +26,9 @@ export default {
                 }
 
             }
-            if (n.source !== undefined) {
-                if (state.sources[n.source] !== undefined) {
-                    Vue.set(state.sources[n.source], n.key, n);
+            if (n.object !== undefined) {
+                if (state.objects[n.object] !== undefined) {
+                    Vue.set(state.objects[n.object], n.key, n);
                 }
                 return
             }
@@ -45,9 +45,9 @@ export default {
                 Vue.delete(state.global, nKey(n));
             }
 
-            if (n.source !== undefined) {
-                if (state.sources[n.source] !== undefined && state.sources[n.source][n.key] !== undefined) {
-                    Vue.delete(state.sources[n.source], n.key);
+            if (n.object !== undefined) {
+                if (state.objects[n.object] !== undefined && state.objects[n.object][n.key] !== undefined) {
+                    Vue.delete(state.objects[n.object], n.key);
                 }
                 return
             }
@@ -69,11 +69,11 @@ export default {
             }, {});
             state.global_qtime = qtime;
 
-            // Make sure to update all relevant notifications in the sources and apps
+            // Make sure to update all relevant notifications in the objects and apps
             v.forEach((n) => {
-                if (n.source !== undefined) {
-                    if (state.sources[n.source] !== undefined) {
-                        Vue.set(state.sources, n.key, n);
+                if (n.object !== undefined) {
+                    if (state.objects[n.object] !== undefined) {
+                        Vue.set(state.objects, n.key, n);
                     }
 
                     return;
@@ -98,15 +98,15 @@ export default {
             Vue.set(state.apps, v.id, nmap);
             Vue.set(state.apps_qtime, v.id, qtime);
         },
-        setSourceNotifications(state, v) {
+        setObjectNotifications(state, v) {
             let qtime = moment();
             let nmap = v.data.reduce((map, o) => {
                 o.qtime = qtime;
                 map[o.key] = o;
                 return map;
             }, {});
-            Vue.set(state.sources, v.id, nmap);
-            Vue.set(state.sources_qtime, v.id, qtime);
+            Vue.set(state.objects, v.id, nmap);
+            Vue.set(state.objects_qtime, v.id, qtime);
         }
     },
     actions: {
@@ -159,18 +159,18 @@ export default {
                 });
             }
         },
-        readSourceNotifications: async function ({
+        readObjectNotifications: async function ({
             commit,
             state,
             rootState
         }, q) {
-            if (state.sources[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.sources_qtime[q.id])) {
+            if (state.objects[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.objects_qtime[q.id])) {
                 console.log(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
             console.log("Reading notifications for", q.id);
             let res = await api("GET", `api/heedy/v1/notifications`, {
-                source: q.id
+                object: q.id
             });
             if (!res.response.ok) {
                 commit("alert", {
@@ -179,7 +179,7 @@ export default {
                 });
 
             } else {
-                commit("setSourceNotifications", {
+                commit("setObjectNotifications", {
                     id: q.id,
                     data: res.data
                 });

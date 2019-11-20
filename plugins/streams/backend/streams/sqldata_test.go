@@ -15,11 +15,11 @@ func genDatabase(t *testing.T) (*sqlx.DB, func()) {
 	require.NoError(t, err)
 
 	_, err = db.Exec(`
-	CREATE TABLE sources (
+	CREATE TABLE objects (
 		id VARCHAR(36) PRIMARY KEY
 	);
 
-	INSERT INTO sources VALUES ('s1'), ('s2');
+	INSERT INTO objects VALUES ('s1'), ('s2');
 `)
 	require.NoError(t, err)
 

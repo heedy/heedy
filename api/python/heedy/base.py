@@ -190,7 +190,7 @@ def getSessionType(sessionType: str, url: str = DEFAULT_URL) -> Session:
 
 class APIObject:
     """
-    APIObject represents an object in heedy (user,app,source,etc).
+    APIObject represents an object in heedy (user,app,object,etc).
     It is given a session and the api location of the object, and allows
     reading, updating, and deleting the object
     """

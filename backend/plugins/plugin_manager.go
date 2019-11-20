@@ -33,7 +33,7 @@ type PluginManager struct {
 	Plugins map[string]*pluginElement
 
 	RunManager    *run.Manager
-	SourceManager *SourceManager
+	ObjectManager *ObjectManager
 
 	// The default handler to use
 	Handler http.Handler
@@ -53,7 +53,7 @@ type PluginManager struct {
 
 func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, error) {
 	m := run.NewManager(db)
-	sm, err := NewSourceManager(db.Assets(), m, h)
+	sm, err := NewObjectManager(db.Assets(), m, h)
 	if err != nil {
 		return nil, err
 	}
@@ -61,18 +61,18 @@ func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, err
 	plugins := db.Assets().Config.GetActivePlugins()
 
 	// First, perform a cleanup operation: find any apps that are owned by inactive plugins,
-	// and remove them if they have empty sources
+	// and remove them if they have empty objects
 	pluginexclusion := ""
 	neworder := []interface{}{}
 	for _, pname := range plugins {
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-	r, err := db.Exec(fmt.Sprintf("DELETE FROM sources WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=sources.app);", pluginexclusion), neworder...)
+	r, err := db.Exec(fmt.Sprintf("DELETE FROM objects WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=objects.app);", pluginexclusion), neworder...)
 	if err != nil {
 		return nil, err
 	}
-	r, err = db.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
+	r, err = db.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM objects WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, err
 		Handler:       h,
 		ADB:           db,
 		RunManager:    m,
-		SourceManager: sm,
+		ObjectManager: sm,
 		start:         "none",
 		order:         []string{},
 		status:        statusLoading,
@@ -161,7 +161,7 @@ func (pm *PluginManager) Start(heedyServer http.Handler) error {
 		if p.Mux != nil {
 			// The plugin has a router component
 			if pm.start == "none" {
-				p.Mux.NotFound(pm.SourceManager.ServeHTTP)
+				p.Mux.NotFound(pm.ObjectManager.ServeHTTP)
 			} else {
 				p.Mux.NotFound(pm.Plugins[pm.start].Plugin.Mux.ServeHTTP)
 			}
@@ -171,8 +171,8 @@ func (pm *PluginManager) Start(heedyServer http.Handler) error {
 		pm.order = append(pm.order, pname)
 		pm.Unlock()
 
-		// Now this plugin's API is active. Set up the source forwards and run the AfterStart handler
-		err = pm.SourceManager.PreparePlugin(pname)
+		// Now this plugin's API is active. Set up the object forwards and run the AfterStart handler
+		err = pm.ObjectManager.PreparePlugin(pname)
 		if err != nil {
 			pm.Close()
 			return err
@@ -294,9 +294,9 @@ func (pm *PluginManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// The source manager gives the full API, with all sources well-defined
+	// The object manager gives the full API, with all objects well-defined
 	if serveKey == "none" {
-		var sm http.Handler = pm.SourceManager
+		var sm http.Handler = pm.ObjectManager
 		if sm == nil {
 			sm = pm.Handler
 		}

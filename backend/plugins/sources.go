@@ -20,17 +20,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Source struct {
+type Object struct {
 	// Routes is nil if there is not backend routing
 	Routes *chi.Mux
 
 	// Create is nil if there is no special creation handling
 	Create http.Handler
 }
-type SourceManager struct {
+type ObjectManager struct {
 	A       *assets.Assets
 	M       *run.Manager
-	Sources map[string]Source
+	Objects map[string]Object
 	mux     *chi.Mux
 	handler http.Handler
 }
@@ -60,16 +60,16 @@ func clearChiContext(h http.Handler) http.HandlerFunc {
 	}
 }
 
-func NewSourceManager(a *assets.Assets, m *run.Manager, h http.Handler) (*SourceManager, error) {
-	sources := make(map[string]Source)
+func NewObjectManager(a *assets.Assets, m *run.Manager, h http.Handler) (*ObjectManager, error) {
+	objects := make(map[string]Object)
 
 	// The base handler is served from mounted handlers, so we need to make sure the chi context is cleared
 	// so that it restarts the mux
 	h = clearChiContext(h)
 
-	// Generate all handlers for the sources that don't use any plugins
-	for sname, sv := range a.Config.SourceTypes {
-		s := Source{}
+	// Generate all handlers for the objects that don't use any plugins
+	for sname, sv := range a.Config.ObjectTypes {
+		s := Object{}
 
 		if sv.Routes != nil && len(*sv.Routes) > 0 {
 			for r, uri := range *sv.Routes {
@@ -84,7 +84,7 @@ func NewSourceManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Source
 						return nil, err
 					}
 					fwdstrip := stripRequestPrefix(h, 6)
-					logrus.Debugf("sources.%s: Forwarding %s -> %s", sname, r, uri)
+					logrus.Debugf("objects.%s: Forwarding %s -> %s", sname, r, uri)
 					if r == "create" {
 						s.Create = fwdstrip
 					} else {
@@ -93,31 +93,31 @@ func NewSourceManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Source
 				}
 			}
 		}
-		sources[sname] = s
+		objects[sname] = s
 	}
 
-	sm := &SourceManager{
+	sm := &ObjectManager{
 		A:       a,
 		M:       m,
-		Sources: sources,
+		Objects: objects,
 		mux:     chi.NewMux(),
 		handler: h,
 	}
 
-	sm.mux.Post("/api/heedy/v1/sources", sm.handleCreate)
+	sm.mux.Post("/api/heedy/v1/objects", sm.handleCreate)
 	// Since the Post is here, we must manually set the GET as valid and forward it
 	// to the underlying api, otherwise we get a 405 error
-	sm.mux.Get("/api/heedy/v1/sources", sm.handler.ServeHTTP)
-	sm.mux.Mount("/api/heedy/v1/sources/{sourceid}", http.HandlerFunc(sm.handleAPI))
+	sm.mux.Get("/api/heedy/v1/objects", sm.handler.ServeHTTP)
+	sm.mux.Mount("/api/heedy/v1/objects/{objectid}", http.HandlerFunc(sm.handleAPI))
 	sm.mux.NotFound(sm.handler.ServeHTTP)
 
 	return sm, nil
 }
 
-func (sm *SourceManager) PreparePlugin(plugin string) error {
-	// Generate the handlers for sources that explicitly use runs started by the given plugin
-	for sname, sv := range sm.A.Config.SourceTypes {
-		s := sm.Sources[sname]
+func (sm *ObjectManager) PreparePlugin(plugin string) error {
+	// Generate the handlers for objects that explicitly use runs started by the given plugin
+	for sname, sv := range sm.A.Config.ObjectTypes {
+		s := sm.Objects[sname]
 		if sv.Routes != nil && len(*sv.Routes) > 0 {
 			for r, uri := range *sv.Routes {
 				pname, _, _ := run.GetPlugin("", uri)
@@ -127,7 +127,7 @@ func (sm *SourceManager) PreparePlugin(plugin string) error {
 						return err
 					}
 					fwdstrip := stripRequestPrefix(h, 6)
-					logrus.Debugf("sources.%s: Forwarding %s -> %s", sname, r, uri)
+					logrus.Debugf("objects.%s: Forwarding %s -> %s", sname, r, uri)
 					if r == "create" {
 						s.Create = fwdstrip
 					} else {
@@ -143,8 +143,8 @@ func (sm *SourceManager) PreparePlugin(plugin string) error {
 	return nil
 }
 
-func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
-	// Read the source in to find the type, and then see if we should forward the create request
+func (sm *ObjectManager) handleCreate(w http.ResponseWriter, r *http.Request) {
+	// Read the object in to find the type, and then see if we should forward the create request
 	// or just handle it locally
 	//Limit requests to the limit given in configuration
 	data, err := ioutil.ReadAll(io.LimitReader(r.Body, *assets.Config().RequestBodyByteLimit))
@@ -154,19 +154,19 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body.Close()
 
-	var src database.Source
+	var src database.Object
 
 	if err = json.Unmarshal(data, &src); err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
 		return
 	}
 	if src.Type == nil {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: must specify a type of source to create"))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: must specify a type of object to create"))
 		return
 	}
-	s, ok := sm.Sources[*src.Type]
+	s, ok := sm.Objects[*src.Type]
 	if !ok {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: unrecognized source type"))
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: unrecognized object type"))
 		return
 	}
 
@@ -179,9 +179,9 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// There is a forward for this source type. First check if we have permission to create the source in the first place,
+	// There is a forward for this object type. First check if we have permission to create the object in the first place,
 	// and then forward.
-	err = rest.CTX(r).DB.CanCreateSource(&src)
+	err = rest.CTX(r).DB.CanCreateObject(&src)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
@@ -191,12 +191,12 @@ func (sm *SourceManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
-	// Get the source from the database, and find its type. Then, extract the scopes available for us
-	// and set the X-Heedy-Scopes and X-Heedy-Source headers, and forward to the source API.
+func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
+	// Get the object from the database, and find its type. Then, extract the scopes available for us
+	// and set the X-Heedy-Scopes and X-Heedy-Object headers, and forward to the object API.
 	ctx := rest.CTX(r)
-	srcid := chi.URLParam(r, "sourceid")
-	s, err := ctx.DB.ReadSource(srcid, nil)
+	srcid := chi.URLParam(r, "objectid")
+	s, err := ctx.DB.ReadObject(srcid, nil)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
@@ -205,7 +205,7 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	if s.LastModified != nil {
 		lastModified = (*s.LastModified).String()
 	}
-	r.Header["X-Heedy-Source"] = []string{srcid}
+	r.Header["X-Heedy-Object"] = []string{srcid}
 	r.Header["X-Heedy-Owner"] = []string{*s.Owner}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
 	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
@@ -219,15 +219,15 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 
 	r.Header["X-Heedy-Meta"] = []string{base64.StdEncoding.EncodeToString(b)}
 
-	// Now get the correct source API
-	ss, ok := sm.Sources[*s.Type]
+	// Now get the correct object API
+	ss, ok := sm.Objects[*s.Type]
 	if ok {
 		if ss.Routes != nil {
 			ss.Routes.ServeHTTP(w, r)
 			return
 		}
 	} else {
-		ctx.Log.Warnf("Request is for an unrecognized source '%s'", *s.Type)
+		ctx.Log.Warnf("Request is for an unrecognized object '%s'", *s.Type)
 	}
 
 	// We need to clear the chi context if forwarding to the builtin REST API, because handleAPI was Mount-ed
@@ -235,11 +235,11 @@ func (sm *SourceManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	sm.handler.ServeHTTP(w, r)
 }
 
-func (sm *SourceManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (sm *ObjectManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v := r.Header.Get("X-Heedy-Overlay")
 	if len(v) > 0 {
 		if v == "none" {
-			// No overlay, meaning that we skip all source implementations
+			// No overlay, meaning that we skip all object implementations
 			sm.handler.ServeHTTP(w, r)
 			return
 		}

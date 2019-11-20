@@ -134,7 +134,7 @@ export default {
       }
       let result = await this.$app.api(
         "POST",
-        `api/heedy/v1/sources`,
+        `api/heedy/v1/objects`,
         toCreate
       );
 
@@ -146,9 +146,9 @@ export default {
       // The result comes without the icon, let's set it correctly
       result.data.icon = toCreate.icon;
 
-      this.$store.commit("setSource", result.data);
+      this.$store.commit("setObject", result.data);
       this.loading = false;
-      this.$router.replace({ path: `/sources/${result.data.id}` });
+      this.$router.replace({ path: `/objects/${result.data.id}` });
     }
   }
 };

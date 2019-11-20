@@ -33,7 +33,7 @@ CREATE TABLE groups (
 		ON DELETE CASCADE,
 
 	-- For public and user access, must explicitly give group read permission,
-	-- which automatically gives read access to all sources
+	-- which automatically gives read access to all objects
 	CONSTRAINT scopes_readaccess CHECK (
 		(public_scopes='[]' OR public_scopes LIKE '%"group:read"%')
 		AND (user_scopes='[]' OR user_scopes LIKE '%"group:read"%')
@@ -80,18 +80,18 @@ CREATE TABLE group_members (
 
 CREATE INDEX member_users ON group_members(user);
 
-CREATE TABLE group_sources (
+CREATE TABLE group_objects (
 	groupid VARCHAR(36),
-	sourceid VARCHAR(36),
+	objectid VARCHAR(36),
 
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	UNIQUE(groupid,sourceid),
-	PRIMARY KEY (groupid,sourceid),
+	UNIQUE(groupid,objectid),
+	PRIMARY KEY (groupid,objectid),
 
-	CONSTRAINT sourceid
-		FOREIGN KEY(sourceid)
-		REFERENCES sources(id)
+	CONSTRAINT objectid
+		FOREIGN KEY(objectid)
+		REFERENCES objects(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	

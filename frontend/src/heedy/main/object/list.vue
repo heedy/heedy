@@ -16,7 +16,7 @@
           </v-list-item-title>
         </v-list-item-content>
       </template>
-      <component :is="item.list_component" :sources="item.sources" />
+      <component :is="item.list_component" :objects="item.objects" />
     </v-list-group>
   </v-list>
 </template>
@@ -24,11 +24,11 @@
 import ListDefault from "./list_default.vue";
 export default {
   props: {
-    sources: Array
+    objects: Array
   },
   computed: {
     items() {
-      let srcobj = this.sources.reduce((o, s) => {
+      let srcobj = this.objects.reduce((o, s) => {
         if (o[s.type] === undefined) {
           o[s.type] = [];
         }
@@ -36,12 +36,12 @@ export default {
         return o;
       }, {});
 
-      let srcType = this.$store.state.heedy.source_types;
+      let srcType = this.$store.state.heedy.object_types;
 
       return Object.keys(srcobj).map(k => ({
         type: k,
         list_title: k.charAt(0).toUpperCase() + k.substring(1) + "s",
-        sources: srcobj[k],
+        objects: srcobj[k],
         list_component: ListDefault,
         ...(srcType[k] || {})
       }));

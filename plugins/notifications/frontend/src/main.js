@@ -3,7 +3,7 @@ import vuexModule from "./main/vuex.js";
 import Notification from "./main/notification.vue";
 import NotificationsPage from "./main/notifications_page.vue";
 import AppComponent from "./main/app_component.vue";
-import SourceComponent from "./main/source_component.vue";
+import ObjectComponent from "./main/object_component.vue";
 import MenuIcon from "./main/menu_icon.vue";
 
 function setup(app) {
@@ -17,10 +17,10 @@ function setup(app) {
             weight: 0.1,
             component: AppComponent
         });
-        app.source.addComponent({
+        app.object.addComponent({
             key: "notifications",
             weight: 0.1,
-            component: SourceComponent
+            component: ObjectComponent
         });
 
         app.addRoute({
@@ -44,7 +44,7 @@ function setup(app) {
             }
         }
 
-        let types = ["user", "app", "source"];
+        let types = ["user", "app", "object"];
         let etypes = ["create", "update", "delete"]
         types.forEach((t) => etypes.forEach((et => {
 

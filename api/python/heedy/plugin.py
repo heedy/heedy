@@ -57,7 +57,7 @@ class Plugin:
         await response.write_eof()
         return response
 
-    def sourceRequest(self, request):
+    def objectRequest(self, request):
         h = request.headers
         last_modified = h["X-Heedy-Last-Modified"]
         if last_modified == "null":
@@ -67,7 +67,7 @@ class Plugin:
             "id": h["X-Heedy-Id"],
             "last_modified": last_modified,
             "meta": json.loads(base64.b64decode(h["X-Heedy-Meta"])),
-            "source": h["X-Heedy-Source"],
+            "object": h["X-Heedy-Object"],
             "owner": h["X-Heedy-Owner"],
             "as": h["X-Heedy-As"],
             "access": h["X-Heedy-Access"].split(" ")

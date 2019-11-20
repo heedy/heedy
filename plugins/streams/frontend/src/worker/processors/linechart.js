@@ -1,4 +1,4 @@
-async function process(source, data) {
+async function process(object, data) {
     if (data.length <= 2) {
         return {};
     }

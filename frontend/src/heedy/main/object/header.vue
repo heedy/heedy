@@ -6,19 +6,19 @@
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
             <h-icon
               :size="120"
-              :image="source.icon"
+              :image="object.icon"
               defaultIcon="assignment"
-              :colorHash="source.name"
+              :colorHash="object.name"
             ></h-icon>
-            <h5 style="color:gray;padding-top:10px">{{source.name}}</h5>
+            <h5 style="color:gray;padding-top:10px">{{object.name}}</h5>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>
-            <h2>{{ source.name }}</h2>
-            <p v-if="source.description!=''">{{ source.description }}</p>
+            <h2>{{ object.name }}</h2>
+            <p v-if="object.description!=''">{{ object.description }}</p>
             <p v-else style="color:lightgray;">No description given.</p>
           </v-flex>
           <v-flex md12>
-            <codemirror :options="cmOptions" :value="JSON.stringify(source,null,'  ')" />
+            <codemirror :options="cmOptions" :value="JSON.stringify(object,null,'  ')" />
           </v-flex>
         </v-layout>
       </v-container>
@@ -28,7 +28,7 @@
 <script>
 export default {
   props: {
-    source: Object
+    object: Object
   },
   data: () => ({
     cmOptions: {

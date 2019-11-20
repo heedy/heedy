@@ -22,20 +22,20 @@ class StreamInjector {
                 event: "stream_actions_write",
                 user: wkr.info.user.username
             }, (e) => this._dataEvent(e));
-            /* source updates happen through re-subscribing
-            wkr.websocket.subscribe("source_update_streamdata", {
-                event: "source_update",
+            /* object updates happen through re-subscribing
+            wkr.websocket.subscribe("object_update_streamdata", {
+                event: "object_update",
                 user: wkr.info.user.username
-            }, (e) => this._sourceEvent(e));
+            }, (e) => this._objectEvent(e));
             */
-            wkr.websocket.subscribe("source_delete_streamdata", {
-                event: "source_delete",
+            wkr.websocket.subscribe("object_delete_streamdata", {
+                event: "object_delete",
                 user: wkr.info.user.username
-            }, (e) => this._sourceEvent(e));
+            }, (e) => this._objectEvent(e));
 
-            // In a perfect world, we would also subscribe to source_update. 
+            // In a perfect world, we would also subscribe to object_update. 
             // However, having the streams come up from the frontend instead allows
-            // us to avoid an API query - otherwise each time the source is updated,
+            // us to avoid an API query - otherwise each time the object is updated,
             // there would be 2 queries, one from the frontend, and one from the worker.
             // This way, the frontend queries, and the worker gets the results of that query.
             wkr.addHandler("stream_update", (ctx, msg) => this._streamUpdate(msg));
@@ -55,16 +55,16 @@ class StreamInjector {
 
     async _dataEvent(event) {
         console.log("stream_worker: DATA EVENT", event);
-        if (this.streams[event.source] !== undefined) {
-            this.streams[event.source].onEvent(event);
+        if (this.streams[event.object] !== undefined) {
+            this.streams[event.object].onEvent(event);
         }
     }
-    async _sourceEvent(event) {
-        console.log("stream_worker: source event", event);
-        if (this.streams[event.source] !== undefined) {
-            if (event.event == "source_delete") {
-                this.streams[event.source].clear();
-                delete this.streams[event.source];
+    async _objectEvent(event) {
+        console.log("stream_worker: object event", event);
+        if (this.streams[event.object] !== undefined) {
+            if (event.event == "object_delete") {
+                this.streams[event.object].clear();
+                delete this.streams[event.object];
             }
         }
 

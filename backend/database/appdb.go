@@ -19,17 +19,17 @@ func NewAppDB(adb *AdminDB, c *App) *AppDB {
 	}
 }
 
-// GetSourceAccess returns a ScopeArray that merges the current access
-func (c *AppDB) GetSourceAccess(s *Source) (sa ScopeArray) {
-	// It is assumed that s was retreived by calling ReadSource on a UserDB
+// GetObjectAccess returns a ScopeArray that merges the current access
+func (c *AppDB) GetObjectAccess(s *Object) (sa ScopeArray) {
+	// It is assumed that s was retreived by calling ReadObject on a UserDB
 	// and that s.Access holds the user's access permissions
 
-	// First, we check if maybe we have full access to the source, which would make life so easy
-	// If we own the source, we don't need to look at the user's access, since ours is *more*
+	// First, we check if maybe we have full access to the object, which would make life so easy
+	// If we own the object, we don't need to look at the user's access, since ours is *more*
 	if s.App != nil && *s.App == c.c.ID {
 
 		// If we have full access, we give full access
-		if c.c.Scopes.HasScope("self.sources") || c.c.Scopes.HasScope("self.sources."+*s.Type) {
+		if c.c.Scopes.HasScope("self.objects") || c.c.Scopes.HasScope("self.objects."+*s.Type) {
 			sa.Scopes = []string{"*"}
 			sa.Update()
 			return
@@ -38,7 +38,7 @@ func (c *AppDB) GetSourceAccess(s *Source) (sa ScopeArray) {
 		// We do not have full access, so we list out the access we *do* have,
 		hasAccess := []string{}
 		for k := range c.c.Scopes.scopeMap {
-			if strings.HasPrefix(k, "self.sources:") || strings.HasPrefix(k, "self.sources."+*s.Type+":") {
+			if strings.HasPrefix(k, "self.objects:") || strings.HasPrefix(k, "self.objects."+*s.Type+":") {
 				scopea := strings.SplitN(k, ":", 2)
 				if len(scopea[1]) > 0 {
 					hasAccess = append(hasAccess, scopea[1])
@@ -52,18 +52,18 @@ func (c *AppDB) GetSourceAccess(s *Source) (sa ScopeArray) {
 		return
 	}
 
-	// OK, this means that the source is either belonging to our owner, or is shared with the owner.
+	// OK, this means that the object is either belonging to our owner, or is shared with the owner.
 	// Check which it is
 	access := s.Access
-	sprefix := "sources"
+	sprefix := "objects"
 	if *s.Owner != *c.c.Owner {
 		sprefix = "shared"
 	} else if s.App == nil {
-		// The app is nil, meaning that the source is totally owned by the user. The scopes need to be replaced:
+		// The app is nil, meaning that the object is totally owned by the user. The scopes need to be replaced:
 		access = *s.Scopes
 	}
 
-	// OK, we don't own it. Bummer. Maybe the source access list is *, in which case we can
+	// OK, we don't own it. Bummer. Maybe the object access list is *, in which case we can
 	// check which scopes we have
 	if access.HasScope("*") {
 		if c.c.Scopes.HasScope(sprefix) || c.c.Scopes.HasScope(sprefix+"."+*s.Type) {
@@ -156,60 +156,60 @@ func (db *AppDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 	return nil, ErrUnimplemented
 }
 
-// CanCreateSource returns whether the given source can be
-func (db *AppDB) CanCreateSource(s *Source) error {
-	_, _, err := sourceCreateQuery(db.adb.Assets().Config, s)
+// CanCreateObject returns whether the given object can be
+func (db *AppDB) CanCreateObject(s *Object) error {
+	_, _, err := objectCreateQuery(db.adb.Assets().Config, s)
 	if err != nil {
 		return err
 	}
 	if s.App != nil && *s.App != db.c.ID {
-		return ErrAccessDenied("Can't create a source for a different app")
+		return ErrAccessDenied("Can't create a object for a different app")
 	}
-	if !db.c.Scopes.HasScope("self.sources:create") && !db.c.Scopes.HasScope("self.sources."+*s.Type+":create") {
-		return ErrAccessDenied("Insufficient access to create a source of this type")
+	if !db.c.Scopes.HasScope("self.objects:create") && !db.c.Scopes.HasScope("self.objects."+*s.Type+":create") {
+		return ErrAccessDenied("Insufficient access to create a object of this type")
 	}
 	return nil
 }
 
-// CreateSource creates the source.
-func (db *AppDB) CreateSource(s *Source) (string, error) {
+// CreateObject creates the object.
+func (db *AppDB) CreateObject(s *Object) (string, error) {
 	if s.App == nil {
 		s.App = &db.c.ID
 	}
 	if s.LastModified != nil {
-		return "", ErrAccessDenied("Last Modified for source is readonly")
+		return "", ErrAccessDenied("Last Modified for object is readonly")
 	}
 	if *s.App != db.c.ID {
-		return "", ErrAccessDenied("Can't create a source for a different app")
+		return "", ErrAccessDenied("Can't create a object for a different app")
 	}
 	if s.Owner != nil && *s.Owner != *db.c.Owner {
-		return "", ErrAccessDenied("Can't create a source for a different user")
+		return "", ErrAccessDenied("Can't create a object for a different user")
 	}
 	// Must not explicily specify the owner for now
 	s.Owner = nil
-	if s.Type == nil || !db.c.Scopes.HasScope("self.sources:create") && !db.c.Scopes.HasScope("self.sources."+*s.Type+":create") {
-		return "", ErrAccessDenied("Insufficient access to create a source of this type")
+	if s.Type == nil || !db.c.Scopes.HasScope("self.objects:create") && !db.c.Scopes.HasScope("self.objects."+*s.Type+":create") {
+		return "", ErrAccessDenied("Insufficient access to create a object of this type")
 	}
-	return db.adb.CreateSource(s)
+	return db.adb.CreateObject(s)
 }
 
-// ReadSource reads the given source if the user has sufficient permissions
-func (db *AppDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
-	s, err := NewUserDB(db.adb, *db.c.Owner).ReadSource(id, o)
+// ReadObject reads the given object if the user has sufficient permissions
+func (db *AppDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
+	s, err := NewUserDB(db.adb, *db.c.Owner).ReadObject(id, o)
 	if err != nil {
 		return nil, err
 	}
-	s.Access = db.GetSourceAccess(s)
+	s.Access = db.GetObjectAccess(s)
 
 	return s, nil
 }
 
-// UpdateSource allows editing a source
-func (db *AppDB) UpdateSource(s *Source) error {
+// UpdateObject allows editing a object
+func (db *AppDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
-		return ErrAccessDenied("Empty status of source is readonly")
+		return ErrAccessDenied("Empty status of object is readonly")
 	}
-	curs, err := db.ReadSource(s.ID, &ReadSourceOptions{
+	curs, err := db.ReadObject(s.ID, &ReadObjectOptions{
 		Icon: false,
 	})
 	if err != nil {
@@ -226,12 +226,12 @@ func (db *AppDB) UpdateSource(s *Source) error {
 		}
 	}
 
-	return NewUserDB(db.adb, *db.c.Owner).UpdateSource(s)
+	return NewUserDB(db.adb, *db.c.Owner).UpdateObject(s)
 }
 
-// Can only delete sources that belong to *us*
-func (db *AppDB) DelSource(id string) error {
-	curs, err := db.ReadSource(id, &ReadSourceOptions{
+// Can only delete objects that belong to *us*
+func (db *AppDB) DelObject(id string) error {
+	curs, err := db.ReadObject(id, &ReadObjectOptions{
 		Icon: false,
 	})
 	if err != nil {
@@ -239,40 +239,40 @@ func (db *AppDB) DelSource(id string) error {
 	}
 
 	if !curs.Access.HasScope("delete") {
-		return ErrAccessDenied("Insufficient permissions to delete the source")
+		return ErrAccessDenied("Insufficient permissions to delete the object")
 	}
-	result, err := db.adb.Exec("DELETE FROM sources WHERE id=?;", id)
+	result, err := db.adb.Exec("DELETE FROM objects WHERE id=?;", id)
 	return getExecError(result, err)
 }
 
-func (db *AppDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+func (db *AppDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
 	return ErrUnimplemented
 }
 
-func (db *AppDB) UnshareSourceFromUser(sourceid, userid string) error {
+func (db *AppDB) UnshareObjectFromUser(objectid, userid string) error {
 	return ErrUnimplemented
 }
 
-func (db *AppDB) UnshareSource(sourceid string) error {
+func (db *AppDB) UnshareObject(objectid string) error {
 	return ErrUnimplemented
 }
 
-func (db *AppDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
+func (db *AppDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, err error) {
 	return nil, ErrUnimplemented
 }
 
-// ListSources lists the given sources
-func (db *AppDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+// ListObjects lists the given objects
+func (db *AppDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
 	if o != nil && o.App != nil && *o.App == "self" {
 		o.App = &db.c.ID
 	}
-	s, err := NewUserDB(db.adb, *db.c.Owner).ListSources(o)
+	s, err := NewUserDB(db.adb, *db.c.Owner).ListObjects(o)
 	if err != nil {
 		return nil, err
 	}
-	ns := []*Source{}
+	ns := []*Object{}
 	for _, v := range s {
-		v.Access = db.GetSourceAccess(v)
+		v.Access = db.GetObjectAccess(v)
 		if v.Access.HasScope("read") {
 			ns = append(ns, v)
 		}

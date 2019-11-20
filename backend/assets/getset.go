@@ -65,43 +65,43 @@ func (c *Configuration) UserIsAdmin(username string) bool {
 	return false
 }
 
-// GetSourceType returns the given source type
-func (c *Configuration) GetSourceType(sourcetype string) (*SourceType, bool) {
+// GetObjectType returns the given object type
+func (c *Configuration) GetObjectType(objecttype string) (*ObjectType, bool) {
 	c.RLock()
 	defer c.RUnlock()
-	s, ok := c.SourceTypes[sourcetype]
+	s, ok := c.ObjectTypes[objecttype]
 	return &s, ok
 }
 
-// ValidateSourceMeta makes sure that sources have valid metadata
-func (c *Configuration) ValidateSourceMeta(sourcetype string, meta *map[string]interface{}) error {
+// ValidateObjectMeta makes sure that objects have valid metadata
+func (c *Configuration) ValidateObjectMeta(objecttype string, meta *map[string]interface{}) error {
 	c.RLock()
 	defer c.RUnlock()
-	s, ok := c.SourceTypes[sourcetype]
+	s, ok := c.ObjectTypes[objecttype]
 	if !ok {
-		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+		return fmt.Errorf("bad_request: invalid object type '%s'", objecttype)
 	}
 	return s.ValidateMeta(meta)
 }
 
-// ValidateSourceMetaWithDefaults validates the source, additionally setting required values to defaults
-func (c *Configuration) ValidateSourceMetaWithDefaults(sourcetype string, meta map[string]interface{}) error {
+// ValidateObjectMetaWithDefaults validates the object, additionally setting required values to defaults
+func (c *Configuration) ValidateObjectMetaWithDefaults(objecttype string, meta map[string]interface{}) error {
 	c.RLock()
 	defer c.RUnlock()
-	s, ok := c.SourceTypes[sourcetype]
+	s, ok := c.ObjectTypes[objecttype]
 	if !ok {
-		return fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+		return fmt.Errorf("bad_request: invalid object type '%s'", objecttype)
 	}
 	return s.ValidateMetaWithDefaults(meta)
 }
 
-// GetSourceScopes returns the map of scopes
-func (c *Configuration) GetSourceScopes(sourcetype string) (map[string]string, error) {
+// GetObjectScopes returns the map of scopes
+func (c *Configuration) GetObjectScopes(objecttype string) (map[string]string, error) {
 	c.RLock()
 	defer c.RUnlock()
-	s, ok := c.SourceTypes[sourcetype]
+	s, ok := c.ObjectTypes[objecttype]
 	if !ok {
-		return nil, fmt.Errorf("bad_request: invalid source type '%s'", sourcetype)
+		return nil, fmt.Errorf("bad_request: invalid object type '%s'", objecttype)
 	}
 	if s.Scopes == nil {
 		return make(map[string]string), nil

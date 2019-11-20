@@ -1,10 +1,10 @@
 <template>
   <div>
     <v-row v-if="!$vuetify.breakpoint.xs">
-      <v-col v-for="s in sources" :key="s.id" cols="12" xs="12" sm="6" md="4" lg="3" xl="3">
+      <v-col v-for="s in objects" :key="s.id" cols="12" xs="12" sm="6" md="4" lg="3" xl="3">
         <v-hover #default="{hover}">
           <v-card :elevation="hover ? 4 : 2">
-            <v-list-item two-line subheader :to="`/sources/${s.id}`">
+            <v-list-item two-line subheader :to="`/objects/${s.id}`">
               <v-list-item-avatar>
                 <h-icon :image="s.icon" :colorHash="s.id"></h-icon>
               </v-list-item-avatar>
@@ -22,9 +22,9 @@
     <v-card v-else>
       <v-container fluid>
         <v-row no-gutters>
-          <v-col cols="12" xs="12" v-for="s in sources" :key="s.id">
+          <v-col cols="12" xs="12" v-for="s in objects" :key="s.id">
             <v-card class="pa-2" outlined tile>
-              <v-list-item two-line subheader :to="`/sources/${s.id}`">
+              <v-list-item two-line subheader :to="`/objects/${s.id}`">
                 <v-list-item-avatar>
                   <h-icon :image="s.icon" :colorHash="s.id"></h-icon>
                 </v-list-item-avatar>
@@ -43,7 +43,7 @@
 <script>
 export default {
   props: {
-    sources: Array
+    objects: Array
   }
 };
 </script>

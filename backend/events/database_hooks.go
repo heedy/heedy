@@ -11,16 +11,16 @@ import (
 var databaseEventType = map[SqliteHook]string{
 	SqliteHook{"users", SQL_CREATE}:       "user_create",
 	SqliteHook{"apps", SQL_CREATE}: "app_create",
-	SqliteHook{"sources", SQL_CREATE}:     "source_create",
+	SqliteHook{"objects", SQL_CREATE}:     "object_create",
 	SqliteHook{"users", SQL_UPDATE}:       "user_update",
 	SqliteHook{"apps", SQL_UPDATE}: "app_update",
-	SqliteHook{"sources", SQL_UPDATE}:     "source_update",
+	SqliteHook{"objects", SQL_UPDATE}:     "object_update",
 	SqliteHook{"users", SQL_DELETE}:       "user_delete",
 	SqliteHook{"apps", SQL_DELETE}: "app_delete",
-	SqliteHook{"sources", SQL_DELETE}:     "source_delete",
+	SqliteHook{"objects", SQL_DELETE}:     "object_delete",
 }
 
-// getEvent returns the username, app id, and source id associated with the given event.
+// getEvent returns the username, app id, and object id associated with the given event.
 // The associated stmt should automatically return empty strings for inapplicable values
 func getEvent(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Event, error) {
 	rows, err := SQLiteSelectConn(c, stmt, rowid)
@@ -59,7 +59,7 @@ func getEvent(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Event, error) {
 		User:       tsel(vals[0]),
 		App: tsel(vals[1]),
 		Plugin:     &plugin,
-		Source:     tsel(vals[3]),
+		Object:     tsel(vals[3]),
 		Key:        tsel(vals[4]),
 		Type:       tsel(vals[5]),
 	}, nil
@@ -72,8 +72,8 @@ func databaseHook(s SqliteHookData) {
 			return "SELECT username,'','','','','' FROM users WHERE rowid=?"
 		case "apps":
 			return "SELECT owner,id,plugin,'','','' FROM apps WHERE rowid=?"
-		case "sources":
-			return "SELECT sources.owner,sources.app,apps.plugin,sources.id,sources.key,sources.type FROM sources LEFT JOIN apps ON sources.app=apps.id WHERE sources.rowid=?"
+		case "objects":
+			return "SELECT objects.owner,objects.app,apps.plugin,objects.id,objects.key,objects.type FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.rowid=?"
 		default:
 			panic("Unrecognized table name in getStmt")
 
@@ -94,11 +94,11 @@ func databaseHook(s SqliteHookData) {
 func RegisterDatabaseHooks() {
 	AddSQLHook("users", SQL_CREATE, databaseHook)
 	AddSQLHook("apps", SQL_CREATE, databaseHook)
-	AddSQLHook("sources", SQL_CREATE, databaseHook)
+	AddSQLHook("objects", SQL_CREATE, databaseHook)
 	AddSQLHook("users", SQL_UPDATE, databaseHook)
 	AddSQLHook("apps", SQL_UPDATE, databaseHook)
-	AddSQLHook("sources", SQL_UPDATE, databaseHook)
+	AddSQLHook("objects", SQL_UPDATE, databaseHook)
 	AddSQLHook("users", SQL_DELETE, databaseHook)
 	AddSQLHook("apps", SQL_DELETE, databaseHook)
-	AddSQLHook("sources", SQL_DELETE, databaseHook)
+	AddSQLHook("objects", SQL_DELETE, databaseHook)
 }

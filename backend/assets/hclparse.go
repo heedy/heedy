@@ -31,7 +31,7 @@ type hclRun struct {
 	Settings hcl.Body `hcl:",remain"`
 }
 
-type hclSource struct {
+type hclObject struct {
 	Key  string `hcl:"key,label"`
 	Name string `hcl:"name"`
 	Type string `hcl:"type"`
@@ -64,7 +64,7 @@ type hclApp struct {
 	Settings       *cty.Value `hcl:"settings,attr"`
 	SettingsSchema *cty.Value `hcl:"settings_schema,attr"`
 
-	Sources []hclSource `hcl:"source,block"`
+	Objects []hclObject `hcl:"object,block"`
 	On      []Event     `hcl:"on,block" json:"on,omitempty"`
 }
 
@@ -95,7 +95,7 @@ type hclPlugin struct {
 	Settings hcl.Body `hcl:",remain"`
 }
 
-type hclSourceType struct {
+type hclObjectType struct {
 	Label string `hcl:"label,label"`
 
 	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
@@ -132,7 +132,7 @@ type hclConfiguration struct {
 	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
-	SourceTypes []hclSourceType `json:"source_types" hcl:"source,block"`
+	ObjectTypes []hclObjectType `json:"type" hcl:"type,block"`
 	RunTypes    []hclRunType    `json:"runtype" hcl:"runtype,block"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
@@ -254,9 +254,9 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	c := NewConfiguration()
 	CopyStructIfPtrSet(c, hc)
 
-	// Loop through the sources
-	for _, ht := range hc.SourceTypes {
-		t := SourceType{}
+	// Loop through the objects
+	for _, ht := range hc.ObjectTypes {
+		t := ObjectType{}
 
 		CopyStructIfPtrSet(&t, ht)
 
@@ -266,7 +266,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			return nil, err
 		}
 
-		c.SourceTypes[ht.Label] = t
+		c.ObjectTypes[ht.Label] = t
 	}
 
 	for _, v := range hc.RunTypes {
@@ -371,15 +371,15 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				}
 				conn.On[o.Event] = &o
 			}
-			for k := range hc.Sources {
-				hs := hc.Sources[k]
+			for k := range hc.Objects {
+				hs := hc.Objects[k]
 				if hs.Key == "" {
-					return nil, fmt.Errorf("%s: Plugin %s app %s source with no label", filename, hp.Name, hc.Plugin)
+					return nil, fmt.Errorf("%s: Plugin %s app %s object with no label", filename, hp.Name, hc.Plugin)
 				}
-				if _, ok := conn.Sources[hs.Key]; ok {
-					return nil, fmt.Errorf("%s: Plugin %s app %s source %s defined twice", filename, hp.Name, hc.Plugin, hs.Key)
+				if _, ok := conn.Objects[hs.Key]; ok {
+					return nil, fmt.Errorf("%s: Plugin %s app %s object %s defined twice", filename, hp.Name, hc.Plugin, hs.Key)
 				}
-				s := NewSource()
+				s := NewObject()
 				s.Name = hs.Name
 				s.Type = hs.Type
 
@@ -393,15 +393,15 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 						return nil, fmt.Errorf("%s: Plugin %s - %w", filename, hp.Name, err)
 					}
 					if o.Event == "" {
-						return nil, fmt.Errorf("%s: Plugin %s app %s source %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
+						return nil, fmt.Errorf("%s: Plugin %s app %s object %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
 					}
 					if _, ok := s.On[o.Event]; ok {
-						return nil, fmt.Errorf("%s: Plugin %s app %s source %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
+						return nil, fmt.Errorf("%s: Plugin %s app %s object %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
 					}
 					s.On[o.Event] = &o
 				}
 
-				conn.Sources[hs.Key] = s
+				conn.Objects[hs.Key] = s
 			}
 
 			p.Apps[hc.Plugin] = conn

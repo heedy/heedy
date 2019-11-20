@@ -26,11 +26,11 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/users/{username}", UpdateUser)
 	v1mux.Delete("/users/{username}", DeleteUser)
 
-	v1mux.Post("/sources", CreateSource)
-	v1mux.Get("/sources", ListSources)
-	v1mux.Get("/sources/{sourceid}", ReadSource)
-	v1mux.Patch("/sources/{sourceid}", UpdateSource)
-	v1mux.Delete("/sources/{sourceid}", DeleteSource)
+	v1mux.Post("/objects", CreateObject)
+	v1mux.Get("/objects", ListObjects)
+	v1mux.Get("/objects/{objectid}", ReadObject)
+	v1mux.Patch("/objects/{objectid}", UpdateObject)
+	v1mux.Delete("/objects/{objectid}", DeleteObject)
 
 	v1mux.Post("/apps", CreateApp)
 	v1mux.Get("/apps", ListApps)
@@ -38,7 +38,7 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/apps/{appid}", UpdateApp)
 	v1mux.Delete("/apps/{appid}", DeleteApp)
 
-	v1mux.Get("/server/scopes/{sourcetype}", GetSourceScopes)
+	v1mux.Get("/server/scopes/{objecttype}", GetObjectScopes)
 	v1mux.Get("/server/scopes", GetAppScopes)
 	v1mux.Get("/server/apps", GetPluginApps)
 	v1mux.Get("/server/version", GetVersion)

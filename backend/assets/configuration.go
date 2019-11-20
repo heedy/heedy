@@ -21,8 +21,8 @@ func (e *Event) Validate() error {
 	return nil
 }
 
-// Source represents a source that is to be auto-created inside a app on behalf of a plugin
-type Source struct {
+// Object represents a object that is to be auto-created inside a app on behalf of a plugin
+type Object struct {
 	Name        string                  `json:"name"`
 	Type        string                  `json:"type"`
 	Description *string                 `json:"description,omitempty"`
@@ -53,7 +53,7 @@ type App struct {
 	Settings       *map[string]interface{} `json:"settings,omitempty"`
 	SettingsSchema *map[string]interface{} `json:"settings_schema,omitempty"`
 
-	Sources map[string]*Source `json:"sources,omitempty"`
+	Objects map[string]*Object `json:"objects,omitempty"`
 
 	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
 }
@@ -112,7 +112,7 @@ func (p *Plugin) Copy() *Plugin {
 	return &np
 }
 
-type SourceType struct {
+type ObjectType struct {
 	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
 	Routes   *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
@@ -123,8 +123,8 @@ type SourceType struct {
 	metaSchema *JSONSchema
 }
 
-func (s *SourceType) Copy() SourceType {
-	snew := SourceType{}
+func (s *ObjectType) Copy() ObjectType {
+	snew := ObjectType{}
 	CopyStructIfPtrSet(&snew, s)
 	if s.Routes != nil {
 		newRoutes := make(map[string]string)
@@ -138,7 +138,7 @@ func (s *SourceType) Copy() SourceType {
 }
 
 // ValidateMeta checks the given metadata is valid
-func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
+func (s *ObjectType) ValidateMeta(meta *map[string]interface{}) (err error) {
 	if s.metaSchema == nil {
 		if s.Meta != nil {
 			s.metaSchema, err = NewSchema(*s.Meta)
@@ -159,7 +159,7 @@ func (s *SourceType) ValidateMeta(meta *map[string]interface{}) (err error) {
 
 // ValidateMetaWithDefaults takes a meta value, and adds any required defaults to the root object
 // if a default is provided.
-func (s *SourceType) ValidateMetaWithDefaults(meta map[string]interface{}) (err error) {
+func (s *ObjectType) ValidateMetaWithDefaults(meta map[string]interface{}) (err error) {
 	if s.metaSchema == nil {
 		if s.Meta != nil {
 			s.metaSchema, err = NewSchema(*s.Meta)
@@ -208,7 +208,7 @@ type Configuration struct {
 	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
 	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
 
-	SourceTypes map[string]SourceType `json:"source,omitempty" hcl:"source_types"`
+	ObjectTypes map[string]ObjectType `json:"type,omitempty" hcl:"type"`
 	RunTypes    map[string]RunType    `json:"runtype,omitempty"`
 
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
@@ -240,9 +240,9 @@ func (c *Configuration) Copy() *Configuration {
 		nc.Plugins[pkey] = pval.Copy()
 	}
 
-	nc.SourceTypes = make(map[string]SourceType)
-	for k, v := range c.SourceTypes {
-		nc.SourceTypes[k] = v.Copy()
+	nc.ObjectTypes = make(map[string]ObjectType)
+	for k, v := range c.ObjectTypes {
+		nc.ObjectTypes[k] = v.Copy()
 	}
 
 	return &nc
@@ -252,7 +252,7 @@ func (c *Configuration) Copy() *Configuration {
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		Plugins:     make(map[string]*Plugin),
-		SourceTypes: make(map[string]SourceType),
+		ObjectTypes: make(map[string]ObjectType),
 		RunTypes:    make(map[string]RunType),
 	}
 }
@@ -268,12 +268,12 @@ func NewPlugin() *Plugin {
 
 func NewApp() *App {
 	return &App{
-		Sources: make(map[string]*Source),
+		Objects: make(map[string]*Object),
 		On:      make(map[string]*Event),
 	}
 }
-func NewSource() *Source {
-	return &Source{
+func NewObject() *Object {
+	return &Object{
 		On: make(map[string]*Event),
 	}
 }
@@ -295,9 +295,9 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 	CopyStructIfPtrSet(base, overlay)
 
-	// Merge the SourceTypes map
-	for ak, av := range overlay.SourceTypes {
-		cv, ok := base.SourceTypes[ak]
+	// Merge the ObjectTypes map
+	for ak, av := range overlay.ObjectTypes {
+		cv, ok := base.ObjectTypes[ak]
 		if ok {
 			// Copy the scopes to av
 			if av.Scopes != nil && cv.Scopes != nil {
@@ -316,9 +316,9 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 			// Update only the set values
 			CopyStructIfPtrSet(&cv, &av)
-			base.SourceTypes[ak] = cv
+			base.ObjectTypes[ak] = cv
 		} else {
-			base.SourceTypes[ak] = av
+			base.ObjectTypes[ak] = av
 		}
 	}
 
@@ -383,10 +383,10 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 						}
 					}
 					CopyStructIfPtrSet(bcValue, ocValue)
-					for sName, sValue := range ocValue.Sources {
-						bsValue, ok := bcValue.Sources[sName]
+					for sName, sValue := range ocValue.Objects {
+						bsValue, ok := bcValue.Objects[sName]
 						if !ok {
-							bcValue.Sources[sName] = sValue
+							bcValue.Objects[sName] = sValue
 						} else {
 							for oName, oV := range sValue.On {
 								bV, ok := bsValue.On[oName]

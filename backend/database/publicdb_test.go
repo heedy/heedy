@@ -58,14 +58,14 @@ func TestPublicUser(t *testing.T) {
 	require.Error(t, db.DelUser("testy"))
 }
 
-func TestPublicSource(t *testing.T) {
+func TestPublicObject(t *testing.T) {
 	adb, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	pdb := NewPublicDB(adb)
 	name := "tree"
 	stype := "stream"
-	_, err := pdb.CreateSource(&Source{
+	_, err := pdb.CreateObject(&Object{
 		Details: Details{
 			Name: &name,
 		},
@@ -74,7 +74,7 @@ func TestPublicSource(t *testing.T) {
 	require.Error(t, err)
 
 	udb := NewUserDB(adb, "testy")
-	sid, err := udb.CreateSource(&Source{
+	sid, err := udb.CreateObject(&Object{
 		Details: Details{
 			Name: &name,
 		},
@@ -82,15 +82,15 @@ func TestPublicSource(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = pdb.ReadSource(sid, nil)
+	_, err = pdb.ReadObject(sid, nil)
 	require.Error(t, err)
 
-	// Now share the source with public
-	require.NoError(t, udb.ShareSource(sid, "public", &ScopeArray{
+	// Now share the object with public
+	require.NoError(t, udb.ShareObject(sid, "public", &ScopeArray{
 		Scopes: []string{"read"},
 	}))
 
-	s, err := pdb.ReadSource(sid, nil)
+	s, err := pdb.ReadObject(sid, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, *s.Details.Name, name)

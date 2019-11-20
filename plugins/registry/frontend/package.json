@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/heedyserver/heedy.git"
+    "url": "git+https://github.com/heedy/heedy.git"
   },
   "keywords": [
     "heedy"
@@ -24,7 +24,7 @@
   "author": "heedy Contributors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/heedyserver/heedy/issues"
+    "url": "https://github.com/heedy/heedy/issues"
   },
   "homepage": "https://heedy.org",
   "dependencies": {

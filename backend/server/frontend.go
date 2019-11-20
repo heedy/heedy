@@ -89,9 +89,9 @@ func FrontendMux() (*chi.Mux, error) {
 		}
 
 		/*
-			sourceMap := make(map[string]*assets.SourceTypeFrontend)
-			for k, v := range cfg.SourceTypes {
-				sourceMap[k] = v.Frontend
+			objectMap := make(map[string]*assets.ObjectTypeFrontend)
+			for k, v := range cfg.ObjectTypes {
+				objectMap[k] = v.Frontend
 			}
 		*/
 

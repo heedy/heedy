@@ -99,7 +99,7 @@ func (p *Plugin) Start() error {
 				Plugin: &cpn,
 			}, peh)
 		}
-		for skey, sv := range cv.Sources {
+		for skey, sv := range cv.Objects {
 			for ename, ev := range sv.On {
 				peh, err := NewPluginEventHandler(p, ev)
 				if err != nil {
@@ -127,7 +127,7 @@ func (p *Plugin) AfterStart() error {
 
 	psettings := a.Config.Plugins[p.Name]
 
-	// Make sure that all apps and sources that need to be auto-created are actually created
+	// Make sure that all apps and objects that need to be auto-created are actually created
 
 	for cname, cv := range psettings.Apps {
 		pluginKey := p.Name + ":" + cname
@@ -154,19 +154,19 @@ func (p *Plugin) AfterStart() error {
 				}
 			}
 		}
-		for skey, sv := range cv.Sources {
+		for skey, sv := range cv.Objects {
 			if sv.AutoCreate == nil || *sv.AutoCreate == true {
 				res := []string{}
-				err := p.DB.DB.Select(&res, "SELECT id FROM apps WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM sources WHERE app=apps.id AND key=?);", pluginKey, skey)
+				err := p.DB.DB.Select(&res, "SELECT id FROM apps WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM objects WHERE app=apps.id AND key=?);", pluginKey, skey)
 				if err != nil {
 					return err
 				}
 				if len(res) > 0 {
-					logrus.Debugf("%s: Creating '%s' source for all users with app '%s'", p.Name, skey, pluginKey)
+					logrus.Debugf("%s: Creating '%s' object for all users with app '%s'", p.Name, skey, pluginKey)
 
 					for _, cid := range res {
-						s := AppSource(cid, skey, sv)
-						_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
+						s := AppObject(cid, skey, sv)
+						_, err = run.Request(p.Server, "POST", "/api/heedy/v1/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 						if err != nil {
 							return err
 						}
@@ -197,11 +197,11 @@ func (p *Plugin) OnUserCreate(username string) error {
 				return err
 			}
 
-			for skey, sv := range cv.Sources {
-				logrus.Debugf("%s: Creating '%s/%s' source for user '%s'", p.Name, pluginKey, skey, username)
+			for skey, sv := range cv.Objects {
+				logrus.Debugf("%s: Creating '%s/%s' object for user '%s'", p.Name, pluginKey, skey, username)
 
-				s := AppSource(cid, skey, sv)
-				_, err = run.Request(p.Server, "POST", "/api/heedy/v1/sources", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
+				s := AppObject(cid, skey, sv)
+				_, err = run.Request(p.Server, "POST", "/api/heedy/v1/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 				if err != nil {
 					return err
 				}

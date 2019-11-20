@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAppSource(t *testing.T) {
+func TestAppObject(t *testing.T) {
 	adb, cleanup := newDBWithUser(t)
 	defer cleanup()
 
@@ -21,7 +21,7 @@ func TestAppSource(t *testing.T) {
 		},
 		Scopes: &AppScopeArray{
 			ScopeArray: ScopeArray{
-				Scopes: []string{"self.sources.stream","owner:read"},
+				Scopes: []string{"self.objects.stream","owner:read"},
 			},
 		},
 	})
@@ -32,7 +32,7 @@ func TestAppSource(t *testing.T) {
 
 	name := "tree"
 	stype := "stream"
-	sid, err := cdb.CreateSource(&Source{
+	sid, err := cdb.CreateObject(&Object{
 		Details: Details{
 			Name: &name,
 		},
@@ -41,7 +41,7 @@ func TestAppSource(t *testing.T) {
 	require.NoError(t, err)
 
 	name2 := "derpy"
-	require.NoError(t, cdb.UpdateSource(&Source{
+	require.NoError(t, cdb.UpdateObject(&Object{
 		Details: Details{
 			ID:       sid,
 			Name: &name2,
@@ -51,13 +51,13 @@ func TestAppSource(t *testing.T) {
 		},
 	}))
 
-	s, err := cdb.ReadSource(sid, nil)
+	s, err := cdb.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, name2)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))
 
-	require.NoError(t, cdb.DelSource(sid))
-	require.Error(t, cdb.DelSource(sid))
+	require.NoError(t, cdb.DelObject(sid))
+	require.Error(t, cdb.DelObject(sid))
 }

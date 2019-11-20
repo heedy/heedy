@@ -6,7 +6,7 @@ class StreamInjector {
 
         app.worker.addHandler("stream_views", (c, m) => this._onViews(c, m));
 
-        // Watch the source objects, so that the worker always has the most recent
+        // Watch the object objects, so that the worker always has the most recent
         // value. A more detailed explanation is in the worker.
         this.watchers = {};
 
@@ -38,7 +38,7 @@ class StreamInjector {
         });
         if (this.watchers[stream.id] === undefined) {
             this.watchers[stream.id] = this.app.store.watch(
-                (state, getters) => state.heedy.sources[stream.id],
+                (state, getters) => state.heedy.objects[stream.id],
                 (n, o) => {
                     if (n === undefined || n === null) {
                         console.log("Stopping watch of ", stream.id);

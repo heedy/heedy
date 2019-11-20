@@ -17,15 +17,15 @@ import (
 	"github.com/heedy/heedy/backend/updater"
 )
 
-func GetSourceScopes(w http.ResponseWriter, r *http.Request) {
+func GetObjectScopes(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	if db.Type() == database.PublicType || db.Type() == database.AppType {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scopes"))
 		return
 	}
 	a := rest.CTX(r).DB.AdminDB().Assets()
-	stype := chi.URLParam(r, "sourcetype")
-	scopes, err := a.Config.GetSourceScopes(stype)
+	stype := chi.URLParam(r, "objecttype")
+	scopes, err := a.Config.GetObjectScopes(stype)
 	rest.WriteJSON(w, r, scopes, err)
 }
 
@@ -48,32 +48,32 @@ func GetAppScopes(w http.ResponseWriter, r *http.Request) {
 		"users":          "All permissions for all users",
 		"users:read":     "Read all users that you can read",
 		"users:update":   "Modify info for all users you can modify",
-		"sources":        "All permissions for all sources of all types",
-		"sources:read":   "Read all sources belonging to you (of all types)",
-		"sources:update": "Modify data of all sources belonging to you (of all types)",
-		"sources:delete": "Delete any sources belonging to you (of all types)",
-		"shared":         "All permissions for sources shared with you (of all types)",
-		"shared:read":    "Read sources of all types that were shared with you",
-		"self.sources":   "Allows the app to create and manage its own sources of all types",
+		"objects":        "All permissions for all objects of all types",
+		"objects:read":   "Read all objects belonging to you (of all types)",
+		"objects:update": "Modify data of all objects belonging to you (of all types)",
+		"objects:delete": "Delete any objects belonging to you (of all types)",
+		"shared":         "All permissions for objects shared with you (of all types)",
+		"shared:read":    "Read objects of all types that were shared with you",
+		"self.objects":   "Allows the app to create and manage its own objects of all types",
 	}
 
-	// Generate the source type scopes
-	for stype := range a.Config.SourceTypes {
-		smap[fmt.Sprintf("sources.%s", stype)] = fmt.Sprintf("All permissions for sources of type '%s'", stype)
-		smap[fmt.Sprintf("sources.%s:read", stype)] = fmt.Sprintf("Read access for your sources of type '%s'", stype)
-		smap[fmt.Sprintf("sources.%s:delete", stype)] = fmt.Sprintf("Can delete your sources of type '%s'", stype)
+	// Generate the object type scopes
+	for stype := range a.Config.ObjectTypes {
+		smap[fmt.Sprintf("objects.%s", stype)] = fmt.Sprintf("All permissions for objects of type '%s'", stype)
+		smap[fmt.Sprintf("objects.%s:read", stype)] = fmt.Sprintf("Read access for your objects of type '%s'", stype)
+		smap[fmt.Sprintf("objects.%s:delete", stype)] = fmt.Sprintf("Can delete your objects of type '%s'", stype)
 
-		smap[fmt.Sprintf("shared.%s", stype)] = fmt.Sprintf("All permissions for sources of type '%s' that were shared with you", stype)
-		smap[fmt.Sprintf("shared.%s:read", stype)] = fmt.Sprintf("Read access for your sources of type '%s' that were shared with you", stype)
+		smap[fmt.Sprintf("shared.%s", stype)] = fmt.Sprintf("All permissions for objects of type '%s' that were shared with you", stype)
+		smap[fmt.Sprintf("shared.%s:read", stype)] = fmt.Sprintf("Read access for your objects of type '%s' that were shared with you", stype)
 
-		smap[fmt.Sprintf("self.sources.%s", stype)] = fmt.Sprintf("Allows the app to create and manage its own sources of type '%s'", stype)
+		smap[fmt.Sprintf("self.objects.%s", stype)] = fmt.Sprintf("Allows the app to create and manage its own objects of type '%s'", stype)
 
 		// And now generate the per-type scopes
-		stypemap := a.Config.SourceTypes[stype].Scopes
+		stypemap := a.Config.ObjectTypes[stype].Scopes
 		if stypemap != nil {
 			for sscope := range *stypemap {
-				smap[fmt.Sprintf("sources.%s:%s", stype, sscope)] = (*stypemap)[sscope]
-				//smap[fmt.Sprintf("self.sources.%s:%s",stype,sscope)] = (*stypemap)[sscope]
+				smap[fmt.Sprintf("objects.%s:%s", stype, sscope)] = (*stypemap)[sscope]
+				//smap[fmt.Sprintf("self.objects.%s:%s",stype,sscope)] = (*stypemap)[sscope]
 				smap[fmt.Sprintf("shared.%s:%s", stype, sscope)] = (*stypemap)[sscope]
 			}
 		}

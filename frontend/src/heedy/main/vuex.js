@@ -25,27 +25,27 @@ export default {
     // Components to show in the app
     app_components: [],
 
-    // A map of sources
-    sources: {},
-    // Components to show for a source
-    source_components: [],
-    // The custom pages to show for the given source type
-    source_custom_pages: {},
-    // Source types tell how to list the sources
-    source_types: {},
+    // A map of objects
+    objects: {},
+    // Components to show for a object
+    object_components: [],
+    // The custom pages to show for the given object type
+    object_custom_pages: {},
+    // Object types tell how to list the objects
+    object_types: {},
 
     // a map keyed by username, where each element is a map of ids to null
-    userSources: {},
-    userSources_qtime: {},
+    userObjects: {},
+    userObjects_qtime: {},
 
     // a map keyed by app id, where each element is a map of ids to null
-    appSources: {},
-    appSources_qtime: {},
+    appObjects: {},
+    appObjects_qtime: {},
 
-    // The following are initialized by the sourceInjector
-    sourceCreators: [],
+    // The following are initialized by the objectInjector
+    objectCreators: [],
 
-    // Subpaths for each source type
+    // Subpaths for each object type
     typePaths: {},
 
     // The map of app scopes along with their descriptions
@@ -68,17 +68,17 @@ export default {
     addUserComponent(state, v) {
       state.user_components.push(v);
     },
-    addSourceType(state, v) {
-      state.source_types[v.type] = v;
+    addObjectType(state, v) {
+      state.object_types[v.type] = v;
     },
-    addSourceComponent(state, v) {
-      state.source_components.push(v);
+    addObjectComponent(state, v) {
+      state.object_components.push(v);
     },
-    addSourceCustomPage(state, p) {
-      state.source_custom_pages[p.t] = p.c;
+    addObjectCustomPage(state, p) {
+      state.object_custom_pages[p.t] = p.c;
     },
-    addSourceCreator(state, c) {
-      state.sourceCreators.push(c);
+    addObjectCreator(state, c) {
+      state.objectCreators.push(c);
     },
     alert(state, v) {
       state.alert = {
@@ -90,8 +90,8 @@ export default {
     },
     setUser(state, v) {
       if (v.isNull !== undefined) {
-        if (state.userSources[v.username] !== undefined) {
-          Vue.delete(state.userSources, v.username);
+        if (state.userObjects[v.username] !== undefined) {
+          Vue.delete(state.userObjects, v.username);
         }
         Vue.set(state.users, v.username, null);
         return;
@@ -106,8 +106,8 @@ export default {
         state.apps = {};
       }
       if (v.isNull !== undefined) {
-        if (state.appSources[v.id] !== undefined) {
-          Vue.delete(state.appSources, v.id);
+        if (state.appObjects[v.id] !== undefined) {
+          Vue.delete(state.appObjects, v.id);
         }
         if (state.apps[v.id] !== undefined) {
           Vue.delete(state.apps, v.id);
@@ -127,82 +127,82 @@ export default {
           ...v[k]
         };
       });
-      Object.keys(state.appSources).forEach(k => {
+      Object.keys(state.appObjects).forEach(k => {
         if (v[k] === undefined) {
-          Vue.delete(state.appSources, k);
+          Vue.delete(state.appObjects, k);
         }
       })
       state.apps = v;
       state.apps_qtime = moment();
     },
-    setSource(state, v) {
-      // First check if the source has existing value
-      let curs = state.sources[v.id] || null;
+    setObject(state, v) {
+      // First check if the object has existing value
+      let curs = state.objects[v.id] || null;
       if (v.isNull !== undefined) {
-        // The source is to be deleted - make sure to take care of all places it could be
+        // The object is to be deleted - make sure to take care of all places it could be
         if (curs !== null) {
           if (curs.app !== null) {
-            if (state.appSources[curs.app] !== undefined) {
-              Vue.delete(state.appSources[curs.app], curs.id);
+            if (state.appObjects[curs.app] !== undefined) {
+              Vue.delete(state.appObjects[curs.app], curs.id);
             }
-          } else if (state.userSources[curs.owner] !== undefined) {
-            Vue.delete(state.userSources[curs.owner], curs.id);
+          } else if (state.userObjects[curs.owner] !== undefined) {
+            Vue.delete(state.userObjects[curs.owner], curs.id);
           }
         }
-        Vue.set(state.sources, v.id, null);
+        Vue.set(state.objects, v.id, null);
         return;
       }
-      // Set the source
-      Vue.set(state.sources, v.id, {
+      // Set the object
+      Vue.set(state.objects, v.id, {
         qtime: moment(),
         ...v
       });
       // Delete from lists where changed
       if (curs != null) {
         if (v.app != curs.app) {
-          if (state.appSources[curs.app] !== undefined) {
-            Vue.delete(state.appSources[curs.app], curs.id);
+          if (state.appObjects[curs.app] !== undefined) {
+            Vue.delete(state.appObjects[curs.app], curs.id);
           }
         }
         if (v.owner != curs.owner) {
-          if (state.userSources[curs.owner] !== undefined) {
-            Vue.delete(state.userSources[curs.owner], curs.id);
+          if (state.userObjects[curs.owner] !== undefined) {
+            Vue.delete(state.userObjects[curs.owner], curs.id);
           }
         }
       }
       // Make sure to set it in the appropriate lists
-      if (v.app != null && state.appSources[v.app] !== undefined) {
-        Vue.set(state.appSources[v.app], v.id, null);
+      if (v.app != null && state.appObjects[v.app] !== undefined) {
+        Vue.set(state.appObjects[v.app], v.id, null);
       }
-      if (state.userSources[v.owner] !== undefined && v.app == null) {
-        Vue.set(state.userSources[v.owner], v.id, null);
+      if (state.userObjects[v.owner] !== undefined && v.app == null) {
+        Vue.set(state.userObjects[v.owner], v.id, null);
       }
     },
-    setUserSources(state, v) {
+    setUserObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
-      v.sources.forEach(s => {
+      v.objects.forEach(s => {
         srcidmap[s.id] = null;
-        Vue.set(state.sources, s.id, {
+        Vue.set(state.objects, s.id, {
           qtime,
           ...s
         });
       });
-      Vue.set(state.userSources, v.user, srcidmap);
-      Vue.set(state.userSources_qtime, v.user, qtime);
+      Vue.set(state.userObjects, v.user, srcidmap);
+      Vue.set(state.userObjects_qtime, v.user, qtime);
     },
-    setAppSources(state, v) {
+    setAppObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
-      v.sources.forEach(s => {
+      v.objects.forEach(s => {
         srcidmap[s.id] = null;
-        Vue.set(state.sources, s.id, {
+        Vue.set(state.objects, s.id, {
           qtime,
           ...s
         });
       });
-      Vue.set(state.appSources, v.id, srcidmap);
-      Vue.set(state.appSources_qtime, v.id, qtime);
+      Vue.set(state.appObjects, v.id, srcidmap);
+      Vue.set(state.appObjects_qtime, v.id, qtime);
     },
     setAppScopes(state, v) {
       state.appScopes = v;
@@ -289,16 +289,16 @@ export default {
         q.callback();
       }
     },
-    readSource_: async function ({
+    readObject_: async function ({
       commit
     }, q) {
-      console.log("Reading source", q.id);
-      let res = await api("GET", `api/heedy/v1/sources/${q.id}`, {
+      console.log("Reading object", q.id);
+      let res = await api("GET", `api/heedy/v1/objects/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
         if (res.response.status == 400 || res.response.status == 403) { // TODO: 404 should be returned
-          commit("setSource", {
+          commit("setObject", {
             id: q.id,
             isNull: true
           });
@@ -310,7 +310,7 @@ export default {
         }
 
       } else {
-        commit("setSource", res.data);
+        commit("setObject", res.data);
       }
 
       if (q.hasOwnProperty("callback")) {
@@ -355,13 +355,13 @@ export default {
       }
       dispatch("readApp_", q);
     },
-    readSource: async function ({
+    readObject: async function ({
       state,
       rootState,
       dispatch
     }, q) {
-      if (state.sources[q.id] !== undefined && state.sources[q.id] !== null) {
-        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.sources[q.id].qtime)) {
+      if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
+        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.objects[q.id].qtime)) {
           console.log(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
@@ -369,19 +369,19 @@ export default {
           return;
         }
       }
-      dispatch("readSource_", q);
+      dispatch("readObject_", q);
     },
-    readUserSources: async function ({
+    readUserObjects: async function ({
       commit,
       state,
       rootState
     }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.userSources[q.username] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.userSources_qtime[q.username])) {
-        console.log(`Not reading ${q.username} sources - websocket active`);
+      if (state.userObjects[q.username] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])) {
+        console.log(`Not reading ${q.username} objects - websocket active`);
         return;
       }
-      console.log("Reading sources for user", q.username);
+      console.log("Reading objects for user", q.username);
       let query = {
         username: q.username
       };
@@ -390,7 +390,7 @@ export default {
         query["app"] = "none";
       }
 
-      let res = await api("GET", `api/heedy/v1/sources`, query);
+      let res = await api("GET", `api/heedy/v1/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -398,9 +398,9 @@ export default {
         });
 
       } else {
-        commit("setUserSources", {
+        commit("setUserObjects", {
           user: q.username,
-          sources: res.data
+          objects: res.data
         });
       }
 
@@ -410,23 +410,23 @@ export default {
       }
 
     },
-    readAppSources: async function ({
+    readAppObjects: async function ({
       commit,
       state,
       rootState
     }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.appSources[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.appSources_qtime[q.id])) {
-        console.log(`Not reading ${q.id} sources - websocket active`);
+      if (state.appObjects[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.appObjects_qtime[q.id])) {
+        console.log(`Not reading ${q.id} objects - websocket active`);
         return;
       }
-      console.log("Reading sources for app", q.id);
+      console.log("Reading objects for app", q.id);
       let query = {
         app: q.id
       };
 
 
-      let res = await api("GET", `api/heedy/v1/sources`, query);
+      let res = await api("GET", `api/heedy/v1/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -434,9 +434,9 @@ export default {
         });
 
       } else {
-        commit("setAppSources", {
+        commit("setAppObjects", {
           id: q.id,
-          sources: res.data
+          objects: res.data
         });
       }
 

@@ -17,7 +17,7 @@ import (
 var queryDecoder = schema.NewDecoder()
 
 type StreamInfo struct {
-	plugin.SourceInfo
+	plugin.ObjectInfo
 	Schema map[string]interface{}
 	Actor  bool
 }
@@ -25,7 +25,7 @@ type StreamInfo struct {
 var ErrNotActor = errors.New("not_actor: The given stream does not accept actions")
 
 func GetStreamInfo(r *http.Request) (*StreamInfo, error) {
-	si, err := plugin.GetSourceInfo(r)
+	si, err := plugin.GetObjectInfo(r)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func GetStreamInfo(r *http.Request) (*StreamInfo, error) {
 		return nil, plugin.ErrPlugin("Stream actor info invalid")
 	}
 	return &StreamInfo{
-		SourceInfo: *si,
+		ObjectInfo: *si,
 		Schema:     schemaMap,
 		Actor:      actor,
 	}, nil
@@ -58,7 +58,7 @@ func validateRequest(w http.ResponseWriter, r *http.Request, scope string) (*Str
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return nil, false
 	}
-	if !si.SourceInfo.Access.HasScope(scope) {
+	if !si.ObjectInfo.Access.HasScope(scope) {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, database.ErrAccessDenied("Insufficient permissions"))
 		return nil, false
 	}
@@ -84,7 +84,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Actions = &action
 
-	di, err := OpenSQLData(c.DB.AdminDB()).ReadStreamData(si.SourceInfo.ID, &q)
+	di, err := OpenSQLData(c.DB.AdminDB()).ReadStreamData(si.ObjectInfo.ID, &q)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
@@ -119,11 +119,11 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Actions = &action
 
-	err = OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.SourceInfo.ID, &q)
+	err = OpenSQLData(c.DB.AdminDB()).RemoveStreamData(si.ObjectInfo.ID, &q)
 	if err == nil {
 		c.Events.Fire(&events.Event{
 			Event:  "stream_data_delete",
-			Source: si.SourceInfo.ID,
+			Object: si.ObjectInfo.ID,
 			Data:   q,
 		})
 	}
@@ -187,12 +187,12 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 
-	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &iq)
+	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.ObjectInfo.ID, dv, &iq)
 	if err == nil && count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
 			ne := database.Date(time.Now().UTC())
 			// The stream is now non-empty, so label it as such
-			err = c.DB.AdminDB().UpdateSource(&database.Source{
+			err = c.DB.AdminDB().UpdateObject(&database.Object{
 				Details: database.Details{
 					ID: si.ID,
 				},
@@ -205,7 +205,7 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		}
 		c.Events.Fire(&events.Event{
 			Event:  evt,
-			Source: si.SourceInfo.ID,
+			Object: si.ObjectInfo.ID,
 			Data: &StreamWriteEvent{
 				T1:    tstart,
 				T2:    tend,
@@ -228,7 +228,7 @@ func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, ErrNotActor)
 		return
 	}
-	l, err := OpenSQLData(c.DB.AdminDB()).StreamDataLength(si.SourceInfo.ID, action)
+	l, err := OpenSQLData(c.DB.AdminDB()).StreamDataLength(si.ObjectInfo.ID, action)
 	rest.WriteJSON(w, r, l, err)
 }
 
@@ -258,7 +258,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	t := "append"
 	a := true
 
-	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.SourceInfo.ID, dv, &InsertQuery{
+	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteStreamData(si.ObjectInfo.ID, dv, &InsertQuery{
 		Type:    &t,
 		Actions: &a,
 	})
@@ -267,7 +267,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 		if shouldUpdateModifed(si.LastModified) {
 			ne := database.Date(time.Now().UTC())
 			// The stream is now non-empty, so label it as such
-			err = c.DB.AdminDB().UpdateSource(&database.Source{
+			err = c.DB.AdminDB().UpdateObject(&database.Object{
 				Details: database.Details{
 					ID: si.ID,
 				},
@@ -276,7 +276,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 		}
 		c.Events.Fire(&events.Event{
 			Event:  "stream_actions_write",
-			Source: si.SourceInfo.ID,
+			Object: si.ObjectInfo.ID,
 			Data: &StreamWriteEvent{
 				T1:    tstart,
 				T2:    tend,

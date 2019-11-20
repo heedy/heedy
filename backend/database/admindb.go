@@ -175,15 +175,15 @@ func (db *AdminDB) ListUsers(o *ListUsersOptions) (u []*User, err error) {
 	return u, err
 }
 
-// CanCreateSource returns whether the given source can be
-func (db *AdminDB) CanCreateSource(s *Source) error {
-	_, _, err := sourceCreateQuery(db.Assets().Config, s)
+// CanCreateObject returns whether the given object can be
+func (db *AdminDB) CanCreateObject(s *Object) error {
+	_, _, err := objectCreateQuery(db.Assets().Config, s)
 	return err
 }
 
-// CreateSource creates the source
-func (db *AdminDB) CreateSource(s *Source) (string, error) {
-	sColumns, sValues, err := sourceCreateQuery(db.Assets().Config, s)
+// CreateObject creates the object
+func (db *AdminDB) CreateObject(s *Object) (string, error) {
+	sColumns, sValues, err := objectCreateQuery(db.Assets().Config, s)
 	if err != nil {
 		return "", err
 	}
@@ -191,67 +191,67 @@ func (db *AdminDB) CreateSource(s *Source) (string, error) {
 	if s.App != nil {
 		// We must insert while also setting the owner to the app's owner
 		sValues = append(sValues, *s.App)
-		result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s,owner) VALUES (%s,(SELECT owner FROM apps WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
+		result, err := db.Exec(fmt.Sprintf("INSERT INTO objects (%s,owner) VALUES (%s,(SELECT owner FROM apps WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
 		err = getExecError(result, err)
 
 		return s.ID, err
 	}
 
-	result, err := db.Exec(fmt.Sprintf("INSERT INTO sources (%s) VALUES (%s);", sColumns, QQ(len(sValues))), sValues...)
+	result, err := db.Exec(fmt.Sprintf("INSERT INTO objects (%s) VALUES (%s);", sColumns, QQ(len(sValues))), sValues...)
 	err = getExecError(result, err)
 
 	return s.ID, err
 
 }
 
-// ReadSource gets the source by ID
-func (db *AdminDB) ReadSource(id string, o *ReadSourceOptions) (s *Source, err error) {
-	s, err = readSource(db, id, o, `SELECT *,'["*"]' AS access FROM sources WHERE (id=?) LIMIT 1;`, id)
+// ReadObject gets the object by ID
+func (db *AdminDB) ReadObject(id string, o *ReadObjectOptions) (s *Object, err error) {
+	s, err = readObject(db, id, o, `SELECT *,'["*"]' AS access FROM objects WHERE (id=?) LIMIT 1;`, id)
 	return
 }
 
-// UpdateSource updates the given source by ID
-func (db *AdminDB) UpdateSource(s *Source) error {
-	return updateSource(db, s, `SELECT type,'["*"]' AS access FROM sources WHERE id=? LIMIT 1;`, s.ID)
+// UpdateObject updates the given object by ID
+func (db *AdminDB) UpdateObject(s *Object) error {
+	return updateObject(db, s, `SELECT type,'["*"]' AS access FROM objects WHERE id=? LIMIT 1;`, s.ID)
 }
 
-// DelSource deletes the given source
-func (db *AdminDB) DelSource(id string) error {
-	result, err := db.Exec("DELETE FROM sources WHERE id=?;", id)
+// DelObject deletes the given object
+func (db *AdminDB) DelObject(id string) error {
+	result, err := db.Exec("DELETE FROM objects WHERE id=?;", id)
 	return getExecError(result, err)
 }
 
-// ShareSource shares the given source with the given user, allowing the given set of scopes
-func (db *AdminDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
+// ShareObject shares the given object with the given user, allowing the given set of scopes
+func (db *AdminDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
 	if len(sa.Scopes) == 0 {
-		return db.UnshareSourceFromUser(sourceid, userid)
+		return db.UnshareObjectFromUser(objectid, userid)
 	}
 	if !sa.HasScope("read") {
-		return ErrBadQuery("To share a source, it needs to have the read scope active")
+		return ErrBadQuery("To share a object, it needs to have the read scope active")
 	}
 
-	res, err := db.Exec("INSERT OR REPLACE INTO shared_sources(username,sourceid,scopes) VALUES (?,?,?);", userid, sourceid, sa)
+	res, err := db.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scopes) VALUES (?,?,?);", userid, objectid, sa)
 	return getExecError(res, err)
 }
 
-// UnshareSourceFromUser Removes the given share from the source
-func (db *AdminDB) UnshareSourceFromUser(sourceid, userid string) error {
-	return unshareSourceFromUser(db, sourceid, userid, "DELETE FROM shared_sources WHERE sourceid=? AND username=?", sourceid, userid)
+// UnshareObjectFromUser Removes the given share from the object
+func (db *AdminDB) UnshareObjectFromUser(objectid, userid string) error {
+	return unshareObjectFromUser(db, objectid, userid, "DELETE FROM shared_objects WHERE objectid=? AND username=?", objectid, userid)
 }
 
-// UnshareSource deletes ALL the shares fro mthe source
-func (db *AdminDB) UnshareSource(sourceid string) error {
-	return unshareSource(db, sourceid, "DELETE FROM shared_sources WHERE sourceid=?", sourceid)
+// UnshareObject deletes ALL the shares fro mthe object
+func (db *AdminDB) UnshareObject(objectid string) error {
+	return unshareObject(db, objectid, "DELETE FROM shared_objects WHERE objectid=?", objectid)
 }
 
-// GetSourceShares returns the shares of the source
-func (db *AdminDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
-	return getSourceShares(db, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?`, sourceid)
+// GetObjectShares returns the shares of the object
+func (db *AdminDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, err error) {
+	return getObjectShares(db, objectid, `SELECT username,scopes FROM shared_objects WHERE objectid=?`, objectid)
 }
 
-// ListSources lists the given sources
-func (db *AdminDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
-	return listSources(db, o, `SELECT *,'["*"]' AS access FROM sources WHERE %s %s;`)
+// ListObjects lists the given objects
+func (db *AdminDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
+	return listObjects(db, o, `SELECT *,'["*"]' AS access FROM objects WHERE %s %s;`)
 }
 
 // CreateApp creates a new app. Nuff said.

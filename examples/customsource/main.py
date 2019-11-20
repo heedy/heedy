@@ -67,5 +67,5 @@ app.add_routes(routes)
 
 # Runs the server over a unix domain socket. The socket is automatically placed in the data folder,
 # and not the plugin folder.
-web.run_app(app, path="customsource.sock")
+web.run_app(app, path="customobject.sock")
 

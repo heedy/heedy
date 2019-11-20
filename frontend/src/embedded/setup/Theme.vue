@@ -25,7 +25,7 @@ export default {
     mini: null
   }),
   props: {
-    source: String
+    object: String
   }
 };
 </script>

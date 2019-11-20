@@ -78,88 +78,88 @@ func (db *UserDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 	return nil, ErrUnimplemented
 }
 
-// CanCreateSource returns whether the given source can be
-func (db *UserDB) CanCreateSource(s *Source) error {
-	_, _, err := sourceCreateQuery(db.adb.Assets().Config, s)
+// CanCreateObject returns whether the given object can be
+func (db *UserDB) CanCreateObject(s *Object) error {
+	_, _, err := objectCreateQuery(db.adb.Assets().Config, s)
 	if err != nil {
 		return err
 	}
 	if s.Owner != nil {
 		if *s.Owner != db.user {
-			return ErrAccessDenied("Cannot create a source for another user")
+			return ErrAccessDenied("Cannot create a object for another user")
 		}
 	}
 	if s.App != nil {
-		return ErrAccessDenied("Can't create a source for a app")
+		return ErrAccessDenied("Can't create a object for a app")
 	}
 	return nil
 }
 
-// CreateSource creates the source.
-func (db *UserDB) CreateSource(s *Source) (string, error) {
+// CreateObject creates the object.
+func (db *UserDB) CreateObject(s *Object) (string, error) {
 	if s.App != nil {
-		return "", ErrAccessDenied("You cannot create sources belonging to a app")
+		return "", ErrAccessDenied("You cannot create objects belonging to a app")
 	}
 	if s.LastModified != nil {
-		return "", ErrAccessDenied("Last Modified status of source is readonly")
+		return "", ErrAccessDenied("Last Modified status of object is readonly")
 	}
 	if s.Owner == nil {
 		// If no owner is specified, assume the current user
 		s.Owner = &db.user
 	}
 	if *s.Owner != db.user {
-		return "", ErrAccessDenied("Cannot create a source belonging to someone else")
+		return "", ErrAccessDenied("Cannot create a object belonging to someone else")
 	}
-	return db.adb.CreateSource(s)
+	return db.adb.CreateObject(s)
 }
 
-// ReadSource reads the given source if the user has sufficient permissions
-func (db *UserDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
-	return readSource(db.adb, id, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
-		WHERE sources.id=? AND ss.user IN (?,'public','users') AND ss.source=sources.id;`, id, db.user)
+// ReadObject reads the given object if the user has sufficient permissions
+func (db *UserDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
+	return readObject(db.adb, id, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss 
+		WHERE objects.id=? AND ss.user IN (?,'public','users') AND ss.object=objects.id;`, id, db.user)
 }
 
-// UpdateSource allows editing a source
-func (db *UserDB) UpdateSource(s *Source) error {
+// UpdateObject allows editing a object
+func (db *UserDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
-		return ErrAccessDenied("Empty status of source is readonly")
+		return ErrAccessDenied("Empty status of object is readonly")
 	}
-	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
-		WHERE sources.id=? AND ss.user IN (?,'public','users') AND ss.source=sources.id;`, s.ID, db.user)
+	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss
+		WHERE objects.id=? AND ss.user IN (?,'public','users') AND ss.object=objects.id;`, s.ID, db.user)
 }
 
-// Can only delete sources that belong to *us*
-func (db *UserDB) DelSource(id string) error {
-	result, err := db.adb.Exec("DELETE FROM sources WHERE id=? AND owner=? AND app IS NULL;", id, db.user)
+// Can only delete objects that belong to *us*
+func (db *UserDB) DelObject(id string) error {
+	result, err := db.adb.Exec("DELETE FROM objects WHERE id=? AND owner=? AND app IS NULL;", id, db.user)
 	return getExecError(result, err)
 }
 
-func (db *UserDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
-	return shareSource(db, sourceid, userid, sa, `SELECT 1 FROM sources WHERE owner=? AND id=?`, db.user, sourceid)
+func (db *UserDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
+	return shareObject(db, objectid, userid, sa, `SELECT 1 FROM objects WHERE owner=? AND id=?`, db.user, objectid)
 }
 
-func (db *UserDB) UnshareSourceFromUser(sourceid, userid string) error {
-	return unshareSourceFromUser(db.adb, sourceid, userid, `DELETE FROM shared_sources WHERE sourceid=? AND username=? 
-		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, userid, db.user)
+func (db *UserDB) UnshareObjectFromUser(objectid, userid string) error {
+	return unshareObjectFromUser(db.adb, objectid, userid, `DELETE FROM shared_objects WHERE objectid=? AND username=? 
+		AND EXISTS (SELECT 1 FROM objects WHERE owner=? AND id=objectid)`, objectid, userid, db.user)
 }
 
-func (db *UserDB) UnshareSource(sourceid string) error {
-	return unshareSource(db.adb, sourceid, `DELETE FROM shared_sources WHERE sourceid=?
-		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, db.user)
+func (db *UserDB) UnshareObject(objectid string) error {
+	return unshareObject(db.adb, objectid, `DELETE FROM shared_objects WHERE objectid=?
+		AND EXISTS (SELECT 1 FROM objects WHERE owner=? AND id=objectid)`, objectid, db.user)
 }
 
-func (db *UserDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
-	return getSourceShares(db.adb, sourceid, `SELECT username,scopes FROM shared_sources WHERE sourceid=?
-		AND EXISTS (SELECT 1 FROM sources WHERE owner=? AND id=sourceid)`, sourceid, db.user)
+func (db *UserDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, err error) {
+	return getObjectShares(db.adb, objectid, `SELECT username,scopes FROM shared_objects WHERE objectid=?
+		AND EXISTS (SELECT 1 FROM objects WHERE owner=? AND id=objectid)`, objectid, db.user)
 }
 
-// ListSources lists the given sources
-func (db *UserDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
+// ListObjects lists the given objects
+func (db *UserDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
 	if o != nil && o.UserName != nil && *o.UserName == "self" {
 		o.UserName = &db.user
 	}
-	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
-		WHERE %s AND ss.user IN (?,'public','users') AND ss.source=sources.id GROUP BY sources.id %s;`, db.user)
+	return listObjects(db.adb, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss 
+		WHERE %s AND ss.user IN (?,'public','users') AND ss.object=objects.id GROUP BY objects.id %s;`, db.user)
 }
 
 func (db *UserDB) CreateApp(c *App) (string, string, error) {

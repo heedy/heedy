@@ -118,14 +118,14 @@ func TestUserUpdateIcon(t *testing.T) {
 	}))
 }
 
-func TestUserSource(t *testing.T) {
+func TestUserObject(t *testing.T) {
 	adb, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	db := NewUserDB(adb, "testy")
 	name := "tree"
 	stype := "stream"
-	sid, err := db.CreateSource(&Source{
+	sid, err := db.CreateObject(&Object{
 		Details: Details{
 			Name: &name,
 		},
@@ -134,7 +134,7 @@ func TestUserSource(t *testing.T) {
 	require.NoError(t, err)
 
 	name2 := "derpy"
-	require.NoError(t, db.UpdateSource(&Source{
+	require.NoError(t, db.UpdateObject(&Object{
 		Details: Details{
 			ID:       sid,
 			Name: &name2,
@@ -143,13 +143,13 @@ func TestUserSource(t *testing.T) {
 			"schema": 4,
 		},
 	}))
-	s, err := db.ReadSource(sid, nil)
+	s, err := db.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, name2)
 	require.NotNil(t, s.Scopes)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))
 
-	require.NoError(t, db.DelSource(sid))
-	require.Error(t, db.DelSource(sid))
+	require.NoError(t, db.DelObject(sid))
+	require.Error(t, db.DelObject(sid))
 }

@@ -25,9 +25,9 @@ CREATE TABLE streamdata (
 	PRIMARY KEY (streamid,timestamp),
 	CONSTRAINT valid_data CHECK (json_valid(data)),
 
-	CONSTRAINT source_fk
+	CONSTRAINT object_fk
 		FOREIGN KEY(streamid)
-		REFERENCES sources(id)
+		REFERENCES objects(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 
@@ -42,9 +42,9 @@ CREATE TABLE streamdata_actions (
 	PRIMARY KEY (streamid,timestamp),
 	CONSTRAINT valid_data CHECK (json_valid(data)),
 
-	CONSTRAINT source_fk
+	CONSTRAINT object_fk
 		FOREIGN KEY(streamid)
-		REFERENCES sources(id)
+		REFERENCES objects(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );

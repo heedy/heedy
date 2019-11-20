@@ -17,7 +17,7 @@
         <div v-else>
           <h-notification
             v-for="n in notifications"
-            :key="n.key+'.'+n.user + '.' + n.app + '.' + n.source"
+            :key="n.key+'.'+n.user + '.' + n.app + '.' + n.object"
             :n="n"
             link
             seen

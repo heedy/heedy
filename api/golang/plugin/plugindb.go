@@ -228,11 +228,11 @@ func (db *PluginDB) ListUsers(o *database.ListUsersOptions) ([]*database.User, e
 	return sl, err
 }
 
-func (db *PluginDB) CanCreateSource(s *database.Source) error {
+func (db *PluginDB) CanCreateObject(s *database.Object) error {
 	return ErrUnimplemented
 }
-func (db *PluginDB) CreateSource(s *database.Source) (string, error) {
-	api := "/api/heedy/v1/sources"
+func (db *PluginDB) CreateObject(s *database.Object) (string, error) {
+	api := "/api/heedy/v1/objects"
 	b, err := json.Marshal(s)
 	if err != nil {
 		return "", err
@@ -241,21 +241,21 @@ func (db *PluginDB) CreateSource(s *database.Source) (string, error) {
 	err = db.UnmarshalRequest(&s, "POST", api, bytes.NewBuffer(b))
 	return s.ID, err
 }
-func (db *PluginDB) ReadSource(id string, o *database.ReadSourceOptions) (*database.Source, error) {
-	api := fmt.Sprintf("/api/heedy/v1/sources/%s", id)
+func (db *PluginDB) ReadObject(id string, o *database.ReadObjectOptions) (*database.Object, error) {
+	api := fmt.Sprintf("/api/heedy/v1/objects/%s", id)
 
 	if o != nil {
 		form := url.Values{}
 		queryEncoder.Encode(o, form)
 		api = api + "?" + form.Encode()
 	}
-	var s database.Source
+	var s database.Object
 
 	err := db.UnmarshalRequest(&s, "GET", api, nil)
 	return &s, err
 }
-func (db *PluginDB) UpdateSource(s *database.Source) error {
-	api := fmt.Sprintf("/api/heedy/v1/sources/%s", s.ID)
+func (db *PluginDB) UpdateObject(s *database.Object) error {
+	api := fmt.Sprintf("/api/heedy/v1/objects/%s", s.ID)
 	b, err := json.Marshal(s)
 	if err != nil {
 		return err
@@ -263,28 +263,28 @@ func (db *PluginDB) UpdateSource(s *database.Source) error {
 
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
-func (db *PluginDB) DelSource(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/sources/%s", id)
+func (db *PluginDB) DelObject(id string) error {
+	api := fmt.Sprintf("/api/heedy/v1/objects/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
 
-func (db *PluginDB) ShareSource(sourceid, userid string, sa *database.ScopeArray) error {
+func (db *PluginDB) ShareObject(objectid, userid string, sa *database.ScopeArray) error {
 	return ErrUnimplemented
 }
-func (db *PluginDB) UnshareSourceFromUser(sourceid, userid string) error {
+func (db *PluginDB) UnshareObjectFromUser(objectid, userid string) error {
 	return ErrUnimplemented
 }
-func (db *PluginDB) UnshareSource(sourceid string) error {
+func (db *PluginDB) UnshareObject(objectid string) error {
 	return ErrUnimplemented
 }
-func (db *PluginDB) GetSourceShares(sourceid string) (m map[string]*database.ScopeArray, err error) {
+func (db *PluginDB) GetObjectShares(objectid string) (m map[string]*database.ScopeArray, err error) {
 	return nil, ErrUnimplemented
 }
 
-// ListSources lists the given sources
-func (db *PluginDB) ListSources(o *database.ListSourcesOptions) ([]*database.Source, error) {
-	var sl []*database.Source
-	api := "/api/heedy/v1/sources"
+// ListObjects lists the given objects
+func (db *PluginDB) ListObjects(o *database.ListObjectsOptions) ([]*database.Object, error) {
+	var sl []*database.Object
+	api := "/api/heedy/v1/objects"
 
 	if o != nil {
 		form := url.Values{}

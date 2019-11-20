@@ -46,7 +46,7 @@ func NewMap() Map {
 // Permitted queries:
 //	user
 //	app
-//	source
+//	object
 //	plugin
 //	app-key
 // 	plugin-key
@@ -69,7 +69,7 @@ type Router struct {
 	UserEvents       map[string]Map
 	AppEvents map[string]Map
 	PluginEvents     map[string]Map
-	SourceEvents     map[string]Map
+	ObjectEvents     map[string]Map
 
 	UserPlugin    map[idKey2]Map
 	AppKey map[idKey2]Map
@@ -77,9 +77,9 @@ type Router struct {
 
 	UserPluginKey map[idKey3]Map
 
-	// If SourceType is set, we send it over the full thing again,
-	// but this time with the given source type
-	SourceType map[string]*Router
+	// If ObjectType is set, we send it over the full thing again,
+	// but this time with the given object type
+	ObjectType map[string]*Router
 }
 
 func NewRouter() *Router {
@@ -92,13 +92,13 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 	defer er.Unlock()
 
 	if e.Type != "" {
-		if er.SourceType == nil {
-			er.SourceType = make(map[string]*Router)
+		if er.ObjectType == nil {
+			er.ObjectType = make(map[string]*Router)
 		}
-		em, ok := er.SourceType[e.Type]
+		em, ok := er.ObjectType[e.Type]
 		if !ok {
 			em = NewRouter()
-			er.SourceType[e.Type] = em
+			er.ObjectType[e.Type] = em
 		}
 		// Set the type to empty string
 		e.Type = ""
@@ -148,14 +148,14 @@ func (er *Router) Subscribe(e Event, h Handler) error {
 		}
 		return em.Subscribe(e.Event, h)
 	}
-	if e.Source != "" {
-		if er.SourceEvents == nil {
-			er.SourceEvents = make(map[string]Map)
+	if e.Object != "" {
+		if er.ObjectEvents == nil {
+			er.ObjectEvents = make(map[string]Map)
 		}
-		em, ok := er.SourceEvents[e.Source]
+		em, ok := er.ObjectEvents[e.Object]
 		if !ok {
 			em = NewMap()
-			er.SourceEvents[e.Source] = em
+			er.ObjectEvents[e.Object] = em
 		}
 		return em.Subscribe(e.Event, h)
 	}
@@ -200,10 +200,10 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 	er.Lock()
 	defer er.Unlock()
 	if e.Type != "" {
-		if er.SourceType == nil {
+		if er.ObjectType == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.SourceType[e.Type]
+		em, ok := er.ObjectType[e.Type]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -251,11 +251,11 @@ func (er *Router) Unsubscribe(e Event, h Handler) error {
 		}
 		return em.Unsubscribe(e.Event, h)
 	}
-	if e.Source != "" {
-		if er.SourceEvents == nil {
+	if e.Object != "" {
+		if er.ObjectEvents == nil {
 			return ErrNotSubscribed
 		}
-		em, ok := er.SourceEvents[e.Source]
+		em, ok := er.ObjectEvents[e.Object]
 		if !ok {
 			return ErrNotSubscribed
 		}
@@ -340,24 +340,24 @@ func (er *Router) Fire(e *Event) {
 		}
 	}
 
-	// Source Subscriptions
-	if e.Source == "" {
+	// Object Subscriptions
+	if e.Object == "" {
 		return
 	}
-	if er.SourceEvents != nil {
-		h, ok := er.SourceEvents[e.Source]
+	if er.ObjectEvents != nil {
+		h, ok := er.ObjectEvents[e.Object]
 		if ok {
 			h.Fire(e)
 		}
-		h, ok = er.SourceEvents["*"]
+		h, ok = er.ObjectEvents["*"]
 		if ok {
 			h.Fire(e)
 		}
 	}
 
 	// This will always be nil in the Type router
-	if er.SourceType != nil {
-		h, ok := er.SourceType[e.Type]
+	if er.ObjectType != nil {
+		h, ok := er.ObjectType[e.Type]
 		if ok {
 			h.Fire(e)
 		}

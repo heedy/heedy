@@ -1,12 +1,12 @@
 <template>
-  <h-card-page :title="'Update ' + source.name" :alert="alert">
+  <h-card-page :title="'Update ' + object.name" :alert="alert">
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
           <h-icon-editor
             ref="iconEditor"
-            :image="source.icon"
-            :colorHash="source.id"
+            :image="object.icon"
+            :colorHash="object.id"
             defaultIcon="timeline"
           ></h-icon-editor>
         </v-flex>
@@ -59,7 +59,7 @@
 <script>
 export default {
   props: {
-    source: Object
+    object: Object
   },
   data: () => ({
     alert: "",
@@ -128,7 +128,7 @@ export default {
 
       if (Object.keys(meta).length > 0) {
         mod.meta = {
-          ...this.source.meta,
+          ...this.object.meta,
           ...meta
         };
       }
@@ -136,7 +136,7 @@ export default {
         console.log("UPDATING", mod);
         let result = await this.$app.api(
           "PATCH",
-          `api/heedy/v1/sources/${this.source.id}`,
+          `api/heedy/v1/objects/${this.object.id}`,
           mod
         );
 
@@ -145,8 +145,8 @@ export default {
           this.loading = false;
           return;
         }
-        this.$store.dispatch("readSource", {
-          id: this.source.id
+        this.$store.dispatch("readObject", {
+          id: this.object.id
         });
       }
 
@@ -154,15 +154,15 @@ export default {
       this.$router.go(-1);
     },
     del: async function() {
-      let s = this.source;
+      let s = this.object;
       if (
         confirm(
-          `Are you sure you want to delete '${this.source.name}'? This deletes all associated data.`
+          `Are you sure you want to delete '${this.object.name}'? This deletes all associated data.`
         )
       ) {
         let res = await this.$app.api(
           "DELETE",
-          `/api/heedy/v1/sources/${this.source.id}`
+          `/api/heedy/v1/objects/${this.object.id}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -194,7 +194,7 @@ export default {
         if (this.scode != null) {
           return this.scode;
         }
-        return JSON.stringify(this.source.meta.schema);
+        return JSON.stringify(this.object.meta.schema);
       },
       set(v) {
         this.scode = v;
@@ -205,7 +205,7 @@ export default {
         if (this.ssubtype != null) {
           return this.ssubtype;
         }
-        return this.source.meta.subtype || "";
+        return this.object.meta.subtype || "";
       },
       set(v) {
         this.ssubtype = v;
@@ -216,7 +216,7 @@ export default {
         if (this.modified.description !== undefined) {
           return this.modified.description;
         }
-        return this.source.description;
+        return this.object.description;
       },
       set(v) {
         this.$app.vue.set(this.modified, "description", v);
@@ -227,7 +227,7 @@ export default {
         if (this.modified.name !== undefined) {
           return this.modified.name;
         }
-        return this.source.name;
+        return this.object.name;
       },
       set(v) {
         this.$app.vue.set(this.modified, "name", v);

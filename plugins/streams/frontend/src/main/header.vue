@@ -1,9 +1,9 @@
 <template>
   <h-header
-    :icon="source.icon"
-    :colorHash="source.id"
-    :name="source.name"
-    :description="source.description"
+    :icon="object.icon"
+    :colorHash="object.id"
+    :name="object.name"
+    :description="object.description"
   >
     <v-select
       :items="queryOptions"
@@ -68,7 +68,7 @@
     </v-dialog>
     <v-tooltip bottom>
       <template #activator="{on}">
-        <v-btn icon v-on="on" :to="`/sources/${source.id}/stream/update`">
+        <v-btn icon v-on="on" :to="`/objects/${object.id}/stream/update`">
           <v-icon>edit</v-icon>
         </v-btn>
       </template>
@@ -154,7 +154,7 @@ export default {
     VDatetimePicker
   },
   props: {
-    source: Object
+    object: Object
   },
   data: () => ({
     dialog: false,

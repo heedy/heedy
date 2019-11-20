@@ -27,7 +27,7 @@ func NewGithubClient(key string) *Github {
 		ctx: context.Background(),
 	}
 	if key != "" {
-		ts := oauth2.StaticTokenSource(
+		ts := oauth2.StaticTokenObject(
 			&oauth2.Token{AccessToken: key},
 		)
 		tc := oauth2.NewClient(g.ctx, ts)

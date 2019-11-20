@@ -93,7 +93,7 @@ CREATE INDEX appowner ON apps(owner,name);
 CREATE INDEX apptoken ON apps(access_token);
 
 
-CREATE TABLE sources (
+CREATE TABLE objects (
 	id VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 	name VARCHAR NOT NULL,
 	description VARCHAR NOT NULL DEFAULT '',
@@ -101,24 +101,24 @@ CREATE TABLE sources (
 	app VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
 
-	-- A key is used for apps to easily map sources to physical things
+	-- A key is used for apps to easily map objects to physical things
 	key VARCHAR(36) DEFAULT NULL,
 
-	type VARCHAR NOT NULL, 	                 -- The source type
-	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the source
+	type VARCHAR NOT NULL, 	                 -- The object type
+	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the object
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
-	last_modified DATE DEFAULT NULL,		 -- Modification date for the source
+	last_modified DATE DEFAULT NULL,		 -- Modification date for the object
 
-	-- Maximal scopes that can be given. The * represents all scopes possible for the given source type
+	-- Maximal scopes that can be given. The * represents all scopes possible for the given object type
 	scopes VARCHAR NOT NULL DEFAULT '["*"]',
 
-	CONSTRAINT sourceapp
+	CONSTRAINT objectapp
 		FOREIGN KEY(app) 
 		REFERENCES apps(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT sourceowner
+	CONSTRAINT objectowner
 		FOREIGN KEY(owner) 
 		REFERENCES users(username)
 		ON UPDATE CASCADE
@@ -128,37 +128,37 @@ CREATE TABLE sources (
 	CONSTRAINT valid_meta CHECK (json_valid(meta))
 );
 
--- Sources can be queried by key
-CREATE INDEX source_key ON sources(key,app);
+-- Objects can be queried by key
+CREATE INDEX object_key ON objects(key,app);
 
 ------------------------------------------------------------------------------------
 -- SHARING
 ------------------------------------------------------------------------------------
 
-CREATE TABLE shared_sources (
+CREATE TABLE shared_objects (
 	username VARCHAR(36) NOT NULL,
-	sourceid VARCHAR(36) NOT NULL,
+	objectid VARCHAR(36) NOT NULL,
 	scopes VARCHAR NOT NULL DEFAULT '["read"]',
 
-	PRIMARY KEY (username,sourceid),
-	UNIQUE (username,sourceid),
+	PRIMARY KEY (username,objectid),
+	UNIQUE (username,objectid),
 
-	CONSTRAINT sourceuser
+	CONSTRAINT objectuser
 		FOREIGN KEY(username)
 		REFERENCES users(username)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT sharedsource
-		FOREIGN KEY(sourceid)
-		REFERENCES sources(id)
+	CONSTRAINT sharedobject
+		FOREIGN KEY(objectid)
+		REFERENCES objects(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
 	CONSTRAINT valid_scopes CHECK (json_valid(scopes))
 );
 
-CREATE INDEX share_sourceid on shared_sources(sourceid);
+CREATE INDEX share_objectid on shared_objects(objectid);
 
 
 ------------------------------------------------------------------
@@ -189,14 +189,14 @@ CREATE INDEX login_tokens ON user_logintokens(token);
 -- Database Views
 ------------------------------------------------------------------
 
-CREATE VIEW user_source_scopes(user,source,scope) AS
-	SELECT sources.owner,sources.id,'*' FROM sources WHERE sources.app IS NULL
+CREATE VIEW user_object_scopes(user,object,scope) AS
+	SELECT objects.owner,objects.id,'*' FROM objects WHERE objects.app IS NULL
 	UNION ALL
-	SELECT sources.owner,sources.id,value FROM sources,json_each(sources.scopes) WHERE sources.app IS NOT NULL
+	SELECT objects.owner,objects.id,value FROM objects,json_each(objects.scopes) WHERE objects.app IS NOT NULL
 	UNION ALL
-	SELECT shared_sources.username,sources.id,ss.value FROM sources,shared_sources,json_each(shared_sources.scopes) AS ss WHERE shared_sources.sourceid=sources.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(sources.scopes) AS sss WHERE sss.value=ss.value OR sss.value='*')
+	SELECT shared_objects.username,objects.id,ss.value FROM objects,shared_objects,json_each(shared_objects.scopes) AS ss WHERE shared_objects.objectid=objects.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(objects.scopes) AS sss WHERE sss.value=ss.value OR sss.value='*')
 	UNION ALL
-	SELECT shared_sources.username,sources.id,sss.value FROM sources,shared_sources,json_each(sources.scopes) AS sss WHERE shared_sources.sourceid=sources.id AND EXISTS (SELECT 1 FROM json_each(shared_sources.scopes) AS ss WHERE ss.value='*')
+	SELECT shared_objects.username,objects.id,sss.value FROM objects,shared_objects,json_each(objects.scopes) AS sss WHERE shared_objects.objectid=objects.id AND EXISTS (SELECT 1 FROM json_each(shared_objects.scopes) AS ss WHERE ss.value='*')
 	;
 
 
@@ -207,7 +207,7 @@ CREATE VIEW user_source_scopes(user,source,scope) AS
 INSERT INTO users (username,name,description,icon,password) VALUES 
 -- The public/users virtual users are created by default, and cannot be deleted,
 -- as they represent the database view that someone not logged in will get,
--- and the sources accessible to a user who is logged in
+-- and the objects accessible to a user who is logged in
 (
 	'users',
 	'Users',

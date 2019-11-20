@@ -15,7 +15,7 @@ type Event struct {
 	User       string  `json:"user,omitempty" db:"user"`
 	App string  `json:"app,omitempty" db:"app"`
 	Plugin     *string `json:"plugin,omitempty" db:"plugin"`
-	Source     string  `json:"source,omitempty" db:"source"`
+	Object     string  `json:"object,omitempty" db:"object"`
 	Key        string  `json:"key,omitempty" db:"key"`
 	Type       string  `json:"type,omitempty" db:"type"`
 
@@ -76,8 +76,8 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 	if e.Event == "" {
 		return errors.New("bad_request: No event type specified")
 	}
-	if e.Source != "" {
-		return db.Get(e, "SELECT sources.owner AS user,COALESCE(sources.app,'') AS app,apps.plugin,COALESCE(sources.key,'') AS key,sources.type FROM sources LEFT JOIN apps ON sources.app=apps.id WHERE sources.id=? LIMIT 1", e.Source)
+	if e.Object != "" {
+		return db.Get(e, "SELECT objects.owner AS user,COALESCE(objects.app,'') AS app,apps.plugin,COALESCE(objects.key,'') AS key,objects.type FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.id=? LIMIT 1", e.Object)
 	}
 	if e.App != "" {
 		e.Key = ""
@@ -95,7 +95,7 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		// This is only to make sure the user exists
 		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
 	}
-	return errors.New("bad_request: An event must target a specific user,app or source")
+	return errors.New("bad_request: An event must target a specific user,app or object")
 }
 
 type FilledHandler struct {

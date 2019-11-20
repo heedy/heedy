@@ -47,60 +47,60 @@ func (db *PublicDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 	return nil, ErrUnimplemented
 }
 
-// CanCreateSource returns whether the given source can be
-func (db *PublicDB) CanCreateSource(s *Source) error {
+// CanCreateObject returns whether the given object can be
+func (db *PublicDB) CanCreateObject(s *Object) error {
 	if s.Type == nil {
-		return ErrBadQuery("No source type given")
+		return ErrBadQuery("No object type given")
 	}
 	if s.Name == nil {
-		return ErrBadQuery("The source needs a name")
+		return ErrBadQuery("The object needs a name")
 	}
-	return ErrAccessDenied("must be logged in to create the source")
+	return ErrAccessDenied("must be logged in to create the object")
 }
 
-func (db *PublicDB) CreateSource(s *Source) (string, error) {
-	return "", ErrAccessDenied("You must be logged in to create sources")
+func (db *PublicDB) CreateObject(s *Object) (string, error) {
+	return "", ErrAccessDenied("You must be logged in to create objects")
 }
 
-// ReadSource reads the given source if it is shared
-func (db *PublicDB) ReadSource(id string, o *ReadSourceOptions) (*Source, error) {
-	return readSource(db.adb, id, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss 
-		WHERE sources.id=? AND ss.user='public' AND ss.source=sources.id;`, id)
+// ReadObject reads the given object if it is shared
+func (db *PublicDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
+	return readObject(db.adb, id, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss 
+		WHERE objects.id=? AND ss.user='public' AND ss.object=objects.id;`, id)
 }
 
-// UpdateSource allows editing a source
-func (db *PublicDB) UpdateSource(s *Source) error {
+// UpdateObject allows editing a object
+func (db *PublicDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
-		return ErrAccessDenied("Last Modified of source is readonly")
+		return ErrAccessDenied("Last Modified of object is readonly")
 	}
-	return updateSource(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
-		WHERE sources.id=? AND ss.user='public' AND ss.source=sources.id;`, s.ID)
+	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss
+		WHERE objects.id=? AND ss.user='public' AND ss.object=objects.id;`, s.ID)
 }
 
-func (db *PublicDB) DelSource(id string) error {
-	return ErrAccessDenied("You must be logged in to delete sources")
+func (db *PublicDB) DelObject(id string) error {
+	return ErrAccessDenied("You must be logged in to delete objects")
 }
 
-func (db *PublicDB) ShareSource(sourceid, userid string, sa *ScopeArray) error {
-	return ErrAccessDenied("You must be logged in to share sources")
+func (db *PublicDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
+	return ErrAccessDenied("You must be logged in to share objects")
 }
 
-func (db *PublicDB) UnshareSourceFromUser(sourceid, userid string) error {
-	return ErrAccessDenied("You must be logged in to delete source shares")
+func (db *PublicDB) UnshareObjectFromUser(objectid, userid string) error {
+	return ErrAccessDenied("You must be logged in to delete object shares")
 }
 
-func (db *PublicDB) UnshareSource(sourceid string) error {
-	return ErrAccessDenied("You must be logged in to delete source shares")
+func (db *PublicDB) UnshareObject(objectid string) error {
+	return ErrAccessDenied("You must be logged in to delete object shares")
 }
 
-func (db *PublicDB) GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error) {
-	return nil, ErrAccessDenied("You must be logged in to get the source shares")
+func (db *PublicDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, err error) {
+	return nil, ErrAccessDenied("You must be logged in to get the object shares")
 }
 
-// ListSources lists the given sources
-func (db *PublicDB) ListSources(o *ListSourcesOptions) ([]*Source, error) {
-	return listSources(db.adb, o, `SELECT sources.*,json_group_array(ss.scope) AS access FROM sources, user_source_scopes AS ss
-		WHERE %s AND ss.user='public' AND ss.source=sources.id GROUP BY sources.id %s;`)
+// ListObjects lists the given objects
+func (db *PublicDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
+	return listObjects(db.adb, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss
+		WHERE %s AND ss.user='public' AND ss.object=objects.id GROUP BY objects.id %s;`)
 }
 
 func (db *PublicDB) CreateApp(c *App) (string, string, error) {

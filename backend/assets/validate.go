@@ -87,18 +87,18 @@ func Validate(c *Configuration) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	for k, v := range c.SourceTypes {
+	for k, v := range c.ObjectTypes {
 		err := v.ValidateMeta(nil)
 		if err != nil {
-			return fmt.Errorf("source %s meta schema invalid: %s", k, err.Error())
+			return fmt.Errorf("object %s meta schema invalid: %s", k, err.Error())
 		}
 	}
 
 	for p, v := range c.Plugins {
 		for conn, v2 := range v.Apps {
-			for s, v3 := range v2.Sources {
-				if _, ok := c.SourceTypes[v3.Type]; !ok {
-					return fmt.Errorf("[plugin: %s, app: %s, source: %s] unrecognized type (%s)", p, conn, s, v3.Type)
+			for s, v3 := range v2.Objects {
+				if _, ok := c.ObjectTypes[v3.Type]; !ok {
+					return fmt.Errorf("[plugin: %s, app: %s, object: %s] unrecognized type (%s)", p, conn, s, v3.Type)
 				}
 			}
 		}
@@ -191,7 +191,7 @@ func Validate(c *Configuration) error {
 					return err
 				}
 			}
-			for _, s := range app.Sources {
+			for _, s := range app.Objects {
 				for _, e := range s.On {
 					if e.Post == nil {
 						return errors.New("'on' must have post specified")
@@ -204,7 +204,7 @@ func Validate(c *Configuration) error {
 
 		}
 	}
-	for _, s := range c.SourceTypes {
+	for _, s := range c.ObjectTypes {
 		if s.Routes != nil {
 			for k, v := range *s.Routes {
 				if err := isValidRoute(k); err != nil {

@@ -1,8 +1,8 @@
 <template>
   <div>
     <h-loading v-if="loading"></h-loading>
-    <h-not-found v-else-if="source==null" />
-    <router-view v-else :source="source"></router-view>
+    <h-not-found v-else-if="object==null" />
+    <router-view v-else :object="object"></router-view>
   </div>
 </template>
 <script>
@@ -11,25 +11,25 @@ export default {
     loading: true
   }),
   props: {
-    sourceid: String
+    objectid: String
   },
   watch: {
-    sourceid(newValue) {
+    objectid(newValue) {
       this.loading = true;
-      this.$store.dispatch("readSource", {
+      this.$store.dispatch("readObject", {
         id: newValue,
         callback: () => (this.loading = false)
       });
     }
   },
   computed: {
-    source() {
-      return this.$store.state.heedy.sources[this.sourceid] || null;
+    object() {
+      return this.$store.state.heedy.objects[this.objectid] || null;
     }
   },
   created() {
-    this.$store.dispatch("readSource", {
-      id: this.sourceid,
+    this.$store.dispatch("readObject", {
+      id: this.objectid,
       callback: () => (this.loading = false)
     });
   }

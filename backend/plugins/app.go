@@ -45,8 +45,8 @@ func App(pluginKey string, owner string, cv *assets.App) *database.App {
 	return c
 }
 
-func AppSource(app string, key string, as *assets.Source) *database.Source {
-	s := &database.Source{
+func AppObject(app string, key string, as *assets.Object) *database.Object {
+	s := &database.Object{
 		Details: database.Details{
 			Name:        &as.Name,
 			Description: as.Description,
@@ -129,10 +129,10 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 	if err != nil {
 		return aid, akey, err
 	}
-	for skey, sv := range app.Sources {
+	for skey, sv := range app.Objects {
 		// We perform the next stuff as admin
 		if sv.AutoCreate == nil || *sv.AutoCreate == true {
-			_, err := c.Request(c, "POST", "/api/heedy/v1/sources", AppSource(aid, skey, sv), map[string]string{"X-Heedy-As": "heedy"})
+			_, err := c.Request(c, "POST", "/api/heedy/v1/objects", AppObject(aid, skey, sv), map[string]string{"X-Heedy-As": "heedy"})
 			if err != nil {
 				adb.DelApp(aid)
 				return "", "", err

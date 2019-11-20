@@ -16,7 +16,7 @@
 import ViewNotFound from "./view_notfound.vue";
 export default {
   props: {
-    source: Object
+    object: Object
   },
   data: () => ({
     datavis: null,
@@ -26,11 +26,11 @@ export default {
   computed: {
     datavis() {
       let dv = this.$store.state.streams.streams;
-      if (dv[this.source.id] === undefined) {
+      if (dv[this.object.id] === undefined) {
         console.log("dataviz null");
         return null;
       }
-      dv = dv[this.source.id];
+      dv = dv[this.object.id];
       let v = Object.keys(dv).map(k => ({ key: k, ...dv[k] }));
       v.sort((a, b) => a.weight - b.weight);
       console.log("dataviz", v);
@@ -47,10 +47,10 @@ export default {
     },
     subscribe(q) {
       if (this.subscribed) {
-        this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+        this.$app.streams.unsubscribeQuery(this.object.id, "mainviews");
       }
       this.subscribed = true;
-      this.$app.streams.subscribeQuery(this.source, "mainviews", q, dv => {
+      this.$app.streams.subscribeQuery(this.object, "mainviews", q, dv => {
         let v = Object.keys(dv).map(k => ({ key: k, ...dv[k] }));
         v.sort((a, b) => a.weight - b.weight);
         console.log("datavis", v);
@@ -61,14 +61,14 @@ export default {
   watch: {
     "$route.query": function(n, o) {
       if (this.subscribed) {
-        this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+        this.$app.streams.unsubscribeQuery(this.object.id, "mainviews");
       }
       this.subscribe(n);
     },
-    source(n, o) {
+    object(n, o) {
       if (n.id != o.id) {
         if (this.subscribed) {
-          this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+          this.$app.streams.unsubscribeQuery(this.object.id, "mainviews");
           this.subscribed = false;
           this.subscribe(this.$route.query);
         }
@@ -82,7 +82,7 @@ export default {
     }
   },
   beforeDestroy() {
-    this.$app.streams.unsubscribeQuery(this.source.id, "mainviews");
+    this.$app.streams.unsubscribeQuery(this.object.id, "mainviews");
   }
 };
 </script>

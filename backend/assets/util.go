@@ -56,7 +56,7 @@ func CopyFile(srcFs afero.Fs, srcFilePath string, destFs afero.Fs, destFilePath 
 func CopyDir(srcFs afero.Fs, srcDirPath string, destFs afero.Fs, destDirPath string) error {
 	// Some code from https://www.socketloop.com/tutorials/golang-copy-directory-including-sub-directories-files
 
-	// get properties of source dir
+	// get properties of object dir
 	srcInfo, err := srcFs.Stat(srcDirPath)
 	if err != nil {
 		return err

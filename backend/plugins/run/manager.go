@@ -84,7 +84,7 @@ func NewManager(db *database.AdminDB) *Manager {
 
 	// Create the heedy internal runner, which represents the heedy core server.
 	// This allows the server to make requests as if it were a plugin. This is useful
-	// for when the server is creating sources (which are implemented entirely by plugins)
+	// for when the server is creating objects (which are implemented entirely by plugins)
 
 	apikeybytes := make([]byte, 128)
 	_, err := rand.Read(apikeybytes)

@@ -23,15 +23,15 @@ import UserInjector, {
 import UserRouter from "./main/user/router.vue";
 import User from "./main/user/index.vue";
 import UserHeader from "./main/user/header.vue";
-import UserSources from "./main/user/sources.vue";
+import UserObjects from "./main/user/objects.vue";
 
-import SourceInjector, {
-    sourceRoutes
-} from "./main/source/injector.js";
-import Source from "./main/source/index.vue";
-import SourceRouter from "./main/source/router.vue";
-import SourceHeader from "./main/source/header.vue";
-import SourceList from "./main/source/list.vue";
+import ObjectInjector, {
+    objectRoutes
+} from "./main/object/injector.js";
+import ObjectComponent from "./main/object/index.vue";
+import ObjectRouter from "./main/object/router.vue";
+import ObjectHeader from "./main/object/header.vue";
+import ObjectList from "./main/object/list.vue";
 
 import AppInjector, {
     appRoutes
@@ -41,7 +41,7 @@ import App from "./main/app/index.vue";
 import AppHeader from "./main/app/header.vue";
 import AppCreate from "./main/app/create.vue";
 import AppUpdate from "./main/app/update.vue";
-import AppSources from "./main/app/sources.vue";
+import AppObjects from "./main/app/objects.vue";
 import AppSettings from "./main/app/settings.vue";
 
 import Apps from "./main/apps.vue";
@@ -64,12 +64,12 @@ function setup(app) {
 
     // Adds the components that are used throughout the UI
     registerCoreComponents(app.vue);
-    app.vue.component("h-source-list", SourceList);
+    app.vue.component("h-object-list", ObjectList);
 
-    // Inject the user/app/source handlers into the app
+    // Inject the user/app/object handlers into the app
     app.inject("user", new UserInjector(app));
     app.inject("app", new AppInjector(app));
-    app.inject("source", new SourceInjector(app));
+    app.inject("object", new ObjectInjector(app));
     app.inject("settings", new SettingsInjector(app));
 
 
@@ -80,9 +80,9 @@ function setup(app) {
         component: UserHeader
     });
     app.user.addComponent({
-        key: "sources",
+        key: "objects",
         weight: 1,
-        component: UserSources
+        component: UserObjects
     });
     app.user.addRoute({
         path: "/",
@@ -163,9 +163,9 @@ function setup(app) {
             component: AppHeader
         });
         app.app.addComponent({
-            key: "sources",
+            key: "objects",
             weight: 1,
-            component: AppSources
+            component: AppObjects
         });
 
 
@@ -219,21 +219,21 @@ function setup(app) {
     });
 
     app.addRoute({
-        path: "/sources/:sourceid",
+        path: "/objects/:objectid",
         props: true,
-        component: SourceRouter,
-        children: sourceRoutes
+        component: ObjectRouter,
+        children: objectRoutes
     });
 
-    app.source.addRoute({
+    app.object.addRoute({
         path: "/",
-        component: Source
+        component: ObjectComponent
     })
 
-    app.source.addComponent({
+    app.object.addComponent({
         key: "header",
         weight: 0,
-        component: SourceHeader
+        component: ObjectHeader
     })
 
 }

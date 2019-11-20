@@ -110,7 +110,7 @@ func appParentScope(s string) string {
 	return r[0]
 }
 
-// AppScopeArray works with app scopes, which have different details than source scopes
+// AppScopeArray works with app scopes, which have different details than object scopes
 type AppScopeArray struct {
 	ScopeArray
 }
@@ -123,7 +123,7 @@ func (s *AppScopeArray) Update() {
 	}
 
 	// Now for each scope, check if there is a wildcard, meaning that
-	// self.sources encompasses self.sources:read
+	// self.objects encompasses self.objects:read
 
 	s.scopeMap = make(map[string]bool)
 	if _, ok := scopeMap["*"]; ok {
@@ -179,7 +179,7 @@ func (s *JSONObject) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
-// Details is used in groups, users, apps and sources to hold info
+// Details is used in groups, users, apps and objects to hold info
 type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
 	ID          string  `json:"id,omitempty" db:"id"`
@@ -218,7 +218,7 @@ type App struct {
 	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
 }
 
-type Source struct {
+type Object struct {
 	Details
 
 	Owner *string `json:"owner,omitempty" db:"owner"`
@@ -239,7 +239,7 @@ type Source struct {
 	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
 
-func (s *Source) String() string {
+func (s *Object) String() string {
 	b, _ := json.MarshalIndent(s, "", "  ")
 	return string(b)
 }
@@ -255,30 +255,30 @@ type ReadAppOptions struct {
 	AccessToken bool `json:"token,omitempty" schema:"token"` // using "token" instead of access_token, since the API uses access_token param
 }
 
-// ReadSourceOptions gives options for reading
-type ReadSourceOptions struct {
+// ReadObjectOptions gives options for reading
+type ReadObjectOptions struct {
 	Icon bool `json:"icon,omitempty" schema:"icon"`
 }
 
 type ListUsersOptions struct {
 }
 
-// ListSourcesOptions shows the options for listing sources
-type ListSourcesOptions struct {
+// ListObjectsOptions shows the options for listing objects
+type ListObjectsOptions struct {
 	// Whether to include icons
 	Icon *bool `json:"icon,omitempty" schema:"icon"`
-	// Limit results to the given user's sources.
+	// Limit results to the given user's objects.
 	UserName *string `json:"username,omitempty" schema:"username"`
-	// Limit the results to the given app's sources
+	// Limit the results to the given app's objects
 	App *string `json:"app,omitempty" schema:"app"`
-	// Get sources with the given key
+	// Get objects with the given key
 	Key *string `json:"key,omitempty" schema:"key"`
-	// Limit results to sources of the given type
+	// Limit results to objects of the given type
 	Type *string `json:"type,omitempty" schema:"type"`
 	// Maximum number of results to return
 	Limit *int `json:"limit,omitempty" schema:"limit"`
 
-	// Whether to include shared sources (not belonging to the user)
+	// Whether to include shared objects (not belonging to the user)
 	// This is only allowed for user==current user
 	Shared *bool
 }
@@ -327,18 +327,18 @@ type DB interface {
 	DelApp(cid string) error
 	ListApps(o *ListAppOptions) ([]*App, error)
 
-	CanCreateSource(s *Source) error
-	CreateSource(s *Source) (string, error)
-	ReadSource(id string, o *ReadSourceOptions) (*Source, error)
-	UpdateSource(s *Source) error
-	DelSource(id string) error
+	CanCreateObject(s *Object) error
+	CreateObject(s *Object) (string, error)
+	ReadObject(id string, o *ReadObjectOptions) (*Object, error)
+	UpdateObject(s *Object) error
+	DelObject(id string) error
 
-	ShareSource(sourceid, userid string, sa *ScopeArray) error
-	UnshareSourceFromUser(sourceid, userid string) error
-	UnshareSource(sourceid string) error
-	GetSourceShares(sourceid string) (m map[string]*ScopeArray, err error)
+	ShareObject(objectid, userid string, sa *ScopeArray) error
+	UnshareObjectFromUser(objectid, userid string) error
+	UnshareObject(objectid string) error
+	GetObjectShares(objectid string) (m map[string]*ScopeArray, err error)
 
-	ListSources(o *ListSourcesOptions) ([]*Source, error)
+	ListObjects(o *ListObjectsOptions) ([]*Object, error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -351,7 +351,7 @@ func ErrBadQuery(err string, args ...interface{}) error {
 }
 
 var (
-	ErrNotFound        = errors.New("not_found: The selected resource was not found")
+	ErrNotFound        = errors.New("not_found: The selected reobject was not found")
 	ErrNoUpdate        = errors.New("Nothing to update")
 	ErrNoPasswordGiven = errors.New("A user cannot have an empty password")
 	ErrUserNotFound    = errors.New("User was not found")
@@ -479,7 +479,7 @@ func extractApp(c *App) (cColumns []string, cValues []interface{}, err error) {
 	return
 }
 
-func extractSource(s *Source) (sColumns []string, sValues []interface{}, err error) {
+func extractObject(s *Object) (sColumns []string, sValues []interface{}, err error) {
 	sColumns, sValues, err = extractDetails(&s.Details)
 	if err != nil {
 		return
@@ -586,33 +586,33 @@ func appUpdateQuery(c *App) (string, []interface{}, error) {
 	return strings.Join(cColumns, "=?,") + "=?", cValues, err
 }
 
-func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{}, error) {
+func objectCreateQuery(c *assets.Configuration, s *Object) (string, []interface{}, error) {
 	var err error
 	if s.Name == nil {
 		return "", nil, ErrInvalidName
 	}
 	if s.Owner == nil && s.App == nil {
-		return "", nil, ErrBadQuery("You must specify either an owner or a app to which the source should belong")
+		return "", nil, ErrBadQuery("You must specify either an owner or a app to which the object should belong")
 	}
 	if s.App != nil && s.Owner != nil {
-		return "", nil, ErrBadQuery("When creating a source for a app, you must not specify an owner")
+		return "", nil, ErrBadQuery("When creating a object for a app, you must not specify an owner")
 	}
 	if s.Type == nil {
-		return "", nil, ErrBadQuery("Must specify a source type")
+		return "", nil, ErrBadQuery("Must specify a object type")
 	}
 	if s.Meta != nil {
-		err = c.ValidateSourceMetaWithDefaults(*s.Type, *s.Meta)
+		err = c.ValidateObjectMetaWithDefaults(*s.Type, *s.Meta)
 	} else {
 		// Validate will set up default meta values
 		m := JSONObject{}
-		err = c.ValidateSourceMetaWithDefaults(*s.Type, m)
+		err = c.ValidateObjectMetaWithDefaults(*s.Type, m)
 		s.Meta = &m
 	}
 	if err != nil {
 		return "", nil, err
 	}
 
-	sColumns, sValues, err := extractSource(s)
+	sColumns, sValues, err := extractObject(s)
 	if err != nil {
 		return "", nil, err
 	}
@@ -626,22 +626,22 @@ func sourceCreateQuery(c *assets.Configuration, s *Source) (string, []interface{
 	return strings.Join(sColumns, ","), sValues, err
 }
 
-// The source s is assumed to have the underlying source type added in.
-func sourceUpdateQuery(c *assets.Configuration, s *Source, sourceType string) (string, []interface{}, error) {
-	sColumns, sValues, err := extractSource(s)
+// The object s is assumed to have the underlying object type added in.
+func objectUpdateQuery(c *assets.Configuration, s *Object, objectType string) (string, []interface{}, error) {
+	sColumns, sValues, err := extractObject(s)
 	if s.Type != nil {
-		return "", nil, ErrBadQuery("Modifying a source type is not supported")
+		return "", nil, ErrBadQuery("Modifying a object type is not supported")
 	}
 	if len(sValues) == 0 {
 		return "", nil, ErrNoUpdate
 	}
 	if s.Meta != nil && err != nil {
-		err = c.ValidateSourceMeta(*s.Type, (*map[string]interface{})(s.Meta))
+		err = c.ValidateObjectMeta(*s.Type, (*map[string]interface{})(s.Meta))
 	}
 	return strings.Join(sColumns, "=?,") + "=?", sValues, err
 }
 
-func listSourcesQuery(o *ListSourcesOptions) (string, []interface{}, error) {
+func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {
 	sColumns := make([]string, 0)
 	sValues := make([]interface{}, 0)
 	pretext := ""

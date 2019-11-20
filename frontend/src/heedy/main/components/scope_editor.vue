@@ -80,13 +80,13 @@ export default {
           color: "green"
         },
         {
-          name: "sources",
-          description: "The app's access to sources belonging to you",
+          name: "objects",
+          description: "The app's access to objects belonging to you",
           color: "blue"
         },
         {
           name: "shared",
-          description: "The app's access to sources shared with you",
+          description: "The app's access to objects shared with you",
           color: "purple"
         },
         {

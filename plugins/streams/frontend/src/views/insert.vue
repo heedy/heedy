@@ -60,7 +60,7 @@ export default {
       console.log("Inserting datapoint:", this.modified.data);
       let res = await this.$app.api(
         "POST",
-        `api/heedy/v1/sources/${this.data.id}/data`,
+        `api/heedy/v1/objects/${this.data.id}/data`,
         [{ t: moment().unix(), d: this.modified.data }]
       );
 

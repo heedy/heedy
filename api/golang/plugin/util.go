@@ -16,7 +16,7 @@ func ErrPlugin(err string, args ...interface{}) error {
 }
 
 // NoOverlay returns a copy of the database with all overlays removed if it is a PluginDB. This is needed
-// for any queries that are run from source implementations
+// for any queries that are run from object implementations
 func NoOverlay(db database.DB) database.DB {
 	pdb, ok := db.(*PluginDB)
 	if !ok {
@@ -32,10 +32,10 @@ func NoOverlay(db database.DB) database.DB {
 	return pdb2
 }
 
-// UnmarshalSourceMeta extracts the meta portion from the source, unmarshalling it into the given object.
-// This is because the meta portion of the source is base64 encoded in the X-Heedy-Meta header
+// UnmarshalObjectMeta extracts the meta portion from the object, unmarshalling it into the given object.
+// This is because the meta portion of the object is base64 encoded in the X-Heedy-Meta header
 // to avoid unnecessary read queries to the database.
-func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
+func UnmarshalObjectMeta(r *http.Request, obj interface{}) error {
 	m := r.Header.Get("X-Heedy-Meta")
 	if m == "" {
 		return errors.New("server_error: could not find X-Heedy-Meta header")
@@ -47,9 +47,9 @@ func UnmarshalSourceMeta(r *http.Request, obj interface{}) error {
 	return json.Unmarshal(b, obj)
 }
 
-// SourceInfo holds the information sent from heedy as http headers about a source.
-// These headers are only present in requests for source API
-type SourceInfo struct {
+// ObjectInfo holds the information sent from heedy as http headers about a object.
+// These headers are only present in requests for object API
+type ObjectInfo struct {
 	Type         string
 	ID           string
 	LastModified *string
@@ -57,18 +57,18 @@ type SourceInfo struct {
 	Access       database.ScopeArray
 }
 
-// GetSourceInfo prepares all source details that come in as part of a source request
-func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
-	si := SourceInfo{
+// GetObjectInfo prepares all object details that come in as part of a object request
+func GetObjectInfo(r *http.Request) (*ObjectInfo, error) {
+	si := ObjectInfo{
 		Type: r.Header.Get("X-Heedy-Type"),
-		ID:   r.Header.Get("X-Heedy-Source"),
+		ID:   r.Header.Get("X-Heedy-Object"),
 	}
 	if si.Type == "" || si.ID == "" {
-		return nil, ErrPlugin("No type or ID headers were present in source request")
+		return nil, ErrPlugin("No type or ID headers were present in object request")
 	}
 	ne, ok := r.Header["X-Heedy-Last-Modified"]
 	if !ok || len(ne) != 1 {
-		return nil, ErrPlugin("No Last-Modified in source request")
+		return nil, ErrPlugin("No Last-Modified in object request")
 	}
 	if ne[0] != "null" {
 		si.LastModified = &ne[0]
@@ -76,13 +76,13 @@ func GetSourceInfo(r *http.Request) (*SourceInfo, error) {
 
 	a, ok := r.Header["X-Heedy-Access"]
 	if !ok {
-		return nil, ErrPlugin("No access scopes were present in source request")
+		return nil, ErrPlugin("No access scopes were present in object request")
 	}
 	si.Access = database.ScopeArray{Scopes: a}
 
 	m := r.Header.Get("X-Heedy-Meta")
 	if m == "" {
-		return nil, ErrPlugin("No meta in source request")
+		return nil, ErrPlugin("No meta in object request")
 	}
 
 	b, err := base64.StdEncoding.DecodeString(m)

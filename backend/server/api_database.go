@@ -58,20 +58,20 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, sl, err)
 }
 
-func ListSources(w http.ResponseWriter, r *http.Request) {
-	var o database.ListSourcesOptions
+func ListObjects(w http.ResponseWriter, r *http.Request) {
+	var o database.ListObjectsOptions
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	sl, err := rest.CTX(r).DB.ListSources(&o)
+	sl, err := rest.CTX(r).DB.ListObjects(&o)
 	rest.WriteJSON(w, r, sl, err)
 }
 
-func CreateSource(w http.ResponseWriter, r *http.Request) {
-	var s database.Source
-	var o database.ReadSourceOptions
+func CreateObject(w http.ResponseWriter, r *http.Request) {
+	var s database.Object
+	var o database.ReadObjectOptions
 	err := rest.UnmarshalRequest(r, &s)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
@@ -84,42 +84,42 @@ func CreateSource(w http.ResponseWriter, r *http.Request) {
 	}
 	adb := rest.CTX(r).DB
 
-	sid, err := adb.CreateSource(&s)
+	sid, err := adb.CreateObject(&s)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	s2, err := adb.ReadSource(sid, &o)
+	s2, err := adb.ReadObject(sid, &o)
 
 	rest.WriteJSON(w, r, s2, err)
 }
 
-func ReadSource(w http.ResponseWriter, r *http.Request) {
-	var o database.ReadSourceOptions
-	srcid := chi.URLParam(r, "sourceid")
+func ReadObject(w http.ResponseWriter, r *http.Request) {
+	var o database.ReadObjectOptions
+	srcid := chi.URLParam(r, "objectid")
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	s, err := rest.CTX(r).DB.ReadSource(srcid, &o)
+	s, err := rest.CTX(r).DB.ReadObject(srcid, &o)
 	rest.WriteJSON(w, r, s, err)
 }
 
-func UpdateSource(w http.ResponseWriter, r *http.Request) {
-	var s database.Source
+func UpdateObject(w http.ResponseWriter, r *http.Request) {
+	var s database.Object
 
 	if err := rest.UnmarshalRequest(r, &s); err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	s.ID = chi.URLParam(r, "sourceid")
-	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateSource(&s))
+	s.ID = chi.URLParam(r, "objectid")
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateObject(&s))
 }
 
-func DeleteSource(w http.ResponseWriter, r *http.Request) {
-	sid := chi.URLParam(r, "sourceid")
-	rest.WriteResult(w, r, rest.CTX(r).DB.DelSource(sid))
+func DeleteObject(w http.ResponseWriter, r *http.Request) {
+	sid := chi.URLParam(r, "objectid")
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelObject(sid))
 }
 
 func CreateApp(w http.ResponseWriter, r *http.Request) {

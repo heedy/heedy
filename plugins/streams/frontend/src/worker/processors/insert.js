@@ -1,5 +1,5 @@
-async function insert(source, data) {
-    if (source == null || source.access != "*" || Object.keys(source.meta.schema).length == 0) {
+async function insert(object, data) {
+    if (object == null || object.access != "*" || Object.keys(object.meta.schema).length == 0) {
         return {};
     }
     return {
@@ -7,8 +7,8 @@ async function insert(source, data) {
             view: "insert",
             title: "Insert",
             data: {
-                schema: source.meta.schema,
-                id: source.id
+                schema: object.meta.schema,
+                id: object.id
             },
             weight: 0
         }

@@ -12,7 +12,7 @@
           <v-layout row justify-center>
             <v-flex text-center xs12 md8 lg6 style="padding-top: 1cm;backgroud-color:blue;">
               <p>
-                Heedy is an open-source, extensible home for your quantified-self data,
+                Heedy is an open-object, extensible home for your quantified-self data,
                 and other information your devices gather about you.
                 It enables you to easily analyze and share
                 things you find in your data, and integrates with the most popular data gathering

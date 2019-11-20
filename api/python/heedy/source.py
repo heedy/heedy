@@ -2,15 +2,15 @@ from .base import APIObject, Session
 from typing import Dict
 
 
-class Source(APIObject):
-    def __init__(self, session: Session, sourceData: Dict):
-        super().__init__(session, f"api/heedy/v1/sources/{sourceData['id']}")
-        self.data = sourceData
+class Object(APIObject):
+    def __init__(self, session: Session, objectData: Dict):
+        super().__init__(session, f"api/heedy/v1/objects/{objectData['id']}")
+        self.data = objectData
 
     @property
     def type(self) -> str:
         """
-        Returns the source type
+        Returns the object type
         """
         return self.data["type"]
 
@@ -21,25 +21,25 @@ class Source(APIObject):
         return str(self)
 
 
-_sourceRegistry = {}
+_objectRegistry = {}
 
 
-def registerSourceType(sourceType: str, sourceClass: Source) -> None:
+def registerObjectType(objectType: str, objectClass: Object) -> None:
     """
-    registerSourceType allows external libraries to implement source types
-    available through heedy plugins. All you need to do is subclass :code:`Source`,
+    registerObjectType allows external libraries to implement object types
+    available through heedy plugins. All you need to do is subclass :code:`Object`,
     and register the corresponding type!
     """
-    _sourceRegistry[sourceType] = sourceClass
+    _objectRegistry[objectType] = objectClass
 
 
-def getSourceObject(session: Session, sourceData: Dict) -> Source:
+def getObjectObject(session: Session, objectData: Dict) -> Object:
     """
-    Heedy allows multiple different source types. getSourceObject uses the
-    registered source type objects to initialize the given source data to
-    the correct object type. If the source is of an unregistered type, it returns
-    a base :code:`Source` object.
+    Heedy allows multiple different object types. getObjectObject uses the
+    registered object type objects to initialize the given object data to
+    the correct object type. If the object is of an unregistered type, it returns
+    a base :code:`Object` object.
     """
-    if sourceData["type"] in _sourceRegistry:
-        return _sourceRegistry[sourceData["type"]](session, sourceData)
-    return Source(session, sourceData)
+    if objectData["type"] in _objectRegistry:
+        return _objectRegistry[objectData["type"]](session, objectData)
+    return Object(session, objectData)

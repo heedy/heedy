@@ -22,7 +22,7 @@
             <v-icon v-else>add</v-icon>
           </v-btn>
         </template>
-        <v-tooltip v-for="item in sourceCreators" :key="item.key" bottom>
+        <v-tooltip v-for="item in objectCreators" :key="item.key" bottom>
           <template v-slot:activator="{ on }">
             <v-btn fab dark small color="green" v-on="on" :to="item.route">
               <v-icon>{{ item.icon }}</v-icon>
@@ -128,8 +128,8 @@ export default {
       }
       return this.user.username == this.$store.state.app.info.user.username;
     },
-    sourceCreators() {
-      return this.$store.state.heedy.sourceCreators;
+    objectCreators() {
+      return this.$store.state.heedy.objectCreators;
     }
   }
 };

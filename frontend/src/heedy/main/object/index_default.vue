@@ -1,23 +1,23 @@
 <template>
   <h-page-container noflex>
-    <component v-for="c in components" :key="c.key" :is="c.component" :source="source" />
+    <component v-for="c in components" :key="c.key" :is="c.component" :object="object" />
   </h-page-container>
 </template>
 <script>
 import { filterComponents } from "../util.js";
 export default {
   props: {
-    source: Object
+    object: Object
   },
   computed: {
     app() {
-      if (this.source.app == null) return null;
+      if (this.object.app == null) return null;
       if (this.$store.state.heedy.apps == null) return null;
-      return this.$store.state.heedy.apps[this.source.app] || null;
+      return this.$store.state.heedy.apps[this.object.app] || null;
     },
     components() {
       return filterComponents(
-        this.$store.state.heedy.source_components,
+        this.$store.state.heedy.object_components,
         {
           plugin: 4,
           skey: 2,
@@ -25,8 +25,8 @@ export default {
         },
         c => {
           // Filter out any components that have constraints violated
-          if (c.type !== undefined && c.type != this.source.type) return false;
-          if (c.skey !== undefined && c.skey != this.source.key) return false;
+          if (c.type !== undefined && c.type != this.object.type) return false;
+          if (c.skey !== undefined && c.skey != this.object.key) return false;
           if (c.plugin !== undefined) {
             if (this.app == null) return false;
             if (this.app.plugin != c.plugin) return false;
@@ -37,7 +37,7 @@ export default {
     }
   },
   watch: {
-    source(s) {
+    object(s) {
       if (s.app != null) {
         let c = this.$store.state.heedy.apps;
         if (c == null || c[s.app] === undefined) {
@@ -47,10 +47,10 @@ export default {
     }
   },
   created() {
-    if (this.source.app != null) {
+    if (this.object.app != null) {
       let c = this.$store.state.heedy.apps;
-      if (c == null || c[this.source.app] === undefined) {
-        this.$store.dispatch("readApp", { id: this.source.app });
+      if (c == null || c[this.object.app] === undefined) {
+        this.$store.dispatch("readApp", { id: this.object.app });
       }
     }
   }

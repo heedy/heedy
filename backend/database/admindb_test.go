@@ -198,7 +198,7 @@ func TestAdminApp(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestAdminSource(t *testing.T) {
+func TestAdminObject(t *testing.T) {
 	db, cleanup := newDB(t)
 	defer cleanup()
 
@@ -218,7 +218,7 @@ func TestAdminSource(t *testing.T) {
 		Owner: &name,
 	})
 	require.NoError(t, err)
-	sid, err := db.CreateSource(&Source{
+	sid, err := db.CreateObject(&Object{
 		Details: Details{
 
 			Name: &name,
@@ -228,7 +228,7 @@ func TestAdminSource(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, db.UpdateSource(&Source{
+	require.NoError(t, db.UpdateObject(&Object{
 		Details: Details{
 			ID:       sid,
 			Name: &badname,
@@ -243,7 +243,7 @@ func TestAdminSource(t *testing.T) {
 		},
 	}))
 
-	s, err := db.ReadSource(sid, nil)
+	s, err := db.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, badname)
 	require.NotNil(t, s.Scopes)
@@ -251,33 +251,33 @@ func TestAdminSource(t *testing.T) {
 	require.Equal(t, len((*s.Scopes).Scopes), 2)
 	require.Equal(t, (*s.Meta)["schema"], float64(4))
 
-	sl,err := db.ListSources(nil)
+	sl,err := db.ListObjects(nil)
 	require.NoError(t,err)
 	require.Equal(t,len(sl),1)
-	sourceType:= "notascouce"
-	sl,err = db.ListSources(&ListSourcesOptions{
-		Type: &sourceType,
+	objectType:= "notascouce"
+	sl,err = db.ListObjects(&ListObjectsOptions{
+		Type: &objectType,
 	})
 	require.NoError(t,err)
 	require.Equal(t,len(sl),0)
-	sl,err = db.ListSources(&ListSourcesOptions{
+	sl,err = db.ListObjects(&ListObjectsOptions{
 		Type: &stype,
 	})
 	require.NoError(t,err)
 	require.Equal(t,len(sl),1)
 	//fmt.Printf(s.String())
 
-	require.NoError(t, db.DelSource(sid))
-	require.Error(t, db.DelSource(sid))
+	require.NoError(t, db.DelObject(sid))
+	require.Error(t, db.DelObject(sid))
 }
 
-func TestAdminShareSource(t *testing.T) {
+func TestAdminShareObject(t *testing.T) {
 	db, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	name := "testy"
 	stype := "stream"
-	sid, err := db.CreateSource(&Source{
+	sid, err := db.CreateObject(&Object{
 		Details: Details{
 
 			Name: &name,
@@ -287,37 +287,37 @@ func TestAdminShareSource(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	m, err := db.GetSourceShares(sid)
+	m, err := db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 0)
 
-	require.NoError(t, db.ShareSource(sid, "public", &ScopeArray{
+	require.NoError(t, db.ShareObject(sid, "public", &ScopeArray{
 		Scopes: []string{"read", "write"},
 	}))
 
-	m, err = db.GetSourceShares(sid)
+	m, err = db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 1)
 
 	require.Equal(t, len(m["public"].Scopes), 2)
 
-	require.NoError(t, db.ShareSource(sid, "users", &ScopeArray{
+	require.NoError(t, db.ShareObject(sid, "users", &ScopeArray{
 		Scopes: []string{"read", "write", "love"},
 	}))
 
-	m, err = db.GetSourceShares(sid)
+	m, err = db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 2)
 
-	require.NoError(t, db.UnshareSourceFromUser(sid, "users"))
+	require.NoError(t, db.UnshareObjectFromUser(sid, "users"))
 
-	m, err = db.GetSourceShares(sid)
+	m, err = db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 1)
 
-	require.NoError(t, db.UnshareSource(sid))
+	require.NoError(t, db.UnshareObject(sid))
 
-	m, err = db.GetSourceShares(sid)
+	m, err = db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 0)
 }

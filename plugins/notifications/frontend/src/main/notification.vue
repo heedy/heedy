@@ -52,7 +52,7 @@ export default {
     },
     linkpath() {
       console.log(this.n);
-      if (this.n.source !== undefined) return `/sources/${this.n.source}`;
+      if (this.n.object !== undefined) return `/objects/${this.n.object}`;
       if (this.n.app !== undefined)
         return `/apps/${this.n.app}`;
       return `/users/${this.n.user}`;
@@ -61,8 +61,8 @@ export default {
   methods: {
     del(v) {
       let nq = { key: this.n.key };
-      if (this.n.source !== undefined) {
-        nq.source = this.n.source;
+      if (this.n.object !== undefined) {
+        nq.object = this.n.object;
       } else if (this.n.app !== undefined) {
         nq.app = this.n.app;
       } else {
@@ -75,8 +75,8 @@ export default {
     n(newN) {
       if (this.seen && !newN.seen) {
         let nq = { key: newN.key };
-        if (newN.source !== undefined) {
-          nq.source = newN.source;
+        if (newN.object !== undefined) {
+          nq.object = newN.object;
         } else if (newN.app !== undefined) {
           nq.app = newN.app;
         } else {
@@ -92,8 +92,8 @@ export default {
   created() {
     if (this.seen && !this.n.seen) {
       let nq = { key: this.n.key };
-      if (this.n.source !== undefined) {
-        nq.source = this.n.source;
+      if (this.n.object !== undefined) {
+        nq.object = this.n.object;
       } else if (this.n.app !== undefined) {
         nq.app = this.n.app;
       } else {

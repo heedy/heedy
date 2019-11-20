@@ -1,4 +1,4 @@
-from ..source import Source, registerSourceType
+from ..object import Object, registerObjectType
 
 import time
 import datetime
@@ -11,13 +11,14 @@ from dateparser import parse
 
 
 def parseTime(t):
-    if isinstance(t,str):
+    if isinstance(t, str):
         t = parse(t)
         if t is None:
             raise AttributeError("Could not parse timestamp")
-    if isinstance(t,datetime.datetime):
+    if isinstance(t, datetime.datetime):
         t = datetime.timestamp(t)
     return t
+
 
 class DatapointArray(list):
     """
@@ -128,9 +129,9 @@ class DatapointArray(list):
         return self.sum() / float(len(self))
 
 
-class Stream(Source):
-    
-    def __call__(self,actions = False, **kwargs):
+class Stream(Object):
+
+    def __call__(self, actions=False, **kwargs):
         """
         Gets stream data. You can query by index with i1 and i2, or by timestamp by t1 and t2.
         Timestamps can be strings such as "last month", "1pm" or "jun 5, 2019, 1pm", which will be
@@ -145,7 +146,7 @@ class Stream(Source):
         urimod = "/data"
         if actions:
             urimod = "/actions"
-        return self.session.get(self.uri + urimod,params=kwargs,f = lambda x: DatapointArray(x))
+        return self.session.get(self.uri + urimod, params=kwargs, f=lambda x: DatapointArray(x))
 
     def __getitem__(self, getrange):
         """Allows accessing the stream just as if it were just one big python array.
@@ -189,7 +190,8 @@ class Stream(Source):
         to the same timestamp as the most recent datapoint hat already exists in the database, and the insert will
         succeed.
         """
-        return self.session.post(self.uri + "/data",data=datapoint_array)
+        return self.session.post(self.uri + "/data", data=datapoint_array)
+
     def append(self, data):
         """inserts one datapoint with the given data, and appends it to
         the stream, using the current timestamp::
@@ -198,8 +200,9 @@ class Stream(Source):
 
         """
         return self.insert_array([{"d": data, "t": time.time()}])
-    def delete(self,**kwargs):
-        return self.session.delete(self.uri + "/data",params=kwargs)
+
+    def delete(self, **kwargs):
+        return self.session.delete(self.uri + "/data", params=kwargs)
 
 
-registerSourceType("stream",Stream)
+registerObjectType("stream", Stream)

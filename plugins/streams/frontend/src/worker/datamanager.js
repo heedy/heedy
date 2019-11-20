@@ -79,7 +79,7 @@ class StreamDataManager {
     }
 
     async runquery(query) {
-        let result = await api("GET", `api/heedy/v1/sources/${this.stream.id}/data`, query);
+        let result = await api("GET", `api/heedy/v1/objects/${this.stream.id}/data`, query);
         if (!result.response.ok) {
             throw result.response.error_message;
         }

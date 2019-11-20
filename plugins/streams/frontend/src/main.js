@@ -12,27 +12,27 @@ function setup(app) {
 
   if (app.info.user != null) {
 
-    app.source.addCreator({
+    app.object.addCreator({
       key: "rawstream",
       text: "Stream",
       icon: "timeline",
-      route: "/create/source/stream"
+      route: "/create/object/stream"
     });
 
-    app.source.addRoute({
+    app.object.addRoute({
       path: "/stream/update",
       component: Update
     });
 
     app.addRoute({
-      path: "/create/source/stream",
+      path: "/create/object/stream",
       component: Create
     });
   }
 
   app.worker.import("streams/worker.mjs");
 
-  app.source.addComponent({
+  app.object.addComponent({
     component: Views,
     type: "stream",
     key: "views",
@@ -44,13 +44,13 @@ function setup(app) {
   app.streams.addView("apexchart", () => import("./views/apexchart.mjs"));
 
 
-  app.source.addComponent({
+  app.object.addComponent({
     component: Header,
     type: "stream",
     key: "header"
   });
 
-  app.source.addType({
+  app.object.addType({
     type: "stream",
     title: "Stream",
     list_title: "Streams",
@@ -58,7 +58,7 @@ function setup(app) {
   });
 
 
-  //app.source.replacePage("stream", Stream);
+  //app.object.replacePage("stream", Stream);
 }
 
 export default setup;

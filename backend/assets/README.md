@@ -6,7 +6,7 @@ Assets have the following directory structure:
 ./{plugin-name}
 ./assets - a folder mirroring the asset manager structure containing file replacements
 plugin.conf - plugin configuration file
-./src - a folder holding python source code
+./src - a folder holding python object code
 README.md - A readme file that holds the plugin description
 /www - The website to show non-logged-in users
 index.html (golang template)
