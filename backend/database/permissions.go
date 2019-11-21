@@ -251,7 +251,7 @@ func listObjects(adb *AdminDB, o *ListObjectsOptions, selectStatement string, ar
 	}
 
 	// Clear icons if not needed
-	if o != nil && o.Icon != nil && !(*o.Icon) {
+	if o == nil || !o.Icon {
 		for r := range res {
 			res[r].Icon = nil
 		}
@@ -266,15 +266,16 @@ func listApps(adb *AdminDB, o *ListAppOptions, selectStatement string, args ...i
 	if err != nil {
 		return nil, err
 	}
-	if o != nil {
-		if o.Icon != nil && !(*o.Icon) {
-			for r := range res {
-				res[r].Icon = nil
-			}
+	if o == nil || !o.Icon {
+		for r := range res {
+			res[r].Icon = nil
 		}
 	}
-	for r := range res {
-		res[r].AccessToken = nil
+	if o == nil || !o.AccessToken {
+		for _, r := range res {
+			r.AccessToken = nil
+		}
 	}
+
 	return res, nil
 }

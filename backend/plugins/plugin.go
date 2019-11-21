@@ -43,6 +43,7 @@ func (p *Plugin) Start() error {
 		rv2 := rv // we need to pass a pointer to start, so need to create a new copy
 		err := p.Run.Start(p.Name, rname, &rv2)
 		if err != nil {
+			logrus.Errorf("Failed to start %s:%s (%v)", p.Name, rname, err)
 			p.Run.StopPlugin(p.Name)
 			return err
 		}

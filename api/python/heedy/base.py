@@ -126,6 +126,13 @@ class AsyncSession(Session):
         self.s = None
         self.headers = {'Content-Type': 'application/json'}
 
+    @staticmethod
+    def __p(p):
+        for k in p:
+            if not isinstance(p[k], str):
+                p[k] = json.dumps(p[k])
+        return p
+
     def setAccessToken(self, token):
         self.headers['Authorization'] = f"Bearer {token}"
 
@@ -153,19 +160,19 @@ class AsyncSession(Session):
 
     async def get(self, path, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.get(urljoin(self.url, path), params=params, headers=self.headers))).json())
+        return f(await (await self.handleResponse(await self.s.get(urljoin(self.url, path), params=self.__p(params), headers=self.headers))).json())
 
     async def post(self, path, data, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.post(urljoin(self.url, path), params=params, data=json.dumps(data), headers=self.headers))).json())
+        return f(await (await self.handleResponse(await self.s.post(urljoin(self.url, path), params=self.__p(params), data=json.dumps(data), headers=self.headers))).json())
 
     async def patch(self, path, data, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.patch(urljoin(self.url, path), params=params, data=json.dumps(data), headers=self.headers))).json())
+        return f(await (await self.handleResponse(await self.s.patch(urljoin(self.url, path), params=self.__p(params), data=json.dumps(data), headers=self.headers))).json())
 
     async def delete(self, path, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.delete(urljoin(self.url, path), params=params, headers=self.headers))).json())
+        return f(await (await self.handleResponse(await self.s.delete(urljoin(self.url, path), params=self.__p(params), headers=self.headers))).json())
 
     async def raw(self, method, path, data=None, params={}, headers={}):
         self.initSession()

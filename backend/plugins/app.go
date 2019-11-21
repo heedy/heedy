@@ -111,11 +111,12 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 	}
 
 	if app.Unique != nil && *app.Unique {
-		noicon := false
 		a, err := adb.ListApps(&database.ListAppOptions{
+			ReadAppOptions: database.ReadAppOptions{
+				Icon: false,
+			},
 			Plugin: &pluginKey,
-			User:   &owner,
-			Icon:   &noicon,
+			Owner:  &owner,
 		})
 		if err != nil {
 			return "", "", err

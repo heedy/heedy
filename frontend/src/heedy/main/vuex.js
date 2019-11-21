@@ -383,7 +383,8 @@ export default {
       }
       console.log("Reading objects for user", q.username);
       let query = {
-        username: q.username
+        owner: q.username,
+        icon: true
       };
 
       if (rootState.app.info.user != null && rootState.app.info.user.username == q.username) {
@@ -422,7 +423,8 @@ export default {
       }
       console.log("Reading objects for app", q.id);
       let query = {
-        app: q.id
+        app: q.id,
+        icon: true
       };
 
 

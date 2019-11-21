@@ -261,14 +261,15 @@ type ReadObjectOptions struct {
 }
 
 type ListUsersOptions struct {
+	ReadUserOptions
 }
 
 // ListObjectsOptions shows the options for listing objects
 type ListObjectsOptions struct {
-	// Whether to include icons
-	Icon *bool `json:"icon,omitempty" schema:"icon"`
+	ReadObjectOptions
+
 	// Limit results to the given user's objects.
-	UserName *string `json:"username,omitempty" schema:"username"`
+	Owner *string `json:"owner,omitempty" schema:"owner"`
 	// Limit the results to the given app's objects
 	App *string `json:"app,omitempty" schema:"app"`
 	// Get objects with the given key
@@ -280,15 +281,15 @@ type ListObjectsOptions struct {
 
 	// Whether to include shared objects (not belonging to the user)
 	// This is only allowed for user==current user
-	Shared *bool
+	Shared bool
 }
 
 // ListAppOptions holds the options associated with listing apps
 type ListAppOptions struct {
-	// Whether to include icons
-	Icon *bool `json:"icon,omitempty" schema:"icon"`
+	ReadAppOptions
+
 	// Limit results to the given user's apps
-	User *string `json:"user,omitempty" schema:"user"`
+	Owner *string `json:"owner,omitempty" schema:"owner"`
 	// Find the apps with the given plugin key
 	Plugin *string `json:"plugin,omitempty" schema:"plugin"`
 }
@@ -647,9 +648,9 @@ func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {
 	pretext := ""
 	if o != nil {
 
-		if o.UserName != nil {
+		if o.Owner != nil {
 			sColumns = append(sColumns, "owner")
-			sValues = append(sValues, *o.UserName)
+			sValues = append(sValues, *o.Owner)
 		}
 		if o.App != nil {
 			if *o.App == "none" {

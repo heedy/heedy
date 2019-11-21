@@ -33,7 +33,7 @@ def registerObjectType(objectType: str, objectClass: Object) -> None:
     _objectRegistry[objectType] = objectClass
 
 
-def getObjectObject(session: Session, objectData: Dict) -> Object:
+def getObject(session: Session, objectData: Dict) -> Object:
     """
     Heedy allows multiple different object types. getObjectObject uses the
     registered object type objects to initialize the given object data to

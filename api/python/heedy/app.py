@@ -1,5 +1,5 @@
 from .base import APIObject, getSessionType, DEFAULT_URL
-from .object import getObjectObject
+from .object import getObject
 
 from functools import partial
 
@@ -12,11 +12,11 @@ class App(APIObject):
         super().__init__(s, "api/heedy/v1/apps/self")
 
     def createObject(self, **kwargs):
-        return self.session.post("api/heedy/v1/objects", data=kwargs, f=lambda x: getObjectObject(self.session, x))
+        return self.session.post("api/heedy/v1/objects", data=kwargs, f=lambda x: getObject(self.session, x))
 
     def listObjects(self, **kwargs):
         return self.session.get("api/heedy/v1/objects",
-                                params=kwargs, f=lambda x: list(map(partial(getObjectObject, self.session), x)))
+                                params=kwargs, f=lambda x: list(map(partial(getObject, self.session), x)))
 
     def notify(self, n, **kwargs):
         return self.session.post("/api/heedy/v1/notifications", n, params=kwargs)

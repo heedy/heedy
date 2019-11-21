@@ -155,8 +155,8 @@ func (db *UserDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, er
 
 // ListObjects lists the given objects
 func (db *UserDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
-	if o != nil && o.UserName != nil && *o.UserName == "self" {
-		o.UserName = &db.user
+	if o != nil && o.Owner != nil && *o.Owner == "self" {
+		o.Owner = &db.user
 	}
 	return listObjects(db.adb, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss 
 		WHERE %s AND ss.user IN (?,'public','users') AND ss.object=objects.id GROUP BY objects.id %s;`, db.user)
@@ -186,7 +186,7 @@ func (db *UserDB) DelApp(cid string) error {
 	return getExecError(result, err)
 }
 func (db *UserDB) ListApps(o *ListAppOptions) ([]*App, error) {
-	if o != nil && o.User != nil && *o.User != db.user {
+	if o != nil && o.Owner != nil && *o.Owner != db.user && *o.Owner != "self" {
 		return nil, ErrAccessDenied("Can only list your own apps")
 	}
 	return listApps(db.adb, o, `SELECT * FROM apps WHERE owner=?`, db.user)

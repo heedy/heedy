@@ -172,6 +172,11 @@ func (db *AdminDB) DelUser(name string) error {
 func (db *AdminDB) ListUsers(o *ListUsersOptions) (u []*User, err error) {
 	err = db.Select(&u, "SELECT * FROM users WHERE username NOT IN ('heedy', 'users', 'public');")
 
+	if o == nil || !o.Icon {
+		for _, ui := range u {
+			ui.Icon = nil
+		}
+	}
 	return u, err
 }
 
@@ -352,14 +357,14 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	var c []*App
 	a := []interface{}{}
 	selectStmt := "SELECT * FROM apps"
-	if o != nil && (o.User != nil || o.Plugin != nil) {
+	if o != nil && (o.Owner != nil || o.Plugin != nil) {
 		selectStmt = selectStmt + " WHERE"
-		if o.User != nil {
+		if o.Owner != nil {
 			selectStmt = selectStmt + " owner=?"
-			a = append(a, *o.User)
+			a = append(a, *o.Owner)
 		}
 		if o.Plugin != nil {
-			if o.User != nil {
+			if o.Owner != nil {
 				selectStmt = selectStmt + " AND"
 			}
 			if *o.Plugin == "" {
@@ -373,9 +378,14 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	}
 	err := db.Select(&c, selectStmt, a...)
 	if err == nil && o != nil {
-		if o.Icon != nil && *o.Icon == false {
+		if !o.Icon {
 			for _, cc := range c {
 				cc.Icon = nil
+			}
+		}
+		if !o.AccessToken {
+			for _, cc := range c {
+				cc.AccessToken = nil
 			}
 		}
 	}
