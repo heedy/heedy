@@ -66,7 +66,7 @@
     <v-dialog v-model="dialog" max-width="1024px">
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
-          <v-list-item two-line>
+          <v-list-item two-line style="overflow:hidden;">
             <v-list-item-avatar style="padding-right: 30px;">
               <h-icon :image="dvalue.icon" :colorHash="dvalue.name"></h-icon>
             </v-list-item-avatar>
@@ -74,7 +74,7 @@
               <v-list-item-title>{{ dvalue.name }}</v-list-item-title>
               <v-list-item-subtitle>{{ dvalue.description }}</v-list-item-subtitle>
             </v-list-item-content>
-            <v-list-item-action>
+            <v-list-item-action v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
               <v-checkbox
                 label="Enabled"
                 :input-value="dvalue.active"
@@ -91,13 +91,19 @@
         <v-divider></v-divider>
 
         <v-card-actions>
-          <h5>
+          <h5 v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
             {{ dvalue.version }} - {{ dvalue.license }}
             <div v-if="dvalue.homepage.length > 0">
               -
               <a :href="dvalue.homepage">homepage</a>
             </div>
           </h5>
+          <v-checkbox
+            v-else
+            label="Enabled"
+            :input-value="dvalue.active"
+            @change="(v) => changeActive(dvalue.name,v)"
+          ></v-checkbox>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="dialog = false">ok</v-btn>
         </v-card-actions>

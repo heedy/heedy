@@ -166,9 +166,15 @@ func (m *Manager) Start(plugin, name string, run *assets.Run) error {
 		}
 		r.Handler = h
 		if a.Config.Verbose {
-			r.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				rest.CTX(r).Log.Debugf("Forwarding to %s:%s", i.Plugin, i.Name)
-				h.ServeHTTP(w, r)
+			r.Handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				ctx := rest.CTX(req)
+				if ctx != nil {
+					ctx.Log.Debugf("Forwarding request to %s:%s%s", i.Plugin, i.Name, req.URL.Path)
+				} else {
+					logrus.Debugf("Forwarding request to %s:%s%s", i.Plugin, i.Name, req.URL.Path)
+				}
+
+				h.ServeHTTP(w, req)
 			})
 		}
 	} else {
@@ -250,6 +256,9 @@ func (m *Manager) StopPlugin(plugin string) error {
 
 // https://golang.org/src/net/http/httputil/reverseproxy.go?s=3318:3379#L88
 func singleJoiningSlash(a, b string) string {
+	if b == "" { // Allow for firing events to empty string (so that trailing slash isn't added)
+		return a
+	}
 	aslash := strings.HasSuffix(a, "/")
 	bslash := strings.HasPrefix(b, "/")
 	switch {

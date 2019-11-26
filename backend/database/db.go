@@ -352,7 +352,7 @@ func ErrBadQuery(err string, args ...interface{}) error {
 }
 
 var (
-	ErrNotFound        = errors.New("not_found: The selected reobject was not found")
+	ErrNotFound        = errors.New("not_found: The selected resource was not found")
 	ErrNoUpdate        = errors.New("Nothing to update")
 	ErrNoPasswordGiven = errors.New("A user cannot have an empty password")
 	ErrUserNotFound    = errors.New("User was not found")

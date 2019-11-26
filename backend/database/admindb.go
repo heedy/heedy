@@ -385,7 +385,21 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 		}
 		if !o.AccessToken {
 			for _, cc := range c {
-				cc.AccessToken = nil
+				if cc.AccessToken != nil {
+					cc.AccessToken = nil
+				} else {
+					// Make empty access token show up as empty, so services can know
+					// that no access token is available
+					emptyString := ""
+					cc.AccessToken = &emptyString
+				}
+			}
+		} else {
+			for _, cc := range c {
+				if cc.AccessToken == nil {
+					emptyString := ""
+					cc.AccessToken = &emptyString
+				}
 			}
 		}
 	}

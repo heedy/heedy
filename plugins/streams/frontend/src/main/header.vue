@@ -4,12 +4,13 @@
     :colorHash="object.id"
     :name="object.name"
     :description="object.description"
+    :showTitle="!$vuetify.breakpoint.xs"
   >
     <v-select
       :items="queryOptions"
       v-model="query"
       style="padding-top: 17px;padding-right: 10px; max-width: 250px;"
-      prepend-icon="event"
+      :prepend-icon="$vuetify.breakpoint.xs?'':'event'"
     ></v-select>
     <v-dialog v-model="dialog" max-width="500">
       <v-card>

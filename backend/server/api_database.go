@@ -147,7 +147,7 @@ func CreateApp(w http.ResponseWriter, r *http.Request) {
 		}
 		owner := ""
 		if c.Owner != nil {
-			// CreateApp internally makes sure that
+			// CreateApp internally makes sure that the owner is non-empty, and valid
 			owner = *c.Owner
 
 		}

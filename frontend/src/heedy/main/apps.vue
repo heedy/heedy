@@ -8,7 +8,7 @@
           </v-btn>
           <v-list-item-content>
             <v-list-item-title class="headline mb-1">Apps</v-list-item-title>
-            <v-list-item-subtitle>Services and devices connected to heedy</v-list-item-subtitle>
+            <v-list-item-subtitle>Services and devices linked to heedy</v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
       </v-card-title>
@@ -41,7 +41,7 @@
           <v-list-item two-line>
             <v-list-item-content>
               <v-list-item-title class="headline mb-1">Add App</v-list-item-title>
-              <v-list-item-subtitle>Add services provided by plugins, or create your own.</v-list-item-subtitle>
+              <v-list-item-subtitle>Integrate heedy with external services.</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-card-title>

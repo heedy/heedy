@@ -94,10 +94,9 @@ func readApp(adb *AdminDB, cid string, o *ReadAppOptions, selectStatement string
 		} else {
 			// Make empty access token show up as empty, so services can know
 			// that no access token is available
-			if c.AccessToken == nil {
-				emptyString := ""
-				c.AccessToken = &emptyString
-			}
+			emptyString := ""
+			c.AccessToken = &emptyString
+
 		}
 
 	} else {
@@ -259,7 +258,6 @@ func listObjects(adb *AdminDB, o *ListObjectsOptions, selectStatement string, ar
 	return res, nil
 }
 
-// TODO: Needs to be redone for plugin apps
 func listApps(adb *AdminDB, o *ListAppOptions, selectStatement string, args ...interface{}) ([]*App, error) {
 	var res []*App
 	err := adb.Select(&res, selectStatement, args...)
@@ -272,8 +270,22 @@ func listApps(adb *AdminDB, o *ListAppOptions, selectStatement string, args ...i
 		}
 	}
 	if o == nil || !o.AccessToken {
-		for _, r := range res {
-			r.AccessToken = nil
+		for _, c := range res {
+			if c.AccessToken != nil {
+				c.AccessToken = nil
+			} else {
+				// Make empty access token show up as empty, so services can know
+				// that no access token is available
+				emptyString := ""
+				c.AccessToken = &emptyString
+			}
+		}
+	} else {
+		for _, cc := range res {
+			if cc.AccessToken == nil {
+				emptyString := ""
+				cc.AccessToken = &emptyString
+			}
 		}
 	}
 

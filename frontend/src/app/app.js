@@ -14,6 +14,7 @@ class App {
         this.theme = null;
         this.injected = {};
         this.routes = {};
+        this.notFound = null;
 
 
         this.worker = new WorkerInjector(appinfo);

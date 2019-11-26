@@ -42,9 +42,17 @@ async function setup(appinfo) {
     }
   }
 
+  let routes = Object.values(app.routes);
+  if (app.notFound !== null) {
+    routes.push({
+      path: "*",
+      component: app.notFound
+    })
+  }
+
   // Set up the app routes
   const router = new VueRouter({
-    routes: Object.values(app.routes),
+    routes: routes,
     // https://router.vuejs.org/guide/advanced/scroll-behavior.html#scroll-behavior
     scrollBehavior(to, from, savedPosition) {
       if (savedPosition) {

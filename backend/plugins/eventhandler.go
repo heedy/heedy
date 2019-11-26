@@ -30,8 +30,8 @@ func NewPluginEventHandler(p *Plugin, e *assets.Event) (*PluginEventHandler, err
 
 func (eh *PluginEventHandler) Fire(e *events.Event) {
 	logrus.Debugf("%s: %s <- %s", eh.Plugin, eh.Post, e.String())
-	_, err := run.Request(eh.Handler, "POST", "/", e, nil)
+	_, err := run.Request(eh.Handler, "POST", "", e, nil)
 	if err != nil {
-		logrus.Warn(err)
+		logrus.Warnf("%s: Failed to post event to %s: %s", eh.Plugin, eh.Post, err)
 	}
 }

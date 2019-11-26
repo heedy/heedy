@@ -14,7 +14,7 @@
           v-model="iconText"
         ></v-text-field>
         <a
-          href="https://material.io/reobjects/icons/?style=baseline"
+          href="https://material.io/resources/icons/?style=baseline"
           target="_blank"
           style="font-size: 70%; margin-top: -15px; margin-bottom: 10px; color: gray; z-index: 1;"
         >See available icons</a>

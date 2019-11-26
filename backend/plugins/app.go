@@ -76,6 +76,9 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 	if c.DB.Type() == database.UserType && owner == "" {
 		owner = c.DB.ID()
 	}
+	if c.DB.Type() == database.UserType && owner != c.DB.ID() {
+		return "", "", database.ErrAccessDenied("You can only create an app for your own user")
+	}
 	if owner == "" {
 		return "", "", errors.New("App must have an owner")
 	}

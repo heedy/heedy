@@ -48,13 +48,16 @@ import Apps from "./main/apps.vue";
 
 
 import vuexModule from "./main/vuex.js";
-import registerCoreComponents from "./main/components.js";
+import registerCoreComponents, {
+    NotFound
+} from "./main/components.js";
 
 function setup(app) {
     app.vue.use(VueCodemirror);
     app.vue.component('draggable', Draggable);
 
     app.theme = Theme;
+    app.notFound = NotFound
 
     // Add the current user to the vuex module
     if (app.info.user != null) {

@@ -24,4 +24,15 @@ function register(Vue) {
     Vue.component("h-header", Header)
 }
 
+export {
+    Loading,
+    Icon,
+    IconEditor,
+    ScopeEditor,
+    PageContainer,
+    CardPage,
+    NotFound,
+    Header
+}
+
 export default register;
