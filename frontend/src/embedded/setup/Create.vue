@@ -17,6 +17,7 @@
           color="deep-orange"
           icon="error_outline"
         >{{ alert }}</v-alert>
+        <v-alert v-if="success.length>0" text outlined type="success">{{ success }}</v-alert>
         <v-container>
           <v-layout row wrap>
             <v-flex xs12>
@@ -152,7 +153,7 @@
           <v-icon>{{ show ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</v-icon>Server Settings
         </v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="info" type="submit" tabindex="10">Create Database</v-btn>
+        <v-btn color="info" type="submit" tabindex="10" :loading="loading">Create Database</v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -174,11 +175,17 @@ export default {
     username: "",
     password1: "",
     password2: "",
-    alert: ""
+    alert: "",
+    success: "",
+    loading: false
   }),
   methods: {
     submit: async function(event) {
       event.preventDefault();
+      if (this.loading) {
+        return;
+      }
+      this.loading = true;
       this.alert = "";
       window.scrollTo({
         top: 0,
@@ -187,19 +194,23 @@ export default {
       });
       if (this.username === "") {
         this.alert = "A username is required";
+        this.loading = false;
         return;
       }
       if (this.password1 != this.password2) {
         this.alert = "The passwords do not match";
+        this.loading = false;
         return;
       }
       if (this.password1 === "") {
         this.alert = "A password is required";
+        this.loading = false;
         return;
       }
       let port = parseInt(this.port, 10);
       if (isNaN(port)) {
         this.alert = "The port must be a number";
+        this.loading = false;
         return;
       }
       // Generate the query used to create the user.
@@ -230,6 +241,7 @@ export default {
 
       if (result.status != 200) {
         this.alert = (await result.json())["error_description"];
+        this.loading = false;
         return;
       }
 
@@ -239,6 +251,8 @@ export default {
       }
 
       // The setup went with defaults, so log in
+
+      this.success = "Database created! Starting heedy...";
 
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));

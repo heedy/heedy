@@ -40,6 +40,14 @@ func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB
 	}
 }
 
+// WithNilInfo can be used to convert a plugin start func that doesn't require an Info struct
+// into a function compatible with database.AddCreateHook.
+func WithNilInfo(bis BuiltinStartFunc) func(*database.AdminDB) error {
+	return func(db *database.AdminDB) error {
+		return bis(db, nil)
+	}
+}
+
 type builtinRunnerMap map[string]*BuiltinRunner
 
 func (b builtinRunnerMap) Add(r *BuiltinRunner) {

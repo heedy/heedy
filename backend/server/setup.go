@@ -160,6 +160,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			os.RemoveAll(directory)
+			return
 		}
 		a.Config.Verbose = c.Verbose
 		// Reset the global assets

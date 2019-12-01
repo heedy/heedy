@@ -39,6 +39,18 @@ async def lol(request):
     await p.delete_notification({"key": "lol", "app": myc[0]["id"]})
     return web.Response(text="lol")
 
+
+@routes.get(r"/a/api/testy/a%2Fb")
+async def a(request):
+    print("YAY")
+    return web.Response(text="OK")
+
+
+@routes.get(r"/a/api/testy/a/b")
+async def a(request):
+    print("NAH")
+    return web.Response(text="NOT OK")
+
 app = web.Application()
 app.add_routes(routes)
 

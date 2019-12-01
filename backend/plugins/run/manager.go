@@ -71,11 +71,6 @@ type Manager struct {
 }
 
 func NewManager(db *database.AdminDB) *Manager {
-	runtypes := make(map[string]TypeHandler)
-
-	// Add the run types built into the database
-	runtypes["builtin"] = NewBuiltinHandler(db)
-	runtypes["exec"] = NewExecHandler(db)
 
 	c := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.PrintfLogger(logrus.StandardLogger()))))
 	c.Start()
@@ -106,13 +101,37 @@ func NewManager(db *database.AdminDB) *Manager {
 		},
 	}
 
-	return &Manager{
+	runtypes := make(map[string]TypeHandler)
+
+	m := &Manager{
 		RunTypes: runtypes,
 		Runners:  runners,
 		cron:     c,
 		CoreKey:  apikey,
 		DB:       db,
 	}
+
+	for rt, v := range db.Assets().Config.RunTypes {
+		var handler TypeHandler
+		if v.API == nil {
+			// These are runtypes built into heedy's core
+			switch rt {
+			case "builtin":
+				handler = NewBuiltinHandler(db)
+			case "exec":
+				handler = NewExecHandler(db)
+			default:
+				// This should be handled by config validation
+				panic(fmt.Sprintf("runtype %s has no API", rt))
+			}
+		} else {
+			handler = NewAPIHandler(m, rt, v)
+		}
+		logrus.Debugf("Registering runtype %s", rt)
+		runtypes[rt] = handler
+	}
+
+	return m
 }
 
 func (m *Manager) Start(plugin, name string, run *assets.Run) error {
@@ -289,7 +308,9 @@ func (m *Manager) GetHandler(plugin, uri string) (http.Handler, error) {
 	}
 	// We need to modify the path
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		req.URL.Path = singleJoiningSlash(hpath, req.URL.Path)
+		// https://github.com/golang/go/commit/874a605af0764a8f340c3de65406963f514e21bc
+		req.URL.Path = singleJoiningSlash(hpath, req.URL.EscapedPath())
+		req.URL.RawPath = req.URL.Path
 		r.Handler.ServeHTTP(w, req)
 	}), nil
 }

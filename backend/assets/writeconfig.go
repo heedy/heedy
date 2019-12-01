@@ -56,5 +56,37 @@ func WriteConfig(filename string, c *Configuration) error {
 
 	}
 
+	for pname, p := range c.Plugins {
+		blk := body.FirstMatchingBlock("plugin", []string{pname})
+		if blk == nil {
+			blk = body.AppendNewBlock("plugin", []string{pname})
+		}
+		b := blk.Body()
+		for sname, svalue := range p.Settings {
+			var v cty.Value
+			switch sv := svalue.(type) {
+			case int:
+				v = cty.NumberIntVal(int64(sv))
+			case int64:
+				v = cty.NumberIntVal(sv)
+			case float64:
+				v = cty.NumberFloatVal(sv)
+			case string:
+				v = cty.StringVal(sv)
+			case []string:
+				if len(sv) == 0 {
+					v = cty.ListValEmpty(cty.String)
+				} else {
+					slist := make([]cty.Value, 0, len(sv))
+					for i := range sv {
+						slist = append(slist, cty.StringVal(sv[i]))
+					}
+					v = cty.ListVal(slist)
+				}
+			}
+			b.SetAttributeValue(sname, v)
+		}
+	}
+
 	return ioutil.WriteFile(filename, writer.Bytes(), 0755)
 }

@@ -8,6 +8,7 @@ import (
 
 	// Add the plugins, which will register their own routes
 	_ "github.com/heedy/heedy/plugins/notifications/backend/notifications"
+	_ "github.com/heedy/heedy/plugins/python/backend/python"
 	_ "github.com/heedy/heedy/plugins/registry/backend/registry"
 	_ "github.com/heedy/heedy/plugins/streams/backend/streams"
 )

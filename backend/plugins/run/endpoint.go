@@ -165,3 +165,19 @@ func WaitForEndpoint(method string, host string, e *Cmd) error {
 	}
 	return fmt.Errorf("Could not connect to %s using %s socket", host, method)
 }
+
+// WaitForAPI is like WaitForEndpoint, but it doesn't have a cmd.
+func WaitForAPI(method string, host string, timeout time.Duration) error {
+	logrus.Debugf("Waiting for %s://%s", method, host)
+	sleepDuration := 100 * time.Millisecond
+	for i := time.Duration(0); i < timeout; i += sleepDuration {
+		c, err := net.Dial(method, host)
+		if err == nil {
+			c.Close()
+			logrus.Debugf("endpoint open %s://%s", method, host)
+			return nil
+		}
+		time.Sleep(sleepDuration)
+	}
+	return fmt.Errorf("Could not connect to %s using %s socket", host, method)
+}

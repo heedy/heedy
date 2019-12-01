@@ -233,6 +233,13 @@ INSERT INTO users (username,name,description,icon,password) VALUES
 
 `
 
+var createHooks = make([]func(*AdminDB) error, 0)
+
+// AddCreateHook executes code when a database is created
+func AddCreateHook(f func(*AdminDB) error) {
+	createHooks = append(createHooks, f)
+}
+
 // Create sets up a new heedy instance
 func Create(a *assets.Assets) error {
 
@@ -281,6 +288,15 @@ func Create(a *assets.Assets) error {
 	adb.SqlxCache.InitCache(db)
 	if a.Config.Verbose {
 		adb.SqlxCache.Verbose = true
+	}
+
+	// Run post-create hooks
+	for _, h := range createHooks {
+		err = h(adb)
+		if err != nil {
+			adb.Close()
+			return err
+		}
 	}
 
 	return adb.Close()
