@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 
 	"github.com/mattn/go-sqlite3"
@@ -11,7 +12,7 @@ import (
 )
 
 func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notification, error) {
-	colnum := 10
+	colnum := 11
 	rows, err := events.SQLiteSelectConn(c, stmt, rowid)
 	defer rows.Close()
 	if err != nil {
@@ -66,20 +67,27 @@ func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notifica
 		object := tsel(vals[9])
 		n.Object = &object
 	}
+	if vals[10] != nil {
+		aa := make(ActionArray, 0)
+		if err := json.Unmarshal([]byte(tsel(vals[10])), &aa); err != nil {
+			return nil, err
+		}
+		n.Actions = &aa
+	}
 
 	return n, nil
 }
 
 var notificationEventType = map[events.SqliteHook]string{
-	events.SqliteHook{"notifications_user", events.SQL_CREATE}:       "user_notification_create",
-	events.SqliteHook{"notifications_app", events.SQL_CREATE}: "app_notification_create",
-	events.SqliteHook{"notifications_object", events.SQL_CREATE}:     "object_notification_create",
-	events.SqliteHook{"notifications_user", events.SQL_UPDATE}:       "user_notification_update",
-	events.SqliteHook{"notifications_app", events.SQL_UPDATE}: "app_notification_update",
-	events.SqliteHook{"notifications_object", events.SQL_UPDATE}:     "object_notification_update",
-	events.SqliteHook{"notifications_user", events.SQL_DELETE}:       "user_notification_delete",
-	events.SqliteHook{"notifications_app", events.SQL_DELETE}: "app_notification_delete",
-	events.SqliteHook{"notifications_object", events.SQL_DELETE}:     "object_notification_delete",
+	events.SqliteHook{"notifications_user", events.SQL_CREATE}:   "user_notification_create",
+	events.SqliteHook{"notifications_app", events.SQL_CREATE}:    "app_notification_create",
+	events.SqliteHook{"notifications_object", events.SQL_CREATE}: "object_notification_create",
+	events.SqliteHook{"notifications_user", events.SQL_UPDATE}:   "user_notification_update",
+	events.SqliteHook{"notifications_app", events.SQL_UPDATE}:    "app_notification_update",
+	events.SqliteHook{"notifications_object", events.SQL_UPDATE}: "object_notification_update",
+	events.SqliteHook{"notifications_user", events.SQL_DELETE}:   "user_notification_delete",
+	events.SqliteHook{"notifications_app", events.SQL_DELETE}:    "app_notification_delete",
+	events.SqliteHook{"notifications_object", events.SQL_DELETE}: "object_notification_delete",
 }
 
 func RegisterNotificationHooks(e events.Handler) {
@@ -88,11 +96,11 @@ func RegisterNotificationHooks(e events.Handler) {
 		getStmt := func(tblname string) string {
 			switch tblname {
 			case "notifications_user":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,NULL,NULL FROM notifications_user WHERE rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,NULL,NULL,actions FROM notifications_user WHERE rowid=?"
 			case "notifications_app":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,app,NULL FROM notifications_app WHERE rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,NULL,actions FROM notifications_app WHERE rowid=?"
 			case "notifications_object":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,app,object FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,object,actions FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.rowid=?"
 			default:
 				panic("Unrecognized table name in getStmt")
 

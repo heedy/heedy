@@ -1,6 +1,8 @@
 package notifications
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,12 +26,14 @@ const sqlSchema = `
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
 		timestamp REAL NOT NULL,
+		actions VARCHAR NOT NULL DEFAULT '[]',
 
 		-- User notifications are global=true
 		global BOOLEAN NOT NULL DEFAULT true,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,key),
+		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
 		CONSTRAINT user_c
 			FOREIGN KEY (user)
@@ -47,11 +51,13 @@ const sqlSchema = `
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
 		timestamp REAL NOT NULL,
+		actions VARCHAR NOT NULL DEFAULT '[]',
 
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,app,key),
+		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
 		CONSTRAINT user_c
 			FOREIGN KEY (user)
@@ -75,12 +81,14 @@ const sqlSchema = `
 		title VARCHAR NOT NULL,
 		description VARCHAR NOT NULL DEFAULT '',
 		type VARCHAR NOT NULL DEFAULT 'info',
+		actions VARCHAR NOT NULL DEFAULT '[]',
 		timestamp REAL NOT NULL,
 
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,app,object,key),
+		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
 		CONSTRAINT user_c
 			FOREIGN KEY (user)
@@ -116,26 +124,54 @@ func SQLUpdater(db *database.AdminDB, curversion int) error {
 
 var ErrAccessDenied = errors.New("access_denied: You don't have necessary permissions for the given query")
 
+type Action struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+	Href        string `json:"href"`
+	NewWindow   bool   `json:"new_window"`
+}
+
+type ActionArray []Action
+
+func (aa *ActionArray) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case []byte:
+		json.Unmarshal(v, aa)
+		return nil
+	case string:
+		json.Unmarshal([]byte(v), aa)
+		return nil
+	default:
+		return fmt.Errorf("Can't scan json array array, unsupported type: %T", v)
+	}
+}
+
+func (aa *ActionArray) Value() (driver.Value, error) {
+	return json.Marshal(aa)
+}
+
 type Notification struct {
 	Key       string  `json:"key,omitempty"`
 	Timestamp float64 `json:"timestamp,omitempty"`
 
-	User       *string `json:"user,omitempty"`
-	App *string `json:"app,omitempty"`
-	Object     *string `json:"object,omitempty"`
+	User   *string `json:"user,omitempty"`
+	App    *string `json:"app,omitempty"`
+	Object *string `json:"object,omitempty"`
 
-	Type        *string `json:"type,omitempty"`
-	Title       *string `json:"title,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Type        *string      `json:"type,omitempty"`
+	Title       *string      `json:"title,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Actions     *ActionArray `json:"actions,omitempty"`
 
 	Seen   *bool `json:"seen,omitempty"`
 	Global *bool `json:"global,omitempty"`
 }
 
 type NotificationsQuery struct {
-	User       *string `json:"user,omitempty" schema:"user"`
-	App *string `json:"app,omitempty" schema:"app"`
-	Object     *string `json:"object,omitempty" schema:"object"`
+	User   *string `json:"user,omitempty" schema:"user"`
+	App    *string `json:"app,omitempty" schema:"app"`
+	Object *string `json:"object,omitempty" schema:"object"`
 
 	Global *bool   `json:"global,omitempty" schema:"global"`
 	Seen   *bool   `json:"seen,omitempty" schema:"seen"`
@@ -326,6 +362,10 @@ func extractNotificationBasics(n *Notification) ([]string, []interface{}) {
 	if n.Type != nil {
 		cNames = append(cNames, "type")
 		cValues = append(cValues, *n.Type)
+	}
+	if n.Actions != nil {
+		cNames = append(cNames, "actions")
+		cValues = append(cValues, n.Actions)
 	}
 	return cNames, cValues
 }

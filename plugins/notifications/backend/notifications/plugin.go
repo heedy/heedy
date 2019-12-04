@@ -11,15 +11,17 @@ const PluginName = "notifications"
 // This is not needed for normal plugins. The init simply registers the plugin with heedy internals
 // for when it is compiled directly into the main heedy executable.
 func init() {
+	withversion := run.WithVersion(PluginName, SQLVersion, func(db *database.AdminDB, i *run.Info, sqlVersion int) error {
+		e := events.NewFilledHandler(db, events.GlobalHandler)
+		RegisterNotificationHooks(e)
 
+		return SQLUpdater(db, sqlVersion)
+	})
 	run.Builtin.Add(&run.BuiltinRunner{
-		Key: PluginName,
-		Start: run.WithVersion(PluginName, SQLVersion, func(db *database.AdminDB, i *run.Info, sqlVersion int) error {
-			e := events.NewFilledHandler(db, events.GlobalHandler)
-			RegisterNotificationHooks(e)
-
-			return SQLUpdater(db, sqlVersion)
-		}),
+		Key:     PluginName,
+		Start:   withversion,
 		Handler: Handler,
 	})
+	// Runs schema creation on database create instead of on first start
+	database.AddCreateHook(run.WithNilInfo(withversion))
 }

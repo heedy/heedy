@@ -28,6 +28,37 @@ func (d Date) Value() (driver.Value, error) {
 	return d.String(), nil
 }
 
+type JSONArray struct {
+	Elements []interface{}
+}
+
+func (ja *JSONArray) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case []byte:
+		json.Unmarshal(v, &ja.Elements)
+		return nil
+	case string:
+		json.Unmarshal([]byte(v), &ja.Elements)
+		return nil
+	default:
+		return fmt.Errorf("Can't scan json array array, unsupported type: %T", v)
+	}
+}
+
+func (ja *JSONArray) Value() (driver.Value, error) {
+	return ja.MarshalJSON()
+}
+
+
+func (ja *JSONArray) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ja.Elements)
+}
+
+func (ja *JSONArray) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b,&ja.Elements)
+}
+
+
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
 type ScopeArray struct {

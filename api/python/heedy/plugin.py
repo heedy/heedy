@@ -96,8 +96,19 @@ class Plugin:
     def listApps(self, **kwargs):
         return self.session.get("api/heedy/v1/apps", params=kwargs)
 
-    def notify(self, n, **kwargs):
-        return self.session.post("/api/heedy/v1/notifications", n, params=kwargs)
+    def notify(self, key, title, **kwargs):
+        n = {
+            "key": key,
+            "title": title,
+            **kwargs
+        }
+        if "_global" in n:
+            n["global"] = n["_global"]
+            del n["_global"]
 
-    def delete_notification(self, n):
-        return self.session.delete("/api/heedy/v1/notifications", params=n)
+        return self.session.post("/api/heedy/v1/notifications", n)
+
+    def delete_notification(self, key=None, **kwargs):
+        if key is not None:
+            kwargs["key"] = key
+        return self.session.delete("/api/heedy/v1/notifications", params=kwargs)

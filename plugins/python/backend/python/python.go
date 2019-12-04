@@ -42,10 +42,10 @@ func SearchPython() (string, []string, error) {
 					return "", []string{}, err
 				}
 				if strings.HasPrefix(apath, d) || runtime.GOOS == "windows" {
-					return exepath, []string{}, nil
+					return exepath, []string{"--quiet"}, nil
 				}
 
-				return exepath, []string{"--user"}, nil
+				return exepath, []string{"--quiet", "--user"}, nil
 			}
 		}
 	}

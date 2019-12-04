@@ -18,5 +18,19 @@ class App(APIObject):
         return self.session.get("api/heedy/v1/objects",
                                 params=kwargs, f=lambda x: list(map(partial(getObject, self.session), x)))
 
-    def notify(self, n, **kwargs):
-        return self.session.post("/api/heedy/v1/notifications", n, params=kwargs)
+    def notify(self, key, title, **kwargs):
+        n = {
+            "key": key,
+            "title": title,
+            **kwargs
+        }
+        if "_global" in n:
+            n["global"] = n["_global"]
+            del n["_global"]
+
+        return self.session.post("/api/heedy/v1/notifications", n)
+
+    def delete_notification(self, key=None, **kwargs):
+        if key is not None:
+            kwargs["key"] = key
+        return self.session.delete("/api/heedy/v1/notifications", params=kwargs)
