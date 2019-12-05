@@ -118,6 +118,18 @@
                   tabindex="6"
                 ></v-text-field>
               </v-flex>
+              <v-flex xs12>
+                <h3>Site URL</h3>
+                <p>You will access heedy by putting this in the URL bar of your browser. If left blank, heedy will use its LAN IP and server port. If heedy will be accessible from the internet, make sure to use https.</p>
+                <v-text-field
+                  label="URL"
+                  :placeholder="urlDefault"
+                  v-model.trim="url"
+                  required
+                  solo
+                  tabindex="7"
+                ></v-text-field>
+              </v-flex>
 
               <!--
         <v-flex xs12>
@@ -160,7 +172,9 @@
 </template>
 
 <script>
-import api from "../../api.mjs";
+import api from "../api.mjs";
+
+let raw_url = window.location.href.split("/setup/")[0];
 
 export default {
   data: () => ({
@@ -171,6 +185,14 @@ export default {
     host: configuration["host"],
     portDefault: configuration["port"].toString(),
     port: configuration["port"].toString(),
+    url:
+      raw_url.includes("localhost") ||
+      raw_url.includes("127.0.0.1") ||
+      raw_url.includes("::1") ||
+      raw_url == configuration["url"]
+        ? ""
+        : raw_url,
+    urlDefault: configuration["url"],
     tls: "none",
     username: "",
     password1: "",
@@ -221,7 +243,8 @@ export default {
         },
         config: {
           host: this.host,
-          port: port
+          port: port,
+          url: this.url
         }
       };
 
@@ -247,7 +270,7 @@ export default {
 
       let furl = "/auth/token";
       if (this.host != this.hostDefault || this.port != this.portDefault) {
-        window.location.href = "http://" + this.host + ":" + this.portDefault;
+        window.location.href = this.url == "" ? configuration["url"] : this.url;
       }
 
       // The setup went with defaults, so log in

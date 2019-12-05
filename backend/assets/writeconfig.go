@@ -2,6 +2,7 @@ package assets
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -22,9 +23,12 @@ func WriteConfig(filename string, c *Configuration) error {
 	}
 	body := writer.Body()
 
-	// Aaaand we're fucked, because we can't write into blocks
-	if c.SiteURL != nil {
-		body.SetAttributeValue("site_url", cty.StringVal(*c.SiteURL))
+	if c.URL != nil {
+		if strings.HasSuffix(*c.URL, "/") {
+			noslash := (*c.URL)[:len(*c.URL)-1]
+			c.URL = &noslash
+		}
+		body.SetAttributeValue("url", cty.StringVal(*c.URL))
 	}
 	if c.Host != nil {
 		body.SetAttributeValue("host", cty.StringVal(*c.Host))

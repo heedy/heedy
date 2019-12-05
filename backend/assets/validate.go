@@ -217,5 +217,15 @@ func Validate(c *Configuration) error {
 		}
 	}
 
+	// Finally, set the URL if it isn't set
+	if c.URL == nil || *c.URL == "" {
+		myurl := fmt.Sprintf("http://%s:%d", GetOutboundIP().String(), *c.Port)
+		c.URL = &myurl
+	}
+	if strings.HasSuffix(*c.URL, "/") {
+		noslash := (*c.URL)[:len(*c.URL)-1]
+		c.URL = &noslash
+	}
+
 	return nil
 }

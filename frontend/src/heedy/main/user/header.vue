@@ -6,31 +6,16 @@
           <v-icon style="color:lightgray;opacity:0.3">edit</v-icon>
         </v-btn>
       </div>
-      <v-speed-dial
-        bottom
-        right
-        absolute
-        v-if="editable && !editing"
-        direction="left"
-        v-model="fab"
-        transition="slide-x-reverse-transition"
-        open-on-hover
+      <v-btn
+        color="blue darken-2"
+        dark
+        fab
+        style="position:absolute;bottom:15px;right:15px;"
+        @click.stop="dialog=true"
       >
-        <template v-slot:activator>
-          <v-btn v-model="fab" color="blue darken-2" dark fab>
-            <v-icon v-if="fab">close</v-icon>
-            <v-icon v-else>add</v-icon>
-          </v-btn>
-        </template>
-        <v-tooltip v-for="item in objectCreators" :key="item.key" bottom>
-          <template v-slot:activator="{ on }">
-            <v-btn fab dark small color="green" v-on="on" :to="item.route">
-              <v-icon>{{ item.icon }}</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ item.text }}</span>
-        </v-tooltip>
-      </v-speed-dial>
+        <v-icon>add</v-icon>
+      </v-btn>
+
       <v-container grid-list-md fluid>
         <v-layout row wrap>
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
@@ -57,6 +42,51 @@
         <v-btn type="submit" color="primary" @click="save" :loading="loading">Save</v-btn>
       </v-card-actions>
     </v-card>
+    <v-dialog v-model="dialog" max-width="1024">
+      <v-card>
+        <v-card-title>
+          <v-list-item two-line>
+            <v-list-item-content>
+              <v-list-item-title class="headline mb-1">Add</v-list-item-title>
+              <v-list-item-subtitle>Create objects that you will manually control.</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-card-title>
+
+        <v-card-text>
+          <v-row no-gutters>
+            <v-col
+              v-for="c in objectCreators"
+              :key="c.key"
+              cols="12"
+              xs="12"
+              sm="6"
+              md="6"
+              lg="4"
+              xl="3"
+            >
+              <v-card class="pa-2" outlined tile>
+                <v-list-item two-line subheader :to="c.route">
+                  <v-list-item-avatar>
+                    <h-icon :image="c.icon" :colorHash="c.key" defaultIcon="insert_drive_file"></h-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>{{ c.title }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ c.description }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" text @click="dialog = false">Cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-flex>
 </template>
 
@@ -68,7 +98,8 @@ export default {
     editing: false,
     modified: {},
     loading: false,
-    fab: false
+    fab: false,
+    dialog: false
   }),
   props: {
     user: Object

@@ -49,15 +49,13 @@ func (ja *JSONArray) Value() (driver.Value, error) {
 	return ja.MarshalJSON()
 }
 
-
 func (ja *JSONArray) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ja.Elements)
 }
 
 func (ja *JSONArray) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b,&ja.Elements)
+	return json.Unmarshal(b, &ja.Elements)
 }
-
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
@@ -245,6 +243,7 @@ type App struct {
 
 	Scopes *AppScopeArray `json:"scopes" db:"scopes"`
 
+	Meta           *JSONObject `json:"meta,omitempty" db:"meta"`
 	Settings       *JSONObject `json:"settings" db:"settings"`
 	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
 }

@@ -14,7 +14,8 @@ function setup(app) {
 
     app.object.addCreator({
       key: "rawstream",
-      text: "Stream",
+      title: "Stream",
+      description: "Streams hold time-series data.",
       icon: "timeline",
       route: "/create/object/stream"
     });

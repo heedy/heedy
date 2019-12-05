@@ -7,7 +7,7 @@
 
 <script>
 // Login is imported from the path of the main auth component
-import Login from "../../heedy/login.mjs";
+import Login from "../heedy/login.mjs";
 
 // AllowAccess is embedded in the bundle
 import AllowAccess from "./oauth.vue";

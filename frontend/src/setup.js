@@ -3,8 +3,8 @@ import Vue, {
   Vuetify
 } from "./dist/vue.mjs";
 
-import Theme from "./embedded/setup/Theme.vue";
-import Create from "./embedded/setup/Create.vue";
+import Theme from "./setup/Theme.vue";
+import Create from "./setup/Create.vue";
 
 Vue.use(VueRouter);
 

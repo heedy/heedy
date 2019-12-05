@@ -66,8 +66,9 @@ CREATE TABLE apps (
 	-- Permissions are granted to a app through scopes
 	scopes VARCHAR NOT NULL DEFAULT '[]',
 
-	settings VARCHAR DEFAULT '{}',
-	settings_schema VARCHAR DEFAULT '{}',
+	meta VARCHAR NOT NULL DEFAULT '{}',      -- Apps can store their own metadata
+	settings VARCHAR NOT NULL DEFAULT '{}',
+	settings_schema VARCHAR NOT NULL DEFAULT '{}',
 
 	-- Apps can have types, which allow the UI to know what type of
 	-- data it holds, for showing appropriate visualizations
@@ -78,8 +79,9 @@ CREATE TABLE apps (
 	-- the "plugin key" of the app if it was generated for a plugin
 	plugin VARCHAR DEFAULT NULL,
 
-	CONSTRAINT valid_settings CHECK (json_valid(settings)),
-	CONSTRAINT valid_settings_schema CHECK (json_valid(settings_schema)),
+	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object'),
+	CONSTRAINT valid_settings CHECK (json_valid(settings) AND json_type(settings)='object'),
+	CONSTRAINT valid_settings_schema CHECK (json_valid(settings_schema)  AND json_type(settings)='object'),
 
 	CONSTRAINT appowner
 		FOREIGN KEY(owner) 
@@ -124,8 +126,8 @@ CREATE TABLE objects (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT valid_scopes CHECK (json_valid(scopes)),
-	CONSTRAINT valid_meta CHECK (json_valid(meta))
+	CONSTRAINT valid_scopes CHECK (json_valid(scopes)  AND json_type(scopes)='array'),
+	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object')
 );
 
 -- Objects can be queried by key

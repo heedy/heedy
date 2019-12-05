@@ -113,7 +113,7 @@ type hclRunType struct {
 }
 
 type hclConfiguration struct {
-	SiteURL        *string   `hcl:"site_url" json:"site_url,omitempty"`
+	URL            *string   `hcl:"url" json:"url,omitempty"`
 	Host           *string   `hcl:"host" json:"host,omitempty"`
 	Port           *uint16   `hcl:"port" json:"port,omitempty"`
 	ActivePlugins  *[]string `hcl:"plugins" json:"plugins,omitempty"`

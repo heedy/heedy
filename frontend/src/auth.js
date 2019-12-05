@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Vuex from "vuex";
 
-import Auth from "./embedded/auth/main.vue";
+import Auth from "./auth/main.vue";
 
 // store is a global variable.
 export const store = new Vuex.Store({
