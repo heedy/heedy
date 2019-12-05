@@ -252,7 +252,7 @@ export default {
 
       // The setup went with defaults, so log in
 
-      this.success = "Database created! Starting heedy...";
+      this.success = "Database created! Waiting for heedy to restart...";
 
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -270,6 +270,7 @@ export default {
             username: this.username,
             password: this.password1
           },
+          null,
           false
         );
         isok = res.response.ok;

@@ -12,7 +12,7 @@ import (
 )
 
 func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notification, error) {
-	colnum := 11
+	colnum := 12
 	rows, err := events.SQLiteSelectConn(c, stmt, rowid)
 	defer rows.Close()
 	if err != nil {
@@ -74,6 +74,8 @@ func getNotification(c *sqlite3.SQLiteConn, stmt string, rowid int64) (*Notifica
 		}
 		n.Actions = &aa
 	}
+	dismissible := vals[11].(bool)
+	n.Dismissible = &dismissible
 
 	return n, nil
 }
@@ -96,11 +98,11 @@ func RegisterNotificationHooks(e events.Handler) {
 		getStmt := func(tblname string) string {
 			switch tblname {
 			case "notifications_user":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,NULL,NULL,actions FROM notifications_user WHERE rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,NULL,NULL,actions,dismissible FROM notifications_user WHERE rowid=?"
 			case "notifications_app":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,app,NULL,actions FROM notifications_app WHERE rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,NULL,actions,dismissible FROM notifications_app WHERE rowid=?"
 			case "notifications_object":
-				return "SELECT key,timestamp,title,description,type,seen,user,global,app,object,actions FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.rowid=?"
+				return "SELECT key,timestamp,title,description,type,seen,user,global,app,object,actions,dismissible FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.rowid=?"
 			default:
 				panic("Unrecognized table name in getStmt")
 

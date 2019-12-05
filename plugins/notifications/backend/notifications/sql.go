@@ -30,6 +30,7 @@ const sqlSchema = `
 
 		-- User notifications are global=true
 		global BOOLEAN NOT NULL DEFAULT true,
+		dismissible BOOLEAN NOT NULL DEFAULT true,
 		seen BOOLEAN NOT NULL DEFAULT false,
 
 		CONSTRAINT pk PRIMARY KEY (user,key),
@@ -55,6 +56,7 @@ const sqlSchema = `
 
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
+		dismissible BOOLEAN NOT NULL DEFAULT true,
 
 		CONSTRAINT pk PRIMARY KEY (user,app,key),
 		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
@@ -86,6 +88,7 @@ const sqlSchema = `
 
 		global BOOLEAN NOT NULL DEFAULT false,
 		seen BOOLEAN NOT NULL DEFAULT false,
+		dismissible BOOLEAN NOT NULL DEFAULT true,
 
 		CONSTRAINT pk PRIMARY KEY (user,app,object,key),
 		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
@@ -130,6 +133,7 @@ type Action struct {
 	Icon        string `json:"icon"`
 	Href        string `json:"href"`
 	NewWindow   bool   `json:"new_window"`
+	Dismiss     bool   `json:"dismiss"`
 }
 
 type ActionArray []Action
@@ -164,8 +168,9 @@ type Notification struct {
 	Description *string      `json:"description,omitempty"`
 	Actions     *ActionArray `json:"actions,omitempty"`
 
-	Seen   *bool `json:"seen,omitempty"`
-	Global *bool `json:"global,omitempty"`
+	Dismissible *bool `json:"dismissible,omitempty"`
+	Seen        *bool `json:"seen,omitempty"`
+	Global      *bool `json:"global,omitempty"`
 }
 
 type NotificationsQuery struct {
@@ -173,9 +178,10 @@ type NotificationsQuery struct {
 	App    *string `json:"app,omitempty" schema:"app"`
 	Object *string `json:"object,omitempty" schema:"object"`
 
-	Global *bool   `json:"global,omitempty" schema:"global"`
-	Seen   *bool   `json:"seen,omitempty" schema:"seen"`
-	Key    *string `json:"key,omitempty" schema:"key"`
+	Global      *bool   `json:"global,omitempty" schema:"global"`
+	Seen        *bool   `json:"seen,omitempty" schema:"seen"`
+	Key         *string `json:"key,omitempty" schema:"key"`
+	Dismissible *bool   `json:"dismissible,omitempty" schema:"dismissible"`
 
 	Type *string `json:"type,omitempty"`
 
@@ -237,6 +243,10 @@ func extractQueryBasics(o *NotificationsQuery) ([]string, []interface{}) {
 	if o.Key != nil {
 		cNames = append(cNames, "key")
 		cValues = append(cValues, *o.Key)
+	}
+	if o.Dismissible != nil {
+		cNames = append(cNames, "dismissible")
+		cValues = append(cValues, *o.Dismissible)
 	}
 	return cNames, cValues
 }
@@ -366,6 +376,10 @@ func extractNotificationBasics(n *Notification) ([]string, []interface{}) {
 	if n.Actions != nil {
 		cNames = append(cNames, "actions")
 		cValues = append(cValues, n.Actions)
+	}
+	if n.Dismissible != nil {
+		cNames = append(cNames, "dismissible")
+		cValues = append(cValues, *n.Dismissible)
 	}
 	return cNames, cValues
 }

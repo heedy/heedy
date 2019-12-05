@@ -189,7 +189,7 @@ export default {
             commit
         }, q) {
             console.log("Updating notification", q);
-            let res = await api("PATCH", `api/heedy/v1/notifications`, q.u, true, q.n);
+            let res = await api("PATCH", `api/heedy/v1/notifications`, q.u, q.n);
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",
@@ -202,7 +202,7 @@ export default {
             commit
         }, q) {
             console.log("DELETING notification", q);
-            let res = await api("DELETE", `api/heedy/v1/notifications`, q);
+            let res = await api("DELETE", `api/heedy/v1/notifications`, null, q);
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",

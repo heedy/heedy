@@ -1,29 +1,48 @@
 <template>
   <v-alert
     :type="n.type.length>0?n.type:'info'"
-    :border="small?undefined:'left'"
+    :border="small && !$vuetify.breakpoint.smAndDown?undefined:'left'"
     :colored-border="!small"
-    dismissible
+    :dismissible="n.actions.length<=1 && n.dismissible"
     :dense="small"
     :outlined="small"
     prominent
     :elevation="1"
+    :icon="$vuetify.breakpoint.smAndDown?false:undefined"
     @input="del"
     style="background-color: #fdfdfd !important;"
   >
     <v-row>
-      <v-col class="grow">
+      <v-col
+        :class="{grow: $vuetify.breakpoint.smAndUp,'col-xs-12':!$vuetify.breakpoint.smAndUp,'col-12':!$vuetify.breakpoint.smAndUp}"
+      >
         <h3 :style="{'padding-top': description.length>0? '10px':'0'}">
           <router-link :to="linkpath" v-if="showlink">{{ n.title }}</router-link>
           <span v-else>{{ n.title }}</span>
         </h3>
         <span v-if="description.length>0" v-html="description" style="padding-top: 5px"></span>
       </v-col>
-      <v-col class="shrink">
-        <v-btn v-for="(v,i) in n.actions" :key="i" outlined @click="linkTo(v)">
+      <v-col
+        :class="{shrink: $vuetify.breakpoint.smAndUp,'col-xs-12':!$vuetify.breakpoint.smAndUp,'col-12':!$vuetify.breakpoint.smAndUp,'text-center': true}"
+      >
+        <v-btn
+          v-for="(v,i) in n.actions"
+          :key="i"
+          outlined
+          @click="linkTo(v)"
+          :color="n.type.length>0?n.type:'info'"
+          style="width: 100%;margin: 2px;"
+        >
           <v-icon v-if="v.icon!=''" left>{{ v.icon }}</v-icon>
           {{ v.title }}
         </v-btn>
+        <v-btn
+          v-if="n.actions.length>1 && n.dismissible"
+          outlined
+          :color="n.type.length>0?n.type:'info'"
+          style="width: 100%;margin: 2px;"
+          @click="del"
+        >Close</v-btn>
       </v-col>
     </v-row>
   </v-alert>
@@ -81,6 +100,9 @@ export default {
     },
     linkTo(v) {
       let url = v.href;
+      if (v.dismiss) {
+        this.del(null);
+      }
       if (url.startsWith("#")) {
         url = location.href.split("#")[0] + url;
         if (!v.new_window) {

@@ -16,7 +16,7 @@
           </v-list-item-content>
           <v-list-item-action style="overflow: hidden">
             <v-toolbar flat collapsed>
-              <v-toolbar-items style="margin-right: -30px;">
+              <v-toolbar-items style="margin-right: -25px;">
                 <slot></slot>
               </v-toolbar-items>
             </v-toolbar>

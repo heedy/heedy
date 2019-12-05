@@ -11,19 +11,26 @@ export function urlify(obj) {
 // This function allows querying the API explicitly.
 // If the method is get, data is urlencoded.
 // It explicitly returns the resulting object, or throws the error given
-async function api(method, uri, data = null, json = true, params = null) {
+async function api(method, uri, data = null, params = null, json = true) {
   let options = {
     method: method,
     credentials: "include",
     redirect: "follow",
     headers: {}
   };
-  if (data != null) {
-    if (params != null) {
-      uri = uri + "?" + urlify(data);
+  if (params != null) {
+    if (data != null && method == "GET") {
+      uri = uri + "?" + urlify({
+        ...data,
+        ...params
+      });
+    } else {
+      uri = uri + "?" + urlify(params);
     }
+  }
+  if (data != null) {
     if (method == "GET") {
-      if (data != null) {
+      if (data != null && params == null) {
         uri = uri + "?" + urlify(data);
       }
     } else if (json) {
@@ -66,10 +73,11 @@ async function api(method, uri, data = null, json = true, params = null) {
   }
 }
 
-export default async function consoleAPI(method, uri, data = null, json = true) {
-  let res = await api(method, uri, data, json);
+export default async function consoleAPI(method, uri, data = null,
+  params = null, json = true) {
+  let res = await api(method, uri, data, params, json);
   if (!res.response.ok) {
-    console.error(method, uri, data, json, res);
+    console.error(method, uri, data, params, json, res);
   }
   return res;
 }
