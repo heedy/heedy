@@ -204,6 +204,21 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 	settings.Cmd[i.APIKey] = c
 	settings.Unlock()
 
+	if sm.API != "" {
+		method, host, err := run.GetEndpoint(settings.DB.Assets().DataDir(), sm.API)
+		if err == nil {
+			err = run.WaitForEndpoint(method, host, c)
+		}
+		if err != nil {
+			settings.Lock()
+			delete(settings.Cmd, i.APIKey)
+			settings.Unlock()
+			cmd.Process.Kill()
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	rest.WriteJSON(w, r, &sm, nil)
 }
 
@@ -226,7 +241,7 @@ func StopPython(w http.ResponseWriter, r *http.Request) {
 	cmd, ok := settings.Cmd[apikey]
 	settings.Unlock()
 	if !ok {
-		rest.WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Couldn't find the command"))
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Can't stop python process: No such process"))
 		return
 	}
 	cmd.Cmd.Process.Signal(os.Interrupt)

@@ -4,6 +4,11 @@ from .object import getObject
 from functools import partial
 
 
+class Apps:
+    def __init__(self):
+        pass
+
+
 class App(APIObject):
     def __init__(self, access_token: str, url: str = DEFAULT_URL, session: str = "sync"):
         # Initialize the app object

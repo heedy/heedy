@@ -225,3 +225,15 @@ class APIObject:
         Deletes the object
         """
         return self.session.delete(self.uri, params=kwargs)
+
+
+class APIList:
+    """
+    APIList represents a list of objects in heedy (users,apps,objects,etc).
+    """
+
+    def __init__(self):
+        pass
+
+    def __getitem__(self, id):
+        pass
