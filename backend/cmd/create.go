@@ -5,8 +5,6 @@ import (
 	"path"
 
 	"github.com/heedy/heedy/backend/assets"
-
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/server"
 
 	"github.com/spf13/cobra"
@@ -15,11 +13,13 @@ import (
 var (
 
 	// Should we run the setup UI?
-	nosetup    bool
+	noserver   bool
 	setupHost  string
 	configFile string
 	port       uint16
 	host       string
+	username   string
+	password   string
 )
 
 // CreateCmd creates a new database
@@ -31,7 +31,7 @@ Creates the folder if it doesn't exist, but fails if the folder is not empty. If
 
 If you want to set it up from command line, without the setup server, you can specify a configuration file and the admin user:
    
-  heedy create ./myfolder -c ./heedy.conf --user=myusername --password=mypassword
+  heedy create ./myfolder --noserver -c ./heedy.conf --username=myusername --password=mypassword
 
 It is recommended that new users use the web setup, which will guide you in preparing the database for use:
 
@@ -62,18 +62,20 @@ It is recommended that new users use the web setup, which will guide you in prep
 		}
 		c.Verbose = verbose
 
-		if nosetup {
-			a, err := assets.Create(directory, c, configFile)
-			if err != nil {
-				return err
-			}
-			if err = database.Create(a); err != nil {
-				os.RemoveAll(directory)
-				return err
-			}
-			return nil
+		sc := server.SetupContext{
+			Config:    c,
+			Directory: directory,
+			File:      configFile,
+			User: server.SetupUser{
+				UserName: username,
+				Password: password,
+			},
 		}
-		return server.Setup(directory, c, configFile, setupHost)
+
+		if noserver {
+			return server.SetupCreate(sc)
+		}
+		return server.Setup(sc, setupHost)
 
 	},
 }
@@ -81,9 +83,11 @@ It is recommended that new users use the web setup, which will guide you in prep
 func init() {
 	CreateCmd.Flags().Uint16VarP(&port, "port", "p", 0, "The port on which to run heedy")
 	CreateCmd.Flags().StringVar(&host, "host", "_", "The host on which to run heedy")
-	CreateCmd.Flags().BoolVar(&nosetup, "nosetup", false, "Don't start the setup server - directly create the database.")
+	CreateCmd.Flags().BoolVar(&noserver, "noserver", false, "Don't start the setup server - directly create the database.")
 	CreateCmd.Flags().StringVar(&setupHost, "setup", ":1324", "Run a setup server on the given host:port")
 	CreateCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to an existing configuration file to use for the database.")
+	CreateCmd.Flags().StringVar(&username, "username", "", "Default user's username")
+	CreateCmd.Flags().StringVar(&password, "password", "", "Default user's password")
 
 	RootCmd.AddCommand(CreateCmd)
 }

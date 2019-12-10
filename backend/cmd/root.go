@@ -47,7 +47,11 @@ var RootCmd = &cobra.Command{
 		directory = path.Join(directory, "heedy")
 		if _, err := os.Stat(path.Join(directory, "heedy.conf")); os.IsNotExist(err) {
 			// A heedy database does not exist in the config directory
-			return server.Setup(directory, c, "", ":1324")
+
+			return server.Setup(server.SetupContext{
+				Config:    c,
+				Directory: directory,
+			}, ":1324")
 		}
 
 		directory, err = filepath.Abs(directory)

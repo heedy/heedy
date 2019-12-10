@@ -43,6 +43,7 @@ func Create(directory string, cfg *Configuration, configFile string) (*Assets, e
 
 	err = CopyDir(builtinFs, "/new", osFs, directory)
 	if err != nil {
+		osFs.RemoveAll(directory)
 		return nil, err
 	}
 
@@ -64,7 +65,11 @@ func Create(directory string, cfg *Configuration, configFile string) (*Assets, e
 	// Finally, overwrite the config file with overloaded configuration options, which were specified
 	// during setup
 	if cfg != nil {
-		WriteConfig(configFilePath, cfg)
+		err = WriteConfig(configFilePath, cfg)
+		if err != nil {
+			osFs.RemoveAll(directory)
+			return nil, err
+		}
 	}
 
 	// And now load the assets

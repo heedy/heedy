@@ -21,20 +21,61 @@ import (
 	_ "github.com/heedy/heedy/backend/events"
 )
 
-type setupContext struct {
-	Config    *assets.Configuration
-	Directory string
+type SetupUser struct {
+	UserName string `json:"username"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
-// Message sent to user creation stuff
-type setupMessage struct {
+// This is the context that is passed to creator function
+type SetupContext struct {
 	Config    *assets.Configuration `json:"config,omitempty"`
-	Directory *string               `json:"directory,omitempty"`
-	User      struct {
-		UserName string `json:"username"`
-		Name     string `json:"name"`
-		Password string `json:"password"`
-	} `json:"user,omitempty"`
+	Directory string                `json:"directory,omitempty"`
+	File      string                `json:"file,omitempty"`
+	User      SetupUser             `json:"user,omitempty"`
+}
+
+func SetupCreate(sc SetupContext) error {
+	if sc.User.UserName == "" || sc.User.Password == "" {
+		return errors.New("A default username and password is required to create a heedy database")
+	}
+	// Make sure the user in context is added to admin users
+	sc.Config.AdminUsers = &[]string{sc.User.UserName}
+
+	logrus.Infof("Creating database in '%s'", sc.Directory)
+	a, err := assets.Create(sc.Directory, sc.Config, sc.File)
+	if err != nil {
+		return err
+	}
+
+	a.Config.Verbose = sc.Config.Verbose
+	assets.SetGlobal(a) // Set global assets
+
+	if err = database.Create(a); err != nil {
+		os.RemoveAll(sc.Directory)
+		return err
+	}
+
+	db, err := database.Open(a)
+	if err != nil {
+		os.RemoveAll(sc.Directory)
+		return err
+	}
+
+	// Now add the default user
+	if err = db.CreateUser(&database.User{
+		Details: database.Details{
+			Name: &sc.User.Name,
+		},
+		UserName: &sc.User.UserName,
+		Password: &sc.User.Password,
+	}); err != nil {
+		db.Close()
+		os.RemoveAll(sc.Directory)
+		return err
+	}
+
+	return db.Close()
 }
 
 // Setup runs the setup server. All of the arguments are optional - include empty strings
@@ -42,7 +83,7 @@ type setupMessage struct {
 // were given.
 // This will load the default config, overwritten with configFile, overwritten with c, and use that
 // as the "defaults" for fields given to the user.
-func Setup(directory string, c *assets.Configuration, configFile string, setupBind string) error {
+func Setup(sc SetupContext, setupBind string) error {
 
 	frontendFS := afero.NewBasePathFs(assets.FS(), "/public")
 	setupbytes, err := afero.ReadFile(frontendFS, "/setup.html")
@@ -52,23 +93,24 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 	setupTemplate, err := template.New("setup").Parse(string(setupbytes))
 
 	fullConfig := assets.Config()
-	if configFile != "" {
-		cF, err := assets.LoadConfigFile(configFile)
+	if sc.File != "" {
+		cF, err := assets.LoadConfigFile(sc.File)
 		if err != nil {
 			return err
 		}
 		fullConfig = assets.MergeConfig(fullConfig, cF)
 	}
-	if c != nil {
-		fullConfig = assets.MergeConfig(fullConfig, c)
+	if sc.Config != nil {
+		fullConfig = assets.MergeConfig(fullConfig, sc.Config)
 	}
+	sc.Config = fullConfig
 
-	if directory != "" {
-		directory, err = filepath.Abs(directory)
-		if err != nil {
-			return err
-		}
+	directory, err := filepath.Abs(sc.Directory)
+	if err != nil {
+		return err
 	}
+	sc.Directory = directory
+
 	mux := chi.NewMux()
 
 	setupServer := &http.Server{
@@ -76,7 +118,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		Handler: mux,
 	}
 
-	if c.Verbose {
+	if sc.Config.Verbose {
 		logrus.Warn("Running in verbose mode")
 		setupServer.Handler = VerboseLoggingMiddleware(mux, nil)
 	}
@@ -85,10 +127,7 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 		http.Redirect(w, r, "/setup/", http.StatusFound)
 	})
 	mux.Get("/setup/", func(w http.ResponseWriter, r *http.Request) {
-		setupTemplate.Execute(w, &setupContext{
-			Config:    fullConfig,
-			Directory: directory,
-		})
+		setupTemplate.Execute(w, &sc)
 	})
 	mux.Mount("/static/", http.FileServer(afero.NewHttpFs(frontendFS)))
 
@@ -103,66 +142,33 @@ func Setup(directory string, c *assets.Configuration, configFile string, setupBi
 			return
 		}
 		logrus.Debug("Got create request")
-		sm := &setupMessage{}
-		err := rest.UnmarshalRequest(r, sm)
+
+		var scn SetupContext
+		err := rest.UnmarshalRequest(r, &scn)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-		if sm.Directory != nil {
+		if scn.Directory != "" {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The directory cannot be set from the web setup for security purposes"))
 			return
 		}
+		scn.Directory = sc.Directory
 
-		// Add the user to admins
-		sm.Config.AdminUsers = &[]string{sm.User.UserName}
-
-		logrus.Infof("Creating database in '%s'", directory)
-		a, err := assets.Create(directory, sm.Config, configFile)
+		err = SetupCreate(scn)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-		a.Config.Verbose = c.Verbose
-		assets.SetGlobal(a) // Set global assets
-
-		if err = database.Create(a); err != nil {
-			os.RemoveAll(directory)
-			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		db, err := database.Open(a)
-		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-			os.RemoveAll(directory)
-			return
-		}
-
-		// Now add the default user
-		if err = db.CreateUser(&database.User{
-			Details: database.Details{
-				Name: &sm.User.Name,
-			},
-			UserName: &sm.User.UserName,
-			Password: &sm.User.Password,
-		}); err != nil {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
-			db.Close()
-			os.RemoveAll(directory)
-			return
-		}
-
-		db.Close()
 
 		// Now we load the main server, as if run was called
-		a, err = assets.Open(directory, nil)
+		a, err := assets.Open(sc.Directory, nil)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
-			os.RemoveAll(directory)
+			os.RemoveAll(sc.Directory)
 			return
 		}
-		a.Config.Verbose = c.Verbose
+		a.Config.Verbose = sc.Config.Verbose
 		// Reset the global assets
 		assets.SetGlobal(a)
 

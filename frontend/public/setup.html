@@ -22,8 +22,8 @@
       </div>
     </div>
     <script>
-      var configuration = {{.Config}};
-      var installDirectory = {{.Directory}};
+      var ctx = {{.}};
+      console.log(ctx);
     </script>
     <!-- setup is at /setup/, so need to go up a folder to /static -->
     <script src="../static/setup.mjs" type="module"></script>

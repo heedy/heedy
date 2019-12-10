@@ -179,24 +179,24 @@ let raw_url = window.location.href.split("/setup/")[0];
 export default {
   data: () => ({
     show: false,
-    directoryDefault: installDirectory,
-    directory: installDirectory,
-    hostDefault: configuration["host"],
-    host: configuration["host"],
-    portDefault: configuration["port"].toString(),
-    port: configuration["port"].toString(),
+    directoryDefault: ctx.directory,
+    directory: ctx.directory,
+    hostDefault: ctx.config["host"],
+    host: ctx.config["host"],
+    portDefault: ctx.config["port"].toString(),
+    port: ctx.config["port"].toString(),
     url:
       raw_url.includes("localhost") ||
       raw_url.includes("127.0.0.1") ||
       raw_url.includes("::1") ||
-      raw_url == configuration["url"]
+      raw_url == ctx.config["url"]
         ? ""
         : raw_url,
-    urlDefault: configuration["url"],
+    urlDefault: ctx.config["url"],
     tls: "none",
-    username: "",
-    password1: "",
-    password2: "",
+    username: ctx.user.username,
+    password1: ctx.user.password,
+    password2: ctx.user.password,
     alert: "",
     success: "",
     loading: false
@@ -270,7 +270,7 @@ export default {
 
       let furl = "/auth/token";
       if (this.host != this.hostDefault || this.port != this.portDefault) {
-        window.location.href = this.url == "" ? configuration["url"] : this.url;
+        window.location.href = this.url == "" ? ctx.config["url"] : this.url;
       }
 
       // The setup went with defaults, so log in

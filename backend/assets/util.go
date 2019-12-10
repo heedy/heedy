@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/afero"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type PrintOpen struct {
@@ -17,7 +17,7 @@ type PrintOpen struct {
 }
 
 func (r PrintOpen) Open(n string) (afero.File, error) {
-	log.Debugf("Request: %s", n)
+	logrus.Debugf("Request: %s", n)
 	return r.Fs.Open(n)
 }
 
@@ -211,14 +211,16 @@ func CopyStructIfPtrSet(base interface{}, overlay interface{}) {
 
 // https://stackoverflow.com/questions/23558425/how-do-i-get-the-local-ip-address-in-go
 // Get preferred outbound ip of this machine
-func GetOutboundIP() net.IP {
+func GetOutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
+		// An error means that the network is unreachable - return localhost
+		logrus.Warn("Could not determine LAN IP. Using localhost.")
+		return "localhost"
 	}
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	return localAddr.IP
+	return localAddr.IP.String()
 }
