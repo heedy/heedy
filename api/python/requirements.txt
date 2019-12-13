@@ -8,3 +8,4 @@ pytest-timeout
 numpy
 aiohttp
 dateparser
+requests

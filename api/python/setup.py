@@ -29,6 +29,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "aiohttp",
-        "dateparser"
+        "dateparser",
+        "requests"
     ],
 )
