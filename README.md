@@ -1,4 +1,5 @@
 # Heedy
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/heedy/heedy/Test?label=tests&style=flat-square)
 
 **Note:** *Heedy replaces ConnectorDB, and is currently a pre-alpha. For ConnectorDB 0.3, please go to the releases page.* 
 

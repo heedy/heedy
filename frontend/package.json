@@ -31,6 +31,7 @@
     "@fortawesome/fontawesome-free": "^5.10.2",
     "@koumoul/vuetify-jsonschema-form": "^0.36.0",
     "color-hash": "^1.0.3",
+    "html-minifier": "^4.0.0",
     "markdown-it": "^10.0.0",
     "material-design-icons-iconfont": "^5.0.1",
     "moment": "^2.24.0",
