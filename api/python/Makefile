@@ -8,4 +8,4 @@ publish: dist
 	twine upload dist/*
 
 test:
-	pytest --cov=heedy --timeout=50
+	./runtests

@@ -211,12 +211,18 @@ func queryAllowed(db database.DB, o *NotificationsQuery) (*NotificationsQuery, e
 		if i > -1 {
 			usr := dbid[:i]
 			conn := dbid[i+1:]
+			if o.App != nil && *o.App == "self" {
+				o.App = &conn
+			}
 			if o.User != nil || o.App != nil && *o.App != conn {
 				return nil, ErrAccessDenied
 			}
 			o.User = &usr
 			o.App = &conn
 		} else {
+			if o.User != nil && *o.User == "self" {
+				o.User = &dbid
+			}
 			if o.User != nil && *o.User != dbid {
 				return nil, ErrAccessDenied
 			}

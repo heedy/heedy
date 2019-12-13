@@ -1,4 +1,5 @@
-from ..object import Object, registerObjectType
+from .objects import Object
+from .registry import registerObjectType
 
 import time
 import datetime
@@ -201,8 +202,14 @@ class Stream(Object):
         """
         return self.insert_array([{"d": data, "t": time.time()}])
 
-    def delete(self, **kwargs):
+    def remove(self, **kwargs):
+        """
+        Removes the given data from the stream
+        """
         return self.session.delete(self.uri + "/data", params=kwargs)
+
+    def __len__(self):
+        return self.length()
 
 
 registerObjectType("stream", Stream)

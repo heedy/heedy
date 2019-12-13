@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"path"
 
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/server"
 
 	"github.com/spf13/cobra"
@@ -14,6 +16,7 @@ var (
 
 	// Should we run the setup UI?
 	noserver   bool
+	testapp    string
 	setupHost  string
 	configFile string
 	port       uint16
@@ -73,7 +76,41 @@ It is recommended that new users use the web setup, which will guide you in prep
 		}
 
 		if noserver {
-			return server.SetupCreate(sc)
+			err := server.SetupCreate(sc)
+			if err == nil && testapp != "" {
+				// If testapp is set, auto-creates an app with the given access token
+				// This is specifically for creating a testing database that can directly
+				// be accessed by API
+
+				db, err := database.Open(assets.Get())
+				if err != nil {
+					os.RemoveAll(directory)
+					return err
+				}
+				defer db.Close()
+				appname := "Test App"
+				appid, _, err := db.CreateApp(&database.App{
+					Details: database.Details{
+						Name: &appname,
+					},
+					Owner: &sc.User.UserName,
+					Scopes: &database.AppScopeArray{
+						ScopeArray: database.ScopeArray{
+							Scopes: []string{"*"},
+						},
+					},
+				})
+				if err != nil {
+					os.RemoveAll(directory)
+					return err
+				}
+				// Manually set the access token to the value
+				_, err = db.Exec("UPDATE apps SET access_token=? WHERE id=?;", testapp, appid)
+				return err
+			}
+			return err
+		} else if testapp != "" {
+			return errors.New("testapp can only be set in noserver mode")
 		}
 		return server.Setup(sc, setupHost)
 
@@ -88,6 +125,7 @@ func init() {
 	CreateCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to an existing configuration file to use for the database.")
 	CreateCmd.Flags().StringVar(&username, "username", "", "Default user's username")
 	CreateCmd.Flags().StringVar(&password, "password", "", "Default user's password")
+	CreateCmd.Flags().StringVar(&testapp, "testapp", "", "Whether to create a test app with the given access token. Only works in noserver mode")
 
 	RootCmd.AddCommand(CreateCmd)
 }

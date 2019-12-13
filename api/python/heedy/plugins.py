@@ -5,6 +5,11 @@ import multidict
 import aiohttp
 import base64
 
+from .notifications import Notifications
+
+from .users import Users
+from .apps import Apps
+from .objects import Objects
 
 class Plugin:
     def __init__(self, session: str = "async"):
@@ -17,6 +22,11 @@ class Plugin:
         self.session = getSessionType(
             session, f"http://localhost:{self.config['config']['port']}")
         self.session.setPluginKey(self.config["apikey"])
+        
+        self.notifications = Notifications({},self.sesssion)
+        self.apps = Apps({},self.session)
+        self.users = Users({},self.session)
+        self.objects = Objects({},self.session)
 
     @property
     def name(self):
@@ -93,22 +103,5 @@ class Plugin:
         """
         return self.session.post("/api/heedy/v1/events", event)
 
-    def listApps(self, **kwargs):
-        return self.session.get("api/heedy/v1/apps", params=kwargs)
-
-    def notify(self, key, title, **kwargs):
-        n = {
-            "key": key,
-            "title": title,
-            **kwargs
-        }
-        if "_global" in n:
-            n["global"] = n["_global"]
-            del n["_global"]
-
-        return self.session.post("/api/heedy/v1/notifications", n)
-
-    def delete_notification(self, key=None, **kwargs):
-        if key is not None:
-            kwargs["key"] = key
-        return self.session.delete("/api/heedy/v1/notifications", params=kwargs)
+    def notify(self, *args, **kwargs):
+        return self.notifications.notify(*args,**kwargs)

@@ -32,7 +32,9 @@ debug: heedydbg frontend/node_modules
 	cd plugins/streams; make builtin; make debug
 	cd plugins/notifications; make builtin; make debug
 	cd plugins/registry; make builtin; make debug
-	
+
+test:
+	cd api/python; make test
 
 clean:
 	# $(GO) clean

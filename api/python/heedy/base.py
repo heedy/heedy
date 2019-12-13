@@ -7,6 +7,8 @@ import requests
 # Used for the asynchronous session
 import aiohttp
 
+from typing import Dict
+
 DEFAULT_URL = "http://localhost:1324"
 
 
@@ -44,6 +46,9 @@ class Session:
             url = url + "/"
         self.url = url
 
+    def f(self,func,x):
+        raise NotImplementedError()
+
     def setAccessToken(self, token):
         raise NotImplementedError()
 
@@ -78,6 +83,13 @@ class SyncSession(Session):
         super().__init__(url)
         self.s = requests.Session()
         self.s.headers.update({'Content-Type': 'application/json'})
+
+    def f(self,x,func):
+        return func(x)
+    
+    @property
+    def isasync(self):
+        return True
 
     def setAccessToken(self, token):
         self.s.headers.update({'Authorization': f"Bearer {token}"})
@@ -125,6 +137,13 @@ class AsyncSession(Session):
         super().__init__(url)
         self.s = None
         self.headers = {'Content-Type': 'application/json'}
+
+    @property
+    def isasync(self):
+        return True
+
+    async def f(self,x,func):
+        return func(await x)
 
     @staticmethod
     def __p(p):
@@ -194,6 +213,7 @@ def getSessionType(sessionType: str, url: str = DEFAULT_URL) -> Session:
     raise NotImplementedError(
         f"The session type '{sessionType}' is not implemented")
 
+from .notifications import Notifications
 
 class APIObject:
     """
@@ -201,10 +221,12 @@ class APIObject:
     It is given a session and the api location of the object, and allows
     reading, updating, and deleting the object
     """
-
-    def __init__(self, session: Session, uri: str):
+    props = {"name","description","icon"}
+    def __init__(self, uri: str, constraints: Dict, session: Session):
         self.session = session
         self.uri = uri
+
+        self.notifications = Notifications(constraints,self.session)
 
     def read(self, **kwargs):
         """
@@ -225,6 +247,20 @@ class APIObject:
         Deletes the object
         """
         return self.session.delete(self.uri, params=kwargs)
+    def __setattr__(self, name, value):
+        if name in self.props:
+            return self.update(**{name:value})
+        return super().__setattr__(name, value)
+    def __getattr__(self,attr : str):
+        return self.session.f(self.read(),lambda x: x[attr])
+
+    def __eq__(self,other):
+        if isinstance(other,self.__class__):
+            return other.uri == self.uri
+        return False
+
+    def notify(self,*args, **kwargs):
+        return self.notifications.notify(*args,**kwargs)
 
 
 class APIList:
@@ -232,8 +268,18 @@ class APIList:
     APIList represents a list of objects in heedy (users,apps,objects,etc).
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, uri: str, constraints: Dict, session : Session):
+        self.session = session
+        self.uri = uri
+        self.constraints = constraints
+    
+    # These are internal functions that help with implementing the useful parts of 
+    # lists
+    def _create(self,f=lambda x: x, **kwargs):
+        return self.session.post(self.uri,kwargs,f=f)
 
-    def __getitem__(self, id):
-        pass
+    def _getitem(self,item, f=lambda x: x):
+        return self.session.get(f"{self.uri}/{item}",f=f)
+
+    def _call(self, f=lambda x: x,**kwargs):
+        return self.session.get(self.uri,params={**self.constraints,**kwargs},f=f)

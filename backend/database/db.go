@@ -383,12 +383,12 @@ func ErrBadQuery(err string, args ...interface{}) error {
 
 var (
 	ErrNotFound        = errors.New("not_found: The selected resource was not found")
-	ErrNoUpdate        = errors.New("Nothing to update")
-	ErrNoPasswordGiven = errors.New("A user cannot have an empty password")
-	ErrUserNotFound    = errors.New("User was not found")
-	ErrInvalidUserName = errors.New("Invalid Username")
-	ErrInvalidName     = errors.New("Invalid name")
-	ErrInvalidQuery    = errors.New("Invalid query")
+	ErrNoUpdate        = errors.New("nop: Nothing to update")
+	ErrNoPasswordGiven = errors.New("bad_request: A user cannot have an empty password")
+	ErrUserNotFound    = errors.New("not_found: User was not found")
+	ErrInvalidUserName = errors.New("bad_request: Invalid Username")
+	ErrInvalidName     = errors.New("bad_request: Invalid name")
+	ErrInvalidQuery    = errors.New("invalid_query: Invalid query")
 )
 
 // Gets all pointer elements of a struct, and wherever the pointer isn't nil, adds it to the array
@@ -581,7 +581,7 @@ func appCreateQuery(c *App) (string, []interface{}, error) {
 		return "", nil, ErrInvalidName
 	}
 	if c.Owner == nil {
-		return "", nil, ErrInvalidQuery
+		return "", nil, ErrBadQuery("An app must have an owner")
 	}
 	cColumns, cValues, err := extractApp(c)
 	if err != nil {
