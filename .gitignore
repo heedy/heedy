@@ -1,7 +1,7 @@
 # The public folder is generated from the frontend
 /assets/public
 /assets/setup
-
+.gobin
 .vscode
 # test text file
 backend/server/tests/exec/data/test.txt
