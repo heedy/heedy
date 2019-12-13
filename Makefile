@@ -18,11 +18,12 @@ frontend: phony frontend/node_modules
 	cd plugins/notifications; make builtin; make frontend
 	cd plugins/registry; make builtin; make frontend
 
-heedy: backend/main.go phony # gencode
-ifeq ($(shell which statik),)
-	go install github.com/rakyll/statik
-endif
-	statik -src=./assets -dest=./backend -p assets -f
+.gobin/statik:
+	GOBIN=${PWD}/.gobin go install github.com/rakyll/statik
+
+
+heedy: backend/main.go .gobin/statik phony # gencode
+	./.gobin/statik -src=./assets -dest=./backend -p assets -f
 	cd backend; $(GO) build --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook" -o ../heedy -ldflags "-X \"github.com/heedy/heedy/backend/buildinfo.BuildTimestamp=`date -u '+%Y-%m-%d %H:%M:%S'`\" -X github.com/heedy/heedy/backend/buildinfo.GitHash=`git rev-parse HEAD` -X github.com/heedy/heedy/backend/buildinfo.Version=$(VERSION)"
 	rm ./backend/assets/statik.go
 
