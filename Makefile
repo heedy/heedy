@@ -20,10 +20,9 @@ frontend: phony frontend/node_modules
 
 heedy: backend/main.go phony # gencode
 ifeq ($(shell which statik),)
-	go get github.com/rakyll/statik
+	go get -v github.com/rakyll/statik
 	echo ${PATH}
-	echo GOBIN
-	echo ${GOBIN}
+	echo ${GOPATH}
 endif
 	statik -src=./assets -dest=./backend -p assets -f
 	cd backend; $(GO) build --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook" -o ../heedy -ldflags "-X \"github.com/heedy/heedy/backend/buildinfo.BuildTimestamp=`date -u '+%Y-%m-%d %H:%M:%S'`\" -X github.com/heedy/heedy/backend/buildinfo.GitHash=`git rev-parse HEAD` -X github.com/heedy/heedy/backend/buildinfo.Version=$(VERSION)"
