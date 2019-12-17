@@ -12,9 +12,11 @@ from .apps import Apps
 from .objects import Objects
 
 class Plugin:
-    def __init__(self, session: str = "async"):
+    def __init__(self, config=None, session: str = "async"):
         # Load the plugin configuration
-        self.config = json.loads(input())
+        self.config = config
+        if self.config is None:
+            self.config = json.loads(input())
 
         # Change the directory to the data dir
         os.chdir(self.config["data_dir"])
@@ -23,7 +25,7 @@ class Plugin:
             session, f"http://localhost:{self.config['config']['port']}")
         self.session.setPluginKey(self.config["apikey"])
         
-        self.notifications = Notifications({},self.sesssion)
+        self.notifications = Notifications({},self.session)
         self.apps = Apps({},self.session)
         self.users = Users({},self.session)
         self.objects = Objects({},self.session)
