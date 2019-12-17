@@ -32,15 +32,6 @@ func (c *Configuration) GetPort() uint16 {
 	return 0
 }
 
-func (c *Configuration) GetNewAppScopes() []string {
-	c.RLock()
-	defer c.RUnlock()
-	if c.NewAppScopes != nil {
-		return *c.NewAppScopes
-	}
-	return []string{}
-}
-
 func (c *Configuration) GetActivePlugins() []string {
 	c.RLock()
 	defer c.RUnlock()
@@ -95,18 +86,18 @@ func (c *Configuration) ValidateObjectMetaWithDefaults(objecttype string, meta m
 	return s.ValidateMetaWithDefaults(meta)
 }
 
-// GetObjectScopes returns the map of scopes
-func (c *Configuration) GetObjectScopes(objecttype string) (map[string]string, error) {
+// GetObjectScope returns the map of scope
+func (c *Configuration) GetObjectScope(objecttype string) (map[string]string, error) {
 	c.RLock()
 	defer c.RUnlock()
 	s, ok := c.ObjectTypes[objecttype]
 	if !ok {
 		return nil, fmt.Errorf("bad_request: invalid object type '%s'", objecttype)
 	}
-	if s.Scopes == nil {
+	if s.Scope == nil {
 		return make(map[string]string), nil
 	}
-	return *s.Scopes, nil
+	return *s.Scope, nil
 }
 
 // GetRunTimeout gets timeout for exec

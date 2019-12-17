@@ -112,7 +112,7 @@ func TestUserUpdateIcon(t *testing.T) {
 	icon := "mi:lol"
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
-			ID:     "testy",
+			ID:   "testy",
 			Icon: &icon,
 		},
 	}))
@@ -136,7 +136,7 @@ func TestUserObject(t *testing.T) {
 	name2 := "derpy"
 	require.NoError(t, db.UpdateObject(&Object{
 		Details: Details{
-			ID:       sid,
+			ID:   sid,
 			Name: &name2,
 		},
 		Meta: &JSONObject{
@@ -146,7 +146,7 @@ func TestUserObject(t *testing.T) {
 	s, err := db.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, name2)
-	require.NotNil(t, s.Scopes)
+	require.NotNil(t, s.OwnerScope)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))
 

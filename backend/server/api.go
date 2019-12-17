@@ -38,8 +38,8 @@ func APIMux() (*chi.Mux, error) {
 	v1mux.Patch("/apps/{appid}", UpdateApp)
 	v1mux.Delete("/apps/{appid}", DeleteApp)
 
-	v1mux.Get("/server/scopes/{objecttype}", GetObjectScopes)
-	v1mux.Get("/server/scopes", GetAppScopes)
+	v1mux.Get("/server/scope/{objecttype}", GetObjectScope)
+	v1mux.Get("/server/scope", GetAppScope)
 	v1mux.Get("/server/apps", GetPluginApps)
 	v1mux.Get("/server/version", GetVersion)
 

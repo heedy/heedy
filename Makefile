@@ -38,6 +38,7 @@ debug: heedydbg frontend/node_modules
 	cd plugins/registry; make builtin; make debug
 
 test:
+	go test ./backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
 	cd api/python; make test
 
 clean:

@@ -20,10 +20,10 @@ func App(pluginKey string, owner string, cv *assets.App) *database.App {
 		Plugin:  &pluginKey,
 		Owner:   &owner,
 	}
-	if cv.Scopes != nil {
-		c.Scopes = &database.AppScopeArray{
+	if cv.Scope != nil {
+		c.Scope = &database.AppScopeArray{
 			ScopeArray: database.ScopeArray{
-				Scopes: *cv.Scopes,
+				Scope: *cv.Scope,
 			},
 		}
 	}
@@ -60,9 +60,9 @@ func AppObject(app string, key string, as *assets.Object) *database.Object {
 		jo := database.JSONObject(*as.Meta)
 		s.Meta = &jo
 	}
-	if as.Scopes != nil {
-		s.Scopes = &database.ScopeArray{
-			Scopes: *as.Scopes,
+	if as.Scope != nil {
+		s.OwnerScope = &database.ScopeArray{
+			Scope: *as.Scope,
 		}
 	}
 

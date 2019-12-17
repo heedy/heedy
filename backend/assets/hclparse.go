@@ -40,7 +40,7 @@ type hclObject struct {
 
 	Description *string    `hcl:"description"`
 	Icon        *string    `hcl:"icon"`
-	Scopes      *[]string  `hcl:"scopes"`
+	Scope       *[]string  `hcl:"scope"`
 	Meta        *cty.Value `hcl:"meta,attr"`
 
 	On []Event `hcl:"on,block" json:"on,omitempty"`
@@ -57,7 +57,7 @@ type hclApp struct {
 	Description *string   `json:"description" hcl:"description"`
 	Icon        *string   `json:"icon" hcl:"icon"`
 	Type        *string   `json:"type" hcl:"type"`
-	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Scope       *[]string `json:"scope,omitempty" hcl:"scope"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 
@@ -102,8 +102,8 @@ type hclObjectType struct {
 
 	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
-	Meta   *cty.Value         `hcl:"meta,attr"`
-	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+	Meta  *cty.Value         `hcl:"meta,attr"`
+	Scope *map[string]string `json:"scope,omitempty" hcl:"scope" cty:"scope"`
 }
 
 type hclRunType struct {
@@ -129,8 +129,8 @@ type hclConfiguration struct {
 
 	RunTimeout *string `hcl:"run_timeout"`
 
-	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
-	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
+	Scope       *map[string]string `json:"scope,omitempty" hcl:"scope"`
+	NewAppScope *[]string          `json:"new_app_scope,omitempty" hcl:"new_app_scope"`
 
 	ObjectTypes []hclObjectType `json:"type" hcl:"type,block"`
 	RunTypes    []hclRunType    `json:"runtype" hcl:"runtype,block"`

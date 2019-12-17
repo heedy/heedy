@@ -60,35 +60,35 @@ func (ja *JSONArray) UnmarshalJSON(b []byte) error {
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
 type ScopeArray struct {
-	Scopes   []string
+	Scope    []string
 	scopeMap map[string]bool
 }
 
-// Update cleans out the scopes to remove repeated items
+// Update cleans out the scope to remove repeated items
 func (s *ScopeArray) Update() {
 	s.scopeMap = make(map[string]bool)
-	for _, v := range s.Scopes {
+	for _, v := range s.Scope {
 		s.scopeMap[v] = true
 	}
 
 	if _, ok := s.scopeMap["*"]; ok {
-		s.Scopes = []string{"*"}
+		s.Scope = []string{"*"}
 		return
 	}
-	s.Scopes = make([]string, 0, len(s.scopeMap))
+	s.Scope = make([]string, 0, len(s.scopeMap))
 	for k := range s.scopeMap {
-		s.Scopes = append(s.Scopes, k)
+		s.Scope = append(s.Scope, k)
 	}
 }
 
 func (s *ScopeArray) Scan(val interface{}) error {
 	switch v := val.(type) {
 	case []byte:
-		json.Unmarshal(v, &s.Scopes)
+		json.Unmarshal(v, &s.Scope)
 		s.Update()
 		return nil
 	case string:
-		json.Unmarshal([]byte(v), &s.Scopes)
+		json.Unmarshal([]byte(v), &s.Scope)
 		s.Update()
 		return nil
 	default:
@@ -97,7 +97,7 @@ func (s *ScopeArray) Scan(val interface{}) error {
 }
 
 func (s *ScopeArray) String() string {
-	return strings.Join(s.Scopes, " ")
+	return strings.Join(s.Scope, " ")
 }
 
 func (s *ScopeArray) MarshalJSON() ([]byte, error) {
@@ -110,16 +110,16 @@ func (s *ScopeArray) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, &total)
 	total = strings.TrimSpace(total)
 	if len(total) == 0 {
-		s.Scopes = []string{}
+		s.Scope = []string{}
 	} else {
-		s.Scopes = strings.Split(total, " ")
+		s.Scope = strings.Split(total, " ")
 	}
 	s.Update()
 	return err
 }
 
 func (s *ScopeArray) Value() (driver.Value, error) {
-	return json.Marshal(s.Scopes)
+	return json.Marshal(s.Scope)
 }
 
 // HasScope checks if the given scope is present
@@ -139,15 +139,15 @@ func appParentScope(s string) string {
 	return r[0]
 }
 
-// AppScopeArray works with app scopes, which have different details than object scopes
+// AppScopeArray works with app scope, which have different details than object scope
 type AppScopeArray struct {
 	ScopeArray
 }
 
-// Update cleans out the scopes to remove repeated items
+// Update cleans out the scope to remove repeated items
 func (s *AppScopeArray) Update() {
 	scopeMap := make(map[string]bool)
-	for _, v := range s.Scopes {
+	for _, v := range s.Scope {
 		scopeMap[v] = true
 	}
 
@@ -157,19 +157,19 @@ func (s *AppScopeArray) Update() {
 	s.scopeMap = make(map[string]bool)
 	if _, ok := scopeMap["*"]; ok {
 		s.scopeMap["*"] = true
-		s.Scopes = []string{"*"}
+		s.Scope = []string{"*"}
 		return
 	}
 
-	for _, v := range s.Scopes {
+	for _, v := range s.Scope {
 		if _, ok := scopeMap[appParentScope(v)]; !ok {
 			s.scopeMap[v] = true
 		}
 	}
 
-	s.Scopes = make([]string, 0, len(s.scopeMap))
+	s.Scope = make([]string, 0, len(s.scopeMap))
 	for k := range s.scopeMap {
-		s.Scopes = append(s.Scopes, k)
+		s.Scope = append(s.Scope, k)
 	}
 }
 
@@ -241,7 +241,7 @@ type App struct {
 	CreatedDate    Date    `json:"created_date,omitempty" db:"created_date"`
 	LastAccessDate *Date   `json:"last_access_date" db:"last_access_date"`
 
-	Scopes *AppScopeArray `json:"scopes" db:"scopes"`
+	Scope *AppScopeArray `json:"scope" db:"scope"`
 
 	Meta           *JSONObject `json:"meta,omitempty" db:"meta"`
 	Settings       *JSONObject `json:"settings" db:"settings"`
@@ -262,9 +262,10 @@ type Object struct {
 	CreatedDate  *Date `json:"created_date,omitempty" db:"created_date"`
 	LastModified *Date `json:"last_modified" db:"last_modified"`
 
-	Scopes *ScopeArray `json:"scopes" db:"scopes"`
+	// The scope the owner has to the object. This allows apps to control objects belonging to them.
+	OwnerScope *ScopeArray `json:"owner_scope" db:"owner_scope"`
 
-	// The access array, giving the permissions the cuurently logged in thing has
+	// The access array, giving the permissions the currently logged in thing has
 	// It is generated manually for each read query, it does not exist in the database.
 	Access ScopeArray `json:"access,omitempty" db:"access"`
 }
@@ -520,7 +521,7 @@ func extractObject(s *Object) (sColumns []string, sValues []interface{}, err err
 			return
 		}
 	}
-	if len(s.Access.Scopes) > 0 {
+	if len(s.Access.Scope) > 0 {
 		err = ErrBadQuery("The access field is auto-generated from permissions - it cannot be set directly")
 	}
 

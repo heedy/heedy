@@ -17,27 +17,27 @@ import (
 	"github.com/heedy/heedy/backend/updater"
 )
 
-func GetObjectScopes(w http.ResponseWriter, r *http.Request) {
+func GetObjectScope(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	if db.Type() == database.PublicType || db.Type() == database.AppType {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scopes"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scope"))
 		return
 	}
 	a := rest.CTX(r).DB.AdminDB().Assets()
 	stype := chi.URLParam(r, "objecttype")
-	scopes, err := a.Config.GetObjectScopes(stype)
-	rest.WriteJSON(w, r, scopes, err)
+	scope, err := a.Config.GetObjectScope(stype)
+	rest.WriteJSON(w, r, scope, err)
 }
 
-func GetAppScopes(w http.ResponseWriter, r *http.Request) {
+func GetAppScope(w http.ResponseWriter, r *http.Request) {
 	a := rest.CTX(r).DB.AdminDB().Assets()
 
 	db := rest.CTX(r).DB
 	if db.Type() == database.PublicType || db.Type() == database.AppType {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scopes"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list scope"))
 		return
 	}
-	// Now our job is to generate all of the scopes
+	// Now our job is to generate all of the scope
 	// TODO: language support
 	// TODO: maybe require auth for this?
 
@@ -57,7 +57,7 @@ func GetAppScopes(w http.ResponseWriter, r *http.Request) {
 		"self.objects":   "Allows the app to create and manage its own objects of all types",
 	}
 
-	// Generate the object type scopes
+	// Generate the object type scope
 	for stype := range a.Config.ObjectTypes {
 		smap[fmt.Sprintf("objects.%s", stype)] = fmt.Sprintf("All permissions for objects of type '%s'", stype)
 		smap[fmt.Sprintf("objects.%s:read", stype)] = fmt.Sprintf("Read access for your objects of type '%s'", stype)
@@ -68,8 +68,8 @@ func GetAppScopes(w http.ResponseWriter, r *http.Request) {
 
 		smap[fmt.Sprintf("self.objects.%s", stype)] = fmt.Sprintf("Allows the app to create and manage its own objects of type '%s'", stype)
 
-		// And now generate the per-type scopes
-		stypemap := a.Config.ObjectTypes[stype].Scopes
+		// And now generate the per-type scope
+		stypemap := a.Config.ObjectTypes[stype].Scope
 		if stypemap != nil {
 			for sscope := range *stypemap {
 				smap[fmt.Sprintf("objects.%s:%s", stype, sscope)] = (*stypemap)[sscope]

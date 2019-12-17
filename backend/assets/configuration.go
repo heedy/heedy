@@ -28,7 +28,7 @@ type Object struct {
 	Description *string                 `json:"description,omitempty"`
 	Icon        *string                 `json:"icon,omitempty"`
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
-	Scopes      *[]string               `json:"scopes,omitempty"`
+	Scope       *[]string               `json:"scope,omitempty"`
 
 	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
 
@@ -45,7 +45,7 @@ type App struct {
 
 	Description *string   `json:"description,omitempty" hcl:"description"`
 	Icon        *string   `json:"icon,omitempty" hcl:"icon"`
-	Scopes      *[]string `json:"scopes,omitempty" hcl:"scopes"`
+	Scope       *[]string `json:"scope,omitempty" hcl:"scope"`
 	Type        *string   `json:"type" hcl:"type"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
@@ -118,7 +118,7 @@ type ObjectType struct {
 
 	Meta *map[string]interface{} `json:"meta,omitempty"`
 
-	Scopes *map[string]string `json:"scopes,omitempty" hcl:"scopes" cty:"scopes"`
+	Scope *map[string]string `json:"scope,omitempty" hcl:"scope" cty:"scope"`
 
 	metaSchema *JSONSchema
 }
@@ -205,8 +205,7 @@ type Configuration struct {
 
 	RunTimeout *string `json:"run_timeout,omitempty"`
 
-	Scopes       *map[string]string `json:"scopes,omitempty" hcl:"scopes"`
-	NewAppScopes *[]string          `json:"new_app_scopes,omitempty" hcl:"new_app_scopes"`
+	Scope *map[string]string `json:"scope,omitempty" hcl:"scope"`
 
 	ObjectTypes map[string]ObjectType `json:"type,omitempty" hcl:"type"`
 	RunTypes    map[string]RunType    `json:"runtype,omitempty"`
@@ -283,14 +282,13 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	base = base.Copy()
 	overlay = overlay.Copy()
 
-	// Copy the scopes to overlay, since they will be replaced with CopyStruct
-	if overlay.Scopes != nil && base.Scopes != nil {
-		for sk, sv := range *overlay.Scopes {
-			(*base.Scopes)[sk] = sv
+	// Copy the scope to overlay, since they will be replaced with CopyStruct
+	if overlay.Scope != nil && base.Scope != nil {
+		for sk, sv := range *overlay.Scope {
+			(*base.Scope)[sk] = sv
 		}
-		overlay.Scopes = base.Scopes
+		overlay.Scope = base.Scope
 	}
-	overlay.NewAppScopes = MergeStringArrays(base.NewAppScopes, overlay.NewAppScopes)
 	overlay.ForbiddenUsers = MergeStringArrays(base.ForbiddenUsers, overlay.ForbiddenUsers)
 
 	CopyStructIfPtrSet(base, overlay)
@@ -299,12 +297,12 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 	for ak, av := range overlay.ObjectTypes {
 		cv, ok := base.ObjectTypes[ak]
 		if ok {
-			// Copy the scopes to av
-			if av.Scopes != nil && cv.Scopes != nil {
-				for sk, sv := range *av.Scopes {
-					(*cv.Scopes)[sk] = sv
+			// Copy the scope to av
+			if av.Scope != nil && cv.Scope != nil {
+				for sk, sv := range *av.Scope {
+					(*cv.Scope)[sk] = sv
 				}
-				av.Scopes = cv.Scopes
+				av.Scope = cv.Scope
 			}
 			// Copy the routes to av
 			if av.Routes != nil && cv.Routes != nil {

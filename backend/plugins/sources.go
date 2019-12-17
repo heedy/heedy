@@ -193,7 +193,7 @@ func (sm *ObjectManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	// Get the object from the database, and find its type. Then, extract the scopes available for us
-	// and set the X-Heedy-Scopes and X-Heedy-Object headers, and forward to the object API.
+	// and set the X-Heedy-Scope and X-Heedy-Object headers, and forward to the object API.
 	ctx := rest.CTX(r)
 	srcid := chi.URLParam(r, "objectid")
 	s, err := ctx.DB.ReadObject(srcid, nil)
@@ -209,7 +209,7 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	r.Header["X-Heedy-Owner"] = []string{*s.Owner}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
 	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
-	r.Header["X-Heedy-Access"] = s.Access.Scopes
+	r.Header["X-Heedy-Access"] = s.Access.Scope
 
 	b, err := json.Marshal(s.Meta)
 	if err != nil {

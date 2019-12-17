@@ -128,7 +128,7 @@ func TestAdminDBUser(t *testing.T) {
 
 	require.NoError(t, db.UpdateUser(&User{
 		Details: Details{
-			ID:   name,
+			ID: name,
 		},
 		UserName: &name2,
 	}), "User name should update")
@@ -165,7 +165,7 @@ func TestAdminApp(t *testing.T) {
 		Details: Details{
 			Name: &name,
 		},
-		Owner: &name,
+		Owner:       &name,
 		AccessToken: &noAccessToken,
 	})
 	require.NoError(t, err)
@@ -223,14 +223,14 @@ func TestAdminObject(t *testing.T) {
 
 			Name: &name,
 		},
-		App: &conn,
-		Type:       &stype,
+		App:  &conn,
+		Type: &stype,
 	})
 	require.NoError(t, err)
 
 	require.NoError(t, db.UpdateObject(&Object{
 		Details: Details{
-			ID:       sid,
+			ID:   sid,
 			Name: &badname,
 		},
 
@@ -238,33 +238,33 @@ func TestAdminObject(t *testing.T) {
 			"schema": 4,
 		},
 
-		Scopes: &ScopeArray{
-			Scopes: []string{"myscope1", "myscope2"},
+		OwnerScope: &ScopeArray{
+			Scope: []string{"myscope1", "myscope2"},
 		},
 	}))
 
 	s, err := db.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, badname)
-	require.NotNil(t, s.Scopes)
+	require.NotNil(t, s.OwnerScope)
 	require.NotNil(t, s.Meta)
-	require.Equal(t, len((*s.Scopes).Scopes), 2)
+	require.Equal(t, len((*s.OwnerScope).Scope), 2)
 	require.Equal(t, (*s.Meta)["schema"], float64(4))
 
-	sl,err := db.ListObjects(nil)
-	require.NoError(t,err)
-	require.Equal(t,len(sl),1)
-	objectType:= "notascouce"
-	sl,err = db.ListObjects(&ListObjectsOptions{
+	sl, err := db.ListObjects(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(sl), 1)
+	objectType := "notascouce"
+	sl, err = db.ListObjects(&ListObjectsOptions{
 		Type: &objectType,
 	})
-	require.NoError(t,err)
-	require.Equal(t,len(sl),0)
-	sl,err = db.ListObjects(&ListObjectsOptions{
+	require.NoError(t, err)
+	require.Equal(t, len(sl), 0)
+	sl, err = db.ListObjects(&ListObjectsOptions{
 		Type: &stype,
 	})
-	require.NoError(t,err)
-	require.Equal(t,len(sl),1)
+	require.NoError(t, err)
+	require.Equal(t, len(sl), 1)
 	//fmt.Printf(s.String())
 
 	require.NoError(t, db.DelObject(sid))
@@ -292,17 +292,17 @@ func TestAdminShareObject(t *testing.T) {
 	require.Equal(t, len(m), 0)
 
 	require.NoError(t, db.ShareObject(sid, "public", &ScopeArray{
-		Scopes: []string{"read", "write"},
+		Scope: []string{"read", "write"},
 	}))
 
 	m, err = db.GetObjectShares(sid)
 	require.NoError(t, err)
 	require.Equal(t, len(m), 1)
 
-	require.Equal(t, len(m["public"].Scopes), 2)
+	require.Equal(t, len(m["public"].Scope), 2)
 
 	require.NoError(t, db.ShareObject(sid, "users", &ScopeArray{
-		Scopes: []string{"read", "write", "love"},
+		Scope: []string{"read", "write", "love"},
 	}))
 
 	m, err = db.GetObjectShares(sid)

@@ -46,7 +46,7 @@ class Session:
             url = url + "/"
         self.url = url
 
-    def f(self,func,x):
+    def f(self, func, x):
         raise NotImplementedError()
 
     def setAccessToken(self, token):
@@ -82,23 +82,25 @@ class SyncSession(Session):
     def __init__(self, url=DEFAULT_URL):
         super().__init__(url)
         self.s = requests.Session()
-        self.s.headers.update({'Content-Type': 'application/json'})
+        self.s.headers.update({"Content-Type": "application/json"})
 
-    def f(self,x,func):
+    def f(self, x, func):
         return func(x)
-    
+
     @property
     def isasync(self):
         return True
 
     def setAccessToken(self, token):
-        self.s.headers.update({'Authorization': f"Bearer {token}"})
+        self.s.headers.update({"Authorization": f"Bearer {token}"})
 
     def setPluginKey(self, key):
         self.s.headers.update({"X-Heedy-Key": key})
 
     def version(self):
-        return self.handleResponse(self.s.get(urljoin(self.url, "api/heedy/v1/server/version"))).text
+        return self.handleResponse(
+            self.s.get(urljoin(self.url, "api/heedy/v1/server/version"))
+        ).text
 
     def handleResponse(self, r):
         if r.status_code >= 400:
@@ -106,22 +108,44 @@ class SyncSession(Session):
             try:
                 msg = r.json()
             except:
-                msg = {"error": "malformed_response", "error_description":
-                       f"The server returned \"{r.text}\", which is not json."}
+                msg = {
+                    "error": "malformed_response",
+                    "error_description": f'The server returned "{r.text}", which is not json.',
+                }
             raise HeedyError(msg)
         return r
 
     def get(self, path, params={}, f=lambda x: x):
-        return f(self.handleResponse(self.s.get(urljoin(self.url, path), params=params)).json())
+        return f(
+            self.handleResponse(
+                self.s.get(urljoin(self.url, path), params=params)
+            ).json()
+        )
 
     def post(self, path, data, params={}, f=lambda x: x):
-        return f(self.handleResponse(self.s.post(urljoin(self.url, path), data=json.dumps(data), params=params)).json())
+        return f(
+            self.handleResponse(
+                self.s.post(
+                    urljoin(self.url, path), data=json.dumps(data), params=params
+                )
+            ).json()
+        )
 
     def patch(self, path, data, params={}, f=lambda x: x):
-        return f(self.handleResponse(self.s.patch(urljoin(self.url, path), data=json.dumps(data), params=params)).json())
+        return f(
+            self.handleResponse(
+                self.s.patch(
+                    urljoin(self.url, path), data=json.dumps(data), params=params
+                )
+            ).json()
+        )
 
     def delete(self, path, params={}, f=lambda x: x):
-        return f(self.handleResponse(self.s.delete(urljoin(self.url, path), params=params)).json())
+        return f(
+            self.handleResponse(
+                self.s.delete(urljoin(self.url, path), params=params)
+            ).json()
+        )
 
     def close(self):
         self.s.close()
@@ -136,13 +160,13 @@ class AsyncSession(Session):
     def __init__(self, url=DEFAULT_URL):
         super().__init__(url)
         self.s = None
-        self.headers = {'Content-Type': 'application/json'}
+        self.headers = {"Content-Type": "application/json"}
 
     @property
     def isasync(self):
         return True
 
-    async def f(self,x,func):
+    async def f(self, x, func):
         return func(await x)
 
     @staticmethod
@@ -153,7 +177,7 @@ class AsyncSession(Session):
         return p
 
     def setAccessToken(self, token):
-        self.headers['Authorization'] = f"Bearer {token}"
+        self.headers["Authorization"] = f"Bearer {token}"
 
     def setPluginKey(self, key):
         self.headers["X-Heedy-Key"] = key
@@ -168,34 +192,87 @@ class AsyncSession(Session):
             try:
                 msg = await r.json()
             except:
-                msg = {"error": "malformed_response",
-                       "error_description": f"The server did not return valid json"}
+                msg = {
+                    "error": "malformed_response",
+                    "error_description": f"The server did not return valid json",
+                }
             raise HeedyError(msg)
         return r
 
     async def version(self):
         self.initSession()
-        return await (await self.handleResponse(await self.s.get(urljoin(self.url, "api/heedy/v1/server/version")))).text()
+        return await (
+            await self.handleResponse(
+                await self.s.get(urljoin(self.url, "api/heedy/v1/server/version"))
+            )
+        ).text()
 
     async def get(self, path, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.get(urljoin(self.url, path), params=self.__p(params), headers=self.headers))).json())
+        return f(
+            await (
+                await self.handleResponse(
+                    await self.s.get(
+                        urljoin(self.url, path),
+                        params=self.__p(params),
+                        headers=self.headers,
+                    )
+                )
+            ).json()
+        )
 
     async def post(self, path, data, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.post(urljoin(self.url, path), params=self.__p(params), data=json.dumps(data), headers=self.headers))).json())
+        return f(
+            await (
+                await self.handleResponse(
+                    await self.s.post(
+                        urljoin(self.url, path),
+                        params=self.__p(params),
+                        data=json.dumps(data),
+                        headers=self.headers,
+                    )
+                )
+            ).json()
+        )
 
     async def patch(self, path, data, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.patch(urljoin(self.url, path), params=self.__p(params), data=json.dumps(data), headers=self.headers))).json())
+        return f(
+            await (
+                await self.handleResponse(
+                    await self.s.patch(
+                        urljoin(self.url, path),
+                        params=self.__p(params),
+                        data=json.dumps(data),
+                        headers=self.headers,
+                    )
+                )
+            ).json()
+        )
 
     async def delete(self, path, params={}, f=lambda x: x):
         self.initSession()
-        return f(await (await self.handleResponse(await self.s.delete(urljoin(self.url, path), params=self.__p(params), headers=self.headers))).json())
+        return f(
+            await (
+                await self.handleResponse(
+                    await self.s.delete(
+                        urljoin(self.url, path),
+                        params=self.__p(params),
+                        headers=self.headers,
+                    )
+                )
+            ).json()
+        )
 
     async def raw(self, method, path, data=None, params={}, headers={}):
         self.initSession()
-        return await self.s.request(method, urljoin(self.url, path), headers={**self.headers, **headers}, data=data)
+        return await self.s.request(
+            method,
+            urljoin(self.url, path),
+            headers={**self.headers, **headers},
+            data=data,
+        )
 
     async def close(self):
         if self.s is not None:
@@ -210,10 +287,11 @@ def getSessionType(sessionType: str, url: str = DEFAULT_URL) -> Session:
         return SyncSession(url)
     if sessionType == "async":
         return AsyncSession(url)
-    raise NotImplementedError(
-        f"The session type '{sessionType}' is not implemented")
+    raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
+
 
 from .notifications import Notifications
+
 
 class APIObject:
     """
@@ -221,12 +299,14 @@ class APIObject:
     It is given a session and the api location of the object, and allows
     reading, updating, and deleting the object
     """
-    props = {"name","description","icon"}
+
+    props = {"name", "description", "icon"}
+
     def __init__(self, uri: str, constraints: Dict, session: Session):
         self.session = session
         self.uri = uri
 
-        self.notifications = Notifications(constraints,self.session)
+        self.notifications = Notifications(constraints, self.session)
 
     def read(self, **kwargs):
         """
@@ -247,20 +327,22 @@ class APIObject:
         Deletes the object
         """
         return self.session.delete(self.uri, params=kwargs)
+
     def __setattr__(self, name, value):
         if name in self.props:
-            return self.update(**{name:value})
+            return self.update(**{name: value})
         return super().__setattr__(name, value)
-    def __getattr__(self,attr : str):
-        return self.session.f(self.read(),lambda x: x[attr])
 
-    def __eq__(self,other):
-        if isinstance(other,self.__class__):
+    def __getattr__(self, attr: str):
+        return self.session.f(self.read(), lambda x: x[attr])
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
             return other.uri == self.uri
         return False
 
-    def notify(self,*args, **kwargs):
-        return self.notifications.notify(*args,**kwargs)
+    def notify(self, *args, **kwargs):
+        return self.notifications.notify(*args, **kwargs)
 
 
 class APIList:
@@ -268,18 +350,19 @@ class APIList:
     APIList represents a list of objects in heedy (users,apps,objects,etc).
     """
 
-    def __init__(self, uri: str, constraints: Dict, session : Session):
+    def __init__(self, uri: str, constraints: Dict, session: Session):
         self.session = session
         self.uri = uri
-        self.constraints = constraints
-    
-    # These are internal functions that help with implementing the useful parts of 
+        self._constraints = constraints
+
+    # These are internal functions that help with implementing the useful parts of
     # lists
-    def _create(self,f=lambda x: x, **kwargs):
-        return self.session.post(self.uri,kwargs,f=f)
+    def _create(self, f=lambda x: x, **kwargs):
+        return self.session.post(self.uri, {**self._constraints, **kwargs}, f=f)
 
-    def _getitem(self,item, f=lambda x: x):
-        return self.session.get(f"{self.uri}/{item}",f=f)
+    def _getitem(self, item, f=lambda x: x):
+        return self.session.get(f"{self.uri}/{item}", f=f)
 
-    def _call(self, f=lambda x: x,**kwargs):
-        return self.session.get(self.uri,params={**self.constraints,**kwargs},f=f)
+    def _call(self, f=lambda x: x, **kwargs):
+        return self.session.get(self.uri, params={**self._constraints, **kwargs}, f=f)
+

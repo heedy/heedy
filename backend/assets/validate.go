@@ -219,8 +219,14 @@ func Validate(c *Configuration) error {
 
 	// Finally, set the URL if it isn't set
 	if c.URL == nil || *c.URL == "" {
-		myurl := fmt.Sprintf("http://%s:%d", GetOutboundIP(), *c.Port)
-		c.URL = &myurl
+		if c.Port != nil {
+			// If port is not set, it means we're testing
+			myurl := fmt.Sprintf("http://%s:%d", GetOutboundIP(), *c.Port)
+			c.URL = &myurl
+		} else {
+			testurl := "http://localhost"
+			c.URL = &testurl
+		}
 	}
 	if strings.HasSuffix(*c.URL, "/") {
 		noslash := (*c.URL)[:len(*c.URL)-1]

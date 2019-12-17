@@ -13,7 +13,7 @@
               placeholder="This app does stuff"
               v-model="description"
             ></v-text-field>
-            <h-scope-editor v-model="scopes"></h-scope-editor>
+            <h-scope-editor v-model="scope"></h-scope-editor>
             <v-layout row style="padding:0; margin-top:-25px; ">
               <v-flex style="padding-right: 0; margin-bottom: -40px;">
                 <v-checkbox
@@ -130,12 +130,12 @@ export default {
         this.$app.vue.set(this.modified, "name", v);
       }
     },
-    scopes: {
+    scope: {
       get() {
-        return this.modified["scopes"] || this.app.scopes;
+        return this.modified["scope"] || this.app.scope;
       },
       set(v) {
-        this.$app.vue.set(this.modified, "scopes", v);
+        this.$app.vue.set(this.modified, "scope", v);
       }
     },
     enabled: {

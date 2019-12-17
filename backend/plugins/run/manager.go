@@ -51,7 +51,7 @@ func (r *Runner) Run() {
 	rt := r.m.RunTypes[*r.I.Run.Type]
 	err := rt.Run(r.I)
 	if err != nil {
-		logrus.Errorf("%s:%s %w", err)
+		logrus.Errorf("%s:%s %w", r.I.Plugin, r.I.Name, err)
 		return
 	}
 }
@@ -146,7 +146,7 @@ func (m *Manager) Start(plugin, name string, run *assets.Run) error {
 	rt, ok := m.RunTypes[*run.Type]
 	m.RUnlock()
 	if !ok {
-		return fmt.Errorf("runtype '%s' not recognized", run.Type)
+		return fmt.Errorf("runtype '%s' not recognized", *run.Type)
 	}
 
 	a := m.DB.Assets()

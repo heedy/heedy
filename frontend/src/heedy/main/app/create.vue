@@ -13,7 +13,7 @@
               placeholder="This app does stuff"
               v-model="description"
             ></v-text-field>
-            <h-scope-editor v-model="scopes"></h-scope-editor>
+            <h-scope-editor v-model="scope"></h-scope-editor>
           </v-container>
         </v-flex>
       </v-layout>
@@ -30,7 +30,7 @@ import api from "../../../api.mjs";
 export default {
   data: () => ({
     description: "",
-    scopes: "self.objects",
+    scope: "self.objects",
     name: "",
     loading: false,
     alert: ""
@@ -45,7 +45,7 @@ export default {
       let query = {
         name: this.name.trim(),
         description: this.description.trim(),
-        scopes: this.scopes,
+        scope: this.scope,
         icon: this.$refs.iconEditor.getImage()
       };
 

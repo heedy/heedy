@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Create a heedy database with a special test app, which has api key "testkey"
-rm -rf ../../testdb
-../../heedy create ../../testdb --noserver --username=test --password=test --testapp=testkey
+rm -rf testdb
+../../heedy create testdb --noserver --username=test --password=test --testapp=testkey
 
 # Start the database in the background
-../../heedy start ../../testdb --verbose
+../../heedy start testdb --verbose
 
 # Wait for the port to be open
 # https://stackoverflow.com/questions/27599839/how-to-wait-for-an-open-port-with-netcat
@@ -18,7 +18,7 @@ done
 pytest -x --cov=heedy --timeout=50
 status=$?
 
-../../heedy stop ../../testdb
-rm -rf ../../testdb
+../../heedy stop testdb
+rm -rf testdb
 
 exit $status

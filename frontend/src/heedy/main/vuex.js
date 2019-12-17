@@ -4,8 +4,6 @@ import api from "../../api.mjs";
 
 export default {
   state: {
-
-
     alert: {
       value: false,
       text: "",
@@ -49,7 +47,7 @@ export default {
     typePaths: {},
 
     // The map of app scopes along with their descriptions
-    appScopes: null,
+    appScope: null,
 
     settings_routes: [],
     updates: {
@@ -112,7 +110,7 @@ export default {
         if (state.apps[v.id] !== undefined) {
           Vue.delete(state.apps, v.id);
         }
-        return
+        return;
       }
       Vue.set(state.apps, v.id, {
         qtime: moment(),
@@ -131,7 +129,7 @@ export default {
         if (v[k] === undefined) {
           Vue.delete(state.appObjects, k);
         }
-      })
+      });
       state.apps = v;
       state.apps_qtime = moment();
     },
@@ -204,8 +202,8 @@ export default {
       Vue.set(state.appObjects, v.id, srcidmap);
       Vue.set(state.appObjects_qtime, v.id, qtime);
     },
-    setAppScopes(state, v) {
-      state.appScopes = v;
+    setAppScope(state, v) {
+      state.appScope = v;
     },
     setUpdates(state, v) {
       state.updates = v;
@@ -215,9 +213,7 @@ export default {
     }
   },
   actions: {
-    errnotify({
-      commit
-    }, v) {
+    errnotify({ commit }, v) {
       // Notifies of an error
       if (v.hasOwnProperty("error")) {
         // Only notify if it is an actual error
@@ -228,10 +224,7 @@ export default {
       }
     },
     // This function performs a query on the user, ignoring websocket
-    readUser_: async function ({
-      commit,
-      rootState
-    }, q) {
+    readUser_: async function({ commit, rootState }, q) {
       let username = q.username;
       console.log("Reading user", username);
       let res = await api("GET", `api/heedy/v1/users/${username}`, {
@@ -240,7 +233,8 @@ export default {
       console.log(res);
       if (!res.response.ok) {
         // If the error is 404, set the user to null
-        if (res.response.status == 400 || res.response.status == 403) { // TODO: 404 should be returned
+        if (res.response.status == 400 || res.response.status == 403) {
+          // TODO: 404 should be returned
           commit("setUser", {
             username: username,
             isNull: true
@@ -252,7 +246,10 @@ export default {
           });
         }
       } else {
-        if (rootState.app.info.user != null && rootState.app.info.user.username == username) {
+        if (
+          rootState.app.info.user != null &&
+          rootState.app.info.user.username == username
+        ) {
           commit("updateLoggedInUser", res.data);
         }
         commit("setUser", res.data);
@@ -261,15 +258,14 @@ export default {
         q.callback();
       }
     },
-    readApp_: async function ({
-      commit
-    }, q) {
+    readApp_: async function({ commit }, q) {
       console.log("Reading app", q.id);
       let res = await api("GET", `api/heedy/v1/apps/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
-        if (res.response.status == 400 || res.response.status == 403) { // TODO: 404 should be returned
+        if (res.response.status == 400 || res.response.status == 403) {
+          // TODO: 404 should be returned
           commit("setApp", {
             id: q.id,
             isNull: true
@@ -284,20 +280,18 @@ export default {
         commit("setApp", res.data);
       }
 
-
       if (q.hasOwnProperty("callback")) {
         q.callback();
       }
     },
-    readObject_: async function ({
-      commit
-    }, q) {
+    readObject_: async function({ commit }, q) {
       console.log("Reading object", q.id);
       let res = await api("GET", `api/heedy/v1/objects/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
-        if (res.response.status == 400 || res.response.status == 403) { // TODO: 404 should be returned
+        if (res.response.status == 400 || res.response.status == 403) {
+          // TODO: 404 should be returned
           commit("setObject", {
             id: q.id,
             isNull: true
@@ -308,7 +302,6 @@ export default {
             text: res.data.error_description
           });
         }
-
       } else {
         commit("setObject", res.data);
       }
@@ -318,14 +311,16 @@ export default {
       }
     },
 
-    readUser({
-      state,
-      rootState,
-      dispatch
-    }, q) {
+    readUser({ state, rootState, dispatch }, q) {
       let username = q.username;
-      if (state.users[username] !== undefined && state.users[username] != null) {
-        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.users[username].qtime)) {
+      if (
+        state.users[username] !== undefined &&
+        state.users[username] != null
+      ) {
+        if (
+          rootState.app.websocket != null &&
+          rootState.app.websocket.isBefore(state.users[username].qtime)
+        ) {
           console.log(`Not querying ${username} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
@@ -334,19 +329,17 @@ export default {
         }
       }
       dispatch("readUser_", q);
-
-
     },
-    readApp: async function ({
-      state,
-      rootState,
-      dispatch
-    }, q) {
+    readApp: async function({ state, rootState, dispatch }, q) {
       if (state.apps == null) {
         dispatch("listApps", q);
         return;
       }
-      if (state.apps[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.apps[q.id].qtime)) {
+      if (
+        state.apps[q.id] !== undefined &&
+        rootState.app.websocket != null &&
+        rootState.app.websocket.isBefore(state.apps[q.id].qtime)
+      ) {
         console.log(`Not querying ${q.id} - websocket active`);
         if (q.hasOwnProperty("callback")) {
           q.callback();
@@ -355,13 +348,12 @@ export default {
       }
       dispatch("readApp_", q);
     },
-    readObject: async function ({
-      state,
-      rootState,
-      dispatch
-    }, q) {
+    readObject: async function({ state, rootState, dispatch }, q) {
       if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
-        if (rootState.app.websocket != null && rootState.app.websocket.isBefore(state.objects[q.id].qtime)) {
+        if (
+          rootState.app.websocket != null &&
+          rootState.app.websocket.isBefore(state.objects[q.id].qtime)
+        ) {
           console.log(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
@@ -371,13 +363,13 @@ export default {
       }
       dispatch("readObject_", q);
     },
-    readUserObjects: async function ({
-      commit,
-      state,
-      rootState
-    }, q) {
+    readUserObjects: async function({ commit, state, rootState }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.userObjects[q.username] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])) {
+      if (
+        state.userObjects[q.username] !== undefined &&
+        rootState.app.websocket !== null &&
+        rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])
+      ) {
         console.log(`Not reading ${q.username} objects - websocket active`);
         return;
       }
@@ -387,7 +379,10 @@ export default {
         icon: true
       };
 
-      if (rootState.app.info.user != null && rootState.app.info.user.username == q.username) {
+      if (
+        rootState.app.info.user != null &&
+        rootState.app.info.user.username == q.username
+      ) {
         query["app"] = "none";
       }
 
@@ -397,7 +392,6 @@ export default {
           type: "error",
           text: res.data.error_description
         });
-
       } else {
         commit("setUserObjects", {
           user: q.username,
@@ -405,19 +399,17 @@ export default {
         });
       }
 
-
       if (q.hasOwnProperty("callback")) {
         q.callback();
       }
-
     },
-    readAppObjects: async function ({
-      commit,
-      state,
-      rootState
-    }, q) {
+    readAppObjects: async function({ commit, state, rootState }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (state.appObjects[q.id] !== undefined && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.appObjects_qtime[q.id])) {
+      if (
+        state.appObjects[q.id] !== undefined &&
+        rootState.app.websocket !== null &&
+        rootState.app.websocket.isBefore(state.appObjects_qtime[q.id])
+      ) {
         console.log(`Not reading ${q.id} objects - websocket active`);
         return;
       }
@@ -427,14 +419,12 @@ export default {
         icon: true
       };
 
-
       let res = await api("GET", `api/heedy/v1/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
           text: res.data.error_description
         });
-
       } else {
         commit("setAppObjects", {
           id: q.id,
@@ -442,34 +432,29 @@ export default {
         });
       }
 
-
       if (q.hasOwnProperty("callback")) {
         q.callback();
       }
-
     },
-    getAppScopes: async function ({
-      commit
-    }) {
+    getAppScope: async function({ commit }) {
       console.log("Loading available app scopes");
-      let res = await api("GET", "api/heedy/v1/server/scopes");
+      let res = await api("GET", "api/heedy/v1/server/scope");
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
           text: res.data.error_description
         });
-
       } else {
-        commit("setAppScopes", res.data);
+        commit("setAppScope", res.data);
       }
     },
-    listApps: async function ({
-      commit,
-      state,
-      rootState
-    }, q) {
+    listApps: async function({ commit, state, rootState }, q) {
       // Only list apps if they are not being kept up-to-date by the websocket
-      if (state.apps !== null && rootState.app.websocket !== null && rootState.app.websocket.isBefore(state.apps_qtime)) {
+      if (
+        state.apps !== null &&
+        rootState.app.websocket !== null &&
+        rootState.app.websocket.isBefore(state.apps_qtime)
+      ) {
         console.log("Not listing apps - websocket active");
         return;
       }
@@ -489,7 +474,7 @@ export default {
       }
       let cmap = {};
       res.data.map(v => {
-        cmap[v.id] = v
+        cmap[v.id] = v;
       });
       commit("setApps", cmap);
       if (q !== undefined && q.hasOwnProperty("callback")) {
@@ -497,29 +482,23 @@ export default {
       }
     },
 
-    getUpdates: async function ({
-      commit
-    }) {
+    getUpdates: async function({ commit }) {
       console.log("Checking if updates ready");
       let res = await api("GET", "api/heedy/v1/server/updates");
-      if (!res.response.ok) {} else {
+      if (!res.response.ok) {
+      } else {
         commit("setUpdates", res.data);
       }
     },
-    getPluginApps: async function ({
-      commit,
-      state
-    }) {
+    getPluginApps: async function({ commit, state }) {
       if (state.plugin_apps !== null) {
         return;
       }
       let res = await api("GET", "api/heedy/v1/server/apps");
-      if (!res.response.ok) {} else {
+      if (!res.response.ok) {
+      } else {
         commit("setPluginApps", res.data);
       }
-
     }
-
   }
-
 };

@@ -94,9 +94,9 @@ It is recommended that new users use the web setup, which will guide you in prep
 						Name: &appname,
 					},
 					Owner: &sc.User.UserName,
-					Scopes: &database.AppScopeArray{
+					Scope: &database.AppScopeArray{
 						ScopeArray: database.ScopeArray{
-							Scopes: []string{"*"},
+							Scope: []string{"*"},
 						},
 					},
 				})

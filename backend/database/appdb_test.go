@@ -1,6 +1,5 @@
 package database
 
-
 import (
 	"testing"
 
@@ -14,21 +13,21 @@ func TestAppObject(t *testing.T) {
 	udb := NewUserDB(adb, "testy")
 
 	cname := "conn"
-	cid,_, err := udb.CreateApp(&App{
+	cid, _, err := udb.CreateApp(&App{
 		Details: Details{
-			ID: "conn",
+			ID:   "conn",
 			Name: &cname,
 		},
-		Scopes: &AppScopeArray{
+		Scope: &AppScopeArray{
 			ScopeArray: ScopeArray{
-				Scopes: []string{"self.objects.stream","owner:read"},
+				Scope: []string{"self.objects.stream", "owner:read"},
 			},
 		},
 	})
-	require.NoError(t,err)
-	c,err := udb.ReadApp(cid,nil)
-	require.NoError(t,err)
-	cdb := NewAppDB(adb,c)
+	require.NoError(t, err)
+	c, err := udb.ReadApp(cid, nil)
+	require.NoError(t, err)
+	cdb := NewAppDB(adb, c)
 
 	name := "tree"
 	stype := "stream"
@@ -43,7 +42,7 @@ func TestAppObject(t *testing.T) {
 	name2 := "derpy"
 	require.NoError(t, cdb.UpdateObject(&Object{
 		Details: Details{
-			ID:       sid,
+			ID:   sid,
 			Name: &name2,
 		},
 		Meta: &JSONObject{
@@ -54,7 +53,7 @@ func TestAppObject(t *testing.T) {
 	s, err := cdb.ReadObject(sid, nil)
 	require.NoError(t, err)
 	require.Equal(t, *s.Name, name2)
-	require.NotNil(t, s.Scopes)
+	require.NotNil(t, s.OwnerScope)
 	require.NotNil(t, s.Meta)
 	require.True(t, s.Access.HasScope("*"))
 

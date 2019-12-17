@@ -75,9 +75,10 @@ func TestGoodConfigurations(t *testing.T) {
 		testFile := path.Join("tests/good", f[i].Name())
 		c, err := loadTestConfig(testFile)
 		require.NoError(t, err)
+		require.NoError(t, Validate(c), testFile)
+		c.URL = nil // The url is assumed to be nil, since it is automatically filled in on load
 		b2, err := json.Marshal(c)
 		require.NoError(t, err)
-		require.NoError(t, Validate(c), testFile+" "+string(b2))
 		resultFile := path.Join(testFile, "result.json")
 		_, err = os.Stat(resultFile)
 		if err == nil {

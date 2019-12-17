@@ -37,9 +37,9 @@ class DatapointArray(list):
         return DatapointArray(self).merge(other)
 
     def __getitem__(self, key):
-        if (key == "t"):
+        if key == "t":
             return self.t()
-        if (key == "d"):
+        if key == "d":
             return self.d()
         d = list.__getitem__(self, key)
         if isinstance(key, slice):
@@ -131,7 +131,6 @@ class DatapointArray(list):
 
 
 class Stream(Object):
-
     def __call__(self, actions=False, **kwargs):
         """
         Gets stream data. You can query by index with i1 and i2, or by timestamp by t1 and t2.
@@ -147,7 +146,9 @@ class Stream(Object):
         urimod = "/data"
         if actions:
             urimod = "/actions"
-        return self.session.get(self.uri + urimod, params=kwargs, f=lambda x: DatapointArray(x))
+        return self.session.get(
+            self.uri + urimod, params=kwargs, f=lambda x: DatapointArray(x)
+        )
 
     def __getitem__(self, getrange):
         """Allows accessing the stream just as if it were just one big python array.
@@ -201,6 +202,11 @@ class Stream(Object):
 
         """
         return self.insert_array([{"d": data, "t": time.time()}])
+
+    def insert(self, data, timestamp=None):
+        if timestamp is None:
+            return self.append(data)
+        return self.insert_array([{"t": timestamp, "d": data}])
 
     def remove(self, **kwargs):
         """

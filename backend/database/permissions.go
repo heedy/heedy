@@ -112,7 +112,7 @@ func readApp(adb *AdminDB, cid string, o *ReadAppOptions, selectStatement string
 
 // updateObject uses a select statement that returns the object type if editing is permitted
 func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...interface{}) error {
-	// Get the object type and scopes
+	// Get the object type and scope
 	var sv struct {
 		Stype  string     `db:"type"`
 		Access ScopeArray `db:"access"`
@@ -127,7 +127,7 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 	}
 
 	// Now check which scope we require for the update to succeed
-	if s.Name != nil || s.Owner != nil || s.App != nil || s.Scopes != nil {
+	if s.Name != nil || s.Owner != nil || s.App != nil || s.OwnerScope != nil {
 		if !sv.Access.HasScope("update") {
 			return ErrNotFound
 		}
@@ -162,7 +162,7 @@ func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{})
 // Here db is different, since it calls unshare
 func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL string, args ...interface{}) error {
 	adb := db.AdminDB()
-	if len(sa.Scopes) == 0 {
+	if len(sa.Scope) == 0 {
 		return db.UnshareObjectFromUser(objectid, username)
 	}
 
@@ -187,7 +187,7 @@ func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL stri
 		return ErrAccessDenied("You do not have sufficient access to share this object")
 	}
 
-	result, err := adb.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scopes) VALUES (?,?,?);", username, objectid, sa)
+	result, err := adb.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scope) VALUES (?,?,?);", username, objectid, sa)
 	err = getExecError(result, err)
 	if err != nil {
 		tx.Rollback()
@@ -211,7 +211,7 @@ func unshareObject(adb *AdminDB, objectid, selectStatement string, args ...inter
 func getObjectShares(adb *AdminDB, objectid, selectStatement string, args ...interface{}) (m map[string]*ScopeArray, err error) {
 	var res []struct {
 		Username string
-		Scopes   *ScopeArray
+		Scope    *ScopeArray
 	}
 
 	err = adb.Select(&res, selectStatement, args...)
@@ -221,7 +221,7 @@ func getObjectShares(adb *AdminDB, objectid, selectStatement string, args ...int
 
 	m = make(map[string]*ScopeArray)
 	for _, v := range res {
-		m[v.Username] = v.Scopes
+		m[v.Username] = v.Scope
 	}
 
 	return m, err

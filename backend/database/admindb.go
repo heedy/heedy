@@ -226,16 +226,16 @@ func (db *AdminDB) DelObject(id string) error {
 	return getExecError(result, err)
 }
 
-// ShareObject shares the given object with the given user, allowing the given set of scopes
+// ShareObject shares the given object with the given user, allowing the given set of scope
 func (db *AdminDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
-	if len(sa.Scopes) == 0 {
+	if len(sa.Scope) == 0 {
 		return db.UnshareObjectFromUser(objectid, userid)
 	}
 	if !sa.HasScope("read") {
 		return ErrBadQuery("To share a object, it needs to have the read scope active")
 	}
 
-	res, err := db.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scopes) VALUES (?,?,?);", userid, objectid, sa)
+	res, err := db.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scope) VALUES (?,?,?);", userid, objectid, sa)
 	return getExecError(res, err)
 }
 
@@ -251,7 +251,7 @@ func (db *AdminDB) UnshareObject(objectid string) error {
 
 // GetObjectShares returns the shares of the object
 func (db *AdminDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, err error) {
-	return getObjectShares(db, objectid, `SELECT username,scopes FROM shared_objects WHERE objectid=?`, objectid)
+	return getObjectShares(db, objectid, `SELECT username,scope FROM shared_objects WHERE objectid=?`, objectid)
 }
 
 // ListObjects lists the given objects
@@ -279,16 +279,6 @@ func (db *AdminDB) CreateApp(c *App) (string, string, error) {
 	if err != nil {
 		tx.Rollback()
 		return "", "", err
-	}
-
-	scopes := db.Assets().Config.GetNewAppScopes()
-	for i := range scopes {
-		result, err := tx.Exec("INSERT INTO app_scopes(appid,scope) VALUES (?,?);", appid, scopes[i])
-		err = getExecError(result, err)
-		if err != nil && err != ErrNotFound {
-			tx.Rollback()
-			return "", "", err
-		}
 	}
 
 	return appid, accessToken, tx.Commit()

@@ -64,7 +64,7 @@ func (db *PublicDB) CreateObject(s *Object) (string, error) {
 
 // ReadObject reads the given object if it is shared
 func (db *PublicDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
-	return readObject(db.adb, id, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss 
+	return readObject(db.adb, id, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss 
 		WHERE objects.id=? AND ss.user='public' AND ss.object=objects.id;`, id)
 }
 
@@ -73,7 +73,7 @@ func (db *PublicDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
 		return ErrAccessDenied("Last Modified of object is readonly")
 	}
-	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss
+	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss
 		WHERE objects.id=? AND ss.user='public' AND ss.object=objects.id;`, s.ID)
 }
 
@@ -99,7 +99,7 @@ func (db *PublicDB) GetObjectShares(objectid string) (m map[string]*ScopeArray, 
 
 // ListObjects lists the given objects
 func (db *PublicDB) ListObjects(o *ListObjectsOptions) ([]*Object, error) {
-	return listObjects(db.adb, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scopes AS ss
+	return listObjects(db.adb, o, `SELECT objects.*,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss
 		WHERE %s AND ss.user='public' AND ss.object=objects.id GROUP BY objects.id %s;`)
 }
 

@@ -63,8 +63,8 @@ CREATE TABLE apps (
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
 	last_access_date DATE DEFAULT NULL, -- apps without access tokens don't have access dates
 
-	-- Permissions are granted to a app through scopes
-	scopes VARCHAR NOT NULL DEFAULT '[]',
+	-- Permissions are granted to a app through scope
+	scope VARCHAR NOT NULL DEFAULT '[]',
 
 	meta VARCHAR NOT NULL DEFAULT '{}',      -- Apps can store their own metadata
 	settings VARCHAR NOT NULL DEFAULT '{}',
@@ -111,8 +111,8 @@ CREATE TABLE objects (
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
 	last_modified DATE DEFAULT NULL,		 -- Modification date for the object
 
-	-- Maximal scopes that can be given. The * represents all scopes possible for the given object type
-	scopes VARCHAR NOT NULL DEFAULT '["*"]',
+	-- Maximal scope that the owner has
+	owner_scope VARCHAR NOT NULL DEFAULT '["*"]',
 
 	CONSTRAINT objectapp
 		FOREIGN KEY(app) 
@@ -126,7 +126,7 @@ CREATE TABLE objects (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT valid_scopes CHECK (json_valid(scopes)  AND json_type(scopes)='array'),
+	CONSTRAINT valid_scope CHECK (json_valid(owner_scope)  AND json_type(owner_scope)='array'),
 	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object')
 );
 
@@ -140,7 +140,7 @@ CREATE INDEX object_key ON objects(key,app);
 CREATE TABLE shared_objects (
 	username VARCHAR(36) NOT NULL,
 	objectid VARCHAR(36) NOT NULL,
-	scopes VARCHAR NOT NULL DEFAULT '["read"]',
+	scope VARCHAR NOT NULL DEFAULT '["read"]',
 
 	PRIMARY KEY (username,objectid),
 	UNIQUE (username,objectid),
@@ -157,7 +157,7 @@ CREATE TABLE shared_objects (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT valid_scopes CHECK (json_valid(scopes))
+	CONSTRAINT valid_scope CHECK (json_valid(scope))
 );
 
 CREATE INDEX share_objectid on shared_objects(objectid);
@@ -191,14 +191,14 @@ CREATE INDEX login_tokens ON user_logintokens(token);
 -- Database Views
 ------------------------------------------------------------------
 
-CREATE VIEW user_object_scopes(user,object,scope) AS
+CREATE VIEW user_object_scope(user,object,scope) AS
 	SELECT objects.owner,objects.id,'*' FROM objects WHERE objects.app IS NULL
 	UNION ALL
-	SELECT objects.owner,objects.id,value FROM objects,json_each(objects.scopes) WHERE objects.app IS NOT NULL
+	SELECT objects.owner,objects.id,value FROM objects,json_each(objects.owner_scope) WHERE objects.app IS NOT NULL
 	UNION ALL
-	SELECT shared_objects.username,objects.id,ss.value FROM objects,shared_objects,json_each(shared_objects.scopes) AS ss WHERE shared_objects.objectid=objects.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(objects.scopes) AS sss WHERE sss.value=ss.value OR sss.value='*')
+	SELECT shared_objects.username,objects.id,ss.value FROM objects,shared_objects,json_each(shared_objects.scope) AS ss WHERE shared_objects.objectid=objects.id AND ss.value<>'*' AND EXISTS (SELECT sss.value FROM json_each(objects.owner_scope) AS sss WHERE sss.value=ss.value OR sss.value='*')
 	UNION ALL
-	SELECT shared_objects.username,objects.id,sss.value FROM objects,shared_objects,json_each(objects.scopes) AS sss WHERE shared_objects.objectid=objects.id AND EXISTS (SELECT 1 FROM json_each(shared_objects.scopes) AS ss WHERE ss.value='*')
+	SELECT shared_objects.username,objects.id,sss.value FROM objects,shared_objects,json_each(objects.owner_scope) AS sss WHERE shared_objects.objectid=objects.id AND EXISTS (SELECT 1 FROM json_each(shared_objects.scope) AS ss WHERE ss.value='*')
 	;
 
 

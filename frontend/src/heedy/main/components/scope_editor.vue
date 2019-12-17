@@ -54,13 +54,13 @@ export default {
     loading: true
   }),
   created() {
-    if (this.$store.state.heedy.appScopes == null) {
-      this.$store.dispatch("getAppScopes");
+    if (this.$store.state.heedy.appScope == null) {
+      this.$store.dispatch("getAppScope");
     }
   },
   computed: {
     items() {
-      let cscopes = this.$store.state.heedy.appScopes;
+      let cscopes = this.$store.state.heedy.appScope;
       if (cscopes == null) {
         return [{ header: "Loading..." }];
       }
@@ -100,13 +100,13 @@ export default {
           color: "red"
         }
       ].forEach(t => {
-        let tScopes = Object.keys(cscopes).filter(v => v.startsWith(t.name));
-        tScopes.map(k => {
+        let tScope = Object.keys(cscopes).filter(v => v.startsWith(t.name));
+        tScope.map(k => {
           recognizedSet[k] = true;
         });
-        res.push({ header: t.description, text: tScopes.join(" ") });
+        res.push({ header: t.description, text: tScope.join(" ") });
         res = res.concat(
-          tScopes.map(k => ({
+          tScope.map(k => ({
             text: k,
             description: cscopes[k],
             color: t.color
@@ -122,7 +122,7 @@ export default {
       if (this.customItems.length > 0 || unrecognizedDB.length > 0) {
         unrecognizedDB = unrecognizedDB.concat(this.customItems);
         res.push({
-          header: "Custom & Unrecognized Scopes:",
+          header: "Custom & Unrecognized Scope:",
           text: unrecognizedDB.map(k => k.text).join(" ")
         });
         res = res.concat(unrecognizedDB);

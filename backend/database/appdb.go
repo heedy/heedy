@@ -29,15 +29,15 @@ func (c *AppDB) GetObjectAccess(s *Object) (sa ScopeArray) {
 	if s.App != nil && *s.App == c.c.ID {
 
 		// If we have full access, we give full access
-		if c.c.Scopes.HasScope("self.objects") || c.c.Scopes.HasScope("self.objects."+*s.Type) {
-			sa.Scopes = []string{"*"}
+		if c.c.Scope.HasScope("self.objects") || c.c.Scope.HasScope("self.objects."+*s.Type) {
+			sa.Scope = []string{"*"}
 			sa.Update()
 			return
 		}
 
 		// We do not have full access, so we list out the access we *do* have,
 		hasAccess := []string{}
-		for k := range c.c.Scopes.scopeMap {
+		for k := range c.c.Scope.scopeMap {
 			if strings.HasPrefix(k, "self.objects:") || strings.HasPrefix(k, "self.objects."+*s.Type+":") {
 				scopea := strings.SplitN(k, ":", 2)
 				if len(scopea[1]) > 0 {
@@ -47,7 +47,7 @@ func (c *AppDB) GetObjectAccess(s *Object) (sa ScopeArray) {
 			}
 		}
 
-		sa.Scopes = hasAccess
+		sa.Scope = hasAccess
 		sa.Update()
 		return
 	}
@@ -59,22 +59,22 @@ func (c *AppDB) GetObjectAccess(s *Object) (sa ScopeArray) {
 	if *s.Owner != *c.c.Owner {
 		sprefix = "shared"
 	} else if s.App == nil {
-		// The app is nil, meaning that the object is totally owned by the user. The scopes need to be replaced:
-		access = *s.Scopes
+		// The app is nil, meaning that the object is totally owned by the user. The scope need to be replaced:
+		access = *s.OwnerScope
 	}
 
 	// OK, we don't own it. Bummer. Maybe the object access list is *, in which case we can
-	// check which scopes we have
+	// check which scope we have
 	if access.HasScope("*") {
-		if c.c.Scopes.HasScope(sprefix) || c.c.Scopes.HasScope(sprefix+"."+*s.Type) {
-			sa.Scopes = []string{"*"}
+		if c.c.Scope.HasScope(sprefix) || c.c.Scope.HasScope(sprefix+"."+*s.Type) {
+			sa.Scope = []string{"*"}
 			sa.Update()
 			return
 		}
 
 		// Dammit, we don't have full access, so once again, list out the access we do have
 		hasAccess := []string{}
-		for k := range c.c.Scopes.scopeMap {
+		for k := range c.c.Scope.scopeMap {
 			if strings.HasPrefix(k, sprefix+":") || strings.HasPrefix(k, sprefix+"."+*s.Type+":") {
 				scopea := strings.SplitN(k, ":", 2)
 				if len(scopea[1]) > 0 {
@@ -84,19 +84,19 @@ func (c *AppDB) GetObjectAccess(s *Object) (sa ScopeArray) {
 			}
 		}
 
-		sa.Scopes = hasAccess
+		sa.Scope = hasAccess
 		sa.Update()
 		return
 	}
 
 	// Now we both don't own it, and we don't have full access. For the access listed, find out which ones we have
 	hasAccess := []string{}
-	for _, v := range access.Scopes {
-		if c.c.Scopes.HasScope(sprefix+":"+v) || c.c.Scopes.HasScope(sprefix+"."+*s.Type+":"+v) {
+	for _, v := range access.Scope {
+		if c.c.Scope.HasScope(sprefix+":"+v) || c.c.Scope.HasScope(sprefix+"."+*s.Type+":"+v) {
 			hasAccess = append(hasAccess, v)
 		}
 	}
-	sa.Scopes = hasAccess
+	sa.Scope = hasAccess
 	sa.Update()
 	return
 }
@@ -126,7 +126,7 @@ func (db *AppDB) ReadUser(name string, o *ReadUserOptions) (*User, error) {
 	// A app can read a user:
 	//	if the user is its owner, and owner:read scope
 	//	if the user can be read by the owner, and has users:read scope
-	if db.c.Scopes.HasScope("users:read") || name == *db.c.Owner && db.c.Scopes.HasScope("owner:read") {
+	if db.c.Scope.HasScope("users:read") || name == *db.c.Owner && db.c.Scope.HasScope("owner:read") {
 		return NewUserDB(db.adb, *db.c.Owner).ReadUser(name, o)
 	}
 
@@ -138,14 +138,14 @@ func (db *AppDB) UpdateUser(u *User) error {
 	// A app can read a user:
 	//	if the user is its owner, and owner:read scope
 	//	if the user can be read by the owner, and has users:read scope
-	if db.c.Scopes.HasScope("users:update") || u.ID == *db.c.Owner && db.c.Scopes.HasScope("owner:update") {
+	if db.c.Scope.HasScope("users:update") || u.ID == *db.c.Owner && db.c.Scope.HasScope("owner:update") {
 		return NewUserDB(db.adb, *db.c.Owner).UpdateUser(u)
 	}
 
 	return ErrAccessDenied("Insufficient access to update the given user")
 }
 func (db *AppDB) DelUser(name string) error {
-	if db.c.Scopes.HasScope("users:delete") || name == *db.c.Owner && db.c.Scopes.HasScope("owner:delete") {
+	if db.c.Scope.HasScope("users:delete") || name == *db.c.Owner && db.c.Scope.HasScope("owner:delete") {
 		return NewUserDB(db.adb, *db.c.Owner).DelUser(name)
 	}
 
@@ -165,7 +165,7 @@ func (db *AppDB) CanCreateObject(s *Object) error {
 	if s.App != nil && *s.App != db.c.ID {
 		return ErrAccessDenied("Can't create a object for a different app")
 	}
-	if !db.c.Scopes.HasScope("self.objects:create") && !db.c.Scopes.HasScope("self.objects."+*s.Type+":create") {
+	if !db.c.Scope.HasScope("self.objects:create") && !db.c.Scope.HasScope("self.objects."+*s.Type+":create") {
 		return ErrAccessDenied("Insufficient access to create a object of this type")
 	}
 	return nil
@@ -173,7 +173,7 @@ func (db *AppDB) CanCreateObject(s *Object) error {
 
 // CreateObject creates the object.
 func (db *AppDB) CreateObject(s *Object) (string, error) {
-	if s.App == nil {
+	if s.App == nil || *s.App == "self" {
 		s.App = &db.c.ID
 	}
 	if s.LastModified != nil {
@@ -187,7 +187,7 @@ func (db *AppDB) CreateObject(s *Object) (string, error) {
 	}
 	// Must not explicily specify the owner for now
 	s.Owner = nil
-	if s.Type == nil || !db.c.Scopes.HasScope("self.objects:create") && !db.c.Scopes.HasScope("self.objects."+*s.Type+":create") {
+	if s.Type == nil || !db.c.Scope.HasScope("self.objects:create") && !db.c.Scope.HasScope("self.objects."+*s.Type+":create") {
 		return "", ErrAccessDenied("Insufficient access to create a object of this type")
 	}
 	return db.adb.CreateObject(s)
@@ -216,7 +216,7 @@ func (db *AppDB) UpdateObject(s *Object) error {
 		return err
 	}
 
-	if s.Name != nil || s.Owner != nil || s.App != nil || s.Scopes != nil {
+	if s.Name != nil || s.Owner != nil || s.App != nil || s.OwnerScope != nil {
 		if !curs.Access.HasScope("update") {
 			return ErrNotFound
 		}
@@ -300,8 +300,8 @@ func (db *AppDB) UpdateApp(c *App) error {
 	if c.ID != db.c.ID {
 		return ErrAccessDenied("Can't modify other apps")
 	}
-	if c.Scopes != nil {
-		return ErrAccessDenied("Can't change own scopes")
+	if c.Scope != nil {
+		return ErrAccessDenied("Can't change own scope")
 	}
 	return updateApp(db.adb, c, "id=?", c.ID)
 }

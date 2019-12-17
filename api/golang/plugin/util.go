@@ -76,9 +76,9 @@ func GetObjectInfo(r *http.Request) (*ObjectInfo, error) {
 
 	a, ok := r.Header["X-Heedy-Access"]
 	if !ok {
-		return nil, ErrPlugin("No access scopes were present in object request")
+		return nil, ErrPlugin("No access scope was present in object request")
 	}
-	si.Access = database.ScopeArray{Scopes: a}
+	si.Access = database.ScopeArray{Scope: a}
 
 	m := r.Header.Get("X-Heedy-Meta")
 	if m == "" {

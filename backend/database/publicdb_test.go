@@ -87,7 +87,7 @@ func TestPublicObject(t *testing.T) {
 
 	// Now share the object with public
 	require.NoError(t, udb.ShareObject(sid, "public", &ScopeArray{
-		Scopes: []string{"read"},
+		Scope: []string{"read"},
 	}))
 
 	s, err := pdb.ReadObject(sid, nil)
