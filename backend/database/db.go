@@ -243,7 +243,6 @@ type App struct {
 
 	Scope *AppScopeArray `json:"scope" db:"scope"`
 
-	Meta           *JSONObject `json:"meta,omitempty" db:"meta"`
 	Settings       *JSONObject `json:"settings" db:"settings"`
 	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
 }

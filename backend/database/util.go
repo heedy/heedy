@@ -62,7 +62,7 @@ func ValidGroupScopes(s *ScopeArray) error {
 
 // Performs a set of tests on the result and error of a
 // call to see what kind of error we should return.
-func getExecError(result sql.Result, err error) error {
+func GetExecError(result sql.Result, err error) error {
 	if err != nil {
 		return err
 	}

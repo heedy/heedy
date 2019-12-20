@@ -105,14 +105,14 @@ func (db *AdminDB) AddLoginToken(username string, description string) (token str
 		return
 	}
 	result, err2 := db.Exec("INSERT INTO user_logintokens (username,token,description) VALUES (?,?,?);", username, token, description)
-	err = getExecError(result, err2)
+	err = GetExecError(result, err2)
 	return
 }
 
 // RemoveLoginToken deletes the given token from the database
 func (db *AdminDB) RemoveLoginToken(token string) error {
 	result, err := db.Exec("DELETE FROM user_logintokens WHERE token=?;", token)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 // CreateUser is the administrator version of create
@@ -123,7 +123,7 @@ func (db *AdminDB) CreateUser(u *User) error {
 	}
 
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO users (%s) VALUES (%s);", userColumns, QQ(len(userValues))), userValues...)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 
 }
 
@@ -155,7 +155,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 	if len(userValues) > 1 {
 		// This uses a join to make sure that the group is in fact an existing user
 		result, err := db.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
-		return getExecError(result, err)
+		return GetExecError(result, err)
 
 	}
 
@@ -166,7 +166,7 @@ func (db *AdminDB) UpdateUser(u *User) error {
 func (db *AdminDB) DelUser(name string) error {
 	// The user's group will be deleted by cascade on group owner
 	result, err := db.Exec("DELETE FROM users WHERE username=?;", name)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 func (db *AdminDB) ListUsers(o *ListUsersOptions) (u []*User, err error) {
@@ -197,13 +197,13 @@ func (db *AdminDB) CreateObject(s *Object) (string, error) {
 		// We must insert while also setting the owner to the app's owner
 		sValues = append(sValues, *s.App)
 		result, err := db.Exec(fmt.Sprintf("INSERT INTO objects (%s,owner) VALUES (%s,(SELECT owner FROM apps WHERE id=?));", sColumns, QQ(len(sValues)-1)), sValues...)
-		err = getExecError(result, err)
+		err = GetExecError(result, err)
 
 		return s.ID, err
 	}
 
 	result, err := db.Exec(fmt.Sprintf("INSERT INTO objects (%s) VALUES (%s);", sColumns, QQ(len(sValues))), sValues...)
-	err = getExecError(result, err)
+	err = GetExecError(result, err)
 
 	return s.ID, err
 
@@ -223,7 +223,7 @@ func (db *AdminDB) UpdateObject(s *Object) error {
 // DelObject deletes the given object
 func (db *AdminDB) DelObject(id string) error {
 	result, err := db.Exec("DELETE FROM objects WHERE id=?;", id)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 // ShareObject shares the given object with the given user, allowing the given set of scope
@@ -236,7 +236,7 @@ func (db *AdminDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
 	}
 
 	res, err := db.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scope) VALUES (?,?,?);", userid, objectid, sa)
-	return getExecError(res, err)
+	return GetExecError(res, err)
 }
 
 // UnshareObjectFromUser Removes the given share from the object
@@ -275,7 +275,7 @@ func (db *AdminDB) CreateApp(c *App) (string, string, error) {
 	}
 
 	result, err := tx.Exec(fmt.Sprintf("INSERT INTO apps (%s) VALUES (%s);", cColumns, QQ(len(cValues))), cValues...)
-	err = getExecError(result, err)
+	err = GetExecError(result, err)
 	if err != nil {
 		tx.Rollback()
 		return "", "", err
@@ -286,38 +286,8 @@ func (db *AdminDB) CreateApp(c *App) (string, string, error) {
 }
 
 // ReadApp gets the app associated with the given API key
-func (db *AdminDB) ReadApp(id string, o *ReadAppOptions) (*App, error) {
-	c := &App{}
-	err := db.Get(c, "SELECT * FROM apps WHERE (id=?) LIMIT 1;", id)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	}
-	if o != nil && o.Icon {
-		c.Icon = nil
-	}
-	if o == nil || !o.Icon {
-		c.Icon = nil
-	}
-	if o == nil || !o.AccessToken {
-		if c.AccessToken != nil {
-			c.AccessToken = nil
-		} else {
-			// Make empty access token show up as empty, so services can know
-			// that no access token is available
-			if c.AccessToken == nil {
-				emptyString := ""
-				c.AccessToken = &emptyString
-			}
-		}
-
-	} else {
-		// Make empty access token show up as empty
-		if c.AccessToken == nil {
-			emptyString := ""
-			c.AccessToken = &emptyString
-		}
-	}
-	return c, err
+func (db *AdminDB) ReadApp(aid string, o *ReadAppOptions) (*App, error) {
+	return readApp(db, aid, o, "SELECT * FROM apps WHERE (id=?) LIMIT 1;", aid)
 }
 
 // UpdateApp updates the given app (by ID). Note that the inserted values will be written directly to
@@ -332,19 +302,18 @@ func (db *AdminDB) UpdateApp(c *App) error {
 
 	// Allow updating groups that are not users
 	result, err := db.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE id=?;", cColumns), cValues...)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 
 }
 
 // DelApp deletes the given app.
 func (db *AdminDB) DelApp(id string) error {
 	result, err := db.Exec("DELETE FROM apps WHERE id=?;", id)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 // ListApps lists apps
 func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
-	var c []*App
 	a := []interface{}{}
 	selectStmt := "SELECT * FROM apps"
 	if o != nil && (o.Owner != nil || o.Plugin != nil) {
@@ -366,32 +335,6 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 
 		}
 	}
-	err := db.Select(&c, selectStmt, a...)
-	if err == nil && o != nil {
-		if !o.Icon {
-			for _, cc := range c {
-				cc.Icon = nil
-			}
-		}
-		if !o.AccessToken {
-			for _, cc := range c {
-				if cc.AccessToken != nil {
-					cc.AccessToken = nil
-				} else {
-					// Make empty access token show up as empty, so services can know
-					// that no access token is available
-					emptyString := ""
-					cc.AccessToken = &emptyString
-				}
-			}
-		} else {
-			for _, cc := range c {
-				if cc.AccessToken == nil {
-					emptyString := ""
-					cc.AccessToken = &emptyString
-				}
-			}
-		}
-	}
-	return c, err
+	return listApps(db, o, selectStmt, a...)
+
 }

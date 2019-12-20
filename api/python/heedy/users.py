@@ -1,5 +1,6 @@
 from typing import Dict
 from .base import APIObject, Session
+from .kv import KV
 
 from . import apps
 from . import objects
@@ -20,6 +21,15 @@ class User(APIObject):
         #   myapp = await u.apps.create()
         self.apps = apps.Apps({"owner": username}, self.session)
         self.objects = objects.Objects({"owner": username}, self.session)
+        self._kv = KV(f"api/heedy/v1/kv/users/{username}", self.session)
+
+    @property
+    def kv(self):
+        return self._kv
+
+    @kv.setter
+    def kv(self, v):
+        return self._kv.set(**v)
 
 
 class Users(APIObject):

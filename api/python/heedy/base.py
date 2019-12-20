@@ -37,7 +37,8 @@ class Session:
     Session is the abstract base class that both sync and async sessions implement
     """
 
-    def __init__(self, url=DEFAULT_URL):
+    def __init__(self, namespace, url=DEFAULT_URL):
+        self.namespace = namespace
 
         # Set up the API url
         if not url.startswith("http"):
@@ -79,8 +80,8 @@ class SyncSession(Session):
     SyncSession is to be used in synchronous programs. It uses requests internally.
     """
 
-    def __init__(self, url=DEFAULT_URL):
-        super().__init__(url)
+    def __init__(self, namespace, url=DEFAULT_URL):
+        super().__init__(namespace, url)
         self.s = requests.Session()
         self.s.headers.update({"Content-Type": "application/json"})
 
@@ -157,8 +158,8 @@ class AsyncSession(Session):
     allowing them to be awaited
     """
 
-    def __init__(self, url=DEFAULT_URL):
-        super().__init__(url)
+    def __init__(self, namespace, url=DEFAULT_URL):
+        super().__init__(namespace, url)
         self.s = None
         self.headers = {"Content-Type": "application/json"}
 
@@ -279,14 +280,14 @@ class AsyncSession(Session):
             await self.s.close()
 
 
-def getSessionType(sessionType: str, url: str = DEFAULT_URL) -> Session:
+def getSessionType(sessionType: str, namespace: str, url: str = DEFAULT_URL) -> Session:
     """
     This function is given a string, either "sync" or "async", and it returns a SyncSession or AsyncSession respectively.
     """
     if sessionType == "sync":
-        return SyncSession(url)
+        return SyncSession(namespace, url)
     if sessionType == "async":
-        return AsyncSession(url)
+        return AsyncSession(namespace, url)
     raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
 
 

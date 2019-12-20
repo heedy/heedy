@@ -74,7 +74,7 @@ type Query struct {
 type InsertQuery struct {
 	Actions *bool `json:"actions,omitempty"`
 
-	// insert, append, upsert - default is insert
+	// insert, append, update - default is update
 	Type *string `json:"type,omitempty"`
 }
 

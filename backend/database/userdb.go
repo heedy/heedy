@@ -131,7 +131,7 @@ func (db *UserDB) UpdateObject(s *Object) error {
 // Can only delete objects that belong to *us*
 func (db *UserDB) DelObject(id string) error {
 	result, err := db.adb.Exec("DELETE FROM objects WHERE id=? AND owner=? AND app IS NULL;", id, db.user)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 func (db *UserDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
@@ -183,11 +183,22 @@ func (db *UserDB) UpdateApp(c *App) error {
 func (db *UserDB) DelApp(cid string) error {
 	// Can only delete apps that are not plugin-generated, unless the plugin is no longer active
 	result, err := db.adb.Exec("DELETE FROM apps WHERE id=? AND owner=?;", cid, db.user)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 func (db *UserDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	if o != nil && o.Owner != nil && *o.Owner != db.user && *o.Owner != "self" {
 		return nil, ErrAccessDenied("Can only list your own apps")
 	}
-	return listApps(db.adb, o, `SELECT * FROM apps WHERE owner=?`, db.user)
+	a := []interface{}{db.user}
+	selectStmt := `SELECT * FROM apps WHERE owner=?`
+	if o != nil && o.Plugin != nil {
+		if *o.Plugin == "" {
+			selectStmt = selectStmt + " AND plugin IS NULL"
+		} else {
+			selectStmt = selectStmt + " AND plugin=?"
+			a = append(a, *o.Plugin)
+		}
+	}
+
+	return listApps(db.adb, o, selectStmt, a...)
 }

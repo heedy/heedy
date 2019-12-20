@@ -43,7 +43,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 	}
 
 	result, err := tx.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
-	err = getExecError(result, err)
+	err = GetExecError(result, err)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -53,7 +53,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 }
 func delUser(adb *AdminDB, name string, sqlStatement string, args ...interface{}) error {
 	result, err := adb.Exec(sqlStatement, args...)
-	err = getExecError(result, err)
+	err = GetExecError(result, err)
 	if err == nil {
 		// When deleting a user, we also remove the user from the list of admins
 		err = adb.Assets().RemAdmin(name)
@@ -146,7 +146,7 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 
 	// Allow updating groups that are not users
 	result, err := adb.Exec(fmt.Sprintf("UPDATE objects SET %s WHERE id=?;", sColumns), sValues...)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) error {
@@ -156,7 +156,7 @@ func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{})
 	cColumns, cValues, err := appUpdateQuery(c)
 	cValues = append(cValues, args...)
 	result, err := adb.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE %s", cColumns, whereStatement), cValues...)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 // Here db is different, since it calls unshare
@@ -187,8 +187,8 @@ func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL stri
 		return ErrAccessDenied("You do not have sufficient access to share this object")
 	}
 
-	result, err := adb.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scope) VALUES (?,?,?);", username, objectid, sa)
-	err = getExecError(result, err)
+	result, err := tx.Exec("INSERT OR REPLACE INTO shared_objects(username,objectid,scope) VALUES (?,?,?);", username, objectid, sa)
+	err = GetExecError(result, err)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -200,12 +200,12 @@ func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL stri
 
 func unshareObjectFromUser(adb *AdminDB, objectid, userid string, selectStatement string, args ...interface{}) error {
 	res, err := adb.Exec(selectStatement, args...)
-	return getExecError(res, err)
+	return GetExecError(res, err)
 }
 
 func unshareObject(adb *AdminDB, objectid, selectStatement string, args ...interface{}) error {
 	res, err := adb.Exec(selectStatement, args...)
-	return getExecError(res, err)
+	return GetExecError(res, err)
 }
 
 func getObjectShares(adb *AdminDB, objectid, selectStatement string, args ...interface{}) (m map[string]*ScopeArray, err error) {

@@ -242,7 +242,7 @@ func (db *AppDB) DelObject(id string) error {
 		return ErrAccessDenied("Insufficient permissions to delete the object")
 	}
 	result, err := db.adb.Exec("DELETE FROM objects WHERE id=?;", id)
-	return getExecError(result, err)
+	return GetExecError(result, err)
 }
 
 func (db *AppDB) ShareObject(objectid, userid string, sa *ScopeArray) error {
@@ -291,7 +291,7 @@ func (db *AppDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
 	if cid != db.c.ID {
 		return nil, ErrAccessDenied("Can't read other apps")
 	}
-	return NewUserDB(db.adb, *db.c.Owner).ReadApp(cid, o)
+	return readApp(db.adb, cid, o, `SELECT * FROM apps WHERE owner=? AND id=?;`, *db.c.Owner, cid)
 }
 func (db *AppDB) UpdateApp(c *App) error {
 	if c.ID == "self" {

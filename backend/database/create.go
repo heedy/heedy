@@ -66,7 +66,6 @@ CREATE TABLE apps (
 	-- Permissions are granted to a app through scope
 	scope VARCHAR NOT NULL DEFAULT '[]',
 
-	meta VARCHAR NOT NULL DEFAULT '{}',      -- Apps can store their own metadata
 	settings VARCHAR NOT NULL DEFAULT '{}',
 	settings_schema VARCHAR NOT NULL DEFAULT '{}',
 
@@ -79,7 +78,6 @@ CREATE TABLE apps (
 	-- the "plugin key" of the app if it was generated for a plugin
 	plugin VARCHAR DEFAULT NULL,
 
-	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object'),
 	CONSTRAINT valid_settings CHECK (json_valid(settings) AND json_type(settings)='object'),
 	CONSTRAINT valid_settings_schema CHECK (json_valid(settings_schema)  AND json_type(settings)='object'),
 

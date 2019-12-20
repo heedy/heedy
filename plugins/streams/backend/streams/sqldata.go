@@ -225,7 +225,7 @@ func (d *SQLData) StreamDataLength(sid string, actions bool) (l uint64, err erro
 
 func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQuery) (*Datapoint, float64, float64, int64, error) {
 	table := "streamdata"
-	insert := "INSERT"
+	insert := "INSERT OR REPLACE"
 	ts := float64(-999999999)
 	actions := false
 
@@ -247,7 +247,7 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 		return dp, tstart, tend, count, err
 	}
 
-	if q.Type != nil && *q.Type != "INSERT" {
+	if q.Type != nil && *q.Type != "update" {
 		if *q.Type == "append" {
 			err = tx.Get(&ts, fmt.Sprintf("SELECT MAX(timestamp) FROM %s WHERE streamid=?", table), sid)
 			if err != nil {
@@ -259,7 +259,10 @@ func (d *SQLData) WriteStreamData(sid string, data DatapointIterator, q *InsertQ
 			} else {
 			}
 		}
-		insert = "INSERT OR REPLACE"
+		if *q.Type != "insert" {
+			return dp, tstart, tend, count, errors.New("Unrecognized insert type")
+		}
+		insert = "INSERT"
 	}
 	fullQuery := fmt.Sprintf("%s INTO %s VALUES (?,?,?)", insert, table)
 	if actions {

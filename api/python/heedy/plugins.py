@@ -11,6 +11,7 @@ from .users import Users
 from .apps import Apps
 from .objects import Objects
 
+
 class Plugin:
     def __init__(self, config=None, session: str = "async"):
         # Load the plugin configuration
@@ -22,19 +23,22 @@ class Plugin:
         os.chdir(self.config["data_dir"])
 
         self.session = getSessionType(
-            session, f"http://localhost:{self.config['config']['port']}")
+            session, self.name, f"http://localhost:{self.config['config']['port']}"
+        )
         self.session.setPluginKey(self.config["apikey"])
-        
-        self.notifications = Notifications({},self.session)
-        self.apps = Apps({},self.session)
-        self.users = Users({},self.session)
-        self.objects = Objects({},self.session)
+
+        self.notifications = Notifications({}, self.session)
+        self.apps = Apps({}, self.session)
+        self.users = Users({}, self.session)
+        self.objects = Objects({}, self.session)
 
     @property
     def name(self):
         return self.config["plugin"]
 
-    async def forward(self, request, data=None, headers={}, run_as: str = None, overlay=None):
+    async def forward(
+        self, request, data=None, headers={}, run_as: str = None, overlay=None
+    ):
         """
         Forwards the given request to the underlying database.
         It only functions in async mode.
@@ -50,7 +54,13 @@ class Plugin:
 
         headers["X-Heedy-Overlay"] = overlay
 
-        return await self.session.raw(request.method, request.path, headers=headers, data=data, params=request.query)
+        return await self.session.raw(
+            request.method,
+            request.path,
+            headers=headers,
+            data=data,
+            params=request.query,
+        )
 
     async def respond_forwarded(self, request, **kwargs):
         """
@@ -59,7 +69,8 @@ class Plugin:
         req_res = await self.forward(request, **kwargs)
 
         response = aiohttp.web.StreamResponse(
-            status=req_res.status, headers=req_res.headers)
+            status=req_res.status, headers=req_res.headers
+        )
         await response.prepare(request)
         while True:
             chunk = await req_res.content.read(32768)
@@ -82,7 +93,7 @@ class Plugin:
             "object": h["X-Heedy-Object"],
             "owner": h["X-Heedy-Owner"],
             "as": h["X-Heedy-As"],
-            "access": h["X-Heedy-Access"].split(" ")
+            "access": h["X-Heedy-Access"].split(" "),
         }
 
     def hasAccess(self, request, scope):
@@ -91,7 +102,11 @@ class Plugin:
 
     def isUser(self, request):
         h = request.headers
-        return not "/" in h["X-Heedy-As"] and h["X-Heedy-As"] != "heedy" and h["X-Heedy-As"] != "public"
+        return (
+            not "/" in h["X-Heedy-As"]
+            and h["X-Heedy-As"] != "heedy"
+            and h["X-Heedy-As"] != "public"
+        )
 
     def isApp(self, request):
         return "/" in request.headers["X-Heedy-As"]
@@ -106,4 +121,5 @@ class Plugin:
         return self.session.post("/api/heedy/v1/events", event)
 
     def notify(self, *args, **kwargs):
-        return self.notifications.notify(*args,**kwargs)
+        return self.notifications.notify(*args, **kwargs)
+
