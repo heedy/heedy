@@ -13,7 +13,7 @@ def test_basics():
 
     o = a.objects.create("myobj", {"schema": {"type": "number"}})
     assert o.name == "myobj"
-    assert o.type == "stream"
+    assert o.type == "timeseries"
     assert len(a.objects()) == 1
 
     assert o == a.objects[o.id]
@@ -24,7 +24,7 @@ def test_basics():
     d = o[:]
     assert len(d) == 1
     assert d[0]["d"] == 2
-    o.remove()  # Clear the stream
+    o.remove()  # Clear the timeseries
     assert len(o) == 0
 
     o.delete()
@@ -65,7 +65,7 @@ async def test_basics_async():
 
     o = await a.objects.create("myobj2", {"schema": {"type": "number"}})
     assert o.name == "myobj2"
-    assert o.type == "stream"
+    assert o.type == "timeseries"
     assert len(await a.objects()) == 1
 
     assert o == await a.objects[o.id]

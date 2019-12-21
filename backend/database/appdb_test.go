@@ -20,7 +20,7 @@ func TestAppObject(t *testing.T) {
 		},
 		Scope: &AppScopeArray{
 			ScopeArray: ScopeArray{
-				Scope: []string{"self.objects.stream", "owner:read"},
+				Scope: []string{"self.objects.timeseries", "owner:read"},
 			},
 		},
 	})
@@ -30,7 +30,7 @@ func TestAppObject(t *testing.T) {
 	cdb := NewAppDB(adb, c)
 
 	name := "tree"
-	stype := "stream"
+	stype := "timeseries"
 	sid, err := cdb.CreateObject(&Object{
 		Details: Details{
 			Name: &name,

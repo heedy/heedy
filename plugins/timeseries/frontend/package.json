@@ -1,0 +1,50 @@
+{
+  "name": "heedy-timeseries",
+  "version": "0.1.0",
+  "description": "Support for timeseries in heedy",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:html && npm run build:js",
+    "build:js": "rollup -c",
+    "sync:html": "test -d ./public && rsync -r ./public/ ../assets/public/ || echo 'Skipping public'",
+    "build:html": "test -d ./public && npm run sync:html && html-minifier --file-ext html --input-dir ../assets/public --output-dir ../assets/public --minify-css --minify-js --remove-comments --collapse-whitespace --case-sensitive --no-include-auto-generated-tags  || echo 'Skipping public'",
+    "debug:js": "rollup -c -m --environment NODE_ENV:debug",
+    "watch:js": "rollup -c -w -m --environment NODE_ENV:debug",
+    "watch:html": "test -d ./public && nodemon --watch public -e html,css,js,json,svg,png --exec \"npm run sync:html\" || echo 'Skipping public'",
+    "mkdebug": "run-p 'debug:js' 'sync:html'",
+    "debug": "run-p 'watch:js' 'watch:html'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heedy/heedy.git"
+  },
+  "keywords": [
+    "heedy"
+  ],
+  "author": "heedy Contributors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/heedy/heedy/issues"
+  },
+  "homepage": "https://heedy.org",
+  "dependencies": {
+    "apexcharts": "^3.10.1",
+    "glob": "^7.1.4",
+    "html-minifier": "^4.0.0",
+    "nodemon": "^1.19.1",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^1.16.6",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-external-globals": "^0.3.1",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-postcss": "^2.0.3",
+    "rollup-plugin-replace": "^2.2.0",
+    "rollup-plugin-terser": "^5.1.1",
+    "rollup-plugin-vue": "^5.0.1",
+    "vue": "^2.6.10",
+    "vue-apexcharts": "^1.5.1",
+    "vue-template-compiler": "^2.6.10",
+    "vuetify-datetime-picker": "^2.1.1"
+  }
+}

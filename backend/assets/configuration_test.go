@@ -111,15 +111,15 @@ func TestSchemaValidation(t *testing.T) {
 		"actor":  false,
 	}
 
-	require.NoError(t, c.ValidateObjectMeta("stream", &v))
+	require.NoError(t, c.ValidateObjectMeta("timeseries", &v))
 
 	v = map[string]interface{}{
 		"actor": "hi",
 	}
-	require.Error(t, c.ValidateObjectMeta("stream", &v))
+	require.Error(t, c.ValidateObjectMeta("timeseries", &v))
 
 	v = map[string]interface{}{
 		"ar": "hi",
 	}
-	require.Error(t, c.ValidateObjectMeta("stream", &v))
+	require.Error(t, c.ValidateObjectMeta("timeseries", &v))
 }

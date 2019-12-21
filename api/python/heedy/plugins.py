@@ -68,7 +68,7 @@ class Plugin:
         """
         req_res = await self.forward(request, **kwargs)
 
-        response = aiohttp.web.StreamResponse(
+        response = aiohttp.web.TimeseriesResponse(
             status=req_res.status, headers=req_res.headers
         )
         await response.prepare(request)

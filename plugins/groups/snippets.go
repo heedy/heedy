@@ -107,19 +107,19 @@ CREATE TABLE group_objects (
 
 /* COMMENTED OUT FOR NOW
 
--- Streams that the app is permitted to access
-CREATE TABLE app_streams (
+-- Timeseries that the app is permitted to access
+CREATE TABLE app_timeseries (
 	appid VARCHAR(36),
-	streamid VARCHAR(36),
+	tsid VARCHAR(36),
 
-	access INTEGER DEFAULT 1, -- Same as stream access
+	access INTEGER DEFAULT 1, -- Same as timeseries access
 
-	UNIQUE(appid,streamid),
-	PRIMARY KEY (appid,streamid),
+	UNIQUE(appid,tsid),
+	PRIMARY KEY (appid,tsid),
 
-	CONSTRAINT cstreamid
-		FOREIGN KEY(streamid)
-		REFERENCES streams(id)
+	CONSTRAINT ctsid
+		FOREIGN KEY(tsid)
+		REFERENCES timeseries(id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	

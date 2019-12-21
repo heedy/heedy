@@ -124,7 +124,7 @@ func TestUserObject(t *testing.T) {
 
 	db := NewUserDB(adb, "testy")
 	name := "tree"
-	stype := "stream"
+	stype := "timeseries"
 	sid, err := db.CreateObject(&Object{
 		Details: Details{
 			Name: &name,

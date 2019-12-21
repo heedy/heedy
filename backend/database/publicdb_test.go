@@ -64,7 +64,7 @@ func TestPublicObject(t *testing.T) {
 
 	pdb := NewPublicDB(adb)
 	name := "tree"
-	stype := "stream"
+	stype := "timeseries"
 	_, err := pdb.CreateObject(&Object{
 		Details: Details{
 			Name: &name,

@@ -67,7 +67,7 @@ class ObjectInjector {
      * Adds a route to objects. It
      * automatically takes /object/:objectid/{r.path}.
      * If the route works only on a specific object type, it is recommended to
-     * prefix it with the type, ie: p.path = /stream/...
+     * prefix it with the type, ie: p.path = /timeseries/...
      * @param {*} r 
      */
     addRoute(r) {

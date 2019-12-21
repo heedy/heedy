@@ -61,9 +61,9 @@ class Objects(APIList):
             f=lambda x: [registry.getObject(xx, self.session) for xx in x], **kwargs
         )
 
-    def create(self, name, meta={}, otype="stream", **kwargs):
+    def create(self, name, meta={}, otype="timeseries", **kwargs):
         """
-        Creates a new object of the given type (stream by default).
+        Creates a new object of the given type (timeseries by default).
         """
         return super()._create(
             f=lambda x: registry.getObject(x, self.session),

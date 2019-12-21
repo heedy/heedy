@@ -11,7 +11,7 @@ import (
 	_ "github.com/heedy/heedy/plugins/notifications/backend/notifications"
 	_ "github.com/heedy/heedy/plugins/python/backend/python"
 	_ "github.com/heedy/heedy/plugins/registry/backend/registry"
-	_ "github.com/heedy/heedy/plugins/streams/backend/streams"
+	_ "github.com/heedy/heedy/plugins/timeseries/backend/timeseries"
 )
 
 func main() {

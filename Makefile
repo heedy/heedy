@@ -14,7 +14,7 @@ frontend/node_modules:
 
 frontend: phony frontend/node_modules
 	cd frontend; npm run build
-	cd plugins/streams; make builtin; make frontend
+	cd plugins/timeseries; make builtin; make frontend
 	cd plugins/notifications; make builtin; make frontend
 	cd plugins/registry; make builtin; make frontend
 
@@ -33,7 +33,7 @@ heedydbg: phony
 
 debug: heedydbg frontend/node_modules
 	cd frontend; npm run mkdebug
-	cd plugins/streams; make builtin; make debug
+	cd plugins/timeseries; make builtin; make debug
 	cd plugins/notifications; make builtin; make debug
 	cd plugins/registry; make builtin; make debug
 
@@ -53,6 +53,6 @@ clean:
 	rm -f ./backend/assets/statik.go
 
 	# Clear the plugins
-	cd plugins/streams; make clean
+	cd plugins/timeseries; make clean
 	cd plugins/notifications; make clean
 	cd plugins/registry; make clean

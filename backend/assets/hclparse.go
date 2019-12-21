@@ -188,7 +188,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	// The configuration is initially unmarshalled into the hclConfiguration
 	// object, which then needs extra processing to get into the format that heedy
 	// can use.
-	// TODO: Perhaps it might be helpful to fix these issues upstream,
+	// TODO: Perhaps it might be helpful to fix these issues uptimeseries,
 	// 			rather than messing with a bunch of workarounds?
 	hc := &hclConfiguration{}
 

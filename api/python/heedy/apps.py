@@ -56,7 +56,7 @@ class Apps(APIList):
             f=lambda x: [App(xx["id"], session=self.session) for xx in x], **kwargs
         )
 
-    def create(self, name, otype="stream", **kwargs):
+    def create(self, name, otype="timeseries", **kwargs):
         return self._create(
             f=lambda x: App(x["id"], session=self.session),
             **{"name": name, "type": otype, **kwargs},

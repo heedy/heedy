@@ -141,7 +141,7 @@ func CreateApp(w http.ResponseWriter, r *http.Request) {
 		cid, _, err = db.CreateApp(&c)
 	} else {
 		// There is a plugin set. This means that the user might want to create
-		// a plugin app, which will be auto-populated with streams and managed by the plugin.
+		// a plugin app, which will be auto-populated with timeseries and managed by the plugin.
 		if c.Name != nil && *c.Name != "" {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("Creating a plugin app requires all app fields other than 'plugin' to be empty"))
 		}

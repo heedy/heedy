@@ -204,7 +204,7 @@ func TestAdminObject(t *testing.T) {
 
 	name := "testy"
 	passwd := "testpass"
-	stype := "stream"
+	stype := "timeseries"
 	require.NoError(t, db.CreateUser(&User{
 		UserName: &name,
 		Password: &passwd,
@@ -276,7 +276,7 @@ func TestAdminShareObject(t *testing.T) {
 	defer cleanup()
 
 	name := "testy"
-	stype := "stream"
+	stype := "timeseries"
 	sid, err := db.CreateObject(&Object{
 		Details: Details{
 
