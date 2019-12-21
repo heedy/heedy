@@ -18,8 +18,9 @@ var SQLVersion = 1
 const sqlSchema = `
 
 CREATE TABLE timeseries (
-	tsid VARCHAR(36),
-	timestamp REAL,
+	tsid VARCHAR(36) NOT NULL,
+	timestamp REAL NOT NULL,
+	duration REAL NOT NULL DEFAULT 0,
 	data BLOB,
 
 	PRIMARY KEY (tsid,timestamp),
@@ -34,8 +35,9 @@ CREATE TABLE timeseries (
 );
 
 CREATE TABLE timeseries_actions (
-	tsid VARCHAR(36),
-	timestamp REAL,
+	tsid VARCHAR(36) NOT NULL,
+	timestamp REAL NOT NULL,
+	duration REAL NOT NULL DEFAULT 0,
 	actor VARCHAR DEFAULT NULL,
 	data BLOB,
 
@@ -71,9 +73,9 @@ func (s *SQLIterator) Next() (*Datapoint, error) {
 
 	var err error
 	if s.actions {
-		err = s.rows.Scan(&dp.Timestamp, &dp.Actor, &b)
+		err = s.rows.Scan(&dp.Timestamp, &dp.Duration, &dp.Actor, &b)
 	} else {
-		err = s.rows.Scan(&dp.Timestamp, &b)
+		err = s.rows.Scan(&dp.Timestamp, &dp.Duration, &b)
 	}
 
 	if err != nil {
@@ -247,8 +249,8 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 		return dp, tstart, tend, count, err
 	}
 
-	if q.Type != nil && *q.Type != "update" {
-		if *q.Type == "append" {
+	if q.Method != nil && *q.Method != "update" {
+		if *q.Method == "append" {
 			err = tx.Get(&ts, fmt.Sprintf("SELECT MAX(timestamp) FROM %s WHERE tsid=?", table), sid)
 			if err != nil {
 				if err != sql.ErrNoRows {
@@ -259,14 +261,14 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 			} else {
 			}
 		}
-		if *q.Type != "insert" {
+		if *q.Method != "insert" {
 			return dp, tstart, tend, count, errors.New("Unrecognized insert type")
 		}
 		insert = "INSERT"
 	}
-	fullQuery := fmt.Sprintf("%s INTO %s VALUES (?,?,?)", insert, table)
+	fullQuery := fmt.Sprintf("%s INTO %s VALUES (?,?,?,?)", insert, table)
 	if actions {
-		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?)", insert, table)
+		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?,?)", insert, table)
 	}
 	dp2 := dp
 	for dp != nil {
@@ -285,9 +287,9 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 			return dp, tstart, tend, count, err
 		}
 		if actions {
-			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Actor, b)
+			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Duration, dp.Actor, b)
 		} else {
-			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, b)
+			_, err = tx.Exec(fullQuery, sid, dp.Timestamp, dp.Duration, b)
 		}
 
 		if err != nil {
@@ -315,12 +317,12 @@ func (d *SQLData) ReadTimeseriesData(sid string, q *Query) (DatapointIterator, e
 		return nil, err
 	}
 	if q.Actions != nil && *q.Actions {
-		rows, err := d.db.Queryx("SELECT timestamp,actor,data FROM "+query, values...)
+		rows, err := d.db.Queryx("SELECT timestamp,duration,actor,data FROM "+query, values...)
 
 		// TODO: Add transform
 		return &SQLIterator{rows.Rows, true}, err
 	}
-	rows, err := d.db.Queryx("SELECT timestamp,data FROM "+query, values...)
+	rows, err := d.db.Queryx("SELECT timestamp,duration,data FROM "+query, values...)
 
 	// TODO: Add transform
 	return &SQLIterator{rows.Rows, false}, err

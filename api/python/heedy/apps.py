@@ -27,15 +27,8 @@ class App(APIObject):
             super().__init__("api/heedy/v1/apps/self", {"app": appid}, s)
         # The objects belonging to the app
         self.objects = objects.Objects({"app": appid}, self.session)
-        self._kv = KV(f"api/heedy/v1/kv/apps/{appid}", self.session)
-
-    @property
-    def kv(self):
-        return self._kv
-
-    @kv.setter
-    def kv(self, v):
-        return self._kv.set(**v)
+        # Key-value store associated with the app
+        self.kv = KV(f"api/heedy/v1/kv/apps/{appid}", self.session)
 
     @property
     def owner(self):

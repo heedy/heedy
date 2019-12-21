@@ -4,11 +4,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/heedy/heedy/backend/database"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
-func genDatabase(t *testing.T) (*sqlx.DB, func()) {
+func genDatabase(t *testing.T) (*database.AdminDB, func()) {
 	os.RemoveAll("./test_db")
 	os.Mkdir("./test_db", 0755)
 	db, err := sqlx.Open("sqlite3", "test_db/heedy.db?_fk=1")
@@ -23,7 +24,10 @@ func genDatabase(t *testing.T) (*sqlx.DB, func()) {
 `)
 	require.NoError(t, err)
 
-	return db, func() {
+	adb := &database.AdminDB{}
+	adb.SqlxCache.InitCache(db)
+
+	return adb, func() {
 		os.RemoveAll("./test_db")
 	}
 }
@@ -31,7 +35,7 @@ func genDatabase(t *testing.T) (*sqlx.DB, func()) {
 func TestDatabase(t *testing.T) {
 	sdb, cleanup := genDatabase(t)
 	defer cleanup()
-	require.NoError(t, CreateSQLData(sdb))
+	require.NoError(t, SQLUpdater(sdb, nil, 0))
 	action := true
 	s := OpenSQLData(sdb)
 
@@ -39,11 +43,14 @@ func TestDatabase(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, l, uint64(0))
 
-	require.NoError(t, s.WriteTimeseriesData("s1", NewDatapointArrayIterator(dpa1), &InsertQuery{
+	imethod := "insert"
+	_, _, _, _, err = s.WriteTimeseriesData("s1", NewDatapointArrayIterator(dpa1), &InsertQuery{
 		Actions: &action,
-	}))
+		Method:  &imethod,
+	})
+	require.NoError(t, err)
 
-	tt := float64(1.0)
+	tt := "1.0"
 	di, err := s.ReadTimeseriesData("s1", &Query{
 		T:       &tt,
 		Actions: &action,
@@ -65,11 +72,12 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, dpa.String(), dpa1.String())
 
 	// Overwrite the first datapoint
-	insertType := "upsert"
-	require.NoError(t, s.WriteTimeseriesData("s1", NewDatapointArrayIterator(dpa3), &InsertQuery{
-		Type:    &insertType,
+	insertType := "update"
+	_, _, _, _, err = s.WriteTimeseriesData("s1", NewDatapointArrayIterator(dpa3), &InsertQuery{
+		Method:  &insertType,
 		Actions: &action,
-	}))
+	})
+	require.NoError(t, err)
 
 	di, err = s.ReadTimeseriesData("s1", &Query{
 		T1:      &tt,
@@ -102,11 +110,15 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, len(dpa), 1)
 	require.Equal(t, dpa[0].String(), dpa1[1].String())
 
-	require.Error(t, s.WriteTimeseriesData("s2", NewDatapointArrayIterator(dpa7), &InsertQuery{}))
-	itype := "upsert"
-	require.NoError(t, s.WriteTimeseriesData("s2", NewDatapointArrayIterator(dpa7), &InsertQuery{
-		Type: &itype,
-	}))
+	_, _, _, _, err = s.WriteTimeseriesData("s2", NewDatapointArrayIterator(dpa7), &InsertQuery{
+		Method: &imethod,
+	})
+	require.Error(t, err)
+	itype := "update"
+	_, _, _, _, err = s.WriteTimeseriesData("s2", NewDatapointArrayIterator(dpa7), &InsertQuery{
+		Method: &itype,
+	})
+	require.NoError(t, err)
 
 	l, err = s.TimeseriesDataLength("s2", false)
 	require.NoError(t, err)

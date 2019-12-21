@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setuptools.setup(
     name="heedy",
-    version="0.0.3",
+    version="0.0.4",
     description="A Python library for interfacing with Heedy",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -26,10 +26,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     python_requires=">=3.7.0",
-    install_requires=[
-        "numpy",
-        "aiohttp",
-        "dateparser",
-        "requests"
-    ],
+    install_requires=["numpy", "aiohttp", "dateparser", "requests"],
 )

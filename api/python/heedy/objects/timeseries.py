@@ -17,7 +17,7 @@ def parseTime(t):
         if t is None:
             raise AttributeError("Could not parse timestamp")
     if isinstance(t, datetime.datetime):
-        t = datetime.timestamp(t)
+        t = t.timestamp()
     return t
 
 
@@ -61,6 +61,11 @@ class DatapointArray(list):
         """Returns just the timestamp portion of the datapoints as a list.
         The timestamps are in python datetime's date format."""
         return list(map(lambda x: datetime.datetime.fromtimestamp(x["t"]), self.raw()))
+
+    def td(self):
+        """Returns just the durations of all datapoints.
+        """
+        return list(map(lambda x: 0.0 if not "td" in x else x["td"], self.raw()))
 
     def merge(self, array):
         """Adds the given array of datapoints to the generator.
@@ -176,37 +181,34 @@ class Timeseries(Object):
             urimod = "/actions/length"
         return self.session.get(self.uri + urimod)
 
-    def insert_array(self, datapoint_array):
+    def insert_array(self, datapoint_array, **kwargs):
         """given an array of datapoints, inserts them to the timeseries. This is different from append(),
         because it requires an array of valid datapoints, whereas append only requires the data portion
         of the datapoint, and fills out the rest::
 
-            s.insert_array([{"d": 4, "t": time.time()},{"d": 5, "t": time.time()}])
+            s.insert_array([{"d": 4, "t": time.time()},{"d": 5, "t": time.time(), "td": 5.3}])
 
-        The optional `restamp` parameter specifies whether or not the database should rewrite the timestamps
-        of datapoints which have a timestamp that is less than one that already exists in the database.
-
-        That is, if restamp is False, and a datapoint has a timestamp less than a datapoint that already
-        exists in the database, then the insert will fail. If restamp is True, then all datapoints
-        with timestamps below the datapoints already in the database will have their timestamps overwritten
-        to the same timestamp as the most recent datapoint hat already exists in the database, and the insert will
-        succeed.
+        Each datapoint can optionally also contain a "td" parameter with the datapoint's duration in seconds.
+        A time series can't have multiple datapoints with the same timestamp, so such datapoints are automatically
+        overwritten by default. Using method="insert" will throw an error if a timestamp conflicts with an existing one.
         """
-        return self.session.post(self.uri + "/timeseries", data=datapoint_array)
+        return self.session.post(
+            self.uri + "/timeseries", data=datapoint_array, params=kwargs
+        )
 
-    def append(self, data):
+    def append(self, data, duration=0):
         """inserts one datapoint with the given data, and appends it to
         the timeseries, using the current timestamp::
 
             s.append("Hello World!")
 
         """
-        return self.insert_array([{"d": data, "t": time.time()}])
+        return self.insert_array([{"d": data, "t": time.time(), "td": duration}])
 
-    def insert(self, data, timestamp=None):
+    def insert(self, data, timestamp=None, duration=0):
         if timestamp is None:
             return self.append(data)
-        return self.insert_array([{"t": timestamp, "d": data}])
+        return self.insert_array([{"t": timestamp, "d": data, "td": duration}])
 
     def remove(self, **kwargs):
         """

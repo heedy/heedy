@@ -8,8 +8,10 @@ import (
 
 type Datapoint struct {
 	Timestamp float64     `json:"t" db:"timestamp" msgpack:"t,omitempty"`
+	Duration  float64     `json:"td,omitempty" db:"duration" msgpack:"td,omitempty"`
 	Data      interface{} `json:"d" db:"data" msgpack:"d,omitempty"`
-	Actor     string      `json:"a,omitempty" db:"actor" msgpack:"a,omitempty"`
+
+	Actor string `json:"a,omitempty" db:"actor" msgpack:"a,omitempty"`
 }
 
 //IsEqual checks if the datapoint is equal to another datapoint
@@ -75,7 +77,7 @@ type InsertQuery struct {
 	Actions *bool `json:"actions,omitempty"`
 
 	// insert, append, update - default is update
-	Type *string `json:"type,omitempty"`
+	Method *string `json:"method,omitempty"`
 }
 
 func Unix(t time.Time) float64 {

@@ -259,7 +259,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	a := true
 
 	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteTimeseriesData(si.ObjectInfo.ID, dv, &InsertQuery{
-		Type:    &t,
+		Method:  &t,
 		Actions: &a,
 	})
 
