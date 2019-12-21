@@ -94,6 +94,9 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
 	_, err = io.Copy(w, ai)
 	if err != nil {
 		c.Log.Warnf("Read failed: %s", err.Error())

@@ -125,7 +125,7 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 	// golang json unmarshal encodes empty arrays as null
 	// https://github.com/golang/go/issues/27589
 	// This detects that, and fixes the problem.
-	if bytes.Equal(jdata, []byte("null")) {
+	if bytes.Equal(jdata, []byte("null")) && data != nil {
 		if k := reflect.TypeOf(data).Kind(); (k == reflect.Slice || k == reflect.Array) && reflect.ValueOf(data).Len() == 0 {
 			jdata = []byte("[]")
 		}
@@ -150,4 +150,3 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 	w.Write([]byte(`{"result":"ok"}`))
 
 }
-

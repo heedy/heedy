@@ -173,7 +173,12 @@ class Timeseries(Object):
             return self(i1=getrange, i2=getrange + 1)[0]
 
         # The query is a slice - return the range
-        return self(i1=getrange.start, i2=getrange.stop)
+        qkwargs = {}
+        if getrange.start is not None:
+            qkwargs["i1"] = getrange.start
+        if getrange.stop is not None:
+            qkwargs["i2"] = getrange.stop
+        return self(**qkwargs)
 
     def length(self, actions=False):
         urimod = "/timeseries/length"

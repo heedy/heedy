@@ -1,6 +1,7 @@
 package kv
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -236,6 +237,9 @@ func getKey(adb *database.AdminDB, selectStatement string, args ...interface{}) 
 	var sv string
 	err := adb.Get(&sv, selectStatement, args...)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // No rows just means that it is null
+		}
 		return nil, err
 	}
 	var v interface{}
