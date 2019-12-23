@@ -1,11 +1,13 @@
 <template>
   <v-flex style="padding-top: 0px;">
     <v-row>
-      <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="4">
+      <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="6" xl="4">
         <v-card>
-          <v-card-title v-if="d.title !== undefined">{{
+          <v-card-title v-if="d.title !== undefined">
+            {{
             d.title
-          }}</v-card-title>
+            }}
+          </v-card-title>
           <v-card-text>
             <component :is="view(d.view)" :data="d.data" />
           </v-card-text>

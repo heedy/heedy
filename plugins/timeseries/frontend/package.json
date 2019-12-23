@@ -29,6 +29,8 @@
   "homepage": "https://heedy.org",
   "dependencies": {
     "apexcharts": "^3.10.1",
+    "chart.js": "^2.9.3",
+    "downsample": "^1.0.3",
     "glob": "^7.1.4",
     "html-minifier": "^4.0.0",
     "nodemon": "^1.19.1",
@@ -44,6 +46,7 @@
     "rollup-plugin-vue": "^5.0.1",
     "vue": "^2.6.10",
     "vue-apexcharts": "^1.5.1",
+    "vue-chartjs": "^3.5.0",
     "vue-template-compiler": "^2.6.10",
     "vuetify-datetime-picker": "^2.1.1"
   }
