@@ -47,7 +47,7 @@ function computeDataset(
   let showLine = d.length < 500;
   let dataset = new Array(d.length);
   let isbool = true;
-  let pointColor = d.length > 10000 ? color.high : color.low;
+  let pointColor = d.length > 5000 ? color.high : color.low;
 
   if (showDuration) {
     isbool = false; // Datasets with duration are processed as non-boolean
@@ -172,11 +172,11 @@ async function process(object, d) {
   if (!downsample) {
     datasetobj.labels = labels;
   }
-  let bigchart = d.length > 10000;
+  let bigchart = d.length > 5000;
   return {
     lineplot: {
       weight: 9,
-      title: "Line Plot",
+      title: downsample > 0 ? "Plot (downsampled)" : "Plot",
       view: "chartjs",
       data: {
         type: "line",

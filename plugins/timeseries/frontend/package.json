@@ -30,6 +30,7 @@
   "dependencies": {
     "apexcharts": "^3.10.1",
     "chart.js": "^2.9.3",
+    "d3": "^5.14.2",
     "downsample": "^1.0.3",
     "glob": "^7.1.4",
     "html-minifier": "^4.0.0",
@@ -44,6 +45,7 @@
     "rollup-plugin-replace": "^2.2.0",
     "rollup-plugin-terser": "^5.1.1",
     "rollup-plugin-vue": "^5.0.1",
+    "timelines-chart": "^2.8.4",
     "vue": "^2.6.10",
     "vue-apexcharts": "^1.5.1",
     "vue-chartjs": "^3.5.0",

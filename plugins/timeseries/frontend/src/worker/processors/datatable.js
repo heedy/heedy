@@ -10,7 +10,7 @@ async function process(object, data) {
     // It is not an object, so we simply dump the data
     return {
       datatable: {
-        weight: 10,
+        weight: 20,
         title: "Data Table",
         view: "datatable",
         data: {
