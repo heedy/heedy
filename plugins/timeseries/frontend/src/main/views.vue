@@ -1,12 +1,18 @@
 <template>
   <v-flex style="padding-top: 0px;">
     <v-row>
-      <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="6" xl="4">
+      <v-col
+        v-for="d in datavis"
+        :key="d.key"
+        cols="12"
+        sm="12"
+        md="6"
+        lg="6"
+        xl="4"
+      >
         <v-card>
           <v-card-title v-if="d.title !== undefined">
-            {{
-            d.title
-            }}
+            {{ d.title }}
           </v-card-title>
           <v-card-text>
             <component :is="view(d.view)" :data="d.data" />
@@ -57,7 +63,10 @@ export default {
       this.$app.timeseries.subscribeQuery(this.object, "mainviews", q, dv => {
         let v = Object.keys(dv).map(k => ({ key: k, ...dv[k] }));
         v.sort((a, b) => a.weight - b.weight);
-        console.log("datavis", v);
+        console.log(
+          "Received views:",
+          v.map(vi => `${vi.key} (${vi.view})`)
+        );
         this.datavis = v;
       });
     }

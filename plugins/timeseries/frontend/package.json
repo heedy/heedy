@@ -33,6 +33,7 @@
     "d3": "^5.14.2",
     "downsample": "^1.0.3",
     "glob": "^7.1.4",
+    "horizon-timeseries-chart": "^1.6.2",
     "html-minifier": "^4.0.0",
     "nodemon": "^1.19.1",
     "npm-run-all": "^4.1.5",
@@ -50,6 +51,7 @@
     "vue-apexcharts": "^1.5.1",
     "vue-chartjs": "^3.5.0",
     "vue-template-compiler": "^2.6.10",
+    "vue-virtual-table": "^0.2.14",
     "vuetify-datetime-picker": "^2.1.1"
   }
 }

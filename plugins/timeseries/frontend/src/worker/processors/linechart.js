@@ -1,4 +1,5 @@
 import { LTTB } from "../../../dist/downsample.mjs";
+import { isNumeric } from "../../analysis.mjs";
 // The colors supported by object views.
 const objectColors = [
   {
@@ -121,8 +122,8 @@ async function process(object, d) {
   if (d.length < 2) {
     return {};
   }
-  if (!d.every(dp => !isNaN(dp.d))) {
-    return {}; // This currently disallows objects
+  if (!isNumeric(d)) {
+    return {};
   }
   let legend = false;
   let datasetobj = {};
@@ -176,7 +177,7 @@ async function process(object, d) {
   return {
     lineplot: {
       weight: 9,
-      title: downsample > 0 ? "Plot (downsampled)" : "Plot",
+      title: "Raw Plot",
       view: "chartjs",
       data: {
         type: "line",

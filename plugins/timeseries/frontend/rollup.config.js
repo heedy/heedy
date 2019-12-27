@@ -68,7 +68,8 @@ function out(name, loc = "", format = "es") {
 export default [
   // The base files
   out("main.js"),
-  out("worker.js")
+  out("worker.js"),
+  out("analysis.js")
 ]
   .concat(
     glob

@@ -2,14 +2,13 @@
   <div ref="chart" style="width: 100%"></div>
 </template>
 <script>
-import TimelinesChart from "../../dist/timelines-chart.mjs";
+import { TimelinesChart } from "../../dist/d3v.mjs";
 export default {
   props: {
     data: Object
   },
   methods: {
     handleResize(event) {
-      console.log("REESIZE");
       this._tc.width(this.$refs.chart.clientWidth);
     }
   },

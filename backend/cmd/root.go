@@ -28,6 +28,8 @@ var (
 var verbose bool
 var revert bool
 
+var force_run bool
+
 // RootCmd is the root command under which all other commands are placed.
 // It is used to initialize all variables that are global for the whole app
 var RootCmd = &cobra.Command{
@@ -122,7 +124,7 @@ func writepid(cdir string) error {
 	p, err := getpid(cdir)
 	if err == nil {
 		err = p.Signal(syscall.Signal(0))
-		if err == nil {
+		if err == nil && !force_run {
 			return fmt.Errorf("Heedy is already running at pid %d", p.Pid)
 		}
 	}
@@ -134,5 +136,5 @@ func writepid(cdir string) error {
 func init() {
 	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
 	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
-
+	RootCmd.PersistentFlags().BoolVar(&force_run, "force", false, "Force the server to start even if it detects a heedy pid running")
 }

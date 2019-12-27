@@ -1,4 +1,5 @@
 import api from "../../api.mjs";
+import { cleanDT } from "../analysis.mjs";
 
 import QueryManager from "./querymanager.js";
 
@@ -95,7 +96,7 @@ class TimeseriesDataManager {
 
   async process(data) {
     let vals = Object.values(this.si.processors).map(v =>
-      v(this.timeseries, data)
+      v(this.timeseries, cleanDT(data))
     );
     let outvals = {};
     for (let i = 0; i < vals.length; i++) {

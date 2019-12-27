@@ -43,6 +43,7 @@ function setup(app) {
   app.timeseries.addView("apexchart", () => import("./views/apexchart.mjs"));
   app.timeseries.addView("chartjs", () => import("./views/chartjs.mjs"));
   app.timeseries.addView("timeline", () => import("./views/timeline.mjs"));
+  app.timeseries.addView("horizon", () => import("./views/horizon.mjs"));
 
   app.object.addComponent({
     component: Header,

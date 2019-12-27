@@ -5,7 +5,7 @@ import TimeseriesInjector from "./worker/injector.js";
 import datatable from "./worker/processors/datatable.js";
 import insert from "./worker/processors/insert.js";
 import linechart from "./worker/processors/linechart.js";
-import timeline from "./worker/processors/timeline.js";
+import dayview from "./worker/processors/dayview.js";
 
 function setup(wkr) {
   console.log("timeseries_worker: starting");
@@ -15,7 +15,7 @@ function setup(wkr) {
   wkr.timeseries.addProcessor("datatable", datatable);
   wkr.timeseries.addProcessor("insert", insert);
   wkr.timeseries.addProcessor("linechart", linechart);
-  wkr.timeseries.addProcessor("timeline", timeline);
+  wkr.timeseries.addProcessor("dayview", dayview);
 }
 
 export default setup;
