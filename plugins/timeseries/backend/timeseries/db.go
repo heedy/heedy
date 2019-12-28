@@ -8,7 +8,7 @@ import (
 
 type Datapoint struct {
 	Timestamp float64     `json:"t" db:"timestamp" msgpack:"t,omitempty"`
-	Duration  float64     `json:"td,omitempty" db:"duration" msgpack:"td,omitempty"`
+	Duration  float64     `json:"dt,omitempty" db:"duration" msgpack:"dt,omitempty"`
 	Data      interface{} `json:"d" db:"data" msgpack:"d,omitempty"`
 
 	Actor string `json:"a,omitempty" db:"actor" msgpack:"a,omitempty"`

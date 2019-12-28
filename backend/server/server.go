@@ -100,7 +100,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 
 	// We add a special handler to allow restarting the server
 	restartServer := false
-	mux.HandleFunc("/api/heedy/v1/server/restart", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/server/restart", func(w http.ResponseWriter, r *http.Request) {
 		db := rest.CTX(r).DB
 		a := db.AdminDB().Assets()
 		if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {

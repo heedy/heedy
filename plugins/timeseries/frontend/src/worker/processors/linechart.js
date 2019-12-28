@@ -128,7 +128,7 @@ async function process(object, d) {
   let legend = false;
   let datasetobj = {};
   let downsample = d.length > 50000 ? 50000 : 0;
-  let showDuration = d.length < 500 && d.some(dp => dp.td > 0);
+  let showDuration = d.length < 500 && d.some(dp => dp.dt > 0);
   // Prepare the labels
   let labels = new Array(d.length);
   if (showDuration) {
@@ -136,7 +136,7 @@ async function process(object, d) {
     for (let i = 0; i < d.length; i++) {
       labels[i * 3] = d[i].t * 1000;
       labels[i * 3 + 1] =
-        (d[i].t + (d[i].td !== undefined ? d[i].td : 0)) * 1000;
+        (d[i].t + (d[i].dt !== undefined ? d[i].dt : 0)) * 1000;
       labels[i * 3 + 2] = labels[i * 3 + 1];
     }
   } else {

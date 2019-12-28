@@ -118,7 +118,7 @@ class Plugin:
         """
         Fires the given event
         """
-        return self.session.post("/api/heedy/v1/events", event)
+        return self.session.post("/api/events", event)
 
     def notify(self, *args, **kwargs):
         return self.notifications.notify(*args, **kwargs)

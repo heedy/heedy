@@ -18,17 +18,17 @@ class App(APIObject):
             # Treat the session as already initialized, meaning that the access token is actually
             # the app id
             appid = access_token
-            super().__init__(f"api/heedy/v1/apps/{appid}", {"app": appid}, session)
+            super().__init__(f"api/apps/{appid}", {"app": appid}, session)
 
         else:
             # Initialize the app object as a direct API
             s = getSessionType(session, "self")
             s.setAccessToken(access_token)
-            super().__init__("api/heedy/v1/apps/self", {"app": appid}, s)
+            super().__init__("api/apps/self", {"app": appid}, s)
         # The objects belonging to the app
         self.objects = objects.Objects({"app": appid}, self.session)
         # Key-value store associated with the app
-        self.kv = KV(f"api/heedy/v1/kv/apps/{appid}", self.session)
+        self.kv = KV(f"api/kv/apps/{appid}", self.session)
 
     @property
     def owner(self):
@@ -39,7 +39,7 @@ class App(APIObject):
 
 class Apps(APIList):
     def __init__(self, constraints: Dict, session: Session):
-        super().__init__("api/heedy/v1/apps", constraints, session)
+        super().__init__("api/apps", constraints, session)
 
     def __getitem__(self, item):
         return self._getitem(item, f=lambda x: App(x["id"], session=self.session))

@@ -67,7 +67,7 @@ export default {
       console.log("Inserting datapoint:", this.modified.data);
       let res = await this.$app.api(
         "POST",
-        `api/heedy/v1/objects/${this.data.id}/timeseries`,
+        `api/objects/${this.data.id}/timeseries`,
         [{ t: moment().unix(), d: this.modified.data }]
       );
 

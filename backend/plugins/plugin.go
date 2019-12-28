@@ -167,7 +167,7 @@ func (p *Plugin) AfterStart() error {
 
 					for _, cid := range res {
 						s := AppObject(cid, skey, sv)
-						_, err = run.Request(p.Server, "POST", "/api/heedy/v1/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
+						_, err = run.Request(p.Server, "POST", "/api/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 						if err != nil {
 							return err
 						}
@@ -202,7 +202,7 @@ func (p *Plugin) OnUserCreate(username string) error {
 				logrus.Debugf("%s: Creating '%s/%s' object for user '%s'", p.Name, pluginKey, skey, username)
 
 				s := AppObject(cid, skey, sv)
-				_, err = run.Request(p.Server, "POST", "/api/heedy/v1/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
+				_, err = run.Request(p.Server, "POST", "/api/objects", s, map[string]string{"X-Heedy-Key": p.Run.CoreKey})
 				if err != nil {
 					return err
 				}

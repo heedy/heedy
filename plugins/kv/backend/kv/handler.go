@@ -108,9 +108,9 @@ var Handler = func() *chi.Mux {
 		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 	})
 
-	apiMux.Mount("/api/heedy/v1/kv/users", GenerateHandler(UserAuth))
-	apiMux.Mount("/api/heedy/v1/kv/apps", GenerateHandler(AppAuth))
-	apiMux.Mount("/api/heedy/v1/kv/objects", GenerateHandler(ObjectAuth))
+	apiMux.Mount("/api/kv/users", GenerateHandler(UserAuth))
+	apiMux.Mount("/api/kv/apps", GenerateHandler(AppAuth))
+	apiMux.Mount("/api/kv/objects", GenerateHandler(ObjectAuth))
 
 	return apiMux
 }()

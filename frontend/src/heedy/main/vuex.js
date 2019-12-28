@@ -227,7 +227,7 @@ export default {
     readUser_: async function({ commit, rootState }, q) {
       let username = q.username;
       console.log("Reading user", username);
-      let res = await api("GET", `api/heedy/v1/users/${username}`, {
+      let res = await api("GET", `api/users/${username}`, {
         icon: true
       });
       console.log(res);
@@ -260,7 +260,7 @@ export default {
     },
     readApp_: async function({ commit }, q) {
       console.log("Reading app", q.id);
-      let res = await api("GET", `api/heedy/v1/apps/${q.id}`, {
+      let res = await api("GET", `api/apps/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
@@ -286,7 +286,7 @@ export default {
     },
     readObject_: async function({ commit }, q) {
       console.log("Reading object", q.id);
-      let res = await api("GET", `api/heedy/v1/objects/${q.id}`, {
+      let res = await api("GET", `api/objects/${q.id}`, {
         icon: true
       });
       if (!res.response.ok) {
@@ -386,7 +386,7 @@ export default {
         query["app"] = "none";
       }
 
-      let res = await api("GET", `api/heedy/v1/objects`, query);
+      let res = await api("GET", `api/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -419,7 +419,7 @@ export default {
         icon: true
       };
 
-      let res = await api("GET", `api/heedy/v1/objects`, query);
+      let res = await api("GET", `api/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -438,7 +438,7 @@ export default {
     },
     getAppScope: async function({ commit }) {
       console.log("Loading available app scopes");
-      let res = await api("GET", "api/heedy/v1/server/scope");
+      let res = await api("GET", "api/server/scope");
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
@@ -459,7 +459,7 @@ export default {
         return;
       }
       console.log("Loading apps");
-      let res = await api("GET", "api/heedy/v1/apps", {
+      let res = await api("GET", "api/apps", {
         icon: true
       });
       if (!res.response.ok) {
@@ -484,7 +484,7 @@ export default {
 
     getUpdates: async function({ commit }) {
       console.log("Checking if updates ready");
-      let res = await api("GET", "api/heedy/v1/server/updates");
+      let res = await api("GET", "api/server/updates");
       if (!res.response.ok) {
       } else {
         commit("setUpdates", res.data);
@@ -494,7 +494,7 @@ export default {
       if (state.plugin_apps !== null) {
         return;
       }
-      let res = await api("GET", "api/heedy/v1/server/apps");
+      let res = await api("GET", "api/server/apps");
       if (!res.response.ok) {
       } else {
         commit("setPluginApps", res.data);

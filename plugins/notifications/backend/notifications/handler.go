@@ -70,7 +70,7 @@ var Handler = func() *chi.Mux {
 	apiMux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
 	})
-	apiMux.Mount("/api/heedy/v1", v1mux)
+	apiMux.Mount("/api", v1mux)
 
 	return apiMux
 }()

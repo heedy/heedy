@@ -16,7 +16,7 @@
           </v-list-item-title>
         </v-list-item-content>
       </template>
-      <component :is="item.list_component" :objects="item.objects" />
+      <component :is="item.list_component" :objects="item.objects" :defaultIcon="item.icon" />
     </v-list-group>
   </v-list>
 </template>

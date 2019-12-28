@@ -141,7 +141,7 @@ export default {
     addApp: async function(appkey) {
       this.dialog = false;
       console.log("Creating", appkey);
-      let result = await this.$app.api("POST", `api/heedy/v1/apps?icon=true`, {
+      let result = await this.$app.api("POST", `api/apps?icon=true`, {
         plugin: appkey
       });
 

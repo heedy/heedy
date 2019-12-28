@@ -13,7 +13,7 @@ class WebsocketSubscriber {
             wsproto = "ws:"
         }
 
-        this.loc = wsproto + "//" + location.host + location.pathname + "api/heedy/v1/events";
+        this.loc = wsproto + "//" + location.host + location.pathname + "api/events";
 
         // The websocket server might be disabled for non-logged-in users
         this.retryConnect = app.info.user != null;

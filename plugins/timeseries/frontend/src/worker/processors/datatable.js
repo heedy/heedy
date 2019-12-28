@@ -16,11 +16,11 @@ async function process(object, data) {
       { prop: "d", name: "Data" }
     ];
 
-    if (data.some(dp => dp.td !== undefined)) {
+    if (data.some(dp => dp.dt !== undefined)) {
       for (let i = 0; i < data.length; i++) {
         datapoints[i].dt =
-          data[i].td !== undefined
-            ? moment.duration(data[i].td, "seconds").humanize()
+          data[i].dt !== undefined
+            ? moment.duration(data[i].dt, "seconds").humanize()
             : "";
       }
       config = [

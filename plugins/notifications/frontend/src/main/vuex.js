@@ -120,7 +120,7 @@ export default {
                 return;
             }
             console.log("Reading global notifications");
-            let res = await api("GET", `api/heedy/v1/notifications`, {
+            let res = await api("GET", `api/notifications`, {
                 global: true
             });
             if (!res.response.ok) {
@@ -143,7 +143,7 @@ export default {
                 return;
             }
             console.log("Reading notifications for", q.id);
-            let res = await api("GET", `api/heedy/v1/notifications`, {
+            let res = await api("GET", `api/notifications`, {
                 app: q.id
             });
             if (!res.response.ok) {
@@ -169,7 +169,7 @@ export default {
                 return;
             }
             console.log("Reading notifications for", q.id);
-            let res = await api("GET", `api/heedy/v1/notifications`, {
+            let res = await api("GET", `api/notifications`, {
                 object: q.id
             });
             if (!res.response.ok) {
@@ -189,7 +189,7 @@ export default {
             commit
         }, q) {
             console.log("Updating notification", q);
-            let res = await api("PATCH", `api/heedy/v1/notifications`, q.u, q.n);
+            let res = await api("PATCH", `api/notifications`, q.u, q.n);
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",
@@ -202,7 +202,7 @@ export default {
             commit
         }, q) {
             console.log("DELETING notification", q);
-            let res = await api("DELETE", `api/heedy/v1/notifications`, null, q);
+            let res = await api("DELETE", `api/notifications`, null, q);
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",

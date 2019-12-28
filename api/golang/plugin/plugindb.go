@@ -144,7 +144,7 @@ func (db *PluginDB) StringRequest(method, api string, body io.Reader) (string, e
 
 // Fire allows PluginDB to conform to the events.Handler interface, which is used to fire events
 func (db *PluginDB) Fire(e *events.Event) {
-	api := "/api/heedy/v1/events"
+	api := "/api/events"
 	b, err := json.Marshal(e)
 	if err != nil {
 		db.P.Logger().Warnf("Failed to fire event: %s", err.Error())
@@ -189,7 +189,7 @@ func (db *PluginDB) CreateUser(u *database.User) error {
 }
 
 func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*database.User, error) {
-	api := fmt.Sprintf("/api/heedy/v1/users/%s", name)
+	api := fmt.Sprintf("/api/users/%s", name)
 
 	if o != nil {
 		form := url.Values{}
@@ -202,7 +202,7 @@ func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*databas
 	return &u, err
 }
 func (db *PluginDB) UpdateUser(u *database.User) error {
-	api := fmt.Sprintf("/api/heedy/v1/users/%s", u.ID)
+	api := fmt.Sprintf("/api/users/%s", u.ID)
 	b, err := json.Marshal(u)
 	if err != nil {
 		return err
@@ -211,13 +211,13 @@ func (db *PluginDB) UpdateUser(u *database.User) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelUser(name string) error {
-	api := fmt.Sprintf("/api/heedy/v1/users/%s", name)
+	api := fmt.Sprintf("/api/users/%s", name)
 	return db.BasicRequest("DELETE", api, nil)
 }
 
 func (db *PluginDB) ListUsers(o *database.ListUsersOptions) ([]*database.User, error) {
 	var sl []*database.User
-	api := "/api/heedy/v1/users"
+	api := "/api/users"
 
 	if o != nil {
 		form := url.Values{}
@@ -232,7 +232,7 @@ func (db *PluginDB) CanCreateObject(s *database.Object) error {
 	return ErrUnimplemented
 }
 func (db *PluginDB) CreateObject(s *database.Object) (string, error) {
-	api := "/api/heedy/v1/objects"
+	api := "/api/objects"
 	b, err := json.Marshal(s)
 	if err != nil {
 		return "", err
@@ -242,7 +242,7 @@ func (db *PluginDB) CreateObject(s *database.Object) (string, error) {
 	return s.ID, err
 }
 func (db *PluginDB) ReadObject(id string, o *database.ReadObjectOptions) (*database.Object, error) {
-	api := fmt.Sprintf("/api/heedy/v1/objects/%s", id)
+	api := fmt.Sprintf("/api/objects/%s", id)
 
 	if o != nil {
 		form := url.Values{}
@@ -255,7 +255,7 @@ func (db *PluginDB) ReadObject(id string, o *database.ReadObjectOptions) (*datab
 	return &s, err
 }
 func (db *PluginDB) UpdateObject(s *database.Object) error {
-	api := fmt.Sprintf("/api/heedy/v1/objects/%s", s.ID)
+	api := fmt.Sprintf("/api/objects/%s", s.ID)
 	b, err := json.Marshal(s)
 	if err != nil {
 		return err
@@ -264,7 +264,7 @@ func (db *PluginDB) UpdateObject(s *database.Object) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelObject(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/objects/%s", id)
+	api := fmt.Sprintf("/api/objects/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
 
@@ -284,7 +284,7 @@ func (db *PluginDB) GetObjectShares(objectid string) (m map[string]*database.Sco
 // ListObjects lists the given objects
 func (db *PluginDB) ListObjects(o *database.ListObjectsOptions) ([]*database.Object, error) {
 	var sl []*database.Object
-	api := "/api/heedy/v1/objects"
+	api := "/api/objects"
 
 	if o != nil {
 		form := url.Values{}
@@ -296,7 +296,7 @@ func (db *PluginDB) ListObjects(o *database.ListObjectsOptions) ([]*database.Obj
 }
 
 func (db *PluginDB) CreateApp(c *database.App) (string, string, error) {
-	api := "/api/heedy/v1/apps"
+	api := "/api/apps"
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", "", err
@@ -310,7 +310,7 @@ func (db *PluginDB) CreateApp(c *database.App) (string, string, error) {
 	return c.ID, accessToken, err
 }
 func (db *PluginDB) ReadApp(id string, o *database.ReadAppOptions) (*database.App, error) {
-	api := fmt.Sprintf("/api/heedy/v1/apps/%s", id)
+	api := fmt.Sprintf("/api/apps/%s", id)
 
 	if o != nil {
 		form := url.Values{}
@@ -323,7 +323,7 @@ func (db *PluginDB) ReadApp(id string, o *database.ReadAppOptions) (*database.Ap
 	return &c, err
 }
 func (db *PluginDB) UpdateApp(c *database.App) error {
-	api := fmt.Sprintf("/api/heedy/v1/apps/%s", c.ID)
+	api := fmt.Sprintf("/api/apps/%s", c.ID)
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -332,12 +332,12 @@ func (db *PluginDB) UpdateApp(c *database.App) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelApp(id string) error {
-	api := fmt.Sprintf("/api/heedy/v1/apps/%s", id)
+	api := fmt.Sprintf("/api/apps/%s", id)
 	return db.BasicRequest("DELETE", api, nil)
 }
 func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error) {
 	var cl []*database.App
-	api := "/api/heedy/v1/apps"
+	api := "/api/apps"
 
 	if o != nil {
 		form := url.Values{}

@@ -104,11 +104,11 @@ func NewObjectManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Object
 		handler: h,
 	}
 
-	sm.mux.Post("/api/heedy/v1/objects", sm.handleCreate)
+	sm.mux.Post("/api/objects", sm.handleCreate)
 	// Since the Post is here, we must manually set the GET as valid and forward it
 	// to the underlying api, otherwise we get a 405 error
-	sm.mux.Get("/api/heedy/v1/objects", sm.handler.ServeHTTP)
-	sm.mux.Mount("/api/heedy/v1/objects/{objectid}", http.HandlerFunc(sm.handleAPI))
+	sm.mux.Get("/api/objects", sm.handler.ServeHTTP)
+	sm.mux.Mount("/api/objects/{objectid}", http.HandlerFunc(sm.handleAPI))
 	sm.mux.NotFound(sm.handler.ServeHTTP)
 
 	return sm, nil

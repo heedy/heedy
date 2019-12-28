@@ -136,7 +136,7 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 	for skey, sv := range app.Objects {
 		// We perform the next stuff as admin
 		if sv.AutoCreate == nil || *sv.AutoCreate == true {
-			_, err := c.Request(c, "POST", "/api/heedy/v1/objects", AppObject(aid, skey, sv), map[string]string{"X-Heedy-As": "heedy"})
+			_, err := c.Request(c, "POST", "/api/objects", AppObject(aid, skey, sv), map[string]string{"X-Heedy-As": "heedy"})
 			if err != nil {
 				adb.DelApp(aid)
 				return "", "", err

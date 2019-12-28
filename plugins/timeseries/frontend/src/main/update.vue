@@ -141,7 +141,7 @@ export default {
         console.log("UPDATING", mod);
         let result = await this.$app.api(
           "PATCH",
-          `api/heedy/v1/objects/${this.object.id}`,
+          `api/objects/${this.object.id}`,
           mod
         );
 
@@ -167,7 +167,7 @@ export default {
       ) {
         let res = await this.$app.api(
           "DELETE",
-          `/api/heedy/v1/objects/${this.object.id}`
+          `/api/objects/${this.object.id}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;

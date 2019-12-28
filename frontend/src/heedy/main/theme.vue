@@ -23,7 +23,7 @@
           </v-list-item>
           <v-list-item v-else two-line :to="'/users/' + user.username">
             <v-list-item-avatar>
-              <h-icon :image="user.icon" :colorHash="user.username"></h-icon>
+              <h-icon :image="user.icon" defaultIcon="person" :colorHash="user.username"></h-icon>
             </v-list-item-avatar>
 
             <v-list-item-content>
@@ -110,7 +110,7 @@
       </v-btn>
       <v-btn v-else :to="'/users/' + user.username">
         <span v-if="!small">{{ username }}</span>
-        <h-icon :image="user.icon" :colorHash="user.username" :size="28"></h-icon>
+        <h-icon :image="user.icon" defaultIcon="person" :colorHash="user.username" :size="28"></h-icon>
       </v-btn>
 
       <v-btn v-for="item in menu" :key="item.key" :to="item.route">

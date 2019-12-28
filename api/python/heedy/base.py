@@ -100,7 +100,7 @@ class SyncSession(Session):
 
     def version(self):
         return self.handleResponse(
-            self.s.get(urljoin(self.url, "api/heedy/v1/server/version"))
+            self.s.get(urljoin(self.url, "api/server/version"))
         ).text
 
     def handleResponse(self, r):
@@ -204,7 +204,7 @@ class AsyncSession(Session):
         self.initSession()
         return await (
             await self.handleResponse(
-                await self.s.get(urljoin(self.url, "api/heedy/v1/server/version"))
+                await self.s.get(urljoin(self.url, "api/server/version"))
             )
         ).text()
 

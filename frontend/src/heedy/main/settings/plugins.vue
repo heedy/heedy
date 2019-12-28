@@ -250,7 +250,7 @@ export default {
         console.log("ABORT", evt);
         endRequest();
       });
-      xhr.open("POST", "api/heedy/v1/server/updates/plugins");
+      xhr.open("POST", "api/server/updates/plugins");
       xhr.send(form);
       this.xhr = xhr;
     },
@@ -266,7 +266,7 @@ export default {
       console.log(this.active);
       let res = await this.$app.api(
         "PATCH",
-        "api/heedy/v1/server/updates/config",
+        "api/server/updates/config",
         { plugins: this.active }
       );
       if (!res.response.ok) {
@@ -278,7 +278,7 @@ export default {
       this.reload();
     },
     reload: async function() {
-      this.$app.api("GET", "api/heedy/v1/server/updates/plugins").then(res => {
+      this.$app.api("GET", "api/server/updates/plugins").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.plugins = {};
@@ -287,7 +287,7 @@ export default {
         console.log("plugins", res.data);
         this.plugins = res.data;
       });
-      this.$app.api("GET", "api/heedy/v1/server/updates/config").then(res => {
+      this.$app.api("GET", "api/server/updates/config").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.active = [];

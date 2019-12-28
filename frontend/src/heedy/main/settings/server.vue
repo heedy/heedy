@@ -28,7 +28,7 @@ export default {
   methods: {
     reload: async function() {
       try {
-        let res = await fetch("/api/heedy/v1/server/updates/heedy.conf", {
+        let res = await fetch("/api/server/updates/heedy.conf", {
           method: "GET",
           credentials: "include",
           redirect: "follow"
@@ -40,7 +40,7 @@ export default {
       }
     },
     update: async function() {
-      let res = await fetch("/api/heedy/v1/server/updates/heedy.conf", {
+      let res = await fetch("/api/server/updates/heedy.conf", {
         method: "POST",
         credentials: "include",
         redirect: "follow",

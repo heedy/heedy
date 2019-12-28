@@ -62,10 +62,10 @@ class DatapointArray(list):
         The timestamps are in python datetime's date format."""
         return list(map(lambda x: datetime.datetime.fromtimestamp(x["t"]), self.raw()))
 
-    def td(self):
+    def dt(self):
         """Returns just the durations of all datapoints.
         """
-        return list(map(lambda x: 0.0 if not "td" in x else x["td"], self.raw()))
+        return list(map(lambda x: 0.0 if not "dt" in x else x["dt"], self.raw()))
 
     def merge(self, array):
         """Adds the given array of datapoints to the generator.
@@ -191,9 +191,9 @@ class Timeseries(Object):
         because it requires an array of valid datapoints, whereas append only requires the data portion
         of the datapoint, and fills out the rest::
 
-            s.insert_array([{"d": 4, "t": time.time()},{"d": 5, "t": time.time(), "td": 5.3}])
+            s.insert_array([{"d": 4, "t": time.time()},{"d": 5, "t": time.time(), "dt": 5.3}])
 
-        Each datapoint can optionally also contain a "td" parameter with the datapoint's duration in seconds.
+        Each datapoint can optionally also contain a "dt" parameter with the datapoint's duration in seconds.
         A time series can't have multiple datapoints with the same timestamp, so such datapoints are automatically
         overwritten by default. Using method="insert" will throw an error if a timestamp conflicts with an existing one.
         """
@@ -208,12 +208,12 @@ class Timeseries(Object):
             s.append("Hello World!")
 
         """
-        return self.insert_array([{"d": data, "t": time.time(), "td": duration}])
+        return self.insert_array([{"d": data, "t": time.time(), "dt": duration}])
 
     def insert(self, data, timestamp=None, duration=0):
         if timestamp is None:
             return self.append(data)
-        return self.insert_array([{"t": timestamp, "d": data, "td": duration}])
+        return self.insert_array([{"t": timestamp, "d": data, "dt": duration}])
 
     def remove(self, **kwargs):
         """

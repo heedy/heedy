@@ -24,12 +24,12 @@ def test_basics():
     d = o[:]
     assert len(d) == 1
     assert d[0]["d"] == 2
-    assert "td" not in d[0]
+    assert "dt" not in d[0]
     o.append(3, duration=9)
     d = o[:]
     assert len(d) == 2
     assert d[1]["d"] == 3
-    assert d[1]["td"] == 9
+    assert d[1]["dt"] == 9
     o.remove()  # Clear the timeseries
     assert len(o) == 0
 

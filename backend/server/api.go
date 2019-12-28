@@ -15,49 +15,47 @@ func APINotFound(w http.ResponseWriter, r *http.Request) {
 // APIMux gives the REST API
 func APIMux() (*chi.Mux, error) {
 
-	v1mux := chi.NewMux()
-
-	v1mux.Get("/events", EventWebsocket)
-	v1mux.Post("/events", FireEvent)
-
-	v1mux.Post("/users", CreateUser)
-	v1mux.Get("/users", ListUsers)
-	v1mux.Get("/users/{username}", ReadUser)
-	v1mux.Patch("/users/{username}", UpdateUser)
-	v1mux.Delete("/users/{username}", DeleteUser)
-
-	v1mux.Post("/objects", CreateObject)
-	v1mux.Get("/objects", ListObjects)
-	v1mux.Get("/objects/{objectid}", ReadObject)
-	v1mux.Patch("/objects/{objectid}", UpdateObject)
-	v1mux.Delete("/objects/{objectid}", DeleteObject)
-
-	v1mux.Post("/apps", CreateApp)
-	v1mux.Get("/apps", ListApps)
-	v1mux.Get("/apps/{appid}", ReadApp)
-	v1mux.Patch("/apps/{appid}", UpdateApp)
-	v1mux.Delete("/apps/{appid}", DeleteApp)
-
-	v1mux.Get("/server/scope/{objecttype}", GetObjectScope)
-	v1mux.Get("/server/scope", GetAppScope)
-	v1mux.Get("/server/apps", GetPluginApps)
-	v1mux.Get("/server/version", GetVersion)
-
-	v1mux.Get("/server/admin", GetAdminUsers)
-	v1mux.Post("/server/admin/{username}", AddAdminUser)
-	v1mux.Delete("/server/admin/{username}", RemoveAdminUser)
-
-	v1mux.Get("/server/updates", GetUpdates)
-	v1mux.Get("/server/updates/status", GetUpdateStatus)
-	v1mux.Get("/server/updates/heedy.conf", GetConfigFile)
-	v1mux.Post("/server/updates/heedy.conf", PostConfigFile)
-	v1mux.Get("/server/updates/config", GetUConfig)
-	v1mux.Patch("/server/updates/config", PatchUConfig)
-	v1mux.Get("/server/updates/plugins", GetAllPlugins)
-	v1mux.Post("/server/updates/plugins", PostPlugin)
-
 	apiMux := chi.NewMux()
+
+	apiMux.Get("/events", EventWebsocket)
+	apiMux.Post("/events", FireEvent)
+
+	apiMux.Post("/users", CreateUser)
+	apiMux.Get("/users", ListUsers)
+	apiMux.Get("/users/{username}", ReadUser)
+	apiMux.Patch("/users/{username}", UpdateUser)
+	apiMux.Delete("/users/{username}", DeleteUser)
+
+	apiMux.Post("/objects", CreateObject)
+	apiMux.Get("/objects", ListObjects)
+	apiMux.Get("/objects/{objectid}", ReadObject)
+	apiMux.Patch("/objects/{objectid}", UpdateObject)
+	apiMux.Delete("/objects/{objectid}", DeleteObject)
+
+	apiMux.Post("/apps", CreateApp)
+	apiMux.Get("/apps", ListApps)
+	apiMux.Get("/apps/{appid}", ReadApp)
+	apiMux.Patch("/apps/{appid}", UpdateApp)
+	apiMux.Delete("/apps/{appid}", DeleteApp)
+
+	apiMux.Get("/server/scope/{objecttype}", GetObjectScope)
+	apiMux.Get("/server/scope", GetAppScope)
+	apiMux.Get("/server/apps", GetPluginApps)
+	apiMux.Get("/server/version", GetVersion)
+
+	apiMux.Get("/server/admin", GetAdminUsers)
+	apiMux.Post("/server/admin/{username}", AddAdminUser)
+	apiMux.Delete("/server/admin/{username}", RemoveAdminUser)
+
+	apiMux.Get("/server/updates", GetUpdates)
+	apiMux.Get("/server/updates/status", GetUpdateStatus)
+	apiMux.Get("/server/updates/heedy.conf", GetConfigFile)
+	apiMux.Post("/server/updates/heedy.conf", PostConfigFile)
+	apiMux.Get("/server/updates/config", GetUConfig)
+	apiMux.Patch("/server/updates/config", PatchUConfig)
+	apiMux.Get("/server/updates/plugins", GetAllPlugins)
+	apiMux.Post("/server/updates/plugins", PostPlugin)
+
 	apiMux.NotFound(APINotFound)
-	apiMux.Mount("/heedy/v1", v1mux)
 	return apiMux, nil
 }

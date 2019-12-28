@@ -76,7 +76,7 @@ export default {
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$app.api(
           "PATCH",
-          `api/heedy/v1/apps/${this.app.id}`,
+          `api/apps/${this.app.id}`,
           this.modified
         );
 
@@ -102,7 +102,7 @@ export default {
       ) {
         let res = await this.$app.api(
           "DELETE",
-          `/api/heedy/v1/apps/${this.app.id}`
+          `/api/apps/${this.app.id}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;

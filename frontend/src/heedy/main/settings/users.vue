@@ -186,7 +186,7 @@ export default {
         this.alert = "Passwords don't match";
         return;
       }
-      let res = await this.$app.api("POST", `/api/heedy/v1/users`, {
+      let res = await this.$app.api("POST", `/api/users`, {
         username: c.username,
         password: c.password
       });
@@ -205,7 +205,7 @@ export default {
       ) {
         let res = await this.$app.api(
           "DELETE",
-          `/api/heedy/v1/users/${u.username}`
+          `/api/users/${u.username}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -231,7 +231,7 @@ export default {
       if (Object.keys(toUpdate).length > 0) {
         let res = await this.$app.api(
           "PATCH",
-          `/api/heedy/v1/users/${this.updating.id}`,
+          `/api/users/${this.updating.id}`,
           toUpdate
         );
         if (!res.response.ok) {
@@ -242,7 +242,7 @@ export default {
       if (this.updating.admin != this.updating.id_admin) {
         let res = await this.$app.api(
           this.updating.admin ? "POST" : "DELETE",
-          `/api/heedy/v1/server/admin/${this.updating.username}`
+          `/api/server/admin/${this.updating.username}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -253,7 +253,7 @@ export default {
       this.reload();
     },
     reload: async function() {
-      let u = this.$app.api("GET", "/api/heedy/v1/users").then(res => {
+      let u = this.$app.api("GET", "/api/users").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.users = [];
@@ -262,7 +262,7 @@ export default {
         console.log("users", res.data);
         this.users = res.data;
       });
-      let a = this.$app.api("GET", "/api/heedy/v1/server/admin").then(res => {
+      let a = this.$app.api("GET", "/api/server/admin").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.admin = [];

@@ -28,7 +28,7 @@ export default {
     },
     defaultIcon: {
       type: String,
-      default: "person"
+      default: "brightness_1"
     }
   },
   computed: {

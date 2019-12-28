@@ -14,12 +14,12 @@ class Object(APIObject):
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(
-            f"api/heedy/v1/objects/{objectData['id']}",
+            f"api/objects/{objectData['id']}",
             {"object": objectData["id"]},
             session,
         )
         self.data = objectData
-        self._kv = KV(f"api/heedy/v1/kv/objects/{objectData['id']}", self.session)
+        self._kv = KV(f"api/kv/objects/{objectData['id']}", self.session)
 
     @property
     def kv(self):
@@ -51,7 +51,7 @@ class Object(APIObject):
 
 class Objects(APIList):
     def __init__(self, constraints: Dict, session: Session):
-        super().__init__("api/heedy/v1/objects", constraints, session)
+        super().__init__("api/objects", constraints, session)
 
     def __getitem__(self, item):
         return super()._getitem(item, f=lambda x: registry.getObject(x, self.session))

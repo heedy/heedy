@@ -139,7 +139,7 @@ export default {
       }
       let result = await this.$app.api(
         "POST",
-        `api/heedy/v1/objects`,
+        `api/objects`,
         toCreate
       );
 

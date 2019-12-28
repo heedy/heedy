@@ -1,8 +1,8 @@
 function cleanDT(ts) {
   // TODO: This is actually a bug in the underlying heedy code
   for (let i = 0; i < ts.length - 1; i++) {
-    if (ts[i].td !== undefined && ts[i].t + ts[i].td > ts[i + 1].t) {
-      ts[i].td = ts[i + 1].t - ts[i].t;
+    if (ts[i].dt !== undefined && ts[i].t + ts[i].dt > ts[i + 1].t) {
+      ts[i].dt = ts[i + 1].t - ts[i].t;
     }
   }
   return ts;
@@ -20,9 +20,9 @@ function explicitDuration(ts, offset = 0.001) {
   for (let i = 0; i < ts.length; i++) {
     res[j] = ts[i];
     j++;
-    if (ts[i].td !== undefined && ts[i].td != 0) {
+    if (ts[i].dt !== undefined && ts[i].dt != 0) {
       res[j] = {
-        t: ts[i].t + ts[i].td - offset,
+        t: ts[i].t + ts[i].dt - offset,
         d: ts[i].d
       };
       j++;
@@ -51,7 +51,7 @@ function perDay(ts) {
   let curDate = new Date(dp.t * 1000);
   while (true) {
     let startTime = new Date(dp.t * 1000);
-    let endTime = new Date(1000 * (dp.t + (dp.td === undefined ? 0 : dp.td)));
+    let endTime = new Date(1000 * (dp.t + (dp.dt === undefined ? 0 : dp.dt)));
 
     if (datesAreOnSameDay(curDate, startTime)) {
       // We add the datapoint to the current day array
@@ -60,6 +60,7 @@ function perDay(ts) {
         curday.push(dp);
         i += 1;
         if (i >= ts.length) {
+          days.push({ date: curDate, data: curday });
           break;
         }
         dp = ts[i];
@@ -73,7 +74,7 @@ function perDay(ts) {
         });
         dp = {
           t: nextDate(curDate).getTime() / 1000,
-          td: dp.td - dt,
+          td: dp.dt - dt,
           d: dp.d
         };
       }

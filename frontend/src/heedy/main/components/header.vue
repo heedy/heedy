@@ -8,7 +8,7 @@
           style="margin-top: -10px;margin-bottom: -8px; overflow: hidden;"
         >
           <v-list-item-avatar>
-            <h-icon :image="icon" :colorHash="colorHash" />
+            <h-icon :image="icon" :defaultIcon="defaultIcon" :colorHash="colorHash" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title class="headline mb-1">{{ name }}</v-list-item-title>
@@ -39,6 +39,10 @@
 export default {
   props: {
     icon: String,
+    defaultIcon: {
+      type: String,
+      default: "person"
+    },
     colorHash: {
       type: String,
       default: ""

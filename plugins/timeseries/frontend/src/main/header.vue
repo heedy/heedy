@@ -1,6 +1,7 @@
 <template>
   <h-header
     :icon="object.icon"
+    defaultIcon="timeline"
     :colorHash="object.id"
     :name="object.name"
     :description="object.description"
@@ -9,7 +10,7 @@
     <v-select
       :items="queryOptions"
       v-model="query"
-      style="padding-top: 17px;padding-right: 10px; max-width: 250px;"
+      style="padding-top: 17px;padding-right: 10px; max-width: 280px;"
       :prepend-icon="$vuetify.breakpoint.xs?'':'event'"
     ></v-select>
     <v-dialog v-model="dialog" max-width="500">
@@ -108,7 +109,8 @@ function queryLabel(q) {
   // If it is a starting query
   if (q.i2 === undefined && q.t2 === undefined) {
     if (q.i1 !== undefined && q.t1 === undefined && q.i1.startsWith("-")) {
-      return `Last ${q.i1.substring(1, q.i1.length)} datapoints${append}`;
+      let ival = parseInt(q.i1);
+      return `Last ${(-ival).toLocaleString()} datapoints${append}`;
     }
     if (q.i1 === undefined && q.t1 !== undefined && q.t1.startsWith("now-")) {
       return `Last ${q.t1.substring("now-".length, q.t1.length)}${append}`;
@@ -163,31 +165,45 @@ export default {
     live: true,
     queryOptions: [
       { text: "Last 100 datapoints", value: 0, q: { i1: "-100" } },
-      { text: "Last 1000 datapoints", value: 1, q: { i1: "-1000" } },
+      {
+        text: `Last ${(1000).toLocaleString()} datapoints`,
+        value: 1,
+        q: { i1: "-1000" }
+      },
+      {
+        text: `Last ${(10000).toLocaleString()} datapoints`,
+        value: 2,
+        q: { i1: "-10000" }
+      },
+      {
+        text: `Last ${(100000).toLocaleString()} datapoints`,
+        value: 3,
+        q: { i1: "-100000" }
+      },
       {
         text: "Last 1d",
-        value: 2,
+        value: 4,
         q: {
           t1: "now-1d"
         }
       },
       {
         text: "Last 1w",
-        value: 3,
+        value: 5,
         q: {
           t1: "now-1w"
         }
       },
       {
         text: "Last 1mo",
-        value: 4,
+        value: 6,
         q: {
           t1: "now-1mo"
         }
       },
       {
         text: "Last 3mo",
-        value: 5,
+        value: 7,
         q: {
           t1: "now-3mo"
         }
@@ -201,7 +217,6 @@ export default {
   computed: {
     query: {
       get() {
-        console.log(this.$route.query);
         if (Object.keys(this.$route.query).length == 0) {
           this.$router.replace({ query: this.queryOptions[0].q });
           return 0;
@@ -226,7 +241,6 @@ export default {
           this.dialog = true;
           return;
         }
-        console.log("SET", v);
         let lbl = queryLabel(this.$route.query);
         if (lbl != this.queryOptions[v].text) {
           this.$router.replace({ query: this.queryOptions[v].q });
@@ -252,7 +266,6 @@ export default {
 
       this.dialog = false;
       this.custom = { i1: "", i2: "", t1: "", t2: "" };
-
       this.$router.replace({ query: q });
     }
   }

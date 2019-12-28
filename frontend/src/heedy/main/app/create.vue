@@ -55,7 +55,7 @@ export default {
         return;
       }
 
-      let result = await api("POST", `api/heedy/v1/apps`, query);
+      let result = await api("POST", `api/apps`, query);
 
       if (!result.response.ok) {
         this.alert = result.data.error_description;

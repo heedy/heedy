@@ -6,7 +6,7 @@ function prepareTimeline(dp) {
   return {
     timeRange: [
       new Date(dp.t * 1000),
-      new Date(1000 * (dp.t + (dp.td === undefined ? 0 : dp.td)))
+      new Date(1000 * (dp.t + (dp.dt === undefined ? 0 : dp.dt)))
     ],
     val: dp.d
   };
@@ -26,7 +26,7 @@ function process(o, ts) {
   if (dataType == "categorical") {
     if (dt <= 1.5 * day) {
       return {
-        timeline: {
+        dayview: {
           weight: 10,
           title: "Timeline",
           view: "timeline",
@@ -63,7 +63,7 @@ function process(o, ts) {
     }));
 
     return {
-      timeline: {
+      dayview: {
         weight: 10,
         title: "Timeline",
         view: "timeline",
@@ -84,7 +84,7 @@ function process(o, ts) {
     };
   }
   if (dataType == "number") {
-    if (dt <= 2 * day) {
+    if (dt <= 2 * day || (dt / day) * 10 >= ts.length) {
       return {};
     }
     let datas = perDay(ts).map(dval => {
@@ -95,7 +95,7 @@ function process(o, ts) {
 
         dur = LTTB(
           dur.map(dp => ({ x: dp.t, y: dp.d })),
-          dt > 20 * day ? 500 : 1000
+          dt > 20 * day ? (dt > 60 ? 200 : 500) : 1000
         ).map(dp => ({ t: dp.x, d: dp.y }));
       }
       return dur.map(dp => ({
@@ -114,7 +114,7 @@ function process(o, ts) {
 
     // There's 2 days or more of data that is all numeric. Let's show a per-day view of the time series
     return {
-      timeline: {
+      dayview: {
         weight: 10,
         title: "Per Day",
         view: "horizon",

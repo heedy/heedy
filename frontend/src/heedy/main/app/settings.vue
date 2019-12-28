@@ -97,7 +97,7 @@ export default {
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$app.api(
           "PATCH",
-          `api/heedy/v1/apps/${this.app.id}`,
+          `api/apps/${this.app.id}`,
           modified
         );
 

@@ -85,7 +85,7 @@ class TimeseriesDataManager {
   async runquery(query) {
     let result = await api(
       "GET",
-      `api/heedy/v1/objects/${this.timeseries.id}/timeseries`,
+      `api/objects/${this.timeseries.id}/timeseries`,
       query
     );
     if (!result.response.ok) {
@@ -107,6 +107,16 @@ class TimeseriesDataManager {
   }
 
   async process_and_send(key, data) {
+    this.si.worker.postMessage("timeseries_views", {
+      key,
+      id: this.timeseries.id,
+      views: {
+        query_status: {
+          view: "status",
+          data: `Processing ${data.length.toLocaleString()} Datapoints`
+        }
+      }
+    });
     let outvals = await this.process(data);
     this.si.worker.postMessage("timeseries_views", {
       key,
@@ -115,7 +125,7 @@ class TimeseriesDataManager {
     });
   }
 
-  async query(timeseries, key, query) {
+  async query(timeseries, key, query, qcallback = x => x) {
     console.log("timeseries_worker: Querying ", this.timeseries.id, key, query);
 
     try {
@@ -131,8 +141,9 @@ class TimeseriesDataManager {
           }
         }
       });
+      return;
     }
-    console.log("timeseries_worker: Query Result", data);
+    console.log("timeseries_worker: Queried ", data.length);
     await this.process_and_send(key, data);
   }
 }

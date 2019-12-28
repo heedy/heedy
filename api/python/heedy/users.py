@@ -11,7 +11,7 @@ class User(APIObject):
     props = {"name", "username", "description", "icon"}
 
     def __init__(self, username: str, session: Session):
-        super().__init__(f"api/heedy/v1/users/{username}", {"user": username}, session)
+        super().__init__(f"api/users/{username}", {"user": username}, session)
 
         # Apps represents a list of the user's active apps. Apps can be accessed by ID::
         #   myapp = await u.apps["appid"]
@@ -21,7 +21,7 @@ class User(APIObject):
         #   myapp = await u.apps.create()
         self.apps = apps.Apps({"owner": username}, self.session)
         self.objects = objects.Objects({"owner": username}, self.session)
-        self._kv = KV(f"api/heedy/v1/kv/users/{username}", self.session)
+        self._kv = KV(f"api/kv/users/{username}", self.session)
 
     @property
     def kv(self):
@@ -34,7 +34,7 @@ class User(APIObject):
 
 class Users(APIObject):
     def __init__(self, constraints: Dict, session: Session):
-        super().__init__("api/heedy/v1/users", constraints, session)
+        super().__init__("api/users", constraints, session)
 
     def __getitem__(self, item):
         return self._getitem(item, f=lambda x: User(x["id"], session=self.session))

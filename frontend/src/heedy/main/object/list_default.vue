@@ -6,7 +6,7 @@
           <v-card :elevation="hover ? 4 : 2">
             <v-list-item two-line subheader :to="`/objects/${s.id}`">
               <v-list-item-avatar>
-                <h-icon :image="s.icon" :colorHash="s.id"></h-icon>
+                <h-icon :image="s.icon" :defaultIcon="defaultIcon" :colorHash="s.id"></h-icon>
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title>{{ s.name }}</v-list-item-title>
@@ -43,7 +43,11 @@
 <script>
 export default {
   props: {
-    objects: Array
+    objects: Array,
+    defaultIcon: {
+      type: String,
+      default: "brightness_1"
+    }
   }
 };
 </script>
