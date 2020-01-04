@@ -10,7 +10,7 @@ import {
 
 const plugin_name = "registry"
 
-const production = !process.env.NODE_ENV === 'debug';
+const production = !(process.env.NODE_ENV === 'debug');
 const plugins = [
   VuePlugin({
     // https://github.com/vuejs/rollup-plugin-vue/issues/238

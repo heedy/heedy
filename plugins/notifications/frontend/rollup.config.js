@@ -10,7 +10,7 @@ import {
 
 const plugin_name = "notifications"
 
-const production = !process.env.NODE_ENV === 'debug';
+const production = !(process.env.NODE_ENV === 'debug');
 const plugins = [
   VuePlugin({
     // https://github.com/vuejs/rollup-plugin-vue/issues/238
@@ -40,6 +40,8 @@ if (production) {
     mangle: true,
     module: true
   }));
+} else {
+  console.log("Running debug build");
 }
 
 function checkExternal(modid, parent, isResolved) {

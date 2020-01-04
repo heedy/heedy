@@ -4,13 +4,15 @@ import postcss from "rollup-plugin-postcss";
 import json from "rollup-plugin-json";
 import VuePlugin from "rollup-plugin-vue";
 import replace from "rollup-plugin-replace";
-import { terser } from "rollup-plugin-terser";
+import {
+  terser
+} from "rollup-plugin-terser";
 
 import glob from "glob";
 
 const plugin_name = "timeseries";
 
-const production = !process.env.NODE_ENV === "debug";
+const production = !(process.env.NODE_ENV === "debug");
 const plugins = [
   VuePlugin({
     // https://github.com/vuejs/rollup-plugin-vue/issues/238
@@ -54,8 +56,7 @@ function out(name, loc = "", format = "es") {
     input: "src/" + name,
     output: {
       name: filename[0],
-      file:
-        `../assets/public/static/${plugin_name}/` +
+      file: `../assets/public/static/${plugin_name}/` +
         loc +
         filename[0] +
         (format == "es" ? ".mjs" : ".js"),
@@ -71,17 +72,17 @@ export default [
   out("worker.js"),
   out("analysis.js")
 ]
-  .concat(
+.concat(
     glob
-      .sync("views/*.vue", {
-        cwd: "./src"
-      })
-      .map(a => out(a))
+    .sync("views/*.vue", {
+      cwd: "./src"
+    })
+    .map(a => out(a))
   )
   .concat(
     glob
-      .sync("dist/*.js", {
-        cwd: "./src"
-      })
-      .map(a => out(a, "../"))
+    .sync("dist/*.js", {
+      cwd: "./src"
+    })
+    .map(a => out(a, "../"))
   );
