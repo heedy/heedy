@@ -212,7 +212,7 @@ class Timeseries(Object):
 
     def insert(self, data, timestamp=None, duration=0):
         if timestamp is None:
-            return self.append(data)
+            return self.append(data, duration)
         return self.insert_array([{"t": timestamp, "d": data, "dt": duration}])
 
     def remove(self, **kwargs):

@@ -51,6 +51,50 @@ CREATE TABLE timeseries_actions (
 		ON DELETE CASCADE
 );
 
+
+CREATE TRIGGER timeseries_overlap_check 
+	BEFORE INSERT ON timeseries FOR EACH ROW
+	WHEN (
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp<new.timestamp
+	) OR (
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp
+	)
+	BEGIN
+		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
+	END;
+
+CREATE TRIGGER timeseries_actions_overlap_check 
+	BEFORE INSERT ON timeseries_actions FOR EACH ROW
+	WHEN (
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp<new.timestamp
+	) OR (
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp
+	)
+	BEGIN
+		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
+	END;
+
+CREATE TRIGGER timeseries_overlap_check_update
+	BEFORE UPDATE ON timeseries FOR EACH ROW
+	WHEN (
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp<new.timestamp
+	) OR (
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp
+	)
+	BEGIN
+		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
+	END;
+
+CREATE TRIGGER timeseries_actions_overlap_check_update
+	BEFORE UPDATE ON timeseries_actions FOR EACH ROW
+	WHEN (
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp<new.timestamp
+	) OR (
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp
+	)
+	BEGIN
+		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
+	END;
 `
 
 type SQLIterator struct {
