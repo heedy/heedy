@@ -145,3 +145,42 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, len(dpa7)-1, len(dpa))
 
 }
+
+func TestDurationUpdate(t *testing.T) {
+	sdb, cleanup := genDatabase(t)
+	defer cleanup()
+	require.NoError(t, SQLUpdater(sdb, nil, 0))
+
+	s := OpenSQLData(sdb)
+
+	insert1 := DatapointArray{
+		&Datapoint{1., 1., 1, ""},
+		&Datapoint{2., 1., 2, ""},
+		&Datapoint{3., 1., 3, ""},
+		&Datapoint{4., 1., 4, ""},
+	}
+	_, _, _, _, err := s.WriteTimeseriesData("s1", NewDatapointArrayIterator(insert1), &InsertQuery{})
+	require.NoError(t, err)
+
+	insert2 := DatapointArray{
+		&Datapoint{2.5, 1., 2.5, ""},
+		&Datapoint{3.5, 0, 3.5, ""},
+	}
+	_, _, _, _, err = s.WriteTimeseriesData("s1", NewDatapointArrayIterator(insert2), &InsertQuery{})
+	require.NoError(t, err)
+
+	di, err := s.ReadTimeseriesData("s1", &Query{})
+	require.NoError(t, err)
+	dpa, err := NewArrayFromIterator(di)
+	require.NoError(t, err)
+
+	output := DatapointArray{
+		&Datapoint{1., 1., 1, ""},
+		&Datapoint{2., .5, 2, ""},
+		&Datapoint{2.5, 1., 2.5, ""},
+		&Datapoint{3.5, 0, 3.5, ""},
+		&Datapoint{4., 1., 4, ""},
+	}
+
+	require.Equal(t, output.String(), dpa.String())
+}

@@ -24,7 +24,7 @@
         </v-list-item>
         <v-toolbar v-else flat collapsed>
           <div v-if="showIcon" style="padding-right: 20px">
-            <h-icon :image="icon" :colorHash="colorHash" />
+            <h-icon :image="icon" :defaultIcon="defaultIcon" :colorHash="colorHash" />
           </div>
           <v-spacer></v-spacer>
           <v-toolbar-items style="align-items: center">

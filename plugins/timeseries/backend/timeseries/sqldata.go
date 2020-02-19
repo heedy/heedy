@@ -274,6 +274,7 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 	insert := "INSERT OR REPLACE"
 	ts := float64(-999999999)
 	actions := false
+	isupdate := true
 
 	if q.Actions != nil && *q.Actions {
 		table = "timeseries_actions"
@@ -285,7 +286,7 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 		return dp, ts, ts, 0, err
 	}
 	tstart := dp.Timestamp
-	tend := dp.Timestamp
+	tend := dp.Timestamp + dp.Duration
 	count := int64(0)
 
 	tx, err := d.db.Beginx()
@@ -294,8 +295,9 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 	}
 
 	if q.Method != nil && *q.Method != "update" {
+		isupdate = false
 		if *q.Method == "append" {
-			err = tx.Get(&ts, fmt.Sprintf("SELECT MAX(timestamp) FROM %s WHERE tsid=?", table), sid)
+			err = tx.Get(&ts, fmt.Sprintf("SELECT MAX(timestamp)+duration FROM %s WHERE tsid=?", table), sid)
 			if err != nil {
 				if err != sql.ErrNoRows {
 					tx.Rollback()
@@ -314,15 +316,39 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 	if actions {
 		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?,?)", insert, table)
 	}
+	updateDeleteQuery := fmt.Sprintf("DELETE FROM %s WHERE tsid=? AND timestamp > ? AND timestamp < ?", table)
+	updateTruncateQuery := fmt.Sprintf("UPDATE %s SET duration=?-timestamp WHERE tsid=? AND timestamp < ? AND duration > 0 AND timestamp + duration > ?", table)
 	dp2 := dp
 	for dp != nil {
 		count++
 		dp2 = dp
 
-		if dp.Timestamp <= ts {
+		if dp.Timestamp < ts {
 			tx.Rollback()
 			return dp, tstart, tend, count, errors.New("bad_query: datapoint older than existing data")
 		}
+
+		// If the method is update, need to run extra queries to handle intersecting durations in the inserted datapoints.
+		// The update query replaces datapoints with identical timestamps, truncates the durations of datapoints that begin before the current datapoint
+		// and deletes datapoints that start during the current datapoint. This ensures consistency of durations for the time series.
+		// To avoid the overhead of these operations, a user can use the "insert" or "append" methods instead.
+		if isupdate {
+			// Remove datapoints that start during current datapoint's duration
+			if dp.Duration > 0 {
+				_, err = tx.Exec(updateDeleteQuery, sid, dp.Timestamp, dp.Timestamp+dp.Duration)
+				if err != nil {
+					tx.Rollback()
+					return dp, tstart, tend, count, err
+				}
+			}
+			// Truncate the durations for any datapoints that would overlap with current one
+			_, err = tx.Exec(updateTruncateQuery, dp.Timestamp, sid, dp.Timestamp, dp.Timestamp)
+			if err != nil {
+				tx.Rollback()
+				return dp, tstart, tend, count, err
+			}
+		}
+
 		// github.com/vmihailenco/msgpack
 		// b, err := msgpack.Marshal(dp.Data)
 		b, err := json.Marshal(dp.Data)
@@ -340,7 +366,7 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 			tx.Rollback()
 			return dp, tstart, tend, count, err
 		}
-		tend := dp.Timestamp
+		tend := dp.Timestamp + dp.Duration
 
 		dp, err = data.Next()
 		if err != nil {
