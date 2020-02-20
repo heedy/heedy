@@ -24,6 +24,7 @@ CREATE TABLE timeseries (
 	data BLOB,
 
 	PRIMARY KEY (tsid,timestamp),
+	CONSTRAINT valid_duration CHECK (duration >= 0),
 	CONSTRAINT valid_data CHECK (json_valid(data)),
 
 	CONSTRAINT object_fk
@@ -33,6 +34,7 @@ CREATE TABLE timeseries (
 		ON DELETE CASCADE
 
 );
+CREATE INDEX timeseries_duration ON timeseries(tsid,timestamp+duration) WHERE duration > 0;
 
 CREATE TABLE timeseries_actions (
 	tsid VARCHAR(36) NOT NULL,
@@ -42,6 +44,7 @@ CREATE TABLE timeseries_actions (
 	data BLOB,
 
 	PRIMARY KEY (tsid,timestamp),
+	CONSTRAINT valid_duration CHECK (duration >= 0),
 	CONSTRAINT valid_data CHECK (json_valid(data)),
 
 	CONSTRAINT object_fk
@@ -50,14 +53,14 @@ CREATE TABLE timeseries_actions (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE
 );
-
+CREATE INDEX timeseries_actions_duration ON timeseries_actions(tsid,timestamp+duration) WHERE duration > 0;
 
 CREATE TRIGGER timeseries_overlap_check 
 	BEFORE INSERT ON timeseries FOR EACH ROW
 	WHEN (
-		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp<new.timestamp
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries INDEXED BY timeseries_duration WHERE tsid=new.tsid AND timestamp<new.timestamp AND timestamp+duration>new.timestamp AND duration > 0
 	) OR (
-		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp AND new.duration > 0
 	)
 	BEGIN
 		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
@@ -66,9 +69,9 @@ CREATE TRIGGER timeseries_overlap_check
 CREATE TRIGGER timeseries_actions_overlap_check 
 	BEFORE INSERT ON timeseries_actions FOR EACH ROW
 	WHEN (
-		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp<new.timestamp
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions INDEXED BY timeseries_actions_duration WHERE tsid=new.tsid AND timestamp<new.timestamp AND timestamp+duration>new.timestamp AND duration > 0
 	) OR (
-		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp AND new.duration > 0
 	)
 	BEGIN
 		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
@@ -77,9 +80,9 @@ CREATE TRIGGER timeseries_actions_overlap_check
 CREATE TRIGGER timeseries_overlap_check_update
 	BEFORE UPDATE ON timeseries FOR EACH ROW
 	WHEN (
-		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp<new.timestamp
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries INDEXED BY timeseries_duration WHERE tsid=new.tsid AND timestamp<new.timestamp AND timestamp+duration>new.timestamp AND duration > 0
 	) OR (
-		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries WHERE tsid=new.tsid AND timestamp > new.timestamp AND new.duration > 0
 	)
 	BEGIN
 		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
@@ -88,9 +91,9 @@ CREATE TRIGGER timeseries_overlap_check_update
 CREATE TRIGGER timeseries_actions_overlap_check_update
 	BEFORE UPDATE ON timeseries_actions FOR EACH ROW
 	WHEN (
-		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp<new.timestamp
+		SELECT COALESCE(max(timestamp)+duration>new.timestamp,FALSE) FROM timeseries_actions INDEXED BY timeseries_actions_duration WHERE tsid=new.tsid AND timestamp<new.timestamp AND timestamp+duration>new.timestamp AND duration > 0
 	) OR (
-		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp
+		SELECT COALESCE(new.timestamp+new.duration>MIN(timestamp),FALSE) FROM timeseries_actions WHERE tsid=new.tsid AND timestamp > new.timestamp AND new.duration > 0
 	)
 	BEGIN
 		SELECT RAISE(FAIL,'Datapoint time range conflicts with existing data');
@@ -317,7 +320,11 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 		fullQuery = fmt.Sprintf("%s INTO %s VALUES (?,?,?,?,?)", insert, table)
 	}
 	updateDeleteQuery := fmt.Sprintf("DELETE FROM %s WHERE tsid=? AND timestamp > ? AND timestamp < ?", table)
-	updateTruncateQuery := fmt.Sprintf("UPDATE %s SET duration=?-timestamp WHERE tsid=? AND timestamp < ? AND duration > 0 AND timestamp + duration > ?", table)
+	indexToUse := "timeseries_duration"
+	if actions {
+		indexToUse = "timeseries_actions_duration"
+	}
+	updateTruncateQuery := fmt.Sprintf("UPDATE %s INDEXED BY %s SET duration=?-timestamp WHERE tsid=? AND timestamp < ? AND duration > 0 AND timestamp + duration > ?", table, indexToUse)
 	dp2 := dp
 	for dp != nil {
 		count++
