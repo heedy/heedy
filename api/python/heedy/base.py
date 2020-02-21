@@ -50,10 +50,17 @@ class Session:
     def f(self, func, x):
         raise NotImplementedError()
 
+    @property
+    def isasync(self):
+        raise NotImplementedError()
+
     def setAccessToken(self, token):
         raise NotImplementedError()
 
     def setPluginKey(self, key):
+        raise NotImplementedError()
+
+    def setHeader(self, key, value):
         raise NotImplementedError()
 
     def version(self):
@@ -97,6 +104,9 @@ class SyncSession(Session):
 
     def setPluginKey(self, key):
         self.s.headers.update({"X-Heedy-Key": key})
+
+    def setHeader(self, key, value):
+        self.s.headers.update({key: value})
 
     def version(self):
         return self.handleResponse(
@@ -182,6 +192,9 @@ class AsyncSession(Session):
 
     def setPluginKey(self, key):
         self.headers["X-Heedy-Key"] = key
+
+    def setHeader(self, key, value):
+        self.headers[key] = value
 
     def initSession(self):
         if self.s is None:
@@ -288,11 +301,10 @@ def getSessionType(sessionType: str, namespace: str, url: str = DEFAULT_URL) -> 
         return SyncSession(namespace, url)
     if sessionType == "async":
         return AsyncSession(namespace, url)
-    raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
-
+    raise NotImplementedError(
+        f"The session type '{sessionType}' is not implemented")
 
 from .notifications import Notifications
-
 
 class APIObject:
     """
@@ -366,4 +378,3 @@ class APIList:
 
     def _call(self, f=lambda x: x, **kwargs):
         return self.session.get(self.uri, params={**self._constraints, **kwargs}, f=f)
-

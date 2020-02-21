@@ -19,8 +19,8 @@ class Plugin:
         if self.config is None:
             self.config = json.loads(input())
 
-        # Change the directory to the data dir
-        os.chdir(self.config["data_dir"])
+            # Change the directory to the data dir
+            os.chdir(self.config["data_dir"])
 
         self.session = getSessionType(
             session, self.name, f"http://localhost:{self.config['config']['port']}"
@@ -35,6 +35,14 @@ class Plugin:
     @property
     def name(self):
         return self.config["plugin"]
+
+    def copy(self):
+        return Plugin(self.config, "async" if self.session.isasync else "sync")
+
+    def query_as(self, accessor):
+        p = self.copy()
+        p.session.setHeader("X-Heedy-As", accessor)
+        return p
 
     async def forward(
         self, request, data=None, headers={}, run_as: str = None, overlay=None
@@ -122,4 +130,3 @@ class Plugin:
 
     def notify(self, *args, **kwargs):
         return self.notifications.notify(*args, **kwargs)
-

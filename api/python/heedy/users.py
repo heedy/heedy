@@ -12,6 +12,7 @@ class User(APIObject):
 
     def __init__(self, username: str, session: Session):
         super().__init__(f"api/users/{username}", {"user": username}, session)
+        self._username = username
 
         # Apps represents a list of the user's active apps. Apps can be accessed by ID::
         #   myapp = await u.apps["appid"]
@@ -26,6 +27,9 @@ class User(APIObject):
     @property
     def kv(self):
         return self._kv
+    @property
+    def username(self):
+        return self._username
 
     @kv.setter
     def kv(self, v):

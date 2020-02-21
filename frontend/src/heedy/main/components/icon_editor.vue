@@ -10,7 +10,7 @@
         <v-text-field
           class="centered-input"
           label="Icon Name"
-          placeholder="person"
+          :placeholder="defaultIcon"
           v-model="iconText"
         ></v-text-field>
         <a
