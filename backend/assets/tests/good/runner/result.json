@@ -1,4 +1,5 @@
 {
+    "plugins": ["testy"],
     "runtype": {
         "myrunner": {
             "api": "builtin://ayy",

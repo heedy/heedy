@@ -1,4 +1,5 @@
 {
+    "plugins": ["yeet"],
     "plugin": {
         "yeet": {
             "settings": {
