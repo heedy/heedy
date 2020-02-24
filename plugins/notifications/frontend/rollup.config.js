@@ -1,9 +1,9 @@
-import resolve from "rollup-plugin-node-resolve";
-import commonjs from "rollup-plugin-commonjs";
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
 import postcss from "rollup-plugin-postcss";
-import json from "rollup-plugin-json";
+import json from "@rollup/plugin-json";
 import VuePlugin from "rollup-plugin-vue";
-import replace from "rollup-plugin-replace";
+import replace from "@rollup/plugin-replace";
 import {
   terser
 } from "rollup-plugin-terser";
@@ -45,7 +45,7 @@ if (production) {
 }
 
 function checkExternal(modid, parent, isResolved) {
-  return (!isResolved && modid.endsWith(".mjs")) || modid.startsWith("http");
+  return (!isResolved && modid.endsWith(".mjs") && modid.startsWith(".")) || modid.startsWith("http");
 }
 
 function out(name, loc = "", format = "es") {

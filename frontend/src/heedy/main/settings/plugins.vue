@@ -44,11 +44,11 @@
             <v-list-item-subtitle>{{ pi.description }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
-            <v-btn icon style="padding-right: 15px" @click="() => showDetails(pi)">
+            <v-btn icon @click="() => showDetails(pi)">
               <v-icon color="grey lighten-1">fas fa-info-circle</v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-avatar style="padding-right: 30px;">
+          <v-list-item-avatar>
             <h-icon :image="pi.icon" :colorHash="pi.name"></h-icon>
           </v-list-item-avatar>
         </v-list-item>
@@ -67,7 +67,7 @@
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
           <v-list-item two-line style="overflow:hidden;">
-            <v-list-item-avatar style="padding-right: 30px;">
+            <v-list-item-avatar>
               <h-icon :image="dvalue.icon" :colorHash="dvalue.name"></h-icon>
             </v-list-item-avatar>
             <v-list-item-content>
@@ -264,11 +264,9 @@ export default {
     },
     update: async function() {
       console.log(this.active);
-      let res = await this.$app.api(
-        "PATCH",
-        "api/server/updates/config",
-        { plugins: this.active }
-      );
+      let res = await this.$app.api("PATCH", "api/server/updates/config", {
+        plugins: this.active
+      });
       if (!res.response.ok) {
         this.alert = res.data.error_description;
         return;

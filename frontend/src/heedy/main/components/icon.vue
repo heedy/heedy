@@ -40,7 +40,7 @@ export default {
     },
     fontSize() {
       if (this.image.includes("fa-")) {
-        return Math.round(0.7 * this.iconSize) + "px";
+        return Math.round(0.65 * this.iconSize) + "px";
       }
       return Math.round(0.9 * this.iconSize) + "px";
     }

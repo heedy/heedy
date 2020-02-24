@@ -1,12 +1,13 @@
 <template>
   <v-app id="heedy" v-resize="onResize">
     <v-navigation-drawer
-      :expand-on-hover="true"
+      expand-on-hover
+      permanent
       stateless
       app
       dark
       hide-overlay
-      :value="!bottom"
+      :mini-variant-width="70"
       v-if="shownav && !bottom"
     >
       <v-layout column fill-height>
