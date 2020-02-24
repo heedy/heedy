@@ -315,9 +315,10 @@ class APIObject:
 
     props = {"name", "description", "icon"}
 
-    def __init__(self, uri: str, constraints: Dict, session: Session):
+    def __init__(self, uri: str, constraints: Dict, session: Session, cached_data = {}):
         self.session = session
         self.uri = uri
+        self.cached_data = cached_data
 
         self.notifications = Notifications(constraints, self.session)
 
@@ -325,7 +326,10 @@ class APIObject:
         """
         Read the object
         """
-        return self.session.get(self.uri, params=kwargs)
+        def writeCache(o):
+            self.cached_data = o
+            return o
+        return self.session.f(self.session.get(self.uri, params=kwargs),writeCache)
 
     def update(self, **kwargs):
         """
@@ -353,6 +357,10 @@ class APIObject:
         if isinstance(other, self.__class__):
             return other.uri == self.uri
         return False
+
+    def __getitem__(self,i):
+        # Gets the item from the cache - assumes that the data is in the cache. If not, need to call .read() first
+        return self.cached_data[i]
 
     def notify(self, *args, **kwargs):
         return self.notifications.notify(*args, **kwargs)

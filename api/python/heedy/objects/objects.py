@@ -12,11 +12,12 @@ from . import registry
 class Object(APIObject):
     props = {"name", "description", "icon", "meta"}
 
-    def __init__(self, objectData: Dict, session: Session):
+    def __init__(self, objectData: Dict, session: Session,cached_data : Dict ={}):
         super().__init__(
             f"api/objects/{objectData['id']}",
             {"object": objectData["id"]},
             session,
+            cached_data=cached_data
         )
         self.data = objectData
         self._kv = KV(f"api/kv/objects/{objectData['id']}", self.session)

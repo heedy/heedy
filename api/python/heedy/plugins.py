@@ -99,6 +99,7 @@ class Plugin:
             "last_modified": last_modified,
             "meta": json.loads(base64.b64decode(h["X-Heedy-Meta"])),
             "object": h["X-Heedy-Object"],
+            "type": h["X-Heedy-Type"],
             "owner": h["X-Heedy-Owner"],
             "as": h["X-Heedy-As"],
             "access": h["X-Heedy-Access"].split(" "),

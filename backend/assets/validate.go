@@ -94,7 +94,12 @@ func Validate(c *Configuration) error {
 		}
 	}
 
-	for p, v := range c.Plugins {
+	// Make sure all the active plugins have valid configurations
+	for _, p := range c.GetActivePlugins() {
+		v, ok := c.Plugins[p]
+		if !ok {
+			return fmt.Errorf("Plugin '%s' config not found", p)
+		}
 		for conn, v2 := range v.Apps {
 			for s, v3 := range v2.Objects {
 				if _, ok := c.ObjectTypes[v3.Type]; !ok {
@@ -108,13 +113,6 @@ func Validate(c *Configuration) error {
 		}
 		if err = s.ValidateWithDefaults(v.Settings); err != nil {
 			return err
-		}
-	}
-
-	// Make sure all the active plugins have an associated configuration
-	for _, ap := range c.GetActivePlugins() {
-		if _, ok := c.Plugins[ap]; !ok {
-			return fmt.Errorf("Plugin '%s' config not found", ap)
 		}
 	}
 
@@ -145,7 +143,8 @@ func Validate(c *Configuration) error {
 
 	// ...and make sure that all run calls conform to their appropriate schema
 	defaultType := "exec"
-	for _, p := range c.Plugins {
+	for _, pname := range c.GetActivePlugins() {
+		p := c.Plugins[pname]
 		for _, r := range p.Run {
 			if r.Type == nil {
 				r.Type = &defaultType

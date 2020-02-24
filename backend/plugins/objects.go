@@ -126,7 +126,7 @@ func (sm *ObjectManager) PreparePlugin(plugin string) error {
 					if err != nil {
 						return err
 					}
-					fwdstrip := stripRequestPrefix(h, 6)
+					fwdstrip := stripRequestPrefix(h, 4)
 					logrus.Debugf("objects.%s: Forwarding %s -> %s", sname, r, uri)
 					if r == "create" {
 						s.Create = fwdstrip
