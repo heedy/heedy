@@ -10,8 +10,11 @@ import (
 )
 
 type Event struct {
-	Event string  `hcl:"event,label" json:"-"`
-	Post  *string `hcl:"post" json:"post,omitempty"`
+	Event  string  `hcl:"event,label" json:"event,omitempty"`
+	Type   *string `hcl:"type" json:"type,omitempty"`
+	Key    *string `hcl:"key" json:"key,omitempty"`
+	Plugin *string `hcl:"plugin" json:"plugin,omitempty"`
+	Post   *string `hcl:"post" json:"post,omitempty"`
 }
 
 func (e *Event) Validate() error {
@@ -32,7 +35,7 @@ type Object struct {
 
 	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
 
-	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
+	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
 
 // App represents a app that is to be created on behalf of a plugin
@@ -55,7 +58,7 @@ type App struct {
 
 	Objects map[string]*Object `json:"objects,omitempty"`
 
-	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
+	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
 type Run struct {
 	Type     *string                `hcl:"type" json:"type,omitempty"`
@@ -76,7 +79,7 @@ type Plugin struct {
 	Routes   *map[string]string `json:"routes,omitempty"`
 	Events   *map[string]string `json:"events,omitempty"`
 
-	On map[string]*Event `hcl:"on,block" json:"on,omitempty"`
+	On []Event `hcl:"on,block" json:"on,omitempty"`
 
 	Run            map[string]Run         `json:"run,omitempty"`
 	Settings       map[string]interface{} `json:"settings,omitempty"`
@@ -90,6 +93,7 @@ func (p *Plugin) Copy() *Plugin {
 	np.Run = make(map[string]Run)
 	np.Settings = make(map[string]interface{})
 	np.SettingsSchema = make(map[string]interface{})
+	np.On = make([]Event, len(p.On))
 
 	for ekey, eval := range p.Run {
 		newrun := Run{
@@ -107,6 +111,9 @@ func (p *Plugin) Copy() *Plugin {
 	}
 	for skey, sval := range p.SettingsSchema {
 		np.SettingsSchema[skey] = sval
+	}
+	for si, sval := range p.On {
+		np.On[si] = sval
 	}
 
 	return &np
@@ -261,19 +268,19 @@ func NewPlugin() *Plugin {
 		Run:      make(map[string]Run),
 		Settings: make(map[string]interface{}),
 		Apps:     make(map[string]*App),
-		On:       make(map[string]*Event),
+		On:       make([]Event, 0),
 	}
 }
 
 func NewApp() *App {
 	return &App{
 		Objects: make(map[string]*Object),
-		On:      make(map[string]*Event),
+		On:      make([]Event, 0),
 	}
 }
 func NewObject() *Object {
 	return &Object{
-		On: make(map[string]*Event),
+		On: make([]Event, 0),
 	}
 }
 
@@ -358,13 +365,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				}
 
 			}
-			for oName, oV := range oplugin.On {
-				bV, ok := bplugin.On[oName]
-				if !ok {
-					bplugin.On[oName] = oV
-				} else {
-					CopyStructIfPtrSet(bV, oV)
-				}
+			for _, oV := range oplugin.On {
+				bplugin.On = append(bplugin.On, oV)
 			}
 
 			for cName, ocValue := range oplugin.Apps {
@@ -372,13 +374,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				if !ok {
 					bplugin.Apps[cName] = ocValue
 				} else {
-					for oName, oV := range ocValue.On {
-						bV, ok := bcValue.On[oName]
-						if !ok {
-							bcValue.On[oName] = oV
-						} else {
-							CopyStructIfPtrSet(bV, oV)
-						}
+					for _, oV := range ocValue.On {
+						bcValue.On = append(bcValue.On, oV)
 					}
 					CopyStructIfPtrSet(bcValue, ocValue)
 					for sName, sValue := range ocValue.Objects {
@@ -386,13 +383,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 						if !ok {
 							bcValue.Objects[sName] = sValue
 						} else {
-							for oName, oV := range sValue.On {
-								bV, ok := bsValue.On[oName]
-								if !ok {
-									bsValue.On[oName] = oV
-								} else {
-									CopyStructIfPtrSet(bV, oV)
-								}
+							for _, oV := range sValue.On {
+								bsValue.On = append(bsValue.On, oV)
 							}
 							CopyStructIfPtrSet(bsValue, sValue)
 						}

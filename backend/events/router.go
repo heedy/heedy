@@ -2,11 +2,69 @@ package events
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
 var ErrNotSubscribed = errors.New("Not subscribed")
+
+type eventListElement struct {
+	e Event
+	h Handler
+}
+
+type eventList struct {
+	list []eventListElement
+}
+
+func (el eventList) Fire(e *Event) {
+	for i := range el.list {
+		e2 := el.list[i].e
+		if e2.App != "" && e2.App != "*" && e2.App != e.App {
+
+		} else if e2.Key != "" && e2.Key != "*" && e2.Key != e.Key {
+
+		} else if e2.Object != "" && e2.Object != "*" && e2.Object != e.Object {
+
+		} else if e2.Plugin != nil && *e2.Plugin != "*" && (e.Plugin == nil || *e2.Plugin != *e.Plugin) {
+
+		} else if e2.Type != "" && e2.Type != "*" && e2.Type != e.Type {
+
+		} else if e2.User != "" && e2.User != "*" && e2.User != e.User {
+
+		} else {
+			el.list[i].h.Fire(e)
+		}
+	}
+}
+
+func (el *eventList) Subscribe(event Event, h Handler) error {
+	el.Unsubscribe(event, h) // Make sure we don't duplicate handlers
+	el.list = append(el.list, eventListElement{
+		e: event,
+		h: h,
+	})
+	return nil
+}
+
+func (el *eventList) Unsubscribe(e Event, h Handler) error {
+	for i := range el.list {
+		e.Event = el.list[i].e.Event // Make the events match
+		if el.list[i].h == h && el.list[i].e == e {
+			if len(el.list)-i > 1 {
+				el.list[i] = el.list[len(el.list)-1]
+			}
+			el.list = el.list[:len(el.list)-1]
+			return nil
+		}
+	}
+	return ErrNotSubscribed
+}
+
+func newEventList() *eventList {
+	return &eventList{
+		list: make([]eventListElement, 0),
+	}
+}
 
 // Map: NOT THREADSAFE
 type Map map[string]*MultiHandler
@@ -43,348 +101,54 @@ func NewMap() Map {
 	return make(Map)
 }
 
-// Permitted queries:
-//	user
-//	app
-//	object
-//	plugin
-//	app-key
-// 	plugin-key
-// 	user-plugin
-//	user-plugin-key
-
-type idKey2 struct {
-	id  string
-	id2 string
-}
-type idKey3 struct {
-	id  string
-	id2 string
-	id3 string
-}
-
 type Router struct {
 	sync.RWMutex
 
-	UserEvents       map[string]Map
-	AppEvents map[string]Map
-	PluginEvents     map[string]Map
-	ObjectEvents     map[string]Map
+	EventMap map[string]*eventList
 
-	UserPlugin    map[idKey2]Map
-	AppKey map[idKey2]Map
-	PluginKey     map[idKey2]Map
-
-	UserPluginKey map[idKey3]Map
-
-	// If ObjectType is set, we send it over the full thing again,
-	// but this time with the given object type
-	ObjectType map[string]*Router
+	NoEvent *eventList
 }
 
 func NewRouter() *Router {
-	// None of the maps are initialized at the beginning, they get set up with subscribe
-	return &Router{}
+	return &Router{
+		EventMap: make(map[string]*eventList),
+		NoEvent:  newEventList(),
+	}
 }
 
-func (er *Router) Subscribe(e Event, h Handler) error {
-	er.Lock()
-	defer er.Unlock()
-
-	if e.Type != "" {
-		if er.ObjectType == nil {
-			er.ObjectType = make(map[string]*Router)
-		}
-		em, ok := er.ObjectType[e.Type]
-		if !ok {
-			em = NewRouter()
-			er.ObjectType[e.Type] = em
-		}
-		// Set the type to empty string
-		e.Type = ""
-		return em.Subscribe(e, h)
+func (r *Router) Subscribe(e Event, h Handler) error {
+	r.Lock()
+	defer r.Unlock()
+	if e.Event == "" || e.Event == "*" {
+		return r.NoEvent.Subscribe(e, h)
 	}
-	if e.User != "" && e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
-		if er.UserPluginKey == nil {
-			er.UserPluginKey = make(map[idKey3]Map)
-		}
-		em, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
-		if !ok {
-			em = NewMap()
-			er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}] = em
-		}
-		return em.Subscribe(e.Event, h)
+	em, ok := r.EventMap[e.Event]
+	if !ok {
+		em = newEventList()
+		r.EventMap[e.Event] = em
 	}
-	if e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
-		if er.PluginKey == nil {
-			er.PluginKey = make(map[idKey2]Map)
-		}
-		em, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
-		if !ok {
-			em = NewMap()
-			er.PluginKey[idKey2{*e.Plugin, e.Key}] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.App != "" && e.Key != "" {
-		if er.AppKey == nil {
-			er.AppKey = make(map[idKey2]Map)
-		}
-		em, ok := er.AppKey[idKey2{e.App, e.Key}]
-		if !ok {
-			em = NewMap()
-			er.AppKey[idKey2{e.App, e.Key}] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.Plugin != nil && *e.Plugin != "" && e.User != "" {
-		if er.UserPlugin == nil {
-			er.UserPlugin = make(map[idKey2]Map)
-		}
-		em, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
-		if !ok {
-			em = NewMap()
-			er.UserPlugin[idKey2{e.User, *e.Plugin}] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.Object != "" {
-		if er.ObjectEvents == nil {
-			er.ObjectEvents = make(map[string]Map)
-		}
-		em, ok := er.ObjectEvents[e.Object]
-		if !ok {
-			em = NewMap()
-			er.ObjectEvents[e.Object] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.Plugin != nil && *e.Plugin != "" {
-		if er.PluginEvents == nil {
-			er.PluginEvents = make(map[string]Map)
-		}
-		em, ok := er.PluginEvents[*e.Plugin]
-		if !ok {
-			em = NewMap()
-			er.PluginEvents[*e.Plugin] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.App != "" {
-		if er.AppEvents == nil {
-			er.AppEvents = make(map[string]Map)
-		}
-		em, ok := er.AppEvents[e.App]
-		if !ok {
-			em = NewMap()
-			er.AppEvents[e.App] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-	if e.User != "" {
-		if er.UserEvents == nil {
-			er.UserEvents = make(map[string]Map)
-		}
-		em, ok := er.UserEvents[e.User]
-		if !ok {
-			em = NewMap()
-			er.UserEvents[e.User] = em
-		}
-		return em.Subscribe(e.Event, h)
-	}
-
-	return fmt.Errorf("Could not subscribe to %s", e.String())
+	return em.Subscribe(e, h)
 }
 
-func (er *Router) Unsubscribe(e Event, h Handler) error {
-	er.Lock()
-	defer er.Unlock()
-	if e.Type != "" {
-		if er.ObjectType == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.ObjectType[e.Type]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		// Set the type to empty string
-		e.Type = ""
-		return em.Unsubscribe(e, h)
+func (r *Router) Unsubscribe(e Event, h Handler) error {
+	r.Lock()
+	defer r.Unlock()
+	if e.Event == "" || e.Event == "*" {
+		return r.NoEvent.Unsubscribe(e, h)
 	}
-	if e.User != "" && e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
-		if er.UserPluginKey == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
+	em, ok := r.EventMap[e.Event]
+	if !ok {
+		return ErrNotSubscribed
 	}
-	if e.Plugin != nil && *e.Plugin != "" && e.Key != "" {
-		if er.PluginKey == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.App != "" && e.Key != "" {
-		if er.AppKey == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.AppKey[idKey2{e.App, e.Key}]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.Plugin != nil && *e.Plugin != "" && e.User != "" {
-		if er.UserPlugin == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.Object != "" {
-		if er.ObjectEvents == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.ObjectEvents[e.Object]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.Plugin != nil && *e.Plugin != "" {
-		if er.PluginEvents == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.PluginEvents[*e.Plugin]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.App != "" {
-		if er.AppEvents == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.AppEvents[e.App]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-	if e.User != "" {
-		if er.UserEvents == nil {
-			return ErrNotSubscribed
-		}
-		em, ok := er.UserEvents[e.User]
-		if !ok {
-			return ErrNotSubscribed
-		}
-		return em.Unsubscribe(e.Event, h)
-	}
-
-	return fmt.Errorf("Could not unsubscribe from %s", e.String())
+	return em.Unsubscribe(e, h)
 }
 
-func (er *Router) Fire(e *Event) {
-	er.RLock()
-	defer er.RUnlock()
-
-	// User Subscriptions
-	if er.UserEvents != nil {
-		h, ok := er.UserEvents[e.User]
-		if ok {
-			h.Fire(e)
-		}
-		h, ok = er.UserEvents["*"]
-		if ok {
-			h.Fire(e)
-		}
+func (r *Router) Fire(e *Event) {
+	r.RLock()
+	defer r.RUnlock()
+	em, ok := r.EventMap[e.Event]
+	if ok {
+		em.Fire(e)
 	}
-
-	// App Subscriptions
-	if e.App == "" {
-		return
-	}
-	if er.AppEvents != nil {
-		h, ok := er.AppEvents[e.App]
-		if ok {
-			h.Fire(e)
-		}
-		h, ok = er.AppEvents["*"]
-		if ok {
-			h.Fire(e)
-		}
-	}
-	if e.Plugin != nil && *e.Plugin != "" {
-		if er.PluginEvents != nil {
-			h, ok := er.PluginEvents[*e.Plugin]
-			if ok {
-				h.Fire(e)
-			}
-		}
-		if er.UserPlugin != nil {
-			h, ok := er.UserPlugin[idKey2{e.User, *e.Plugin}]
-			if ok {
-				h.Fire(e)
-			}
-		}
-	}
-
-	// Object Subscriptions
-	if e.Object == "" {
-		return
-	}
-	if er.ObjectEvents != nil {
-		h, ok := er.ObjectEvents[e.Object]
-		if ok {
-			h.Fire(e)
-		}
-		h, ok = er.ObjectEvents["*"]
-		if ok {
-			h.Fire(e)
-		}
-	}
-
-	// This will always be nil in the Type router
-	if er.ObjectType != nil {
-		h, ok := er.ObjectType[e.Type]
-		if ok {
-			h.Fire(e)
-		}
-	}
-
-	if e.Key == "" {
-		return
-	}
-	if er.AppKey != nil {
-		h, ok := er.AppKey[idKey2{e.App, e.Key}]
-		if ok {
-			h.Fire(e)
-		}
-	}
-	if e.Plugin == nil || *e.Plugin == "" {
-		return
-	}
-	if er.PluginKey != nil {
-		h, ok := er.PluginKey[idKey2{*e.Plugin, e.Key}]
-		if ok {
-			h.Fire(e)
-		}
-	}
-	if er.UserPluginKey != nil {
-		h, ok := er.UserPluginKey[idKey3{e.User, *e.Plugin, e.Key}]
-		if ok {
-			h.Fire(e)
-		}
-	}
+	r.NoEvent.Fire(e)
 }

@@ -328,11 +328,8 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			if hp.On[o].Event == "" {
 				return nil, fmt.Errorf("%s: Plugin %s 'on' without event", filename, hp.Name)
 			}
-			if _, ok := p.On[hp.On[o].Event]; ok {
-				return nil, fmt.Errorf("%s: Plugin %s on %s defined twice", filename, hp.Name, hp.On[o].Event)
-			}
-			p.On[hp.On[o].Event] = &hp.On[o]
 		}
+		p.On = hp.On
 		if hp.SettingSchema != nil {
 			sobj, err := loadJSONObject(hp.SettingSchema)
 			if err != nil {
@@ -367,11 +364,8 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				if o.Event == "" {
 					return nil, fmt.Errorf("%s: Plugin %s app %s 'on' without event", filename, hp.Name, conn.Name)
 				}
-				if _, ok := conn.On[o.Event]; ok {
-					return nil, fmt.Errorf("%s: Plugin %s app %s on %s defined twice", filename, hp.Name, conn.Name, o.Event)
-				}
-				conn.On[o.Event] = &o
 			}
+			conn.On = hc.On
 			for k := range hc.Objects {
 				hs := hc.Objects[k]
 				if hs.Key == "" {
@@ -397,11 +391,8 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 					if o.Event == "" {
 						return nil, fmt.Errorf("%s: Plugin %s app %s object %s 'on' without event", filename, hp.Name, conn.Name, s.Name)
 					}
-					if _, ok := s.On[o.Event]; ok {
-						return nil, fmt.Errorf("%s: Plugin %s app %s object %s on %s defined twice", filename, hp.Name, conn.Name, s.Name, o.Event)
-					}
-					s.On[o.Event] = &o
 				}
+				s.On = hs.On
 
 				conn.Objects[hs.Key] = s
 			}

@@ -122,6 +122,13 @@ func (pm *PluginManager) Fire(e *events.Event) {
 }
 
 func (pm *PluginManager) Start(heedyServer http.Handler) error {
+	// First prepare all elements that don't require a plugin
+	err := pm.ObjectManager.PreparePlugin("")
+	if err != nil {
+		pm.Close()
+		return err
+	}
+
 	plugins := pm.ADB.Assets().Config.GetActivePlugins()
 
 	for _, pname := range plugins {

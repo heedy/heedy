@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
@@ -34,6 +35,20 @@ func NewPlugin(db *database.AdminDB, m *run.Manager, heedyServer http.Handler, p
 	logrus.Debugf("Loading plugin '%s'", pname)
 
 	return p, nil
+}
+
+func assetEventToEvent(ev assets.Event) events.Event {
+	evt := events.Event{
+		Event: ev.Event,
+	}
+	if ev.Type != nil {
+		evt.Type = *ev.Type
+	}
+	if ev.Key != nil {
+		evt.Key = *ev.Key
+	}
+	ev.Plugin = evt.Plugin
+	return evt
 }
 
 func (p *Plugin) Start() error {
@@ -76,43 +91,40 @@ func (p *Plugin) Start() error {
 
 	// Set up events that are subscribed in the config with the "on" blocks
 
-	for ename, ev := range psettings.On {
-		peh, err := NewPluginEventHandler(p, ev)
+	for _, ev := range psettings.On {
+		peh, err := NewPluginEventHandler(p, &ev)
 		if err != nil {
 			return err
 		}
-		logrus.Debugf("%s: Forwarding event '%s' -> %s", p.Name, ename, *ev.Post)
-		p.EventRouter.Subscribe(events.Event{
-			Event: ename,
-			User:  "*",
-		}, peh)
+		evt := assetEventToEvent(ev)
+
+		logrus.Debugf("%s: Forwarding event %s -> %s", p.Name, evt.String(), *ev.Post)
+		p.EventRouter.Subscribe(evt, peh)
 	}
 	for cplugin, cv := range psettings.Apps {
-		for ename, ev := range cv.On {
-			peh, err := NewPluginEventHandler(p, ev)
+		for _, ev := range cv.On {
+			peh, err := NewPluginEventHandler(p, &ev)
 			if err != nil {
 				return err
 			}
 			cpn := p.Name + ":" + cplugin
-			logrus.Debugf("%s: Forwarding event '%s/%s' -> %s", p.Name, cpn, ename, *ev.Post)
-			p.EventRouter.Subscribe(events.Event{
-				Event:  ename,
-				Plugin: &cpn,
-			}, peh)
+			evt := assetEventToEvent(ev)
+			evt.Plugin = &cpn
+			logrus.Debugf("%s: Forwarding event %s -> %s", p.Name, evt.String(), *ev.Post)
+			p.EventRouter.Subscribe(evt, peh)
 		}
 		for skey, sv := range cv.Objects {
-			for ename, ev := range sv.On {
-				peh, err := NewPluginEventHandler(p, ev)
+			for _, ev := range sv.On {
+				peh, err := NewPluginEventHandler(p, &ev)
 				if err != nil {
 					return err
 				}
 				cpn := p.Name + ":" + cplugin
-				logrus.Debugf("%s: Forwarding event '%s/%s/%s' -> %s", p.Name, cpn, skey, ename, *ev.Post)
-				p.EventRouter.Subscribe(events.Event{
-					Event:  ename,
-					Plugin: &cpn,
-					Key:    skey,
-				}, peh)
+				evt := assetEventToEvent(ev)
+				evt.Plugin = &cpn
+				evt.Key = skey
+				logrus.Debugf("%s: Forwarding event %s -> %s", p.Name, evt.String(), *ev.Post)
+				p.EventRouter.Subscribe(evt, peh)
 			}
 		}
 	}
