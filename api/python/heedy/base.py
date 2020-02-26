@@ -7,6 +7,7 @@ import requests
 # Used for the asynchronous session
 import aiohttp
 
+import pprint
 from typing import Dict
 
 DEFAULT_URL = "http://localhost:1324"
@@ -361,6 +362,12 @@ class APIObject:
     def __getitem__(self,i):
         # Gets the item from the cache - assumes that the data is in the cache. If not, need to call .read() first
         return self.cached_data[i]
+
+    def __str__(self):
+        return self.__class__.__name__ + pprint.pformat(self.cached_data)
+
+    def __repr__(self):
+        return str(self)
 
     def notify(self, *args, **kwargs):
         return self.notifications.notify(*args, **kwargs)

@@ -8,7 +8,7 @@
       <template #activator="{on: onDialog}">
         <v-tooltip bottom>
           <template #activator="{on}">
-            <v-btn icon v-on="{...on}" @click="() => {onDialog.click();getKey();}">
+            <v-btn icon v-on="{...on}" @click="(e) => {onDialog.click(e);getKey();}">
               <v-icon>vpn_key</v-icon>
             </v-btn>
           </template>

@@ -24,7 +24,7 @@ Several existing aggregators already perform many of heedy's functions ([see the
 Heedy itself is very limited in scope. Most of its power comes from the plugins that allow you to integrate it with other services. Some plugins worth checking out:
 
 - [fitbit](https://github.com/heedy/heedy-fitbit-plugin) - sync heedy with Fitbit, allowing you to access and analyze your wearables' data.
-- notebook - *coming soon:* Use jupyter notebooks to analyze heedy data
+- [notebook](https://github.com/heedy/heedy-notebook-plugin) - analyze data directly within Heedy with Jupyter notebooks.
 
 # Building
 

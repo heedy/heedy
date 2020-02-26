@@ -24,5 +24,5 @@ def getObject(objectData: Dict, session: Session):
     a base :code:`Object` object.
     """
     if objectData["type"] in _objectRegistry:
-        return _objectRegistry[objectData["type"]](objectData,session,cached_data=objectData)
-    return objects.Object(objectData,session,cached_data=objectData)
+        return _objectRegistry[objectData["type"]](objectData,session)
+    return objects.Object(objectData,session)
