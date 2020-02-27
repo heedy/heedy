@@ -207,7 +207,7 @@ func (db *AppDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
 // UpdateObject allows editing a object
 func (db *AppDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
-		return ErrAccessDenied("Empty status of object is readonly")
+		return ErrAccessDenied("Modification date of object is readonly")
 	}
 	curs, err := db.ReadObject(s.ID, &ReadObjectOptions{
 		Icon: false,
@@ -302,6 +302,9 @@ func (db *AppDB) UpdateApp(c *App) error {
 	}
 	if c.Scope != nil {
 		return ErrAccessDenied("Can't change own scope")
+	}
+	if c.Plugin != nil {
+		return ErrAccessDenied("Cannot modify app plugin value")
 	}
 	return updateApp(db.adb, c, "id=?", c.ID)
 }

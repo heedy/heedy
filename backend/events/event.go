@@ -11,13 +11,14 @@ import (
 )
 
 type Event struct {
-	Event      string  `json:"event"`
-	User       string  `json:"user,omitempty" db:"user"`
-	App string  `json:"app,omitempty" db:"app"`
-	Plugin     *string `json:"plugin,omitempty" db:"plugin"`
-	Object     string  `json:"object,omitempty" db:"object"`
-	Key        string  `json:"key,omitempty" db:"key"`
-	Type       string  `json:"type,omitempty" db:"type"`
+	Event  string                `json:"event"`
+	User   string                `json:"user,omitempty" db:"user"`
+	App    string                `json:"app,omitempty" db:"app"`
+	Plugin *string               `json:"plugin,omitempty" db:"plugin"`
+	Key    *string               `json:"key,omitempty" db:"key"`
+	Object string                `json:"object,omitempty" db:"object"`
+	Tags   *database.StringArray `json:"tags,omitempty" db:"tags"`
+	Type   string                `json:"type,omitempty" db:"type"`
 
 	Data interface{} `json:"data,omitempty"`
 }
@@ -77,21 +78,21 @@ func FillEvent(db *database.AdminDB, e *Event) error {
 		return errors.New("bad_request: No event type specified")
 	}
 	if e.Object != "" {
-		return db.Get(e, "SELECT objects.owner AS user,COALESCE(objects.app,'') AS app,apps.plugin,COALESCE(objects.key,'') AS key,objects.type FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.id=? LIMIT 1", e.Object)
+		return db.Get(e, "SELECT objects.owner AS user,COALESCE(objects.app,'') AS app,apps.plugin,objects.tags AS tags,objects.key AS key,objects.type FROM objects LEFT JOIN apps ON objects.app=apps.id WHERE objects.id=? LIMIT 1", e.Object)
 	}
 	if e.App != "" {
-		e.Key = ""
+		e.Tags = nil
+		e.Key = nil
 		e.Type = ""
-		es := ""
-		e.Plugin = &es
+		e.Plugin = nil
 		return db.Get(e, "SELECT owner AS user,plugin FROM apps WHERE id=? LIMIT 1", e.App)
 	}
 	if e.User != "" {
-		e.Key = ""
+		e.Tags = nil
 		e.Type = ""
 		e.App = ""
-		es := ""
-		e.Plugin = &es
+		e.Key = nil
+		e.Plugin = nil
 		// This is only to make sure the user exists
 		return db.Get(e, "SELECT username AS user FROM users WHERE username=? LIMIT 1", e.User)
 	}
@@ -112,7 +113,7 @@ func NewFilledHandler(db *database.AdminDB, h Handler) FilledHandler {
 
 func (fh FilledHandler) Fire(e *Event) {
 	if err := FillEvent(fh.DB, e); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("Failed to validate event %s: %s", e.String(), err)
 	} else {
 		fh.Handler.Fire(e)
 	}

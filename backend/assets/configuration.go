@@ -12,8 +12,9 @@ import (
 type Event struct {
 	Event  string  `hcl:"event,label" json:"event,omitempty"`
 	Type   *string `hcl:"type" json:"type,omitempty"`
-	Key    *string `hcl:"key" json:"key,omitempty"`
+	Tags   *string `hcl:"tags" json:"tags,omitempty"`
 	Plugin *string `hcl:"plugin" json:"plugin,omitempty"`
+	Key    *string `hcl:"key" json:"key,omitempty"`
 	Post   *string `hcl:"post" json:"post,omitempty"`
 }
 
@@ -31,7 +32,8 @@ type Object struct {
 	Description *string                 `json:"description,omitempty"`
 	Icon        *string                 `json:"icon,omitempty"`
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
-	Scope       *[]string               `json:"scope,omitempty"`
+	OwnerScope  *string                 `json:"owner_scope,omitempty"`
+	Tags        *string                 `json:"tags,omitempty"`
 
 	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
 
@@ -48,7 +50,7 @@ type App struct {
 
 	Description *string   `json:"description,omitempty" hcl:"description"`
 	Icon        *string   `json:"icon,omitempty" hcl:"icon"`
-	Scope       *[]string `json:"scope,omitempty" hcl:"scope"`
+	Scope       *string   `json:"scope,omitempty" hcl:"scope"`
 	Type        *string   `json:"type" hcl:"type"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`

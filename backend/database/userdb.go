@@ -122,7 +122,7 @@ func (db *UserDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
 // UpdateObject allows editing a object
 func (db *UserDB) UpdateObject(s *Object) error {
 	if s.LastModified != nil {
-		return ErrAccessDenied("Empty status of object is readonly")
+		return ErrAccessDenied("Modification date of object is readonly")
 	}
 	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss
 		WHERE objects.id=? AND ss.user IN (?,'public','users') AND ss.object=objects.id;`, s.ID, db.user)
@@ -171,6 +171,9 @@ func (db *UserDB) CreateApp(c *App) (string, string, error) {
 	if *c.Owner != db.user {
 		return "", "", ErrAccessDenied("Cannot create an app belonging to someone else")
 	}
+	if c.Plugin != nil {
+		return "", "", ErrAccessDenied("Cannot create a plugin app")
+	}
 	return db.adb.CreateApp(c)
 }
 func (db *UserDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
@@ -178,6 +181,9 @@ func (db *UserDB) ReadApp(cid string, o *ReadAppOptions) (*App, error) {
 	return readApp(db.adb, cid, o, `SELECT * FROM apps WHERE owner=? AND id=?;`, db.user, cid)
 }
 func (db *UserDB) UpdateApp(c *App) error {
+	if c.Plugin != nil {
+		return ErrAccessDenied("Cannot modify app plugin value")
+	}
 	return updateApp(db.adb, c, `id=? AND owner=?`, c.ID, db.user)
 }
 func (db *UserDB) DelApp(cid string) error {

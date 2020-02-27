@@ -247,7 +247,7 @@ func (m *Manager) Kill() error {
 		if r.I.Run != nil {
 			err := m.RunTypes[*r.I.Run.Type].Kill(apikey)
 			if err != nil {
-				logrus.Error(err)
+				logrus.Errorf("Failed to kill app: %s", err)
 			}
 		}
 

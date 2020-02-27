@@ -100,9 +100,13 @@ CREATE TABLE objects (
 	icon VARCHAR NOT NULL DEFAULT '',
 	app VARCHAR(36) DEFAULT NULL,
 	owner VARCHAR(36) NOT NULL,
-
-	-- A key is used for apps to easily map objects to physical things
+	
+	-- key to be used by the app/plugin to reference the object
+	-- If not set, it is null, to allow unique constraint
 	key VARCHAR(36) DEFAULT NULL,
+
+	-- Tags are used for apps to easily query objects 
+	tags VARCHAR NOT NULL DEFAULT '[]',
 
 	type VARCHAR NOT NULL, 	                 -- The object type
 	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the object
@@ -124,12 +128,14 @@ CREATE TABLE objects (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
+	CONSTRAINT valid_tags CHECK (json_valid(tags)  AND json_type(tags)='array'),
 	CONSTRAINT valid_scope CHECK (json_valid(owner_scope)  AND json_type(owner_scope)='array'),
-	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object')
-);
+	CONSTRAINT valid_meta CHECK (json_valid(meta) AND json_type(meta)='object'),
 
--- Objects can be queried by key
-CREATE INDEX object_key ON objects(key,app);
+	-- The object key is unique per app. We use key first to have the index on key first
+	UNIQUE(key,app),
+	CONSTRAINT apps_only_key CHECK (key IS NULL OR app IS NOT NULL)
+);
 
 ------------------------------------------------------------------------------------
 -- SHARING
@@ -155,7 +161,7 @@ CREATE TABLE shared_objects (
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 
-	CONSTRAINT valid_scope CHECK (json_valid(scope))
+	CONSTRAINT valid_scope CHECK (json_valid(scope) AND json_type(scope)='array')
 );
 
 CREATE INDEX share_objectid on shared_objects(objectid);

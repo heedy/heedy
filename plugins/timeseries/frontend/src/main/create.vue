@@ -7,22 +7,19 @@
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field
-              label="Name"
-              placeholder="My Timeseries"
-              v-model="name"
-            ></v-text-field>
+            <v-text-field label="Name" placeholder="My Timeseries" v-model="name"></v-text-field>
             <v-text-field
               label="Description"
               placeholder="This timeseries holds my data"
               v-model="description"
             ></v-text-field>
-            <v-text-field label="Subtype" placeholder></v-text-field>
+            <h-tag-editor v-model="tags" />
           </v-container>
         </v-flex>
       </v-layout>
     </v-container>
     <v-container v-if="advanced">
+      <v-text-field label="Subtype" v-model="subtype" placeholder></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
           <v-container>
@@ -47,8 +44,7 @@
 
     <v-card-actions>
       <v-btn text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon
-        >Advanced
+        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon>Advanced
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
@@ -63,6 +59,7 @@ export default {
     loading: false,
     description: "",
     subtype: "",
+    tags: "",
     code: "{}",
     name: "",
     cmOptions: {
@@ -120,13 +117,14 @@ export default {
 
       let toCreate = {
         name: this.name,
-        type: "timeseries"
+        type: "timeseries",
+        description: this.description,
+        tags: this.tags,
+        meta: {
+          subtype: this.subtype
+        },
+        icon: this.$refs.iconEditor.getImage()
       };
-      toCreate.description = this.description;
-      toCreate.meta = {
-        subtype: this.subtype
-      };
-      toCreate.icon = this.$refs.iconEditor.getImage();
       if (this.advanced) {
         try {
           var s = JSON.parse(this.code);
@@ -137,11 +135,7 @@ export default {
         }
         toCreate.meta.schema = s;
       }
-      let result = await this.$app.api(
-        "POST",
-        `api/objects`,
-        toCreate
-      );
+      let result = await this.$app.api("POST", `api/objects`, toCreate);
 
       if (!result.response.ok) {
         this.alert = result.data.error_description;

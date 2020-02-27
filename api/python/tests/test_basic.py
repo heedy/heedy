@@ -59,6 +59,35 @@ def test_kv():
     del a.kv["test"]
     assert len(a.kv()) == 0
 
+def test_tags_and_keys():
+    a = App("testkey")
+    a.objects.create("obj1",tags="tag1 tag2",key="key1")
+    a.objects.create("obj2",tags="tag1 tag3",key="key2")
+
+    assert len(a.objects(key="key1"))==1
+    assert len(a.objects(key="key2"))==1
+    assert len(a.objects(key="key3"))==0
+    assert len(a.objects(key=""))==0
+
+    assert len(a.objects(tags="tag1"))==2
+    assert len(a.objects(tags="tag1 tag3"))==1
+    assert len(a.objects(tags="tag1 tag3",key="key1"))==0
+
+    with pytest.raises(Exception):
+        a.objects.create("obj3",tags="tag1 tag3",key="key2")
+
+    a.objects(key="key1")[0].tags = "tag4"
+    assert len(a.objects(tags="tag1"))==1
+    assert len(a.objects(tags="tag4"))==1
+
+    a.objects(key="key2")[0].key = ""
+    assert len(a.objects(key="key2"))==0
+    assert len(a.objects(key=""))==1
+
+    for o in a.objects():
+        o.delete()
+
+
 
 @pytest.mark.asyncio
 async def test_basics_async():

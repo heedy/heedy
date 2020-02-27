@@ -213,7 +213,9 @@ export default {
     }
   },
   actions: {
-    errnotify({ commit }, v) {
+    errnotify({
+      commit
+    }, v) {
       // Notifies of an error
       if (v.hasOwnProperty("error")) {
         // Only notify if it is an actual error
@@ -224,7 +226,10 @@ export default {
       }
     },
     // This function performs a query on the user, ignoring websocket
-    readUser_: async function({ commit, rootState }, q) {
+    readUser_: async function ({
+      commit,
+      rootState
+    }, q) {
       let username = q.username;
       console.log("Reading user", username);
       let res = await api("GET", `api/users/${username}`, {
@@ -258,7 +263,9 @@ export default {
         q.callback();
       }
     },
-    readApp_: async function({ commit }, q) {
+    readApp_: async function ({
+      commit
+    }, q) {
       console.log("Reading app", q.id);
       let res = await api("GET", `api/apps/${q.id}`, {
         icon: true
@@ -284,7 +291,9 @@ export default {
         q.callback();
       }
     },
-    readObject_: async function({ commit }, q) {
+    readObject_: async function ({
+      commit
+    }, q) {
       console.log("Reading object", q.id);
       let res = await api("GET", `api/objects/${q.id}`, {
         icon: true
@@ -311,7 +320,11 @@ export default {
       }
     },
 
-    readUser({ state, rootState, dispatch }, q) {
+    readUser({
+      state,
+      rootState,
+      dispatch
+    }, q) {
       let username = q.username;
       if (
         state.users[username] !== undefined &&
@@ -330,7 +343,11 @@ export default {
       }
       dispatch("readUser_", q);
     },
-    readApp: async function({ state, rootState, dispatch }, q) {
+    readApp: async function ({
+      state,
+      rootState,
+      dispatch
+    }, q) {
       if (state.apps == null) {
         dispatch("listApps", q);
         return;
@@ -348,7 +365,11 @@ export default {
       }
       dispatch("readApp_", q);
     },
-    readObject: async function({ state, rootState, dispatch }, q) {
+    readObject: async function ({
+      state,
+      rootState,
+      dispatch
+    }, q) {
       if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
         if (
           rootState.app.websocket != null &&
@@ -363,7 +384,11 @@ export default {
       }
       dispatch("readObject_", q);
     },
-    readUserObjects: async function({ commit, state, rootState }, q) {
+    readUserObjects: async function ({
+      commit,
+      state,
+      rootState
+    }, q) {
       // Only if they are not being kept up-to-date by the websocket
       if (
         state.userObjects[q.username] !== undefined &&
@@ -383,7 +408,7 @@ export default {
         rootState.app.info.user != null &&
         rootState.app.info.user.username == q.username
       ) {
-        query["app"] = "none";
+        query["app"] = "";
       }
 
       let res = await api("GET", `api/objects`, query);
@@ -403,7 +428,11 @@ export default {
         q.callback();
       }
     },
-    readAppObjects: async function({ commit, state, rootState }, q) {
+    readAppObjects: async function ({
+      commit,
+      state,
+      rootState
+    }, q) {
       // Only if they are not being kept up-to-date by the websocket
       if (
         state.appObjects[q.id] !== undefined &&
@@ -436,7 +465,9 @@ export default {
         q.callback();
       }
     },
-    getAppScope: async function({ commit }) {
+    getAppScope: async function ({
+      commit
+    }) {
       console.log("Loading available app scopes");
       let res = await api("GET", "api/server/scope");
       if (!res.response.ok) {
@@ -448,7 +479,11 @@ export default {
         commit("setAppScope", res.data);
       }
     },
-    listApps: async function({ commit, state, rootState }, q) {
+    listApps: async function ({
+      commit,
+      state,
+      rootState
+    }, q) {
       // Only list apps if they are not being kept up-to-date by the websocket
       if (
         state.apps !== null &&
@@ -482,21 +517,24 @@ export default {
       }
     },
 
-    getUpdates: async function({ commit }) {
+    getUpdates: async function ({
+      commit
+    }) {
       console.log("Checking if updates ready");
       let res = await api("GET", "api/server/updates");
-      if (!res.response.ok) {
-      } else {
+      if (!res.response.ok) {} else {
         commit("setUpdates", res.data);
       }
     },
-    getPluginApps: async function({ commit, state }) {
+    getPluginApps: async function ({
+      commit,
+      state
+    }) {
       if (state.plugin_apps !== null) {
         return;
       }
       let res = await api("GET", "api/server/apps");
-      if (!res.response.ok) {
-      } else {
+      if (!res.response.ok) {} else {
         commit("setPluginApps", res.data);
       }
     }

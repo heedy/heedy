@@ -94,7 +94,7 @@ var notificationEventType = map[events.SqliteHook]string{
 
 func RegisterNotificationHooks(e events.Handler) {
 
-	databaseHook := func(s events.SqliteHookData) {
+	databaseHook := func(s events.SqliteHookData) *events.Event {
 		getStmt := func(tblname string) string {
 			switch tblname {
 			case "notifications_user":
@@ -111,22 +111,30 @@ func RegisterNotificationHooks(e events.Handler) {
 
 		n, err := getNotification(s.Conn, getStmt(s.Table), s.RowID)
 		if err != nil {
-			logrus.Error(err)
-			return
+			logrus.Errorf("Failed to process notification event: %s", err)
+			return nil
 		}
-		evt := &events.Event{
-			Data: n,
-		}
+		var evt *events.Event
 		if n.Object != nil {
-			evt.Object = *n.Object
+			evt, err = events.FillObjectEvent(s, *n.Object)
+			if err != nil {
+				logrus.Errorf("Failed to fill object data for notification event: %s", err)
+				return nil
+			}
 		} else if n.App != nil {
-			evt.App = *n.App
+			evt, err = events.FillAppEvent(s, *n.App)
+			if err != nil {
+				logrus.Errorf("Failed to fill app data for notification event: %s", err)
+				return nil
+			}
 		} else {
-			evt.User = *n.User
+			evt = &events.Event{
+				User: *n.User,
+			}
 		}
-
+		evt.Data = n
 		evt.Event = notificationEventType[events.SqliteHook{s.Table, s.Type}]
-		go e.Fire(evt)
+		return evt
 	}
 
 	events.AddSQLHook("notifications_user", events.SQL_CREATE, databaseHook)

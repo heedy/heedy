@@ -20,6 +20,18 @@ func (d Date) MarshalJSON() ([]byte, error) {
 	return []byte(t), nil
 }
 
+func (d *Date) UnmarshalJSON(b []byte) error {
+	var s string
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+	t, err := time.Parse("2006-01-02", s)
+	*d = Date(t)
+
+	return err
+}
+
 func (d Date) String() string {
 	return time.Time(d).Format("2006-01-02")
 }
@@ -55,6 +67,84 @@ func (ja *JSONArray) MarshalJSON() ([]byte, error) {
 
 func (ja *JSONArray) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &ja.Elements)
+}
+
+type StringArray struct {
+	Strings []string
+	sMap    map[string]bool
+}
+
+func (s *StringArray) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case []byte:
+		json.Unmarshal(v, &s.Strings)
+		return nil
+	case string:
+		json.Unmarshal([]byte(v), &s.Strings)
+		return nil
+	default:
+		return fmt.Errorf("Can't scan string array, unsupported type: %T", v)
+	}
+}
+
+func (s *StringArray) Load(total string) {
+	s.Strings = strings.Fields(total)
+	s.sMap = nil // Clear the old map
+	s.Deduplicate()
+}
+
+func (s *StringArray) String() string {
+	return strings.Join(s.Strings, " ")
+}
+
+func (s *StringArray) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s *StringArray) UnmarshalJSON(b []byte) error {
+	var total string
+	err := json.Unmarshal(b, &total)
+	if err == nil {
+		s.Load(total)
+	}
+	return err
+}
+
+func (s *StringArray) Value() (driver.Value, error) {
+	return json.Marshal(s.Strings)
+}
+
+func (s *StringArray) LoadMap() {
+	if s.sMap == nil {
+		smap := make(map[string]bool)
+		for _, v := range s.Strings {
+			smap[v] = true
+		}
+		s.sMap = smap
+	}
+}
+func (s *StringArray) Deduplicate() {
+	s.LoadMap()
+	s.Strings = make([]string, 0, len(s.sMap))
+	for k := range s.sMap {
+		s.Strings = append(s.Strings, k)
+	}
+}
+
+func (s *StringArray) Contains(v string) bool {
+	s.LoadMap()
+	_, ok := s.sMap[v]
+	return ok
+}
+
+func (s *StringArray) HasSubset(s2 []string) bool {
+	s.LoadMap()
+	for _, v := range s2 {
+		if !s.Contains(v) {
+			return false
+		}
+	}
+	return true
 }
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
@@ -105,16 +195,15 @@ func (s *ScopeArray) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
 
+func (s *ScopeArray) Load(total string) {
+	s.Scope = strings.Fields(total)
+	s.Update()
+}
+
 func (s *ScopeArray) UnmarshalJSON(b []byte) error {
 	var total string
 	err := json.Unmarshal(b, &total)
-	total = strings.TrimSpace(total)
-	if len(total) == 0 {
-		s.Scope = []string{}
-	} else {
-		s.Scope = strings.Split(total, " ")
-	}
-	s.Update()
+	s.Load(total)
 	return err
 }
 
@@ -232,7 +321,7 @@ type User struct {
 type App struct {
 	Details
 	Owner  *string `json:"owner" db:"owner"`
-	Plugin *string `json:"plugin" db:"plugin"`
+	Plugin *string `json:"plugin,omitempty" db:"plugin"`
 	Type   *string `json:"type" db:"type"`
 
 	Enabled *bool `json:"enabled,omitempty" db:"enabled"`
@@ -253,7 +342,9 @@ type Object struct {
 	Owner *string `json:"owner,omitempty" db:"owner"`
 	App   *string `json:"app" db:"app"`
 
-	Key *string `json:"key" db:"key"`
+	Tags *StringArray `json:"tags,omitempty" db:"tags"`
+
+	Key *string `json:"key,omitempty" db:"key"`
 
 	Type *string     `json:"type,omitempty" db:"type"`
 	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
@@ -262,7 +353,7 @@ type Object struct {
 	LastModified *Date `json:"last_modified" db:"last_modified"`
 
 	// The scope the owner has to the object. This allows apps to control objects belonging to them.
-	OwnerScope *ScopeArray `json:"owner_scope" db:"owner_scope"`
+	OwnerScope *ScopeArray `json:"owner_scope,omitempty" db:"owner_scope"`
 
 	// The access array, giving the permissions the currently logged in thing has
 	// It is generated manually for each read query, it does not exist in the database.
@@ -302,8 +393,10 @@ type ListObjectsOptions struct {
 	Owner *string `json:"owner,omitempty" schema:"owner"`
 	// Limit the results to the given app's objects
 	App *string `json:"app,omitempty" schema:"app"`
-	// Get objects with the given key
+	// Get by plugin key
 	Key *string `json:"key,omitempty" schema:"key"`
+	// Get objects with the given tags
+	Tags *string `json:"tags,omitempty" schema:"tags"`
 	// Limit results to objects of the given type
 	Type *string `json:"type,omitempty" schema:"type"`
 	// Maximum number of results to return
@@ -523,10 +616,18 @@ func extractObject(s *Object) (sColumns []string, sValues []interface{}, err err
 	if len(s.Access.Scope) > 0 {
 		err = ErrBadQuery("The access field is auto-generated from permissions - it cannot be set directly")
 	}
+	skv := s.Key
+	if skv != nil && *skv == "" {
+		sColumns = append(sColumns, "key")
+		sValues = append(sValues, nil)
+		s.Key = nil
+	}
 
 	c2, g2 := extractPointers(s)
 	sColumns = append(sColumns, c2...)
 	sValues = append(sValues, g2...)
+
+	s.Key = skv
 
 	return
 }
@@ -631,6 +732,9 @@ func objectCreateQuery(c *assets.Configuration, s *Object) (string, []interface{
 	if s.Type == nil {
 		return "", nil, ErrBadQuery("Must specify a object type")
 	}
+	if s.Key != nil && *s.Key == "" {
+		return "", nil, ErrBadQuery("Object key can't be empty string")
+	}
 	if s.Meta != nil {
 		err = c.ValidateObjectMetaWithDefaults(*s.Type, *s.Meta)
 	} else {
@@ -683,7 +787,7 @@ func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {
 			sValues = append(sValues, *o.Owner)
 		}
 		if o.App != nil {
-			if *o.App == "none" {
+			if *o.App == "" {
 				pretext = "app IS NULL"
 			} else {
 				sColumns = append(sColumns, "app")
@@ -695,8 +799,28 @@ func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {
 			sValues = append(sValues, *o.Type)
 		}
 		if o.Key != nil {
-			sColumns = append(sColumns, "key")
-			sValues = append(sValues, *o.Key)
+			if *o.Key == "" {
+				if pretext != "" {
+					pretext += " AND "
+				}
+				pretext += "key IS NULL"
+			} else {
+				sColumns = append(sColumns, "key")
+				sValues = append(sValues, *o.Key)
+			}
+		}
+		if o.Tags != nil {
+			ts := StringArray{}
+			ts.Load(*o.Tags)
+			if len(ts.Strings) > 0 {
+				// Need to make sure ALL the tags queried here are available. We assume that the values in database are distinct
+				sColumns = append(sColumns, fmt.Sprintf("(SELECT COUNT(json_each.value) FROM json_each(tags) WHERE json_each.value IN (%s))", QQ(len(ts.Strings))))
+				for i := range ts.Strings {
+					sValues = append(sValues, ts.Strings[i])
+				}
+				sValues = append(sValues, len(ts.Strings))
+			}
+
 		}
 	}
 	if len(sColumns) == 0 {

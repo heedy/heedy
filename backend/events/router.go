@@ -21,11 +21,13 @@ func (el eventList) Fire(e *Event) {
 		e2 := el.list[i].e
 		if e2.App != "" && e2.App != "*" && e2.App != e.App {
 
-		} else if e2.Key != "" && e2.Key != "*" && e2.Key != e.Key {
+		} else if e2.Tags != nil && len(e2.Tags.Strings) != 0 && (e.Tags == nil || len(e.Tags.Strings) == 0 || !e.Tags.HasSubset(e2.Tags.Strings)) {
 
 		} else if e2.Object != "" && e2.Object != "*" && e2.Object != e.Object {
 
-		} else if e2.Plugin != nil && *e2.Plugin != "*" && (e.Plugin == nil || *e2.Plugin != *e.Plugin) {
+		} else if e2.Plugin != nil && (e.Plugin == nil || *e2.Plugin != *e.Plugin) {
+
+		} else if e2.Key != nil && (e.Key == nil || *e2.Key != *e.Key) {
 
 		} else if e2.Type != "" && e2.Type != "*" && e2.Type != e.Type {
 
@@ -46,10 +48,14 @@ func (el *eventList) Subscribe(event Event, h Handler) error {
 	return nil
 }
 
+func cmpSP(s1 *string, s2 *string) bool {
+	return s1 == s2 || s1 != nil && s2 != nil && *s1 == *s2
+}
+
 func (el *eventList) Unsubscribe(e Event, h Handler) error {
 	for i := range el.list {
-		e.Event = el.list[i].e.Event // Make the events match
-		if el.list[i].h == h && el.list[i].e == e {
+		ee := el.list[i].e
+		if el.list[i].h == h && ee.App == e.App && ee.Object == e.Object && cmpSP(ee.Plugin, e.Plugin) && cmpSP(ee.Key, e.Key) && ee.User == e.User && ee.Type == e.Type && (ee.Tags == e.Tags || ee.Tags != nil && e.Tags != nil && len(ee.Tags.Strings) == len(e.Tags.Strings) && e.Tags.HasSubset(ee.Tags.Strings)) {
 			if len(el.list)-i > 1 {
 				el.list[i] = el.list[len(el.list)-1]
 			}

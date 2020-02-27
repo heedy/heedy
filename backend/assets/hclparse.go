@@ -38,10 +38,12 @@ type hclObject struct {
 
 	AutoCreate *bool `json:"auto_create,omitempty" hcl:"auto_create"`
 
-	Description *string    `hcl:"description"`
-	Icon        *string    `hcl:"icon"`
-	Scope       *[]string  `hcl:"scope"`
-	Meta        *cty.Value `hcl:"meta,attr"`
+	Description *string `hcl:"description"`
+	Icon        *string `hcl:"icon"`
+	OwnerScope  *string `hcl:"owner_scope"`
+	Tags        *string `hcl:"tags"`
+
+	Meta *cty.Value `hcl:"meta,attr"`
 
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
@@ -57,7 +59,7 @@ type hclApp struct {
 	Description *string   `json:"description" hcl:"description"`
 	Icon        *string   `json:"icon" hcl:"icon"`
 	Type        *string   `json:"type" hcl:"type"`
-	Scope       *[]string `json:"scope,omitempty" hcl:"scope"`
+	Scope       *string   `json:"scope,omitempty" hcl:"scope"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 

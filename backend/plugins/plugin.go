@@ -44,10 +44,13 @@ func assetEventToEvent(ev assets.Event) events.Event {
 	if ev.Type != nil {
 		evt.Type = *ev.Type
 	}
-	if ev.Key != nil {
-		evt.Key = *ev.Key
+	if ev.Tags != nil {
+		evt.Tags = &database.StringArray{}
+		evt.Tags.Load(*ev.Tags)
 	}
-	ev.Plugin = evt.Plugin
+	evt.Plugin = ev.Plugin
+	evt.Key = ev.Key
+
 	return evt
 }
 
@@ -122,7 +125,12 @@ func (p *Plugin) Start() error {
 				cpn := p.Name + ":" + cplugin
 				evt := assetEventToEvent(ev)
 				evt.Plugin = &cpn
-				evt.Key = skey
+				if evt.Tags != nil {
+					evt.Tags.Load(skey + " " + *ev.Tags)
+				} else {
+					evt.Tags = &database.StringArray{}
+					evt.Tags.Load(skey)
+				}
 				logrus.Debugf("%s: Forwarding event %s -> %s", p.Name, evt.String(), *ev.Post)
 				p.EventRouter.Subscribe(evt, peh)
 			}

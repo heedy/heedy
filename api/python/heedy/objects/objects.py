@@ -11,7 +11,7 @@ from . import registry
 
 
 class Object(APIObject):
-    props = {"name", "description", "icon", "meta"}
+    props = {"name", "description", "icon", "meta", "tags", "key"}
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(
@@ -31,7 +31,10 @@ class Object(APIObject):
         return self._kv.set(**v)
 
     def __getattr__(self, attr):
-        return self.cached_data[attr]
+        try:
+            return self.cached_data[attr]
+        except:
+            return None
 
     @property
     def owner(self):
@@ -43,6 +46,7 @@ class Object(APIObject):
             return None
         return apps.App(self.cached_data["app"], session=self.session)
 
+
 class Objects(APIList):
     def __init__(self, constraints: Dict, session: Session):
         super().__init__("api/objects", constraints, session)
@@ -51,6 +55,10 @@ class Objects(APIList):
         return super()._getitem(item, f=lambda x: registry.getObject(x, self.session))
 
     def __call__(self, **kwargs):
+        # To query by object type, we use otype
+        if "otype" in kwargs:
+            kwargs["type"] = kwargs["otype"]
+            del kwargs["otype"]
         return super()._call(
             f=lambda x: [registry.getObject(xx, self.session) for xx in x], **kwargs
         )
@@ -63,4 +71,3 @@ class Objects(APIList):
             f=lambda x: registry.getObject(x, self.session),
             **{"name": name, "type": otype, "meta": meta, **kwargs},
         )
-

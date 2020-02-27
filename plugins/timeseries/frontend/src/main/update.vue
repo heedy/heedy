@@ -12,22 +12,19 @@
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field
-              label="Name"
-              placeholder="My Timeseries"
-              v-model="name"
-            ></v-text-field>
+            <v-text-field label="Name" placeholder="My Timeseries" v-model="name"></v-text-field>
             <v-text-field
               label="Description"
               placeholder="This timeseries holds my data"
               v-model="description"
             ></v-text-field>
-            <v-text-field label="Subtype" placeholder></v-text-field>
+            <h-tag-editor v-model="tags" />
           </v-container>
         </v-flex>
       </v-layout>
     </v-container>
     <v-container v-if="advanced">
+      <v-text-field label="Subtype" v-model="subtype" placeholder></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
           <v-container>
@@ -53,8 +50,7 @@
     <v-card-actions>
       <v-btn dark color="red" @click="del" :loading="loading">Delete</v-btn>
       <v-btn text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon
-        >Advanced
+        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon>Advanced
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn dark color="blue" @click="update" :loading="loading">Update</v-btn>
@@ -236,6 +232,17 @@ export default {
       },
       set(v) {
         this.$app.vue.set(this.modified, "name", v);
+      }
+    },
+    tags: {
+      get() {
+        if (this.modified.tags !== undefined) {
+          return this.modified.tags;
+        }
+        return this.object.tags;
+      },
+      set(v) {
+        this.$app.vue.set(this.modified, "tags", v);
       }
     }
   }

@@ -8,6 +8,7 @@ import Loading from "./components/loading.vue";
 import Icon from "./components/icon.vue";
 import IconEditor from "./components/icon_editor.vue";
 import ScopeEditor from "./components/scope_editor.vue";
+import TagEditor from "./components/tag_editor.vue";
 import PageContainer from "./components/page_container.vue";
 import CardPage from "./components/card_page.vue";
 import NotFound from "./components/404.vue";
@@ -18,6 +19,7 @@ function register(Vue) {
     Vue.component("h-icon", Icon);
     Vue.component("h-icon-editor", IconEditor);
     Vue.component("h-scope-editor", ScopeEditor);
+    Vue.component("h-tag-editor", TagEditor);
     Vue.component("h-page-container", PageContainer);
     Vue.component("h-card-page", CardPage);
     Vue.component("h-not-found", NotFound);
@@ -29,6 +31,7 @@ export {
     Icon,
     IconEditor,
     ScopeEditor,
+    TagEditor,
     PageContainer,
     CardPage,
     NotFound,

@@ -321,3 +321,146 @@ func TestAdminShareObject(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(m), 0)
 }
+
+func TestKey(t *testing.T) {
+	db, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy"
+	otype := "timeseries"
+
+	// Key can't be set for non-app objects
+	_, err := db.CreateObject(&Object{
+		Details: Details{
+
+			Name: &name,
+		},
+		Key:   &name,
+		Owner: &name,
+		Type:  &otype,
+	})
+	require.Error(t, err)
+
+	appid, _, err := db.CreateApp(&App{
+		Details: Details{
+			Name: &name,
+		},
+		Owner: &name,
+	})
+	require.NoError(t, err)
+
+	oid1, err := db.CreateObject(&Object{
+		Details: Details{
+
+			Name: &name,
+		},
+		App:  &appid,
+		Key:  &name,
+		Type: &otype,
+	})
+	require.NoError(t, err)
+
+	// App keys are unique
+	_, err = db.CreateObject(&Object{
+		Details: Details{
+
+			Name: &name,
+		},
+		App:  &appid,
+		Key:  &name,
+		Type: &otype,
+	})
+	require.Error(t, err)
+
+	// Allow creating different key
+	key2 := "key2"
+	oid2, err := db.CreateObject(&Object{
+		Details: Details{
+
+			Name: &name,
+		},
+		App:  &appid,
+		Key:  &key2,
+		Type: &otype,
+	})
+	require.NoError(t, err)
+
+	// Allow querying by key
+	objs, err := db.ListObjects(&ListObjectsOptions{
+		Key: &key2,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, objs, 1)
+	require.Equal(t, objs[0].ID, oid2)
+	require.Equal(t, *objs[0].Key, key2)
+
+	// Now remove the key from oid1, and query objects with no key
+	es := ""
+	err = db.UpdateObject(&Object{
+		Details: Details{
+			ID: oid1,
+		},
+		Key: &es,
+	})
+	require.NoError(t, err)
+
+	objs, err = db.ListObjects(&ListObjectsOptions{
+		Key: &es,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, objs, 1)
+	require.Equal(t, objs[0].ID, oid1)
+	require.Nil(t, objs[0].Key)
+
+}
+
+func TestTags(t *testing.T) {
+	db, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy"
+	otype := "timeseries"
+
+	tags := &StringArray{Strings: []string{"tag1", "tag2", "tag3"}}
+	// Key can't be set for non-app objects
+	oid1, err := db.CreateObject(&Object{
+		Details: Details{
+
+			Name: &name,
+		},
+		Tags:  tags,
+		Owner: &name,
+		Type:  &otype,
+	})
+	require.NoError(t, err)
+
+	stags := tags.String()
+	objs, err := db.ListObjects(&ListObjectsOptions{
+		Tags: &stags,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, objs, 1)
+	require.Equal(t, objs[0].ID, oid1)
+
+	stags = "tag1 tag4"
+
+	objs, err = db.ListObjects(&ListObjectsOptions{
+		Tags: &stags,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, objs, 0)
+
+	stags = "tag3 tag1"
+
+	objs, err = db.ListObjects(&ListObjectsOptions{
+		Tags: &stags,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, objs, 1)
+	require.Equal(t, objs[0].ID, oid1)
+}

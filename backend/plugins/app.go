@@ -22,10 +22,9 @@ func App(pluginKey string, owner string, cv *assets.App) *database.App {
 	}
 	if cv.Scope != nil {
 		c.Scope = &database.AppScopeArray{
-			ScopeArray: database.ScopeArray{
-				Scope: *cv.Scope,
-			},
+			ScopeArray: database.ScopeArray{},
 		}
+		c.Scope.Load(*cv.Scope)
 	}
 	if cv.AccessToken == nil || !(*cv.AccessToken) {
 		empty := ""
@@ -56,14 +55,17 @@ func AppObject(app string, key string, as *assets.Object) *database.Object {
 		Key:  &key,
 		Type: &as.Type,
 	}
+	if as.Tags != nil {
+		s.Tags = &database.StringArray{}
+		s.Tags.Load(*as.Tags)
+	}
 	if as.Meta != nil {
 		jo := database.JSONObject(*as.Meta)
 		s.Meta = &jo
 	}
-	if as.Scope != nil {
-		s.OwnerScope = &database.ScopeArray{
-			Scope: *as.Scope,
-		}
+	if as.OwnerScope != nil {
+		s.OwnerScope = &database.ScopeArray{}
+		s.OwnerScope.Load(*as.OwnerScope)
 	}
 
 	return s

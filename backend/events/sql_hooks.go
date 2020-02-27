@@ -1,60 +1,71 @@
 package events
 
 import (
+	"container/list"
 	"database/sql"
 	"database/sql/driver"
-	"github.com/mattn/go-sqlite3"
 	"sync"
+
+	"github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 
-	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database"
 )
 
 type QueryType int
+
 const (
-	SQL_CREATE QueryType= iota
-	SQL_UPDATE 
+	SQL_CREATE QueryType = iota
+	SQL_UPDATE
 	SQL_DELETE
 )
 
 type SqliteHookData struct {
-	Type QueryType
+	Type  QueryType
 	Table string
 	RowID int64
-	Conn *sqlite3.SQLiteConn
+	Conn  *sqlite3.SQLiteConn
 }
 
 type SqliteHook struct {
-	Table string	// The table
-	Query QueryType	// The op on the table
+	Table string    // The table
+	Query QueryType // The op on the table
 }
 
-var queryTypeMap = map[int]QueryType{18:SQL_CREATE,23:SQL_UPDATE,9:SQL_DELETE}
-var sqliteEventType = make(map[SqliteHook]func(SqliteHookData))
+var queryTypeMap = map[int]QueryType{18: SQL_CREATE, 23: SQL_UPDATE, 9: SQL_DELETE}
+var sqliteEventType = make(map[SqliteHook]func(SqliteHookData) *Event)
 
-func AddSQLHook(table string, queryType QueryType, hookfunc func(SqliteHookData)) error {
-	sqliteEventType[SqliteHook{table,queryType}] = hookfunc
+func AddSQLHook(table string, queryType QueryType, hookfunc func(SqliteHookData) *Event) error {
+	sqliteEventType[SqliteHook{table, queryType}] = hookfunc
 	return nil
 }
 
 func connectHook(conn *sqlite3.SQLiteConn) error {
+	// We keep a list of events that we are processing, before the database undergoes a commit
+	elist := list.New()
 	conn.RegisterUpdateHook(func(op int, dbname string, tblname string, rowid int64) {
 		if op == 9 || dbname != "main" {
 			return
 		}
-		qtype,ok := queryTypeMap[op]
+		qtype, ok := queryTypeMap[op]
 		if !ok {
 			return
 		}
 		ename, ok := sqliteEventType[SqliteHook{tblname, qtype}]
 		if ok {
-			ename(SqliteHookData{
-				Type: qtype,
+			evt := ename(SqliteHookData{
+				Type:  qtype,
 				Table: tblname,
 				RowID: rowid,
-				Conn: conn,
+				Conn:  conn,
 			})
+			if evt != nil {
+				if assets.Get().Config.Verbose {
+					logrus.WithField("stack", database.MiniStack(2)).Debugf("Preparing event %s", evt.String())
+				}
+				elist.PushBack(evt)
+			}
 		}
 	})
 	conn.RegisterPreUpdateHook(func(pud sqlite3.SQLitePreUpdateData) {
@@ -64,23 +75,63 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 
 		// We need pre-updates to handle DELETEs, since we need to know the
 		// values before they are deleted
-		qtype,ok := queryTypeMap[pud.Op]
+		qtype, ok := queryTypeMap[pud.Op]
 		if !ok {
 			return
 		}
 		ename, ok := sqliteEventType[SqliteHook{pud.TableName, qtype}]
 		if ok {
-			ename(SqliteHookData{
-				Type: qtype,
+			evt := ename(SqliteHookData{
+				Type:  qtype,
 				Table: pud.TableName,
 				RowID: pud.OldRowID,
-				Conn: conn,
+				Conn:  conn,
 			})
+			if evt != nil {
+				if assets.Get().Config.Verbose {
+					logrus.WithField("stack", database.MiniStack(2)).Debugf("Preparing event %s", evt.String())
+				}
+				elist.PushBack(evt)
+			}
 		}
+	})
+
+	// The above hooks are called on each update to the database, before they are committed.
+	// We actually want to fire the events only AFTER they are committed, so that transaction rollbacks don't mess with us.
+	// We therefore gather the
+
+	conn.RegisterCommitHook(func() int {
+		// The transaction was committed, so fire the events
+		if assets.Get().Config.Verbose {
+			ll := elist.Len()
+			if ll > 0 {
+				logrus.WithField("stack", database.MiniStack(2)).Debugf("Database commit - firing %d prepared event(s)", ll)
+			}
+		}
+		el2 := elist
+		elist = list.New()
+
+		// Want to let the event firing to happen asynchronously, since we want the commit to finish ASAP
+		go func() {
+			el := el2.Front()
+			for el != nil {
+				go Fire(el.Value.(*Event))
+				el = el.Next()
+			}
+		}()
+
+		return 0
+	})
+	conn.RegisterRollbackHook(func() {
+		// There was a rollback, so we get rid of the cached events
+		ll := elist.Len()
+		if ll > 0 {
+			logrus.Debugf("Database rollback detected, cancelling %d prepared event(s)", ll)
+		}
+		elist.Init()
 	})
 	return nil
 }
-
 
 // Select on the raw conn, with prepared statements
 type sqliteConnStmt struct {
@@ -91,24 +142,24 @@ type sqliteConnStmt struct {
 var stmtMutex = sync.RWMutex{}
 var stmtMap = make(map[sqliteConnStmt]driver.Stmt)
 
-func SQLiteSelectConn(c *sqlite3.SQLiteConn, stmt string,vals ...driver.Value) (driver.Rows,error) {
+func SQLiteSelectConn(c *sqlite3.SQLiteConn, stmt string, vals ...driver.Value) (driver.Rows, error) {
 	if assets.Get().Config.Verbose {
-		logrus.WithField("stack",database.MiniStack(2)).Debug(stmt)
+		logrus.WithField("stack", database.MiniStack(2)).Debug(stmt)
 	}
 	stmtMutex.RLock()
-	s,ok := stmtMap[sqliteConnStmt{c,stmt}]
+	s, ok := stmtMap[sqliteConnStmt{c, stmt}]
 	stmtMutex.RUnlock()
 	if !ok {
 		stmtMutex.Lock()
-		s,ok = stmtMap[sqliteConnStmt{c,stmt}]
+		s, ok = stmtMap[sqliteConnStmt{c, stmt}]
 		if !ok {
 			var err error
-			s,err = c.Prepare(stmt)
-			if err!=nil {
+			s, err = c.Prepare(stmt)
+			if err != nil {
 				stmtMutex.Unlock()
-				return nil,err
+				return nil, err
 			}
-			stmtMap[sqliteConnStmt{c,stmt}] = s
+			stmtMap[sqliteConnStmt{c, stmt}] = s
 		}
 		stmtMutex.Unlock()
 	}
@@ -116,7 +167,6 @@ func SQLiteSelectConn(c *sqlite3.SQLiteConn, stmt string,vals ...driver.Value) (
 	return s.Query(vals)
 
 }
-
 
 // This needs to run before the database is opened, because sqlite3 can only hold a single global
 // change listener for each app, and it must be registered here, rather than on database open, since
