@@ -275,11 +275,13 @@ export default {
 
       // The setup went with defaults, so log in
 
-      this.success = "Database created! Waiting for heedy to restart...";
+      this.success = "Database created! Waiting for heedy to start...";
 
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
       }
+
+      await sleep(200);
 
       let i = 0;
       let isok = false;
@@ -299,9 +301,9 @@ export default {
         isok = res.response.ok;
         console.log(res);
         if (!isok) {
-          await sleep(100);
+          await sleep(200);
         }
-      } while (i < 5 && !isok);
+      } while (i < 5 * 30 && !isok);
 
       // We don't actually care about the result - we just wanted the cookie. Now redirect
       window.location.href = window.location.href.split("setup/")[0];

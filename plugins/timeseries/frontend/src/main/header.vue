@@ -68,7 +68,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-tooltip bottom>
+    <v-tooltip bottom v-if="access.includes('*') || access.includes('write')">
       <template #activator="{on}">
         <v-btn icon v-on="on" :to="`/objects/${object.id}/timeseries/update`">
           <v-icon>edit</v-icon>
@@ -215,6 +215,9 @@ export default {
     ]
   }),
   computed: {
+    access() {
+      return this.object.access.split(" ");
+    },
     query: {
       get() {
         if (Object.keys(this.$route.query).length == 0) {
