@@ -55,6 +55,7 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Patch("/server/updates/config", PatchUConfig)
 	apiMux.Get("/server/updates/plugins", GetAllPlugins)
 	apiMux.Post("/server/updates/plugins", PostPlugin)
+	apiMux.Get("/server/updates/plugins/{pluginname}/README.md", GetPluginReadme)
 
 	apiMux.NotFound(APINotFound)
 	return apiMux, nil

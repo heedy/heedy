@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
@@ -247,6 +248,34 @@ func GetAllPlugins(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := updater.ListPlugins(a.FolderPath)
 	rest.WriteJSON(w, r, p, err)
+}
+
+func GetPluginReadme(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	pluginName := chi.URLParam(r, "pluginname")
+	// Make sure the pluginName is valid
+	if strings.ContainsAny(pluginName, "/.\\") {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("Invalid character in plugin name"))
+		return
+	}
+
+	f, err := updater.GetReadme(a.FolderPath, pluginName)
+	if err != nil {
+		rest.WriteJSONError(w, r, 404, err)
+		return
+	}
+	defer f.Close()
+	w.Header().Add("Content-Type", "text/markdown; charset=UTF-8")
+	w.WriteHeader(200)
+	_, err = io.Copy(w, f)
+	if err != nil {
+		rest.CTX(r).Log.Warn(err)
+	}
 }
 
 func PostPlugin(w http.ResponseWriter, r *http.Request) {

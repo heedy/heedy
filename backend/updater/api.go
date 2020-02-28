@@ -2,6 +2,7 @@ package updater
 
 import (
 	"errors"
+	"io"
 	"os"
 	"path"
 
@@ -139,6 +140,17 @@ func ListPlugins(configDir string) (map[string]*assets.Plugin, error) {
 		}
 	}
 	return p, nil
+}
+
+func GetReadme(configDir string, pluginName string) (io.ReadCloser, error) {
+	mainFile := path.Join(configDir, "plugins", pluginName, "README.md")
+	updateFile := path.Join(configDir, "updates", "plugins", pluginName, "README.md")
+
+	f, err := os.Open(updateFile)
+	if err != nil {
+		f, err = os.Open(mainFile)
+	}
+	return f, err
 }
 
 func UpdatePlugin(configDir string, zipFile string) error {

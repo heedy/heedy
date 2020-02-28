@@ -21,6 +21,15 @@ func UpdatePlugins(configDir, updateDir, backupDir string) error {
 	if err != nil {
 		return err
 	}
+	_, err = ioutil.ReadDir(configPluginDir)
+	if os.IsNotExist(err) {
+		// The plugins folder does not exist yet. Create it.
+		if err = os.MkdirAll(configPluginDir, os.ModePerm); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
 	// Create the backup plugin directory
 	if err = os.MkdirAll(backupPluginDir, os.ModePerm); err != nil {
 		return err

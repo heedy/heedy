@@ -91,7 +91,11 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var i run.Info
-	rest.UnmarshalRequest(r, &i)
+	err := rest.UnmarshalRequest(r, &i)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 
 	// Prepare the API message
 	sm := run.StartMessage{}
@@ -138,7 +142,7 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fp := path.Join(i.PluginDir, filename)
-	_, err := os.Stat(fp)
+	_, err = os.Stat(fp)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return

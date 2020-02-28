@@ -36,7 +36,7 @@
       <v-list>
         <v-list-item v-for="pi in pluginItems" :key="pi.name" two-line>
           <v-list-item-action>
-            <v-checkbox :input-value="pi.active" @change="(v) => changeActive(pi.name,v)"></v-checkbox>
+            <v-checkbox :input-value="isActive(pi.name)" @change="(v) => changeActive(pi.name,v)"></v-checkbox>
           </v-list-item-action>
 
           <v-list-item-content>
@@ -53,56 +53,58 @@
           </v-list-item-avatar>
         </v-list-item>
       </v-list>
-
-      <v-flex row>
-        <div class="flex-grow-1"></div>
-        <v-btn color="primary" dark class="mb-2" @click="update">Update</v-btn>
-      </v-flex>
     </div>
     <div
       v-else
       style="color: gray; text-align: center; padding: 1cm;"
     >You don't have any plugins installed.</div>
-    <v-dialog v-model="dialog" max-width="1024px">
+    <v-dialog v-if="plugins[dvalue]!==undefined" v-model="dialog" max-width="1024px">
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
           <v-list-item two-line style="overflow:hidden;">
             <v-list-item-avatar>
-              <h-icon :image="dvalue.icon" :colorHash="dvalue.name"></h-icon>
+              <h-icon :image="plugins[dvalue].icon" :colorHash="plugins[dvalue].name"></h-icon>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title>{{ dvalue.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ dvalue.description }}</v-list-item-subtitle>
+              <v-list-item-title>{{ plugins[dvalue].name }}</v-list-item-title>
+              <v-list-item-subtitle>{{ plugins[dvalue].description }}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-action v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
               <v-checkbox
                 label="Enabled"
-                :input-value="dvalue.active"
-                @change="(v) => changeActive(dvalue.name,v)"
+                :input-value="isActive(dvalue)"
+                @change="(v) => changeActive(dvalue,v)"
               ></v-checkbox>
             </v-list-item-action>
           </v-list-item>
         </v-card-title>
 
         <v-card-text style="padding-top: 20px;">
-          <span v-html="getMD"></span>
+          <v-container fluid v-if="plugins[dvalue].readme===undefined">
+            <v-layout justify-center align-center>
+              <v-flex text-center>
+                <h1>Loading...</h1>
+              </v-flex>
+            </v-layout>
+          </v-container>
+          <span v-else v-html="getMD" class="markdownview"></span>
         </v-card-text>
 
         <v-divider></v-divider>
 
         <v-card-actions>
           <h5 v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
-            {{ dvalue.version }} - {{ dvalue.license }}
-            <div v-if="dvalue.homepage.length > 0">
+            {{ plugins[dvalue].version }} - {{ plugins[dvalue].license }}
+            <div v-if="plugins[dvalue].homepage.length > 0">
               -
-              <a :href="dvalue.homepage">homepage</a>
+              <a :href="plugins[dvalue].homepage">homepage</a>
             </div>
           </h5>
           <v-checkbox
             v-else
             label="Enabled"
-            :input-value="dvalue.active"
-            @change="(v) => changeActive(dvalue.name,v)"
+            :input-value="isActive(dvalue)"
+            @change="(v) => changeActive(dvalue,v)"
           ></v-checkbox>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="dialog = false">ok</v-btn>
@@ -125,58 +127,21 @@ export default {
     uploading: false,
     uploadPercent: 0,
     xhr: null,
-    dvalue: {
-      name: "",
-      description: "",
-      readme: "",
-      license: "",
-      homepage: "",
-      version: "",
-      icon: ""
-    }
+    dvalue: ""
   }),
   computed: {
     pluginItems() {
-      console.log("GET ITEMS", this.plugins, this.active);
-      let obj = Object.keys(this.plugins).map(k => ({
-        name: k,
-        description:
-          this.plugins[k].description !== undefined
-            ? this.plugins[k].description
-            : "",
-        version:
-          this.plugins[k].version !== undefined
-            ? this.plugins[k].version
-            : "v???",
-        readme:
-          this.plugins[k].readme !== undefined ? this.plugins[k].readme : "",
-        license:
-          this.plugins[k].license !== undefined
-            ? this.plugins[k].license
-            : "unlicensed",
-        homepage:
-          this.plugins[k].homepage !== undefined
-            ? this.plugins[k].homepage
-            : "",
-        icon:
-          this.plugins[k].icon !== undefined
-            ? this.plugins[k].icon
-            : "fas fa-puzzle-piece",
-        active: this.active.includes(k)
-      }));
-
-      console.log(obj);
-
-      return obj;
+      return Object.values(this.plugins);
     },
     getMD() {
-      return md.render(this.dvalue.readme);
+      return md.render(this.plugins[this.dvalue].readme);
     }
   },
   methods: {
     showDetails(p) {
-      this.dvalue = p;
+      this.dvalue = p.name;
       this.dialog = true;
+      this.getReadme(p.name);
     },
     changeActive(pname, v) {
       console.log(pname, v);
@@ -190,6 +155,7 @@ export default {
           this.active.push(pname);
         }
       }
+      this.update();
     },
     upload: async function() {
       if (this.uploading) {
@@ -283,7 +249,31 @@ export default {
           return;
         }
         console.log("plugins", res.data);
-        this.plugins = res.data;
+
+        let plugineer = {};
+        Object.keys(res.data).map(k => {
+          plugineer[k] = {
+            name: k,
+            description:
+              res.data[k].description !== undefined
+                ? res.data[k].description
+                : "",
+            version:
+              res.data[k].version !== undefined ? res.data[k].version : "v???",
+            license:
+              res.data[k].license !== undefined
+                ? res.data[k].license
+                : "unlicensed",
+            homepage:
+              res.data[k].homepage !== undefined ? res.data[k].homepage : "",
+            icon:
+              res.data[k].icon !== undefined
+                ? res.data[k].icon
+                : "fas fa-puzzle-piece"
+          };
+        });
+
+        this.plugins = plugineer;
       });
       this.$app.api("GET", "api/server/updates/config").then(res => {
         if (!res.response.ok) {
@@ -294,27 +284,61 @@ export default {
         console.log("active", res.data.plugins);
         this.active = res.data.plugins;
       });
+    },
+    isActive(k) {
+      return this.active.includes(k);
+    },
+    getReadme: async function(pname) {
+      console.log("Getting readme for", pname);
+      let setreadme = r => {
+        this.plugins[pname] = {
+          ...this.plugins[pname],
+          readme: r
+        };
+      };
+      try {
+      } catch (err) {
+        setreadme("Error getting plugin readme.");
+        return;
+      }
+      let res = await fetch(`api/server/updates/plugins/${pname}/README.md`, {
+        method: "GET",
+        credentials: "include",
+        redirect: "follow"
+      });
+      console.log("README", res);
+      if (!res.ok) {
+        // this.alert = res.data.error_description;
+        console.log("Plugin has no README");
+        setreadme("This plugin has no README.md");
+        return;
+      }
+      setreadme(await res.text());
     }
   },
+
   created() {
     this.reload();
   }
 };
 </script>
 <style>
-p {
+.markdownview p {
   padding-top: 15px;
 }
-h1 {
+.markdownview h1 {
   padding-top: 15px;
 }
-h2 {
+.markdownview h2 {
   padding-top: 15px;
 }
-h3 {
+.markdownview h3 {
   padding-top: 15px;
 }
-h4 {
+.markdownview h4 {
   padding-top: 15px;
+}
+.markdownview img {
+  max-width: 100%;
 }
 </style>

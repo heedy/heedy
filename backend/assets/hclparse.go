@@ -75,7 +75,6 @@ type hclPlugin struct {
 	Icon        *string `hcl:"icon" json:"icon"`
 	Version     *string `hcl:"version" json:"version"`
 	Description *string `hcl:"description" json:"description"`
-	Readme      *string `hcl:"readme" json:"readme"`
 	Homepage    *string `hcl:"homepage" json:"homepage"`
 	License     *string `hcl:"license" json:"license"`
 
