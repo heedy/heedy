@@ -1,7 +1,7 @@
 # Heedy
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/heedy/heedy/Test?label=tests&style=flat-square)
 
-**Note:** *Heedy replaces ConnectorDB, and is currently a pre-alpha. For ConnectorDB 0.3, please go to the releases page.* 
+**Note:** *Heedy is currently in alpha. You can try it out by downloading it from the releases page, but there is no guarantee that future versions will be backwards-compatible until full release.* 
 
 A repository for your quantified-self data, and an extensible analysis engine.
 
@@ -9,8 +9,14 @@ There already exist many apps and fitness trackers that gather and attempt to ma
 
 Several existing aggregators already perform many of heedy's functions ([see the list here](https://github.com/woop/awesome-quantified-self#aggregators--dashboards)). However, they are all missing one of two critical components:
 
-1) **Open-source and self-hosted**: Most existing tools are cloud-based, which means that all of your data is on "someone else's computer". While these companies may claim that they will not [sell your data](https://arstechnica.com/information-technology/2017/03/how-isps-can-sell-your-web-history-and-how-to-stop-them/), or won't [turn it over to governments](https://en.wikipedia.org/wiki/Lavabit), they can change their minds (and terms of service) at any time. The only way to guarantee that your data will never be used against you is for it to be on your computer, operated by software you can audit yourself.
-2) **Extensible**: Even a system with fantastic visualizations and powerful analysis, like heedy's predecessor (ConnectorDB), has limited utility. This is because it can only perform the analysis the original authors assumed would be useful. While ConnectorDB included a REST API, it was tedious and required lots of computer knowledge to run specialized analysis scripts. Furthermore, any application built upon CDB needed to create its own separate UI. Heedy offers a powerful plugin system - plugin writers can add new integrations, plots, or even modify core functionality with a few lines of python or javascript. A registry is planned, so that users can install plugins with the click of a button.
+1) **Open-source and self-hosted**: Most existing tools are cloud-based, which means that all of your data is on "someone else's computer". While these companies may claim that they will not [sell your data](https://arstechnica.com/tech-policy/2019/03/ftc-investigates-whether-isps-sell-your-browsing-history-and-location-data/), or won't [turn it over to governments](https://en.wikipedia.org/wiki/PRISM_(surveillance_program)), they can change their minds (and terms of service) at any time. The only way to guarantee that your data will never be used against you is for it to be on your computer, operated by software you can audit yourself.
+2) **Extensible**: Even a system with fantastic visualizations and powerful analysis has limited utility. This is because it can only show what the original authors assumed would be useful. Heedy offers a powerful plugin system - plugin writers can add new integrations, plots, or even modify core functionality with a few lines of python or javascript. A registry is planned, so that users can install plugins with the click of a button.
+
+# Screenshots
+The first screenshot is of sleep data uploaded by the [fitbit plugin](https://github.com/heedy/heedy-fitbit-plugin). The second is a jupyter notebook enabled by the [notebook plugin](https://github.com/heedy/heedy-notebook-plugin). Heedy's visualization and analysis capabilities are a work in progress, so there is a lot more to come!
+
+[![Fitbit Plugin Example](./screenshot1.png)](https://github.com/heedy/heedy-fitbit-plugin)
+[![Fitbit Notebook Example](./screenshot2.png)](https://github.com/heedy/heedy-notebook-plugin)
 
 # Installing
 
