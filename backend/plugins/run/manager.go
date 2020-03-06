@@ -51,7 +51,7 @@ func (r *Runner) Run() {
 	rt := r.m.RunTypes[*r.I.Run.Type]
 	err := rt.Run(r.I)
 	if err != nil {
-		logrus.Errorf("%s:%s %w", r.I.Plugin, r.I.Name, err)
+		logrus.Errorf("%s:%s %s", r.I.Plugin, r.I.Name, err)
 		return
 	}
 }
