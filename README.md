@@ -12,13 +12,13 @@ Several existing aggregators already perform many of heedy's functions ([see the
 1) **Open-source and self-hosted**: Most existing tools are cloud-based, which means that all of your data is on "someone else's computer". While these companies may claim that they will not [sell your data](https://arstechnica.com/tech-policy/2019/03/ftc-investigates-whether-isps-sell-your-browsing-history-and-location-data/), or won't [turn it over to governments](https://en.wikipedia.org/wiki/PRISM_(surveillance_program)), they can change their minds (and terms of service) at any time. The only way to guarantee that your data will never be used against you is for it to be on your computer, operated by software you can audit yourself.
 2) **Extensible**: Even a system with fantastic visualizations and powerful analysis has limited utility. This is because it can only show what the original authors assumed would be useful. Heedy offers a powerful plugin system - plugin writers can add new integrations, plots, or even modify core functionality with a few lines of python or javascript. A registry is planned, so that users can install plugins with the click of a button.
 
-# Screenshots
+## Screenshots
 The first screenshot is of sleep data uploaded by the [fitbit plugin](https://github.com/heedy/heedy-fitbit-plugin). The second is a jupyter notebook enabled by the [notebook plugin](https://github.com/heedy/heedy-notebook-plugin). Heedy's visualization and analysis capabilities are a work in progress, so there is a lot more to come!
 
 [![Fitbit Plugin Example](./screenshot1.png)](https://github.com/heedy/heedy-fitbit-plugin)
 [![Fitbit Notebook Example](./screenshot2.png)](https://github.com/heedy/heedy-notebook-plugin)
 
-# Installing
+## Installing
 
 1) Download the executable
 2) Run the executable
@@ -32,11 +32,11 @@ Heedy itself is very limited in scope. Most of its power comes from the plugins 
 - [fitbit](https://github.com/heedy/heedy-fitbit-plugin) - sync heedy with Fitbit, allowing you to access and analyze your wearables' data.
 - [notebook](https://github.com/heedy/heedy-notebook-plugin) - analyze data directly within Heedy with Jupyter notebooks.
 
-# Building
+## Building
 
 Building heedy requires at least go 1.13 and a recent version of node and npm.
 
-## Release
+### Release
 
 ```
 git clone https://github.com/heedy/heedy
@@ -44,7 +44,7 @@ cd heedy
 make
 ```
 
-## Debug
+### Debug
 
 ```
 git clone https://github.com/heedy/heedy
@@ -54,7 +54,7 @@ make debug
 
 The debug version uses the assets from the `./assets` folder instead of embedding in the executable.
 
-### Watch frontend
+#### Watch frontend
 
 To edit the frontend, you will want a debug build and run the following in the frontend folder:
 ```

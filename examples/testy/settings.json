@@ -1,8 +1,0 @@
-{
-    "description": "This here allows you to set settings",
-    "apikey": {
-        "type": "string",
-        "description": "The API Key to use",
-        "title": "API Key"
-    }
-}
