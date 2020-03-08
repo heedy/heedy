@@ -1,5 +1,5 @@
 # Heedy
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/heedy/heedy/Test?label=tests&style=flat-square)
+[![Docs](https://img.shields.io/badge/documentation-heedy.org-purple?style=flat-square)](https://heedy.org)[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/heedy/heedy?style=flat-square)](https://github.com/heedy/heedy/releases)[![PyPI](https://img.shields.io/pypi/v/heedy?style=flat-square)](https://pypi.org/project/heedy/)![GitHub Workflow Status](https://img.shields.io/github/workflow/status/heedy/heedy/Test?label=tests&style=flat-square)
 
 **Note:** *Heedy is currently in alpha. You can try it out by downloading it from the releases page, but there is no guarantee that future versions will be backwards-compatible until full release.* 
 

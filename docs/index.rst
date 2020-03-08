@@ -19,7 +19,6 @@ and plugin-writers, to help them extend heedy.
 .. toctree::
    :maxdepth: 2
    
-   installing
+   server/index
    examples/index
    python_api/index
-   rest_api

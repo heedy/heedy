@@ -203,7 +203,23 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		Functions: map[string]function.Function{
 			"jsondecode": stdlib.JSONDecodeFunc,
 			"jsonencode": stdlib.JSONEncodeFunc,
+			"concat":     stdlib.ConcatFunc,
+			"format":     stdlib.FormatFunc,
 			"int":        stdlib.IntFunc,
+			"join": function.New(&function.Spec{
+				VarParam: &function.Parameter{
+					Name: "string",
+					Type: cty.String,
+				},
+				Type: function.StaticReturnType(cty.String),
+				Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+					result := ""
+					for _, s := range args {
+						result += s.AsString()
+					}
+					return cty.StringVal(string(result)), nil
+				},
+			}),
 			"file": function.New(&function.Spec{
 				Params: []function.Parameter{
 					{

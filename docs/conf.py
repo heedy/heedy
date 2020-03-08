@@ -10,6 +10,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from recommonmark.transform import AutoStructify
+import subprocess
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../api/python'))
@@ -22,9 +24,9 @@ copyright = '2020, Heedy Contributors'
 author = 'Heedy Contributors'
 
 # The full version, including alpha/beta/rc tags
-import subprocess
 
-release = f"{open('../VERSION','r').read().strip()}-git.{subprocess.run('git rev-list --count HEAD'.split(),capture_output=True).stdout.decode().strip()}"
+release = "%s-git.%s" % (open('../VERSION', 'r').read().strip(), subprocess.run(
+    'git rev-list --count HEAD'.split(), capture_output=True).stdout.decode().strip())
 
 
 # -- General configuration ---------------------------------------------------
@@ -44,7 +46,7 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-    "aiohttp": ("https://docs.aiohttp.org/en/stable/",None),
+    "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -78,8 +80,7 @@ html_theme_options = {
 html_static_path = ['_static']
 
 
-from recommonmark.transform import AutoStructify
-
 # https://recommonmark.readthedocs.io/en/latest/#autostructify
+
 def setup(app):
     app.add_transform(AutoStructify)
