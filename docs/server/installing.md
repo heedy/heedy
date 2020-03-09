@@ -1,7 +1,7 @@
 # Setup & Install
 
 The heedy server comes as a single-file executable, which you can download from the [github releases page](https://github.com/heedy/heedy/releases). All you need to do is run `heedy` without any arguments, and it will guide you through setting up and running a database.
-For casual use, *nothing else is needed* - that is, everything should *just work* by simply running `heedy`. The remainder of this document is therefore focused on advanced users, who want more control over their heedy install.
+For casual use, *nothing else is needed* - that is, everything should *just work*. The remainder of this document is therefore focused on advanced users, who want more control over their heedy install.
 
 ## Python Environment
 

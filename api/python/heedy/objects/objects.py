@@ -11,7 +11,8 @@ from . import registry
 
 
 class Object(APIObject):
-    props = {"name", "description", "icon", "meta", "tags", "key"}
+    props = {"name", "description", "icon", "access"
+             "meta", "tags", "key", "owner_scope"}
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(

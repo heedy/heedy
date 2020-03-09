@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -216,6 +217,9 @@ func (db *AppDB) UpdateObject(s *Object) error {
 		return err
 	}
 
+	// Since apps have their own special way of handling access, we check permissions here
+	// and manually perform the update.
+
 	if s.Name != nil || s.Owner != nil || s.App != nil || s.OwnerScope != nil {
 		if !curs.Access.HasScope("update") {
 			return ErrNotFound
@@ -226,7 +230,15 @@ func (db *AppDB) UpdateObject(s *Object) error {
 		}
 	}
 
-	return NewUserDB(db.adb, *db.c.Owner).UpdateObject(s)
+	sColumns, sValues, err := objectUpdateQuery(db.adb.Assets().Config, s, *curs.Type)
+	if err != nil {
+		return err
+	}
+
+	sValues = append(sValues, s.ID)
+
+	result, err := db.adb.Exec(fmt.Sprintf("UPDATE objects SET %s WHERE id=?;", sColumns), sValues...)
+	return GetExecError(result, err)
 }
 
 // Can only delete objects that belong to *us*

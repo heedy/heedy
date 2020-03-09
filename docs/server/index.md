@@ -1,7 +1,6 @@
 # The Heedy Server
 
-The heedy server comes as a single-file executable. All you need to do is run the `heedy` executable without any arguments, and it will guide you through setting up and running a database.
-For the most part, heedy should *just work*, without any special considerations.
+The Heedy server handles the core mechanics necessary to gather data. Heedy itself only includes basic functionality, with advanced features left to plugins. This documentation only describes the features built into the executable by default.
 
 
 ```eval_rst

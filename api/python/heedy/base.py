@@ -305,7 +305,9 @@ def getSessionType(sessionType: str, namespace: str, url: str = DEFAULT_URL) -> 
     raise NotImplementedError(
         f"The session type '{sessionType}' is not implemented")
 
+
 from .notifications import Notifications
+
 
 class APIObject:
     """
@@ -316,7 +318,7 @@ class APIObject:
 
     props = {"name", "description", "icon"}
 
-    def __init__(self, uri: str, constraints: Dict, session: Session, cached_data = {}):
+    def __init__(self, uri: str, constraints: Dict, session: Session, cached_data={}):
         self.session = session
         self.uri = uri
         self.cached_data = cached_data
@@ -330,7 +332,7 @@ class APIObject:
         def writeCache(o):
             self.cached_data = o
             return o
-        return self.session.f(self.session.get(self.uri, params=kwargs),writeCache)
+        return self.session.f(self.session.get(self.uri, params=kwargs), writeCache)
 
     def update(self, **kwargs):
         """
@@ -338,7 +340,11 @@ class APIObject:
 
             o.update(name="My new name",description="my new description")
         """
-        return self.session.patch(self.uri, kwargs)
+        def updateCache(o):
+            if "result" in o and o["result"] == "ok":
+                self.cached_data.update(kwargs)
+            return o
+        return self.session.f(self.session.patch(self.uri, kwargs), updateCache)
 
     def delete(self, **kwargs):
         """
@@ -359,7 +365,7 @@ class APIObject:
             return other.uri == self.uri
         return False
 
-    def __getitem__(self,i):
+    def __getitem__(self, i):
         # Gets the item from the cache - assumes that the data is in the cache. If not, need to call .read() first
         return self.cached_data[i]
 
