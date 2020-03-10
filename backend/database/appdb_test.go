@@ -40,13 +40,22 @@ func TestAppObject(t *testing.T) {
 	require.NoError(t, err)
 
 	name2 := "derpy"
-	require.NoError(t, cdb.UpdateObject(&Object{
+	require.Error(t, cdb.UpdateObject(&Object{
 		Details: Details{
 			ID:   sid,
 			Name: &name2,
 		},
 		Meta: &JSONObject{
 			"schema": 4,
+		},
+	}))
+	require.NoError(t, cdb.UpdateObject(&Object{
+		Details: Details{
+			ID:   sid,
+			Name: &name2,
+		},
+		Meta: &JSONObject{
+			"actor": true,
 		},
 	}))
 

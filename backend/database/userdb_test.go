@@ -134,13 +134,22 @@ func TestUserObject(t *testing.T) {
 	require.NoError(t, err)
 
 	name2 := "derpy"
-	require.NoError(t, db.UpdateObject(&Object{
+	require.Error(t, db.UpdateObject(&Object{
 		Details: Details{
 			ID:   sid,
 			Name: &name2,
 		},
 		Meta: &JSONObject{
 			"schema": 4,
+		},
+	}))
+	require.NoError(t, db.UpdateObject(&Object{
+		Details: Details{
+			ID:   sid,
+			Name: &name2,
+		},
+		Meta: &JSONObject{
+			"actor": true,
 		},
 	}))
 	s, err := db.ReadObject(sid, nil)

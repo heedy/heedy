@@ -228,7 +228,7 @@ func TestAdminObject(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, db.UpdateObject(&Object{
+	require.Error(t, db.UpdateObject(&Object{
 		Details: Details{
 			ID:   sid,
 			Name: &badname,
@@ -242,6 +242,20 @@ func TestAdminObject(t *testing.T) {
 			Scope: []string{"myscope1", "myscope2"},
 		},
 	}))
+	require.NoError(t, db.UpdateObject(&Object{
+		Details: Details{
+			ID:   sid,
+			Name: &badname,
+		},
+
+		Meta: &JSONObject{
+			"actor": true,
+		},
+
+		OwnerScope: &ScopeArray{
+			Scope: []string{"myscope1", "myscope2"},
+		},
+	}))
 
 	s, err := db.ReadObject(sid, nil)
 	require.NoError(t, err)
@@ -249,7 +263,7 @@ func TestAdminObject(t *testing.T) {
 	require.NotNil(t, s.OwnerScope)
 	require.NotNil(t, s.Meta)
 	require.Equal(t, len((*s.OwnerScope).Scope), 2)
-	require.Equal(t, (*s.Meta)["schema"], float64(4))
+	require.Equal(t, (*s.Meta)["actor"], true)
 
 	sl, err := db.ListObjects(nil)
 	require.NoError(t, err)
