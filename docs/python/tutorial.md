@@ -88,9 +88,24 @@ When data is appended to the timeseries, it is given the current unix timestamp.
 
 Currently, the timeseries can accept any type of data. We want it to only accept numbers.
 This can be achieved by giving it a [JSON Schema](https://json-schema.org/).
+Since the schema property is specific to objects of the timeseries type, it is located in the object metadata. You can set elements of the metadata by creating an object which will overwrite the desired properties:
 
 ```python
->>> ts.meta ={"schema": {"type":"number"}}
+>>> ts.meta = {"schema": {"type":"number"}}
+>>> ts
+Timeseries{'access': '*',
+ ...
+ 'meta': {'actor': False, 'schema': {"type":"number"}, 'subtype': ''},
+ ...}
+>>> ts.append("I am a string")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  ...
+  File "/usr/lib/python3.8/site-packages/heedy/base.py", line 127, in handleResponse
+    raise HeedyError(msg)
+heedy.base.HeedyError: bad_query: The data failed schema validation
+>>> ts.append(3.14)
+{'result': 'ok'}
 ```
 
 ## Hybrid Asyncio

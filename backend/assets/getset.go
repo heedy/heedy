@@ -75,6 +75,17 @@ func (c *Configuration) ValidateObjectMeta(objecttype string, meta *map[string]i
 	return s.ValidateMeta(meta)
 }
 
+// ValidateObjectMetaUpdate makes sure that objects have valid metadata update queries
+func (c *Configuration) ValidateObjectMetaUpdate(objecttype string, meta map[string]interface{}) error {
+	c.RLock()
+	defer c.RUnlock()
+	s, ok := c.ObjectTypes[objecttype]
+	if !ok {
+		return fmt.Errorf("bad_request: invalid object type '%s'", objecttype)
+	}
+	return s.ValidateMetaUpdate(meta)
+}
+
 // ValidateObjectMetaWithDefaults validates the object, additionally setting required values to defaults
 func (c *Configuration) ValidateObjectMetaWithDefaults(objecttype string, meta map[string]interface{}) error {
 	c.RLock()

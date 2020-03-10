@@ -67,10 +67,13 @@ html_theme = 'alabaster'
 
 html_theme_options = {
     'logo': 'logo.png',
+    'logo_name': True,
+    'logo_text_align': "center",
+    'fixed_sidebar': True,
     'github_user': 'heedy',
     'github_repo': 'heedy',
     'github_banner': True,
-    'github_button': True,
+    'github_button': False,
     'show_powered_by': False,
 }
 

@@ -763,17 +763,68 @@ func objectCreateQuery(c *assets.Configuration, s *Object) (string, []interface{
 
 // The object s is assumed to have the underlying object type added in.
 func objectUpdateQuery(c *assets.Configuration, s *Object, objectType string) (string, []interface{}, error) {
+	metav := s.Meta
+	if metav != nil {
+		err := c.ValidateObjectMetaUpdate(objectType, *metav)
+		if err != nil {
+			return "", nil, err
+		}
+		// Stop the meta from being extracted from the object, since the update query
+		// needs to handle it manually
+		s.Meta = nil
+	}
 	sColumns, sValues, err := extractObject(s)
 	if s.Type != nil {
 		return "", nil, ErrBadQuery("Modifying a object type is not supported")
 	}
-	if len(sValues) == 0 {
-		return "", nil, ErrNoUpdate
+
+	if metav == nil {
+		if len(sValues) == 0 {
+			return "", nil, ErrNoUpdate
+		}
+		return strings.Join(sColumns, "=?,") + "=?", sValues, err
 	}
-	if s.Meta != nil && err != nil {
-		err = c.ValidateObjectMeta(*s.Type, (*map[string]interface{})(s.Meta))
+
+	// Handle meta values
+	deletes := make([]interface{}, 0)
+	adds := make([]interface{}, 0)
+	for k, v := range *metav {
+		if v == nil {
+			deletes = append(deletes, "$."+k)
+		} else {
+			jsonvalue, err := json.Marshal(v)
+			if err != nil {
+				return "", nil, err
+			}
+			adds = append(adds, "$."+k, string(jsonvalue))
+		}
 	}
-	return strings.Join(sColumns, "=?,") + "=?", sValues, err
+	if len(deletes) == 0 && len(adds) == 0 {
+		if len(sValues) == 0 {
+			return "", nil, ErrNoUpdate
+		}
+		return strings.Join(sColumns, "=?,") + "=?", sValues, err
+	}
+
+	metaq := "json(meta)"
+	if len(deletes) > 0 {
+		sValues = append(sValues, deletes...)
+		metaq = fmt.Sprintf("json_remove(%s,%s)", metaq, QQ(len(deletes)))
+	}
+	if len(adds) > 0 {
+		sValues = append(sValues, adds...)
+		metaq = "json_set(" + metaq
+		// Add the right number of qqs
+		for i := 0; i < len(adds)/2; i++ {
+			metaq += ",?,json(?)"
+		}
+		metaq += ")"
+	}
+	if len(sColumns) == 0 {
+		return "meta=" + metaq, sValues, err
+	}
+
+	return strings.Join(sColumns, "=?,") + "=?, meta=" + metaq, sValues, err
 }
 
 func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {

@@ -11,7 +11,7 @@ from . import registry
 
 
 class Object(APIObject):
-    props = {"name", "description", "icon", "access"
+    props = {"name", "description", "icon", "access",
              "meta", "tags", "key", "owner_scope"}
 
     def __init__(self, objectData: Dict, session: Session):
@@ -46,6 +46,31 @@ class Object(APIObject):
         if self.cached_data["app"] is None:
             return None
         return apps.App(self.cached_data["app"], session=self.session)
+
+    def update(self, **kwargs):
+        """
+        Updates the given data::
+
+            o.update(name="My new name",description="my new description")
+        """
+
+        meta = self.cached_data.get("meta", None)
+
+        def updateMeta(o):
+            if "result" in o and o["result"] == "ok" and "meta" in kwargs:
+                if meta is None:
+                    self.cached_data.pop("meta", 0)
+                else:
+                    # We have values of meta, so set them correctly
+                    kwm = kwargs["meta"]
+                    for key in kwm:
+                        if kwm[key] is None:
+                            meta.pop(key, 0)
+                        else:
+                            meta[key] = kwm[key]
+                    self.cached_data["meta"] = meta
+            return o
+        return self.session.f(super().update(**kwargs), updateMeta)
 
 
 class Objects(APIList):

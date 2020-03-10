@@ -154,7 +154,7 @@ func (s *ObjectType) ValidateMeta(meta *map[string]interface{}) (err error) {
 			s.metaSchema, err = NewSchema(make(map[string]interface{}))
 		}
 		if err != nil {
-			return
+			return err
 		}
 	}
 	if meta != nil {
@@ -179,6 +179,21 @@ func (s *ObjectType) ValidateMetaWithDefaults(meta map[string]interface{}) (err 
 		}
 	}
 	return s.metaSchema.ValidateWithDefaults(meta)
+}
+
+// ValidateMetaUpdate validates an update query
+func (s *ObjectType) ValidateMetaUpdate(meta map[string]interface{}) (err error) {
+	if s.metaSchema == nil {
+		if s.Meta != nil {
+			s.metaSchema, err = NewSchema(*s.Meta)
+		} else {
+			s.metaSchema, err = NewSchema(make(map[string]interface{}))
+		}
+		if err != nil {
+			return
+		}
+	}
+	return s.metaSchema.ValidateUpdate(meta)
 }
 
 type RunType struct {

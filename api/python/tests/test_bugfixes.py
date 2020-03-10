@@ -14,3 +14,14 @@ def test_appscope():
     assert o.read()["key"] == "lol"
     o.key = "hiya"
     assert o.read()["key"] == "hiya"
+
+
+def test_metamod():
+    a = App("testkey")
+    o = a.objects.create("myobj", otype="timeseries")
+    o.meta = {"schema": {"type": "number"}}
+    assert o.cached_data["meta"]["schema"]["type"] == "number"
+    assert o.cached_data["meta"]["actor"] == False
+
+    assert o.meta["schema"]["type"] == "number"
+    assert o.meta["actor"] == False

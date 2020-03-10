@@ -340,6 +340,7 @@ class APIObject:
 
             o.update(name="My new name",description="my new description")
         """
+
         def updateCache(o):
             if "result" in o and o["result"] == "ok":
                 self.cached_data.update(kwargs)
