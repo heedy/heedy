@@ -63,7 +63,7 @@ export default {
   },
   methods: {
     restart: async function() {
-      let res = await this.$app.api("GET", "api/server/restart");
+      let res = await this.$frontend.api("GET", "api/server/restart");
 
       this.restarting = true;
 
@@ -72,14 +72,14 @@ export default {
       }
       await sleep(1000);
 
-      res = await this.$app.api("GET", "api/server/version");
+      res = await this.$frontend.api("GET", "api/server/version");
       while (!res.response.ok) {
         await sleep(1000);
-        res = await this.$app.api("GET", "api/server/version");
+        res = await this.$frontend.api("GET", "api/server/version");
       }
 
       // Now check if the update was successful
-      res = await this.$app.api("GET", "api/server/updates/status");
+      res = await this.$frontend.api("GET", "api/server/updates/status");
       this.restarting = false;
       if (!res.response.ok) {
         console.log("Update error: ", res.data.error_description);

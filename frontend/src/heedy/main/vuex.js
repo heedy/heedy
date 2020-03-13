@@ -1,6 +1,6 @@
 import Vue from "../../dist/vue.mjs";
 import moment from "../../dist/moment.mjs";
-import api from "../../api.mjs";
+import api from "../../rest.mjs";
 
 export default {
   state: {

@@ -1,4 +1,4 @@
-import api from "../../api.mjs";
+import api from "../../rest.mjs";
 import { cleanDT } from "../analysis.mjs";
 
 import QueryManager from "./querymanager.js";

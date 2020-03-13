@@ -7,4 +7,6 @@ Heedy plugins allow extending heedy. Each plugin has its own `heedy.conf`, defin
     :maxdepth: 2
 
     examples/index
+    frontend/index
+    backend/index
 ```

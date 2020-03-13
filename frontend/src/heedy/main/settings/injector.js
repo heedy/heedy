@@ -1,9 +1,13 @@
 var settingsPageMap = {};
 var settingsRoutes = [];
 
-class Settings {
-    constructor(app) {
-        this.store = app.store;
+class SettingsInjector {
+    /**
+     * Handle settings
+     * @param {*} frontend 
+     */
+    constructor(frontend) {
+        this.store = frontend.store;
     }
     addPage(p) {
         settingsPageMap[p.path] = p;
@@ -22,4 +26,4 @@ class Settings {
 export {
     settingsRoutes
 };
-export default Settings;
+export default SettingsInjector;

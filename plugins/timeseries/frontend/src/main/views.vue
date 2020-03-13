@@ -51,12 +51,12 @@ export default {
     },
     subscribe(q) {
       if (this.subscribed) {
-        this.$app.timeseries.unsubscribeQuery(this.object.id, "mainviews");
+        this.$frontend.timeseries.unsubscribeQuery(this.object.id, "mainviews");
       }
       this.subscribed = true;
       this.message = "Querying Data...";
       this.datavis = [];
-      this.$app.timeseries.subscribeQuery(this.object, "mainviews", q, dv => {
+      this.$frontend.timeseries.subscribeQuery(this.object, "mainviews", q, dv => {
         if (dv.query_status !== undefined) {
           // Special-case query status messages
           this.message = dv.query_status.data;
@@ -77,7 +77,7 @@ export default {
     object(n, o) {
       if (n.id != o.id) {
         if (this.subscribed) {
-          this.$app.timeseries.unsubscribeQuery(o.id, "mainviews");
+          this.$frontend.timeseries.unsubscribeQuery(o.id, "mainviews");
           this.subscribed = false;
           this.subscribe(this.$route.query);
         }
@@ -91,7 +91,7 @@ export default {
     }
   },
   beforeDestroy() {
-    this.$app.timeseries.unsubscribeQuery(this.object.id, "mainviews");
+    this.$frontend.timeseries.unsubscribeQuery(this.object.id, "mainviews");
   }
 };
 </script>

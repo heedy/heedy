@@ -1,8 +1,12 @@
 var userRoutesMap = {};
 var userRoutes = [];
-class User {
-    constructor(app) {
-        this.store = app.store;
+class UserInjector {
+    /**
+     * Handle users
+     * @param {*} frontend 
+     */
+    constructor(frontend) {
+        this.store = frontend.store;
 
         // queryUser is called on user update and delete events.
         // it checks if the store is keeping track of the user,
@@ -20,14 +24,14 @@ class User {
         // TODO: This needs to be fixed in the server: right now wildcard subscription
         // to users fails, but it should just subscribe to public users.
         // It should also succeed if not logged in (public users only)
-        if (app.info.user != null) {
-            app.websocket.subscribe("user_update", {
+        if (frontend.info.user != null) {
+            frontend.websocket.subscribe("user_update", {
                 event: "user_update",
-                user: app.info.user.username //"*"
+                user: frontend.info.user.username //"*"
             }, queryUser);
-            app.websocket.subscribe("user_delete", {
+            frontend.websocket.subscribe("user_delete", {
                 event: "user_delete",
-                user: app.info.user.username //"*"
+                user: frontend.info.user.username //"*"
             }, (e) => {
                 let username = e.user;
                 if (this.store.state.heedy.users[username] !== undefined) {
@@ -65,4 +69,4 @@ class User {
 export {
     userRoutes
 }
-export default User;
+export default UserInjector;

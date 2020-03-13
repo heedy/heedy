@@ -1,24 +1,65 @@
 import WorkerInjector from "./worker_injector.js";
 import WebsocketInjector from "./websocket.js";
 
+class Frontend {
 
-class App {
+    /**
+     * Frontend is the main stuff
+     */
     constructor(Vue, appinfo, store) {
-        // Allows registration of components
+        /**
+         * The Vue instance. This is mainly to be used to register components and plugins.
+         * 
+         * @example
+         * frontend.vue.use(MyVuePlugin);
+         * frontend.vue.component("mycomponent",MyComponent);
+         */
         this.vue = Vue;
-        // Allows setting stuff in the store
+
+        /**
+         * The vuex store
+         */
         this.store = store;
 
+        /**
+         * This property contains information passed in from the server:
+         * @example
+         * {
+         *    "hi": "ho"
+         * }
+         */
         this.info = appinfo;
 
+        /**
+         * The vue component to use as the main theme for the frontend. The theme
+         * renders the main menu, and holds the router that shows individual pages.
+         * @example
+         * frontend.theme = MyThemeComponent
+         */
         this.theme = null;
-        this.injected = {};
-        this.routes = {};
+
+        /**
+         * The vue component to display when linked to a route that was not registered.
+         * For example, the notFound component will be displayed when the path `#/blahblah`
+         * is used.
+         * @example
+         * frontend.notFound = MyNotFoundComponent
+         */
         this.notFound = null;
 
-
+        /**
+         * The worker is an instance of the Worker class
+         */
         this.worker = new WorkerInjector(appinfo);
         this.websocket = new WebsocketInjector(this);
+
+
+        this.injected = {};
+        this.routes = {};
+
+
+
+
     }
 
     /**
@@ -58,4 +99,4 @@ class App {
 
 }
 
-export default App;
+export default Frontend;

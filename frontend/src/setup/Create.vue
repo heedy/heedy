@@ -172,7 +172,7 @@
 </template>
 
 <script>
-import api from "../api.mjs";
+import api from "../rest.mjs";
 
 let raw_url = window.location.href.split("/setup/")[0];
 

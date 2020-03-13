@@ -74,7 +74,7 @@ export default {
       });
 
       if (Object.keys(this.modified).length > 0) {
-        let result = await this.$app.api(
+        let result = await this.$frontend.api(
           "PATCH",
           `api/apps/${this.app.id}`,
           this.modified
@@ -100,7 +100,7 @@ export default {
           `Are you sure you want to delete '${this.app.name}'? You can disable it instead, which will keep any data this app has gathered.`
         )
       ) {
-        let res = await this.$app.api(
+        let res = await this.$frontend.api(
           "DELETE",
           `/api/apps/${this.app.id}`
         );
@@ -119,7 +119,7 @@ export default {
         return this.modified.description || this.app.description;
       },
       set(v) {
-        this.$app.vue.set(this.modified, "description", v);
+        this.$frontend.vue.set(this.modified, "description", v);
       }
     },
     name: {
@@ -127,7 +127,7 @@ export default {
         return this.modified["name"] || this.app.name;
       },
       set(v) {
-        this.$app.vue.set(this.modified, "name", v);
+        this.$frontend.vue.set(this.modified, "name", v);
       }
     },
     scope: {
@@ -135,7 +135,7 @@ export default {
         return this.modified["scope"] || this.app.scope;
       },
       set(v) {
-        this.$app.vue.set(this.modified, "scope", v);
+        this.$frontend.vue.set(this.modified, "scope", v);
       }
     },
     enabled: {
@@ -146,7 +146,7 @@ export default {
         return this.modified["enabled"];
       },
       set(v) {
-        this.$app.vue.set(this.modified, "enabled", v);
+        this.$frontend.vue.set(this.modified, "enabled", v);
       }
     }
   }

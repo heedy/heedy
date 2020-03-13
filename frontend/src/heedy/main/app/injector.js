@@ -1,9 +1,13 @@
 var appRoutesMap = {};
 var appRoutes = [];
 
-class App {
-    constructor(app) {
-        this.store = app.store;
+class AppInjector {
+    /**
+     * Handle apps
+     * @param {*} frontend 
+     */
+    constructor(frontend) {
+        this.store = frontend.store;
 
         // queryApp is called each time an event happens involving a app.
         // It is used to keep the apps up-to-date
@@ -19,18 +23,18 @@ class App {
 
         // Subscribe to all app events, so that the app list
         // can be kept up-to-date
-        if (app.info.user != null) {
-            app.websocket.subscribe("app_create", {
+        if (frontend.info.user != null) {
+            frontend.websocket.subscribe("app_create", {
                 event: "app_create",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, queryApp);
-            app.websocket.subscribe("app_update", {
+            frontend.websocket.subscribe("app_update", {
                 event: "app_update",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, queryApp);
-            app.websocket.subscribe("app_delete", {
+            frontend.websocket.subscribe("app_delete", {
                 event: "app_delete",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, (e) => {
                 if (this.store.state.heedy.apps !== null) {
                     // Instead of querying the deleted app, perform the delete explicitly
@@ -65,4 +69,4 @@ class App {
 export {
     appRoutes
 }
-export default App;
+export default AppInjector;

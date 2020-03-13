@@ -95,7 +95,7 @@ export default {
       console.log("Update app settings", this.app.id);
 
       if (Object.keys(this.modified).length > 0) {
-        let result = await this.$app.api(
+        let result = await this.$frontend.api(
           "PATCH",
           `api/apps/${this.app.id}`,
           modified

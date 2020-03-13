@@ -1,6 +1,10 @@
 import worker from "../worker.mjs"
 
 class WorkerInjector {
+    /**
+     * The worker
+     * @param {*} appinfo 
+     */
     constructor(appinfo) {
         this.handlers = {};
 

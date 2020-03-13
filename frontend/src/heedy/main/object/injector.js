@@ -2,8 +2,12 @@ var objectRoutesMap = {};
 var objectRoutes = [];
 
 class ObjectInjector {
-    constructor(app) {
-        this.store = app.store;
+    /**
+     * Deals with objects
+     * @param {*} frontend 
+     */
+    constructor(frontend) {
+        this.store = frontend.store;
 
         let queryObject = (e) => {
             if (this.store.state.heedy.objects[e.object] !== undefined || this.store.state.heedy.userObjects[e.user] !== undefined || e.app !== undefined && this.store.state.heedy.appObjects[e.app] !== undefined) {
@@ -14,18 +18,18 @@ class ObjectInjector {
         }
         // Subscribe to all object events, so that the object list
         // can be kept up-to-date
-        if (app.info.user != null) {
-            app.websocket.subscribe("object_create", {
+        if (frontend.info.user != null) {
+            frontend.websocket.subscribe("object_create", {
                 event: "object_create",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, queryObject);
-            app.websocket.subscribe("object_update", {
+            frontend.websocket.subscribe("object_update", {
                 event: "object_update",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, queryObject);
-            app.websocket.subscribe("object_delete", {
+            frontend.websocket.subscribe("object_delete", {
                 event: "object_delete",
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, (e) => {
                 if (this.store.state.heedy.objects[e.object] !== undefined || this.store.state.heedy.userObjects[e.user] !== undefined || e.app !== undefined && this.store.state.heedy.appObjects[e.app] !== undefined) {
                     this.store.commit("setObject", {

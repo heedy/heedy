@@ -6,29 +6,29 @@ import AppComponent from "./main/app_component.vue";
 import ObjectComponent from "./main/object_component.vue";
 import MenuIcon from "./main/menu_icon.vue";
 
-function setup(app) {
+function setup(frontend) {
     Vue.component("h-notification", Notification)
 
-    if (app.info.user != null) {
-        app.store.registerModule("notifications", vuexModule);
+    if (frontend.info.user != null) {
+        frontend.store.registerModule("notifications", vuexModule);
 
-        app.app.addComponent({
+        frontend.apps.addComponent({
             key: "notifications",
             weight: 0.1,
             component: AppComponent
         });
-        app.object.addComponent({
+        frontend.objects.addComponent({
             key: "notifications",
             weight: 0.1,
             component: ObjectComponent
         });
 
-        app.addRoute({
+        frontend.addRoute({
             path: "/notifications",
             component: NotificationsPage
         });
 
-        app.addMenuItem({
+        frontend.addMenuItem({
             key: "notifications",
             text: "Notifications",
             component: MenuIcon,
@@ -38,9 +38,9 @@ function setup(app) {
 
         let notifier = (e) => {
             if (e.event.includes("delete")) {
-                app.store.commit("deleteNotification", e.data);
+                frontend.store.commit("deleteNotification", e.data);
             } else {
-                app.store.commit("setNotification", e.data);
+                frontend.store.commit("setNotification", e.data);
             }
         }
 
@@ -49,13 +49,13 @@ function setup(app) {
         types.forEach((t) => etypes.forEach((et => {
 
             let etype = `${t}_notification_${et}`;
-            app.websocket.subscribe(etype, {
+            frontend.websocket.subscribe(etype, {
                 event: etype,
-                user: app.info.user.username
+                user: frontend.info.user.username
             }, notifier);
         })));
 
-        app.store.dispatch("readGlobalNotifications");
+        frontend.store.dispatch("readGlobalNotifications");
     }
 
 }

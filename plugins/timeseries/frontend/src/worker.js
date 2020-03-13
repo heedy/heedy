@@ -1,4 +1,4 @@
-import api from "../api.mjs";
+import api from "../rest.mjs";
 
 import TimeseriesInjector from "./worker/injector.js";
 

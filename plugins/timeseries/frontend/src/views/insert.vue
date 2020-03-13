@@ -65,7 +65,7 @@ export default {
       this.loading = true;
 
       console.log("Inserting datapoint:", this.modified.data);
-      let res = await this.$app.api(
+      let res = await this.$frontend.api(
         "POST",
         `api/objects/${this.data.id}/timeseries`,
         [{ t: moment().unix(), d: this.modified.data }]

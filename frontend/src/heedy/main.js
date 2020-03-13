@@ -52,73 +52,73 @@ import registerCoreComponents, {
     NotFound
 } from "./main/components.js";
 
-function setup(app) {
-    app.vue.use(VueCodemirror);
-    app.vue.component('draggable', Draggable);
+function setup(frontend) {
+    frontend.vue.use(VueCodemirror);
+    frontend.vue.component('draggable', Draggable);
 
-    app.theme = Theme;
-    app.notFound = NotFound
+    frontend.theme = Theme;
+    frontend.notFound = NotFound
 
     // Add the current user to the vuex module
-    if (app.info.user != null) {
-        vuexModule.state.users[app.info.user.username] = app.info.user;
+    if (frontend.info.user != null) {
+        vuexModule.state.users[frontend.info.user.username] = frontend.info.user;
     }
-    app.store.registerModule("heedy", vuexModule);
+    frontend.store.registerModule("heedy", vuexModule);
 
     // Adds the components that are used throughout the UI
-    registerCoreComponents(app.vue);
-    app.vue.component("h-object-list", ObjectList);
+    registerCoreComponents(frontend.vue);
+    frontend.vue.component("h-object-list", ObjectList);
 
-    // Inject the user/app/object handlers into the app
-    app.inject("user", new UserInjector(app));
-    app.inject("app", new AppInjector(app));
-    app.inject("object", new ObjectInjector(app));
-    app.inject("settings", new SettingsInjector(app));
+    // Inject the user/app/object handlers into the frontend
+    frontend.inject("users", new UserInjector(frontend));
+    frontend.inject("apps", new AppInjector(frontend));
+    frontend.inject("objects", new ObjectInjector(frontend));
+    frontend.inject("settings", new SettingsInjector(frontend));
 
 
 
-    app.user.addComponent({
+    frontend.users.addComponent({
         key: "header",
         weight: 0,
         component: UserHeader
     });
-    app.user.addComponent({
+    frontend.users.addComponent({
         key: "objects",
         weight: 1,
         component: UserObjects
     });
-    app.user.addRoute({
+    frontend.users.addRoute({
         path: "/",
         component: User
     });
 
 
-    if (app.info.user != null) {
+    if (frontend.info.user != null) {
         // Pages to set up when user is logged in
-        if (app.info.admin) {
-            app.addMenuItem({
+        if (frontend.info.admin) {
+            frontend.addMenuItem({
                 key: "heedySettings",
                 text: "Settings",
                 icon: "settings",
                 route: "/settings/plugins",
                 location: "secondary"
             });
-            app.addRoute({
+            frontend.addRoute({
                 path: "/settings",
                 component: SettingsPage,
                 children: settingsRoutes
             });
-            app.settings.addPage({
+            frontend.settings.addPage({
                 path: "users",
                 component: SettingsUsers,
                 title: "Users"
             });
-            app.settings.addPage({
+            frontend.settings.addPage({
                 path: "server",
                 component: SettingsServer,
                 title: "Server"
             });
-            app.settings.addPage({
+            frontend.settings.addPage({
                 path: "plugins",
                 component: SettingsPlugins,
                 title: "Plugins"
@@ -127,45 +127,45 @@ function setup(app) {
 
 
 
-        app.addRoute({
+        frontend.addRoute({
             path: "/logout",
             component: Logout
         });
 
 
-        app.addRoute({
+        frontend.addRoute({
             path: "/apps",
             component: Apps
         });
-        app.addRoute({
+        frontend.addRoute({
             path: "/apps/:appid",
             props: true,
             component: AppRouter,
             children: appRoutes
         });
 
-        app.app.addRoute({
+        frontend.apps.addRoute({
             path: "",
             component: App
         });
 
-        app.app.addRoute({
+        frontend.apps.addRoute({
             path: "update",
             component: AppUpdate
         });
-        app.app.addRoute({
+        frontend.apps.addRoute({
             path: "settings",
             component: AppSettings
         });
 
 
         // Add the default app UI
-        app.app.addComponent({
+        frontend.apps.addComponent({
             key: "header",
             weight: 0,
             component: AppHeader
         });
-        app.app.addComponent({
+        frontend.apps.addComponent({
             key: "objects",
             weight: 1,
             component: AppObjects
@@ -174,17 +174,17 @@ function setup(app) {
 
 
 
-        app.addRoute({
+        frontend.addRoute({
             path: "/create/app",
             component: AppCreate
         });
 
-        app.addRoute({
+        frontend.addRoute({
             path: "/",
-            redirect: `/users/${app.info.user.username}`
+            redirect: `/users/${frontend.info.user.username}`
         });
 
-        app.addMenuItem({
+        frontend.addMenuItem({
             key: "apps",
             text: "Apps",
             icon: "settings_input_component",
@@ -194,16 +194,16 @@ function setup(app) {
 
     } else {
         // Pages to set up for public site visitors
-        app.addRoute({
+        frontend.addRoute({
             path: "/",
             component: PublicHome
         });
-        app.addRoute({
+        frontend.addRoute({
             path: "/login",
             component: Login
         });
 
-        app.addMenuItem({
+        frontend.addMenuItem({
             key: "heedyHome",
             text: "Home",
             icon: "home",
@@ -214,26 +214,26 @@ function setup(app) {
 
     // Pages that are active in all situations
 
-    app.addRoute({
+    frontend.addRoute({
         path: "/users/:username",
         props: true,
         component: UserRouter,
         children: userRoutes
     });
 
-    app.addRoute({
+    frontend.addRoute({
         path: "/objects/:objectid",
         props: true,
         component: ObjectRouter,
         children: objectRoutes
     });
 
-    app.object.addRoute({
+    frontend.objects.addRoute({
         path: "/",
         component: ObjectComponent
     })
 
-    app.object.addComponent({
+    frontend.objects.addComponent({
         key: "header",
         weight: 0,
         component: ObjectHeader

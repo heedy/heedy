@@ -230,7 +230,7 @@ export default {
     },
     update: async function() {
       console.log(this.active);
-      let res = await this.$app.api("PATCH", "api/server/updates/config", {
+      let res = await this.$frontend.api("PATCH", "api/server/updates/config", {
         plugins: this.active
       });
       if (!res.response.ok) {
@@ -242,7 +242,7 @@ export default {
       this.reload();
     },
     reload: async function() {
-      this.$app.api("GET", "api/server/updates/plugins").then(res => {
+      this.$frontend.api("GET", "api/server/updates/plugins").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.plugins = {};
@@ -275,7 +275,7 @@ export default {
 
         this.plugins = plugineer;
       });
-      this.$app.api("GET", "api/server/updates/config").then(res => {
+      this.$frontend.api("GET", "api/server/updates/config").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.active = [];

@@ -8,9 +8,15 @@ export function urlify(obj) {
   return str.join("&");
 }
 
-// This function allows querying the API explicitly.
-// If the method is get, data is urlencoded.
-// It explicitly returns the resulting object, or throws the error given
+/**
+ * This function allows querying the API explicitly. If the method is get, data is urlencoded.
+ * It explicitly returns the resulting object, or throws the error given
+ * @param {*} method - HTTP verb to use (GET/POST/...)
+ * @param {*} uri - uri to query (api/heedy/...)
+ * @param {*} data - optional object to send as a json payload
+ * @param {*} params - params to set as url params
+ * @param {*} json - whether data should be sent as standard POST url encoded or as json
+ */
 async function api(method, uri, data = null, params = null, json = true) {
   let options = {
     method: method,

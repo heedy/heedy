@@ -4,10 +4,10 @@ import Vue, {
   Vuetify
 } from "./dist/vue.mjs";
 
-import api from "./api.js";
+import api from "./rest.mjs";
 
-import App from "./app/app.js";
-import vuexStore from "./app/vuex.js";
+import Frontend from "./main/frontend.js";
+import vuexStore from "./main/vuex.js";
 
 async function setup(appinfo) {
   console.log("Setting up...");
@@ -18,14 +18,14 @@ async function setup(appinfo) {
   // Prepare the vuex store
   const store = new Vuex.Store(vuexStore(appinfo));
 
-  let app = new App(Vue, appinfo, store);
+  let frontend = new Frontend(Vue, appinfo, store);
 
-  app.api = api;
+  frontend.api = api;
 
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);
     try {
-      (await plugins[i]).default(app);
+      (await plugins[i]).default(frontend);
     } catch (err) {
       console.error(err);
       alert(`Failed to load plugin '${appinfo.frontend[i].name}': ${err.message}`);
@@ -34,19 +34,19 @@ async function setup(appinfo) {
   }
 
   // Now go through the injected modules to run their onInit
-  for (let key in app.injected) {
+  for (let key in frontend.injected) {
     // skip loop if the property is from prototype
-    if (!app.injected.hasOwnProperty(key)) continue;
-    if (app.injected[key].$onInit !== undefined) {
-      app.injected[key].$onInit();
+    if (!frontend.injected.hasOwnProperty(key)) continue;
+    if (frontend.injected[key].$onInit !== undefined) {
+      frontend.injected[key].$onInit();
     }
   }
 
-  let routes = Object.values(app.routes);
-  if (app.notFound !== null) {
+  let routes = Object.values(frontend.routes);
+  if (frontend.notFound !== null) {
     routes.push({
       path: "*",
-      component: app.notFound
+      component: frontend.notFound
     })
   }
 
@@ -74,8 +74,8 @@ async function setup(appinfo) {
 
   Vue.mixin({
     computed: {
-      $app() {
-        return app;
+      $frontend() {
+        return frontend;
       }
     }
   });
@@ -84,13 +84,13 @@ async function setup(appinfo) {
     router: router,
     store: store,
     vuetify: vuetify,
-    render: h => h(app.theme)
+    render: h => h(frontend.theme)
   });
 
   // Mount it
-  vue.$mount("#app");
+  vue.$mount("#frontend");
 
-  return app;
+  return frontend;
 }
 
 export default setup;

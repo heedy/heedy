@@ -109,7 +109,7 @@
 </template>
 
 <script>
-import api from "../../../api.mjs";
+import api from "../../../rest.mjs";
 
 export default {
   data: () => ({

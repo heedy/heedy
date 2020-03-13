@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import api from "../../../api.mjs";
+import api from "../../../rest.mjs";
 import Moment from "../../../dist/moment.mjs";
 export default {
   data: () => ({
