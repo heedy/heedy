@@ -41,9 +41,9 @@ function setup(frontend) {
 export default setup;
 ```
 
-### Extra Functionality
+### Injected Functionality
 
-Each heedy plugin can attach additional functionality to the frontend object. In a bare heedy install, there are six such registered classes extending the frontend's functionality:
+Each heedy plugin can attach additional functionality to the frontend object (i.e. inject their own objects into the frontend). In a bare heedy install, the following registered classes extend the frontend's functionality:
 
 ```eval_rst
 .. toctree::
