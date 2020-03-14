@@ -42,9 +42,9 @@ func WriteConfig(filename string, c *Configuration) error {
 			plist = append(plist, cty.StringVal((*c.ActivePlugins)[i]))
 		}
 		if len(plist) > 0 {
-			body.SetAttributeValue("plugins", cty.ListVal(plist))
+			body.SetAttributeValue("active_plugins", cty.ListVal(plist))
 		} else {
-			body.SetAttributeValue("plugins", cty.ListValEmpty(cty.String))
+			body.SetAttributeValue("active_plugins", cty.ListValEmpty(cty.String))
 		}
 	}
 	if c.AdminUsers != nil {

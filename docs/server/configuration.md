@@ -6,10 +6,11 @@ so if the server fails to restart for any reason, any changes you made will be a
 
 ## Installing Plugins
 
-You can install a plugin using the web UI by uploading a zip file containing the plugin folder. Remember to enable the plugin by clicking its checkbox once it is uploaded!
+You can install a plugin using the web UI by uploading a zip file containing the plugin folder.
 ![Plugin Upload UI](./plugin_upload.png)
 
-You will be prompted to restart heedy to activate the plugin.
+You will be prompted to restart heedy to activate the plugin. 
+It is highly recommended that you check the box for a database backup whenever installing new plugins which might modify your database. That way, if there are issues, heedy can revert the entire update, including any changes to the database.
 
 ### Manually Installing Plugins
 
@@ -22,9 +23,9 @@ mkdir ./myheedy/plugins
 mv myplugin ./myheedy/plugins/
 ```
 
-You will then need to enable the plugin by modifying your heedy.conf `vim ./myheedy/heedy.conf` to add `myplugin` to the plugins array:
+You will then need to enable the plugin by modifying your heedy.conf `vim ./myheedy/heedy.conf` to add `myplugin` to the active plugins array:
 ```
-plugins = ["fitbit","notebook","myplugin"]
+active_plugins = ["fitbit","notebook","myplugin"]
 ```
 
 You will need to restart heedy for the changes to take effect.

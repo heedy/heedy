@@ -215,7 +215,7 @@ type Configuration struct {
 	URL            *string   `hcl:"url" json:"url,omitempty"`
 	Host           *string   `hcl:"host" json:"host,omitempty"`
 	Port           *uint16   `hcl:"port" json:"port,omitempty"`
-	ActivePlugins  *[]string `hcl:"plugins" json:"plugins,omitempty"`
+	ActivePlugins  *[]string `hcl:"active_plugins" json:"active_plugins,omitempty"`
 	AdminUsers     *[]string `hcl:"admin_users" json:"admin_users,omitempty"`
 	ForbiddenUsers *[]string `hcl:"forbidden_users" json:"forbidden_users,omitempty"`
 

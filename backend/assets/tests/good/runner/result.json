@@ -1,5 +1,5 @@
 {
-    "plugins": ["testy"],
+    "active_plugins": ["testy"],
     "runtype": {
         "myrunner": {
             "api": "builtin://ayy",

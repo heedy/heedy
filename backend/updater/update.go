@@ -55,7 +55,7 @@ func Update(configDir string) (bool, error) {
 	if err = os.MkdirAll(backupDir, os.ModePerm); err != nil {
 		return true, err
 	}
-	if o == nil || o.BackupData {
+	if o != nil && o.BackupData {
 		if err = BackupData(configDir, updateDir, backupDir); err != nil {
 			return true, err
 		}

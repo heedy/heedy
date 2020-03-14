@@ -1,5 +1,5 @@
 {
-    "plugins": ["yeet"],
+    "active_plugins": ["yeet"],
     "plugin": {
         "yeet": {
             "settings": {

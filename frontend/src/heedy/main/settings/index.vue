@@ -11,7 +11,7 @@
     <router-view></router-view>
     <v-flex v-if="hasUpdate>0">
       <div style="padding: 10px; padding-bottom: 0;">
-        <v-alert outlined type="warning" prominent border="left">
+        <v-alert outlined type="info" prominent border="left">
           <v-row align="center">
             <v-col class="grow">Heedy needs to restart to apply changes.</v-col>
             <v-col class="shrink" style="min-width: 190px;max-width: 100%;">
@@ -21,12 +21,12 @@
                 @change="setBackup"
                 dense
                 label="Backup Database"
-                color="warning"
+                color="info"
               ></v-checkbox>
             </v-col>
             <v-col class="shrink">
-              <v-btn color="error" style="width:100%" outlined @click="restart">Apply</v-btn>
-              <v-btn color="warning" style="width:100%" outlined @click="undoUpdates">Undo</v-btn>
+              <v-btn color="info" style="width:100%" outlined @click="restart">Apply</v-btn>
+              <v-btn color="info" style="width:100%" outlined @click="undoUpdates">Undo</v-btn>
             </v-col>
           </v-row>
         </v-alert>
@@ -77,7 +77,7 @@ export default {
     },
     hasBackup() {
       let o = this.$store.state.heedy.updates.options;
-      if (o == null) return true;
+      if (o == null) return false;
       return o.backup;
     }
   },

@@ -347,7 +347,7 @@ func UpdatePlugin(configDir string, zipFile string) error {
 	if opt != nil {
 		for i := range opt.DeletedPlugins {
 			if opt.DeletedPlugins[i] == pn {
-				logrus.Debug("Removing %s from delete list", pn)
+				logrus.Debugf("Removing %s from delete list", pn)
 				// The plugin to be deleted is actually the one just uploaded, so the upload
 				// cancels the deletion
 				if len(opt.DeletedPlugins) == 1 {

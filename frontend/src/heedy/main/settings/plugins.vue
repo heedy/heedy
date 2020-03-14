@@ -299,7 +299,7 @@ export default {
         "PATCH",
         "api/server/updates/config",
         {
-          plugins: this.active
+          active_plugins: this.active
         }
       );
       if (!res.response.ok) {
@@ -350,8 +350,8 @@ export default {
           this.active = [];
           return;
         }
-        console.log("active", res.data.plugins);
-        this.active = res.data.plugins;
+        console.log("active", res.data.active_plugins);
+        this.active = res.data.active_plugins;
       });
     },
     isActive(k) {
