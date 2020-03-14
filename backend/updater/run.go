@@ -14,12 +14,17 @@ type Options struct {
 	AddonConfig *assets.Configuration
 	Runner      func(a *assets.Assets) error
 	Revert      bool
+	Update      bool
 }
 
 func Run(o Options) error {
-	hadUpdate, err := Update(o.ConfigDir)
-	if err != nil {
-		return err
+	hadUpdate := false
+	if o.Update {
+		var err error
+		hadUpdate, err = Update(o.ConfigDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Check if the config directory contains a heedy executable
@@ -65,7 +70,7 @@ func Run(o Options) error {
 			return err
 		}
 
-		return RunHeedy(o.ConfigDir)
+		return StartHeedy(o.ConfigDir)
 	}
 
 	return err

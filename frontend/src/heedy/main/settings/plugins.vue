@@ -36,7 +36,16 @@
       <v-list>
         <v-list-item v-for="pi in pluginItems" :key="pi.name" two-line>
           <v-list-item-action>
-            <v-checkbox :input-value="isActive(pi.name)" @change="(v) => changeActive(pi.name,v)"></v-checkbox>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-checkbox
+                  v-on="on"
+                  :input-value="isActive(pi.name)"
+                  @change="(v) => changeActive(pi.name,v)"
+                ></v-checkbox>
+              </template>
+              <span>Enable/Disable Plugin</span>
+            </v-tooltip>
           </v-list-item-action>
 
           <v-list-item-content>
@@ -44,12 +53,24 @@
             <v-list-item-subtitle>{{ pi.description }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
-            <v-btn icon @click="() => showDetails(pi)">
-              <v-icon color="grey lighten-1">fas fa-info-circle</v-icon>
-            </v-btn>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-btn icon v-on="on" @click="() => showDetails(pi)">
+                  <v-icon color="grey">fas fa-info-circle</v-icon>
+                </v-btn>
+              </template>
+              <span>Plugin Info</span>
+            </v-tooltip>
           </v-list-item-action>
           <v-list-item-avatar>
-            <h-icon :image="pi.icon" :colorHash="pi.name"></h-icon>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-btn icon v-on="on" @click="() => deletePlugin(pi)">
+                  <v-icon color="grey">fas fa-trash</v-icon>
+                </v-btn>
+              </template>
+              <span>Delete Plugin</span>
+            </v-tooltip>
           </v-list-item-avatar>
         </v-list-item>
       </v-list>
@@ -75,6 +96,16 @@
                 :input-value="isActive(dvalue)"
                 @change="(v) => changeActive(dvalue,v)"
               ></v-checkbox>
+            </v-list-item-action>
+            <v-list-item-action v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on }">
+                  <v-btn icon v-on="on" @click="() => {dialog=false;deletePlugin(plugins[dvalue])}">
+                    <v-icon>fas fa-trash</v-icon>
+                  </v-btn>
+                </template>
+                <span>Delete Plugin</span>
+              </v-tooltip>
             </v-list-item-action>
           </v-list-item>
         </v-card-title>
@@ -131,7 +162,12 @@ export default {
   }),
   computed: {
     pluginItems() {
-      return Object.values(this.plugins);
+      let pvals = Object.values(this.plugins);
+      let o = this.$store.state.heedy.updates.options;
+      if (o == null || o.deleted == null) {
+        return pvals;
+      }
+      return pvals.filter(v => !o.deleted.includes(v.name));
     },
     getMD() {
       return md.render(this.plugins[this.dvalue].readme);
@@ -142,6 +178,35 @@ export default {
       this.dvalue = p.name;
       this.dialog = true;
       this.getReadme(p.name);
+    },
+    deletePlugin: async function(p) {
+      if (
+        confirm(
+          `Are you sure you want to delete plugin '${p.name}'? You can disable it instead.`
+        )
+      ) {
+        let o = this.$store.state.heedy.updates.options;
+        if (o == null) {
+          o = {
+            backup: true,
+            deleted: []
+          };
+        }
+        o = {
+          ...o,
+          deleted: [...o.deleted, p.name]
+        };
+        let res = await this.$frontend.rest(
+          "POST",
+          "api/server/updates/options",
+          o
+        );
+        if (!res.response.ok) {
+          console.log("Update error: ", res.data.error_description);
+          this.alert = res.data.error_description;
+        }
+        this.$store.dispatch("getUpdates");
+      }
     },
     changeActive(pname, v) {
       console.log(pname, v);
@@ -230,9 +295,13 @@ export default {
     },
     update: async function() {
       console.log(this.active);
-      let res = await this.$frontend.api("PATCH", "api/server/updates/config", {
-        plugins: this.active
-      });
+      let res = await this.$frontend.rest(
+        "PATCH",
+        "api/server/updates/config",
+        {
+          plugins: this.active
+        }
+      );
       if (!res.response.ok) {
         this.alert = res.data.error_description;
         return;
@@ -242,7 +311,7 @@ export default {
       this.reload();
     },
     reload: async function() {
-      this.$frontend.api("GET", "api/server/updates/plugins").then(res => {
+      this.$frontend.rest("GET", "api/server/updates/plugins").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.plugins = {};
@@ -275,7 +344,7 @@ export default {
 
         this.plugins = plugineer;
       });
-      this.$frontend.api("GET", "api/server/updates/config").then(res => {
+      this.$frontend.rest("GET", "api/server/updates/config").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.active = [];

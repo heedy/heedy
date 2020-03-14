@@ -25,7 +25,7 @@ func StartProcess(heedyPath string, args ...string) error {
 	return cmd.Process.Release()
 }
 
-func RunHeedy(configDir string, extraArgs ...string) error {
+func StartHeedy(configDir string, extraArgs ...string) error {
 	heedyPath, err := filepath.Abs(path.Join(configDir, "heedy"))
 	if err != nil {
 		return err
@@ -42,7 +42,20 @@ func RunHeedy(configDir string, extraArgs ...string) error {
 	// Set up the args
 	args := make([]string, 0, len(extraArgs)+len(os.Args)-1)
 	args = append(args, os.Args[1:]...)
-	args = append(args, extraArgs...)
+
+	// Only add the extraArgs that are not yet added
+	for _, ea := range extraArgs {
+		hadArg := false
+		for _, a := range args {
+			if a == ea {
+				hadArg = true
+				break
+			}
+		}
+		if !hadArg {
+			args = append(args, ea)
+		}
+	}
 
 	// Now replace whatever command was used with the run command
 	for i := range args {

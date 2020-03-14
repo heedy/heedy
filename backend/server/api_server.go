@@ -164,8 +164,18 @@ func GetUpdates(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
-	ui := updater.GetInfo(a.FolderPath)
-	rest.WriteJSON(w, r, ui, nil)
+	ui, err := updater.GetInfo(a.FolderPath)
+	rest.WriteJSON(w, r, ui, err)
+}
+
+func ClearUpdates(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	rest.WriteResult(w, r, updater.ClearUpdates(a.FolderPath))
 }
 
 func GetConfigFile(w http.ResponseWriter, r *http.Request) {
@@ -235,7 +245,7 @@ func GetUConfig(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
 		return
 	}
-	c, err := updater.ReadConfig(a)
+	c, err := updater.ReadConfig(a.FolderPath)
 	rest.WriteJSON(w, r, c, err)
 }
 
@@ -317,4 +327,31 @@ func PostPlugin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rest.WriteResult(w, r, updater.UpdatePlugin(a.FolderPath, zipFile))
+}
+
+func GetUpdateOptions(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	c, err := updater.ReadOptions(a.FolderPath)
+	rest.WriteJSON(w, r, c, err)
+}
+
+func PostUpdateOptions(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	a := db.AdminDB().Assets()
+	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		return
+	}
+	var o updater.UpdateOptions
+	err := rest.UnmarshalRequest(r, &o)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	rest.WriteResult(w, r, updater.WriteOptions(a.FolderPath, &o))
 }

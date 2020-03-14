@@ -29,6 +29,7 @@ var RunCmd = &cobra.Command{
 			ConfigDir:   directory,
 			AddonConfig: c,
 			Revert:      revert,
+			Update:      applyUpdates,
 			Runner: func(a *assets.Assets) error {
 				return server.Run(a, nil)
 			},

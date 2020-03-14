@@ -1,17 +1,10 @@
 <template>
   <v-form @submit="insert" v-model="formValid">
     <div ref="jsform" v-if="!loading">
-      <v-jsonschema-form
-        :schema="schema"
-        :options="options"
-        :model="modified"
-      />
+      <v-jsonschema-form :schema="schema" :options="options" :model="modified" />
     </div>
     <!-- https://github.com/koumoul-dev/vuetify-jsonschema-form/issues/21 -->
-    <div
-      v-else
-      :style="{ height, textAlign: 'center', display: 'flex', margin: 'auto' }"
-    >
+    <div v-else :style="{ height, textAlign: 'center', display: 'flex', margin: 'auto' }">
       <h4 style="margin: auto">Inserting...</h4>
     </div>
     <v-btn dark color="info" type="submit" :loading="loading">Insert</v-btn>
@@ -65,7 +58,7 @@ export default {
       this.loading = true;
 
       console.log("Inserting datapoint:", this.modified.data);
-      let res = await this.$frontend.api(
+      let res = await this.$frontend.rest(
         "POST",
         `api/objects/${this.data.id}/timeseries`,
         [{ t: moment().unix(), d: this.modified.data }]

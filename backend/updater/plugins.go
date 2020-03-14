@@ -49,6 +49,51 @@ func UpdatePlugins(configDir, updateDir, backupDir string) error {
 	return nil
 }
 
+func RemovePlugins(configDir, updateDir, backupDir string, plugins []string) error {
+	configPluginDir := path.Join(configDir, "plugins")
+	updatePluginDir := path.Join(updateDir, "plugins")
+	backupPluginDir := path.Join(backupDir, "plugins")
+
+	// If the plugin is in the update directory, remove it from the directory
+
+	if _, err := ioutil.ReadDir(updatePluginDir); err == nil {
+		for _, p := range plugins {
+			err = os.RemoveAll(path.Join(updatePluginDir, p))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// If the plugin is in the config directory, move it to backup
+	if _, err := ioutil.ReadDir(configPluginDir); err == nil {
+
+		// Make sure the backup plugin directory exists
+		_, err = ioutil.ReadDir(backupPluginDir)
+		if os.IsNotExist(err) {
+			// The plugins folder does not exist yet. Create it.
+			if err = os.MkdirAll(backupPluginDir, os.ModePerm); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+
+		for _, p := range plugins {
+			pdir := path.Join(configPluginDir, p)
+			bdir := path.Join(backupPluginDir, p)
+			if _, err = os.Stat(pdir); err == nil {
+				logrus.Debugf("Moving %s -> %s", pdir, bdir)
+				err = os.Rename(pdir, bdir)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func RevertPlugins(configDir, backupDir, revertDir string) error {
 	configPluginDir := path.Join(configDir, "plugins")
 	revertPluginDir := path.Join(revertDir, "plugins")

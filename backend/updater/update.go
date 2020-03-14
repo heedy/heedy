@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
+
+type UpdateOptions struct {
+	BackupData     bool     `json:"backup"`
+	DeletedPlugins []string `json:"deleted"`
+}
 
 func Update(configDir string) (bool, error) {
 	configDir, err := filepath.Abs(configDir)
@@ -19,6 +25,15 @@ func Update(configDir string) (bool, error) {
 	if _, err := os.Stat(updateDir); os.IsNotExist(err) {
 		// No updates are available
 		return false, nil
+	}
+
+	// Read in update_options.json to get the settings for updates
+	var o *UpdateOptions = nil
+	if updateOptionsFile, err := ioutil.ReadFile(path.Join(updateDir, "update_options.json")); err == nil {
+		err = json.Unmarshal(updateOptionsFile, &o)
+		if err != nil {
+			return true, err
+		}
 	}
 
 	backupDir := path.Join(configDir, "backup")
@@ -40,10 +55,17 @@ func Update(configDir string) (bool, error) {
 	if err = os.MkdirAll(backupDir, os.ModePerm); err != nil {
 		return true, err
 	}
-
-	if err = BackupData(configDir, updateDir, backupDir); err != nil {
-		return true, err
+	if o == nil || o.BackupData {
+		if err = BackupData(configDir, updateDir, backupDir); err != nil {
+			return true, err
+		}
 	}
+	if o != nil {
+		if err = RemovePlugins(configDir, updateDir, backupDir, o.DeletedPlugins); err != nil {
+			return true, err
+		}
+	}
+
 	if err = UpdatePlugins(configDir, updateDir, backupDir); err != nil {
 		return true, err
 	}

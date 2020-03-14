@@ -1,7 +1,6 @@
 package updater
 
 import (
-	"fmt"
 	"os"
 	"path"
 
@@ -21,7 +20,7 @@ func RevertData(configDir, backupDir, revertDir string) error {
 
 	backupFileName := path.Join(backupDir, "data.zip")
 	if _, err := os.Stat(backupFileName); os.IsNotExist(err) {
-		return fmt.Errorf("Could not find backup file %s", backupFileName)
+		return nil // Apparently no data backup exists.
 	}
 
 	logrus.Infof("Reverting data from backup %s", backupFileName)

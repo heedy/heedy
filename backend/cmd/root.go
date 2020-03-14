@@ -27,6 +27,7 @@ var (
 
 var verbose bool
 var revert bool
+var applyUpdates bool
 
 var force_run bool
 
@@ -72,6 +73,7 @@ var RootCmd = &cobra.Command{
 			Runner: func(a *assets.Assets) error {
 				return server.Run(a, nil)
 			},
+			Update: applyUpdates,
 		})
 	},
 }
@@ -136,5 +138,6 @@ func writepid(cdir string) error {
 func init() {
 	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
 	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
+	RootCmd.PersistentFlags().BoolVar(&applyUpdates, "update", false, "Applies any pending updates")
 	RootCmd.PersistentFlags().BoolVar(&force_run, "force", false, "Force the server to start even if it detects a heedy pid running")
 }

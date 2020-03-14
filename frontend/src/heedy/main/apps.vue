@@ -141,7 +141,7 @@ export default {
     addApp: async function(appkey) {
       this.dialog = false;
       console.log("Creating", appkey);
-      let result = await this.$frontend.api("POST", `api/apps?icon=true`, {
+      let result = await this.$frontend.rest("POST", `api/apps?icon=true`, {
         plugin: appkey
       });
 

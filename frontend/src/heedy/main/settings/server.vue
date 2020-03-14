@@ -10,7 +10,7 @@
     </v-card-text>
     <v-card-actions>
       <div class="flex-grow-1"></div>
-      <v-btn color="primary" dark class="mb-2" @click="update">Update</v-btn>
+      <v-btn color="primary" dark class="mb-2" @click="update">Save</v-btn>
     </v-card-actions>
   </div>
 </template>

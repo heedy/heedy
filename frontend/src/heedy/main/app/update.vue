@@ -74,7 +74,7 @@ export default {
       });
 
       if (Object.keys(this.modified).length > 0) {
-        let result = await this.$frontend.api(
+        let result = await this.$frontend.rest(
           "PATCH",
           `api/apps/${this.app.id}`,
           this.modified
@@ -100,7 +100,7 @@ export default {
           `Are you sure you want to delete '${this.app.name}'? You can disable it instead, which will keep any data this app has gathered.`
         )
       ) {
-        let res = await this.$frontend.api(
+        let res = await this.$frontend.rest(
           "DELETE",
           `/api/apps/${this.app.id}`
         );

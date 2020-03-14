@@ -135,7 +135,7 @@ export default {
       }
       if (Object.keys(this.modified).length > 0) {
         console.log("UPDATING", mod);
-        let result = await this.$frontend.api(
+        let result = await this.$frontend.rest(
           "PATCH",
           `api/objects/${this.object.id}`,
           mod
@@ -161,7 +161,7 @@ export default {
           `Are you sure you want to delete '${this.object.name}'? This deletes all associated data.`
         )
       ) {
-        let res = await this.$frontend.api(
+        let res = await this.$frontend.rest(
           "DELETE",
           `/api/objects/${this.object.id}`
         );

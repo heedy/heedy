@@ -20,7 +20,7 @@ async function setup(appinfo) {
 
   let frontend = new Frontend(Vue, appinfo, store);
 
-  frontend.api = api;
+  frontend.rest = api;
 
   for (let i = 0; i < plugins.length; i++) {
     console.log("Preparing", appinfo.frontend[i].name);

@@ -100,6 +100,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 
 	// We add a special handler to allow restarting the server
 	restartServer := false
+	applyUpdates := false
 	mux.HandleFunc("/api/server/restart", func(w http.ResponseWriter, r *http.Request) {
 		db := rest.CTX(r).DB
 		a := db.AdminDB().Assets()
@@ -109,6 +110,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 		}
 		rest.CTX(r).Log.Warn("Restart requested")
 		restartServer = true
+		applyUpdates = true
 		c <- os.Interrupt
 
 		rest.WriteResult(w, r, nil)
@@ -124,7 +126,10 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	logrus.Info("Done")
 	if restartServer {
 		logrus.Info("Restarting")
-		return updater.RunHeedy(a.FolderPath)
+		if applyUpdates {
+			return updater.StartHeedy(a.FolderPath, "--update")
+		}
+		return updater.StartHeedy(a.FolderPath)
 	}
 	return err
 }

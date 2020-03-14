@@ -135,7 +135,7 @@ export default {
         }
         toCreate.meta.schema = s;
       }
-      let result = await this.$frontend.api("POST", `api/objects`, toCreate);
+      let result = await this.$frontend.rest("POST", `api/objects`, toCreate);
 
       if (!result.response.ok) {
         this.alert = result.data.error_description;

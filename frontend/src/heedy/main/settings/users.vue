@@ -186,7 +186,7 @@ export default {
         this.alert = "Passwords don't match";
         return;
       }
-      let res = await this.$frontend.api("POST", `/api/users`, {
+      let res = await this.$frontend.rest("POST", `/api/users`, {
         username: c.username,
         password: c.password
       });
@@ -203,7 +203,7 @@ export default {
           `Are you sure you want to delete '${u.username}'? This action is irreversible, and all data associated with the account will be removed.`
         )
       ) {
-        let res = await this.$frontend.api(
+        let res = await this.$frontend.rest(
           "DELETE",
           `/api/users/${u.username}`
         );
@@ -229,7 +229,7 @@ export default {
       }
       this.updateDialog = false;
       if (Object.keys(toUpdate).length > 0) {
-        let res = await this.$frontend.api(
+        let res = await this.$frontend.rest(
           "PATCH",
           `/api/users/${this.updating.id}`,
           toUpdate
@@ -240,7 +240,7 @@ export default {
         }
       }
       if (this.updating.admin != this.updating.id_admin) {
-        let res = await this.$frontend.api(
+        let res = await this.$frontend.rest(
           this.updating.admin ? "POST" : "DELETE",
           `/api/server/admin/${this.updating.username}`
         );
@@ -253,7 +253,7 @@ export default {
       this.reload();
     },
     reload: async function() {
-      let u = this.$frontend.api("GET", "/api/users").then(res => {
+      let u = this.$frontend.rest("GET", "/api/users").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.users = [];
@@ -262,7 +262,7 @@ export default {
         console.log("users", res.data);
         this.users = res.data;
       });
-      let a = this.$frontend.api("GET", "/api/server/admin").then(res => {
+      let a = this.$frontend.rest("GET", "/api/server/admin").then(res => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.admin = [];

@@ -53,7 +53,8 @@ export default {
     updates: {
       heedy: false,
       plugins: [],
-      config: false
+      config: false,
+      options: null
     }
   },
   mutations: {

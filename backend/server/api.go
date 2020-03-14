@@ -48,6 +48,7 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Delete("/server/admin/{username}", RemoveAdminUser)
 
 	apiMux.Get("/server/updates", GetUpdates)
+	apiMux.Delete("/server/updates", ClearUpdates)
 	apiMux.Get("/server/updates/status", GetUpdateStatus)
 	apiMux.Get("/server/updates/heedy.conf", GetConfigFile)
 	apiMux.Post("/server/updates/heedy.conf", PostConfigFile)
@@ -55,6 +56,8 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Patch("/server/updates/config", PatchUConfig)
 	apiMux.Get("/server/updates/plugins", GetAllPlugins)
 	apiMux.Post("/server/updates/plugins", PostPlugin)
+	apiMux.Get("/server/updates/options", GetUpdateOptions)
+	apiMux.Post("/server/updates/options", PostUpdateOptions)
 	apiMux.Get("/server/updates/plugins/{pluginname}/README.md", GetPluginReadme)
 
 	apiMux.NotFound(APINotFound)

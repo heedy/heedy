@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -13,30 +14,37 @@ import (
 )
 
 type UpdateInfo struct {
-	Heedy   bool     `json:"heedy"`
-	Config  bool     `json:"config"`
-	Plugins []string `json:"plugins"`
+	Heedy   bool           `json:"heedy"`
+	Config  bool           `json:"config"`
+	Plugins []string       `json:"plugins"`
+	Options *UpdateOptions `json:"options"`
 }
 
-func GetInfo(configDir string) (ui UpdateInfo) {
-	var err error
+func GetInfo(configDir string) (ui UpdateInfo, err error) {
 	updateDir := path.Join(configDir, "updates")
 	_, err = os.Stat(path.Join(updateDir, "heedy.conf"))
 	ui.Config = err == nil
 	_, err = os.Stat(path.Join(updateDir, "heedy"))
 	ui.Heedy = err == nil
 
-	d, err := ioutil.ReadDir(path.Join(updateDir, "plugins"))
+	var d []os.FileInfo
+	d, err = ioutil.ReadDir(path.Join(updateDir, "plugins"))
 	if err != nil {
 		ui.Plugins = make([]string, 0)
-		return
+	} else {
+		s := make([]string, len(d))
+		for i := range d {
+			s[i] = d[i].Name()
+		}
+		ui.Plugins = s
 	}
-	s := make([]string, len(d))
-	for i := range d {
-		s[i] = d[i].Name()
-	}
-	ui.Plugins = s
+	ui.Options, err = ReadOptions(configDir)
 	return
+}
+
+func ClearUpdates(configDir string) error {
+	updateDir := path.Join(configDir, "updates")
+	return os.RemoveAll(updateDir)
 }
 
 func Available(configDir string) bool {
@@ -83,14 +91,98 @@ func SetConfigFile(configDir string, b []byte) error {
 	return ioutil.WriteFile(updateHeedy, b, os.ModePerm)
 }
 
-func ReadConfig(a *assets.Assets) (*assets.Configuration, error) {
-	configHeedy := path.Join(a.FolderPath, "heedy.conf")
-	updateHeedy := path.Join(a.FolderPath, "updates", "heedy.conf")
+func ReadConfig(configDir string) (*assets.Configuration, error) {
+	configHeedy := path.Join(configDir, "heedy.conf")
+	updateHeedy := path.Join(configDir, "updates", "heedy.conf")
 	if _, err := os.Stat(updateHeedy); os.IsNotExist(err) {
 		return assets.LoadConfigFile(configHeedy)
 	}
 
 	return assets.LoadConfigFile(updateHeedy)
+}
+
+func EnablePlugins(configDir string, pname []string) error {
+	c, err := ReadConfig(configDir)
+	if err != nil {
+		return err
+	}
+	if c.ActivePlugins == nil {
+		return ModifyConfigFile(configDir, &assets.Configuration{ActivePlugins: &pname})
+	}
+	ap := *c.ActivePlugins
+	hadModification := false
+	for _, pn := range pname {
+		alreadyExists := false
+		for _, p2 := range ap {
+			if pn == p2 {
+				alreadyExists = true
+				break
+			}
+		}
+		if !alreadyExists {
+			ap = append(ap, pn)
+			hadModification = true
+		}
+	}
+	if hadModification {
+		return ModifyConfigFile(configDir, &assets.Configuration{ActivePlugins: &ap})
+	}
+	return nil
+}
+
+func DisablePlugins(configDir string, pname []string) error {
+	c, err := ReadConfig(configDir)
+	if err != nil {
+		return err
+	}
+	if c.ActivePlugins == nil {
+		return nil
+	}
+	ap := *c.ActivePlugins
+	hadModification := false
+	for _, pn := range pname {
+		for i := range ap {
+			if pn == ap[i] {
+				// The plugin is at i - shift the remaining elements
+				for j := i + 1; j < len(ap); j++ {
+					ap[j-1] = ap[j]
+				}
+				ap = ap[:len(ap)-1]
+				hadModification = true
+			}
+		}
+	}
+	if hadModification {
+		return ModifyConfigFile(configDir, &assets.Configuration{ActivePlugins: &ap})
+	}
+	return nil
+}
+
+func ReadOptions(configDir string) (*UpdateOptions, error) {
+	updatePath := path.Join(configDir, "updates", "update_options.json")
+	f, err := ioutil.ReadFile(updatePath)
+	if err != nil {
+		return nil, nil
+	}
+	var o UpdateOptions
+	return &o, json.Unmarshal(f, &o)
+}
+
+func WriteOptions(configDir string, o *UpdateOptions) error {
+	updatePath := path.Join(configDir, "updates", "update_options.json")
+	err := os.MkdirAll(path.Dir(updatePath), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	b, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(updatePath, b, 0644)
+	if err != nil {
+		return err
+	}
+	return DisablePlugins(configDir, o.DeletedPlugins)
 }
 
 func Status(configDir string) error {
@@ -230,7 +322,7 @@ func UpdatePlugin(configDir string, zipFile string) error {
 		return err
 	}
 	outFolder := path.Join(configDir, "updates", "plugins", d[0].Name())
-	if _, err := os.Stat(outFolder); !os.IsNotExist(err) {
+	if _, err = os.Stat(outFolder); !os.IsNotExist(err) {
 		logrus.Debugf("Removing %s", outFolder)
 		if err = os.RemoveAll(outFolder); err != nil {
 			return err
@@ -238,5 +330,37 @@ func UpdatePlugin(configDir string, zipFile string) error {
 	}
 	tmpFolder := path.Join(tmpDir, pn)
 	logrus.Debugf("Moving %s -> %s", tmpFolder, outFolder)
-	return os.Rename(tmpFolder, outFolder)
+	err = os.Rename(tmpFolder, outFolder)
+	if err != nil {
+		return err
+	}
+	// Auto-enable the plugin in config
+	if err = EnablePlugins(configDir, []string{pn}); err != nil {
+		return err
+	}
+
+	// Finally, check the deleted plugins in options, and "undelete" the just-uploaded one
+	opt, err := ReadOptions(configDir)
+	if err != nil {
+		return err
+	}
+	if opt != nil {
+		for i := range opt.DeletedPlugins {
+			if opt.DeletedPlugins[i] == pn {
+				logrus.Debug("Removing %s from delete list", pn)
+				// The plugin to be deleted is actually the one just uploaded, so the upload
+				// cancels the deletion
+				if len(opt.DeletedPlugins) == 1 {
+					opt.DeletedPlugins = []string{}
+				} else {
+					opt.DeletedPlugins[i] = opt.DeletedPlugins[len(opt.DeletedPlugins)-1]
+					opt.DeletedPlugins = opt.DeletedPlugins[:len(opt.DeletedPlugins)-1]
+				}
+				if err = WriteOptions(configDir, opt); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
