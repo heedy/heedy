@@ -58,7 +58,6 @@ type hclApp struct {
 
 	Description *string   `json:"description" hcl:"description"`
 	Icon        *string   `json:"icon" hcl:"icon"`
-	Type        *string   `json:"type" hcl:"type"`
 	Scope       *string   `json:"scope,omitempty" hcl:"scope"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`

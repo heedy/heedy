@@ -18,9 +18,9 @@ type frontendPlugin struct {
 }
 
 type fContext struct {
-	User     *database.User   `json:"user"`
-	Admin    bool             `json:"admin"`
-	Frontend []frontendPlugin `json:"frontend"`
+	User    *database.User   `json:"user"`
+	Admin   bool             `json:"admin"`
+	Plugins []frontendPlugin `json:"plugins"`
 }
 
 type aContext struct {
@@ -98,9 +98,9 @@ func FrontendMux() (*chi.Mux, error) {
 		if u == nil {
 			// Running template as public
 			err = fTemplate.Execute(w, &fContext{
-				User:     nil,
-				Admin:    false,
-				Frontend: frontendPlugins,
+				User:    nil,
+				Admin:   false,
+				Plugins: frontendPlugins,
 			})
 			if err != nil {
 				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -109,9 +109,9 @@ func FrontendMux() (*chi.Mux, error) {
 		}
 
 		err = fTemplate.Execute(w, &fContext{
-			User:     u,
-			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
-			Frontend: frontendPlugins,
+			User:    u,
+			Admin:   ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
+			Plugins: frontendPlugins,
 		})
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)

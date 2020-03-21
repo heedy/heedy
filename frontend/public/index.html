@@ -2,12 +2,12 @@
 <html lang="en">
 
 <head>
-  <link rel="modulepreload" href="./static/app.mjs">
+  <link rel="modulepreload" href="./static/main.mjs">
   <link rel="modulepreload" href="./static/dist/vue.mjs">
   <link rel="modulepreload" href="./static/rest.mjs">
   <link rel="modulepreload" href="./static/worker.mjs">
 
-  {{range .Frontend}}
+  {{range .Plugins}}
   <link rel="modulepreload" href="./static/{{.Path}}">
   {{end}}
 

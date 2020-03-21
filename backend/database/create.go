@@ -69,10 +69,6 @@ CREATE TABLE apps (
 	settings VARCHAR NOT NULL DEFAULT '{}',
 	settings_schema VARCHAR NOT NULL DEFAULT '{}',
 
-	-- Apps can have types, which allow the UI to know what type of
-	-- data it holds, for showing appropriate visualizations
-	type VARCHAR(36) NOT NULL DEFAULT '',
-
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 
 	-- the "plugin key" of the app if it was generated for a plugin

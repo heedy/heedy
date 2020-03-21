@@ -1,36 +1,35 @@
-import Vue, {
-  VueRouter,
-  Vuex,
-  Vuetify
-} from "./dist/vue.mjs";
-
-import api from "./rest.mjs";
+import Vue, { VueRouter, Vuex, Vuetify } from "./dist/vue.mjs";
 
 import Frontend from "./main/frontend.js";
+import WorkerInjector from "./main/worker_injector.js";
+import WebsocketInjector from "./main/websocket.js";
 import vuexStore from "./main/vuex.js";
 
 async function setup(appinfo) {
-  console.log("Setting up...");
+  console.log("Setting up...", appinfo);
 
   // Start running the import statements
-  let plugins = appinfo.frontend.map(f => import("./" + f.path));
+  let plugins = appinfo.plugins.map(f => import("./" + f.path));
 
   // Prepare the vuex store
   const store = new Vuex.Store(vuexStore(appinfo));
 
   let frontend = new Frontend(Vue, appinfo, store);
 
-  frontend.rest = api;
+  // The websocket and worker come by default
+  frontend.inject("worker", new WorkerInjector(appinfo));
+  frontend.inject("websocket", new WebsocketInjector(frontend));
 
   for (let i = 0; i < plugins.length; i++) {
-    console.log("Preparing", appinfo.frontend[i].name);
+    console.log("Preparing", appinfo.plugins[i].name);
     try {
       (await plugins[i]).default(frontend);
     } catch (err) {
       console.error(err);
-      alert(`Failed to load plugin '${appinfo.frontend[i].name}': ${err.message}`);
+      alert(
+        `Failed to load plugin '${appinfo.plugins[i].name}': ${err.message}`
+      );
     }
-
   }
 
   // Now go through the injected modules to run their onInit
@@ -47,7 +46,7 @@ async function setup(appinfo) {
     routes.push({
       path: "*",
       component: frontend.notFound
-    })
+    });
   }
 
   // Set up the app routes
@@ -56,20 +55,20 @@ async function setup(appinfo) {
     // https://router.vuejs.org/guide/advanced/scroll-behavior.html#scroll-behavior
     scrollBehavior(to, from, savedPosition) {
       if (savedPosition) {
-        return savedPosition
+        return savedPosition;
       } else {
         return {
           x: 0,
           y: 0
-        }
+        };
       }
     }
   });
 
   const vuetify = new Vuetify({
     icons: {
-      iconfont: 'md',
-    },
+      iconfont: "md"
+    }
   });
 
   Vue.mixin({

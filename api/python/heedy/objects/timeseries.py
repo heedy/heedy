@@ -102,6 +102,8 @@ class DatapointArray(list):
         """Adds the data from a JSON file. The file is expected to be in datapoint format::
 
             d = DatapointArray().loadJSON("myfile.json")
+
+        Can be used to read data dumped by writeJSON.
         """
         with open(filename, "r") as f:
             self.merge(json.load(f))

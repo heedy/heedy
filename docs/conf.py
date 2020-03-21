@@ -14,19 +14,24 @@ from recommonmark.transform import AutoStructify
 import subprocess
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../api/python'))
+
+sys.path.insert(0, os.path.abspath("../api/python"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Heedy'
-copyright = '2020, Heedy Contributors'
-author = 'Heedy Contributors'
+project = "Heedy"
+copyright = "2020, Heedy Contributors"
+author = "Heedy Contributors"
 
 # The full version, including alpha/beta/rc tags
 
-release = "%s-git.%s" % (open('../VERSION', 'r').read().strip(), subprocess.run(
-    'git rev-list --count HEAD'.split(), capture_output=True).stdout.decode().strip())
+release = "%s-git.%s" % (
+    open("../VERSION", "r").read().strip(),
+    subprocess.run("git rev-list --count HEAD".split(), capture_output=True)
+    .stdout.decode()
+    .strip(),
+)
 
 
 # -- General configuration ---------------------------------------------------
@@ -51,12 +56,12 @@ intersphinx_mapping = {
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 js_source_path = "../frontend/src"
 jsdoc_config_path = "_jsdoc.json"
@@ -66,27 +71,30 @@ jsdoc_config_path = "_jsdoc.json"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "alabaster"
 
 html_theme_options = {
-    'logo': 'logo.png',
-    'logo_name': True,
-    'logo_text_align': "center",
-    'fixed_sidebar': True,
-    'github_user': 'heedy',
-    'github_repo': 'heedy',
-    'github_banner': True,
-    'github_button': False,
-    'show_powered_by': False,
+    "logo": "logo.png",
+    "logo_name": True,
+    "logo_text_align": "center",
+    "fixed_sidebar": True,
+    "github_user": "heedy",
+    "github_repo": "heedy",
+    "github_banner": True,
+    "github_button": False,
+    "show_powered_by": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
+
+html_css_files = ["css/restapi.css"]
 
 
 # https://recommonmark.readthedocs.io/en/latest/#autostructify
+
 
 def setup(app):
     app.add_transform(AutoStructify)

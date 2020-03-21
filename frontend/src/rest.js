@@ -11,11 +11,11 @@ export function urlify(obj) {
 /**
  * This function allows querying the API explicitly. If the method is get, data is urlencoded.
  * It explicitly returns the resulting object, or throws the error given
- * @param {*} method - HTTP verb to use (GET/POST/...)
- * @param {*} uri - uri to query (api/heedy/...)
- * @param {*} data - optional object to send as a json payload
- * @param {*} params - params to set as url params
- * @param {*} json - whether data should be sent as standard POST url encoded or as json
+ * @param {string} method - HTTP verb to use (GET/POST/...)
+ * @param {string} uri - uri to query (api/heedy/...)
+ * @param {object} data - optional object to send as a json payload
+ * @param {object} params - params to set as url params
+ * @param {boolean} json - whether data should be sent as standard POST url encoded or as json
  */
 async function api(method, uri, data = null, params = null, json = true) {
   let options = {
@@ -26,10 +26,13 @@ async function api(method, uri, data = null, params = null, json = true) {
   };
   if (params != null) {
     if (data != null && method == "GET") {
-      uri = uri + "?" + urlify({
-        ...data,
-        ...params
-      });
+      uri =
+        uri +
+        "?" +
+        urlify({
+          ...data,
+          ...params
+        });
     } else {
       uri = uri + "?" + urlify(params);
     }
@@ -79,15 +82,19 @@ async function api(method, uri, data = null, params = null, json = true) {
   }
 }
 
-export default async function consoleAPI(method, uri, data = null,
-  params = null, json = true) {
+export default async function consoleAPI(
+  method,
+  uri,
+  data = null,
+  params = null,
+  json = true
+) {
   let res = await api(method, uri, data, params, json);
   if (!res.response.ok) {
     console.error(method, uri, data, params, json, res);
   }
   return res;
 }
-
 
 var cssLinks = {};
 var jsScripts = {};

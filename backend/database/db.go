@@ -322,7 +322,6 @@ type App struct {
 	Details
 	Owner  *string `json:"owner" db:"owner"`
 	Plugin *string `json:"plugin,omitempty" db:"plugin"`
-	Type   *string `json:"type" db:"type"`
 
 	Enabled *bool `json:"enabled,omitempty" db:"enabled"`
 

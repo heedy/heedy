@@ -38,9 +38,6 @@ func App(pluginKey string, owner string, cv *assets.App) *database.App {
 		jo := database.JSONObject(*cv.Settings)
 		c.Settings = &jo
 	}
-	if cv.Type != nil {
-		c.Type = cv.Type
-	}
 	return c
 }
 

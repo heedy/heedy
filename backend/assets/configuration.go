@@ -51,7 +51,6 @@ type App struct {
 	Description *string   `json:"description,omitempty" hcl:"description"`
 	Icon        *string   `json:"icon,omitempty" hcl:"icon"`
 	Scope       *string   `json:"scope,omitempty" hcl:"scope"`
-	Type        *string   `json:"type" hcl:"type"`
 	Enabled     *bool     `json:"enabled,omitempty" hcl:"enabled"`
 	Readonly    *[]string `json:"readonly,omitempty" hcl:"readonly"`
 

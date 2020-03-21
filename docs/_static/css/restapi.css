@@ -1,0 +1,30 @@
+.rest_path {
+  color: #0e4980;
+  font-weight: bold !important;
+  border-bottom: 2px solid #0e4980;
+}
+.rest_verb {
+  color: #a52a2a;
+  border-bottom: 1px dotted #a52a2a;
+}
+.rest_params {
+  font-weight: bold !important;
+}
+.rest_body {
+  font-weight: bold !important;
+}
+.rest_path span {
+  color: #8b0000;
+}
+
+.rest_output {
+  font-weight: bold !important;
+}
+
+.rest_output_result {
+  border-left: 10px solid #0e4980;
+}
+
+.rest_output_result pre {
+  padding-left: 20px;
+}
