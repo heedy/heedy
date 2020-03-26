@@ -29,8 +29,6 @@ CREATE TABLE heedy (
 -- whether a schema modification is necessary
 INSERT INTO heedy VALUES ("heedy",1);
 
--- A user is a group with an additional password. The id is a group id, we will
--- add the foreign key constraint once the groups table is created.
 CREATE TABLE users (
 	username VARCHAR(36) PRIMARY KEY NOT NULL,
 	name VARCHAR NOT NULL DEFAULT '',
@@ -41,6 +39,7 @@ CREATE TABLE users (
 	public_read BOOLEAN NOT NULL DEFAULT FALSE,
 	users_read BOOLEAN NOT NULL DEFAULT FALSE,
 
+	-- bcrypt-encoded password hash
 	password VARCHAR NOT NULL,
 
 	UNIQUE(username)
@@ -61,7 +60,9 @@ CREATE TABLE apps (
 	access_token VARCHAR UNIQUE DEFAULT NULL,
 
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
-	last_access_date DATE DEFAULT NULL, -- apps without access tokens don't have access dates
+	-- apps without access tokens don't have access dates
+	-- an app that has not yet logged in has this as null
+	last_access_date DATE DEFAULT NULL, 
 
 	-- Permissions are granted to a app through scope
 	scope VARCHAR NOT NULL DEFAULT '[]',

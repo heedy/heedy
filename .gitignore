@@ -27,3 +27,4 @@ package-lock.json
 go.sum
 
 docs/_build
+docs/_govars

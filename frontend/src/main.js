@@ -64,6 +64,8 @@ async function setup(appinfo) {
       }
     }
   });
+  // Set the router in the frontend
+  frontend.router = router;
 
   const vuetify = new Vuetify({
     icons: {

@@ -290,7 +290,6 @@ curl --header "Authorization: Bearer MYTOKEN" \
     "name": "My App",
     "description": "",
     "owner": "myuser",
-    "type": "",
     "enabled": true,
     "created_date": "2020-03-21",
     "last_access_date": null,
@@ -788,3 +787,145 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 ```
 
 </div>
+
+### Key-Value Storage
+
+The key-value database is a built-in plugin, allowing other plugins to store metadata attached to users, apps and objects. It is recommended that a plugin use its own plugin name as the namespace under which it stores its data.
+
+An app can also store its own metadata, by using its app ID or `self` as the namespace when accessing the app's key-value store.
+
+<h4 class="rest_path">/api/kv/users/{id}/{namespace}</h4>
+<h5 class="rest_verb">GET</h5>
+Returns a json object containing all of the key-value pairs in the given namespace
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     http://localhost:1324/api/kv/users/myuser/myplugin
+```
+
+<div class="rest_output_result">
+
+```json
+{
+  "mykey": 45.54
+}
+```
+
+</div>
+
+<h5 class="rest_verb">POST</h5>
+
+Sets the key/values of the namespace to the posted body
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     --request POST \
+     --header "Content-Type: application/json" \
+     --data '{"mykey": 45.54}' \
+     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+```
+
+<div class="rest_output_result">
+
+```json
+{ "result": "ok" }
+```
+
+</div>
+
+<h5 class="rest_verb">PATCH</h5>
+
+Updates only the given key/value pairs for the given namespace
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     --request PATCH \
+     --header "Content-Type: application/json" \
+     --data '{"mykey": 45.54}' \
+     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+```
+
+<div class="rest_output_result">
+
+```json
+{ "result": "ok" }
+```
+
+</div>
+
+<h4 class="rest_path">/api/kv/users/{id}/{namespace}/{key}</h4>
+<h5 class="rest_verb">GET</h5>
+Get the value of the given key in the given namespace.
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+```
+
+<div class="rest_output_result">
+
+```json
+45.54
+```
+
+</div>
+
+<h5 class="rest_verb">POST</h5>
+
+Sets the given key to the posted json value
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     --request POST \
+     --header "Content-Type: application/json" \
+     --data '45.54' \
+     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+```
+
+<div class="rest_output_result">
+
+```json
+{ "result": "ok" }
+```
+
+</div>
+
+<h5 class="rest_verb">DELETE</h5>
+
+Deletes the given key from the given namespace.
+
+<h6 class="rest_output">Example</h6>
+```bash
+curl --header "X-Heedy-Key: MYPLUGINKEY" \
+     --request DELETE \
+     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+```
+
+<div class="rest_output_result">
+
+```json
+{ "result": "ok" }
+```
+
+</div>
+
+<h4 class="rest_path">/api/kv/apps/{id}/{namespace}</h4>
+
+Refer to `/api/kv/users/{id}/{namespace}`, which has an identical API
+
+<h4 class="rest_path">/api/kv/apps/{id}/{namespace}/{key}</h4>
+
+Refer to `/api/kv/users/{id}/{namespace}/{key}`, which has an identical API
+
+<h4 class="rest_path">/api/kv/objects/{id}/{namespace}</h4>
+
+Refer to `/api/kv/users/{id}/{namespace}`, which has an identical API
+
+<h4 class="rest_path">/api/kv/objects/{id}/{namespace}/{key}</h4>
+
+Refer to `/api/kv/users/{id}/{namespace}/{key}`, which has an identical API

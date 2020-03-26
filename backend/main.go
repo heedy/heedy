@@ -7,6 +7,7 @@ import (
 	"github.com/heedy/heedy/backend/events"
 
 	// Add the plugins, which will register their own routes
+	_ "github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
 	_ "github.com/heedy/heedy/plugins/kv/backend/kv"
 	_ "github.com/heedy/heedy/plugins/notifications/backend/notifications"
 	_ "github.com/heedy/heedy/plugins/python/backend/python"

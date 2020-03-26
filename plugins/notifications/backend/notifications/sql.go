@@ -15,103 +15,103 @@ import (
 const SQLVersion = 1
 
 const sqlSchema = `
-	-- We split up the schema into 3 tables due to issues with UNIQUE when certain values are NULL.
-	-- We need apps/objects to be nullable to represent notifications for users/apps
-	-- https://stackoverflow.com/questions/22699409/sqlite-null-and-unique
+-- We split up the schema into 3 tables due to issues with UNIQUE when certain values are NULL.
+-- We need apps/objects to be nullable to represent notifications for users/apps
+-- https://stackoverflow.com/questions/22699409/sqlite-null-and-unique
 
-	CREATE TABLE notifications_user (
-		user VARCHAR NOT NULL,
-		key VARCHAR NOT NULL,
+CREATE TABLE notifications_user (
+	user VARCHAR NOT NULL,
+	key VARCHAR NOT NULL,
 
-		title VARCHAR NOT NULL,
-		description VARCHAR NOT NULL DEFAULT '',
-		type VARCHAR NOT NULL DEFAULT 'info',
-		timestamp REAL NOT NULL,
-		actions VARCHAR NOT NULL DEFAULT '[]',
+	title VARCHAR NOT NULL,
+	description VARCHAR NOT NULL DEFAULT '',
+	type VARCHAR NOT NULL DEFAULT 'info',
+	timestamp REAL NOT NULL,
+	actions VARCHAR NOT NULL DEFAULT '[]',
 
-		-- User notifications are global=true
-		global BOOLEAN NOT NULL DEFAULT true,
-		dismissible BOOLEAN NOT NULL DEFAULT true,
-		seen BOOLEAN NOT NULL DEFAULT false,
+	-- User notifications are global=true
+	global BOOLEAN NOT NULL DEFAULT true,
+	dismissible BOOLEAN NOT NULL DEFAULT true,
+	seen BOOLEAN NOT NULL DEFAULT false,
 
-		CONSTRAINT pk PRIMARY KEY (user,key),
-		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
+	CONSTRAINT pk PRIMARY KEY (user,key),
+	CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
-		CONSTRAINT user_c
-			FOREIGN KEY (user)
-			REFERENCES users(username)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE
-	);
+	CONSTRAINT user_c
+		FOREIGN KEY (user)
+		REFERENCES users(username)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
 
-	CREATE TABLE notifications_app (
-		user VARCHAR NOT NULL,
-		app VARCHAR NOT NULL,
-		key VARCHAR NOT NULL,
+CREATE TABLE notifications_app (
+	user VARCHAR NOT NULL,
+	app VARCHAR NOT NULL,
+	key VARCHAR NOT NULL,
 
-		title VARCHAR NOT NULL,
-		description VARCHAR NOT NULL DEFAULT '',
-		type VARCHAR NOT NULL DEFAULT 'info',
-		timestamp REAL NOT NULL,
-		actions VARCHAR NOT NULL DEFAULT '[]',
+	title VARCHAR NOT NULL,
+	description VARCHAR NOT NULL DEFAULT '',
+	type VARCHAR NOT NULL DEFAULT 'info',
+	timestamp REAL NOT NULL,
+	actions VARCHAR NOT NULL DEFAULT '[]',
 
-		global BOOLEAN NOT NULL DEFAULT false,
-		seen BOOLEAN NOT NULL DEFAULT false,
-		dismissible BOOLEAN NOT NULL DEFAULT true,
+	global BOOLEAN NOT NULL DEFAULT false,
+	seen BOOLEAN NOT NULL DEFAULT false,
+	dismissible BOOLEAN NOT NULL DEFAULT true,
 
-		CONSTRAINT pk PRIMARY KEY (user,app,key),
-		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
+	CONSTRAINT pk PRIMARY KEY (user,app,key),
+	CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
-		CONSTRAINT user_c
-			FOREIGN KEY (user)
-			REFERENCES users(username)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE,
+	CONSTRAINT user_c
+		FOREIGN KEY (user)
+		REFERENCES users(username)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
 
-		CONSTRAINT app_c
-			FOREIGN KEY (app)
-			REFERENCES apps(id)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE
-	);
+	CONSTRAINT app_c
+		FOREIGN KEY (app)
+		REFERENCES apps(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
 
-	CREATE TABLE notifications_object (
-		user VARCHAR NOT NULL,
-		app VARCHAR NOT NULL,
-		object VARCHAR NOT NULL,
-		key VARCHAR NOT NULL,
+CREATE TABLE notifications_object (
+	user VARCHAR NOT NULL,
+	app VARCHAR NOT NULL,
+	object VARCHAR NOT NULL,
+	key VARCHAR NOT NULL,
 
-		title VARCHAR NOT NULL,
-		description VARCHAR NOT NULL DEFAULT '',
-		type VARCHAR NOT NULL DEFAULT 'info',
-		actions VARCHAR NOT NULL DEFAULT '[]',
-		timestamp REAL NOT NULL,
+	title VARCHAR NOT NULL,
+	description VARCHAR NOT NULL DEFAULT '',
+	type VARCHAR NOT NULL DEFAULT 'info',
+	actions VARCHAR NOT NULL DEFAULT '[]',
+	timestamp REAL NOT NULL,
 
-		global BOOLEAN NOT NULL DEFAULT false,
-		seen BOOLEAN NOT NULL DEFAULT false,
-		dismissible BOOLEAN NOT NULL DEFAULT true,
+	global BOOLEAN NOT NULL DEFAULT false,
+	seen BOOLEAN NOT NULL DEFAULT false,
+	dismissible BOOLEAN NOT NULL DEFAULT true,
 
-		CONSTRAINT pk PRIMARY KEY (user,app,object,key),
-		CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
+	CONSTRAINT pk PRIMARY KEY (user,app,object,key),
+	CONSTRAINT valid_actions CHECK(json_valid(actions) AND json_type(actions)=='array'),
 
-		CONSTRAINT user_c
-			FOREIGN KEY (user)
-			REFERENCES users(username)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE,
+	CONSTRAINT user_c
+		FOREIGN KEY (user)
+		REFERENCES users(username)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
 
-		CONSTRAINT app_c
-			FOREIGN KEY (app)
-			REFERENCES apps(id)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE,
+	CONSTRAINT app_c
+		FOREIGN KEY (app)
+		REFERENCES apps(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
 
-		CONSTRAINT object_c
-			FOREIGN KEY (object)
-			REFERENCES objects(id)
-			ON UPDATE CASCADE
-			ON DELETE CASCADE
-	);
+	CONSTRAINT object_c
+		FOREIGN KEY (object)
+		REFERENCES objects(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
 `
 
 // SQLUpdater is in the format expected by Heedy to update the database

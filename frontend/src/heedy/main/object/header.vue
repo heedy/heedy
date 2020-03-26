@@ -7,10 +7,10 @@
             <h-icon
               :size="120"
               :image="object.icon"
-              defaultIcon="assignment"
-              :colorHash="object.name"
+              :defaultIcon="defaultIcon"
+              :colorHash="object.id"
             ></h-icon>
-            <h5 style="color:gray;padding-top:10px">{{object.name}}</h5>
+            <h5 style="color:gray;padding-top:10px">{{object.type}}</h5>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>
             <h2>{{ object.name }}</h2>
@@ -34,7 +34,15 @@ export default {
     cmOptions: {
       readOnly: true
     }
-  })
+  }),
+  computed: {
+    defaultIcon() {
+      let otype = this.$store.state.heedy.object_types[this.object.type] || {
+        icon: "assignment"
+      };
+      return otype.icon;
+    }
+  }
 };
 </script>
 <style>

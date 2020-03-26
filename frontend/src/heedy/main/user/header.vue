@@ -80,7 +80,7 @@
               xl="3"
             >
               <v-card class="pa-2" outlined tile>
-                <v-list-item two-line subheader :to="c.route">
+                <v-list-item two-line subheader @click="()=> runCreator(c)">
                   <v-list-item-avatar>
                     <h-icon :image="c.icon" :colorHash="c.key" defaultIcon="insert_drive_file"></h-icon>
                   </v-list-item-avatar>
@@ -152,6 +152,14 @@ export default {
           this.cancel();
         }
       });
+    },
+    runCreator(c) {
+      if (c.route !== undefined) {
+        this.$router.push({ path: c.route });
+      } else {
+        // There must be a function to call
+        c.fn();
+      }
     }
   },
   computed: {

@@ -36,6 +36,12 @@ class Frontend {
     this.store = store;
 
     /**
+     * The `vue router <https://router.vuejs.org/>`_ used for the frontend. This value is only
+     * initialized after the initial setup, so it is *not available* when initializing plugins.
+     */
+    this.router = null;
+
+    /**
      * This property contains information passed in from the server, and is used
      * to set up the session.
      * @example

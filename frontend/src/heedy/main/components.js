@@ -13,29 +13,32 @@ import PageContainer from "./components/page_container.vue";
 import CardPage from "./components/card_page.vue";
 import NotFound from "./components/404.vue";
 import Header from "./components/header.vue";
+import ObjectHeader from "./components/object-header.vue";
 
 function register(Vue) {
-    Vue.component("h-loading", Loading);
-    Vue.component("h-icon", Icon);
-    Vue.component("h-icon-editor", IconEditor);
-    Vue.component("h-scope-editor", ScopeEditor);
-    Vue.component("h-tag-editor", TagEditor);
-    Vue.component("h-page-container", PageContainer);
-    Vue.component("h-card-page", CardPage);
-    Vue.component("h-not-found", NotFound);
-    Vue.component("h-header", Header)
+  Vue.component("h-loading", Loading);
+  Vue.component("h-icon", Icon);
+  Vue.component("h-icon-editor", IconEditor);
+  Vue.component("h-scope-editor", ScopeEditor);
+  Vue.component("h-tag-editor", TagEditor);
+  Vue.component("h-page-container", PageContainer);
+  Vue.component("h-card-page", CardPage);
+  Vue.component("h-not-found", NotFound);
+  Vue.component("h-header", Header);
+  Vue.component("h-object-header", ObjectHeader);
 }
 
 export {
-    Loading,
-    Icon,
-    IconEditor,
-    ScopeEditor,
-    TagEditor,
-    PageContainer,
-    CardPage,
-    NotFound,
-    Header
-}
+  Loading,
+  Icon,
+  IconEditor,
+  ScopeEditor,
+  TagEditor,
+  PageContainer,
+  CardPage,
+  NotFound,
+  Header,
+  ObjectHeader
+};
 
 export default register;
