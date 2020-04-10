@@ -9,7 +9,7 @@ SOURCEDIR     = .
 BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
-all: getvars
+all: getvars pipesdocs
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 _govars/extractvar:
@@ -23,7 +23,13 @@ getvars: _govars/extractvar
 
 .PHONY: help Makefile
 
+.PHONY: pipesdocs
+pipesdocs:
+	go get github.com/heedy/pipescript
+	go install github.com/heedy/pipescript/pipes
+	python3 ./pipescript.py
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile getvars
+%: Makefile getvars pipesdocs
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

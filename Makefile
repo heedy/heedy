@@ -39,6 +39,9 @@ debug: heedydbg frontend/node_modules
 	cd plugins/notifications; make builtin; make debug
 	cd plugins/registry; make builtin; make debug
 
+watch: heedydbg frontend/node_modules
+	./frontend/watch_all_frontends.sh
+
 test:
 	go test ./backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
 	go test ./plugins/timeseries/backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"

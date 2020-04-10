@@ -28,3 +28,6 @@ go.sum
 
 docs/_build
 docs/_govars
+
+docs/analysis/pipescript/index.md
+docs/analysis/pipescript/transforms/

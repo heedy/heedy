@@ -83,8 +83,13 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 	q.Actions = &action
+	if q.Timeseries != "" {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("timeseries arg is set automatically when querying objects"))
+		return
+	}
+	q.Timeseries = si.ObjectInfo.ID
 
-	di, err := OpenSQLData(c.DB.AdminDB()).ReadTimeseriesData(si.ObjectInfo.ID, &q)
+	di, err := OpenSQLData(c.DB.AdminDB()).ReadTimeseriesData(&q)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
@@ -121,8 +126,13 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 	q.Actions = &action
+	if q.Timeseries != "" {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("timeseries arg is set automatically when querying objects"))
+		return
+	}
+	q.Timeseries = si.ObjectInfo.ID
 
-	err = OpenSQLData(c.DB.AdminDB()).RemoveTimeseriesData(si.ObjectInfo.ID, &q)
+	err = OpenSQLData(c.DB.AdminDB()).RemoveTimeseriesData(&q)
 	if err == nil {
 		c.Events.Fire(&events.Event{
 			Event:  "timeseries_data_delete",

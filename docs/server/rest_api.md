@@ -794,7 +794,7 @@ The key-value database is a built-in plugin, allowing other plugins to store met
 
 An app can also store its own metadata, by using its app ID or `self` as the namespace when accessing the app's key-value store.
 
-<h4 class="rest_path">/api/kv/users/{id}/{namespace}</h4>
+<h4 class="rest_path">/api/kv/users/<span>{id}</span>/<span>{namespace}</span></h4>
 <h5 class="rest_verb">GET</h5>
 Returns a json object containing all of the key-value pairs in the given namespace
 
@@ -856,7 +856,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 
 </div>
 
-<h4 class="rest_path">/api/kv/users/{id}/{namespace}/{key}</h4>
+<h4 class="rest_path">/api/kv/users/<span>{id}</span>/<span>{namespace}</span>/<span>{key}</span></h4>
 <h5 class="rest_verb">GET</h5>
 Get the value of the given key in the given namespace.
 
@@ -914,18 +914,18 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 
 </div>
 
-<h4 class="rest_path">/api/kv/apps/{id}/{namespace}</h4>
+<h4 class="rest_path">/api/kv/apps/<span>{id}</span>/<span>{namespace}</span></h4>
 
 Refer to `/api/kv/users/{id}/{namespace}`, which has an identical API
 
-<h4 class="rest_path">/api/kv/apps/{id}/{namespace}/{key}</h4>
+<h4 class="rest_path">/api/kv/apps/<span>{id}</span>/<span>{namespace}</span>/<span>{key}</span></h4>
 
 Refer to `/api/kv/users/{id}/{namespace}/{key}`, which has an identical API
 
-<h4 class="rest_path">/api/kv/objects/{id}/{namespace}</h4>
+<h4 class="rest_path">/api/kv/objects/<span>{id}</span>/<span>{namespace}</span></h4>
 
 Refer to `/api/kv/users/{id}/{namespace}`, which has an identical API
 
-<h4 class="rest_path">/api/kv/objects/{id}/{namespace}/{key}</h4>
+<h4 class="rest_path">/api/kv/objects/<span>{id}</span>/<span>{namespace}</span>/<span>{key}</span></h4>
 
 Refer to `/api/kv/users/{id}/{namespace}/{key}`, which has an identical API

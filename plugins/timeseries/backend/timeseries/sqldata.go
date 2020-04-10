@@ -161,11 +161,11 @@ func getSQLIndexTimestamp(table string, sid string, index int64) (string, []inte
 // so the result is to be simply pasted instead of manually choosing a table and WHERE clause
 // For example, if Query.T is set, will return "timeseries WHERE timestamp=? ORDER BY timestamp ASC", with the timestamp
 // in the corresponding value array.
-func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
+func querySQL(q *Query, order bool) (string, []interface{}, error) {
 	table := "timeseries"
 	asc := "ASC"
 	constraints := []string{"tsid=?"}
-	cValues := []interface{}{sid}
+	cValues := []interface{}{q.Timeseries}
 
 	if q.Actions != nil && *q.Actions {
 		table = "timeseries_actions"
@@ -190,7 +190,7 @@ func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
 			return "", nil, errors.New("bad_query: Cannot query by range and by single timestamp at the same time")
 		}
 	} else if q.I != nil {
-		c, v := getSQLIndexTimestamp(table, sid, *q.I)
+		c, v := getSQLIndexTimestamp(table, q.Timeseries, *q.I)
 		constraints = append(constraints, "timestamp="+c)
 		cValues = append(cValues, v...)
 		if q.I1 != nil || q.I2 != nil || q.T1 != nil || q.T2 != nil {
@@ -215,12 +215,12 @@ func querySQL(sid string, q *Query, order bool) (string, []interface{}, error) {
 			cValues = append(cValues, Unix(t))
 		}
 		if q.I1 != nil {
-			c, v := getSQLIndexTimestamp(table, sid, *q.I1)
+			c, v := getSQLIndexTimestamp(table, q.Timeseries, *q.I1)
 			constraints = append(constraints, "timestamp>="+c)
 			cValues = append(cValues, v...)
 		}
 		if q.I2 != nil {
-			c, v := getSQLIndexTimestamp(table, sid, *q.I2)
+			c, v := getSQLIndexTimestamp(table, q.Timeseries, *q.I2)
 			constraints = append(constraints, "timestamp<"+c)
 			cValues = append(cValues, v...)
 		}
@@ -387,27 +387,31 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 
 }
 
-func (d *SQLData) ReadTimeseriesData(sid string, q *Query) (DatapointIterator, error) {
+func (d *SQLData) ReadTimeseriesData(q *Query) (DatapointIterator, error) {
 
-	query, values, err := querySQL(sid, q, true)
+	query, values, err := querySQL(q, true)
 	if err != nil {
 		return nil, err
 	}
 	if q.Actions != nil && *q.Actions {
 		rows, err := d.db.Queryx("SELECT timestamp,duration,actor,data FROM "+query, values...)
 
-		// TODO: Add transform
-		return &SQLIterator{rows.Rows, true}, err
+		if err != nil || q.Transform == nil {
+			return &SQLIterator{rows.Rows, false}, err
+		}
+		return MkTransform(*q.Transform, &SQLIterator{rows.Rows, false})
 	}
 	rows, err := d.db.Queryx("SELECT timestamp,duration,data FROM "+query, values...)
 
-	// TODO: Add transform
-	return &SQLIterator{rows.Rows, false}, err
+	if err != nil || q.Transform == nil {
+		return &SQLIterator{rows.Rows, false}, err
+	}
+	return MkTransform(*q.Transform, &SQLIterator{rows.Rows, false})
 
 }
 
-func (d *SQLData) RemoveTimeseriesData(sid string, q *Query) error {
-	query, values, err := querySQL(sid, q, false)
+func (d *SQLData) RemoveTimeseriesData(q *Query) error {
+	query, values, err := querySQL(q, false)
 	if err != nil {
 		return err
 	}

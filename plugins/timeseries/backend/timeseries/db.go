@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"reflect"
 	"time"
+
+	"github.com/heedy/pipescript"
 )
 
 type Datapoint struct {
@@ -61,16 +63,17 @@ type DatapointIterator interface {
 }
 
 type Query struct {
-	T1        *string `json:"t1,omitempty"`
-	T2        *string `json:"t2,omitempty"`
-	I1        *int64  `json:"i1,omitempty"`
-	I2        *int64  `json:"i2,omitempty"`
-	Limit     *int64  `json:"limit,omitempty"`
-	Reversed  *bool   `json:"reversed,omitempty"`
-	T         *string `json:"t,omitempty"`
-	I         *int64  `json:"i,omitempty"`
-	Transform *string `json:"transform,omitempty"`
-	Actions   *bool   `json:"actions,omitempty"`
+	Timeseries string  `json:"timeseries"`
+	T1         *string `json:"t1,omitempty"`
+	T2         *string `json:"t2,omitempty"`
+	I1         *int64  `json:"i1,omitempty"`
+	I2         *int64  `json:"i2,omitempty"`
+	Limit      *int64  `json:"limit,omitempty"`
+	Reversed   *bool   `json:"reversed,omitempty"`
+	T          *string `json:"t,omitempty"`
+	I          *int64  `json:"i,omitempty"`
+	Transform  *string `json:"transform,omitempty"`
+	Actions    *bool   `json:"actions,omitempty"`
 }
 
 type InsertQuery struct {
@@ -82,4 +85,50 @@ type InsertQuery struct {
 
 func Unix(t time.Time) float64 {
 	return float64(t.UnixNano()) * 1e-9
+}
+
+type PipeIterator struct {
+	it DatapointIterator
+}
+
+func (pi PipeIterator) Next(out *pipescript.Datapoint) (*pipescript.Datapoint, error) {
+	dp, err := pi.it.Next()
+	if dp == nil || err != nil {
+		return nil, err
+	}
+	out.Timestamp = dp.Timestamp
+	out.Duration = dp.Duration
+	out.Data = dp.Data
+	return out, nil
+}
+
+type FromPipeIterator struct {
+	dpi DatapointIterator
+	it  pipescript.Iterator
+	dp  pipescript.Datapoint
+}
+
+func (pi *FromPipeIterator) Next() (*Datapoint, error) {
+	dp, err := pi.it.Next(&pi.dp)
+	if dp == nil || err != nil {
+		return nil, err
+	}
+	return &Datapoint{
+		Timestamp: dp.Timestamp,
+		Duration:  dp.Duration,
+		Data:      dp.Data,
+	}, nil
+}
+
+func (pi *FromPipeIterator) Close() error {
+	return pi.dpi.Close()
+}
+
+func MkTransform(transform string, it DatapointIterator) (DatapointIterator, error) {
+	p, err := pipescript.Parse(transform)
+	if err != nil {
+		return nil, err
+	}
+	p.InputIterator(PipeIterator{it})
+	return &FromPipeIterator{dpi: it, it: p}, nil
 }

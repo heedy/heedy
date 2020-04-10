@@ -1,0 +1,76 @@
+/*
+Rest API
+*/
+
+.rest_path {
+  color: #0e4980;
+  font-weight: bold !important;
+  border-bottom: 2px solid #0e4980;
+}
+.rest_verb {
+  color: #a52a2a;
+  border-bottom: 1px dotted #a52a2a;
+}
+.rest_params {
+  font-weight: bold !important;
+}
+.rest_body {
+  font-weight: bold !important;
+}
+.rest_path span {
+  color: #8b0000;
+}
+
+.rest_output {
+  font-weight: bold !important;
+}
+
+.rest_output_result {
+  border-left: 10px solid #0e4980;
+}
+
+.rest_output_result pre {
+  padding-left: 20px;
+}
+
+/*
+PipeScript transform tables
+*/
+
+.pipescriptdetails {
+  width: 100%;
+}
+
+table.pipescriptdetails {
+  width: 100%;
+}
+.pipescriptdetails td {
+  vertical-align: top;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+
+.pipescriptdetails .highlight {
+  background: transparent !important;
+}
+.pipescriptdetails .highlight pre {
+  background: transparent !important;
+}
+
+.table-striped tr:nth-child(even) {background-color: #f0f0f0 !important;}
+.table-bordered td,.table-bordered th {
+  border: 1px solid #ddd;
+  margin: 0;
+}
+table.table-bordered  {
+  border-collapse: collapse;
+}
+.pipescriptargs .highlight {
+  background: transparent !important;
+}
+.pipescriptargs .highlight pre {
+  background: transparent !important;
+}

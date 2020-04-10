@@ -9,6 +9,7 @@ import (
 )
 
 func getStringVariable(filename string, varname string) string {
+	// based on https://gist.github.com/ncdc/fef1099f54a655f8fb11daf86f7868b8
 	// borrowed from https://github.com/lukehoban/go-outline/blob/master/main.go#L54-L107
 	fset := token.NewFileSet()
 	parserMode := parser.ParseComments

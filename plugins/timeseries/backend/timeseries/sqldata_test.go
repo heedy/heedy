@@ -51,9 +51,10 @@ func TestDatabase(t *testing.T) {
 	require.NoError(t, err)
 
 	tt := "1.0"
-	di, err := s.ReadTimeseriesData("s1", &Query{
-		T:       &tt,
-		Actions: &action,
+	di, err := s.ReadTimeseriesData(&Query{
+		Timeseries: "s1",
+		T:          &tt,
+		Actions:    &action,
 	})
 	require.NoError(t, err)
 	dpa, err := NewArrayFromIterator(di)
@@ -61,9 +62,10 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, len(dpa), 1)
 	require.Equal(t, dpa.String(), dpa1[0:1].String())
 
-	di, err = s.ReadTimeseriesData("s1", &Query{
-		T1:      &tt,
-		Actions: &action,
+	di, err = s.ReadTimeseriesData(&Query{
+		Timeseries: "s1",
+		T1:         &tt,
+		Actions:    &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -79,9 +81,10 @@ func TestDatabase(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	di, err = s.ReadTimeseriesData("s1", &Query{
-		T1:      &tt,
-		Actions: &action,
+	di, err = s.ReadTimeseriesData(&Query{
+		Timeseries: "s1",
+		T1:         &tt,
+		Actions:    &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -95,14 +98,16 @@ func TestDatabase(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), l)
 
-	require.NoError(t, s.RemoveTimeseriesData("s1", &Query{
-		T:       &tt,
-		Actions: &action,
+	require.NoError(t, s.RemoveTimeseriesData(&Query{
+		Timeseries: "s1",
+		T:          &tt,
+		Actions:    &action,
 	}))
 
-	di, err = s.ReadTimeseriesData("s1", &Query{
-		T1:      &tt,
-		Actions: &action,
+	di, err = s.ReadTimeseriesData(&Query{
+		Timeseries: "s1",
+		T1:         &tt,
+		Actions:    &action,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -126,9 +131,10 @@ func TestDatabase(t *testing.T) {
 
 	i1 := int64(1)
 	i2 := int64(-3)
-	di, err = s.ReadTimeseriesData("s2", &Query{
-		I1: &i1,
-		I2: &i2,
+	di, err = s.ReadTimeseriesData(&Query{
+		Timeseries: "s2",
+		I1:         &i1,
+		I2:         &i2,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -136,8 +142,9 @@ func TestDatabase(t *testing.T) {
 	require.Equal(t, dpa.String(), dpa7[1:5].String())
 
 	i2 = 80
-	di, err = s.ReadTimeseriesData("s2", &Query{
-		I2: &i2,
+	di, err = s.ReadTimeseriesData(&Query{
+		Timeseries: "s2",
+		I2:         &i2,
 	})
 	require.NoError(t, err)
 	dpa, err = NewArrayFromIterator(di)
@@ -169,7 +176,9 @@ func TestDurationUpdate(t *testing.T) {
 	_, _, _, _, err = s.WriteTimeseriesData("s1", NewDatapointArrayIterator(insert2), &InsertQuery{})
 	require.NoError(t, err)
 
-	di, err := s.ReadTimeseriesData("s1", &Query{})
+	di, err := s.ReadTimeseriesData(&Query{
+		Timeseries: "s1",
+	})
 	require.NoError(t, err)
 	dpa, err := NewArrayFromIterator(di)
 	require.NoError(t, err)

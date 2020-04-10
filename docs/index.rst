@@ -21,5 +21,6 @@ and plugin-writers, to help them extend heedy.
    :maxdepth: 2
    
    server/index
+   analysis/index
    plugins/index
    python/index
