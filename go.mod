@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/hcl/v2 v2.3.0
-	github.com/heedy/pipescript v0.0.0-20200410194950-4513b4094f46 // indirect
+	github.com/heedy/pipescript v0.0.0-20200410194950-4513b4094f46
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/karrick/tparse/v2 v2.8.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible

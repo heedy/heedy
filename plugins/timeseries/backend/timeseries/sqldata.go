@@ -397,9 +397,9 @@ func (d *SQLData) ReadTimeseriesData(q *Query) (DatapointIterator, error) {
 		rows, err := d.db.Queryx("SELECT timestamp,duration,actor,data FROM "+query, values...)
 
 		if err != nil || q.Transform == nil {
-			return &SQLIterator{rows.Rows, false}, err
+			return &SQLIterator{rows.Rows, true}, err
 		}
-		return MkTransform(*q.Transform, &SQLIterator{rows.Rows, false})
+		return MkTransform(*q.Transform, &SQLIterator{rows.Rows, true})
 	}
 	rows, err := d.db.Queryx("SELECT timestamp,duration,data FROM "+query, values...)
 
