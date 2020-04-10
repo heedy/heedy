@@ -69,7 +69,7 @@ for transform in o:
         if hasOptional:
             md += "### Arguments\n<table class='pipescriptargs table-striped table-bordered'><thead><tr><th>#</th><th>Description</th><th>Type</th><th>Schema</th><th>Default</th></tr></thead>"
         else:
-            md += "### Arguments\n<table class='pipescriptargs'><thead><tr><th>#</th><th>Description</th><th>Type</th><th>Schema</th></tr></thead>"
+            md += "### Arguments\n<table class='pipescriptargs table-striped table-bordered'><thead><tr><th>#</th><th>Description</th><th>Type</th><th>Schema</th></tr></thead>"
         for i in range(len(args)):
             arg = args[i]
             if not "default" in arg:
