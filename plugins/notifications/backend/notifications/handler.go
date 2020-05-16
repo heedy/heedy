@@ -67,9 +67,8 @@ var Handler = func() *chi.Mux {
 	v1mux.Delete("/notifications", deleteNotification)
 
 	apiMux := chi.NewMux()
-	apiMux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
-	})
+	apiMux.NotFound(rest.NotFoundHandler)
+	apiMux.MethodNotAllowed(rest.NotFoundHandler)
 	apiMux.Mount("/api", v1mux)
 
 	return apiMux

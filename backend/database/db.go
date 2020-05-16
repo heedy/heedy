@@ -47,11 +47,9 @@ type JSONArray struct {
 func (ja *JSONArray) Scan(val interface{}) error {
 	switch v := val.(type) {
 	case []byte:
-		json.Unmarshal(v, &ja.Elements)
-		return nil
+		return json.Unmarshal(v, &ja.Elements)
 	case string:
-		json.Unmarshal([]byte(v), &ja.Elements)
-		return nil
+		return json.Unmarshal([]byte(v), &ja.Elements)
 	default:
 		return fmt.Errorf("Can't scan json array array, unsupported type: %T", v)
 	}
@@ -77,11 +75,9 @@ type StringArray struct {
 func (s *StringArray) Scan(val interface{}) error {
 	switch v := val.(type) {
 	case []byte:
-		json.Unmarshal(v, &s.Strings)
-		return nil
+		return json.Unmarshal(v, &s.Strings)
 	case string:
-		json.Unmarshal([]byte(v), &s.Strings)
-		return nil
+		return json.Unmarshal([]byte(v), &s.Strings)
 	default:
 		return fmt.Errorf("Can't scan string array, unsupported type: %T", v)
 	}

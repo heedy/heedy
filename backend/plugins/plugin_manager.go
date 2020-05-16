@@ -169,8 +169,10 @@ func (pm *PluginManager) Start(heedyServer http.Handler) error {
 			// The plugin has a router component
 			if pm.start == "none" {
 				p.Mux.NotFound(pm.ObjectManager.ServeHTTP)
+				p.Mux.MethodNotAllowed(pm.ObjectManager.ServeHTTP)
 			} else {
 				p.Mux.NotFound(pm.Plugins[pm.start].Plugin.Mux.ServeHTTP)
+				p.Mux.MethodNotAllowed(pm.Plugins[pm.start].Plugin.Mux.ServeHTTP)
 			}
 			pm.start = pname
 		}

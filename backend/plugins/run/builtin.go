@@ -1,11 +1,13 @@
 package run
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/database"
 )
 
@@ -50,7 +52,18 @@ func WithNilInfo(bis BuiltinStartFunc) func(*database.AdminDB) error {
 
 type builtinRunnerMap map[string]*BuiltinRunner
 
+type ChiClearer struct {
+	Handler http.Handler
+}
+
+func (cc ChiClearer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	cc.Handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, nil)))
+}
+
 func (b builtinRunnerMap) Add(r *BuiltinRunner) {
+	if r.Handler != nil {
+		r.Handler = ChiClearer{r.Handler}
+	}
 	b[r.Key] = r
 }
 

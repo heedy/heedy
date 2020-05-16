@@ -407,13 +407,35 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 				}
 			}
 
-			// Settings copy
-			for settingName, osettingValue := range oplugin.Settings {
-				bplugin.Settings[settingName] = osettingValue
-			}
 			// Schema copy
 			if len(oplugin.SettingsSchema) > 0 {
 				bplugin.SettingsSchema = oplugin.SettingsSchema
+			}
+
+			// Settings copy
+			for settingName, osettingValue := range oplugin.Settings {
+				// If the setting values are both objects,
+				// then merge the object's first level. Otherwise, replace
+
+				v, ok := bplugin.Settings[settingName]
+				if ok {
+					var v2 map[string]interface{}
+					var ov2 map[string]interface{}
+					v2, ok = v.(map[string]interface{})
+					if ok {
+						ov2, ok = osettingValue.(map[string]interface{})
+						if ok {
+							for k, kv := range ov2 {
+								v2[k] = kv
+							}
+							bplugin.Settings[settingName] = v2
+						}
+					}
+				}
+				if !ok {
+					bplugin.Settings[settingName] = osettingValue
+				}
+
 			}
 		}
 	}

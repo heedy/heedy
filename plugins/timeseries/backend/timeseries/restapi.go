@@ -302,41 +302,46 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResult(w, r, err)
 }
 
+func GenerateDataset(w http.ResponseWriter, r *http.Request) {
+	rest.WriteResult(w, r, errors.New("unimplemented"))
+}
+
 // Handler is the global router for the timeseries API
 var Handler = func() *chi.Mux {
 	m := chi.NewMux()
 
-	m.Get("/timeseries", func(w http.ResponseWriter, r *http.Request) {
+	m.Get("/object/timeseries", func(w http.ResponseWriter, r *http.Request) {
 		ReadData(w, r, false)
 	})
-	m.Delete("/timeseries", func(w http.ResponseWriter, r *http.Request) {
+	m.Delete("/object/timeseries", func(w http.ResponseWriter, r *http.Request) {
 		DeleteData(w, r, false)
 	})
-	m.Post("/timeseries", func(w http.ResponseWriter, r *http.Request) {
+	m.Post("/object/timeseries", func(w http.ResponseWriter, r *http.Request) {
 		WriteData(w, r, false)
 	})
-	m.Get("/timeseries/length", func(w http.ResponseWriter, r *http.Request) {
+	m.Get("/object/timeseries/length", func(w http.ResponseWriter, r *http.Request) {
 		DataLength(w, r, false)
 	})
 
-	m.Get("/actions", func(w http.ResponseWriter, r *http.Request) {
+	m.Get("/object/actions", func(w http.ResponseWriter, r *http.Request) {
 		ReadData(w, r, true)
 	})
-	m.Delete("/actions", func(w http.ResponseWriter, r *http.Request) {
+	m.Delete("/object/actions", func(w http.ResponseWriter, r *http.Request) {
 		DeleteData(w, r, true)
 	})
-	m.Post("/actions", func(w http.ResponseWriter, r *http.Request) {
+	m.Post("/object/actions", func(w http.ResponseWriter, r *http.Request) {
 		WriteData(w, r, true)
 	})
-	m.Get("/actions/length", func(w http.ResponseWriter, r *http.Request) {
+	m.Get("/object/actions/length", func(w http.ResponseWriter, r *http.Request) {
 		DataLength(w, r, true)
 	})
 
-	m.Post("/act", Act)
+	m.Post("/object/act", Act)
 
-	m.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
-	})
+	m.Post("/api/dataset", GenerateDataset)
+
+	m.NotFound(rest.NotFoundHandler)
+	m.MethodNotAllowed(rest.NotFoundHandler)
 
 	return m
 }()

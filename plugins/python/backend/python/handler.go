@@ -283,10 +283,8 @@ func KillPython(w http.ResponseWriter, r *http.Request) {
 // Handler is the main API handler
 var Handler = func() *chi.Mux {
 	mux := chi.NewMux()
-	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		l.Error("Unrecognized internal API call: ", r.URL.EscapedPath())
-		w.WriteHeader(404)
-	})
+	mux.NotFound(rest.NotFoundHandler)
+	mux.MethodNotAllowed(rest.NotFoundHandler)
 	mux.Post("/runtypes/python", StartPython)
 	mux.Delete("/runtypes/python/{apikey}", StopPython)
 	return mux

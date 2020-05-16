@@ -64,6 +64,10 @@ func (er *ErrorResponse) Error() string {
 	return er.ErrorName + ":" + er.ErrorDescription
 }
 
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	WriteJSONError(w, r, http.StatusNotFound, ErrNotFound)
+}
+
 // WriteJSONError writes an error message as json. It is assumed that the resulting
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {

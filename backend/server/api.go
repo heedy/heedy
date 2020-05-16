@@ -61,5 +61,6 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/server/updates/plugins/{pluginname}/README.md", GetPluginReadme)
 
 	apiMux.NotFound(APINotFound)
+	apiMux.MethodNotAllowed(APINotFound)
 	return apiMux, nil
 }

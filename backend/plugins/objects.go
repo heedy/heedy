@@ -76,6 +76,7 @@ func NewObjectManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Object
 				if r != "create" && s.Routes == nil {
 					s.Routes = chi.NewMux()
 					s.Routes.NotFound(h.ServeHTTP)
+					s.Routes.MethodNotAllowed(h.ServeHTTP)
 				}
 				plugin, _, _ := run.GetPlugin("", uri)
 				if plugin == "" {
@@ -110,6 +111,7 @@ func NewObjectManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Object
 	sm.mux.Get("/api/objects", sm.handler.ServeHTTP)
 	sm.mux.Mount("/api/objects/{objectid}", http.HandlerFunc(sm.handleAPI))
 	sm.mux.NotFound(sm.handler.ServeHTTP)
+	sm.mux.MethodNotAllowed(sm.handler.ServeHTTP)
 
 	return sm, nil
 }

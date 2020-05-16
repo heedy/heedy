@@ -104,9 +104,8 @@ func GenerateHandler(authenticator func(ctx *rest.Context, id string, namespace 
 var Handler = func() *chi.Mux {
 
 	apiMux := chi.NewMux()
-	apiMux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		rest.WriteJSONError(w, r, http.StatusNotFound, rest.ErrNotFound)
-	})
+	apiMux.NotFound(rest.NotFoundHandler)
+	apiMux.MethodNotAllowed(rest.NotFoundHandler)
 
 	apiMux.Mount("/api/kv/users", GenerateHandler(UserAuth))
 	apiMux.Mount("/api/kv/apps", GenerateHandler(AppAuth))

@@ -1,11 +1,18 @@
 {
-    "active_plugins": ["yeet"],
+    "active_plugins": [
+        "yeet"
+    ],
     "plugin": {
         "yeet": {
             "settings": {
                 "yeet": "hi",
                 "yo": true,
-                "yay": 5
+                "yay": 5,
+                "feh": {
+                    "yee": "haw",
+                    "re": "nope",
+                    "foo": "bar"
+                }
             },
             "settings_schema": {
                 "yeet": {
@@ -21,6 +28,10 @@
                 },
                 "zee": {
                     "type": "string"
+                },
+                "feh": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         }
