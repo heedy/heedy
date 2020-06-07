@@ -68,8 +68,8 @@ func FrontendMux() (*chi.Mux, error) {
 	// This is the main function that sets up the frontend template
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		// Disallow clickjacking
-		w.Header().Add("X-Frame-Options", "DENY")
-		w.Header().Add("Cache-Control", "private, no-cache")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Cache-Control", "private, no-cache")
 
 		ctx := rest.CTX(r)
 		var u *database.User

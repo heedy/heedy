@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -72,6 +73,7 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "private, no-cache")
 	c := CTX(r)
 
 	es := ErrorResponse{
@@ -134,6 +136,7 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 			jdata = []byte("[]")
 		}
 	}
+	w.Header().Set("Cache-Control", "private, no-cache")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
 	w.WriteHeader(http.StatusOK)
@@ -148,9 +151,30 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	// success :)
+	w.Header().Set("Cache-Control", "private, no-cache")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", "15")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"result":"ok"}`))
+
+}
+
+// WriteGZIP gzips a response Reader object if gzip is an accepted encoding. While it can be a security risk
+// is some cases, it is very useful when the response can be enormous (like timeseries data).
+func WriteGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
+	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		w.WriteHeader(status)
+		_, err := io.Copy(w, towrite)
+		return err
+	}
+	w.Header().Set("Content-Encoding", "gzip")
+	w.WriteHeader(status)
+	g := gzip.NewWriter(w)
+	_, err := io.Copy(g, towrite)
+	if err != nil {
+		g.Close()
+		return err
+	}
+	return g.Close()
 
 }

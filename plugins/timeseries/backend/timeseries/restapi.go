@@ -2,7 +2,6 @@ package timeseries
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -99,13 +98,14 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
 
-	_, err = io.Copy(w, ai)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	err = rest.WriteGZIP(w, r, ai, http.StatusOK)
 	if err != nil {
-		c.Log.Warnf("Read failed: %s", err.Error())
+		c.Log.Warnf("Timeseries read failed: %s", err.Error())
 	}
+
 }
 
 func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
