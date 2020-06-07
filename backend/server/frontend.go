@@ -25,6 +25,7 @@ type fContext struct {
 	User    *database.User   `json:"user"`
 	Admin   bool             `json:"admin"`
 	Plugins []frontendPlugin `json:"plugins"`
+	Preload []string         `json:"preload"`
 }
 
 type aContext struct {
@@ -87,11 +88,17 @@ func FrontendMux() (*chi.Mux, error) {
 		cfg := assets.Config()
 
 		frontendPlugins := make([]frontendPlugin, 0)
+		preloads := make([]string, 0)
 		if cfg.Frontend != nil {
 			frontendPlugins = append(frontendPlugins, frontendPlugin{
 				Name: "heedy",
 				Path: *cfg.Frontend,
 			})
+			preloads = append(preloads, *cfg.Frontend)
+
+		}
+		if cfg.Preload != nil {
+			preloads = append(preloads, (*cfg.Preload)...)
 		}
 		for _, p := range cfg.GetActivePlugins() {
 			v, ok := cfg.Plugins[p]
@@ -104,6 +111,10 @@ func FrontendMux() (*chi.Mux, error) {
 					Name: p,
 					Path: *v.Frontend,
 				})
+				preloads = append(preloads, *v.Frontend)
+			}
+			if v.Preload != nil {
+				preloads = append(preloads, (*v.Preload)...)
 			}
 		}
 
@@ -120,6 +131,7 @@ func FrontendMux() (*chi.Mux, error) {
 				User:    nil,
 				Admin:   false,
 				Plugins: frontendPlugins,
+				Preload: preloads,
 			})
 			if err != nil {
 				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -131,6 +143,7 @@ func FrontendMux() (*chi.Mux, error) {
 			User:    u,
 			Admin:   ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
 			Plugins: frontendPlugins,
+			Preload: preloads,
 		})
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)

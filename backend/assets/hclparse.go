@@ -77,7 +77,8 @@ type hclPlugin struct {
 	Homepage    *string `hcl:"homepage" json:"homepage"`
 	License     *string `hcl:"license" json:"license"`
 
-	Frontend *string `hcl:"frontend" json:"frontend"`
+	Frontend *string   `hcl:"frontend" json:"frontend"`
+	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`
 
 	Routes *map[string]string `hcl:"routes" json:"routes"`
 	Events *map[string]string `hcl:"events" json:"events,omitempty"`
@@ -125,7 +126,8 @@ type hclConfiguration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Frontend *string `hcl:"frontend"`
+	Frontend *string   `hcl:"frontend"`
+	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`
 
 	RunTimeout *string `hcl:"run_timeout"`
 

@@ -2,13 +2,9 @@
 <html lang="en">
 
 <head>
-  <link rel="modulepreload" href="./static/main.mjs">
-  <link rel="modulepreload" href="./static/dist/vue.mjs">
-  <link rel="modulepreload" href="./static/rest.mjs">
-  <link rel="modulepreload" href="./static/worker.mjs">
 
-  {{range .Plugins}}
-  <link rel="modulepreload" href="./static/{{.Path}}">
+  {{range .Preload}}
+  <link rel="modulepreload" href="./static/{{.}}">
   {{end}}
 
   <link rel="preload" as="font" crossorigin="anonymous" href="./static/fonts/MaterialIcons-Regular.woff2">

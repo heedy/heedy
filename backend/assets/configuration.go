@@ -75,9 +75,11 @@ type Plugin struct {
 	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
 	License     *string `hcl:"license" json:"license,omitempty"`
 
-	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Routes   *map[string]string `json:"routes,omitempty"`
-	Events   *map[string]string `json:"events,omitempty"`
+	Frontend *string   `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
+	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`
+
+	Routes *map[string]string `json:"routes,omitempty"`
+	Events *map[string]string `json:"events,omitempty"`
 
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 
@@ -223,7 +225,8 @@ type Configuration struct {
 
 	SQL *string `hcl:"sql" json:"sql,omitempty"`
 
-	Frontend *string `json:"frontend,omitempty"`
+	Frontend *string   `json:"frontend,omitempty"`
+	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`
 
 	RunTimeout *string `json:"run_timeout,omitempty"`
 
@@ -312,6 +315,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		overlay.Scope = base.Scope
 	}
 	overlay.ForbiddenUsers = MergeStringArrays(base.ForbiddenUsers, overlay.ForbiddenUsers)
+	overlay.Preload = MergeStringArrays(base.Preload, overlay.Preload)
 
 	CopyStructIfPtrSet(base, overlay)
 
@@ -363,6 +367,7 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 			base.Plugins[pluginName] = oplugin
 
 		} else {
+			oplugin.Preload = MergeStringArrays(bplugin.Preload, oplugin.Preload)
 			// Need to continue settings merge into the children
 			CopyStructIfPtrSet(bplugin, oplugin)
 
