@@ -4,9 +4,8 @@ import postcss from "rollup-plugin-postcss";
 import json from "@rollup/plugin-json";
 import VuePlugin from "rollup-plugin-vue";
 import replace from "@rollup/plugin-replace";
-import {
-  terser
-} from "rollup-plugin-terser";
+import { terser } from "rollup-plugin-terser";
+import gzipPlugin from "rollup-plugin-gzip";
 
 import glob from "glob";
 
@@ -16,38 +15,42 @@ const production = !(process.env.NODE_ENV === "debug");
 const plugins = [
   VuePlugin({
     // https://github.com/vuejs/rollup-plugin-vue/issues/238
-    needMap: false
+    needMap: false,
   }),
   commonjs(),
   resolve({
     browser: true,
-    preferBuiltins: false
+    preferBuiltins: false,
   }),
   postcss({
-    minimize: production
+    minimize: production,
   }),
   json({
-    compact: production
+    compact: production,
   }),
   replace({
-    "process.env.NODE_ENV": JSON.stringify(production ? "production" : "debug")
-  })
+    "process.env.NODE_ENV": JSON.stringify(production ? "production" : "debug"),
+  }),
 ];
 if (production) {
   plugins.push(
     terser({
       compress: {
         drop_console: true,
-        ecma: 10 // Heedy doesn't do backwards compatibility
+        ecma: 10, // Heedy doesn't do backwards compatibility
       },
       mangle: true,
-      module: true
+      module: true,
     })
   );
+  plugins.push(gzipPlugin());
 }
 
 function checkExternal(modid, parent, isResolved) {
-  return (!isResolved && modid.endsWith(".mjs") && modid.startsWith(".")) || modid.startsWith("http");
+  return (
+    (!isResolved && modid.endsWith(".mjs") && modid.startsWith(".")) ||
+    modid.startsWith("http")
+  );
 }
 
 function out(name, loc = "", format = "es") {
@@ -56,33 +59,34 @@ function out(name, loc = "", format = "es") {
     input: "src/" + name,
     output: {
       name: filename[0],
-      file: `../assets/public/static/${plugin_name}/` +
+      file:
+        `../assets/public/static/${plugin_name}/` +
         loc +
         filename[0] +
         (format == "es" ? ".mjs" : ".js"),
-      format: format
+      format: format,
     },
     plugins: plugins,
-    external: checkExternal
+    external: checkExternal,
   };
 }
 export default [
   // The base files
   out("main.js"),
   out("worker.js"),
-  out("analysis.js")
+  out("analysis.js"),
 ]
-.concat(
+  .concat(
     glob
-    .sync("views/*.vue", {
-      cwd: "./src"
-    })
-    .map(a => out(a))
+      .sync("views/*.vue", {
+        cwd: "./src",
+      })
+      .map((a) => out(a))
   )
   .concat(
     glob
-    .sync("dist/*.js", {
-      cwd: "./src"
-    })
-    .map(a => out(a, "../"))
+      .sync("dist/*.js", {
+        cwd: "./src",
+      })
+      .map((a) => out(a, "../"))
   );

@@ -22,6 +22,9 @@ CREATE TABLE dashboard_elements (
 	-- The element type specifies the API call to make for backend data
 	type VARCHAR NOT NULL,
 
+	-- To save on computation, dashboards are updated on-demand
+	outdated BOOL NOT NULL DEFAULT TRUE,
+
 	-- The query to run on the backend to update data
 	backend_query BLOB NOT NULL,
 	-- Saved output of backend_query

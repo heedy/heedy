@@ -35,8 +35,9 @@ func (eh DashboardEventHandler) Fire(e *events.Event) {
 		return
 	}
 
-	// For each of these, update the dashboard element!
+	// For each of the dashboard elements, fire the updated event
 	for i := range s {
+		events.Fire(&events.Event{})
 		logrus.Debugf("Updating dashboard element %s/%s", s[i].ObjectID, s[i].ID)
 	}
 }

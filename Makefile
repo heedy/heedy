@@ -18,6 +18,7 @@ frontend: phony frontend/node_modules
 	cd plugins/timeseries; make builtin; make frontend
 	cd plugins/notifications; make builtin; make frontend
 	cd plugins/registry; make builtin; make frontend
+	find ./assets/public/static -name "*.gz" -exec sh -c 'rm "$${0%.gz}"' {} ';'
 
 .gobin/statik:
 	GOBIN=${PWD}/.gobin go install github.com/rakyll/statik

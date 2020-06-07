@@ -36,6 +36,7 @@
     "nodemon": "^1.19.2",
     "npm-run-all": "^4.1.5",
     "rollup": "^1.21.4",
+    "rollup-plugin-gzip": "^2.5.0",
     "rollup-plugin-postcss": "^2.0.3",
     "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-vue": "^5.0.1",

@@ -4,11 +4,15 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/lpar/gzipped/v2"
 	"github.com/spf13/afero"
 )
 
@@ -26,6 +30,21 @@ type fContext struct {
 type aContext struct {
 	User    *database.User `json:"user"`
 	Request *CodeRequest   `json:"request"`
+}
+
+// withExists allows to use lpar/gzipped
+type withExists struct {
+	*afero.HttpFs
+}
+
+func (we withExists) Exists(name string) bool {
+	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
+		return false
+	}
+
+	fullName := filepath.FromSlash(path.Clean("/" + name))
+	_, err := we.Stat(fullName)
+	return err == nil
 }
 
 // FrontendMux represents the frontend
@@ -121,7 +140,7 @@ func FrontendMux() (*chi.Mux, error) {
 	})
 
 	// Handles getting all assets other than the root webpage
-	mux.Mount("/static/", http.FileServer(afero.NewHttpFs(frontendFS)))
+	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
 
 	return mux, nil
 }
