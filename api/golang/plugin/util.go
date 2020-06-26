@@ -52,6 +52,7 @@ func UnmarshalObjectMeta(r *http.Request, obj interface{}) error {
 type ObjectInfo struct {
 	Type         string
 	ID           string
+	Owner        string
 	LastModified *string
 	Meta         map[string]interface{}
 	Access       database.ScopeArray
@@ -60,11 +61,12 @@ type ObjectInfo struct {
 // GetObjectInfo prepares all object details that come in as part of a object request
 func GetObjectInfo(r *http.Request) (*ObjectInfo, error) {
 	si := ObjectInfo{
-		Type: r.Header.Get("X-Heedy-Type"),
-		ID:   r.Header.Get("X-Heedy-Object"),
+		Type:  r.Header.Get("X-Heedy-Type"),
+		ID:    r.Header.Get("X-Heedy-Object"),
+		Owner: r.Header.Get("X-Heedy-Owner"),
 	}
-	if si.Type == "" || si.ID == "" {
-		return nil, ErrPlugin("No type or ID headers were present in object request")
+	if si.Type == "" || si.ID == "" || si.Owner == "" {
+		return nil, ErrPlugin("No type or ID or Owner headers were present in object request")
 	}
 	ne, ok := r.Header["X-Heedy-Last-Modified"]
 	if !ok || len(ne) != 1 {

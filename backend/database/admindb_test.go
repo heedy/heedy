@@ -17,7 +17,7 @@ func newAssets(t *testing.T) (*assets.Assets, func()) {
 	sqla := "sqlite3://heedy.db?_journal=WAL&_fk=1"
 	a.Config.SQL = &sqla
 	return a, func() {
-		//os.RemoveAll("./test_db")
+		os.RemoveAll("./test_db")
 	}
 }
 

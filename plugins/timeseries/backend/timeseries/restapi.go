@@ -58,7 +58,7 @@ func validateRequest(w http.ResponseWriter, r *http.Request, scope string) (*Tim
 		return nil, false
 	}
 	if !si.ObjectInfo.Access.HasScope(scope) {
-		rest.WriteJSONError(w, r, http.StatusInternalServerError, database.ErrAccessDenied("Insufficient permissions"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, database.ErrAccessDenied("Insufficient permissions"))
 		return nil, false
 	}
 	return si, true

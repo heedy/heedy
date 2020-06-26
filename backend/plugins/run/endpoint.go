@@ -19,14 +19,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Request runs the given http handler, and optionally unmarshals the result
+// Request runs the given http handler, if body is byte array, sends that, otherwise marshals as json, and optionally unmarshals the result
 func Request(h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
 	var bodybuffer io.Reader
 	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
+		b, ok := body.([]byte)
+		if !ok {
+			var err error
+			b, err = json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
 		}
+
 		bodybuffer = bytes.NewBuffer(b)
 	}
 

@@ -11,7 +11,20 @@ import (
 	"github.com/heedy/heedy/backend/database"
 )
 
-type BuiltinStartFunc func(db *database.AdminDB, i *Info) error
+type BuiltinHelper interface {
+	GetHandler(uri string) (http.Handler, error)
+}
+
+type builtinHelper struct {
+	plugin string
+	m      *Manager
+}
+
+func (bh *builtinHelper) GetHandler(uri string) (http.Handler, error) {
+	return bh.m.GetHandler(bh.plugin, uri)
+}
+
+type BuiltinStartFunc func(db *database.AdminDB, i *Info, h BuiltinHelper) error
 
 // Builtin is passed in to the BuiltinHandler with
 type BuiltinRunner struct {
@@ -21,8 +34,8 @@ type BuiltinRunner struct {
 	Handler http.Handler
 }
 
-func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB, *Info, int) error) BuiltinStartFunc {
-	return func(db *database.AdminDB, i *Info) error {
+func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB, *Info, BuiltinHelper, int) error) BuiltinStartFunc {
+	return func(db *database.AdminDB, i *Info, h BuiltinHelper) error {
 		var curVersion int
 		err := db.Get(&curVersion, `SELECT version FROM heedy WHERE name=?`, pluginName)
 		if err != nil && err != sql.ErrNoRows {
@@ -31,7 +44,7 @@ func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB
 		if err == sql.ErrNoRows {
 			curVersion = 0
 		}
-		err = pstart(db, i, curVersion)
+		err = pstart(db, i, h, curVersion)
 		if err != nil {
 			return err
 		}
@@ -46,7 +59,7 @@ func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB
 // into a function compatible with database.AddCreateHook.
 func WithNilInfo(bis BuiltinStartFunc) func(*database.AdminDB) error {
 	return func(db *database.AdminDB) error {
-		return bis(db, nil)
+		return bis(db, nil, nil)
 	}
 }
 
@@ -72,12 +85,14 @@ var Builtin = make(builtinRunnerMap)
 type BuiltinHandler struct {
 	DB      *database.AdminDB
 	Running map[string]string
+	m       *Manager
 }
 
-func NewBuiltinHandler(db *database.AdminDB) *BuiltinHandler {
+func NewBuiltinHandler(db *database.AdminDB, m *Manager) *BuiltinHandler {
 	return &BuiltinHandler{
 		DB:      db,
 		Running: make(map[string]string),
+		m:       m,
 	}
 }
 
@@ -130,7 +145,7 @@ func (bh *BuiltinHandler) Run(i *Info) (err error) {
 		return
 	}
 	if r.Start != nil {
-		err = r.Start(bh.DB, i)
+		err = r.Start(bh.DB, i, &builtinHelper{i.Name, bh.m})
 	}
 
 	return

@@ -48,7 +48,8 @@ table.pipescriptdetails {
   vertical-align: top;
 }
 
-th, td {
+th,
+td {
   text-align: left;
   padding: 8px;
 }
@@ -60,12 +61,15 @@ th, td {
   background: transparent !important;
 }
 
-.table-striped tr:nth-child(even) {background-color: #f0f0f0 !important;}
-.table-bordered td,.table-bordered th {
+.table-striped tr:nth-child(even) {
+  background-color: #f0f0f0 !important;
+}
+.table-bordered td,
+.table-bordered th {
   border: 1px solid #ddd;
   margin: 0;
 }
-table.table-bordered  {
+table.table-bordered {
   border-collapse: collapse;
 }
 .pipescriptargs .highlight {
@@ -73,4 +77,59 @@ table.table-bordered  {
 }
 .pipescriptargs .highlight pre {
   background: transparent !important;
+}
+
+.btn {
+  display: inline-block;
+  font-weight: 400;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  border: 1px solid transparent;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-radius: 0.25rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-lg {
+  padding: 0.5rem 1rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  border-radius: 0.3rem;
+}
+.btn-outline-primary {
+  color: #007bff;
+  background-color: transparent;
+  background-image: none;
+  border-color: #007bff;
+}
+.btn-outline-dark {
+  color: #343a40;
+  background-color: transparent;
+  background-image: none;
+  border-color: #343a40;
+}
+
+.btn-outline-dark:hover {
+  text-decoration: none;
+  color: white;
+  background-color: #343a40;
 }

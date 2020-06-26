@@ -11,7 +11,7 @@ const PluginName = "notifications"
 // This is not needed for normal plugins. The init simply registers the plugin with heedy internals
 // for when it is compiled directly into the main heedy executable.
 func init() {
-	withversion := run.WithVersion(PluginName, SQLVersion, func(db *database.AdminDB, i *run.Info, sqlVersion int) error {
+	withversion := run.WithVersion(PluginName, SQLVersion, func(db *database.AdminDB, i *run.Info, h run.BuiltinHelper, sqlVersion int) error {
 		e := events.NewFilledHandler(db, events.GlobalHandler)
 		RegisterNotificationHooks(e)
 

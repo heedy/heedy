@@ -16,6 +16,7 @@ require (
 	github.com/karrick/tparse/v2 v2.8.1
 	github.com/lpar/gzipped/v2 v2.0.2
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mitchellh/mapstructure v1.3.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rakyll/statik v0.1.7
 	github.com/robfig/cron/v3 v3.0.1

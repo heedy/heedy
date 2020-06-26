@@ -90,10 +90,12 @@ func (p *Plugin) Close() {
 }
 
 // InitSQL initializes the plugin's sql portion
-func (p *Plugin) InitSQL(name string, version int, updater func(*database.AdminDB, *run.Info, int) error) error {
+func (p *Plugin) InitSQL(name string, version int, updater func(*database.AdminDB, *run.Info, run.BuiltinHelper, int) error) error {
 	adb, err := p.AdminDB()
 	if err != nil {
 		return err
 	}
-	return run.WithVersion(name, version, updater)(adb, p.Meta)
+
+	// The plugin helper is not valid for external plugins right now
+	return run.WithVersion(name, version, updater)(adb, p.Meta, nil)
 }

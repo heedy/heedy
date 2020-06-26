@@ -117,7 +117,7 @@ func NewManager(db *database.AdminDB) *Manager {
 			// These are runtypes built into heedy's core
 			switch rt {
 			case "builtin":
-				handler = NewBuiltinHandler(db)
+				handler = NewBuiltinHandler(db, m)
 			case "exec":
 				handler = NewExecHandler(db)
 			default:

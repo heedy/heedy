@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"errors"
+
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
@@ -10,14 +12,25 @@ const PluginName = "dashboard"
 
 var dbUpdate = run.WithVersion(PluginName, SQLVersion, SQLUpdater)
 
-func StartDashboard(db *database.AdminDB, i *run.Info) error {
-	err := dbUpdate(db, i)
+func StartDashboard(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) error {
+	err := dbUpdate(db, i, h)
+	if err != nil {
+		return err
+	}
+
+	// Set up the global Dashboard object
+	dplugin, ok := db.Assets().Config.Plugins["dashboard"]
+	if !ok {
+		return errors.New("Could not find dashboard plugin configuration")
+	}
+
+	Dashboard, err = NewDashboardProcessor(db, dplugin, h)
 	if err != nil {
 		return err
 	}
 
 	// Set up the event handler
-	events.AddHandler(DashboardEventHandler{db})
+	events.AddHandler(Dashboard)
 
 	return nil
 }

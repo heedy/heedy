@@ -39,7 +39,7 @@ var (
 )
 
 // Start checks the currently set python path to make sure that it is valid
-func Start(db *database.AdminDB, i *run.Info) error {
+func Start(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) error {
 
 	pyplugin, ok := db.Assets().Config.Plugins["python"]
 	if !ok {

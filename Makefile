@@ -46,6 +46,7 @@ watch: heedydbg frontend/node_modules
 test:
 	go test ./backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
 	go test ./plugins/timeseries/backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
+	go test -p 1 ./plugins/dashboard/backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
 	cd api/python; make test
 
 clean:
