@@ -35,7 +35,7 @@ func genDatabase(t *testing.T) (*database.AdminDB, func()) {
 func TestDatabase(t *testing.T) {
 	sdb, cleanup := genDatabase(t)
 	defer cleanup()
-	require.NoError(t, SQLUpdater(sdb, nil, 0))
+	require.NoError(t, SQLUpdater(sdb, nil, nil, 0))
 	action := true
 	s := OpenSQLData(sdb)
 
@@ -50,10 +50,9 @@ func TestDatabase(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	tt := "1.0"
 	di, err := s.ReadTimeseriesData(&Query{
 		Timeseries: "s1",
-		T:          &tt,
+		T:          "1.0",
 		Actions:    &action,
 	})
 	require.NoError(t, err)
@@ -64,7 +63,7 @@ func TestDatabase(t *testing.T) {
 
 	di, err = s.ReadTimeseriesData(&Query{
 		Timeseries: "s1",
-		T1:         &tt,
+		T1:         "1.0",
 		Actions:    &action,
 	})
 	require.NoError(t, err)
@@ -83,7 +82,7 @@ func TestDatabase(t *testing.T) {
 
 	di, err = s.ReadTimeseriesData(&Query{
 		Timeseries: "s1",
-		T1:         &tt,
+		T1:         "1.0",
 		Actions:    &action,
 	})
 	require.NoError(t, err)
@@ -100,13 +99,13 @@ func TestDatabase(t *testing.T) {
 
 	require.NoError(t, s.RemoveTimeseriesData(&Query{
 		Timeseries: "s1",
-		T:          &tt,
+		T:          "1.0",
 		Actions:    &action,
 	}))
 
 	di, err = s.ReadTimeseriesData(&Query{
 		Timeseries: "s1",
-		T1:         &tt,
+		T1:         1.0,
 		Actions:    &action,
 	})
 	require.NoError(t, err)
@@ -156,7 +155,7 @@ func TestDatabase(t *testing.T) {
 func TestDurationUpdate(t *testing.T) {
 	sdb, cleanup := genDatabase(t)
 	defer cleanup()
-	require.NoError(t, SQLUpdater(sdb, nil, 0))
+	require.NoError(t, SQLUpdater(sdb, nil, nil, 0))
 
 	s := OpenSQLData(sdb)
 

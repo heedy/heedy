@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/heedy/heedy/backend/assets"
@@ -13,6 +14,35 @@ type AdminDB struct {
 	SqlxCache
 
 	a *assets.Assets
+}
+
+// As allows performing a query with the given permissions level
+func (db *AdminDB) As(identifier string) (DB, error) {
+	if identifier == "heedy" {
+		return db, nil
+	}
+	if identifier == "public" {
+		return NewPublicDB(db), nil
+	}
+	// Now check if there is a slash in the identifier
+	i := strings.Index(identifier, "/")
+
+	username := identifier
+	if i > -1 {
+		username = identifier[:i]
+		appid := identifier[i+1:]
+		app, err := db.ReadApp(appid, nil)
+		if err != nil {
+			return nil, err
+		}
+		if *app.Owner != username {
+			return nil, fmt.Errorf("User %s doesn't have app %s", username, appid)
+		}
+		return NewAppDB(db, app), nil
+	}
+
+	return NewUserDB(db, identifier), nil
+
 }
 
 // AdminDB returns the admin database

@@ -124,24 +124,6 @@ func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB
 	return database.NewPublicDB(a.DB), nil
 }
 
-// As creates a database As the given identifier. That is, if as is heedy, it returns an admin db,
-// if it is public, returns a public db, and if it is a username/app then it returns those.
-func (a *Auth) As(identifier string) (database.DB, error) {
-	if identifier == "heedy" {
-		return a.DB, nil
-	}
-	if identifier == "public" {
-		return database.NewPublicDB(a.DB), nil
-	}
-	_, err := a.DB.ReadUser(identifier, &database.ReadUserOptions{
-		Icon: false,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return database.NewUserDB(a.DB, identifier), nil
-}
-
 type tokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`

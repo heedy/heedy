@@ -6,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins/run"
-	"github.com/karrick/tparse/v2"
 )
 
 var SQLVersion = 1
@@ -167,6 +165,10 @@ func querySQL(q *Query, order bool) (string, []interface{}, error) {
 	constraints := []string{"tsid=?"}
 	cValues := []interface{}{q.Timeseries}
 
+	if q.Reversed != nil && *q.Reversed && q.Transform != nil && *q.Transform != "" {
+		errors.New("bad_query: Reversed timeseries don't support transforms")
+	}
+
 	if q.Actions != nil && *q.Actions {
 		table = "timeseries_actions"
 	}
@@ -180,12 +182,12 @@ func querySQL(q *Query, order bool) (string, []interface{}, error) {
 	}
 
 	if q.T != nil {
-		t, err := tparse.ParseNow(time.RFC3339, *q.T)
+		t, err := ParseTimestamp(q.T)
 		if err != nil {
 			return "", nil, err
 		}
 		constraints = append(constraints, "timestamp=?")
-		cValues = append(cValues, Unix(t))
+		cValues = append(cValues, t)
 		if q.I != nil || q.I1 != nil || q.I2 != nil || q.T1 != nil || q.T2 != nil {
 			return "", nil, errors.New("bad_query: Cannot query by range and by single timestamp at the same time")
 		}
@@ -199,20 +201,20 @@ func querySQL(q *Query, order bool) (string, []interface{}, error) {
 	} else {
 		// Otherwise, we're querying a range
 		if q.T1 != nil {
-			t, err := tparse.ParseNow(time.RFC3339, *q.T1)
+			t, err := ParseTimestamp(q.T1)
 			if err != nil {
 				return "", nil, err
 			}
 			constraints = append(constraints, "timestamp>=?")
-			cValues = append(cValues, Unix(t))
+			cValues = append(cValues, t)
 		}
 		if q.T2 != nil {
-			t, err := tparse.ParseNow(time.RFC3339, *q.T2)
+			t, err := ParseTimestamp(q.T2)
 			if err != nil {
 				return "", nil, err
 			}
 			constraints = append(constraints, "timestamp<?")
-			cValues = append(cValues, Unix(t))
+			cValues = append(cValues, t)
 		}
 		if q.I1 != nil {
 			c, v := getSQLIndexTimestamp(table, q.Timeseries, *q.I1)
@@ -388,26 +390,15 @@ func (d *SQLData) WriteTimeseriesData(sid string, data DatapointIterator, q *Ins
 }
 
 func (d *SQLData) ReadTimeseriesData(q *Query) (DatapointIterator, error) {
-
-	query, values, err := querySQL(q, true)
-	if err != nil {
-		return nil, err
-	}
-	if q.Actions != nil && *q.Actions {
-		rows, err := d.db.Queryx("SELECT timestamp,duration,actor,data FROM "+query, values...)
-
-		if err != nil || q.Transform == nil {
-			return &SQLIterator{rows.Rows, true}, err
-		}
-		return MkTransform(*q.Transform, &SQLIterator{rows.Rows, true})
-	}
-	rows, err := d.db.Queryx("SELECT timestamp,duration,data FROM "+query, values...)
-
+	it, err := q.RawRead(d.db)
 	if err != nil || q.Transform == nil {
-		return &SQLIterator{rows.Rows, false}, err
+		return it, err
 	}
-	return MkTransform(*q.Transform, &SQLIterator{rows.Rows, false})
-
+	dpi, err := MkTransform(*q.Transform, it)
+	if err != nil {
+		it.Close()
+	}
+	return dpi, err
 }
 
 func (d *SQLData) RemoveTimeseriesData(q *Query) error {

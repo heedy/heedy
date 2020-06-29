@@ -41,7 +41,7 @@ func (db *PluginDB) NewRequest(method, path string, body io.Reader) (*http.Reque
 
 	r, err := http.NewRequest(method, host, body)
 	if err == nil {
-		r.Header.Add("X-Heedy-Auth", db.Entity)
+		r.Header.Add("X-Heedy-As", db.Entity)
 		r.Header.Add("X-Heedy-Key", db.P.Meta.APIKey)
 		r.Header.Add("X-Heedy-Overlay", strconv.Itoa(db.Overlay))
 		if db.RequestID != "" {
@@ -179,9 +179,9 @@ func (db *PluginDB) Type() database.DBType {
 	}
 	i := strings.Index(db.Entity, "/")
 	if i > -1 {
-		return database.UserType
+		return database.AppType
 	}
-	return database.AppType
+	return database.UserType
 }
 
 func (db *PluginDB) CreateUser(u *database.User) error {

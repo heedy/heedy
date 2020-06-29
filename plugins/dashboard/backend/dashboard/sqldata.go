@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/jmoiron/sqlx/types"
 )
@@ -216,6 +217,16 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 
 	}
 
+	// Fill in the event template, since all events here will have the same template
+	eventTemplate := events.Event{
+		Event:  "DASHBOARD_EVENT",
+		Object: oid,
+	}
+	err := events.FillEvent(adb, &eventTemplate)
+	if err != nil {
+		return err
+	}
+
 	// Perform the entire modification of the dashboard as a single transaction
 	tx, err := adb.Beginx()
 	if err != nil {
@@ -249,6 +260,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 	}
 	// Prepare an array of events to fire and dashboard queries to initiate
 	requery := make([]*DashboardElement, 0)
+	evts := make([]*events.Event, 0)
 
 	for _, el := range elements {
 		if el.ID != "" {
@@ -260,6 +272,8 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 				if el.Type == "" {
 					el.Type = de.Type
 				}
+
+				willRequery := false
 
 				if el.Query != nil || el.Frontend != nil || el.Type != de.Type {
 					t, ok := Dashboard.Types[el.Type]
@@ -275,6 +289,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 					de.Outdated = true
 					if el.OnDemand == nil && !*de.OnDemand || el.OnDemand != nil && !*el.OnDemand {
 						requery = append(requery, &de)
+						willRequery = true
 					}
 
 				}
@@ -345,6 +360,17 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 							return err
 						}
 					}
+				}
+
+				if !willRequery {
+					// If not requerying, add the event right now
+					newEvent := eventTemplate
+					newEvent.Event = "DASHBOARD_ELEMENT_UPDATE"
+					newEvent.Data = map[string]interface{}{
+						"element_id":   el.ID,
+						"element_type": de.Type,
+					}
+					evts = append(evts, &newEvent)
 				}
 
 				continue
@@ -424,6 +450,14 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			}
 		}
 
+		newEvent := eventTemplate
+		newEvent.Event = "DASHBOARD_ELEMENT_CREATE"
+		newEvent.Data = map[string]interface{}{
+			"element_id":   el.ID,
+			"element_type": el.Type,
+		}
+		evts = append(evts, &newEvent)
+
 		// We added an element, so increment the max index
 		maxIndex++
 
@@ -433,13 +467,28 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 	if err != nil {
 		return err
 	}
-	for _, e := range requery {
+	for i := range requery {
+		e := requery[i]
 		// Dispatch requery requests for all of the objects that are being changed which are not ondemand
 		q, err := e.Query.MarshalJSON()
 		if err == nil {
-			go Dashboard.Query(username, e.ObjectID, e.ID, e.Type, q)
+			go func() {
+				Dashboard.Query(username, e.ObjectID, e.ID, e.Type, q)
+				newEvent := eventTemplate
+				newEvent.Event = "DASHBOARD_ELEMENT_UPDATE"
+				newEvent.Data = map[string]interface{}{
+					"element_id":   e.ID,
+					"element_type": e.Type,
+				}
+				events.Fire(&newEvent)
+			}()
 		}
 
+	}
+
+	// Now fire the update events for all ondemand elements
+	for _, e := range evts {
+		events.Fire(e)
 	}
 	return nil
 }
@@ -489,6 +538,21 @@ func ReadDashboardElement(adb *database.AdminDB, username string, oid string, de
 }
 
 func DeleteDashboardElement(adb *database.AdminDB, oid string, deid string) error {
+	evt := &events.Event{
+		Event:  "DASHBOARD_ELEMENT_DELETE",
+		Object: oid,
+		Data: map[string]interface{}{
+			"element_id": deid,
+		},
+	}
+	err := events.FillEvent(adb, evt)
+	if err != nil {
+		return err
+	}
 	result, err := adb.Exec("DELETE FROM dashboard_elements WHERE element_id=? AND object_id=?", deid, oid)
-	return database.GetExecError(result, err)
+	err = database.GetExecError(result, err)
+	if err == nil {
+		events.Fire(evt)
+	}
+	return err
 }

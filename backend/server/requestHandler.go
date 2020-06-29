@@ -116,7 +116,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Now check if we are to update the context based on the X-Heedy headers
 		authVal := r.Header.Get("X-Heedy-As")
 		if len(authVal) > 0 && authVal != c.DB.ID() {
-			c.DB, err = a.auth.As(authVal)
+			c.DB, err = a.auth.DB.As(authVal)
 			if err != nil {
 				rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("plugin_error: Could not auth as %s: %s", authVal, err.Error()))
 				return

@@ -129,7 +129,7 @@ func (dp *DashboardProcessor) RunQ(username, oid string, eid string, etype strin
 
 	logrus.Debugf("Querying dashboard element %s/%s/%s (%s)", username, oid, eid, etype)
 
-	buf, err := run.Request(t.Handler, "POST", "/", q, map[string]string{
+	buf, err := run.RequestWithContext(dp.ADB, t.Handler, "POST", "/", q, map[string]string{
 		"X-Heedy-As": username,
 	})
 	if err != nil {
@@ -215,30 +215,93 @@ func (dp *DashboardProcessor) Fire(e *events.Event) {
 	if e.Object == "" {
 		return // Dashboards only listen to explicit object events
 	}
-	/*
 
-		// Otherwise, get the API calls for matching events
-		var s []struct {
-			ID           string `db:"id"`
-			Type         string `db:"type"`
-			BackendQuery []byte `db:"backend_query"`
-			Owner        string `db:"owner"`
-			ObjectID     string `db:"objectID"`
-		}
-		err := eh.db.Select(&s, `SELECT dashboard_elements.id,dashboard_elements.type,dashboard_elements.backend_query,objects.owner,objects.id AS objectID FROM dashboard_events
-							JOIN dashboard_elements ON (dashboard_elements.id=dashboard_events.element_id)
+	// Otherwise, get the API calls for matching events
+	var s []struct {
+		ElementID string                `db:"element_id"`
+		Type      string                `db:"type"`
+		Query     []byte                `db:"query"`
+		Owner     string                `db:"owner"`
+		ObjectID  string                `db:"objectID"`
+		OnDemand  bool                  `db:"on_demand"`
+		App       string                `db:"app"`
+		Plugin    *string               `json:"plugin,omitempty" db:"plugin"`
+		Key       *string               `json:"key,omitempty" db:"key"`
+		Tags      *database.StringArray `json:"tags,omitempty" db:"tags"`
+	}
+
+	tx, err := dp.ADB.Beginx()
+	if err != nil {
+		logrus.Errorf("Failed to get dashboard event (%s,%s): %v", e.Event, e.Object, err)
+		return
+	}
+	err = tx.Select(&s, `SELECT dashboard_elements.element_id,dashboard_elements.type,dashboard_elements.query,dashboard_elements.on_demand,objects.owner,objects.id AS objectID,COALESCE(objects.app,'') AS app,apps.plugin,objects.tags,objects.key FROM dashboard_events
+							JOIN dashboard_elements ON (dashboard_elements.element_id=dashboard_events.element_id AND dashboard_elements.object_id=dashboard_events.object_id)
 							JOIN objects ON (dashboard_elements.object_id=objects.id)
-							WHERE dashboard_events.event=? AND dashboard_events.object_id=?;`, e.Event, e.Object)
+							LEFT JOIN apps ON (objects.app=apps.id)
+							WHERE dashboard_events.event=? AND dashboard_events.event_object_id=?;`, e.Event, e.Object)
 
+	if err != nil {
+		logrus.Errorf("Failed to get dashboard events for (%s,%s): %v", e.Event, e.Object, err)
+		return
+	}
+
+	// Mark them all as outdated
+	for ev := range s {
+		res, err := tx.Exec(`UPDATE dashboard_elements SET outdated=TRUE WHERE element_id=? AND object_id=?;`, s[ev].ElementID, s[ev].ObjectID)
+		err = database.GetExecError(res, err)
 		if err != nil {
-			logrus.Errorf("Failed to get dashboard events for (%s,%s): %v", e.Event, e.Object, err)
+			logrus.Errorf("Failed to set dashboard element outdated %s/%s/%s, %v", s[ev].Owner, s[ev].ObjectID, s[ev].ElementID, err)
+			tx.Rollback()
 			return
 		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		logrus.Errorf("Failed to commit outdated dashboard elements for (%s,%s): %v", e.Event, e.Object, err)
+		return
+	}
 
-		// For each of the dashboard elements, fire the updated event
-		for i := range s {
-			events.Fire(&events.Event{})
-			logrus.Debugf("Dashboard element %s/%s is outdated", s[i].ObjectID, s[i].ID)
+	// For each of the dashboard elements,
+	for i := range s {
+		sv := s[i]
+		if !sv.OnDemand {
+			// Dispatch the query, and only once the result is ready do we fire the updated event
+			go func() {
+				Dashboard.Query(sv.Owner, sv.ObjectID, sv.ElementID, sv.Type, sv.Query)
+				events.Fire(&events.Event{
+					Event:  "DASHBOARD_ELEMENT_UPDATE",
+					User:   sv.Owner,
+					App:    sv.App,
+					Object: sv.ObjectID,
+					Plugin: sv.Plugin,
+					Key:    sv.Key,
+					Tags:   sv.Tags,
+					Type:   "dashboard",
+					Data: map[string]interface{}{
+						"element_id":   sv.ElementID,
+						"element_type": sv.Type,
+					},
+				})
+			}()
+		} else {
+			// Otherwise, fire the event right away, since it will perform the query when the element is read
+			events.Fire(&events.Event{
+				Event:  "DASHBOARD_ELEMENT_UPDATE",
+				User:   sv.Owner,
+				App:    sv.App,
+				Object: sv.ObjectID,
+				Plugin: sv.Plugin,
+				Key:    sv.Key,
+				Tags:   sv.Tags,
+				Type:   "dashboard",
+				Data: map[string]interface{}{
+					"element_id":   sv.ElementID,
+					"element_type": sv.Type,
+				},
+			})
 		}
-	*/
+
+	}
+
 }

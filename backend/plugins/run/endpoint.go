@@ -2,6 +2,7 @@ package run
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,22 +17,77 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/events"
 	"github.com/sirupsen/logrus"
 )
 
-// Request runs the given http handler, if body is byte array, sends that, otherwise marshals as json, and optionally unmarshals the result
+// RequestWithContext is just like request, but it also creates a heedy request context, so that it can request things from builtin plugins
+func RequestWithContext(adb *database.AdminDB, h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
+	var bodybuffer io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		bodybuffer = bytes.NewBuffer(b)
+	}
+
+	req, err := http.NewRequest(method, path, bodybuffer)
+	if err != nil {
+		return nil, err
+	}
+	if headers != nil {
+		for key, val := range headers {
+			req.Header.Add(key, val)
+		}
+	}
+
+	c := &rest.Context{
+		Events: events.NewFilledHandler(adb, events.GlobalHandler),
+		DB:     adb,
+		Log:    rest.RequestLogger(req),
+	}
+	as, ok := headers["X-Heedy-As"]
+	if ok {
+		c.DB, err = adb.As(as)
+		if err != nil {
+			return nil, err
+		}
+		c.Log = c.Log.WithField("auth", c.DB.ID())
+	}
+	id, ok := headers["X-Heedy-Id"]
+	if ok {
+		c.ID = id
+	}
+	rid, ok := headers["X-Heedy-Request"]
+	if ok {
+		c.RequestID = rid
+	}
+
+	req = req.WithContext(context.WithValue(req.Context(), rest.HeedyContext, c))
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code >= 400 {
+		var er rest.ErrorResponse
+		err = json.Unmarshal(rec.Body.Bytes(), &er)
+		if err != nil {
+			return nil, err
+		}
+		return nil, &er
+	}
+	return rec.Body, nil
+}
+
+// Request runs the given http handler, and optionally unmarshals the result
 func Request(h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
 	var bodybuffer io.Reader
 	if body != nil {
-		b, ok := body.([]byte)
-		if !ok {
-			var err error
-			b, err = json.Marshal(body)
-			if err != nil {
-				return nil, err
-			}
+		b, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
 		}
-
 		bodybuffer = bytes.NewBuffer(b)
 	}
 

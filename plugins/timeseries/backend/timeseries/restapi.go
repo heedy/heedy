@@ -303,7 +303,36 @@ func Act(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateDataset(w http.ResponseWriter, r *http.Request) {
+	// Generate a dataset
+	c := rest.CTX(r)
+	var d Dataset
+	err := rest.UnmarshalRequest(r, &d)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+
+	di, err := d.Get(c.DB)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	pi := &FromPipeIterator{dpi: di, it: di}
+
 	rest.WriteResult(w, r, errors.New("unimplemented"))
+
+	ai, err := NewJsonArrayReader(pi)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	err = rest.WriteGZIP(w, r, ai, http.StatusOK)
+	if err != nil {
+		c.Log.Warnf("Dataset read failed: %s", err.Error())
+	}
 }
 
 // Handler is the global router for the timeseries API

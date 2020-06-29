@@ -3,6 +3,7 @@ package timeseries
 import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins/run"
+	"github.com/heedy/pipescript/datasets/interpolators"
 	"github.com/heedy/pipescript/transforms"
 )
 
@@ -13,6 +14,7 @@ const PluginName = "timeseries"
 func init() {
 	// Register all pipescript transforms
 	transforms.Register()
+	interpolators.Register()
 
 	// Initialize the plugin
 	withversion := run.WithVersion(PluginName, SQLVersion, SQLUpdater)
