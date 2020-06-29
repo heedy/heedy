@@ -132,6 +132,7 @@ func TestCRUD(t *testing.T) {
 	}
 	emptyObject := types.JSONText("{}")
 	zeroObject := types.JSONText("0")
+	oneObject := types.JSONText("1")
 
 	require.Error(t, WriteDashboard(adb, "test", oid1, []DashboardElement{
 		{
@@ -184,7 +185,7 @@ func TestCRUD(t *testing.T) {
 	err = WriteDashboard(adb, "test", oid1, []DashboardElement{
 		{
 			ID:     el.ID,
-			Query:  &zeroObject,
+			Query:  &oneObject,
 			Events: &de,
 		},
 	})
@@ -195,7 +196,7 @@ func TestCRUD(t *testing.T) {
 	require.Len(t, da, 1)
 	b, err = da[0].Data.MarshalJSON()
 	require.NoError(t, err)
-	require.Equal(t, "1", string(b))
+	require.Equal(t, "2", string(b))
 
 	require.NoError(t, DeleteDashboardElement(adb, oid1, da[0].ID))
 

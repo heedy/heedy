@@ -26,9 +26,13 @@ import (
 func RequestWithContext(adb *database.AdminDB, h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
 	var bodybuffer io.Reader
 	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
+		b, ok := body.([]byte)
+		if !ok {
+			var err error
+			b, err = json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
 		}
 		bodybuffer = bytes.NewBuffer(b)
 	}
@@ -84,9 +88,13 @@ func RequestWithContext(adb *database.AdminDB, h http.Handler, method, path stri
 func Request(h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
 	var bodybuffer io.Reader
 	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
+		b, ok := body.([]byte)
+		if !ok {
+			var err error
+			b, err = json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
 		}
 		bodybuffer = bytes.NewBuffer(b)
 	}
