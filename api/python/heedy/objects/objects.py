@@ -11,16 +11,27 @@ from . import registry
 
 
 class Object(APIObject):
-    props = {"name", "description", "icon", "access",
-             "meta", "tags", "key", "owner_scope"}
+    props = {
+        "name",
+        "description",
+        "icon",
+        "access",
+        "meta",
+        "tags",
+        "key",
+        "owner_scope",
+    }
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(
             f"api/objects/{objectData['id']}",
             {"object": objectData["id"]},
             session,
-            cached_data=objectData
+            cached_data=objectData,
         )
+        # The object ID
+        self.id = objectData["id"]
+
         self._kv = KV(f"api/kv/objects/{objectData['id']}", self.session)
 
     @property
@@ -70,6 +81,7 @@ class Object(APIObject):
                             meta[key] = kwm[key]
                     self.cached_data["meta"] = meta
             return o
+
         return self.session.f(super().update(**kwargs), updateMeta)
 
 

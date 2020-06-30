@@ -16,6 +16,7 @@ This page is the core API reference for the heedy python client.
     :inherited-members:
     :show-inheritance:
 ```
+
 ### Timeseries
 
 ```eval_rst
@@ -50,6 +51,16 @@ This page is the core API reference for the heedy python client.
 
 ```eval_rst
 .. automodule:: heedy.plugins
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+```
+
+## Datasets
+
+```eval_rst
+.. automodule:: heedy.datasets
     :members:
     :undoc-members:
     :inherited-members:

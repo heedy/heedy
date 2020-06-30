@@ -13,12 +13,21 @@ from dateparser import parse
 
 def parseTime(t):
     if isinstance(t, str):
-        t = parse(t)
-        if t is None:
-            raise AttributeError("Could not parse timestamp")
+        tnew = parse(t)
+        if tnew is not None:
+            t = tnew
     if isinstance(t, datetime.datetime):
         t = t.timestamp()
     return t
+
+
+def fixTimestamps(query):
+    if "t1" in query:
+        query["t1"] = parseTime(query["t1"])
+    if "t2" in query:
+        query["t2"] = parseTime(query["t2"])
+    if "t" in query:
+        query["t"] = parseTime(query["t"])
 
 
 class DatapointArray(list):
@@ -144,12 +153,7 @@ class Timeseries(Object):
         Timestamps can be strings such as "last month", "1pm" or "jun 5, 2019, 1pm", which will be
         parsed and converted to the corresponding unix timestamps
         """
-        if "t1" in kwargs:
-            kwargs["t1"] = parseTime(kwargs["t1"])
-        if "t2" in kwargs:
-            kwargs["t2"] = parseTime(kwargs["t2"])
-        if "t" in kwargs:
-            kwargs["t"] = parseTime(kwargs["t"])
+        fixTimestamps(kwargs)
         urimod = "/timeseries"
         if actions:
             urimod = "/actions"

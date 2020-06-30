@@ -319,8 +319,6 @@ func GenerateDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	pi := &FromPipeIterator{dpi: di, it: di}
 
-	rest.WriteResult(w, r, errors.New("unimplemented"))
-
 	ai, err := NewJsonArrayReader(pi)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
