@@ -2,6 +2,7 @@ package timeseries
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -93,6 +94,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
+	defer di.Close()
 	ai, err := NewJsonArrayReader(di)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -317,6 +319,7 @@ func GenerateDataset(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
+	defer di.Close()
 	pi := &FromPipeIterator{dpi: di, it: di}
 
 	ai, err := NewJsonArrayReader(pi)
@@ -330,6 +333,64 @@ func GenerateDataset(w http.ResponseWriter, r *http.Request) {
 	err = rest.WriteGZIP(w, r, ai, http.StatusOK)
 	if err != nil {
 		c.Log.Warnf("Dataset read failed: %s", err.Error())
+	}
+}
+
+func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
+	// Generate a dataset
+	c := rest.CTX(r)
+	var d []*Dataset
+	err := rest.UnmarshalRequest(r, &d)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	readers := make([]*JsonReader, len(d))
+	for i := range d {
+		di, err := d[i].Get(c.DB)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+			return
+		}
+		defer di.Close()
+
+		pi := &FromPipeIterator{dpi: di, it: di}
+
+		ai, err := NewJsonArrayReader(pi)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		readers[i] = ai
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte{'['})
+	if err != nil {
+		c.Log.Warnf("Dashboard dataset: %s", err.Error())
+		return
+	}
+	for i := range readers {
+		_, err = io.Copy(w, readers[i])
+
+		if err != nil {
+			c.Log.Warnf("Dashboard dataset: %s", err.Error())
+			return
+		}
+		if i < len(readers)-1 {
+			_, err = w.Write([]byte{','})
+			if err != nil {
+				c.Log.Warnf("Dashboard dataset: %s", err.Error())
+				return
+			}
+		}
+	}
+	_, err = w.Write([]byte{']'})
+	if err != nil {
+		c.Log.Warnf("Dashboard dataset: %s", err.Error())
+		return
 	}
 }
 
@@ -366,6 +427,8 @@ var Handler = func() *chi.Mux {
 	m.Post("/object/act", Act)
 
 	m.Post("/api/dataset", GenerateDataset)
+
+	m.Post("/dashboard/", GenerateDashboardDataset)
 
 	m.NotFound(rest.NotFoundHandler)
 	m.MethodNotAllowed(rest.NotFoundHandler)

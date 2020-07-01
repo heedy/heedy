@@ -18,7 +18,7 @@ const sqlSchema = `
 
 CREATE TABLE dashboard_elements (
 	object_id VARCHAR(36) NOT NULL,
-	element_id VARCHAR(36) UNIQUE NOT NULL,
+	element_id VARCHAR(36) NOT NULL,
 
 	element_index INT NOT NULL,
 
@@ -57,14 +57,9 @@ CREATE TABLE dashboard_events (
 
 	PRIMARY KEY (object_id,element_id,event_object_id,event),
 
-	CONSTRAINT dashboard_updater
-		FOREIGN KEY(element_id)
-		REFERENCES dashboard_elements(element_id)
-		ON UPDATE CASCADE
-		ON DELETE CASCADE,
-	CONSTRAINT underlying_object
-		FOREIGN KEY(object_id)
-		REFERENCES objects(id)
+	CONSTRAINT underlying_element
+		FOREIGN KEY(object_id,element_id)
+		REFERENCES dashboard_elements(object_id,element_id)
 		ON UPDATE CASCADE
 		ON DELETE CASCADE,
 	CONSTRAINT event_object_c
@@ -101,7 +96,7 @@ type DashboardElement struct {
 	ObjectID string `json:"object_id,omitempty" db:"object_id"`
 	Index    *int   `json:"index,omitempty" db:"element_index"`
 
-	Type     string `json:"type,omitempty"`
+	Type     string `json:"type,omitempty" db:"type"`
 	OnDemand *bool  `json:"on_demand,omitempty" db:"on_demand"`
 
 	Query    *types.JSONText `json:"query,omitempty"`
@@ -365,7 +360,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 				if !willRequery {
 					// If not requerying, add the event right now
 					newEvent := eventTemplate
-					newEvent.Event = "DASHBOARD_ELEMENT_UPDATE"
+					newEvent.Event = "dashboard_element_update"
 					newEvent.Data = map[string]interface{}{
 						"element_id":   el.ID,
 						"element_type": de.Type,
@@ -401,9 +396,13 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			tx.Rollback()
 			return fmt.Errorf("Unrecognized element type '%s'", el.Type)
 		}
-		if el.Query == nil || el.Frontend == nil {
+		if el.Query == nil {
 			tx.Rollback()
-			return fmt.Errorf("Element has no query/frontend")
+			return fmt.Errorf("Element has no query")
+		}
+		if el.Frontend == nil {
+			v := types.JSONText("{}")
+			el.Frontend = &v
 		}
 		err = t.Validate(&el)
 		if err != nil {
@@ -451,7 +450,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 		}
 
 		newEvent := eventTemplate
-		newEvent.Event = "DASHBOARD_ELEMENT_CREATE"
+		newEvent.Event = "dashboard_element_create"
 		newEvent.Data = map[string]interface{}{
 			"element_id":   el.ID,
 			"element_type": el.Type,
@@ -475,7 +474,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			go func() {
 				Dashboard.Query(username, e.ObjectID, e.ID, e.Type, q)
 				newEvent := eventTemplate
-				newEvent.Event = "DASHBOARD_ELEMENT_UPDATE"
+				newEvent.Event = "dashboard_element_update"
 				newEvent.Data = map[string]interface{}{
 					"element_id":   e.ID,
 					"element_type": e.Type,
@@ -495,7 +494,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 
 func ReadDashboardElement(adb *database.AdminDB, username string, oid string, deid string, include_query bool) (*DashboardElement, error) {
 	var de DashboardElement
-	err := adb.Get(&de, `SELECT element_id,element_index,type,on_demand,query,data,frontend,outdated FROM dashboard_elements WHERE element_id=? AND object_id=?;`, deid, oid)
+	err := adb.Get(&de, `SELECT * FROM dashboard_elements WHERE element_id=? AND object_id=?;`, deid, oid)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -505,7 +504,7 @@ func ReadDashboardElement(adb *database.AdminDB, username string, oid string, de
 	}
 	if include_query {
 		var earr []DashboardEvent
-		err = adb.Select(&earr, `SELECT event_object_id,event WHERE element_id=?`, deid)
+		err = adb.Select(&earr, `SELECT event_object_id,event FROM dashboard_events WHERE element_id=?`, deid)
 
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -539,7 +538,7 @@ func ReadDashboardElement(adb *database.AdminDB, username string, oid string, de
 
 func DeleteDashboardElement(adb *database.AdminDB, oid string, deid string) error {
 	evt := &events.Event{
-		Event:  "DASHBOARD_ELEMENT_DELETE",
+		Event:  "dashboard_element_delete",
 		Object: oid,
 		Data: map[string]interface{}{
 			"element_id": deid,

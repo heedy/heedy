@@ -104,7 +104,7 @@ var Handler = func() *chi.Mux {
 	m.Get("/object/dashboard", ReadHandler)
 	m.Post("/object/dashboard", WriteHandler)
 	m.Get("/object/dashboard/{element_id}", ReadElementHandler)
-	m.Post("/object/dashboard/{element_id}", WriteElementHandler)
+	m.Patch("/object/dashboard/{element_id}", WriteElementHandler)
 	m.Delete("/object/dashboard/{element_id}", DeleteElementHandler)
 
 	m.NotFound(rest.NotFoundHandler)

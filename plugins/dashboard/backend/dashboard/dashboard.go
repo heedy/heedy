@@ -183,6 +183,9 @@ func (dp *DashboardProcessor) Query(username string, oid string, eid string, ety
 	data, err = dp.RunQ(username, oid, eid, etype, q)
 	if err != nil {
 		// We return valid bytes no matter what
+
+		// TODO: if err is of format err_name: text description
+		// the returned error name should be the name
 		data, _ = json.Marshal(rest.ErrorResponse{
 			ErrorName:        "server_error",
 			ErrorDescription: err.Error(),
@@ -270,7 +273,7 @@ func (dp *DashboardProcessor) Fire(e *events.Event) {
 			go func() {
 				Dashboard.Query(sv.Owner, sv.ObjectID, sv.ElementID, sv.Type, sv.Query)
 				events.Fire(&events.Event{
-					Event:  "DASHBOARD_ELEMENT_UPDATE",
+					Event:  "dashboard_element_update",
 					User:   sv.Owner,
 					App:    sv.App,
 					Object: sv.ObjectID,
@@ -287,7 +290,7 @@ func (dp *DashboardProcessor) Fire(e *events.Event) {
 		} else {
 			// Otherwise, fire the event right away, since it will perform the query when the element is read
 			events.Fire(&events.Event{
-				Event:  "DASHBOARD_ELEMENT_UPDATE",
+				Event:  "dashboard_element_update",
 				User:   sv.Owner,
 				App:    sv.App,
 				Object: sv.ObjectID,
