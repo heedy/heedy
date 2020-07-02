@@ -6,7 +6,17 @@
     :name="object.name"
     :description="object.description"
     :showTitle="!$vuetify.breakpoint.xs"
-  ></h-header>
+  >
+    <slot></slot>
+    <v-tooltip bottom v-if="access.includes('*') || access.includes('write')">
+      <template #activator="{on}">
+        <v-btn icon v-on="on" :to="`/objects/${object.id}/update`">
+          <v-icon>edit</v-icon>
+        </v-btn>
+      </template>
+      <span>Edit</span>
+    </v-tooltip>
+  </h-header>
 </template>
 <script>
 export default {
@@ -19,6 +29,9 @@ export default {
         icon: "assignment"
       };
       return otype.icon;
+    },
+    access() {
+      return this.object.access.split(" ");
     }
   }
 };

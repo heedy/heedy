@@ -1,29 +1,6 @@
 <template>
-  <h-card-page :title="'Update ' + object.name" :alert="alert">
-    <v-container fluid grid-list-md>
-      <v-layout row>
-        <v-flex sm5 md4 xs12>
-          <h-icon-editor
-            ref="iconEditor"
-            :image="object.icon"
-            :colorHash="object.id"
-            defaultIcon="timeline"
-          ></h-icon-editor>
-        </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <v-text-field label="Name" placeholder="My Timeseries" v-model="name"></v-text-field>
-            <v-text-field
-              label="Description"
-              placeholder="This timeseries holds my data"
-              v-model="description"
-            ></v-text-field>
-            <h-tag-editor v-model="tags" />
-          </v-container>
-        </v-flex>
-      </v-layout>
-    </v-container>
-    <v-container v-if="advanced">
+  <h-object-updater :object="object" :meta="meta">
+    <template v-slot:advanced>
       <v-text-field label="Subtype" v-model="subtype" placeholder></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
@@ -45,17 +22,8 @@
           </v-container>
         </v-flex>
       </v-row>
-    </v-container>
-
-    <v-card-actions>
-      <v-btn dark color="red" @click="del" :loading="loading">Delete</v-btn>
-      <v-btn text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon>Advanced
-      </v-btn>
-      <v-spacer></v-spacer>
-      <v-btn dark color="blue" @click="update" :loading="loading">Update</v-btn>
-    </v-card-actions>
-  </h-card-page>
+    </template>
+  </h-object-updater>
 </template>
 <script>
 export default {
@@ -63,10 +31,6 @@ export default {
     object: Object
   },
   data: () => ({
-    alert: "",
-    modified: {},
-    loading: false,
-    advanced: false,
     scode: null,
     ssubtype: null,
     cmOptions: {
@@ -96,85 +60,6 @@ export default {
           return;
         default:
           this.code = JSON.stringify({ type: v }, null, "  ");
-      }
-    },
-    update: async function() {
-      if (this.loading) return;
-
-      this.loading = true;
-      this.alert = "";
-
-      if (this.$refs.iconEditor.hasImage()) {
-        // We are in the image picker, and an image was chosen
-        this.modified.icon = this.$refs.iconEditor.getImage();
-      }
-
-      let meta = {};
-
-      if (this.advanced && this.scode != null) {
-        try {
-          var s = JSON.parse(this.scode);
-        } catch {
-          this.alert = "Could not parse schema";
-          this.loading = false;
-          return;
-        }
-        meta.schema = s;
-      }
-      if (this.ssubtype != null) {
-        meta.subtype = this.ssubtype;
-      }
-
-      let mod = this.modified;
-
-      if (Object.keys(meta).length > 0) {
-        mod.meta = {
-          ...this.object.meta,
-          ...meta
-        };
-      }
-      if (Object.keys(this.modified).length > 0) {
-        console.log("UPDATING", mod);
-        let result = await this.$frontend.rest(
-          "PATCH",
-          `api/objects/${this.object.id}`,
-          mod
-        );
-
-        if (!result.response.ok) {
-          this.alert = result.data.error_description;
-          this.loading = false;
-          return;
-        }
-        this.$store.dispatch("readObject", {
-          id: this.object.id
-        });
-      }
-
-      this.loading = false;
-      this.$router.go(-1);
-    },
-    del: async function() {
-      let s = this.object;
-      if (
-        confirm(
-          `Are you sure you want to delete '${this.object.name}'? This deletes all associated data.`
-        )
-      ) {
-        let res = await this.$frontend.rest(
-          "DELETE",
-          `/api/objects/${this.object.id}`
-        );
-        if (!res.response.ok) {
-          this.alert = res.data.error_description;
-        } else {
-          this.alert = "";
-          if (s.app != null) {
-            this.$router.push(`/apps/${s.app}`);
-          } else {
-            this.$router.push(`/users/${s.owner}`);
-          }
-        }
       }
     }
   },
@@ -212,38 +97,17 @@ export default {
         this.ssubtype = v;
       }
     },
-    description: {
-      get() {
-        if (this.modified.description !== undefined) {
-          return this.modified.description;
-        }
-        return this.object.description;
-      },
-      set(v) {
-        this.$frontend.vue.set(this.modified, "description", v);
+    meta() {
+      let meta = {};
+      if (this.scode != null) {
+        try {
+          meta.schema = JSON.parse(this.scode);
+        } catch {}
       }
-    },
-    name: {
-      get() {
-        if (this.modified.name !== undefined) {
-          return this.modified.name;
-        }
-        return this.object.name;
-      },
-      set(v) {
-        this.$frontend.vue.set(this.modified, "name", v);
+      if (this.ssubtype != null) {
+        meta.subtype = this.ssubtype;
       }
-    },
-    tags: {
-      get() {
-        if (this.modified.tags !== undefined) {
-          return this.modified.tags;
-        }
-        return this.object.tags;
-      },
-      set(v) {
-        this.$frontend.vue.set(this.modified, "tags", v);
-      }
+      return meta;
     }
   }
 };

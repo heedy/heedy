@@ -15,17 +15,12 @@ function setup(frontend) {
       title: "Timeseries",
       description: "Manually gather data.",
       icon: "timeline",
-      route: "/create/object/timeseries"
-    });
-
-    frontend.objects.addRoute({
-      path: "/timeseries/update",
-      component: Update
+      route: "/create/object/timeseries",
     });
 
     frontend.addRoute({
       path: "/create/object/timeseries",
-      component: Create
+      component: Create,
     });
   }
 
@@ -34,13 +29,14 @@ function setup(frontend) {
   frontend.objects.addComponent({
     component: Views,
     type: "timeseries",
-    key: "views",
-    weight: 5
+    key: "body",
+    weight: 5,
   });
 
-  frontend.timeseries.addView("datatable", () => import("./views/datatable.mjs"));
+  frontend.timeseries.addView("datatable", () =>
+    import("./views/datatable.mjs")
+  );
   frontend.timeseries.addView("insert", () => import("./views/insert.mjs"));
-  frontend.timeseries.addView("apexchart", () => import("./views/apexchart.mjs"));
   frontend.timeseries.addView("chartjs", () => import("./views/chartjs.mjs"));
   frontend.timeseries.addView("timeline", () => import("./views/timeline.mjs"));
   frontend.timeseries.addView("horizon", () => import("./views/horizon.mjs"));
@@ -48,17 +44,16 @@ function setup(frontend) {
   frontend.objects.addComponent({
     component: Header,
     type: "timeseries",
-    key: "header"
+    key: "header",
   });
 
-  frontend.objects.addType({
+  frontend.objects.setType({
     type: "timeseries",
     title: "Timeseries",
     list_title: "Timeseries",
-    icon: "timeline"
+    icon: "timeline",
+    update: Update,
   });
-
-  //frontend.objects.replacePage("timeseries", Timeseries);
 }
 
 export default setup;

@@ -1,16 +1,15 @@
-import Header from "./main/header.vue";
+import vuexModule from "./main/vuex.js";
+import Injector from "./main/injector";
 
 function setup(frontend) {
-  frontend.objects.addType({
+  frontend.store.registerModule("dashboard", vuexModule);
+  frontend.inject("dashboard", new Injector(frontend));
+
+  frontend.objects.setType({
     type: "dashboard",
     title: "Dashboard",
     list_title: "Dashboards",
-    icon: "dashboard"
-  });
-  frontend.objects.addComponent({
-    component: Header,
-    type: "dashboard",
-    key: "header"
+    icon: "dashboard",
   });
 
   if (frontend.info.user != null) {
@@ -22,14 +21,14 @@ function setup(frontend) {
       fn: async () => {
         let res = await frontend.rest("POST", "/api/objects", {
           name: "My Dashboard",
-          type: "dashboard"
+          type: "dashboard",
         });
         if (res.response.ok) {
-          frontend.router.push({ path: `/objects/${res.data.id}` });
+          frontend.router.push({ path: `/objects/${res.data.id}/update` });
         } else {
           frontend.store.dispatch("errnotify", res.data);
         }
-      }
+      },
     });
   }
 }

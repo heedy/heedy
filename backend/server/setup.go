@@ -14,6 +14,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/lpar/gzipped/v2"
 	"github.com/spf13/afero"
 
 	"github.com/sirupsen/logrus"
@@ -129,7 +130,7 @@ func Setup(sc SetupContext, setupBind string) error {
 	mux.Get("/setup/", func(w http.ResponseWriter, r *http.Request) {
 		setupTemplate.Execute(w, &sc)
 	})
-	mux.Mount("/static/", http.FileServer(afero.NewHttpFs(frontendFS)))
+	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
 
 	// /setup is POSTed with info, and this function prepares the database
 	setupMutex := sync.Mutex{}

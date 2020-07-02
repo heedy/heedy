@@ -13,7 +13,8 @@ import PageContainer from "./components/page_container.vue";
 import CardPage from "./components/card_page.vue";
 import NotFound from "./components/404.vue";
 import Header from "./components/header.vue";
-import ObjectHeader from "./components/object-header.vue";
+import ObjectHeader from "./components/object_header.vue";
+import ObjectUpdater from "./components/object_updater.vue";
 
 function register(Vue) {
   Vue.component("h-loading", Loading);
@@ -26,6 +27,7 @@ function register(Vue) {
   Vue.component("h-not-found", NotFound);
   Vue.component("h-header", Header);
   Vue.component("h-object-header", ObjectHeader);
+  Vue.component("h-object-updater", ObjectUpdater);
 }
 
 export {
@@ -38,7 +40,8 @@ export {
   CardPage,
   NotFound,
   Header,
-  ObjectHeader
+  ObjectHeader,
+  ObjectUpdater,
 };
 
 export default register;

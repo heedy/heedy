@@ -7,7 +7,7 @@ export default {
     alert: {
       value: false,
       text: "",
-      type: ""
+      type: "",
     },
     users: {},
     // Components to show for a user
@@ -27,9 +27,7 @@ export default {
     objects: {},
     // Components to show for a object
     object_components: [],
-    // The custom pages to show for the given object type
-    object_custom_pages: {},
-    // Object types tell how to list the objects
+    // Object types hold the app customization for each object type
     object_types: {},
 
     // a map keyed by username, where each element is a map of ids to null
@@ -54,8 +52,8 @@ export default {
       heedy: false,
       plugins: [],
       config: false,
-      options: null
-    }
+      options: null,
+    },
   },
   mutations: {
     setSettingsRoutes(state, v) {
@@ -67,14 +65,17 @@ export default {
     addUserComponent(state, v) {
       state.user_components.push(v);
     },
-    addObjectType(state, v) {
+    setObjectType(state, v) {
+      if (state.object_types[v.type] !== undefined) {
+        v = {
+          ...state.object_types[v.type],
+          ...v,
+        };
+      }
       state.object_types[v.type] = v;
     },
     addObjectComponent(state, v) {
       state.object_components.push(v);
-    },
-    addObjectCustomPage(state, p) {
-      state.object_custom_pages[p.t] = p.c;
     },
     addObjectCreator(state, c) {
       state.objectCreators.push(c);
@@ -84,7 +85,7 @@ export default {
         value: true,
         type: "",
         text: "",
-        ...v
+        ...v,
       };
     },
     setUser(state, v) {
@@ -97,7 +98,7 @@ export default {
       }
       Vue.set(state.users, v.username, {
         qtime: moment(),
-        ...v
+        ...v,
       });
     },
     setApp(state, v) {
@@ -115,18 +116,18 @@ export default {
       }
       Vue.set(state.apps, v.id, {
         qtime: moment(),
-        ...v
+        ...v,
       });
     },
     setApps(state, v) {
       let qtime = moment();
-      Object.keys(v).forEach(k => {
+      Object.keys(v).forEach((k) => {
         v[k] = {
           qtime,
-          ...v[k]
+          ...v[k],
         };
       });
-      Object.keys(state.appObjects).forEach(k => {
+      Object.keys(state.appObjects).forEach((k) => {
         if (v[k] === undefined) {
           Vue.delete(state.appObjects, k);
         }
@@ -154,7 +155,7 @@ export default {
       // Set the object
       Vue.set(state.objects, v.id, {
         qtime: moment(),
-        ...v
+        ...v,
       });
       // Delete from lists where changed
       if (curs != null) {
@@ -180,11 +181,11 @@ export default {
     setUserObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
-      v.objects.forEach(s => {
+      v.objects.forEach((s) => {
         srcidmap[s.id] = null;
         Vue.set(state.objects, s.id, {
           qtime,
-          ...s
+          ...s,
         });
       });
       Vue.set(state.userObjects, v.user, srcidmap);
@@ -193,11 +194,11 @@ export default {
     setAppObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
-      v.objects.forEach(s => {
+      v.objects.forEach((s) => {
         srcidmap[s.id] = null;
         Vue.set(state.objects, s.id, {
           qtime,
-          ...s
+          ...s,
         });
       });
       Vue.set(state.appObjects, v.id, srcidmap);
@@ -211,7 +212,7 @@ export default {
     },
     setPluginApps(state, v) {
       state.plugin_apps = v;
-    }
+    },
   },
   actions: {
     errnotify({ commit }, v) {
@@ -220,7 +221,7 @@ export default {
         // Only notify if it is an actual error
         commit("alert", {
           type: "error",
-          text: v.error_description
+          text: v.error_description,
         });
       }
     },
@@ -229,7 +230,7 @@ export default {
       let username = q.username;
       console.log("Reading user", username);
       let res = await api("GET", `api/users/${username}`, {
-        icon: true
+        icon: true,
       });
       console.log(res);
       if (!res.response.ok) {
@@ -238,12 +239,12 @@ export default {
           // TODO: 404 should be returned
           commit("setUser", {
             username: username,
-            isNull: true
+            isNull: true,
           });
         } else {
           commit("alert", {
             type: "error",
-            text: res.data.error_description
+            text: res.data.error_description,
           });
         }
       } else {
@@ -262,19 +263,19 @@ export default {
     readApp_: async function({ commit }, q) {
       console.log("Reading app", q.id);
       let res = await api("GET", `api/apps/${q.id}`, {
-        icon: true
+        icon: true,
       });
       if (!res.response.ok) {
         if (res.response.status == 400 || res.response.status == 403) {
           // TODO: 404 should be returned
           commit("setApp", {
             id: q.id,
-            isNull: true
+            isNull: true,
           });
         } else {
           commit("alert", {
             type: "error",
-            text: res.data.error_description
+            text: res.data.error_description,
           });
         }
       } else {
@@ -288,19 +289,19 @@ export default {
     readObject_: async function({ commit }, q) {
       console.log("Reading object", q.id);
       let res = await api("GET", `api/objects/${q.id}`, {
-        icon: true
+        icon: true,
       });
       if (!res.response.ok) {
         if (res.response.status == 400 || res.response.status == 403) {
           // TODO: 404 should be returned
           commit("setObject", {
             id: q.id,
-            isNull: true
+            isNull: true,
           });
         } else {
           commit("alert", {
             type: "error",
-            text: res.data.error_description
+            text: res.data.error_description,
           });
         }
       } else {
@@ -377,19 +378,19 @@ export default {
       console.log("Reading objects for user", q.username);
       let query = {
         owner: q.username,
-        icon: true
+        icon: true,
       };
 
       let res = await api("GET", `api/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
-          text: res.data.error_description
+          text: res.data.error_description,
         });
       } else {
         commit("setUserObjects", {
           user: q.username,
-          objects: res.data
+          objects: res.data,
         });
       }
 
@@ -410,19 +411,19 @@ export default {
       console.log("Reading objects for app", q.id);
       let query = {
         app: q.id,
-        icon: true
+        icon: true,
       };
 
       let res = await api("GET", `api/objects`, query);
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
-          text: res.data.error_description
+          text: res.data.error_description,
         });
       } else {
         commit("setAppObjects", {
           id: q.id,
-          objects: res.data
+          objects: res.data,
         });
       }
 
@@ -436,7 +437,7 @@ export default {
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
-          text: res.data.error_description
+          text: res.data.error_description,
         });
       } else {
         commit("setAppScope", res.data);
@@ -454,12 +455,12 @@ export default {
       }
       console.log("Loading apps");
       let res = await api("GET", "api/apps", {
-        icon: true
+        icon: true,
       });
       if (!res.response.ok) {
         commit("alert", {
           type: "error",
-          text: res.data.error_description
+          text: res.data.error_description,
         });
         if (q !== undefined && q.hasOwnProperty("callback")) {
           q.callback();
@@ -467,7 +468,7 @@ export default {
         return;
       }
       let cmap = {};
-      res.data.map(v => {
+      res.data.map((v) => {
         cmap[v.id] = v;
       });
       commit("setApps", cmap);
@@ -493,6 +494,6 @@ export default {
       } else {
         commit("setPluginApps", res.data);
       }
-    }
-  }
+    },
+  },
 };

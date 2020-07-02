@@ -2,7 +2,7 @@
   <component :is="is" :object="object" />
 </template>
 <script>
-import ObjectDefault from "./index_default.vue";
+import ObjectDefault from "./update_default.vue";
 
 export default {
   props: {
@@ -14,7 +14,7 @@ export default {
         this.$store.state.heedy.object_types[this.object.type] !== undefined
       ) {
         return (
-          this.$store.state.heedy.object_types[this.object.type]["index"] ||
+          this.$store.state.heedy.object_types[this.object.type]["update"] ||
           ObjectDefault
         );
       }

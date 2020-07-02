@@ -1,12 +1,5 @@
 <template>
-  <h-header
-    :icon="object.icon"
-    defaultIcon="timeline"
-    :colorHash="object.id"
-    :name="object.name"
-    :description="object.description"
-    :showTitle="!$vuetify.breakpoint.xs"
-  >
+  <h-object-header :object="object">
     <v-select
       :items="queryOptions"
       v-model="query"
@@ -50,13 +43,6 @@
               />
             </v-col>
           </v-row>
-          <!--
-          <v-row>
-            <v-col cols="12" xs="12">
-              <v-text-field outlined label="Transform" />
-            </v-col>
-          </v-row>
-          -->
         </v-card-text>
 
         <v-divider></v-divider>
@@ -68,15 +54,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-tooltip bottom v-if="access.includes('*') || access.includes('write')">
-      <template #activator="{on}">
-        <v-btn icon v-on="on" :to="`/objects/${object.id}/timeseries/update`">
-          <v-icon>edit</v-icon>
-        </v-btn>
-      </template>
-      <span>Edit Timeseries</span>
-    </v-tooltip>
-  </h-header>
+  </h-object-header>
 </template>
 <script>
 import moment from "../../dist/moment.mjs";
@@ -215,9 +193,6 @@ export default {
     ]
   }),
   computed: {
-    access() {
-      return this.object.access.split(" ");
-    },
     query: {
       get() {
         if (Object.keys(this.$route.query).length == 0) {
