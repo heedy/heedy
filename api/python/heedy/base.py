@@ -302,8 +302,7 @@ def getSessionType(sessionType: str, namespace: str, url: str = DEFAULT_URL) -> 
         return SyncSession(namespace, url)
     if sessionType == "async":
         return AsyncSession(namespace, url)
-    raise NotImplementedError(
-        f"The session type '{sessionType}' is not implemented")
+    raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
 
 
 from .notifications import Notifications
@@ -329,9 +328,11 @@ class APIObject:
         """
         Read the object
         """
+
         def writeCache(o):
             self.cached_data = o
             return o
+
         return self.session.f(self.session.get(self.uri, params=kwargs), writeCache)
 
     def update(self, **kwargs):
@@ -345,6 +346,7 @@ class APIObject:
             if "result" in o and o["result"] == "ok":
                 self.cached_data.update(kwargs)
             return o
+
         return self.session.f(self.session.patch(self.uri, kwargs), updateCache)
 
     def delete(self, **kwargs):
@@ -359,6 +361,8 @@ class APIObject:
         return super().__setattr__(name, value)
 
     def __getattr__(self, attr: str):
+        if attr.startswith("_"):  # ipython tries a bunch of repr formats
+            raise AttributeError(f"Unknown attribute '{attr}'")
         return self.session.f(self.read(), lambda x: x[attr])
 
     def __eq__(self, other):

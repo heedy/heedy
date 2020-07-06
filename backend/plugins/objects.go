@@ -207,8 +207,13 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	if s.LastModified != nil {
 		lastModified = (*s.LastModified).String()
 	}
+	app := "null"
+	if s.App != nil {
+		app = *s.App
+	}
 	r.Header["X-Heedy-Object"] = []string{srcid}
 	r.Header["X-Heedy-Owner"] = []string{*s.Owner}
+	r.Header["X-Heedy-App"] = []string{app}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
 	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
 	r.Header["X-Heedy-Access"] = s.Access.Scope

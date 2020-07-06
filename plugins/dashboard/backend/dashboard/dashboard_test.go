@@ -3,6 +3,7 @@ package dashboard
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/heedy/heedy/api/golang/rest"
@@ -18,7 +19,13 @@ func testHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var j int
 		err := rest.UnmarshalRequest(r, &j)
-		rest.WriteJSON(w, r, i+j, err)
+		evt := []DashboardEvent{
+			{
+				ObjectID: r.Header.Get("X-Heedy-Object"),
+				Event:    "READ_ME",
+			},
+		}
+		rest.WriteJSON(w, r, QueryResult{Events: &evt, Data: types.JSONText(strconv.Itoa(i + j))}, err)
 		i++
 	})
 }
@@ -124,12 +131,6 @@ func TestCRUD(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, da, 0)
 
-	de := []DashboardEvent{
-		{
-			ObjectID: oid2,
-			Event:    "READ_ME",
-		},
-	}
 	emptyObject := types.JSONText("{}")
 	zeroObject := types.JSONText("0")
 	oneObject := types.JSONText("1")
@@ -138,8 +139,7 @@ func TestCRUD(t *testing.T) {
 		{
 			Type:     "no_a_type",
 			Query:    &zeroObject,
-			Frontend: &emptyObject,
-			Events:   &de,
+			Settings: &emptyObject,
 		},
 	}))
 
@@ -147,8 +147,7 @@ func TestCRUD(t *testing.T) {
 		{
 			Type:     "test",
 			Query:    &emptyObject,
-			Frontend: &emptyObject,
-			Events:   &de,
+			Settings: &emptyObject,
 		},
 	}))
 
@@ -156,8 +155,7 @@ func TestCRUD(t *testing.T) {
 		{
 			Type:     "test",
 			Query:    &zeroObject,
-			Frontend: &emptyObject,
-			Events:   &de,
+			Settings: &emptyObject,
 		},
 	})
 	require.NoError(t, err)
@@ -176,7 +174,6 @@ func TestCRUD(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, el.Query)
 	require.Nil(t, el.OnDemand)
-	require.Nil(t, el.Events)
 	require.NotNil(t, el.Data)
 	b, err = el.Data.MarshalJSON()
 	require.NoError(t, err)
@@ -184,9 +181,8 @@ func TestCRUD(t *testing.T) {
 
 	err = WriteDashboard(adb, "test", oid1, []DashboardElement{
 		{
-			ID:     el.ID,
-			Query:  &oneObject,
-			Events: &de,
+			ID:    el.ID,
+			Query: &oneObject,
 		},
 	})
 	require.NoError(t, err)

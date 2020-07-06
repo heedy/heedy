@@ -30,7 +30,6 @@ function setup(frontend) {
     component: Views,
     type: "timeseries",
     key: "body",
-    weight: 5,
   });
 
   frontend.timeseries.addView("datatable", () =>

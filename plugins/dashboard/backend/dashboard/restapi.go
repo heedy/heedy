@@ -30,9 +30,9 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := rest.CTX(r)
-	da, err := ReadDashboard(c.DB.AdminDB(), oi.Owner, oi.ID, oi.Access.HasScope("write"))
+	da, err := ReadDashboard(c.DB.AdminDB(), oi.AsObject(), oi.ID, oi.Access.HasScope("write"))
 
-	rest.WriteJSON(w, r, da, err)
+	rest.WriteGzipJSON(w, r, da, err)
 }
 
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	err = WriteDashboard(c.DB.AdminDB(), oi.Owner, oi.ID, elements)
+	err = WriteDashboard(c.DB.AdminDB(), oi.AsObject(), oi.ID, elements)
 	rest.WriteResult(w, r, err)
 }
 
@@ -58,9 +58,8 @@ func ReadElementHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	c := rest.CTX(r)
 	eid := chi.URLParam(r, "element_id")
-	de, err := ReadDashboardElement(c.DB.AdminDB(), oi.Owner, oi.ID, eid, oi.Access.HasScope("write"))
-
-	rest.WriteJSON(w, r, de, err)
+	de, err := ReadDashboardElement(c.DB.AdminDB(), oi.AsObject(), oi.ID, eid, oi.Access.HasScope("write"))
+	rest.WriteGzipJSON(w, r, de, err)
 
 }
 
@@ -93,7 +92,7 @@ func WriteElementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	element.ID = eid
-	err = WriteDashboard(c.DB.AdminDB(), oi.Owner, oi.ID, []DashboardElement{element})
+	err = WriteDashboard(c.DB.AdminDB(), oi.AsObject(), oi.ID, []DashboardElement{element})
 	rest.WriteResult(w, r, err)
 }
 

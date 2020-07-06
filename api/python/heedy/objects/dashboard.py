@@ -4,7 +4,7 @@ from .registry import registerObjectType
 
 
 class DashboardElement(APIObject):
-    props = {"query", "frontend", "data", "id", "events", "type"}
+    props = {"query", "settings", "data", "id", "type", "title", "on_demand", "index"}
 
     def __init__(self, dashboard, cached_data={}):
 
@@ -38,8 +38,10 @@ class Dashboard(Object):
     def __setitem__(self, elementid, value):
         return self.session.post(self.uri + "/dashboard/" + elementid, value)
 
-    def add(self, element):
-        return self.session.post(self.uri + "/dashboard", [element])
+    def add(self, query, etype="dataset", **kwargs):
+        kwargs["type"] = etype
+        kwargs["query"] = query
+        return self.session.post(self.uri + "/dashboard", [kwargs])
 
 
 registerObjectType("dashboard", Dashboard)

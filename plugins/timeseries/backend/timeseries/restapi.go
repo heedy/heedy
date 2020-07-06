@@ -1,6 +1,7 @@
 package timeseries
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
+	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
 )
 
 var queryDecoder = schema.NewDecoder()
@@ -336,6 +338,37 @@ func GenerateDataset(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getEvents(d []*Dataset) []dashboard.DashboardEvent {
+	if len(d) == 0 {
+		return nil
+	}
+	m := d[0].GetTimeseries()
+	for i := 1; i < len(d); i++ {
+		m2 := d[i].GetTimeseries()
+		for k := range m2 {
+			// don't care about numbers
+			m[k] = 1
+		}
+	}
+
+	arr := make([]dashboard.DashboardEvent, 0, len(m)*2)
+	for k := range m {
+		arr = append(arr, dashboard.DashboardEvent{
+			ObjectID: k,
+			Event:    "timeseries_data_write",
+		}, dashboard.DashboardEvent{
+			ObjectID: k,
+			Event:    "timeseries_data_delete",
+		})
+	}
+
+	return arr
+}
+
+type dashboardQueryResult struct {
+	Data interface{} `json:"data"`
+}
+
 func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 	// Generate a dataset
 	c := rest.CTX(r)
@@ -366,8 +399,24 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 		readers[i] = ai
 	}
 
+	evts, err := json.Marshal(getEvents(d))
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte{'['})
+	_, err = w.Write([]byte(`{"events":`))
+	if err != nil {
+		c.Log.Warnf("Dashboard dataset: %s", err.Error())
+		return
+	}
+	_, err = w.Write(evts)
+	if err != nil {
+		c.Log.Warnf("Dashboard dataset: %s", err.Error())
+		return
+	}
+	_, err = w.Write([]byte(`,"data":[`))
 	if err != nil {
 		c.Log.Warnf("Dashboard dataset: %s", err.Error())
 		return
@@ -387,7 +436,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	_, err = w.Write([]byte{']'})
+	_, err = w.Write([]byte(`]}`))
 	if err != nil {
 		c.Log.Warnf("Dashboard dataset: %s", err.Error())
 		return

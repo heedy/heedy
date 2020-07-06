@@ -29,16 +29,18 @@ CREATE TABLE dashboard_elements (
 	outdated BOOL NOT NULL DEFAULT TRUE,
 	on_demand BOOL NOT NULL DEFAULT TRUE,
 
+	title VARCHAR(100) NOT NULL,
+
 	-- The query to run on the backend to update data
 	query BLOB NOT NULL,
 	-- Saved output of query
 	data BLOB NOT NULL DEFAULT 'null',
 	-- Settings for displaying the data on the frontend
-	frontend BLOB NOT NULL,
+	settings BLOB NOT NULL,
 
 	PRIMARY KEY (object_id,element_id),
 
-	CONSTRAINT all_valid CHECK (json_valid(query) AND json_valid(frontend) AND json_valid(data)),
+	CONSTRAINT all_valid CHECK (json_valid(query) AND json_valid(settings) AND json_valid(data)),
 
 	CONSTRAINT object_updater
 		FOREIGN KEY(object_id)
@@ -84,11 +86,8 @@ func SQLUpdater(db *database.AdminDB, i *run.Info, h run.BuiltinHelper, curversi
 }
 
 type DashboardEvent struct {
-	ObjectID string `json:"object_id" db:"event_object_id"`
+	ObjectID string `json:"object" db:"event_object_id"`
 	Event    string `json:"event"`
-
-	ElementID   string `json:"-" db:"element_id"`
-	OwnerObject string `json:"-" db:"object_id"`
 }
 
 type DashboardElement struct {
@@ -99,51 +98,23 @@ type DashboardElement struct {
 	Type     string `json:"type,omitempty" db:"type"`
 	OnDemand *bool  `json:"on_demand,omitempty" db:"on_demand"`
 
+	Title    *string         `json:"title,omitempty"`
 	Query    *types.JSONText `json:"query,omitempty"`
 	Data     *types.JSONText `json:"data,omitempty"`
-	Frontend *types.JSONText `json:"frontend,omitempty"`
-
-	Events *[]DashboardEvent `json:"events,omitempty"`
+	Settings *types.JSONText `json:"settings,omitempty"`
 
 	// Internal variable
 	Outdated bool `json:"-"`
 }
 
 // ReadDashboard returns the full dashboard data
-func ReadDashboard(adb *database.AdminDB, username string, oid string, include_query bool) ([]DashboardElement, error) {
+func ReadDashboard(adb *database.AdminDB, as string, oid string, include_query bool) ([]DashboardElement, error) {
 	// Read the full dashboard
 	var elements []DashboardElement
-	tx, err := adb.Beginx()
+
+	err := adb.Select(&elements, `SELECT * FROM dashboard_elements WHERE object_id=? ORDER BY element_index ASC;`, oid)
 	if err != nil {
 		return nil, err
-	}
-
-	err = tx.Select(&elements, `SELECT * FROM dashboard_elements WHERE object_id=?;`, oid)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	var events []DashboardEvent
-	err = tx.Select(&events, `SELECT * FROM dashboard_events WHERE object_id=?;`, oid)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	tx.Commit()
-
-	for i := range elements {
-		dea := make([]DashboardEvent, 0)
-		elements[i].Events = &dea
-	}
-
-	// Now add the events to the elements
-	for _, evt := range events {
-		for j := range elements {
-			if elements[j].ID == evt.ElementID {
-				dea := append(*elements[j].Events, evt)
-				elements[j].Events = &dea
-			}
-		}
 	}
 
 	// At this point, some of the dashboard elements might be outdated, and therefore need to be queried.
@@ -152,7 +123,7 @@ func ReadDashboard(adb *database.AdminDB, username string, oid string, include_q
 	for j := range elements {
 		if elements[j].Outdated && *elements[j].OnDemand {
 			// If it is on-demand, we actually run the query, and return the results
-			c, err := Dashboard.UpdateElement(username, &elements[j])
+			c, err := Dashboard.UpdateElement(as, &elements[j])
 			if err != nil {
 				// This error is weird, since it shouldn't actually ever happen. We simply don't do anything in this case,
 				// since we'd need to close a bunch of channels on an error here
@@ -172,7 +143,6 @@ func ReadDashboard(adb *database.AdminDB, username string, oid string, include_q
 	if !include_query {
 		for i := range elements {
 			elements[i].Query = nil
-			elements[i].Events = nil
 			elements[i].OnDemand = nil
 		}
 	}
@@ -180,7 +150,7 @@ func ReadDashboard(adb *database.AdminDB, username string, oid string, include_q
 	return elements, nil
 }
 
-func WriteDashboard(adb *database.AdminDB, username string, oid string, elements []DashboardElement) error {
+func WriteDashboard(adb *database.AdminDB, as string, oid string, elements []DashboardElement) error {
 	// The write query is an ordered list of inserts/updates to dashboard elements.
 
 	// First perform basic validation
@@ -192,21 +162,6 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			// We're creating a new element
 			if el.Type == "" {
 				return fmt.Errorf("Can't create dashboard element without a type")
-			}
-
-			// Make sure it is listening to some event
-			if el.Events == nil {
-				return fmt.Errorf("Element has no events")
-			}
-		} else {
-		}
-
-		// Make sure elements are filled out
-		if el.Events != nil {
-			for _, evt := range *el.Events {
-				if evt.ObjectID == "" || evt.Event == "" {
-					return fmt.Errorf("Element has invalid events")
-				}
 			}
 		}
 
@@ -228,24 +183,6 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 		return err
 	}
 
-	// Before doing anything, ensure that this user has read permissions for all of the events that are being written
-	for _, el := range elements {
-		if el.Events != nil {
-			for _, ev := range *el.Events {
-				var sc int
-				err = tx.Get(&sc, `SELECT COUNT(scope) FROM user_object_scope WHERE user=? AND object=? AND (scope='read' OR scope='*') LIMIT 1;`, username, oid)
-				if err != nil {
-					tx.Rollback()
-					return err
-				}
-				if sc == 0 {
-					tx.Rollback()
-					return fmt.Errorf("Event '%s' for object '%s' invalid", ev.Event, ev.ObjectID)
-				}
-			}
-		}
-	}
-
 	// Get the max index of the elements
 	var maxIndex int
 	err = tx.Get(&maxIndex, `SELECT COALESCE(MAX(element_index),-1) FROM dashboard_elements WHERE object_id=?;`, oid)
@@ -261,7 +198,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 		if el.ID != "" {
 			// If there is an ID, check if the element already exists
 			var de DashboardElement
-			err = adb.Get(&de, `SELECT element_id,element_index,type,on_demand,query,frontend FROM dashboard_elements WHERE element_id=? AND object_id=?;`, el.ID, oid)
+			err = adb.Get(&de, `SELECT element_id,element_index,type,on_demand,query,settings,title FROM dashboard_elements WHERE element_id=? AND object_id=?;`, el.ID, oid)
 			if err == nil {
 				// The element exists
 				if el.Type == "" {
@@ -270,7 +207,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 
 				willRequery := false
 
-				if el.Query != nil || el.Frontend != nil || el.Type != de.Type {
+				if el.Query != nil || el.Settings != nil || el.Type != de.Type {
 					t, ok := Dashboard.Types[el.Type]
 					if !ok {
 						tx.Rollback()
@@ -294,11 +231,14 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 				if el.Query != nil {
 					de.Query = el.Query
 				}
-				if el.Frontend != nil {
-					de.Frontend = el.Frontend
+				if el.Settings != nil {
+					de.Settings = el.Settings
 				}
 				if el.OnDemand != nil {
 					de.OnDemand = el.OnDemand
+				}
+				if el.Title != nil {
+					de.Title = el.Title
 				}
 				if el.Index != nil {
 					// We are setting the index of a dashboard element, so make sure that the indices of all elements
@@ -309,52 +249,36 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 					if *el.Index != *de.Index {
 						// Shift the indices to place the current element in the correct spot
 						if *el.Index > *de.Index {
-							res, err := tx.Exec(`UPDATE dashboard_elements SET element_index=element_index-1 WHERE object_id=? AND element_index>? AND element_index<=?`, oid, *de.Index, *el.Index)
-							err = database.GetExecError(res, err)
+							_, err = tx.Exec(`UPDATE dashboard_elements SET element_index=element_index-1 WHERE object_id=? AND element_index>? AND element_index<=?`, oid, *de.Index, *el.Index)
 							if err != nil {
 								tx.Rollback()
 								return err
 							}
 						} else {
-							res, err := tx.Exec(`UPDATE dashboard_elements SET element_index=element_index+1 WHERE object_id=? AND element_index>=? AND element_index<?`, oid, *el.Index, *de.Index)
-							err = database.GetExecError(res, err)
+							_, err = tx.Exec(`UPDATE dashboard_elements SET element_index=element_index+1 WHERE object_id=? AND element_index>=? AND element_index<?`, oid, *el.Index, *de.Index)
 							if err != nil {
 								tx.Rollback()
 								return err
 							}
 						}
 					}
+					// Update this index
+					de.Index = el.Index
 				}
 
 				res, err := tx.Exec(`UPDATE dashboard_elements SET 
+							title=?,
 							type=?,
-							frontend=?,
+							settings=?,
 							query=?,
 							on_demand=?,
 							element_index=?,outdated=?
 						WHERE element_id=? AND object_id=?;`,
-					de.Type, de.Frontend, de.Query, de.OnDemand, de.Index, de.Outdated, el.ID, oid)
+					de.Title, de.Type, de.Settings, de.Query, de.OnDemand, de.Index, de.Outdated, el.ID, oid)
 				err = database.GetExecError(res, err)
 				if err != nil {
 					tx.Rollback()
 					return err
-				}
-
-				// Now, if we are setting any events, set them all
-				if el.Events != nil {
-					_, err = tx.Exec(`DELETE FROM dashboard_events WHERE object_id=? AND element_id=?;`, oid, el.ID)
-					if err != nil {
-						tx.Rollback()
-						return err
-					}
-					for _, evt := range *el.Events {
-						res, err = tx.Exec(`INSERT INTO dashboard_events(object_id,element_id,event,event_object_id) VALUES (?,?,?,?);`, oid, el.ID, evt.Event, evt.ObjectID)
-						err = database.GetExecError(res, err)
-						if err != nil {
-							tx.Rollback()
-							return err
-						}
-					}
 				}
 
 				if !willRequery {
@@ -384,12 +308,6 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			return fmt.Errorf("Can't create dashboard element without a type")
 		}
 
-		// Make sure it is listening to some event
-		if el.Events == nil {
-			tx.Rollback()
-			return fmt.Errorf("Element has no events")
-		}
-
 		// Make sure that there is a query and frontend, and that they match the schema
 		t, ok := Dashboard.Types[el.Type]
 		if !ok {
@@ -400,9 +318,13 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			tx.Rollback()
 			return fmt.Errorf("Element has no query")
 		}
-		if el.Frontend == nil {
+		if el.Settings == nil {
 			v := types.JSONText("{}")
-			el.Frontend = &v
+			el.Settings = &v
+		}
+		if el.Title == nil {
+			v := ""
+			el.Title = &v
 		}
 		err = t.Validate(&el)
 		if err != nil {
@@ -432,21 +354,12 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 			}
 		}
 
-		res, err := tx.Exec(`INSERT INTO dashboard_elements(type,frontend,query,on_demand,element_index,data,outdated,object_id,element_id) VALUES (?,?,?,?,?,'null',TRUE,?,?);`,
-			el.Type, el.Frontend, el.Query, el.OnDemand, el.Index, oid, el.ID)
+		res, err := tx.Exec(`INSERT INTO dashboard_elements(title,type,settings,query,on_demand,element_index,data,outdated,object_id,element_id) VALUES (?,?,?,?,?,?,'null',TRUE,?,?);`,
+			el.Title, el.Type, el.Settings, el.Query, el.OnDemand, el.Index, oid, el.ID)
 		err = database.GetExecError(res, err)
 		if err != nil {
 			tx.Rollback()
 			return err
-		}
-
-		for _, evt := range *el.Events {
-			res, err = tx.Exec(`INSERT INTO dashboard_events(object_id,element_id,event,event_object_id) VALUES (?,?,?,?);`, oid, el.ID, evt.Event, evt.ObjectID)
-			err = database.GetExecError(res, err)
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
 		}
 
 		newEvent := eventTemplate
@@ -472,7 +385,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 		q, err := e.Query.MarshalJSON()
 		if err == nil {
 			go func() {
-				Dashboard.Query(username, e.ObjectID, e.ID, e.Type, q)
+				Dashboard.Query(as, e.ObjectID, e.ID, e.Type, q)
 				newEvent := eventTemplate
 				newEvent.Event = "dashboard_element_update"
 				newEvent.Data = map[string]interface{}{
@@ -492,7 +405,7 @@ func WriteDashboard(adb *database.AdminDB, username string, oid string, elements
 	return nil
 }
 
-func ReadDashboardElement(adb *database.AdminDB, username string, oid string, deid string, include_query bool) (*DashboardElement, error) {
+func ReadDashboardElement(adb *database.AdminDB, as string, oid string, deid string, include_query bool) (*DashboardElement, error) {
 	var de DashboardElement
 	err := adb.Get(&de, `SELECT * FROM dashboard_elements WHERE element_id=? AND object_id=?;`, deid, oid)
 
@@ -502,22 +415,10 @@ func ReadDashboardElement(adb *database.AdminDB, username string, oid string, de
 		}
 		return nil, err
 	}
-	if include_query {
-		var earr []DashboardEvent
-		err = adb.Select(&earr, `SELECT event_object_id,event FROM dashboard_events WHERE element_id=?`, deid)
-
-		if err != nil {
-			if err == sql.ErrNoRows {
-				err = database.ErrNotFound
-			}
-			return nil, err
-		}
-		de.Events = &earr
-	}
 
 	if de.Outdated && *de.OnDemand {
 		// If it is on-demand, we actually run the query, and return the results
-		c, err := Dashboard.UpdateElement(username, &de)
+		c, err := Dashboard.UpdateElement(as, &de)
 		if err != nil {
 			// This error is weird, since it shouldn't actually ever happen. We simply don't do anything in this case,
 			// since we'd need to close a bunch of channels on an error here
@@ -548,8 +449,26 @@ func DeleteDashboardElement(adb *database.AdminDB, oid string, deid string) erro
 	if err != nil {
 		return err
 	}
-	result, err := adb.Exec("DELETE FROM dashboard_elements WHERE element_id=? AND object_id=?", deid, oid)
+
+	tx, err := adb.Beginx()
+	if err != nil {
+		return err
+	}
+	// Deleting the element requires shifting all indices down
+	_, err = tx.Exec(`UPDATE dashboard_elements SET element_index=element_index-1 WHERE object_id=? AND element_index>(SELECT element_index FROM dashboard_elements WHERE object_id=? AND element_id=?)`, oid, oid, deid)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	result, err := tx.Exec("DELETE FROM dashboard_elements WHERE element_id=? AND object_id=?", deid, oid)
 	err = database.GetExecError(result, err)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
 	if err == nil {
 		events.Fire(evt)
 	}

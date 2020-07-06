@@ -69,18 +69,11 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	WriteJSONError(w, r, http.StatusNotFound, ErrNotFound)
 }
 
-// WriteJSONError writes an error message as json. It is assumed that the resulting
-// status code is not StatusOK, but rather 4xx
-func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "private, no-cache")
-	c := CTX(r)
-
+func NewErrorResponse(err error) ErrorResponse {
 	es := ErrorResponse{
-		ErrorName:        "internal_error",
+		ErrorName:        "server_error",
 		ErrorDescription: err.Error(),
 	}
-	myerr := err
 
 	// We can have error types encoded in the error, split with a :
 	errs := strings.SplitN(err.Error(), ":", 2)
@@ -88,6 +81,18 @@ func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err erro
 		es.ErrorName = errs[0]
 		es.ErrorDescription = strings.TrimSpace(errs[1])
 	}
+	return es
+}
+
+// WriteJSONError writes an error message as json. It is assumed that the resulting
+// status code is not StatusOK, but rather 4xx
+func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "private, no-cache")
+	c := CTX(r)
+
+	es := NewErrorResponse(err)
+	myerr := err
 
 	if c != nil {
 		es.ID = c.RequestID
@@ -122,6 +127,11 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 		WriteJSONError(w, r, 400, err)
 		return
 	}
+	WriteJSONStatus(w, r, data, http.StatusOK)
+}
+
+// WriteJSONStatus writes json with the given status code
+func WriteJSONStatus(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
 	jdata, err := json.Marshal(data)
 	if err != nil {
 		WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -139,7 +149,7 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, data interface{}, err err
 	w.Header().Set("Cache-Control", "private, no-cache")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(status)
 	w.Write(jdata)
 }
 
@@ -162,7 +172,8 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 // WriteGZIP gzips a response Reader object if gzip is an accepted encoding. While it can be a security risk
 // is some cases, it is very useful when the response can be enormous (like timeseries data).
 func WriteGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
-	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || assets.Get().Config.Verbose {
+		// If gzip is not supported, or we are in verbose mode, disable gzip output
 		w.WriteHeader(status)
 		_, err := io.Copy(w, towrite)
 		return err
@@ -177,4 +188,29 @@ func WriteGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status
 	}
 	return g.Close()
 
+}
+
+func WriteGzipJSON(w http.ResponseWriter, r *http.Request, data interface{}, err error) {
+	if err != nil {
+		// By default, an error returns 400
+		WriteJSONError(w, r, 400, err)
+		return
+	}
+	jdata, err := json.Marshal(data)
+	if err != nil {
+		WriteJSONError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	// golang json unmarshal encodes empty arrays as null
+	// https://github.com/golang/go/issues/27589
+	// This detects that, and fixes the problem.
+	if bytes.Equal(jdata, []byte("null")) && data != nil {
+		if k := reflect.TypeOf(data).Kind(); (k == reflect.Slice || k == reflect.Array) && reflect.ValueOf(data).Len() == 0 {
+			jdata = []byte("[]")
+		}
+	}
+	w.Header().Set("Cache-Control", "private, no-cache")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	WriteGZIP(w, r, bytes.NewBuffer(jdata), http.StatusOK)
 }

@@ -71,4 +71,5 @@ function out(name, loc = "", format = "es") {
 export default [
   // The base files
   out("main.js"),
+  out("worker.js"),
 ];

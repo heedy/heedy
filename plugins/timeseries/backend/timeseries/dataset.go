@@ -60,11 +60,32 @@ func GetMerge(db database.DB, q []*Query, tstart float64) (*DatasetIterator, err
 	}, nil
 }
 
+func mergeTimeseries(q []*Query) map[string]int {
+	m := make(map[string]int)
+	for _, qi := range q {
+		cv, ok := m[qi.Timeseries]
+		if !ok {
+			cv = 0
+		}
+		m[qi.Timeseries] = cv + 1
+	}
+	return m
+}
+
 type DatasetElement struct {
 	Query
 	Merge        []*Query `json:"merge"`
 	Interpolator string   `json:"interpolator"`
 	AllowNull    bool     `json:"allow_null"`
+}
+
+func (d *DatasetElement) GetTimeseries() map[string]int {
+	if d.Timeseries != "" {
+		m := make(map[string]int)
+		m[d.Timeseries] = 1
+		return m
+	}
+	return mergeTimeseries(d.Merge)
 }
 
 func (d *DatasetElement) Validate() error {
@@ -117,6 +138,30 @@ type Dataset struct {
 	Dataset map[string]*DatasetElement `json:"dataset,omitempty"`
 
 	PostTransform string `json:"post_transform,omitempty"`
+}
+
+// GetTimeseries returns a map of all the timeseries IDs included in the query
+func (d *Dataset) GetTimeseries() (m map[string]int) {
+	if len(d.Merge) > 0 {
+		m = mergeTimeseries(d.Merge)
+	} else {
+		m = make(map[string]int)
+	}
+	if d.Timeseries != "" {
+		m[d.Timeseries] = 1
+	}
+	for _, v := range d.Dataset {
+		m2 := v.GetTimeseries()
+		for k, v := range m2 {
+			cv, ok := m[k]
+			if !ok {
+				cv = 0
+			}
+			m[k] = cv + v
+		}
+	}
+
+	return
 }
 
 func (d *Dataset) Validate() error {

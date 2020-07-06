@@ -53,9 +53,19 @@ type ObjectInfo struct {
 	Type         string
 	ID           string
 	Owner        string
+	App          string
 	LastModified *string
 	Meta         map[string]interface{}
 	Access       database.ScopeArray
+}
+
+// AsObject returns the "As" of the object owner, be it a user or an app
+func (o *ObjectInfo) AsObject() string {
+	as := o.Owner
+	if o.App != "" {
+		as += "/" + o.App
+	}
+	return as
 }
 
 // GetObjectInfo prepares all object details that come in as part of a object request
@@ -74,6 +84,12 @@ func GetObjectInfo(r *http.Request) (*ObjectInfo, error) {
 	}
 	if ne[0] != "null" {
 		si.LastModified = &ne[0]
+	}
+	ne, ok = r.Header["X-Heedy-App"]
+	if ok && len(ne) > 0 {
+		if ne[0] != "null" {
+			si.App = ne[0]
+		}
 	}
 
 	a, ok := r.Header["X-Heedy-Access"]
