@@ -81,35 +81,6 @@ function setup(frontend) {
 
   if (frontend.info.user != null) {
     // Pages to set up when user is logged in
-    if (frontend.info.admin) {
-      frontend.addMenuItem({
-        key: "heedySettings",
-        text: "Settings",
-        icon: "settings",
-        route: "/settings/plugins",
-        location: "secondary",
-      });
-      frontend.addRoute({
-        path: "/settings",
-        component: SettingsPage,
-        children: settingsRoutes,
-      });
-      frontend.settings.addPage({
-        path: "users",
-        component: SettingsUsers,
-        title: "Users",
-      });
-      frontend.settings.addPage({
-        path: "server",
-        component: SettingsServer,
-        title: "Server",
-      });
-      frontend.settings.addPage({
-        path: "plugins",
-        component: SettingsPlugins,
-        title: "Plugins",
-      });
-    }
 
     frontend.addRoute({
       path: "/logout",
@@ -168,8 +139,39 @@ function setup(frontend) {
       text: "Apps",
       icon: "settings_input_component",
       route: "/apps",
-      location: "primary",
+      location: "secondary",
     });
+
+    // Pages to show when the user is an admin
+    if (frontend.info.admin) {
+      frontend.addMenuItem({
+        key: "heedySettings",
+        text: "Settings",
+        icon: "settings",
+        route: "/settings/plugins",
+        location: "secondary",
+      });
+      frontend.addRoute({
+        path: "/settings",
+        component: SettingsPage,
+        children: settingsRoutes,
+      });
+      frontend.settings.addPage({
+        path: "users",
+        component: SettingsUsers,
+        title: "Users",
+      });
+      frontend.settings.addPage({
+        path: "server",
+        component: SettingsServer,
+        title: "Server",
+      });
+      frontend.settings.addPage({
+        path: "plugins",
+        component: SettingsPlugins,
+        title: "Plugins",
+      });
+    }
   } else {
     // Pages to set up for public site visitors
     frontend.addRoute({

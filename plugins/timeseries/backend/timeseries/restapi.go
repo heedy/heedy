@@ -67,6 +67,31 @@ func validateRequest(w http.ResponseWriter, r *http.Request, scope string) (*Tim
 	return si, true
 }
 
+func decodeQuery(r *http.Request) (Query, error) {
+	// schema can't handle interface{} values for t1 and t2 and t
+	var q struct {
+		Query
+		T1v *string `schema:"t1"`
+		T2v *string `schema:"t2"`
+		Tv  *string `schema:"t"`
+	}
+
+	err := queryDecoder.Decode(&q, r.URL.Query())
+	if err != nil {
+		return Query{}, err
+	}
+	if q.Tv != nil {
+		q.Query.T = *q.Tv
+	}
+	if q.T1v != nil {
+		q.Query.T1 = *q.T1v
+	}
+	if q.T2v != nil {
+		q.Query.T2 = *q.T2v
+	}
+	return q.Query, nil
+}
+
 func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 	c := rest.CTX(r)
 	si, ok := validateRequest(w, r, "read")
@@ -77,13 +102,13 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, ErrNotActor)
 		return
 	}
-	var q Query
 
-	err := queryDecoder.Decode(&q, r.URL.Query())
+	q, err := decodeQuery(r)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
+
 	q.Actions = &action
 	if q.Timeseries != "" {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("timeseries arg is set automatically when querying objects"))
@@ -122,9 +147,7 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, ErrNotActor)
 		return
 	}
-	var q Query
-
-	err := queryDecoder.Decode(&q, r.URL.Query())
+	q, err := decodeQuery(r)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return

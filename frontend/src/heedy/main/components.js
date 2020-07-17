@@ -15,6 +15,7 @@ import NotFound from "./components/404.vue";
 import Header from "./components/header.vue";
 import ObjectHeader from "./components/object_header.vue";
 import ObjectUpdater from "./components/object_updater.vue";
+import ObjectPicker from "./components/object_picker.vue";
 
 function register(Vue) {
   Vue.component("h-loading", Loading);
@@ -28,6 +29,7 @@ function register(Vue) {
   Vue.component("h-header", Header);
   Vue.component("h-object-header", ObjectHeader);
   Vue.component("h-object-updater", ObjectUpdater);
+  Vue.component("h-object-picker", ObjectPicker);
 }
 
 export {
@@ -42,6 +44,7 @@ export {
   Header,
   ObjectHeader,
   ObjectUpdater,
+  ObjectPicker,
 };
 
 export default register;

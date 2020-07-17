@@ -191,6 +191,9 @@ export default {
       Vue.set(state.userObjects, v.user, srcidmap);
       Vue.set(state.userObjects_qtime, v.user, qtime);
     },
+    setUserObjectsQTime(state, uname) {
+      Vue.set(state.userObjects_qtime, uname, moment());
+    },
     setAppObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
@@ -367,14 +370,27 @@ export default {
     },
     readUserObjects: async function({ commit, state, rootState }, q) {
       // Only if they are not being kept up-to-date by the websocket
-      if (
-        state.userObjects[q.username] !== undefined &&
-        rootState.app.websocket !== null &&
-        rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])
-      ) {
-        console.log(`Not reading ${q.username} objects - websocket active`);
-        return;
+      if (state.userObjects_qtime[q.username] !== undefined) {
+        if (
+          rootState.app.websocket !== null &&
+          rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])
+        ) {
+          console.log(`Not reading ${q.username} objects - websocket active`);
+          return;
+        }
+        // Check if we JUST queried less than a second ago
+        if (
+          state.userObjects_qtime[q.username].isAfter(
+            moment().subtract(1, "second")
+          )
+        ) {
+          console.log(
+            `Not re-reading ${q.username} objects - they were just queried!`
+          );
+          return;
+        }
       }
+      commit("setUserObjectsQTime", q.username);
       console.log("Reading objects for user", q.username);
       let query = {
         owner: q.username,

@@ -4,6 +4,7 @@ import Header from "./main/header.vue";
 import vuexModule from "./main/vuex.js";
 import TimeseriesInjector from "./main/injector";
 import Update from "./main/update.vue";
+import Dataset from "./main/dataset/editor.vue";
 
 function setup(frontend) {
   frontend.store.registerModule("timeseries", vuexModule);
@@ -22,7 +23,19 @@ function setup(frontend) {
       path: "/create/object/timeseries",
       component: Create,
     });
+
+    frontend.addMenuItem({
+      key: "dataset",
+      text: "Data Analysis",
+      icon: "fas fa-chart-bar",
+      route: "/dataset",
+    });
   }
+
+  frontend.addRoute({
+    path: "/dataset",
+    component: Dataset,
+  });
 
   frontend.worker.import("timeseries/worker.mjs");
 

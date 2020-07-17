@@ -118,7 +118,7 @@ func (q *Query) Get(db database.DB, tstart float64) (*DatasetIterator, error) {
 	var piter pipescript.Iterator
 	piter = PipeIterator{iter}
 
-	if q.Transform != nil {
+	if q.Transform != nil && *q.Transform != "" {
 		p, err := pipescript.Parse(*q.Transform)
 		if err != nil {
 			iter.Close()
