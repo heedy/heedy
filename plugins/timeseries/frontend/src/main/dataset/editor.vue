@@ -19,8 +19,11 @@
             icon="error_outline"
           >{{ alert }}</v-alert>
         </div>
-        <Query v-model="query"></Query>
+        <multi-query v-model="query"></multi-query>
         <v-card-actions>
+          <v-btn text @click="addSeries">
+            <v-icon left>add_circle</v-icon>Add Series
+          </v-btn>
           <v-spacer></v-spacer>
           <v-btn dark color="blue" @click="runQuery" :loading="loading">Run Query</v-btn>
         </v-card-actions>
@@ -29,23 +32,31 @@
   </h-page-container>
 </template>
 <script>
-import Query from "./query.vue";
+import MultiQuery from "./multiquery.vue";
 export default {
   components: {
-    Query
+    MultiQuery,
   },
   data: () => ({
     alert: "",
-    query: {
-      timeseries: "",
-      t1: "now-3mo"
-    },
-    loading: false
+    query: [
+      {
+        timeseries: "",
+        t1: "now-3mo",
+      },
+    ],
+    loading: false,
   }),
   methods: {
-    runQuery: async function() {
+    runQuery: async function () {
       console.log(JSON.stringify(this.query));
-    }
-  }
+    },
+    addSeries() {
+      this.query.push({
+        timeseries: "",
+        t1: "now-3mo",
+      });
+    },
+  },
 };
 </script>

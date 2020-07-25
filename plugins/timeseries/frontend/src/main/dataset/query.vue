@@ -57,6 +57,14 @@
                     <v-list-item-title v-else>Switch to Time Range</v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
+                <v-list-item v-if="removeSeries" @click="() => $emit('removeSeries')">
+                  <v-list-item-icon>
+                    <v-icon>remove_circle</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title>Remove Series</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
               </v-list>
             </v-menu>
           </div>
@@ -76,7 +84,13 @@
           ></correlate>
         </div>
       </v-flex>
-      <v-flex lg12 md12 sm12 xs12>
+      <v-flex
+        lg12
+        md12
+        sm12
+        xs12
+        style="padding-top:0;padding-bottom:0;margin-top:-20px;margin-bottom:0;padding-left:8px"
+      >
         <v-btn text @click="addDatasetElement">
           <v-icon left>add</v-icon>Correlate With...
         </v-btn>
@@ -108,18 +122,22 @@ import Duration from "./duration.vue";
 import Correlate from "./correlate.vue";
 export default {
   props: {
-    value: Object
+    value: Object,
+    removeSeries: {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {
     RangePicker,
     Transform,
     Correlate,
-    Duration
+    Duration,
   },
   data: () => ({
     dialog: false,
     wantTransform: false,
-    coltext: ""
+    coltext: "",
   }),
   methods: {
     showDialog() {
@@ -134,12 +152,12 @@ export default {
       }
       this.$emit("input", {
         ...this.value,
-        key: this.coltext
+        key: this.coltext,
       });
     },
     setDatasetVal(k, v) {
       let datasetv = {
-        ...this.value.dataset
+        ...this.value.dataset,
       };
       datasetv[k] = v;
 
@@ -151,7 +169,7 @@ export default {
         return;
       }
       let datasetv = {
-        ...this.value.dataset
+        ...this.value.dataset,
       };
       datasetv[next] = datasetv[cur];
       if (next != cur) {
@@ -164,7 +182,7 @@ export default {
     },
     delCol(col) {
       let datasetv = {
-        ...this.value.dataset
+        ...this.value.dataset,
       };
       delete datasetv[col];
       this.$emit("input", { ...this.value, dataset: datasetv });
@@ -176,7 +194,7 @@ export default {
       for (let i = 0; i < startWith.length; i++) {
         if (!this.hasCol(startWith[i])) {
           let ds = {
-            ...this.dataset
+            ...this.dataset,
           };
           ds[startWith[i]] = newElement;
           this.$emit("input", { ...this.value, dataset: ds });
@@ -188,7 +206,7 @@ export default {
         let curval = String.fromCharCode("a".charCodeAt(0) + i);
         if (!hasCol(curval)) {
           let ds = {
-            ...this.dataset
+            ...this.dataset,
           };
           ds[curval] = newElement;
           this.$emit("input", { ...this.value, dataset: ds });
@@ -224,13 +242,13 @@ export default {
         nv.dt = 60 * 60;
         if (nv.dataset === undefined || Object.keys(nv.dataset).length == 0) {
           nv.dataset = {
-            y: { timeseries: "" }
+            y: { timeseries: "" },
           };
         }
       }
 
       this.$emit("input", nv);
-    }
+    },
   },
   computed: {
     dt: {
@@ -239,7 +257,7 @@ export default {
       },
       set(v) {
         this.$emit("input", { ...this.value, dt: v });
-      }
+      },
     },
     tsquery() {
       return this.value.dt !== undefined;
@@ -253,7 +271,7 @@ export default {
       },
       set(t) {
         this.$emit("input", { ...this.value, transform: t });
-      }
+      },
     },
     colname() {
       return this.value.key || "x";
@@ -267,7 +285,7 @@ export default {
     timeseries: {
       get() {
         if (this.value.merge !== undefined) {
-          return this.value.merge.map(v => v.timeseries);
+          return this.value.merge.map((v) => v.timeseries);
         }
         if (
           this.value.timeseries !== undefined &&
@@ -291,15 +309,15 @@ export default {
         }
         this.$emit("input", {
           ...curval,
-          merge: v.map(e => ({
-            timeseries: e
-          }))
+          merge: v.map((e) => ({
+            timeseries: e,
+          })),
         });
-      }
+      },
     },
     dataset() {
       return this.value.dataset || {};
-    }
-  }
+    },
+  },
 };
 </script>
