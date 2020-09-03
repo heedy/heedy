@@ -1,16 +1,19 @@
 package timeseries
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
 	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
@@ -329,35 +332,73 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResult(w, r, err)
 }
 
-func GenerateDataset(w http.ResponseWriter, r *http.Request) {
+func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 	// Generate a dataset
 	c := rest.CTX(r)
-	var d Dataset
+	var d []*Dataset
 	err := rest.UnmarshalRequest(r, &d)
 	if err != nil {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
 		return
 	}
 
-	di, err := d.Get(c.DB)
+	readers := make([]*JsonReader, len(d))
+	for i := range d {
+		di, err := d[i].Get(c.DB)
+		if err != nil {
+			rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
+			return
+		}
+		defer di.Close()
+
+		pi := &FromPipeIterator{dpi: di, it: di}
+
+		ai, err := NewJsonArrayReader(pi)
+		if err != nil {
+			rest.WriteJSONError(rw, r, http.StatusInternalServerError, err)
+			return
+		}
+		readers[i] = ai
+	}
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	var w io.Writer
+	w = rw
+
+	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && !assets.Get().Config.Verbose {
+		// If gzip is supported, compress the output
+		rw.Header().Set("Content-Encoding", "gzip")
+		rw.WriteHeader(http.StatusOK)
+		gzw := gzip.NewWriter(rw)
+		w = gzw
+		defer gzw.Close()
+	} else {
+		rw.WriteHeader(http.StatusOK)
+	}
+
+	_, err = w.Write([]byte(`[`))
 	if err != nil {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		c.Log.Warnf("Dataset: %s", err.Error())
 		return
 	}
-	defer di.Close()
-	pi := &FromPipeIterator{dpi: di, it: di}
+	for i := range readers {
+		_, err = io.Copy(w, readers[i])
 
-	ai, err := NewJsonArrayReader(pi)
-	if err != nil {
-		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-		return
+		if err != nil {
+			c.Log.Warnf("Dataset: %s", err.Error())
+			return
+		}
+		if i < len(readers)-1 {
+			_, err = w.Write([]byte{','})
+			if err != nil {
+				c.Log.Warnf("Dataset: %s", err.Error())
+				return
+			}
+		}
 	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	err = rest.WriteGZIP(w, r, ai, http.StatusOK)
+	_, err = w.Write([]byte(`]`))
 	if err != nil {
-		c.Log.Warnf("Dataset read failed: %s", err.Error())
+		c.Log.Warnf("Dataset: %s", err.Error())
+		return
 	}
 }
 

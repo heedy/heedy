@@ -1,73 +1,65 @@
+var randomKey = () =>
+  "_" +
+  Math.random()
+    .toString(36)
+    .substr(2, 9);
+
 class TimeseriesInjector {
   constructor(app) {
     this.app = app;
 
     this.subscriptions = {};
 
-    app.worker.addHandler("timeseries_views", (c, m) => this._onViews(c, m));
-
-    // Watch the object objects, so that the worker always has the most recent
-    // value. A more detailed explanation is in the worker.
-    this.watchers = {};
+    app.worker.addHandler("timeseries_query_result", (c, m) =>
+      this._onQueryResult(c, m)
+    );
+    app.worker.addHandler("timeseries_query_status", (c, m) =>
+      this._onQueryResult(c, m)
+    );
   }
 
-  addView(name, obj) {
-    this.app.store.commit("addView", {
+  addVisualization(name, obj) {
+    this.app.store.commit("addTSVisualization", {
       key: name,
-      component: obj
+      component: obj,
     });
   }
 
-  _onViews(ctx, msg) {
-    let skey = msg.id + ":" + msg.key;
-    if (this.subscriptions[skey] === undefined) {
-      console.error("Unknown timeseries view subscription key ", skey);
+  _onQueryResult(ctx, msg) {
+    if (this.subscriptions[msg.key] === undefined) {
+      console.error("Unknown timeseries query subscription key ", msg.key);
       return;
     }
-    this.subscriptions[skey](msg.views);
+    this.subscriptions[msg.key](msg);
   }
 
-  subscribeQuery(timeseries, key, query, callback) {
-    let skey = timeseries.id + ":" + key;
-    this.subscriptions[skey] = callback;
+  subscribeQuery(query, callback) {
+    let key = randomKey();
+    this.subscriptions[key] = callback;
     this.app.worker.postMessage("timeseries_subscribe_query", {
-      timeseries: timeseries,
       key,
-      query
+      query,
     });
-    if (this.watchers[timeseries.id] === undefined) {
-      this.watchers[timeseries.id] = this.app.store.watch(
-        (state, getters) => state.heedy.objects[timeseries.id],
-        (n, o) => {
-          if (n === undefined || n === null) {
-            console.log("Stopping watch of ", timeseries.id);
-            this.watchers[timeseries.id]();
-            return;
-          }
-          this.app.worker.postMessage("timeseries_update", n);
-        }
-      );
-    }
+    return key;
   }
-  unsubscribeQuery(tsid, key) {
+  unsubscribeQuery(key) {
     this.app.worker.postMessage("timeseries_unsubscribe_query", {
-      id: tsid,
-      key
+      key,
     });
-    let skey = tsid + ":" + key;
-    delete this.subscriptions[skey];
+    delete this.subscriptions[key];
   }
 
-  query(timeseries, query, callback) {
-    let skey = timeseries.id + ":" + key;
-    this.subscriptions[skey] = d => {
-      delete this.subscriptions[skey];
-      callback(d);
-    };
-    this.app.worker.postMessage("timeseries_query", {
-      timeseries: timeseries,
-      key,
-      query
+  query(q) {
+    return new Promise((resolve, reject) => {
+      let key = randomKey();
+      this.subscriptions[key] = (d) => {
+        delete this.subscriptions[key];
+        resolve(d);
+      };
+      this.app.worker.postMessage("timeseries_query", {
+        key,
+        query,
+      });
     });
   }
 }

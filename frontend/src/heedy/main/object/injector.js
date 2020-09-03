@@ -61,6 +61,26 @@ class ObjectInjector {
         }
       );
     }
+
+    // Respond to object queries from the worker
+    frontend.worker.addHandler("get_object", (ctx, msg) =>
+      this.get(msg.id).then((obj) =>
+        frontend.worker.postMessage("get_object", obj)
+      )
+    );
+  }
+
+  /**
+   * Returns a promise that gets the given object
+   * @param {*} oid Object ID to get
+   */
+  get(oid) {
+    return new Promise((resolve, reject) => {
+      this.store.dispatch("readObject", {
+        id: oid,
+        callback: () => resolve(this.store.state.heedy.objects[oid]),
+      });
+    });
   }
 
   /**
@@ -85,7 +105,7 @@ class ObjectInjector {
    * Adds a route to objects. It
    * automatically takes /object/:objectid/{r.path}.
    * If the route works only on a specific object type, it is recommended to
-   * prefix it with the type, ie: p.path = /timeseries/...
+   * prefix it with the type, ie: r.path = /timeseries/...
    * @param {*} r
    */
   addRoute(r) {

@@ -1,5 +1,6 @@
 import Create from "./main/create.vue";
-import Views from "./main/views.vue";
+import VisTimeseries from "./main/vis_timeseries.vue";
+import DatasetVisualization from "./main/dataset_visualization.vue";
 import Header from "./main/header.vue";
 import vuexModule from "./main/vuex.js";
 import TimeseriesInjector from "./main/injector";
@@ -9,6 +10,9 @@ import Dataset from "./main/dataset/editor.vue";
 function setup(frontend) {
   frontend.store.registerModule("timeseries", vuexModule);
   frontend.inject("timeseries", new TimeseriesInjector(frontend));
+
+  // The component that permits visualizing a dataset
+  frontend.vue.component("h-dataset-visualization", DatasetVisualization);
 
   if (frontend.info.user != null) {
     frontend.objects.addCreator({
@@ -40,18 +44,28 @@ function setup(frontend) {
   frontend.worker.import("timeseries/worker.mjs");
 
   frontend.objects.addComponent({
-    component: Views,
+    component: VisTimeseries,
     type: "timeseries",
     key: "body",
   });
 
-  frontend.timeseries.addView("datatable", () =>
-    import("./views/datatable.mjs")
+  /*
+  frontend.timeseries.addVisualization("datatable", () =>
+    import("./visualizations/datatable.mjs")
   );
-  frontend.timeseries.addView("insert", () => import("./views/insert.mjs"));
-  frontend.timeseries.addView("chartjs", () => import("./views/chartjs.mjs"));
-  frontend.timeseries.addView("timeline", () => import("./views/timeline.mjs"));
-  frontend.timeseries.addView("horizon", () => import("./views/horizon.mjs"));
+  frontend.timeseries.addVisualization("insert", () =>
+    import("./visualizations/insert.mjs")
+  );
+  frontend.timeseries.addVisualization("chartjs", () =>
+    import("./visualizations/chartjs.mjs")
+  );
+  frontend.timeseries.addVisualization("timeline", () =>
+    import("./visualizations/timeline.mjs")
+  );
+  frontend.timeseries.addVisualization("horizon", () =>
+    import("./visualizations/horizon.mjs")
+  );
+  */
 
   frontend.objects.addComponent({
     component: Header,

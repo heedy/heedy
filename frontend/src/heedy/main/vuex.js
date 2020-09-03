@@ -23,8 +23,12 @@ export default {
     // Components to show in the app
     app_components: [],
 
-    // A map of objects
+    // A map of objects and the time they were queried.
+    // qtime holds an array of callbacks for queries in progress
+    // and the timestamp of queries already completed.
     objects: {},
+    objects_qtime: {},
+
     // Components to show for a object
     object_components: [],
     // Object types hold the app customization for each object type
@@ -138,6 +142,15 @@ export default {
     setObject(state, v) {
       // First check if the object has existing value
       let curs = state.objects[v.id] || null;
+
+      // Get the callbacks
+      let callbacks =
+        state.objects_qtime[v.id] === undefined ||
+        !Array.isArray(state.objects_qtime[v.id])
+          ? []
+          : state.objects_qtime[v.id];
+      Vue.set(state.objects_qtime, v.id, moment());
+
       if (v.isNull !== undefined) {
         // The object is to be deleted - make sure to take care of all places it could be
         if (curs !== null) {
@@ -150,13 +163,14 @@ export default {
           }
         }
         Vue.set(state.objects, v.id, null);
+
+        callbacks.forEach((c) => c());
+
         return;
       }
       // Set the object
-      Vue.set(state.objects, v.id, {
-        qtime: moment(),
-        ...v,
-      });
+      Vue.set(state.objects, v.id, v);
+
       // Delete from lists where changed
       if (curs != null) {
         if (v.app != curs.app) {
@@ -170,6 +184,7 @@ export default {
           }
         }
       }
+
       // Make sure to set it in the appropriate lists
       if (v.app != null && state.appObjects[v.app] !== undefined) {
         Vue.set(state.appObjects[v.app], v.id, null);
@@ -177,16 +192,25 @@ export default {
       if (state.userObjects[v.owner] !== undefined) {
         Vue.set(state.userObjects[v.owner], v.id, null);
       }
+
+      callbacks.forEach((c) => c());
+    },
+    addObjectQTimeCallback(state, v) {
+      if (
+        state.objects_qtime[v.id] === undefined ||
+        !Array.isArray(state.objects_qtime[v.id])
+      ) {
+        state.objects_qtime[v.id] = [];
+      }
+      if (v.callback !== undefined) {
+        state.objects_qtime[v.id].push(v.callback);
+      }
     },
     setUserObjects(state, v) {
       let srcidmap = {};
       let qtime = moment();
       v.objects.forEach((s) => {
         srcidmap[s.id] = null;
-        Vue.set(state.objects, s.id, {
-          qtime,
-          ...s,
-        });
       });
       Vue.set(state.userObjects, v.user, srcidmap);
       Vue.set(state.userObjects_qtime, v.user, qtime);
@@ -199,10 +223,6 @@ export default {
       let qtime = moment();
       v.objects.forEach((s) => {
         srcidmap[s.id] = null;
-        Vue.set(state.objects, s.id, {
-          qtime,
-          ...s,
-        });
       });
       Vue.set(state.appObjects, v.id, srcidmap);
       Vue.set(state.appObjects_qtime, v.id, qtime);
@@ -289,7 +309,26 @@ export default {
         q.callback();
       }
     },
-    readObject_: async function({ commit }, q) {
+    readObject_: async function({ commit, state }, q) {
+      if (
+        state.objects_qtime[q.id] !== undefined &&
+        Array.isArray(state.objects_qtime[q.id])
+      ) {
+        console.log(`waiting for object ${q.id}`);
+        if (q.callback !== undefined) {
+          commit("addObjectQTimeCallback", {
+            id: q.id,
+            callback: q.callback,
+          });
+        }
+        return;
+      }
+
+      // Set up the query waiting array
+      commit("addObjectQTimeCallback", {
+        id: q.id,
+      });
+
       console.log("Reading object", q.id);
       let res = await api("GET", `api/objects/${q.id}`, {
         icon: true,
@@ -404,6 +443,7 @@ export default {
           text: res.data.error_description,
         });
       } else {
+        res.data.forEach((obj) => commit("setObject", obj));
         commit("setUserObjects", {
           user: q.username,
           objects: res.data,
@@ -437,6 +477,7 @@ export default {
           text: res.data.error_description,
         });
       } else {
+        res.data.forEach((obj) => commit("setObject", obj));
         commit("setAppObjects", {
           id: q.id,
           objects: res.data,

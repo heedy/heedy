@@ -1,12 +1,21 @@
-import DataManager from "./datamanager.js";
+import Query from "./query.js";
 
 class TimeseriesInjector {
   constructor(wkr) {
     this.worker = wkr;
-    this.processors = {};
+    this.preprocessors = {};
+    this.analyzers = [];
 
-    this.timeseries = {};
+    // The currently active queries, keyed by their frontend key.
+    this.queries = {};
 
+    // Queries that are inactive but still contain valid data.
+    this.inactive = [];
+
+    // Subscribe to these messages from the frontend.
+    // timeseries_query - a single-shot query - just return the results
+    // timeseries_subscribe_query - given a key, and a query, keep the data up-to-date
+    // timeseries_unsubscribe_query - unsubscribe from live updates of the given key
     wkr.addHandler("timeseries_query", (ctx, msg) => this._query(ctx, msg));
     wkr.addHandler("timeseries_subscribe_query", (ctx, msg) =>
       this._subscribeQuery(ctx, msg)
@@ -15,120 +24,140 @@ class TimeseriesInjector {
       this._unsubscribeQuery(ctx, msg)
     );
 
-    // TODO: In the future, make sure to subscribe to timeseries from other users
-    // that might be queried
-    if (wkr.info.user != null) {
-      wkr.websocket.subscribe(
-        "timeseries_data_write",
-        {
-          event: "timeseries_data_write",
-          user: wkr.info.user.username
-        },
-        e => this._dataEvent(e)
-      );
-      wkr.websocket.subscribe(
-        "timeseries_actions_write",
-        {
-          event: "timeseries_actions_write",
-          user: wkr.info.user.username
-        },
-        e => this._dataEvent(e)
-      );
-      wkr.websocket.subscribe(
-        "timeseries_data_delete",
-        {
-          event: "timeseries_data_delete",
-          user: wkr.info.user.username
-        },
-        e => this._dataEvent(e)
-      );
-      /* object updates happen through re-subscribing
-            wkr.websocket.subscribe("object_update_timeseries", {
-                event: "object_update",
-                user: wkr.info.user.username
-            }, (e) => this._objectEvent(e));
-            */
-      wkr.websocket.subscribe(
-        "object_delete_timeseries",
-        {
-          event: "object_delete",
-          user: wkr.info.user.username
-        },
-        e => this._objectEvent(e)
-      );
+    // Subscribe to changes in timeseries
+    wkr.websocket.subscribe(
+      "timeseries_data_write",
+      {
+        event: "timeseries_data_write",
+      },
+      (e) => this._dataEvent(e)
+    );
+    wkr.websocket.subscribe(
+      "timeseries_actions_write",
+      {
+        event: "timeseries_actions_write",
+      },
+      (e) => this._dataEvent(e)
+    );
+    wkr.websocket.subscribe(
+      "timeseries_data_delete",
+      {
+        event: "timeseries_data_delete",
+      },
+      (e) => this._dataEvent(e)
+    );
 
-      // In a perfect world, we would also subscribe to object_update.
-      // However, having the timeseries come up from the frontend instead allows
-      // us to avoid an API query - otherwise each time the object is updated,
-      // there would be 2 queries, one from the frontend, and one from the worker.
-      // This way, the frontend queries, and the worker gets the results of that query.
-      wkr.addHandler("timeseries_update", (ctx, msg) =>
-        this._timeseriesUpdate(msg)
-      );
-
-      wkr.websocket.subscribe_status(s => this._ws_status(s));
-    }
+    wkr.websocket.subscribe_status((s) => this._ws_status(s));
   }
-
-  addProcessor(key, f) {
-    this.processors[key] = f;
-  }
-
   _ws_status(s) {
-    Object.values(this.timeseries).forEach(sv => sv.onWebsocket(s));
-  }
-
-  async _dataEvent(event) {
-    console.log("timeseries_worker: DATA EVENT", event);
-    if (this.timeseries[event.object] !== undefined) {
-      this.timeseries[event.object].onEvent(event);
+    if (s === null) {
+      this.inactive.forEach((q) => q.close());
+      this.inactive = [];
     }
   }
-  async _objectEvent(event) {
-    console.log("timeseries_worker: object event", event);
-    if (this.timeseries[event.object] !== undefined) {
-      if (event.event == "object_delete") {
-        this.timeseries[event.object].clear();
-        delete this.timeseries[event.object];
+  _getQuery(q, cbk, status) {
+    for (let i = 0; i < this.inactive.length; i++) {
+      if (this.inactive[i].isEqual(q)) {
+        console.log("Using cached data for query", q);
+        let qv = this.inactive[i];
+        this.inactive.splice(i, 1);
+        qv.activate(cbk, status);
+        return qv;
       }
     }
+    return new Query(this.worker, q, cbk, status);
   }
-  async _timeseriesUpdate(timeseries) {
-    if (this.timeseries[timeseries.id] !== undefined) {
-      this.timeseries[timeseries.id].updateTimeseries(timeseries);
+  _discardQuery(q) {
+    if (this.worker.websocket.status !== null) {
+      // If there is an active websocket, keep the query until it no longer holds
+      // up-to-date data
+      console.log("Caching unused query data", q.query);
+      this.inactive.push(q);
+      q.deactivate(() => {
+        this.inactive = this.inactive.filter((v) => v != q);
+      });
+    } else {
+      q.close();
     }
   }
-  async _subscribeQuery(ctx, msg) {
-    if (this.timeseries[msg.timeseries.id] === undefined) {
-      this.timeseries[msg.timeseries.id] = new DataManager(
-        this,
-        msg.timeseries
-      );
-    }
-    this.timeseries[msg.timeseries.id].subscribe(
-      msg.timeseries,
-      msg.key,
-      msg.query
+  _query(ctx, msg) {
+    console.log("Running single query", msg);
+    let qval = null;
+    qval = this._getQuery(
+      msg.query,
+      (d, o) => {
+        this._discardQuery(qval);
+        this.worker.postMessage("timeseries_query_result", {
+          key: msg.key,
+          visualizations: o,
+          data: d,
+        });
+      },
+      (s) =>
+        this.worker.postMessage("timeseries_query_status", {
+          key: msg.key,
+          status: s,
+        })
     );
   }
-  async _unsubscribeQuery(ctx, msg) {
-    if (this.timeseries[msg.id] !== undefined) {
-      this.timeseries[msg.id].unsubscribe(msg.key);
+  _subscribeQuery(ctx, msg) {
+    console.log("Subscribing to timeseries query", msg);
+    this.queries[msg.key] = this._getQuery(
+      msg.query,
+      (d, o) => {
+        this.worker.postMessage("timeseries_query_result", {
+          key: msg.key,
+          visualizations: o,
+          data: d,
+        });
+      },
+      (s) =>
+        this.worker.postMessage("timeseries_query_status", {
+          key: msg.key,
+          status: s,
+        })
+    );
+  }
+  _unsubscribeQuery(ctx, msg) {
+    console.log("Unsubscribing from timeseries query", msg);
+    if (this.queries[msg.key] !== undefined) {
+      let q = this.queries[msg.key];
+
+      delete this.queries[msg.key];
+
+      this._discardQuery(q);
     }
   }
-  async _query(ctx, msg) {
-    if (this.timeseries[msg.timeseries.id] === undefined) {
-      this.timeseries[msg.timeseries.id] = new DataManager(
-        this,
-        msg.timeseries
-      );
-    }
-    this.timeseries[msg.timeseries.id].query(
-      msg.timeseries,
-      msg.key,
-      msg.query
+  _dataEvent(event) {
+    console.log(
+      "Data event - checking if any timeseries queries need to be updated",
+      event
     );
+    Object.values(this.queries).forEach((q) => q.onDataEvent(event));
+    [...this.inactive].forEach((q) => q.onDataEvent(event));
+  }
+
+  /**
+   * A preprocessor is an async function which is given the query, its associated dataset, as well as access to apps/timeseries
+   * and the visualization settings given by an analyzer (or by person editing dashboard), and it performs any necessary preprocessing steps that might
+   * take a long time/be computationally intensive. It is permitted to output a visualization of a different type than it is given.
+   *
+   * @param {*} vistype The visualization type to handle
+   * @param {*} f An async function that performs preprocessing
+   */
+  addPreprocessor(vistype, f) {
+    this.preprocessors[vistype] = f;
+  }
+
+  /**
+   * Analyzers are async functions that given a query, its associated dataset, as well as access to apps/timeseries
+   * decides which visualizations to use and how to set them up. As an example, given a numeric timeseries, an analyzer might
+   * output the settings necessary to view the data as a line plot.
+   *
+   * @param {*} f An analysis function
+   */
+  addAnalyzer(f) {
+    this.analyzers.push(f);
   }
 }
-
 export default TimeseriesInjector;

@@ -3,15 +3,11 @@ import Vue from "../../dist/vue.mjs";
 
 export default {
   state: {
-    views: {},
-    timeseries: {}
+    visualizations: {},
   },
   mutations: {
-    addView(state, v) {
-      Vue.set(state.views, v.key, v.component);
+    addTSVisualization(state, v) {
+      Vue.set(state.visualizations, v.key, v.component);
     },
-    setData(state, v) {
-      Vue.set(state.timeseries, v.id, v.data);
-    }
-  }
+  },
 };
