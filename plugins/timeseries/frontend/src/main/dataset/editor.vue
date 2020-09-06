@@ -12,12 +12,13 @@
       <v-card>
         <div style="padding: 10px; padding-bottom: 0;">
           <v-alert
-            v-if="alert.length>0"
+            v-if="alert.length > 0"
             text
             outlined
             color="deep-orange"
             icon="error_outline"
-          >{{ alert }}</v-alert>
+            >{{ alert }}</v-alert
+          >
         </div>
         <multi-query v-model="query"></multi-query>
         <v-card-actions>
@@ -25,10 +26,18 @@
             <v-icon left>add_circle</v-icon>Add Series
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn dark color="blue" @click="runQuery" :loading="loading">Run Query</v-btn>
+          <v-btn dark color="blue" @click="runQuery" :loading="loading"
+            >Run Query</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-flex>
+    <v-flex v-if="errmessage != ''">
+      <div style="width:100%;text-align:center;">
+        <h1 style="color: #c9c9c9;margin-top: 5%;">{{ errmessage }}</h1>
+      </div>
+    </v-flex>
+    <h-dataset-visualization v-else :query="visquery"></h-dataset-visualization>
   </h-page-container>
 </template>
 <script>
@@ -39,17 +48,27 @@ export default {
   },
   data: () => ({
     alert: "",
+    defaultQuery: [
+      {
+        timeseries: "",
+        t1: "now-3mo",
+      },
+    ],
     query: [
       {
         timeseries: "",
         t1: "now-3mo",
       },
     ],
+    visquery: [],
     loading: false,
+    errmessage: "",
   }),
   methods: {
-    runQuery: async function () {
-      console.log(JSON.stringify(this.query));
+    runQuery: async function() {
+      let qjson = JSON.stringify(this.query);
+      console.log("Running query", qjson);
+      this.$router.replace({ query: { q: btoa(qjson) } });
     },
     addSeries() {
       this.query.push({
@@ -57,6 +76,37 @@ export default {
         t1: "now-3mo",
       });
     },
+    processQuery(qstring) {
+      this.errmessage = "";
+      try {
+        let qval = atob(qstring);
+        let qjson = JSON.parse(qval);
+        this.visquery = qjson;
+        this.query = qjson;
+      } catch (err) {
+        console.error(err);
+        this.visquery = [];
+        this.query = this.defaultQuery;
+        this.errmessage = "Error reading query";
+      }
+    },
+  },
+  watch: {
+    "$route.query": function(n, o) {
+      this.errmessage = "";
+      if (n.q !== undefined) {
+        this.processQuery(n.q);
+      } else {
+        this.visquery = [];
+        this.query = this.defaultQuery;
+      }
+    },
+  },
+  created() {
+    // If no query, use default
+    if (this.$route.query.q !== undefined) {
+      this.processQuery(this.$route.query.q);
+    }
   },
 };
 </script>

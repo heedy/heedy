@@ -45,7 +45,6 @@ export default {
         }
         return obj;
       });
-      console.log(ndp);
       return ndp;
     },
   },

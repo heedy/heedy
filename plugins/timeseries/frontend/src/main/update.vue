@@ -1,7 +1,11 @@
 <template>
   <h-object-updater :object="object" :meta="meta">
     <template v-slot:advanced>
-      <v-text-field label="Subtype" v-model="subtype" placeholder></v-text-field>
+      <v-text-field
+        label="Subtype"
+        v-model="subtype"
+        placeholder
+      ></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
           <v-container>
@@ -28,40 +32,40 @@
 <script>
 export default {
   props: {
-    object: Object
+    object: Object,
   },
   data: () => ({
     scode: null,
     ssubtype: null,
     cmOptions: {
       tabSize: 2,
-      mode: "text/javascript"
+      mode: "text/javascript",
     },
     schemaTypes: [
       {
         label: "Number",
-        value: "number"
+        value: "number",
       },
       {
         label: "String",
-        value: "string"
+        value: "string",
       },
       {
         label: "Other",
-        value: "?"
-      }
-    ]
+        value: "?",
+      },
+    ],
   }),
   methods: {
     setRadio(v) {
       switch (v) {
         case "?":
-          this.code = "{}";
+          this.scode = "{}";
           return;
         default:
-          this.code = JSON.stringify({ type: v }, null, "  ");
+          this.scode = JSON.stringify({ type: v }, null, "  ");
       }
-    }
+    },
   },
   computed: {
     curRadio() {
@@ -80,11 +84,11 @@ export default {
         if (this.scode != null) {
           return this.scode;
         }
-        return JSON.stringify(this.object.meta.schema);
+        return JSON.stringify(this.object.meta.schema, null, "  ");
       },
       set(v) {
         this.scode = v;
-      }
+      },
     },
     subtype: {
       get() {
@@ -95,7 +99,7 @@ export default {
       },
       set(v) {
         this.ssubtype = v;
-      }
+      },
     },
     meta() {
       let meta = {};
@@ -108,7 +112,7 @@ export default {
         meta.subtype = this.ssubtype;
       }
       return meta;
-    }
-  }
+    },
+  },
 };
 </script>

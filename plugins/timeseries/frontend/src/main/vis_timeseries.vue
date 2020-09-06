@@ -26,7 +26,10 @@ export default {
   computed: {
     haswrite() {
       let access = this.object.access.split(" ");
-      return access.includes("*") || access.includes("write");
+      return (
+        this.object.meta.schema.type !== undefined &&
+        (access.includes("*") || access.includes("write"))
+      );
     },
   },
   watch: {
