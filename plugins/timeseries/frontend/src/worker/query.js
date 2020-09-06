@@ -248,7 +248,6 @@ class Query {
     this.reprepare = false;
     // Start running all the analyzers
     let aresults = this.worker.timeseries.analyzers.map((a) => a(this.qdata));
-    console.log(aresults);
 
     // Wait for the results
     let resultarray = await Promise.all(aresults);
@@ -267,9 +266,10 @@ class Query {
     let rvalues = await Promise.all(
       rkeys.map((k) => {
         if (
-          this.worker.timeseries.preprocessors[results[k].type] !== undefined
+          this.worker.timeseries.preprocessors[results[k].visualization] !==
+          undefined
         ) {
-          return this.worker.timeseries.preprocessors[results[k].type](
+          return this.worker.timeseries.preprocessors[results[k].visualization](
             this.qdata,
             results[k]
           );
@@ -280,6 +280,7 @@ class Query {
 
     this.output = rkeys.reduce((o, cv, i) => {
       o[cv] = rvalues[i];
+      return o;
     }, {});
 
     // Call the callback

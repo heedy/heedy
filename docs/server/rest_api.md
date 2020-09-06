@@ -824,7 +824,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request POST \
      --header "Content-Type: application/json" \
      --data '{"mykey": 45.54}' \
-     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+     http://localhost:1324/api/kv/users/myuser/myplugin
 ```
 
 <div class="rest_output_result">
@@ -845,7 +845,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request PATCH \
      --header "Content-Type: application/json" \
      --data '{"mykey": 45.54}' \
-     http://localhost:1324/api/kv/users/myuser/myplugin/mykey
+     http://localhost:1324/api/kv/users/myuser/myplugin
 ```
 
 <div class="rest_output_result">

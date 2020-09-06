@@ -90,7 +90,8 @@ class TimeseriesInjector {
         this.worker.postMessage("timeseries_query_result", {
           key: msg.key,
           visualizations: o,
-          data: d,
+          dataset: d.dataset,
+          query: d.query,
         });
       },
       (s) =>
@@ -108,7 +109,8 @@ class TimeseriesInjector {
         this.worker.postMessage("timeseries_query_result", {
           key: msg.key,
           visualizations: o,
-          data: d,
+          dataset: d.dataset,
+          query: d.query,
         });
       },
       (s) =>

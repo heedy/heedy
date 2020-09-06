@@ -1,10 +1,10 @@
-import MarkdownIt from 'markdown-it';
+import MarkdownIt from "markdown-it";
 
 let md = new MarkdownIt({
-    html: false
+  html: false,
 });
 
-export {
-    md
-};
+window.markdownit = MarkdownIt;
+
+export { md };
 export default MarkdownIt;

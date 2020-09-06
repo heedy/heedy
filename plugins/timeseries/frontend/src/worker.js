@@ -1,5 +1,6 @@
 import TimeseriesInjector from "./worker/injector.js";
 
+import datatableAnalyzer from "./worker/analyzers/datatable.js";
 /*
 import datatable from "./worker/preprocessors/datatable.js";
 import insert from "./worker/preprocessors/insert.js";
@@ -11,6 +12,7 @@ function setup(wkr) {
 
   wkr.inject("timeseries", new TimeseriesInjector(wkr));
 
+  wkr.timeseries.addAnalyzer(datatableAnalyzer);
   /*
   wkr.timeseries.addPreprocessor("datatable", datatable);
   wkr.timeseries.addPreprocessor("insert", insert);

@@ -49,10 +49,10 @@ function setup(frontend) {
     key: "body",
   });
 
-  /*
   frontend.timeseries.addVisualization("datatable", () =>
     import("./visualizations/datatable.mjs")
   );
+  /*
   frontend.timeseries.addVisualization("insert", () =>
     import("./visualizations/insert.mjs")
   );

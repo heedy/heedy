@@ -1,5 +1,5 @@
 <template>
-  <v-content>
+  <v-main>
     <v-flex>Plugins</v-flex>
-  </v-content>
+  </v-main>
 </template>

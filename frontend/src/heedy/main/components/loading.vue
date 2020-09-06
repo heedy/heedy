@@ -1,5 +1,5 @@
 <template>
-  <v-content class="loading">
+  <v-main class="loading">
     <v-container fluid>
       <v-layout justify-center align-center>
         <v-flex text-center>
@@ -7,7 +7,7 @@
         </v-flex>
       </v-layout>
     </v-container>
-  </v-content>
+  </v-main>
 </template>
 
 <style>

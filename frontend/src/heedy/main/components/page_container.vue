@@ -1,5 +1,5 @@
 <template>
-  <v-content v-resize="onResize">
+  <v-main v-resize="onResize">
     <v-container grid-list-xl :fluid="fluid">
       <v-layout fill-height column>
         <v-flex v-if="!noflex">
@@ -8,18 +8,18 @@
         <slot v-else></slot>
       </v-layout>
     </v-container>
-  </v-content>
+  </v-main>
 </template>
 <script>
 export default {
   data: () => ({
-    fluid: true
+    fluid: true,
   }),
   props: {
     noflex: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   mounted() {
     this.onResize();
@@ -27,7 +27,7 @@ export default {
   methods: {
     onResize() {
       this.fluid = window.innerWidth < 1264;
-    }
-  }
+    },
+  },
 };
 </script>

@@ -68,7 +68,7 @@ function deepEqual(a, b) {
 
   // Check key values - uses ES5 Object.keys
   return aKeys.every(function(key) {
-    return objectTester(a[key], b[key]);
+    return deepEqual(a[key], b[key]);
   });
   return false;
 }

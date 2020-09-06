@@ -1,5 +1,5 @@
 <template>
-  <v-content class="notfound">
+  <v-main class="notfound">
     <v-container fluid>
       <v-layout justify-center align-center>
         <v-flex text-center>
@@ -8,7 +8,7 @@
         </v-flex>
       </v-layout>
     </v-container>
-  </v-content>
+  </v-main>
 </template>
 
 <style>

@@ -1,41 +1,39 @@
 name: Test
 on: [push]
 jobs:
-
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15
+        id: go
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
 
-    - name: Set up Go 1.14
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.14
-      id: go
-    - name: Set up Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.7'
+      - name: Check out code
+        uses: actions/checkout@v1
 
-    - name: Check out code
-      uses: actions/checkout@v1
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r api/python/requirements.txt
-        mkdir $GITHUB_WORKSPACE/.npm-global
-        npm config set prefix "$GITHUB_WORKSPACE/.npm-global"
-        npm install -g jsdoc
-        echo "::add-path::$GITHUB_WORKSPACE/.npm-global/bin"
-        echo "::add-path::$(go env GOPATH)/bin"
-        pip install -r docs/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api/python/requirements.txt
+          mkdir $GITHUB_WORKSPACE/.npm-global
+          npm config set prefix "$GITHUB_WORKSPACE/.npm-global"
+          npm install -g jsdoc
+          echo "::add-path::$GITHUB_WORKSPACE/.npm-global/bin"
+          echo "::add-path::$(go env GOPATH)/bin"
+          pip install -r docs/requirements.txt
 
-    - name: Build
-      run: make
-    
-    - name: Test
-      run: make test
-    - name: Docs
-      working-directory: docs
-      run: make
+      - name: Build
+        run: make
+
+      - name: Test
+        run: make test
+      - name: Docs
+        working-directory: docs
+        run: make

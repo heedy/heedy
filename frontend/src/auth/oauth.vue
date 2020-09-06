@@ -1,5 +1,5 @@
 <template>
-  <v-content class="login-background">
+  <v-main class="login-background">
     <v-container fluid>
       <v-layout justify-center align-center>
         <v-flex text-xs-center>
@@ -8,7 +8,12 @@
               <span class="title font-weight-light">Permit App?</span>
             </v-card-title>
             <v-card-text class="headline font-weight-bold">
-              <v-text-field prepend-icon="lock" name="Password" label="Password" type="password"></v-text-field>
+              <v-text-field
+                prepend-icon="lock"
+                name="Password"
+                label="Password"
+                type="password"
+              ></v-text-field>
             </v-card-text>
 
             <v-card-actions>
@@ -18,15 +23,15 @@
         </v-flex>
       </v-layout>
     </v-container>
-  </v-content>
+  </v-main>
 </template>
 
 <script>
 export default {
   data: () => ({}),
   props: {
-    object: String
-  }
+    object: String,
+  },
 };
 </script>
 

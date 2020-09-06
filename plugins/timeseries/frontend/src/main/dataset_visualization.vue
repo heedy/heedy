@@ -1,18 +1,34 @@
 <template>
   <v-flex style="padding-top: 0px;">
     <v-row>
-      <v-col v-if="datavis.length == 0" style="width: 100%; text-align: center;">
-        <h1 style="color: #c9c9c9;margin-top: 5%;">{{ message }}</h1>
-      </v-col>
-      <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="6" xl="4">
+      <slot>
+        <v-col
+          v-if="datavis.length == 0"
+          style="width: 100%; text-align: center;"
+        >
+          <h1 style="color: #c9c9c9;margin-top: 5%;">{{ message }}</h1>
+        </v-col>
+      </slot>
+      <v-col
+        v-for="d in datavis"
+        :key="d.key"
+        cols="12"
+        sm="12"
+        md="6"
+        lg="6"
+        xl="4"
+      >
         <v-card>
           <v-card-title v-if="d.title !== undefined">
-            {{
-            d.title
-            }}
+            {{ d.title }}
           </v-card-title>
           <v-card-text>
-            <component :is="visualization(d.type)" :dataset="data" :visualization="d" />
+            <component
+              :is="visualization(d.visualization)"
+              :dataset="data"
+              :query="query"
+              :config="d.config"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -59,7 +75,7 @@ export default {
   }),
   methods: {
     visualization(v) {
-      let vs = this.$store.state.timeseries.views;
+      let vs = this.$store.state.timeseries.visualizations;
       if (vs[v] === undefined) {
         return VisNotFound;
       }
@@ -81,14 +97,14 @@ export default {
             return;
           }
 
-          this.data = dv.data;
+          this.data = dv.dataset;
           dv = dv.visualizations;
 
           let v = Object.keys(dv).map((k) => ({ key: k, ...dv[k] }));
           v.sort((a, b) => a.weight - b.weight);
           console.log(
             "Received visualizations:",
-            v.map((vi) => `${vi.key} (${vi.type})`)
+            v.map((vi) => `${vi.key} (${vi.visualization})`)
           );
           this.datavis = v;
           this.message = "No Data";
@@ -103,7 +119,7 @@ export default {
         this.qkey = "";
       }
       if (n.length > 0) {
-        this.qkey = this.subscribe(this.query);
+        this.subscribe(this.query);
       } else {
         this.datavis = [];
         this.data = [];
@@ -115,12 +131,14 @@ export default {
   created() {
     // Only subscribe if non-empty query, or modify the query to be the default
     if (this.query.length > 0) {
-      this.qkey = this.subscribe(this.query);
+      this.subscribe(this.query);
     } else {
       this.message = "Empty Query";
     }
+    console.log("KEY", this.qkey);
   },
   beforeDestroy() {
+    console.log("KEY", this.qkey);
     if (this.qkey != "") {
       this.$frontend.timeseries.unsubscribeQuery(this.qkey);
     }

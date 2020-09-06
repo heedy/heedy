@@ -1,8 +1,21 @@
 <template>
-  <h-dataset-visualization :query="query"></h-dataset-visualization>
+  <h-dataset-visualization :query="query">
+    <v-col v-if="haswrite" cols="12" sm="12" md="6" lg="6" xl="4">
+      <v-card>
+        <v-card-title>Insert</v-card-title>
+        <v-card-text>
+          <insert :object="object"></insert>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </h-dataset-visualization>
 </template>
 <script>
+import Insert from "./insert.vue";
 export default {
+  components: {
+    Insert,
+  },
   props: {
     object: Object,
   },
@@ -10,8 +23,14 @@ export default {
     defaultQuery: { i1: -1000 },
     query: [],
   }),
+  computed: {
+    haswrite() {
+      let access = this.object.access.split(" ");
+      return access.includes("*") || access.includes("write");
+    },
+  },
   watch: {
-    "$route.query": function (n, o) {
+    "$route.query": function(n, o) {
       if (Object.keys(n).length == 0) {
         this.$router.replace({ query: this.defaultQuery });
       } else {

@@ -4,9 +4,9 @@
       <v-container fluid grid-list-md>
         <v-layout row>
           <v-flex>
-            <v-jsonschema-form
+            <v-jsf
               :schema="schema"
-              :model="modified"
+              v-model="modified"
               :options="options"
               @error="show"
               @change="show"
@@ -19,19 +19,17 @@
       <v-card-actions>
         <v-spacer></v-spacer>
 
-        <v-btn dark color="info" type="submit" :loading="loading">Update Settings</v-btn>
+        <v-btn dark color="info" type="submit" :loading="loading"
+          >Update Settings</v-btn
+        >
       </v-card-actions>
     </v-form>
   </h-card-page>
 </template>
 <script>
-import VJsonschemaForm from "../../../dist/vuetify-jsonschema-form.mjs";
 export default {
-  components: {
-    VJsonschemaForm
-  },
   props: {
-    app: Object
+    app: Object,
   },
   data: function() {
     return {
@@ -42,8 +40,8 @@ export default {
       options: {
         debug: false,
         disableAll: false,
-        autoFoldObjects: false
-      }
+        autoFoldObjects: false,
+      },
     };
   },
   computed: {
@@ -54,8 +52,8 @@ export default {
       let s = {
         type: "object",
         properties: {
-          ...this.app.settings_schema
-        }
+          ...this.app.settings_schema,
+        },
       };
       if (s.properties.required !== undefined) {
         s.required = s.properties.required;
@@ -71,7 +69,7 @@ export default {
       }
       console.log(s);
       return s;
-    }
+    },
   },
   methods: {
     show(e) {
@@ -89,8 +87,8 @@ export default {
 
       let modified = {
         settings: {
-          ...this.modified
-        }
+          ...this.modified,
+        },
       };
       console.log("Update app settings", this.app.id);
 
@@ -108,14 +106,14 @@ export default {
         }
 
         this.$store.dispatch("readApp", {
-          id: this.app.id
+          id: this.app.id,
         });
       }
 
       this.loading = false;
       this.$router.push({ path: `/apps/${this.app.id}` });
     },
-    del: async function() {}
-  }
+    del: async function() {},
+  },
 };
 </script>

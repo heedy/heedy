@@ -1,49 +1,56 @@
 <template>
   <v-form @submit="insert" v-model="formValid">
     <div ref="jsform" v-if="!loading">
-      <v-jsonschema-form :schema="schema" :options="options" :model="modified" />
+      <v-jsf :schema="schema" :options="options" v-model="modified" />
     </div>
     <!-- https://github.com/koumoul-dev/vuetify-jsonschema-form/issues/21 -->
-    <div v-else :style="{ height, textAlign: 'center', display: 'flex', margin: 'auto' }">
+    <div
+      v-else
+      :style="{ height, textAlign: 'center', display: 'flex', margin: 'auto' }"
+    >
       <h4 style="margin: auto">Inserting...</h4>
     </div>
     <v-btn dark color="info" type="submit" :loading="loading">Insert</v-btn>
   </v-form>
 </template>
 <script>
-import VJsonschemaForm from "../../dist/vuetify-jsonschema-form.mjs";
 import moment from "../../dist/moment.mjs";
 export default {
-  components: {
-    VJsonschemaForm
-  },
   props: {
-    data: Object
+    object: Object,
   },
   data: () => ({
     formValid: false,
     loading: false,
     height: "20px",
-    options: {
-      debug: false,
-      disableAll: false,
-      autoFoldObjects: false
-    },
-    modified: {}
+    options: {},
+    modified: {},
   }),
   computed: {
     schema() {
+      if (
+        this.object.meta.schema.type !== undefined &&
+        this.object.meta.schema.type == "object"
+      ) {
+        return {
+          type: "object",
+          properties: {
+            data: this.object.meta.schema,
+          },
+          required: ["data"],
+        };
+      }
       return {
         type: "object",
         properties: {
           data: {
             title: "Insert Datapoint",
-            ...this.data.schema
-          }
+            ...this.object.meta.schema,
+          },
         },
-        required: ["data"]
+        required: ["data"],
       };
-    }
+    },
   },
   methods: {
     insert: async function(event) {
@@ -60,7 +67,7 @@ export default {
       console.log("Inserting datapoint:", this.modified.data);
       let res = await this.$frontend.rest(
         "POST",
-        `api/objects/${this.data.id}/timeseries`,
+        `api/objects/${this.object.id}/timeseries`,
         [{ t: moment().unix(), d: this.modified.data }]
       );
 
@@ -71,7 +78,7 @@ export default {
       }
       this.modified = { data: null };
       this.loading = false;
-    }
-  }
+    },
+  },
 };
 </script>

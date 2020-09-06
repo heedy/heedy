@@ -78,7 +78,7 @@ export default [
 ]
   .concat(
     glob
-      .sync("views/*.vue", {
+      .sync("visualizations/*.vue", {
         cwd: "./src",
       })
       .map((a) => out(a))
