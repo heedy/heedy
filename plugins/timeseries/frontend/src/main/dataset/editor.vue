@@ -17,8 +17,7 @@
             outlined
             color="deep-orange"
             icon="error_outline"
-            >{{ alert }}</v-alert
-          >
+          >{{ alert }}</v-alert>
         </div>
         <multi-query v-model="query"></multi-query>
         <v-card-actions>
@@ -26,9 +25,7 @@
             <v-icon left>add_circle</v-icon>Add Series
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn dark color="blue" @click="runQuery" :loading="loading"
-            >Run Query</v-btn
-          >
+          <v-btn dark color="blue" @click="runQuery" :loading="loading">Run Query</v-btn>
         </v-card-actions>
       </v-card>
     </v-flex>
@@ -65,7 +62,7 @@ export default {
     errmessage: "",
   }),
   methods: {
-    runQuery: async function() {
+    runQuery: async function () {
       let qjson = JSON.stringify(this.query);
       console.log("Running query", qjson);
       this.$router.replace({ query: { q: btoa(qjson) } });
@@ -82,23 +79,23 @@ export default {
         let qval = atob(qstring);
         let qjson = JSON.parse(qval);
         this.visquery = qjson;
-        this.query = qjson;
+        this.query = qjson.map((q) => ({ ...q }));
       } catch (err) {
         console.error(err);
         this.visquery = [];
-        this.query = this.defaultQuery;
+        this.query = this.defaultQuery.map((q) => ({ ...q }));
         this.errmessage = "Error reading query";
       }
     },
   },
   watch: {
-    "$route.query": function(n, o) {
+    "$route.query": function (n, o) {
       this.errmessage = "";
       if (n.q !== undefined) {
         this.processQuery(n.q);
       } else {
         this.visquery = [];
-        this.query = this.defaultQuery;
+        this.query = this.defaultQuery.map((q) => ({ ...q }));
       }
     },
   },

@@ -102,6 +102,16 @@ func (d *DatasetElement) Validate() error {
 		if q.Reversed != nil && *q.Reversed {
 			return errors.New("bad_query: datasets can't use reversed timeseries")
 		}
+		// Allow specifying a single time range for an entire merge query
+		if q.T1 == nil && d.T1 != nil {
+			q.T1 = d.T1
+		}
+		if q.T2 == nil && d.T2 != nil {
+			q.T2 = d.T2
+		}
+		if q.T == nil && q.T != nil {
+			q.T = d.T
+		}
 	}
 	if d.Interpolator == "" {
 		d.Interpolator = "closest"
@@ -171,8 +181,11 @@ func (d *Dataset) Validate() error {
 	if d.Dt != nil && (d.Query.Timeseries != "" || len(d.Merge) > 0) {
 		return errors.New("bad_query: dt and timeseries/merge cannot be used at the same time")
 	}
-	if d.Dt != nil && (d.T1 == nil || d.T2 == nil) {
-		return errors.New("bad_query: t-dataset must have start and end time")
+	if d.Dt != nil && (d.T1 == nil) {
+		return errors.New("bad_query: t-dataset must have start time")
+	}
+	if d.Dt != nil && (d.T2 == nil) {
+		d.T2 = "now"
 	}
 	if len(d.Dataset) == 0 && d.Dt != nil {
 		return errors.New("bad_query: Can't query dt without a dataset")
@@ -196,6 +209,17 @@ func (d *Dataset) Validate() error {
 		}
 		if q.Reversed != nil && *q.Reversed {
 			return errors.New("bad_query: datasets can't use reversed timeseries")
+		}
+
+		// Allow specifying a single time range for an entire merge query
+		if q.T1 == nil && d.T1 != nil {
+			q.T1 = d.T1
+		}
+		if q.T2 == nil && d.T2 != nil {
+			q.T2 = d.T2
+		}
+		if q.T == nil && q.T != nil {
+			q.T = d.T
 		}
 	}
 	for _, v := range d.Dataset {

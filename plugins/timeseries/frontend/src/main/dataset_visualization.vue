@@ -123,7 +123,7 @@ export default {
       } else {
         this.datavis = [];
         this.data = [];
-        this.message = "Empty Query";
+        this.message = "";
       }
     },
     live(n, o) {},
@@ -133,12 +133,10 @@ export default {
     if (this.query.length > 0) {
       this.subscribe(this.query);
     } else {
-      this.message = "Empty Query";
+      this.message = "";
     }
-    console.log("KEY", this.qkey);
   },
   beforeDestroy() {
-    console.log("KEY", this.qkey);
     if (this.qkey != "") {
       this.$frontend.timeseries.unsubscribeQuery(this.qkey);
     }
