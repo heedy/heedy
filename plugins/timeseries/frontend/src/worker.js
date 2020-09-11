@@ -1,6 +1,9 @@
 import TimeseriesInjector from "./worker/injector.js";
 
 import datatableAnalyzer from "./worker/analyzers/datatable.js";
+import linechartAnalyzer from "./worker/analyzers/linechart.js";
+
+import chartjsPreprocessor from "./worker/preprocessors/chartjs.js";
 /*
 import datatable from "./worker/preprocessors/datatable.js";
 import insert from "./worker/preprocessors/insert.js";
@@ -13,6 +16,9 @@ function setup(wkr) {
   wkr.inject("timeseries", new TimeseriesInjector(wkr));
 
   wkr.timeseries.addAnalyzer(datatableAnalyzer);
+  wkr.timeseries.addAnalyzer(linechartAnalyzer);
+
+  wkr.timeseries.addPreprocessor("chartjs", chartjsPreprocessor);
   /*
   wkr.timeseries.addPreprocessor("datatable", datatable);
   wkr.timeseries.addPreprocessor("insert", insert);

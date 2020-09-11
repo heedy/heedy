@@ -52,6 +52,9 @@ function setup(frontend) {
   frontend.timeseries.addVisualization("datatable", () =>
     import("./visualizations/datatable.mjs")
   );
+  frontend.timeseries.addVisualization("chartjs", () =>
+    import("./visualizations/chartjs.mjs")
+  );
   /*
   frontend.timeseries.addVisualization("insert", () =>
     import("./visualizations/insert.mjs")

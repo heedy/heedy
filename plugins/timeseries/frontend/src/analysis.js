@@ -23,7 +23,7 @@ function explicitDuration(ts, offset = 0.001) {
     if (ts[i].dt !== undefined && ts[i].dt != 0) {
       res[j] = {
         t: ts[i].t + ts[i].dt - offset,
-        d: ts[i].d
+        d: ts[i].d,
       };
       j++;
     }
@@ -38,9 +38,9 @@ const datesAreOnSameDay = (first, second) =>
   first.getMonth() === second.getMonth() &&
   first.getDate() === second.getDate();
 
-const endDate = d =>
+const endDate = (d) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-const nextDate = d =>
+const nextDate = (d) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0, 0);
 
 function perDay(ts) {
@@ -70,12 +70,12 @@ function perDay(ts) {
         curday.push({
           t: dp.t,
           td: dt,
-          d: dp.d
+          d: dp.d,
         });
         dp = {
           t: nextDate(curDate).getTime() / 1000,
           td: dp.dt - dt,
-          d: dp.d
+          d: dp.d,
         };
       }
     } else {
@@ -89,17 +89,21 @@ function perDay(ts) {
 }
 
 function isNumeric(ts) {
-  return ts.every(dp => !isNaN(dp.d));
+  return ts.every((dp) => !isNaN(dp.d));
+}
+
+function isBoolean(ts) {
+  return ts.every((dp) => typeof dp.d === "boolean");
 }
 
 function getType(ts) {
   if (isNumeric(ts)) {
     return "number";
   }
-  if (ts.every(dp => typeof dp.d === "string")) {
+  if (ts.every((dp) => typeof dp.d === "string")) {
     // Check if it is categorical
     let vals = {};
-    ts.forEach(dp => {
+    ts.forEach((dp) => {
       vals[dp.d] = true;
     });
     let keynum = Object.keys(vals).length;
@@ -112,4 +116,12 @@ function getType(ts) {
   return null;
 }
 
-export { perDay, explicitDuration, isNumeric, day, getType, cleanDT };
+export {
+  perDay,
+  explicitDuration,
+  isNumeric,
+  day,
+  getType,
+  cleanDT,
+  isBoolean,
+};

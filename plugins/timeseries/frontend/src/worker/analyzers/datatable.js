@@ -11,7 +11,7 @@ async function analyze(qd) {
     if (typeof data[0].d !== "object") {
       columns.push({ prop: "d", name: "Data" });
     } else {
-      // It is an object, so find the properties, and make them table headers rather than jsut the raw data
+      // It is an object, so find the properties, and make them table headers rather than just the raw data
       let headers = {};
       let isWeird = false;
       data.forEach((dp) => {

@@ -1,3 +1,3 @@
-import { LTD, LTOB, LTTB } from "downsample";
+import { LTD, LTOB, LTTB, createLTTB } from "downsample";
 
-export { LTD, LTOB, LTTB };
+export { LTD, LTOB, LTTB, createLTTB };
