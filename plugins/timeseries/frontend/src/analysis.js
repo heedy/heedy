@@ -96,16 +96,23 @@ function isBoolean(ts) {
   return ts.every((dp) => typeof dp.d === "boolean");
 }
 
-function isObject(ts) {
-  return ts.every((dp) => typeof dp.d === "object");
-}
-
-function getType(ts) {
+function getType(ts, extractor) {
   if (ts.length == 0) {
     return "";
   }
-  let curtype = typeof ts[0].d;
-  if (ts.every((dp) => typeof dp.d === curtype)) {
+  let i = 0;
+  for (; i < ts.length; i++) {
+    if (extractor(ts[0]) !== null) {
+      break;
+    }
+  }
+  if (i == ts.length) {
+    return ""; // All null
+  }
+  let curtype = typeof extractor(ts[i]);
+  if (
+    ts.every((dp) => typeof extractor(dp) === curtype || extractor(dp) === null)
+  ) {
     return curtype;
   }
   return "";

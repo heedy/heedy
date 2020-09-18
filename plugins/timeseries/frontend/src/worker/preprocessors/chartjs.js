@@ -87,7 +87,7 @@ function prepareDataset(qd, ds) {
     }));
 
     if (ds.data.removeNull !== undefined && ds.data.removeNull) {
-      newds.data = newds.data.filter((dp) => dp.y !== null);
+      newds.data = newds.data.filter((dp) => dp.y !== null && dp.x !== null);
     }
   }
 
@@ -119,7 +119,7 @@ function preprocess(qd, visualization) {
 
   if (nvis.config.syncX !== undefined && nvis.config.syncX) {
     // Change the X axis  minimum and maximum values to the total dataset max and min
-
+    // TODO: syncX does not work if x is not pre-sorted. It can therefore only be used for timestamp series.
     let totalMin = Math.min.apply(
       null,
       nvis.config.charts.map((c) =>

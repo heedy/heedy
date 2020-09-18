@@ -15,13 +15,14 @@ class QueryData {
 
     // internal cache for function results
     this._dataType = this.dataset.map((d) => null);
+    this._keyType = this.dataset.map((d) => ({}));
     this._keys = this.dataset.map((d) => null);
     this._hasDuration = this.dataset.map((d) => null);
 
     for (let i = 0; i < this.dataset.length; i++) {
       this.dataset[i].dataType = () => {
         if (this._dataType[i] === null) {
-          this._dataType[i] = getType(this.dataset[i]);
+          this._dataType[i] = getType(this.dataset[i], (dp) => dp.d);
         }
         return this._dataType[i];
       };
@@ -45,6 +46,15 @@ class QueryData {
           this._hasDuration[i] = this.dataset[i].some((dp) => dp.dt > 0);
         }
         return this._hasDuration[i];
+      };
+
+      this.dataset[i].keyType = (key) => {
+        if (this._keyType[i][key] === undefined) {
+          this._keyType[i][key] = getType(this.dataset[i], (dp) =>
+            dp.d[key] !== undefined ? dp.d[key] : null
+          );
+        }
+        return this._keyType[i][key];
       };
     }
   }

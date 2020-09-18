@@ -7,12 +7,6 @@ const multiSeriesColors = [
     border: "rgba(75, 192, 192,0.4)",
   },
   {
-    low: "rgba(255, 206, 86,0.6)",
-    high: "rgba(255, 206, 86,0.1)",
-    background: "rgba(255, 206, 86,0.1)",
-    border: "rgba(255, 206, 86,0.4)",
-  },
-  {
     low: "rgba(255, 99, 132,0.6)",
     high: "rgba(255, 99, 132,0.1)",
     background: "rgba(255, 99, 132,0.1)",
@@ -23,6 +17,12 @@ const multiSeriesColors = [
     high: "rgba(54, 162, 235,0.1)",
     background: "rgba(54, 162, 235,0.1)",
     border: "rgba(54, 162, 235,0.4)",
+  },
+  {
+    low: "rgba(255, 206, 86,0.6)",
+    high: "rgba(255, 206, 86,0.1)",
+    background: "rgba(255, 206, 86,0.1)",
+    border: "rgba(255, 206, 86,0.4)",
   },
 ];
 
@@ -125,12 +125,13 @@ function analyze(qd) {
     // Filter out the keys with less than half data, and which are not numbers
     let usefulKeys = Object.keys(k)
       .filter((kv) => k[kv] >= d.length / 2)
-      .filter((kv) =>
-        d.every((dp) => !isNaN(dp.d[kv] === undefined ? null : dp.d[kv]))
-      );
+      .filter((kv) => {
+        let kt = d.keyType(kv);
+        return kt === "number" || kt === "boolean";
+      });
 
-    // Sort by number of datapoints
-    usefulKeys.sort((a, b) => k[b] - k[a]);
+    // Sort by key name - this gives same color to correlation series as raw series
+    usefulKeys.sort();
 
     if (
       usefulKeys.length == 0 ||
@@ -141,6 +142,8 @@ function analyze(qd) {
     }
 
     if (usefulKeys.length > 4) {
+      // Sort by number of datapoints
+      usefulKeys.sort((a, b) => k[b] - k[a]);
       usefulKeys = usefulKeys.slice(0, 4);
     }
 
