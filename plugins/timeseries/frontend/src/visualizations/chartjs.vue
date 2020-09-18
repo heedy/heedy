@@ -106,7 +106,6 @@ export default {
   },
   props: {
     query: Array,
-    dataset: Array,
     config: Object,
   },
 };

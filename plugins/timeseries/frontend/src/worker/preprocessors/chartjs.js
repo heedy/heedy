@@ -38,6 +38,9 @@ function prepareDataset(qd, ds) {
       y: extractY(dp),
       dt: dp.dt * 1000,
     }));
+    if (ds.data.removeNull !== undefined && ds.data.removeNull) {
+      data = data.filter((dp) => dp.y !== null);
+    }
 
     dataset = new Array(data.length * 3); // Start point, endpoint, and a null to break the line
 
@@ -82,6 +85,10 @@ function prepareDataset(qd, ds) {
       x: extractX(dp),
       y: extractY(dp),
     }));
+
+    if (ds.data.removeNull !== undefined && ds.data.removeNull) {
+      newds.data = newds.data.filter((dp) => dp.y !== null);
+    }
   }
 
   if (ds.data.downsample !== undefined && ds.data.downsample > 0) {

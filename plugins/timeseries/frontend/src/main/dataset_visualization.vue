@@ -2,33 +2,15 @@
   <v-flex style="padding-top: 0px;">
     <v-row>
       <slot>
-        <v-col
-          v-if="datavis.length == 0"
-          style="width: 100%; text-align: center;"
-        >
+        <v-col v-if="datavis.length == 0" style="width: 100%; text-align: center;">
           <h1 style="color: #c9c9c9;margin-top: 5%;">{{ message }}</h1>
         </v-col>
       </slot>
-      <v-col
-        v-for="d in datavis"
-        :key="d.key"
-        cols="12"
-        sm="12"
-        md="6"
-        lg="6"
-        xl="4"
-      >
+      <v-col v-for="d in datavis" :key="d.key" cols="12" sm="12" md="6" lg="6" xl="4">
         <v-card>
-          <v-card-title v-if="d.title !== undefined">
-            {{ d.title }}
-          </v-card-title>
+          <v-card-title v-if="d.title !== undefined">{{ d.title }}</v-card-title>
           <v-card-text>
-            <component
-              :is="visualization(d.visualization)"
-              :dataset="data"
-              :query="query"
-              :config="d.config"
-            />
+            <component :is="visualization(d.visualization)" :query="query" :config="d.config" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -70,7 +52,6 @@ export default {
   data: () => ({
     message: "Querying Data...",
     datavis: [],
-    data: [],
     qkey: "",
   }),
   methods: {
@@ -97,7 +78,6 @@ export default {
             return;
           }
 
-          this.data = dv.dataset;
           dv = dv.visualizations;
 
           let v = Object.keys(dv).map((k) => ({ key: k, ...dv[k] }));
@@ -122,7 +102,6 @@ export default {
         this.subscribe(this.query);
       } else {
         this.datavis = [];
-        this.data = [];
         this.message = "";
       }
     },

@@ -35,7 +35,7 @@ Heedy itself is very limited in scope. Most of its power comes from the plugins 
 
 ## Building
 
-Building heedy requires at least go 1.13 and a recent version of node and npm.
+Building heedy requires at least go 1.15 and a recent version of node and npm.
 
 ### Release
 

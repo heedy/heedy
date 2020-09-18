@@ -1,5 +1,5 @@
 <template>
-  <v-content class="login-background">
+  <v-main class="login-background">
     <v-container fluid>
       <v-layout justify-center align-center>
         <v-flex text-center>
@@ -26,14 +26,16 @@
               </v-card-text>
 
               <v-card-actions>
-                <v-btn primary large block :loading="loading" type="submit">Login</v-btn>
+                <v-btn primary large block :loading="loading" type="submit"
+                  >Login</v-btn
+                >
               </v-card-actions>
             </form>
           </v-card>
         </v-flex>
       </v-layout>
     </v-container>
-  </v-content>
+  </v-main>
 </template>
 
 <script>
@@ -42,7 +44,7 @@ export default {
   data: () => ({
     loading: false,
     username: "",
-    password: ""
+    password: "",
   }),
   methods: {
     login: async function(e) {
@@ -54,7 +56,7 @@ export default {
         {
           grant_type: "password",
           username: this.username,
-          password: this.password
+          password: this.password,
         },
         null,
         false
@@ -67,8 +69,8 @@ export default {
         // Success, so perform a refresh of the page
         window.location.href = window.location.href.split("#")[0];
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

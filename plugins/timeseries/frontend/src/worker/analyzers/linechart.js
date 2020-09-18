@@ -1,16 +1,16 @@
 // The colors supported by object views.
 const multiSeriesColors = [
   {
-    low: "rgba(255, 206, 86,0.6)",
-    high: "rgba(255, 206, 86,0.1)",
-    background: "rgba(255, 206, 86,0.1)",
-    border: "rgba(255, 206, 86,0.4)",
-  },
-  {
     low: "rgba(75, 192, 192,0.6)",
     high: "rgba(75, 192, 192,0.1)",
     background: "rgba(75, 192, 192,0.1)",
     border: "rgba(75, 192, 192,0.4)",
+  },
+  {
+    low: "rgba(255, 206, 86,0.6)",
+    high: "rgba(255, 206, 86,0.1)",
+    background: "rgba(255, 206, 86,0.1)",
+    border: "rgba(255, 206, 86,0.4)",
   },
   {
     low: "rgba(255, 99, 132,0.6)",
@@ -33,7 +33,7 @@ const singleSeriesColor = {
   border: "rgba(0,92,158,0.4)",
 };
 
-let chartjsSettings = (isLarge, aspectRatio, datasets) => ({
+let chartjsSettings = (isLarge, aspectRatio, ylabel, datasets) => ({
   type: "line",
   options: {
     responsive: true,
@@ -63,6 +63,10 @@ let chartjsSettings = (isLarge, aspectRatio, datasets) => ({
           type: "linear",
           id: "y0",
           position: "left",
+          scaleLabel: {
+            display: ylabel != "",
+            labelString: ylabel,
+          },
         },
       ],
     },
@@ -72,7 +76,7 @@ let chartjsSettings = (isLarge, aspectRatio, datasets) => ({
   },
 });
 
-function generateDataset(d, colors, idx, yid) {
+function generateDataset(d, y, colors, idx, yid) {
   // Generate a chartjs config for this specific data array
   let isbool = d.isBoolean();
   let showDuration = d.length < 500 && d.hasDuration();
@@ -90,60 +94,115 @@ function generateDataset(d, colors, idx, yid) {
     borderColor: colors.border,
     pointBackgroundColor: pointColor,
     pointBorderColor: pointColor,
+    yAxisID: yid,
     data: {
       // The data object is replaced with query data
       series: idx,
       x: ["t"],
-      y: ["d"],
+      y: y,
       downsample: d.length > 50000 ? 50000 : 0,
       withDuration: showDuration,
+      removeNull: true,
     },
   };
 }
 
 function analyze(qd) {
-  if (
-    (!qd.dataset.every((da) => da.isNumeric()) && qd.dataset.length == 0) ||
-    qd.dataset.length > 4
-  ) {
+  if (qd.dataset.length == 0 || qd.dataset.length > 4) {
     return {};
   }
 
   let charts = null;
 
-  if (qd.dataset.length == 1) {
-    charts = [
-      chartjsSettings(qd.dataset[0].length > 5000, 1, [
-        generateDataset(qd.dataset[0], singleSeriesColor, 0, "y0"),
-      ]),
-    ];
-  } else if (qd.dataset.length == 2) {
-    charts = [
-      chartjsSettings(
-        qd.dataset[0].length > 5000 || qd.dataset[1].length > 5000,
-        1,
-        [
-          generateDataset(qd.dataset[0], multiSeriesColors[0], 0, "y0"),
-          generateDataset(qd.dataset[1], multiSeriesColors[1], 1, "y1"),
-        ]
-      ),
-    ];
+  if (!qd.dataset.every((da) => da.isNumeric())) {
+    // The data is not numeric. Find keys if it is an object
+    if (qd.dataset.length != 1 || qd.dataset[0].dataType() != "object") {
+      return {}; // We only handle objects for single series
+    }
 
-    charts[0].options.legend.display = true;
-    charts[0].options.scales.yAxes.push({
-      type: "linear",
-      id: "y1",
-      position: "right",
-      gridLines: {
-        drawOnChartArea: false,
-      },
-    });
-  } else {
-    charts = qd.dataset.map((d, i) =>
-      chartjsSettings(d.length > 5000, qd.dataset.length, [
-        generateDataset(d, multiSeriesColors[i], i, "y0"),
+    let d = qd.dataset[0];
+    let k = d.keys();
+    // Filter out the keys with less than half data, and which are not numbers
+    let usefulKeys = Object.keys(k)
+      .filter((kv) => k[kv] >= d.length / 2)
+      .filter((kv) =>
+        d.every((dp) => !isNaN(dp.d[kv] === undefined ? null : dp.d[kv]))
+      );
+
+    // Sort by number of datapoints
+    usefulKeys.sort((a, b) => k[b] - k[a]);
+
+    if (
+      usefulKeys.length == 0 ||
+      k["latitude"] !== undefined ||
+      k["longitude"] !== undefined
+    ) {
+      return {};
+    }
+
+    if (usefulKeys.length > 4) {
+      usefulKeys = usefulKeys.slice(0, 4);
+    }
+
+    // OK, so now construct the plots using only the useful keys
+    charts = usefulKeys.map((kv, i) =>
+      chartjsSettings(k[kv] > 5000, usefulKeys.length, kv, [
+        generateDataset(d, ["d", kv], multiSeriesColors[i], 0, "y0"),
       ])
     );
+  } else {
+    if (qd.dataset.length == 1) {
+      charts = [
+        chartjsSettings(qd.dataset[0].length > 5000, 1.2, "", [
+          generateDataset(qd.dataset[0], ["d"], singleSeriesColor, 0, "y0"),
+        ]),
+      ];
+    } else if (qd.dataset.length == 2) {
+      charts = [
+        chartjsSettings(
+          qd.dataset[0].length > 5000 || qd.dataset[1].length > 5000,
+          1.2,
+          "Series 1",
+          [
+            generateDataset(
+              qd.dataset[0],
+              ["d"],
+              multiSeriesColors[0],
+              0,
+              "y0"
+            ),
+            generateDataset(
+              qd.dataset[1],
+              ["d"],
+              multiSeriesColors[1],
+              1,
+              "y1"
+            ),
+          ]
+        ),
+      ];
+
+      charts[0].options.legend.display = true;
+      charts[0].options.scales.yAxes.push({
+        type: "linear",
+        id: "y1",
+        position: "right",
+        scaleLabel: {
+          display: true,
+          labelString: "Series 2",
+        },
+
+        gridLines: {
+          drawOnChartArea: false,
+        },
+      });
+    } else {
+      charts = qd.dataset.map((d, i) =>
+        chartjsSettings(d.length > 5000, qd.dataset.length, `Series ${i + 1}`, [
+          generateDataset(d, ["d"], multiSeriesColors[i], i, "y0"),
+        ])
+      );
+    }
   }
 
   return {

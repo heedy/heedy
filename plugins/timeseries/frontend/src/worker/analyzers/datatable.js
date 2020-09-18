@@ -1,4 +1,7 @@
 async function analyze(qd) {
+  if (qd.dataset.length > 6 || !qd.dataset.every((ds) => ds.length < 50000)) {
+    return {}; // Don't display table for huge datasets.
+  }
   let cols = qd.dataset.map((data) => {
     let columns = [{ prop: "t", name: "Timestamp" }];
     if (data.some((dp) => dp.dt !== undefined)) {

@@ -96,6 +96,35 @@ function isBoolean(ts) {
   return ts.every((dp) => typeof dp.d === "boolean");
 }
 
+function isObject(ts) {
+  return ts.every((dp) => typeof dp.d === "object");
+}
+
+function getType(ts) {
+  if (ts.length == 0) {
+    return "";
+  }
+  let curtype = typeof ts[0].d;
+  if (ts.every((dp) => typeof dp.d === curtype)) {
+    return curtype;
+  }
+  return "";
+}
+
+function getKeys(ts) {
+  let vals = {};
+  ts.forEach((dp) => {
+    Object.keys(dp.d).forEach((k) => {
+      if (vals[k] === undefined) {
+        vals[k] = 0;
+      }
+      vals[k]++;
+    });
+  });
+  return vals;
+}
+
+/*
 function getType(ts) {
   if (isNumeric(ts)) {
     return "number";
@@ -114,7 +143,7 @@ function getType(ts) {
     return "string";
   }
   return null;
-}
+}*/
 
 export {
   perDay,
@@ -124,4 +153,5 @@ export {
   getType,
   cleanDT,
   isBoolean,
+  getKeys,
 };

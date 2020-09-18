@@ -204,7 +204,7 @@ export default {
       // If not, start from beginning of alphabet
       for (let i = 0; i < 26; i++) {
         let curval = String.fromCharCode("a".charCodeAt(0) + i);
-        if (!hasCol(curval)) {
+        if (!this.hasCol(curval)) {
           let ds = {
             ...this.dataset,
           };
