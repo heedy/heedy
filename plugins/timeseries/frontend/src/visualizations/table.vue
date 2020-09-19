@@ -3,16 +3,16 @@
     <virtual-table
       v-if="config.length==1"
       :minWidth="width"
-      :height="600"
+      :height="height"
       :config="config[0].columns"
       :data="config[0].data"
     ></virtual-table>
     <v-tabs v-else v-model="tab">
-      <v-tab v-for="(tval,i) in config" :key="i">Series {{ i+1 }}</v-tab>
+      <v-tab v-for="(tval,i) in config" :key="i">{{ config[i].label }}</v-tab>
       <v-tab-item v-for="(tval,i) in config" :key="i" :value="i">
         <virtual-table
           :minWidth="width"
-          :height="600"
+          :height="height"
           :config="config[i].columns"
           :data="config[i].data"
         ></virtual-table>
@@ -35,6 +35,15 @@ export default {
     width: 100,
     tab: 0,
   }),
+  computed: {
+    height() {
+      if (this.width < 150) return this.width;
+      if (this.config.length == 1) {
+        return this.width - 100;
+      }
+      return this.width - 150;
+    },
+  },
 
   methods: {
     handleResize(event) {

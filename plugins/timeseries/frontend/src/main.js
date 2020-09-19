@@ -49,8 +49,8 @@ function setup(frontend) {
     key: "body",
   });
 
-  frontend.timeseries.addVisualization("datatable", () =>
-    import("./visualizations/datatable.mjs")
+  frontend.timeseries.addVisualization("table", () =>
+    import("./visualizations/table.mjs")
   );
   frontend.timeseries.addVisualization("chartjs", () =>
     import("./visualizations/chartjs.mjs")

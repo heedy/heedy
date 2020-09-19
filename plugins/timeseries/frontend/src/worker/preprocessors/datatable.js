@@ -3,6 +3,7 @@ import moment from "../../../dist/moment.mjs";
 function preprocessor(qd, visualization) {
   return {
     ...visualization,
+    visualization: "table",
     config: visualization.config.map((c, i) => ({
       ...c,
       data: qd.dataset[i].map((dp) => {

@@ -44,6 +44,7 @@ class Query {
     this.deactivator = null;
     this.onOutput = null;
     this.onStatus = null;
+    this.outdated = false;
 
     this.qdata = null; // Raw result of query
     this.output = null; // The output of the query
@@ -67,6 +68,7 @@ class Query {
     this.onOutput = cbk;
     this.onStatus = status;
     this.deactivator = null;
+    this.outdated = this.worker.websocket.status === null;
     if (this.qdata === null) {
       if (!this.requery) {
         this.runquery();
@@ -210,8 +212,13 @@ class Query {
     let result = await api("POST", `api/dataset`, this.query);
     if (!result.response.ok) {
       throw result.data.error_description;
-      return;
     }
+
+    // If we just got data, and the websocket is on, we are not outdated
+    if (this.worker.websocket.status !== null) {
+      this.outdated = false;
+    }
+
     this.qdata = new QueryData(this.worker, this, result.data);
 
     if (this.deactivator !== null) {

@@ -65,7 +65,15 @@ export default {
     runQuery: async function () {
       let qjson = JSON.stringify(this.query);
       console.log("Running query", qjson);
-      this.$router.replace({ query: { q: btoa(qjson) } });
+      let qb = btoa(qjson);
+
+      if (this.$route.query.q !== undefined && this.$route.query.q == qb) {
+        // The query is identical to current one - manually call process instead of navigating
+        this.processQuery(qb);
+      } else {
+        // Navigate to the query
+        this.$router.replace({ query: { q: qb } });
+      }
     },
     addSeries() {
       this.query.push({

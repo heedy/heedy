@@ -53,6 +53,11 @@ class TimeseriesInjector {
     if (s === null) {
       this.inactive.forEach((q) => q.close());
       this.inactive = [];
+
+      // Set all queries to outdated, so they are discarded on requery instead of keeping them cached
+      Object.values(this.queries).forEach((q) => {
+        q.outdated = true;
+      });
     }
   }
   _getQuery(q, cbk, status) {
@@ -68,7 +73,7 @@ class TimeseriesInjector {
     return new Query(this.worker, q, cbk, status);
   }
   _discardQuery(q) {
-    if (this.worker.websocket.status !== null) {
+    if (this.worker.websocket.status !== null && !q.outdated) {
       // If there is an active websocket, keep the query until it no longer holds
       // up-to-date data
       console.log("Caching unused query data", q.query);
