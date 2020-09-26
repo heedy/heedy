@@ -120,7 +120,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Timeseries = si.ObjectInfo.ID
 
-	di, err := OpenSQLData(c.DB.AdminDB()).ReadTimeseriesData(&q)
+	di, err := TSDB.Query(&q)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
@@ -163,7 +163,7 @@ func DeleteData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	q.Timeseries = si.ObjectInfo.ID
 
-	err = OpenSQLData(c.DB.AdminDB()).RemoveTimeseriesData(&q)
+	err = TSDB.Delete(&q)
 	if err == nil {
 		c.Events.Fire(&events.Event{
 			Event:  "timeseries_data_delete",
@@ -244,9 +244,9 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
-
-	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteTimeseriesData(si.ObjectInfo.ID, dv, &iq)
-	if err == nil && count > 0 {
+	ii := NewInfoIterator(dv)
+	err = TSDB.Insert(si.ObjectInfo.ID, ii, &iq)
+	if err == nil && ii.Count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
 			ne := database.Date(time.Now().UTC())
 			// The timeseries is now non-empty, so label it as such
@@ -265,10 +265,10 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 			Event:  evt,
 			Object: si.ObjectInfo.ID,
 			Data: &TimeseriesWriteEvent{
-				T1:    tstart,
-				T2:    tend,
-				Count: count,
-				DP:    dp,
+				T1:    ii.Tstart,
+				T2:    ii.Tend,
+				Count: ii.Count,
+				DP:    ii.LastPoint,
 			},
 		})
 	}
@@ -277,7 +277,6 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 }
 
 func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
-	c := rest.CTX(r)
 	si, ok := validateRequest(w, r, "read")
 	if !ok {
 		return
@@ -286,7 +285,7 @@ func DataLength(w http.ResponseWriter, r *http.Request, action bool) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, ErrNotActor)
 		return
 	}
-	l, err := OpenSQLData(c.DB.AdminDB()).TimeseriesDataLength(si.ObjectInfo.ID, action)
+	l, err := TSDB.Length(si.ObjectInfo.ID, action)
 	rest.WriteJSON(w, r, l, err)
 }
 
@@ -316,12 +315,14 @@ func Act(w http.ResponseWriter, r *http.Request) {
 	t := "append"
 	a := true
 
-	dp, tstart, tend, count, err := OpenSQLData(c.DB.AdminDB()).WriteTimeseriesData(si.ObjectInfo.ID, dv, &InsertQuery{
+	ii := NewInfoIterator(dv)
+
+	err = TSDB.Insert(si.ObjectInfo.ID, ii, &InsertQuery{
 		Method:  &t,
 		Actions: &a,
 	})
 
-	if err == nil && count > 0 {
+	if err == nil && ii.Count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
 			ne := database.Date(time.Now().UTC())
 			// The timeseries is now non-empty, so label it as such
@@ -336,10 +337,10 @@ func Act(w http.ResponseWriter, r *http.Request) {
 			Event:  "timeseries_actions_write",
 			Object: si.ObjectInfo.ID,
 			Data: &TimeseriesWriteEvent{
-				T1:    tstart,
-				T2:    tend,
-				Count: count,
-				DP:    dp,
+				T1:    ii.Tstart,
+				T2:    ii.Tend,
+				Count: ii.Count,
+				DP:    ii.LastPoint,
 			},
 		})
 	}
@@ -365,8 +366,8 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		pi := NewChanIterator(&FromPipeIterator{dpi: di, it: di})
-		//pi := &FromPipeIterator{dpi: di, it: di}
+		//pi := NewChanIterator(&TransformIterator{dpi: di, it: di})
+		pi := &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi)
@@ -467,7 +468,8 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-		pi := NewChanIterator(&FromPipeIterator{dpi: di, it: di})
+		// pi := NewChanIterator(&TransformIterator{dpi: di, it: di})
+		pi := &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi)

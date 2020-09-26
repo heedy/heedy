@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
-
 	"github.com/heedy/heedy/backend/cmd"
 	"github.com/heedy/heedy/backend/events"
 
@@ -17,6 +15,5 @@ import (
 
 func main() {
 	events.RegisterDatabaseHooks() // We're running the full server, so we want to trigger events on actions in database
-	logrus.SetLevel(logrus.DebugLevel)
 	cmd.Execute()
 }

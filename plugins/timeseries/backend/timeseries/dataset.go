@@ -10,10 +10,6 @@ import (
 	"github.com/heedy/pipescript/datasets"
 )
 
-type Closer interface {
-	Close() error
-}
-
 type DatasetIterator struct {
 	closers []Closer
 	it      pipescript.Iterator
@@ -31,6 +27,45 @@ func (di *DatasetIterator) Close() (err error) {
 		}
 	}
 	return err
+}
+
+func (q *Query) Get(db database.DB, tstart float64) (*DatasetIterator, error) {
+	if q.T1 == nil && q.I1 == nil && q.T == nil && q.I == nil {
+		q.T1 = tstart
+	}
+
+	obj, err := db.ReadObject(q.Timeseries, &database.ReadObjectOptions{
+		Icon: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if *obj.Type != "timeseries" {
+		return nil, fmt.Errorf("bad_query: Object '%s' is not a timeseries", q.Timeseries)
+	}
+	if !obj.Access.HasScope("read") {
+		return nil, errors.New("access_denied: The given object can't be read")
+	}
+
+	iter, err := TSDB.Query(q)
+
+	var piter pipescript.Iterator
+	piter = PipeIterator{iter}
+
+	if q.Transform != nil && *q.Transform != "" {
+		p, err := pipescript.Parse(*q.Transform)
+		if err != nil {
+			iter.Close()
+			return nil, err
+		}
+		p.InputIterator(piter)
+		piter = p
+	}
+
+	return &DatasetIterator{
+		closers: []Closer{iter},
+		it:      piter,
+	}, nil
 }
 
 func GetMerge(db database.DB, q []*Query, tstart float64) (*DatasetIterator, error) {
@@ -92,15 +127,9 @@ func (d *DatasetElement) Validate() error {
 	if d.Query.Timeseries != "" && len(d.Merge) > 0 {
 		return errors.New("bad_query: Can't create dataset using both merge and timeseries")
 	}
-	if d.Query.Reversed != nil && *d.Query.Reversed {
-		return errors.New("bad_query: datasets can't use reversed timeseries")
-	}
 	for _, q := range d.Merge {
 		if q.Timeseries == "" {
 			return errors.New("bad_query: timseries not specified for merge")
-		}
-		if q.Reversed != nil && *q.Reversed {
-			return errors.New("bad_query: datasets can't use reversed timeseries")
 		}
 		// Allow specifying a single time range for an entire merge query
 		if q.T1 == nil && d.T1 != nil {
@@ -200,15 +229,9 @@ func (d *Dataset) Validate() error {
 		}
 	}
 
-	if d.Query.Reversed != nil && *d.Query.Reversed {
-		return errors.New("bad_query: datasets can't use reversed timeseries")
-	}
 	for _, q := range d.Merge {
 		if q.Timeseries == "" {
 			return errors.New("bad_query: timseries not specified for merge")
-		}
-		if q.Reversed != nil && *q.Reversed {
-			return errors.New("bad_query: datasets can't use reversed timeseries")
 		}
 
 		// Allow specifying a single time range for an entire merge query

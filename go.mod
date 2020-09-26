@@ -16,6 +16,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.6.0
 	github.com/heedy/pipescript v0.0.0-20200906162913-adba7d7e5514
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/karrick/tparse v2.4.2+incompatible
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kevinpollet/nego v0.0.0-20200702060216-3ff8e9f14a70 // indirect
 	github.com/klauspost/compress v1.10.11 // indirect

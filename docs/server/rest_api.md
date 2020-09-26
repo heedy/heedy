@@ -534,7 +534,6 @@ Returns the timeseries data subject to the given constraints.
 - **i1** _(int,null)_ - return only datapoints where `index >= i1`
 - **i2** _(int,null)_ - return only datapoints where `index < i2`
 - **limit** _(int,null)_ - return a maximum of this number of datapoints
-- **reversed** _(bool,false)_ - return the timeseries with _decreasing_ timestamps.
 
 _\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 

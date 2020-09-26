@@ -1,78 +1,10 @@
 package timeseries
 
 import (
-	"os"
 	"testing"
 
-	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/backend/database"
 	"github.com/stretchr/testify/require"
 )
-
-func newAssets(t *testing.T) (*assets.Assets, func()) {
-	a, err := assets.Open("", nil)
-	require.NoError(t, err)
-	os.RemoveAll("./test_db")
-	a.FolderPath = "./test_db"
-	sqla := "sqlite3://heedy.db?_journal=WAL&_fk=1"
-	a.Config.SQL = &sqla
-
-	assets.SetGlobal(a)
-	return a, func() {
-		//os.RemoveAll("./test_db")
-	}
-}
-
-func newDB(t *testing.T) (*database.AdminDB, func()) {
-	a, cleanup := newAssets(t)
-
-	err := database.Create(a)
-	if err != nil {
-		cleanup()
-	}
-	require.NoError(t, err)
-
-	db, err := database.Open(a)
-	require.NoError(t, err)
-
-	return db, cleanup
-}
-
-func newDBWithUser(t *testing.T) (*database.AdminDB, func()) {
-	adb, cleanup := newDB(t)
-
-	name := "test"
-	passwd := "test"
-	require.NoError(t, adb.CreateUser(&database.User{
-		UserName: &name,
-		Password: &passwd,
-	}))
-	return adb, cleanup
-}
-
-func newDBWithObjects(t *testing.T) (*database.AdminDB, string, string, func()) {
-	db, cleanup := newDBWithUser(t)
-	oname := "myobject"
-	otype := "timeseries"
-	uname := "test"
-	oid1, err := db.CreateObject(&database.Object{
-		Details: database.Details{
-			Name: &oname,
-		},
-		Type:  &otype,
-		Owner: &uname,
-	})
-	require.NoError(t, err)
-	oid2, err := db.CreateObject(&database.Object{
-		Details: database.Details{
-			Name: &oname,
-		},
-		Type:  &otype,
-		Owner: &uname,
-	})
-	require.NoError(t, err)
-	return db, oid1, oid2, cleanup
-}
 
 func TestTDataset(t *testing.T) {
 	adb, oid1, oid2, cleanup := newDBWithObjects(t)
@@ -80,8 +12,6 @@ func TestTDataset(t *testing.T) {
 	dpa1 := NewDatapointArrayIterator(DatapointArray{
 		&Datapoint{Timestamp: 1, Data: 1},
 		&Datapoint{Timestamp: 2, Data: 2},
-		&Datapoint{Timestamp: 3, Data: 3},
-		&Datapoint{Timestamp: 3, Data: 4},
 		&Datapoint{Timestamp: 3, Data: 5},
 		&Datapoint{Timestamp: 4, Data: 6},
 		&Datapoint{Timestamp: 5, Data: 7},
@@ -94,10 +24,11 @@ func TestTDataset(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := OpenSQLData(adb)
-	_, _, _, _, err := sd.WriteTimeseriesData(oid1, dpa1, &InsertQuery{})
+	sd := TimeseriesDB{adb, 3, 6}
+	TSDB = sd // need to set the global
+	err := sd.Insert(oid1, dpa1, &InsertQuery{})
 	require.NoError(t, err)
-	_, _, _, _, err = sd.WriteTimeseriesData(oid2, dpa2, &InsertQuery{})
+	err = sd.Insert(oid2, dpa2, &InsertQuery{})
 	require.NoError(t, err)
 
 	di, err := (&Dataset{
@@ -121,7 +52,7 @@ func TestTDataset(t *testing.T) {
 	}).Get(adb)
 	require.NoError(t, err)
 
-	dpa, err := NewArrayFromIterator(&FromPipeIterator{dpi: di, it: di})
+	dpa, err := NewArrayFromIterator(&TransformIterator{dpi: di, it: di})
 	require.NoError(t, err)
 
 	result := DatapointArray{
@@ -167,10 +98,12 @@ func TestXDataset(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := OpenSQLData(adb)
-	_, _, _, _, err := sd.WriteTimeseriesData(oid1, dpa1, &InsertQuery{})
+	sd := TimeseriesDB{adb, 3, 6}
+	TSDB = sd // need to set the global
+
+	err := sd.Insert(oid1, dpa1, &InsertQuery{})
 	require.NoError(t, err)
-	_, _, _, _, err = sd.WriteTimeseriesData(oid2, dpa2, &InsertQuery{})
+	err = sd.Insert(oid2, dpa2, &InsertQuery{})
 	require.NoError(t, err)
 
 	di, err := (&Dataset{
@@ -187,7 +120,7 @@ func TestXDataset(t *testing.T) {
 	}).Get(adb)
 	require.NoError(t, err)
 
-	dpa, err := NewArrayFromIterator(&FromPipeIterator{dpi: di, it: di})
+	dpa, err := NewArrayFromIterator(&TransformIterator{dpi: di, it: di})
 	require.NoError(t, err)
 
 	result := DatapointArray{
@@ -237,7 +170,7 @@ func TestXDataset(t *testing.T) {
 	}).Get(adb)
 	require.NoError(t, err)
 
-	dpa, err = NewArrayFromIterator(&FromPipeIterator{dpi: di, it: di})
+	dpa, err = NewArrayFromIterator(&TransformIterator{dpi: di, it: di})
 	require.NoError(t, err)
 
 	result = DatapointArray{
@@ -274,10 +207,11 @@ func TestDatasetErrors(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := OpenSQLData(adb)
-	_, _, _, _, err := sd.WriteTimeseriesData(oid1, dpa1, &InsertQuery{})
+	sd := TimeseriesDB{adb, 3, 6}
+	TSDB = sd // need to set the global
+	err := sd.Insert(oid1, dpa1, &InsertQuery{})
 	require.NoError(t, err)
-	_, _, _, _, err = sd.WriteTimeseriesData(oid2, dpa2, &InsertQuery{})
+	err = sd.Insert(oid2, dpa2, &InsertQuery{})
 	require.NoError(t, err)
 
 	_, err = (&Dataset{

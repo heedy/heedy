@@ -1,10 +1,193 @@
 package timeseries
 
 import (
+	"database/sql"
 	"errors"
+	"math"
 
+	"github.com/heedy/pipescript"
+	"github.com/jmoiron/sqlx"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+// BatchIterator iterates throguh successive batches of datapoints coming from the database
+type BatchIterator interface {
+	NextBatch() (DatapointArray, error)
+	Close() error
+}
+
+// SQLBatchIterator takes a query that returns the raw batch bytes, and outputs the resulting DatapointArray
+type SQLBatchIterator struct {
+	Rows   *sqlx.Rows
+	Closer func()
+}
+
+func (b SQLBatchIterator) Close() error {
+	if b.Closer != nil {
+		defer b.Closer()
+	}
+	return b.Rows.Close()
+}
+
+func (b SQLBatchIterator) NextBatch() (DatapointArray, error) {
+	if !b.Rows.Next() {
+		b.Rows.Close()
+		return nil, nil
+	}
+	var raw sql.RawBytes
+	err := b.Rows.Scan(&raw)
+	if err != nil {
+		b.Rows.Close()
+		return nil, err
+	}
+	return DatapointArrayFromBytes(raw)
+}
+
+// ChanBatch runs NextBatch() in a goroutine, so that post-processing and pre-processing can happen in parallel
+type ChanBatchIterator struct {
+	closer      chan bool
+	datapointer chan DatapointArray
+	err         error
+}
+
+func (c *ChanBatchIterator) Close() error {
+	if c.closer != nil {
+		c.closer <- true
+		c.closer = nil
+	}
+	return nil
+}
+func (c *ChanBatchIterator) NextBatch() (DatapointArray, error) {
+	dp := <-c.datapointer
+	if dp == nil {
+		return dp, c.err
+	}
+	return dp, nil
+}
+
+func NewChanBatchIterator(di BatchIterator) *ChanBatchIterator {
+	closer := make(chan bool)
+	datapointer := make(chan DatapointArray, 5)
+	ci := &ChanBatchIterator{
+		closer:      make(chan bool, 1),
+		datapointer: datapointer,
+		err:         nil,
+	}
+
+	go func() {
+		for {
+			dp, err := di.NextBatch()
+			if err != nil {
+				ci.err = err
+				dp = nil
+			}
+
+			select {
+			case datapointer <- dp:
+			case <-closer:
+				close(datapointer)
+				return
+			}
+			if dp == nil {
+				return
+			}
+		}
+	}()
+	return ci
+}
+
+// BatchEndTime only returns batches with timestamps < endtime
+type BatchEndTime struct {
+	BatchIterator
+	EndTime float64
+}
+
+func (bet BatchEndTime) NextBatch() (DatapointArray, error) {
+	nb, err := bet.BatchIterator.NextBatch()
+	if err != nil || nb == nil || len(nb) == 0 {
+		return nb, err
+	}
+	if nb[len(nb)-1].Timestamp >= bet.EndTime {
+		// The batch ends after the end time! Remove all datapoints that are beyond the end time
+		i := len(nb) - 1
+		for ; i >= 0 && nb[i].Timestamp >= bet.EndTime; i-- {
+		}
+		if i < 0 {
+			return nil, nil
+		}
+		nb = nb[:i+1]
+	}
+	return nb, nil
+}
+
+type BatchEndOffset struct {
+	BatchIterator
+	EndBatch float64
+	Offset   int
+}
+
+func (beo BatchEndOffset) NextBatch() (DatapointArray, error) {
+	nb, err := beo.BatchIterator.NextBatch()
+	if err != nil || nb == nil || len(nb) == 0 {
+		return nb, err
+	}
+	if nb[0].Timestamp < beo.EndBatch {
+		return nb, nil
+	}
+	if nb[0].Timestamp == beo.EndBatch {
+		return nb[:beo.Offset], nil
+	}
+	return nil, nil
+}
+
+type BatchPointLimit struct {
+	BatchIterator
+	Limit int64
+}
+
+func (bpl *BatchPointLimit) NextBatch() (DatapointArray, error) {
+	nb, err := bpl.BatchIterator.NextBatch()
+	if err != nil || nb == nil || len(nb) == 0 {
+		return nil, err
+	}
+	if bpl.Limit < int64(len(nb)) {
+		// This batch needs to be truncated
+		nb = nb[:bpl.Limit]
+		if len(nb) == 0 {
+			nb = nil
+		}
+	}
+	bpl.Limit -= int64(len(nb))
+	return nb, nil
+}
+
+func Toffset(dpa DatapointArray, t float64) DatapointArray {
+	i := 0
+	for ; dpa[i].Timestamp < t && i < len(dpa); i++ {
+	}
+	return dpa[i:]
+}
+
+// BatchTOffset reads the BatchIterator until the given start time, and returns the remainder of
+// the batch where the time started.
+func BatchTOffset(bi BatchIterator, da DatapointArray, t float64) (DatapointArray, error) {
+	var err error
+	for len(da) == 0 || da[len(da)-1].Timestamp < t {
+		da, err = bi.NextBatch()
+		if da == nil || err != nil {
+			return da, err
+		}
+	}
+	i := 0
+	for ; da[i].Timestamp < t && i < len(da); i++ {
+	}
+	return da[i:], err
+}
+
+type DatapointIterator interface {
+	Next() (*Datapoint, error)
+	Close() error
+}
 
 // DataValidator performs all of the validation necessary on a timeseries for it to conform to a permissions-based
 // system. This includes validating the schema and ensuring that the actor is set correctly.
@@ -52,6 +235,166 @@ func (s *DataValidator) Next() (*Datapoint, error) {
 // Close closes the underlying timeseries
 func (s *DataValidator) Close() error {
 	return s.data.Close()
+}
+
+type InfoIterator struct {
+	DatapointIterator
+	Tstart    float64
+	Tend      float64
+	Count     int64
+	LastPoint *Datapoint
+}
+
+func (i *InfoIterator) Next() (*Datapoint, error) {
+	dp, err := i.DatapointIterator.Next()
+	if err != nil || dp == nil {
+		return dp, err
+	}
+	i.Count++
+	i.Tend = dp.EndTime()
+	if math.IsInf(i.Tstart, -1) {
+		i.Tstart = dp.Timestamp
+	}
+
+	return dp, nil
+
+}
+
+func NewInfoIterator(di DatapointIterator) *InfoIterator {
+	return &InfoIterator{
+		DatapointIterator: di,
+		Tstart:            math.Inf(-1),
+		Tend:              math.Inf(-1),
+		Count:             0,
+		LastPoint:         nil,
+	}
+}
+
+type SortChecker struct {
+	DatapointIterator
+	endTime   float64
+	inclusive bool
+}
+
+func (o *SortChecker) Next() (dp *Datapoint, err error) {
+	dp, err = o.DatapointIterator.Next()
+	if err != nil || dp == nil {
+		return
+	}
+	if dp.Duration < 0 {
+		err = errors.New("bad_query: durations can't be negative")
+		return
+	}
+	if o.inclusive && dp.Timestamp < o.endTime || !o.inclusive && dp.Timestamp <= o.endTime {
+		err = errors.New("bad_query: data must be ordered with increasing timestamps, and durations must not intersect")
+		return
+	}
+	o.inclusive = dp.Duration > 0
+	o.endTime = dp.EndTime()
+	return
+}
+
+func NewSortChecker(di DatapointIterator) *SortChecker {
+	return &SortChecker{
+		DatapointIterator: di,
+		endTime:           math.Inf(-1),
+		inclusive:         false,
+	}
+}
+
+// ChanIterator runs the iteration in a goroutine, so that post-processing data and pre-processing
+// can happen in parallel
+type ChanIterator struct {
+	closer      chan bool
+	datapointer chan *Datapoint
+	err         error
+}
+
+func (c *ChanIterator) Close() error {
+	if c.closer != nil {
+		c.closer <- true
+		c.closer = nil
+	}
+	return nil
+}
+
+func (c *ChanIterator) Next() (*Datapoint, error) {
+	dp := <-c.datapointer
+	if dp == nil {
+		return dp, c.err
+	}
+	return dp, nil
+}
+
+func NewChanIterator(di DatapointIterator) *ChanIterator {
+	closer := make(chan bool)
+	datapointer := make(chan *Datapoint, 10000)
+	ci := &ChanIterator{
+		closer:      make(chan bool, 1),
+		datapointer: datapointer,
+		err:         nil,
+	}
+
+	go func() {
+		for {
+			dp, err := di.Next()
+			if err != nil {
+				ci.err = err
+				dp = nil
+			}
+
+			select {
+			case datapointer <- dp:
+			case <-closer:
+				close(datapointer)
+				return
+			}
+			if dp == nil {
+				return
+			}
+		}
+	}()
+	return ci
+}
+
+type BatchDatapointIterator struct {
+	BatchIterator
+	da DatapointArray
+	i  int
+}
+
+func (bdi *BatchDatapointIterator) Next() (dp *Datapoint, err error) {
+	if bdi.i < len(bdi.da) {
+		dp = bdi.da[bdi.i]
+		bdi.i++
+		return dp, nil
+	}
+	bdi.i = 1
+
+	bdi.da, err = bdi.NextBatch()
+	if err != nil || bdi.da == nil {
+		return nil, err
+	}
+
+	return bdi.da[0], nil
+}
+
+func NewBatchDatapointIterator(bi BatchIterator, da DatapointArray) *BatchDatapointIterator {
+	return &BatchDatapointIterator{
+		BatchIterator: bi,
+		da:            da,
+		i:             0,
+	}
+}
+
+type EmptyIterator struct{}
+
+func (e EmptyIterator) Close() error {
+	return nil
+}
+
+func (e EmptyIterator) Next() (*Datapoint, error) {
+	return nil, nil
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -149,4 +492,55 @@ func NewArrayFromIterator(di DatapointIterator) (DatapointArray, error) {
 		dp, err = di.Next()
 	}
 	return d, err
+}
+
+// PipeIterator allows using PipeScript transforms over DatapointIterator
+type PipeIterator struct {
+	it DatapointIterator
+}
+
+func (pi PipeIterator) Next(out *pipescript.Datapoint) (*pipescript.Datapoint, error) {
+	dp, err := pi.it.Next()
+	if dp == nil || err != nil {
+		return nil, err
+	}
+	out.Timestamp = dp.Timestamp
+	out.Duration = dp.Duration
+	out.Data = dp.Data
+	return out, nil
+}
+
+type Closer interface {
+	Close() error
+}
+
+type TransformIterator struct {
+	dpi Closer
+	it  pipescript.Iterator
+	dp  pipescript.Datapoint
+}
+
+func (pi *TransformIterator) Next() (*Datapoint, error) {
+	dp, err := pi.it.Next(&pi.dp)
+	if dp == nil || err != nil {
+		return nil, err
+	}
+	return &Datapoint{
+		Timestamp: dp.Timestamp,
+		Duration:  dp.Duration,
+		Data:      dp.Data,
+	}, nil
+}
+
+func (pi *TransformIterator) Close() error {
+	return pi.dpi.Close()
+}
+
+func NewTransformIterator(transform string, it DatapointIterator) (DatapointIterator, error) {
+	p, err := pipescript.Parse(transform)
+	if err != nil {
+		return nil, err
+	}
+	p.InputIterator(PipeIterator{it})
+	return &TransformIterator{dpi: it, it: p}, nil
 }
