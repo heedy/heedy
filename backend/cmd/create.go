@@ -50,7 +50,7 @@ It is recommended that new users use the web setup, which will guide you in prep
 		if len(args) == 1 {
 			directory = args[0]
 		} else if len(args) == 0 {
-			f, err := os.UserConfigDir()
+			f, err := UserDataDir()
 			if err != nil {
 				return err
 			}

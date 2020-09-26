@@ -3,15 +3,29 @@
     <v-layout row>
       <v-flex sm6 xs12 :md7="!showTransform" :md4="showTransform">
         <duration v-if="tsquery" v-model="dt"></duration>
-        <h-object-picker v-else v-model="timeseries" type="timeseries" multiple></h-object-picker>
+        <h-object-picker
+          v-else
+          v-model="timeseries"
+          type="timeseries"
+          multiple
+        ></h-object-picker>
       </v-flex>
       <v-flex v-if="showTransform && !$vuetify.breakpoint.sm" md4 xs12>
         <transform v-model="transform"></transform>
       </v-flex>
       <v-flex sm6 xs12 :md5="!showTransform" :md4="showTransform">
-        <div style="display: grid;grid-template-columns: auto min-content;grid-gap:0px">
-          <range-picker :value="value" @input="(v)=>$emit('input',v)"></range-picker>
-          <div style="margin:auto; padding-left:10px;">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: auto min-content;
+            grid-gap: 0px;
+          "
+        >
+          <range-picker
+            :value="value"
+            @input="(v) => $emit('input', v)"
+          ></range-picker>
+          <div style="margin: auto; padding-left: 10px">
             <v-menu offset-y>
               <template v-slot:activator="{ on: menu, attrs }">
                 <v-tooltip bottom>
@@ -24,7 +38,7 @@
                       v-on="{ ...tooltip, ...menu }"
                     >
                       <v-icon v-if="!isDataset || tsquery">more_vert</v-icon>
-                      <template v-else>{{colname}}</template>
+                      <template v-else>{{ colname }}</template>
                     </v-btn>
                   </template>
                   <span>Options</span>
@@ -36,8 +50,12 @@
                     <v-icon>code</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    <v-list-item-title v-if="!showTransform">Add Transform</v-list-item-title>
-                    <v-list-item-title v-else>Remove Transform</v-list-item-title>
+                    <v-list-item-title v-if="!showTransform"
+                      >Add Transform</v-list-item-title
+                    >
+                    <v-list-item-title v-else
+                      >Remove Transform</v-list-item-title
+                    >
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item v-if="isDataset && !tsquery" @click="showDialog">
@@ -53,11 +71,18 @@
                     <v-icon>query_builder</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    <v-list-item-title v-if="tsquery">Switch to Timeseries</v-list-item-title>
-                    <v-list-item-title v-else>Switch to Time Range</v-list-item-title>
+                    <v-list-item-title v-if="tsquery"
+                      >Switch to Timeseries</v-list-item-title
+                    >
+                    <v-list-item-title v-else
+                      >Switch to Time Range</v-list-item-title
+                    >
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item v-if="removeSeries" @click="() => $emit('removeSeries')">
+                <v-list-item
+                  v-if="removeSeries"
+                  @click="() => $emit('remove-series')"
+                >
                   <v-list-item-icon>
                     <v-icon>remove_circle</v-icon>
                   </v-list-item-icon>
@@ -73,13 +98,13 @@
       <v-flex v-if="showTransform && $vuetify.breakpoint.sm" sm12>
         <transform v-model="transform"></transform>
       </v-flex>
-      <v-flex v-for="(v,k) in dataset" :key="k" lg12 md12 sm12 xs12 xl6>
-        <div style="display:block;">
+      <v-flex v-for="(v, k) in dataset" :key="k" lg12 md12 sm12 xs12 xl12>
+        <div style="display: block">
           <correlate
             :colname="k"
-            @update:colname="(cn)=> updateCol(k,cn)"
+            @update:colname="(cn) => updateCol(k, cn)"
             :value="v"
-            @input="(val) => setDatasetVal(k,val)"
+            @input="(val) => setDatasetVal(k, val)"
             @delete="() => delCol(k)"
           ></correlate>
         </div>
@@ -89,7 +114,13 @@
         md12
         sm12
         xs12
-        style="padding-top:0;padding-bottom:0;margin-top:-20px;margin-bottom:0;padding-left:8px"
+        style="
+          padding-top: 0;
+          padding-bottom: 0;
+          margin-top: -20px;
+          margin-bottom: 0;
+          padding-left: 8px;
+        "
       >
         <v-btn text @click="addDatasetElement">
           <v-icon left>add</v-icon>Correlate With...
@@ -98,7 +129,9 @@
     </v-layout>
     <v-dialog v-model="dialog" max-width="500">
       <v-card>
-        <v-card-title class="headline grey lighten-2" primary-title>Rename Column</v-card-title>
+        <v-card-title class="headline grey lighten-2" primary-title
+          >Rename Column</v-card-title
+        >
 
         <v-card-text>
           <v-text-field autofocus v-model="coltext" />

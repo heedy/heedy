@@ -209,7 +209,7 @@ class Query {
     console.log("DatasetQuery: Getting dataset for query", this.query);
     this.onStatus("Querying Data...");
     this.requery = false;
-    let result = await api("POST", `api/dataset`, this.query);
+    let result = await api("POST", `api/timeseries/dataset`, this.query);
     if (!result.response.ok) {
       throw result.data.error_description;
     }

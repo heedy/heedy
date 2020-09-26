@@ -8,7 +8,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dkumor/revhttpfs v0.0.0-20190804203940-8dd55c115095
 	github.com/go-chi/chi v4.1.2+incompatible
-	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686 // indirect
+	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/google/go-cmp v0.5.2 // indirect
 	github.com/google/go-github/v24 v24.0.1
 	github.com/google/uuid v1.1.2

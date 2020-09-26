@@ -1,7 +1,7 @@
 <template>
-  <v-list flat style="background: none;padding-top: 0px;" dense expand>
+  <v-list flat style="background: none; padding-top: 0px" dense expand>
     <v-list-group
-      v-for="(item,idx) in value"
+      v-for="(item, idx) in value"
       :key="idx"
       prepend-icon="timeline"
       value="true"
@@ -9,14 +9,14 @@
     >
       <template v-slot:activator>
         <v-list-item-content>
-          <v-list-item-title>Series {{idx+1}}</v-list-item-title>
+          <v-list-item-title>Series {{ idx + 1 }}</v-list-item-title>
         </v-list-item-content>
       </template>
       <Query
         :value="item"
-        :remove-series="value.length>1"
-        @input="(v)=> setValue(idx,v)"
-        @removeSeries="()=>removeSeries(idx)"
+        :remove-series="value.length > 1"
+        @input="(v) => setValue(idx, v)"
+        @remove-series="() => removeSeries(idx)"
       ></Query>
     </v-list-group>
   </v-list>

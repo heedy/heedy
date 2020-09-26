@@ -32,12 +32,12 @@ function setup(frontend) {
       key: "dataset",
       text: "Data Analysis",
       icon: "fas fa-chart-bar",
-      route: "/dataset",
+      route: "/timeseries/dataset",
     });
   }
 
   frontend.addRoute({
-    path: "/dataset",
+    path: "/timeseries/dataset",
     component: Dataset,
   });
 

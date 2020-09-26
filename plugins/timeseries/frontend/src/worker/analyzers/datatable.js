@@ -1,5 +1,8 @@
 async function analyze(qd) {
-  if (qd.dataset.length > 6 || !qd.dataset.every((ds) => ds.length < 50000)) {
+  if (
+    qd.dataset.length > 6 ||
+    !qd.dataset.every((ds) => ds.length < 50000 && ds.length > 0)
+  ) {
     return {}; // Don't display table for huge datasets.
   }
   let cols = qd.dataset.map((data, i) => {

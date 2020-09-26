@@ -66,6 +66,61 @@ type DatapointIterator interface {
 	Close() error
 }
 
+// ChanIterator runs the iteration in a goroutine, so that post-processing data and pre-processing
+// can happen in parallel
+type ChanIterator struct {
+	closer      chan bool
+	datapointer chan *Datapoint
+	err         error
+}
+
+func (c *ChanIterator) Close() error {
+	if c.closer != nil {
+		c.closer <- true
+		c.closer = nil
+	}
+	return nil
+}
+
+func (c *ChanIterator) Next() (*Datapoint, error) {
+	dp := <-c.datapointer
+	if dp == nil {
+		return dp, c.err
+	}
+	return dp, nil
+}
+
+func NewChanIterator(di DatapointIterator) *ChanIterator {
+	closer := make(chan bool)
+	datapointer := make(chan *Datapoint, 10000)
+	ci := &ChanIterator{
+		closer:      make(chan bool, 1),
+		datapointer: datapointer,
+		err:         nil,
+	}
+
+	go func() {
+		for {
+			dp, err := di.Next()
+			if err != nil {
+				ci.err = err
+				dp = nil
+			}
+
+			select {
+			case datapointer <- dp:
+			case <-closer:
+				close(datapointer)
+				return
+			}
+			if dp == nil {
+				return
+			}
+		}
+	}()
+	return ci
+}
+
 type Query struct {
 	Timeseries string      `json:"timeseries,omitempty"`
 	T1         interface{} `json:"t1,omitempty"`

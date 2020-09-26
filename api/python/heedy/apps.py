@@ -12,18 +12,21 @@ from functools import partial
 class App(APIObject):
     props = {"name", "description", "icon", "settings", "settings_schema"}
 
-    def __init__(self, access_token: str, url: str = DEFAULT_URL, session="sync", cached_data={}):
+    def __init__(
+        self, access_token: str, url: str = DEFAULT_URL, session="sync", cached_data={}
+    ):
         appid = "self"
         if isinstance(session, Session):
             # Treat the session as already initialized, meaning that the access token is actually
             # the app id
             appid = access_token
             super().__init__(
-                f"api/apps/{appid}", {"app": appid}, session, cached_data=cached_data)
+                f"api/apps/{appid}", {"app": appid}, session, cached_data=cached_data
+            )
 
         else:
             # Initialize the app object as a direct API
-            s = getSessionType(session, "self")
+            s = getSessionType(session, "self", url)
             s.setAccessToken(access_token)
             super().__init__("api/apps/self", {"app": appid}, s)
         # The objects belonging to the app
@@ -43,11 +46,16 @@ class Apps(APIList):
         super().__init__("api/apps", constraints, session)
 
     def __getitem__(self, item):
-        return self._getitem(item, f=lambda x: App(x["id"], session=self.session, cached_data=x))
+        return self._getitem(
+            item, f=lambda x: App(x["id"], session=self.session, cached_data=x)
+        )
 
     def __call__(self, **kwargs):
         return self._call(
-            f=lambda x: [App(xx["id"], session=self.session, cached_data=xx) for xx in x], **kwargs
+            f=lambda x: [
+                App(xx["id"], session=self.session, cached_data=xx) for xx in x
+            ],
+            **kwargs,
         )
 
     def create(self, name, **kwargs):

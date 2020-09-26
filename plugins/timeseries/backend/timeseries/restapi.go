@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -125,7 +126,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 	defer di.Close()
-	ai, err := NewJsonArrayReader(di)
+	ai, err := NewJsonArrayReader(NewChanIterator(di))
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
@@ -193,6 +194,20 @@ type TimeseriesWriteEvent struct {
 	DP    *Datapoint `json:"dp,omitempty"`
 }
 
+//UnmarshalRequestNoLimit unmarshals the input data to the given interface without limiting request size
+// This should be replaced at some point probably...
+func UnmarshalRequestNoLimit(request *http.Request, unmarshalTo interface{}) error {
+	defer request.Body.Close()
+
+	//Limit requests to the limit given in configuration
+	data, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(data, unmarshalTo)
+}
+
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	c := rest.CTX(r)
 	si, ok := validateRequest(w, r, "write")
@@ -218,7 +233,7 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 
 	var datapoints DatapointArray
 
-	err = rest.UnmarshalRequest(r, &datapoints)
+	err = UnmarshalRequestNoLimit(r, &datapoints)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -349,9 +364,10 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
 			return
 		}
-		defer di.Close()
 
-		pi := &FromPipeIterator{dpi: di, it: di}
+		pi := NewChanIterator(&FromPipeIterator{dpi: di, it: di})
+		//pi := &FromPipeIterator{dpi: di, it: di}
+		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi)
 		if err != nil {
@@ -364,7 +380,7 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 	var w io.Writer
 	w = rw
 
-	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && !assets.Get().Config.Verbose {
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && !assets.Get().Config.Verbose {
 		// If gzip is supported, compress the output
 		rw.Header().Set("Content-Encoding", "gzip")
 		rw.WriteHeader(http.StatusOK)
@@ -451,9 +467,8 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-		defer di.Close()
-
-		pi := &FromPipeIterator{dpi: di, it: di}
+		pi := NewChanIterator(&FromPipeIterator{dpi: di, it: di})
+		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi)
 		if err != nil {
@@ -539,7 +554,7 @@ var Handler = func() *chi.Mux {
 
 	m.Post("/object/act", Act)
 
-	m.Post("/api/dataset", GenerateDataset)
+	m.Post("/api/timeseries/dataset", GenerateDataset)
 
 	m.Post("/dashboard/", GenerateDashboardDataset)
 

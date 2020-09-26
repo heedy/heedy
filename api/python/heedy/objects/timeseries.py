@@ -72,8 +72,7 @@ class DatapointArray(list):
         return list(map(lambda x: datetime.datetime.fromtimestamp(x["t"]), self.raw()))
 
     def dt(self):
-        """Returns just the durations of all datapoints.
-        """
+        """Returns just the durations of all datapoints."""
         return list(map(lambda x: 0.0 if not "dt" in x else x["dt"], self.raw()))
 
     def merge(self, array):
@@ -226,6 +225,25 @@ class Timeseries(Object):
         Removes the given data from the timeseries
         """
         return self.session.delete(self.uri + "/timeseries", params=kwargs)
+
+    def save(self, filename):
+        """Saves the entire timeseries data to the given filename::
+
+        ts.save("myts.json")
+
+
+        """
+        return self.session.get(
+            self.uri + "/timeseries", f=lambda x: DatapointArray(x).writeJSON(filename)
+        )
+
+    def load(self, filename, **kwargs):
+        """Loads array data from the given file to the timeseries::
+
+        ts.load("myts.json")
+
+        """
+        return self.insert_array(DatapointArray().loadJSON(filename), **kwargs)
 
     def __len__(self):
         return self.length()
