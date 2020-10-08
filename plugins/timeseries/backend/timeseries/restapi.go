@@ -136,7 +136,13 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	err = rest.WriteAsyncGZIP(w, r, ai, http.StatusOK)
+	if TSDB.CompressQueryResponse {
+		err = rest.WriteCompressAsync(w, r, ai, http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		_, err = io.Copy(w, ai)
+	}
+
 	if err != nil {
 		c.Log.Warnf("Timeseries read failed: %s", err.Error())
 	}
@@ -252,6 +258,15 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		iq.Method = &apnd
 	}
 
+	// Need to set actor for all datapoints
+	for i := range datapoints {
+		if datapoints[i] == nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: null datapoint"))
+			return
+		}
+		datapoints[i].Actor = actor
+	}
+
 	if len(si.Schema) > 0 {
 		// JSON schema validation can take a long time, so do it before we start insert so that it doesn't block the database
 		dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, actor)
@@ -266,7 +281,6 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-
 	}
 
 	ii := NewInfoIterator(NewDatapointArrayIterator(datapoints))
@@ -406,7 +420,7 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 	var w io.Writer
 	w = rw
 
-	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && !assets.Get().Config.Verbose {
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && !assets.Get().Config.Verbose && TSDB.CompressQueryResponse {
 		// If gzip is supported, compress the output
 		rw.Header().Set("Content-Encoding", "gzip")
 		rw.WriteHeader(http.StatusOK)

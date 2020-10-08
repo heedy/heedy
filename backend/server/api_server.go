@@ -281,7 +281,7 @@ func GetPluginReadme(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 	w.Header().Add("Content-Type", "text/markdown; charset=UTF-8")
-	err = rest.WriteGZIP(w, r, f, 200) // Plugin README can be large, since it can have embedded images
+	err = rest.WriteCompress(w, r, f, 200) // Plugin README can be large, since it can have embedded images
 	if err != nil {
 		rest.CTX(r).Log.Warn(err)
 	}

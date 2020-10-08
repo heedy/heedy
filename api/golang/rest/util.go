@@ -234,8 +234,8 @@ func NewAsyncWriter(w io.Writer) *AsyncWriter {
 	return aw
 }
 
-// WriteAsyncGZIP is identical to WriteGZIP, but it does gzipping in another thread, since gzip is cpu-consuming
-func WriteAsyncGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
+// WriteCompressAsync is identical to WriteCompress, but it does compression in another thread, since gzip is cpu-consuming
+func WriteCompressAsync(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
 	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || assets.Get().Config.Verbose {
 		// If gzip is not supported, or we are in verbose mode, disable gzip output
 		w.WriteHeader(status)
@@ -257,9 +257,9 @@ func WriteAsyncGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, s
 
 }
 
-// WriteGZIP gzips a response Reader object if gzip is an accepted encoding. While it can be a security risk
+// WriteCompress compresses a response Reader object if it has an accepted encoding. While it can be a security risk
 // is some cases, it is very useful when the response can be enormous (like timeseries data).
-func WriteGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
+func WriteCompress(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
 	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || assets.Get().Config.Verbose {
 		// If gzip is not supported, or we are in verbose mode, disable gzip output
 		w.WriteHeader(status)
@@ -300,5 +300,5 @@ func WriteGzipJSON(w http.ResponseWriter, r *http.Request, data interface{}, err
 	}
 	w.Header().Set("Cache-Control", "private, no-cache")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	WriteGZIP(w, r, bytes.NewBuffer(jdata), http.StatusOK)
+	WriteCompress(w, r, bytes.NewBuffer(jdata), http.StatusOK)
 }

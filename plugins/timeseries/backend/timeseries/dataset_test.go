@@ -24,7 +24,10 @@ func TestTDataset(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := TimeseriesDB{adb, 3, 6}
+	sd := TimeseriesDB{DB: adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3}
 	TSDB = sd // need to set the global
 	err := sd.Insert(oid1, dpa1, &InsertQuery{})
 	require.NoError(t, err)
@@ -98,7 +101,10 @@ func TestXDataset(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := TimeseriesDB{adb, 3, 6}
+	sd := TimeseriesDB{DB: adb,
+		BatchSize:             3,
+		MaxBatchSize:          6,
+		BatchCompressionLevel: 3}
 	TSDB = sd // need to set the global
 
 	err := sd.Insert(oid1, dpa1, &InsertQuery{})
@@ -207,7 +213,10 @@ func TestDatasetErrors(t *testing.T) {
 		&Datapoint{Timestamp: 3.5, Data: 4},
 		&Datapoint{Timestamp: 3.9, Data: 5},
 	})
-	sd := TimeseriesDB{adb, 3, 6}
+	sd := TimeseriesDB{DB: adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3}
 	TSDB = sd // need to set the global
 	err := sd.Insert(oid1, dpa1, &InsertQuery{})
 	require.NoError(t, err)

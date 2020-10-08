@@ -6,6 +6,7 @@ import (
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/klauspost/compress/zstd"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +53,7 @@ func newAssets(t *testing.T) (*assets.Assets, func()) {
 
 	assets.SetGlobal(a)
 	return a, func() {
-		//os.RemoveAll("./test_db")
+		os.RemoveAll("./test_db")
 	}
 }
 
@@ -69,6 +70,9 @@ func newDB(t *testing.T) (*database.AdminDB, func()) {
 	require.NoError(t, err)
 
 	logrus.SetLevel(logrus.DebugLevel)
+
+	zencoder, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.EncoderLevel(2)))
+	require.NoError(t, err)
 
 	return db, cleanup
 }
@@ -122,7 +126,10 @@ func TestDatabase(t *testing.T) {
 	defer cleanup()
 
 	s := TimeseriesDB{
-		adb, 3, 5,
+		DB:                    adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 2,
 	}
 	action := true
 
@@ -286,7 +293,10 @@ func TestEdgeCases(t *testing.T) {
 	defer cleanup()
 
 	s := TimeseriesDB{
-		adb, 3, 5,
+		DB:                    adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3,
 	}
 
 	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(DatapointArray{
@@ -473,7 +483,10 @@ func TestDelete(t *testing.T) {
 	defer cleanup()
 
 	s := TimeseriesDB{
-		adb, 3, 5,
+		DB:                    adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3,
 	}
 
 	dpa8 := DatapointArray{
@@ -573,7 +586,10 @@ func TestBatching(t *testing.T) {
 	defer cleanup()
 
 	s := TimeseriesDB{
-		adb, 3, 5,
+		DB:                    adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3,
 	}
 
 	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(DatapointArray{
@@ -612,7 +628,10 @@ func TestDurationUpdate(t *testing.T) {
 	defer cleanup()
 
 	s := TimeseriesDB{
-		adb, 3, 5,
+		DB:                    adb,
+		BatchSize:             3,
+		MaxBatchSize:          5,
+		BatchCompressionLevel: 3,
 	}
 
 	insert1 := DatapointArray{

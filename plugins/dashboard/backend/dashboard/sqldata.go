@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/jmoiron/sqlx/types"
+	"github.com/klauspost/compress/zstd"
 )
 
 var SQLVersion = 1
@@ -34,13 +36,13 @@ CREATE TABLE dashboard_elements (
 	-- The query to run on the backend to update data
 	query BLOB NOT NULL,
 	-- Saved output of query
-	data BLOB NOT NULL DEFAULT 'null',
+	data BLOB DEFAULT NULL,
 	-- Settings for displaying the data on the frontend
 	settings BLOB NOT NULL,
 
 	PRIMARY KEY (object_id,element_id),
 
-	CONSTRAINT all_valid CHECK (json_valid(query) AND json_valid(settings) AND json_valid(data)),
+	CONSTRAINT all_valid CHECK (json_valid(query) AND json_valid(settings)),
 
 	CONSTRAINT object_updater
 		FOREIGN KEY(object_id)
@@ -85,6 +87,46 @@ func SQLUpdater(db *database.AdminDB, i *run.Info, h run.BuiltinHelper, curversi
 	return err
 }
 
+var zencoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.EncoderLevel(2)))
+var zdecoder, _ = zstd.NewReader(nil)
+
+type CompressedJSON types.JSONText
+
+func (j CompressedJSON) MarshalJSON() ([]byte, error) {
+	return types.JSONText(j).MarshalJSON()
+}
+
+// UnmarshalJSON sets *j to a copy of data
+func (j *CompressedJSON) UnmarshalJSON(data []byte) error {
+	*j = data
+	return nil
+}
+
+// Value returns j as a value.  This does a validating unmarshal into another
+// RawMessage.  If j is invalid json, it returns an error.
+func (j CompressedJSON) Value() (driver.Value, error) {
+	return zencoder.EncodeAll([]byte(j), make([]byte, 0, len(j))), nil
+}
+
+// Scan stores the src in *j.  No validation is done.
+func (j *CompressedJSON) Scan(src interface{}) error {
+	var source []byte
+	switch t := src.(type) {
+	case string:
+		source = []byte(t)
+	case []byte:
+		source = t
+	case nil:
+		*j = CompressedJSON("null")
+		return nil
+	default:
+		return errors.New("Incompatible type for Compressed JSON")
+	}
+	b, err := zdecoder.DecodeAll(source, make([]byte, 0, 10*len(source)))
+	*j = CompressedJSON(b)
+	return err
+}
+
 type DashboardEvent struct {
 	ObjectID string `json:"object" db:"event_object_id"`
 	Event    string `json:"event"`
@@ -100,7 +142,7 @@ type DashboardElement struct {
 
 	Title    *string         `json:"title,omitempty"`
 	Query    *types.JSONText `json:"query,omitempty"`
-	Data     *types.JSONText `json:"data,omitempty"`
+	Data     *CompressedJSON `json:"data,omitempty"`
 	Settings *types.JSONText `json:"settings,omitempty"`
 
 	// Internal variable
@@ -354,7 +396,7 @@ func WriteDashboard(adb *database.AdminDB, as string, oid string, elements []Das
 			}
 		}
 
-		res, err := tx.Exec(`INSERT INTO dashboard_elements(title,type,settings,query,on_demand,element_index,data,outdated,object_id,element_id) VALUES (?,?,?,?,?,?,'null',TRUE,?,?);`,
+		res, err := tx.Exec(`INSERT INTO dashboard_elements(title,type,settings,query,on_demand,element_index,data,outdated,object_id,element_id) VALUES (?,?,?,?,?,?,NULL,TRUE,?,?);`,
 			el.Title, el.Type, el.Settings, el.Query, el.OnDemand, el.Index, oid, el.ID)
 		err = database.GetExecError(res, err)
 		if err != nil {

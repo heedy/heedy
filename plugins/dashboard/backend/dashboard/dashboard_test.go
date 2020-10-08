@@ -25,7 +25,7 @@ func testHandler() http.Handler {
 				Event:    "READ_ME",
 			},
 		}
-		rest.WriteJSON(w, r, QueryResult{Events: &evt, Data: types.JSONText(strconv.Itoa(i + j))}, err)
+		rest.WriteJSON(w, r, QueryResult{Events: &evt, Data: CompressedJSON(strconv.Itoa(i + j))}, err)
 		i++
 	})
 }

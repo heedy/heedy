@@ -11,7 +11,6 @@ import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
-	"github.com/jmoiron/sqlx/types"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
@@ -113,7 +112,7 @@ func NewDashboardProcessor(db *database.AdminDB, p *assets.Plugin, h HandlerGett
 
 type QueryResult struct {
 	Events *[]DashboardEvent `json:"events,omitempty"`
-	Data   types.JSONText    `json:"data"`
+	Data   CompressedJSON    `json:"data"`
 }
 
 func (dp *DashboardProcessor) RunQ(as, oid string, eid string, etype string, q []byte) (*QueryResult, error) {
@@ -250,7 +249,7 @@ func (dp *DashboardProcessor) Query(as string, oid string, eid string, etype str
 	}
 
 	// Update the element in the database
-	res, err := tx.Exec(`UPDATE dashboard_elements SET outdated=?,data=? WHERE object_id=? AND element_id=?`, haderror, data, oid, eid)
+	res, err := tx.Exec(`UPDATE dashboard_elements SET outdated=?,data=? WHERE object_id=? AND element_id=?`, haderror, CompressedJSON(data), oid, eid)
 	err = database.GetExecError(res, err)
 	if err != nil {
 		tx.Rollback()
@@ -270,7 +269,7 @@ func (dp *DashboardProcessor) UpdateElement(as string, de *DashboardElement) (ch
 	}
 	go func() {
 		data, _ := dp.Query(as, de.ObjectID, de.ID, de.Type, q)
-		jt := types.JSONText(data)
+		jt := CompressedJSON(data)
 		de.Data = &jt
 		c <- false
 	}()

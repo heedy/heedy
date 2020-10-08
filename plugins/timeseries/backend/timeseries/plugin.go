@@ -7,7 +7,9 @@ import (
 	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/heedy/pipescript/datasets/interpolators"
 	"github.com/heedy/pipescript/transforms"
+	"github.com/klauspost/compress/zstd"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 )
 
 const PluginName = "timeseries"
@@ -49,7 +51,15 @@ func StartTimeseries(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) err
 		return errors.New("Timeseries batch size must be at least 1, and max batch size must be more than batch size")
 	}
 
-	return nil
+	if TSDB.BatchCompressionLevel < 0 {
+		logrus.WithField("plugin", "timeseries").Warn("Batch compression turned off, use this only on test databases!")
+	}
+	if TSDB.BatchCompressionLevel > 3 {
+		return errors.New("Timeseries currently doesn't support compression rates > 3")
+	}
+	zencoder, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.EncoderLevel(TSDB.BatchCompressionLevel)))
+
+	return err
 }
 
 // This is not needed for normal plugins. The init simply registers the plugin with heedy internals

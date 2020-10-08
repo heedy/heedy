@@ -1,13 +1,10 @@
 package timeseries
 
 import (
-	"bytes"
-	"compress/gzip"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"reflect"
 	"strings"
@@ -15,6 +12,7 @@ import (
 
 	"github.com/heedy/heedy/backend/database"
 	"github.com/jmoiron/sqlx"
+	"github.com/klauspost/compress/zstd"
 	"github.com/mailru/easyjson"
 	"github.com/sirupsen/logrus"
 )
@@ -51,7 +49,7 @@ CREATE TABLE timeseries (
 	tend REAL NOT NULL,
 	length INTEGER NOT NULL,
 
-	-- timeseries data comes as gzipped json array batches
+	-- timeseries data comes as zstandard-compressed json array batches
 	data BLOB,
 
 	PRIMARY KEY (tsid,tstart),
@@ -152,7 +150,7 @@ func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
 	return dpa, err
 }
 */
-
+/*
 func (dpa DatapointArray) ToBytes() ([]byte, error) {
 	//b, err := json.Marshal(dpa)
 	b, err := easyjson.Marshal(dpa)
@@ -182,11 +180,42 @@ func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
 	easyjson.Unmarshal(b, &dpa)
 	return dpa, err
 }
+*/
+
+// The zstandard encoder used for compression into the database
+var zencoder *zstd.Encoder
+var zdecoder, _ = zstd.NewReader(nil)
+
+func (dpa DatapointArray) ToBytes() ([]byte, error) {
+	//b, err := json.Marshal(dpa)
+	b, err := easyjson.Marshal(dpa)
+
+	if err != nil || zencoder == nil {
+		return b, err
+	}
+
+	b = zencoder.EncodeAll(b, make([]byte, 0, len(b)/2))
+	return b, err
+}
+
+//DatapointArrayFromBytes decompresses a gzipped byte array for the compressed representation of a DatapointArray
+func DatapointArrayFromBytes(b []byte) (dpa DatapointArray, err error) {
+	if zencoder != nil {
+		b, err = zdecoder.DecodeAll(b, make([]byte, 0, len(b)*10))
+		if err != nil {
+			return nil, err
+		}
+	}
+	easyjson.Unmarshal(b, &dpa)
+	return
+}
 
 type TimeseriesDB struct {
-	DB           *database.AdminDB `mapstructure:"-"`
-	BatchSize    int               `mapstructure:"batch_size"`
-	MaxBatchSize int               `mapstructure:"max_batch_size"`
+	DB                    *database.AdminDB `mapstructure:"-"`
+	BatchSize             int               `mapstructure:"batch_size"`
+	MaxBatchSize          int               `mapstructure:"max_batch_size"`
+	BatchCompressionLevel int               `mapstructure:"batch_compression_level"`
+	CompressQueryResponse bool              `mapstructure:"compress_query_response"`
 }
 
 func (ts *TimeseriesDB) Length(tsid string, actions bool) (l int64, err error) {
