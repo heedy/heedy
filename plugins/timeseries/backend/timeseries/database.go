@@ -212,6 +212,12 @@ type Query struct {
 	Actions    *bool       `json:"actions,omitempty" schema:"actions"`
 }
 
+// String returns a json representation of the datapoint
+func (q Query) String() string {
+	b, _ := json.Marshal(q)
+	return string(b)
+}
+
 func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 	table := "timeseries"
 	if q.Timeseries == "" {
@@ -372,7 +378,7 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 			return nil, err
 		}
 		if i1 != nil {
-			constraints = append(constraints, "tend >= ?")
+			constraints = append(constraints, "tstart >= ?")
 			cValues = append(cValues, so.Tstart)
 		}
 

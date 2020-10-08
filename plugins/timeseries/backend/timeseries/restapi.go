@@ -212,7 +212,11 @@ func UnmarshalEasyRequestNoLimit(request *http.Request, unmarshalTo easyjson.Unm
 
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	c := rest.CTX(r)
-	si, ok := validateRequest(w, r, "write")
+	scope := "write"
+	if action {
+		scope = "act"
+	}
+	si, ok := validateRequest(w, r, scope)
 	if !ok {
 		return
 	}
@@ -244,14 +248,28 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	actor := ""
 	if action {
 		actor = c.DB.ID()
+		apnd := "append"
+		iq.Method = &apnd
 	}
 
-	dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, actor)
-	if err != nil {
-		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-		return
+	if len(si.Schema) > 0 {
+		// JSON schema validation can take a long time, so do it before we start insert so that it doesn't block the database
+		dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, actor)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		var dp *Datapoint
+		for dp, err = dv.Next(); err == nil && dp != nil; dp, err = dv.Next() {
+		}
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+			return
+		}
+
 	}
-	ii := NewInfoIterator(dv)
+
+	ii := NewInfoIterator(NewDatapointArrayIterator(datapoints))
 	err = TSDB.Insert(si.ObjectInfo.ID, ii, &iq)
 	if err == nil && ii.Count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
