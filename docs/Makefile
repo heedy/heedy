@@ -17,7 +17,7 @@ _govars/extractvar:
 
 getvars: _govars/extractvar
 	_govars/extractvar ../backend/database/create.go schema > _govars/heedy_schema.sql
-	_govars/extractvar ../plugins/timeseries/backend/timeseries/sqldata.go sqlSchema > _govars/timeseries_schema.sql
+	_govars/extractvar ../plugins/timeseries/backend/timeseries/database.go sqlSchema > _govars/timeseries_schema.sql
 	_govars/extractvar ../plugins/notifications/backend/notifications/sql.go sqlSchema > _govars/notifications_schema.sql
 	_govars/extractvar ../plugins/kv/backend/kv/kv.go sqlSchema > _govars/kv_schema.sql
 
