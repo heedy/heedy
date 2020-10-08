@@ -21,6 +21,7 @@ require (
 	github.com/kevinpollet/nego v0.0.0-20200702060216-3ff8e9f14a70 // indirect
 	github.com/klauspost/compress v1.10.11 // indirect
 	github.com/lpar/gzipped/v2 v2.0.2
+	github.com/mailru/easyjson v0.7.6
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.3

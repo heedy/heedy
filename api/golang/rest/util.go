@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	"encoding/json"
 
@@ -166,6 +167,93 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 	w.Header().Set("Content-Length", "15")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"result":"ok"}`))
+
+}
+
+type AsyncWriter struct {
+	sync.Mutex
+	closer  chan bool
+	chunker chan []byte
+	err     error
+}
+
+func (aw *AsyncWriter) Close() error {
+	if aw.chunker != nil {
+		aw.chunker <- nil
+		aw.chunker = nil
+	}
+	<-aw.closer // Wait until done in other thread
+	return nil
+}
+
+func (aw *AsyncWriter) Write(p []byte) (n int, err error) {
+	if aw.chunker == nil {
+		return 0, io.ErrClosedPipe
+	}
+	b := make([]byte, len(p))
+	copy(b, p)
+	aw.chunker <- b
+
+	aw.Lock()
+	err = aw.err
+	aw.Unlock()
+	if err != nil {
+		aw.Close()
+	}
+	return len(p), err
+}
+
+func NewAsyncWriter(w io.Writer) *AsyncWriter {
+	chunker := make(chan []byte, 2)
+	closer := make(chan bool)
+
+	aw := &AsyncWriter{
+		closer: closer, chunker: chunker, err: nil,
+	}
+
+	go func() {
+		for {
+			p := <-chunker
+			if p == nil {
+				closer <- true
+				return // Once p is set to nil, we're done here
+			}
+			_, err := w.Write(p)
+			if err != nil {
+				aw.Lock()
+				aw.err = err
+				aw.Unlock()
+				for nil != <-chunker {
+				} // Wait until Close is called from other thread
+				closer <- true
+				return
+			}
+		}
+	}()
+
+	return aw
+}
+
+// WriteAsyncGZIP is identical to WriteGZIP, but it does gzipping in another thread, since gzip is cpu-consuming
+func WriteAsyncGZIP(w http.ResponseWriter, r *http.Request, towrite io.Reader, status int) error {
+	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || assets.Get().Config.Verbose {
+		// If gzip is not supported, or we are in verbose mode, disable gzip output
+		w.WriteHeader(status)
+		_, err := io.Copy(w, towrite)
+		return err
+	}
+	w.Header().Set("Content-Encoding", "gzip")
+	w.WriteHeader(status)
+	g := gzip.NewWriter(w)
+	aw := NewAsyncWriter(g)
+	_, err := io.Copy(aw, towrite)
+	if err != nil {
+		aw.Close()
+		g.Close()
+		return err
+	}
+	aw.Close()
+	return g.Close()
 
 }
 

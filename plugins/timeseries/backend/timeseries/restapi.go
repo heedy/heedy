@@ -18,6 +18,7 @@ import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
+	"github.com/mailru/easyjson"
 )
 
 var queryDecoder = schema.NewDecoder()
@@ -126,15 +127,16 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 		return
 	}
 	defer di.Close()
-	ai, err := NewJsonArrayReader(NewChanIterator(di))
+	ai, err := NewJsonArrayReader(di, 2048)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
+	defer ai.Close()
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	err = rest.WriteGZIP(w, r, ai, http.StatusOK)
+	err = rest.WriteAsyncGZIP(w, r, ai, http.StatusOK)
 	if err != nil {
 		c.Log.Warnf("Timeseries read failed: %s", err.Error())
 	}
@@ -194,9 +196,9 @@ type TimeseriesWriteEvent struct {
 	DP    *Datapoint `json:"dp,omitempty"`
 }
 
-//UnmarshalRequestNoLimit unmarshals the input data to the given interface without limiting request size
+//UnmarshalEasyRequestNoLimit unmarshals the input data to the given interface without limiting request size
 // This should be replaced at some point probably...
-func UnmarshalRequestNoLimit(request *http.Request, unmarshalTo interface{}) error {
+func UnmarshalEasyRequestNoLimit(request *http.Request, unmarshalTo easyjson.Unmarshaler) error {
 	defer request.Body.Close()
 
 	//Limit requests to the limit given in configuration
@@ -205,7 +207,7 @@ func UnmarshalRequestNoLimit(request *http.Request, unmarshalTo interface{}) err
 		return err
 	}
 
-	return json.Unmarshal(data, unmarshalTo)
+	return easyjson.Unmarshal(data, unmarshalTo)
 }
 
 func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
@@ -233,13 +235,18 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 
 	var datapoints DatapointArray
 
-	err = UnmarshalRequestNoLimit(r, &datapoints)
+	err = UnmarshalEasyRequestNoLimit(r, &datapoints)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
-	dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, c.DB.ID())
+	actor := ""
+	if action {
+		actor = c.DB.ID()
+	}
+
+	dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, actor)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
@@ -358,7 +365,7 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	readers := make([]*JsonReader, len(d))
+	readers := make([]*JsonArrayReader, len(d))
 	for i := range d {
 		di, err := d[i].Get(c.DB)
 		if err != nil {
@@ -370,7 +377,7 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 		pi := &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
-		ai, err := NewJsonArrayReader(pi)
+		ai, err := NewJsonArrayReader(pi, 2048)
 		if err != nil {
 			rest.WriteJSONError(rw, r, http.StatusInternalServerError, err)
 			return
@@ -386,8 +393,11 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Encoding", "gzip")
 		rw.WriteHeader(http.StatusOK)
 		gzw := gzip.NewWriter(rw)
-		w = gzw
 		defer gzw.Close()
+		aw := rest.NewAsyncWriter(gzw)
+		defer aw.Close()
+		w = aw
+
 	} else {
 		rw.WriteHeader(http.StatusOK)
 	}
@@ -461,7 +471,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	readers := make([]*JsonReader, len(d))
+	readers := make([]*JsonArrayReader, len(d))
 	for i := range d {
 		di, err := d[i].Get(c.DB)
 		if err != nil {
@@ -472,7 +482,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 		pi := &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
-		ai, err := NewJsonArrayReader(pi)
+		ai, err := NewJsonArrayReader(pi, 2048)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 			return

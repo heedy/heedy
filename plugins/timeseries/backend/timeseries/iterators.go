@@ -226,9 +226,7 @@ func (s *DataValidator) Next() (*Datapoint, error) {
 		s.data.Close()
 		return dp, errors.New("bad_query: The data failed schema validation")
 	}
-	if s.actor != "" {
-		dp.Actor = s.actor
-	}
+	dp.Actor = s.actor
 	return dp, nil
 }
 

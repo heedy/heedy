@@ -3,6 +3,8 @@ package timeseries
 import (
 	"encoding/json"
 	"io"
+
+	"github.com/mailru/easyjson"
 )
 
 // JsonReader imitates an io.Reader interface
@@ -93,9 +95,88 @@ func NewJsonReader(data DatapointIterator, starter string, separator string, foo
 	return &JsonReader{data, []byte(starter + string(v)), []byte(separator), []byte(footer), len(separator)}, nil
 }
 
-// NewJsonArrayReader creates a new json array reader object. Allows using a RangeReader as an io.Reader type which outputs json.
-// This reads the DataRange as a json array. (ie, [{},[],])
-func NewJsonArrayReader(data DatapointIterator) (*JsonReader, error) {
+type JsonArrayReader struct {
+	DatapointIterator
+	buffer    []byte
+	done      bool
+	batchsize int
+}
 
-	return NewJsonReader(data, "[", ",", "]")
+func (r *JsonArrayReader) fillArray() (dpa DatapointArray, err error) {
+	dpa = make(DatapointArray, 0, r.batchsize)
+	var dp *Datapoint
+	for i := 0; i < r.batchsize; i++ {
+		dp, err = r.DatapointIterator.Next()
+		if dp == nil || err != nil {
+			r.done = true
+			break
+		}
+		dpa = append(dpa, dp)
+	}
+	return dpa, err
+}
+
+func (r *JsonArrayReader) fillBuffer() error {
+	dpa, err := r.fillArray()
+	if err != nil {
+		return err
+	}
+	if len(dpa) == 0 {
+		// The data ended
+		r.buffer = []byte{']'}
+		return nil
+	}
+	b, err := easyjson.Marshal(dpa)
+	if err != nil {
+		return err
+	}
+	b[0] = ','
+	if !r.done {
+		b = b[:len(b)-1] // remove end bracket
+	}
+	r.buffer = b
+	return nil
+}
+
+// Read reads the given number of bytes from the DataRange, and p is the buffer to read into
+func (r *JsonArrayReader) Read(p []byte) (n int, err error) {
+	n = copy(p, r.buffer)
+	r.buffer = r.buffer[n:]
+	if n == len(p) {
+		if r.done && len(r.buffer) == 0 {
+			err = io.EOF
+		}
+		return
+	}
+	if r.done {
+		err = io.EOF
+		return
+	}
+	err = r.fillBuffer()
+	if err != nil {
+		return
+	}
+	var m int
+	m, err = r.Read(p[n:])
+	return m + n, err
+}
+
+// NewJsonArrayReader converts a DatapointIterator into an io.Reader, allowing writing of an arbitrarily large-sized response
+func NewJsonArrayReader(data DatapointIterator, batchsize int) (*JsonArrayReader, error) {
+	jar := &JsonArrayReader{
+		DatapointIterator: data,
+		buffer:            []byte{},
+		done:              false,
+		batchsize:         batchsize,
+	}
+	err := jar.fillBuffer()
+	if err == nil {
+		if len(jar.buffer) == 1 {
+			// An empty array is what we actually want
+			jar.buffer = []byte{'[', ']'}
+		} else {
+			jar.buffer[0] = '['
+		}
+	}
+	return jar, err
 }

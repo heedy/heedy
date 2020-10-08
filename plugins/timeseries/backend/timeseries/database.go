@@ -1,10 +1,13 @@
 package timeseries
 
 import (
+	"bytes"
+	"compress/gzip"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"reflect"
 	"strings"
@@ -12,6 +15,7 @@ import (
 
 	"github.com/heedy/heedy/backend/database"
 	"github.com/jmoiron/sqlx"
+	"github.com/mailru/easyjson"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,6 +86,7 @@ CREATE TABLE timeseries_actions (
 CREATE INDEX timeseries_actions_duration ON timeseries_actions(tsid,tend,tstart);
 `
 
+//easyjson:json
 type Datapoint struct {
 	Timestamp float64     `json:"t" db:"timestamp" msgpack:"t,omitempty"`
 	Duration  float64     `json:"dt,omitempty" db:"duration" msgpack:"dt,omitempty"`
@@ -114,6 +119,7 @@ func NewDatapoint(data interface{}) *Datapoint {
 }
 
 //A DatapointArray holds a couple useful functions that act on it
+//easyjson:json
 type DatapointArray []*Datapoint
 
 // String returns a json representation of the datapoint
@@ -135,6 +141,7 @@ func (dpa DatapointArray) IsEqual(d DatapointArray) bool {
 	return true
 }
 
+/*
 func (dpa DatapointArray) ToBytes() ([]byte, error) {
 	return json.Marshal(dpa)
 }
@@ -144,11 +151,11 @@ func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
 	json.Unmarshal(cdata, &dpa)
 	return dpa, err
 }
-
-/*
+*/
 
 func (dpa DatapointArray) ToBytes() ([]byte, error) {
-	b, err := json.Marshal(dpa)
+	//b, err := json.Marshal(dpa)
+	b, err := easyjson.Marshal(dpa)
 
 	if err != nil {
 		return nil, err
@@ -171,10 +178,11 @@ func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
 	if err != nil {
 		return nil, err
 	}
-	json.Unmarshal(b, &dpa)
+	//json.Unmarshal(b, &dpa)
+	easyjson.Unmarshal(b, &dpa)
 	return dpa, err
 }
-*/
+
 type TimeseriesDB struct {
 	DB           *database.AdminDB `mapstructure:"-"`
 	BatchSize    int               `mapstructure:"batch_size"`
@@ -195,13 +203,13 @@ type Query struct {
 	Timeseries string      `json:"timeseries,omitempty"`
 	T1         interface{} `json:"t1,omitempty"`
 	T2         interface{} `json:"t2,omitempty"`
-	I1         *int64      `json:"i1,omitempty"`
-	I2         *int64      `json:"i2,omitempty"`
-	Limit      *int64      `json:"limit,omitempty"`
+	I1         *int64      `json:"i1,omitempty" schema:"i1"`
+	I2         *int64      `json:"i2,omitempty" schema:"i2"`
+	Limit      *int64      `json:"limit,omitempty" schema:"limit"`
 	T          interface{} `json:"t,omitempty"`
-	I          *int64      `json:"i,omitempty"`
-	Transform  *string     `json:"transform,omitempty"`
-	Actions    *bool       `json:"actions,omitempty"`
+	I          *int64      `json:"i,omitempty" schema:"i"`
+	Transform  *string     `json:"transform,omitempty" schema:"transform"`
+	Actions    *bool       `json:"actions,omitempty" schema:"actions"`
 }
 
 func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
@@ -289,7 +297,7 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 		if q.T2 != nil {
 			bi = BatchEndTime{bi, t2}
 		}
-		return NewBatchDatapointIterator(bi, da), nil
+		return NewBatchDatapointIterator(NewChanBatchIterator(bi), da), nil
 
 	}
 	if q.T != nil {
@@ -449,7 +457,7 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 		}
 	}
 
-	return NewBatchDatapointIterator(bi, da), nil
+	return NewBatchDatapointIterator(NewChanBatchIterator(bi), da), nil
 }
 
 // Query runs the given query, while adding on the transform and limit reading

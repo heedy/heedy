@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/heedy/heedy/backend/cmd"
 	"github.com/heedy/heedy/backend/events"
+	"github.com/sirupsen/logrus"
 
 	// Add the plugins, which will register their own routes
 	_ "github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
@@ -15,5 +16,6 @@ import (
 
 func main() {
 	events.RegisterDatabaseHooks() // We're running the full server, so we want to trigger events on actions in database
+	logrus.SetLevel(logrus.DebugLevel)
 	cmd.Execute()
 }

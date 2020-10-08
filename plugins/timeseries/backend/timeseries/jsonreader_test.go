@@ -3,8 +3,10 @@ package timeseries
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"testing"
 
+	"github.com/mailru/easyjson"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +37,7 @@ func TestJsonReader(t *testing.T) {
 func TestJsonArrayZeroRead(t *testing.T) {
 	dpa := DatapointArray{}
 	dpi := NewDatapointArrayIterator(dpa)
-	jr, err := NewJsonArrayReader(dpi)
+	jr, err := NewJsonArrayReader(dpi, 2)
 	require.NoError(t, err)
 
 	databytes := make([]byte, 5000)
@@ -59,7 +61,7 @@ func TestJsonArrayReader(t *testing.T) {
 
 	dpa := NewDatapointArrayIterator(dpb)
 
-	jr, err := NewJsonArrayReader(dpa)
+	jr, err := NewJsonArrayReader(dpa, 2)
 
 	databytes := make([]byte, 5000)
 
@@ -118,5 +120,24 @@ func TestJsonArrayReader(t *testing.T) {
 		t.Errorf("Incorrect read: %v %v", err, dp.String())
 		return
 	}
+
+}
+
+func TestJsonArrayReaderBig(t *testing.T) {
+	size := 5000
+	dpa := make(DatapointArray, size)
+
+	for i := 0; i < size; i++ {
+		dpa[i] = &Datapoint{Timestamp: float64(i), Data: i, Actor: "hello/world"}
+	}
+	jr, err := NewJsonArrayReader(NewDatapointArrayIterator(dpa), 50)
+	require.NoError(t, err)
+	var dpa2 DatapointArray
+
+	b, err := ioutil.ReadAll(jr)
+	require.NoError(t, err)
+	require.NoError(t, easyjson.Unmarshal(b, &dpa2))
+
+	require.Equal(t, dpa.String(), dpa2.String())
 
 }
