@@ -2,7 +2,6 @@ package rest
 
 import (
 	"bytes"
-	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/klauspost/compress/gzip"
 	"github.com/sirupsen/logrus"
 )
 

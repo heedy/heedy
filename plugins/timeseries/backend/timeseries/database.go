@@ -13,7 +13,6 @@ import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/jmoiron/sqlx"
 	"github.com/klauspost/compress/zstd"
-	"github.com/mailru/easyjson"
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,7 +48,7 @@ CREATE TABLE timeseries (
 	tend REAL NOT NULL,
 	length INTEGER NOT NULL,
 
-	-- timeseries data comes as zstandard-compressed json array batches
+	-- timeseries data comes as zstandard-compressed msgpack array batches
 	data BLOB,
 
 	PRIMARY KEY (tsid,tstart),
@@ -84,13 +83,17 @@ CREATE TABLE timeseries_actions (
 CREATE INDEX timeseries_actions_duration ON timeseries_actions(tsid,tend,tstart);
 `
 
+//go:generate msgp -o=database_msgp.go -tests=false
+//msgp:ignore Query
+//msgp:ignore TimeseriesDB
+
 //easyjson:json
 type Datapoint struct {
-	Timestamp float64     `json:"t" db:"timestamp" msgpack:"t,omitempty"`
-	Duration  float64     `json:"dt,omitempty" db:"duration" msgpack:"dt,omitempty"`
-	Data      interface{} `json:"d" db:"data" msgpack:"d,omitempty"`
+	Timestamp float64     `json:"t" db:"timestamp" msg:"t"`
+	Duration  float64     `json:"dt,omitempty" db:"duration" msg:"dt,omitempty"`
+	Data      interface{} `json:"d" db:"data" msg:"d"`
 
-	Actor string `json:"a,omitempty" db:"actor" msgpack:"a,omitempty"`
+	Actor string `json:"a,omitempty" db:"actor" msg:"a,omitempty"`
 }
 
 //IsEqual checks if the datapoint is equal to another datapoint
@@ -186,6 +189,7 @@ func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
 var zencoder *zstd.Encoder
 var zdecoder, _ = zstd.NewReader(nil)
 
+/*
 func (dpa DatapointArray) ToBytes() ([]byte, error) {
 	//b, err := json.Marshal(dpa)
 	b, err := easyjson.Marshal(dpa)
@@ -207,6 +211,32 @@ func DatapointArrayFromBytes(b []byte) (dpa DatapointArray, err error) {
 		}
 	}
 	easyjson.Unmarshal(b, &dpa)
+	return
+}
+*/
+
+func (dpa DatapointArray) ToBytes() ([]byte, error) {
+	//b, err := easyjson.Marshal(dpa)
+	b, err := dpa.MarshalMsg(nil)
+
+	if err != nil || zencoder == nil {
+		return b, err
+	}
+
+	b = zencoder.EncodeAll(b, make([]byte, 0, len(b)/2))
+	return b, err
+}
+
+//DatapointArrayFromBytes decompresses a gzipped byte array for the compressed representation of a DatapointArray
+func DatapointArrayFromBytes(b []byte) (dpa DatapointArray, err error) {
+	if zencoder != nil {
+		b, err = zdecoder.DecodeAll(b, make([]byte, 0, len(b)*10))
+		if err != nil {
+			return nil, err
+		}
+	}
+	//easyjson.Unmarshal(b, &dpa)
+	_, err = dpa.UnmarshalMsg(b)
 	return
 }
 

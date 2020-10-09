@@ -53,11 +53,12 @@ func StartTimeseries(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) err
 
 	if TSDB.BatchCompressionLevel < 0 {
 		logrus.WithField("plugin", "timeseries").Warn("Batch compression turned off, use this only on test databases!")
-	}
-	if TSDB.BatchCompressionLevel > 3 {
+		zencoder = nil // set to nil means no compression
+	} else if TSDB.BatchCompressionLevel > 3 {
 		return errors.New("Timeseries currently doesn't support compression rates > 3")
+	} else {
+		zencoder, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.EncoderLevel(TSDB.BatchCompressionLevel)))
 	}
-	zencoder, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.EncoderLevel(TSDB.BatchCompressionLevel)))
 
 	return err
 }

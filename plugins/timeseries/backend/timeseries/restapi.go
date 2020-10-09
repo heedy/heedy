@@ -1,7 +1,6 @@
 package timeseries
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
@@ -12,13 +11,15 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
+	"github.com/klauspost/compress/gzip"
+	"github.com/mailru/easyjson"
+
 	"github.com/heedy/heedy/api/golang/plugin"
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
-	"github.com/mailru/easyjson"
 )
 
 var queryDecoder = schema.NewDecoder()

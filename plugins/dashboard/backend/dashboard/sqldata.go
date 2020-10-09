@@ -35,7 +35,7 @@ CREATE TABLE dashboard_elements (
 
 	-- The query to run on the backend to update data
 	query BLOB NOT NULL,
-	-- Saved output of query
+	-- Saved output of query, compressed with zstandard (can be large)
 	data BLOB DEFAULT NULL,
 	-- Settings for displaying the data on the frontend
 	settings BLOB NOT NULL,

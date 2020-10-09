@@ -1,6 +1,6 @@
 # Database Schema
 
-Heedy uses an sqlite database, which is located at `data/heedy.db` in the heedy database folder. Any plugins that access or modify the database should have sqlite's foreign keys on.
+Heedy uses an sqlite database, which is located at `data/heedy.db` in the heedy database folder. Any plugins that access or modify the database should have sqlite's foreign keys on, and be compiled with the `json1` extension.
 
 ## Core Schema
 
@@ -13,6 +13,13 @@ Heedy uses an sqlite database, which is located at `data/heedy.db` in the heedy 
 
 ```eval_rst
 .. literalinclude:: ../../_govars/timeseries_schema.sql
+    :language: sql
+```
+
+## Dashboards
+
+```eval_rst
+.. literalinclude:: ../../_govars/dashboard_schema.sql
     :language: sql
 ```
 
