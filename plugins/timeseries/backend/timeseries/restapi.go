@@ -405,9 +405,15 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
 			return
 		}
-
-		//pi := NewChanIterator(&TransformIterator{dpi: di, it: di})
-		pi := &TransformIterator{dpi: di, it: di}
+		var pi DatapointIterator
+		/*
+			if len(d[i].Dataset) > 0 || d[i].Transform != nil {
+				pi = NewChanIterator(&TransformIterator{dpi: di, it: di})
+			} else {
+				pi = &TransformIterator{dpi: di, it: di}
+			}
+		*/
+		pi = &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi, 2048)

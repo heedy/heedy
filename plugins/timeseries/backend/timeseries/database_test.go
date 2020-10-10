@@ -118,7 +118,7 @@ func cmpQuery(t *testing.T, s TimeseriesDB, q *Query, res DatapointArray) {
 	require.NoError(t, err)
 	dpa, err := NewArrayFromIterator(di)
 	require.NoError(t, err)
-	require.Equal(t, res.String(), dpa.String())
+	require.True(t, res.IsEqual(dpa), "%s different from %s", res.String(), dpa.String())
 }
 
 func TestDatabase(t *testing.T) {
@@ -153,7 +153,7 @@ func TestDatabase(t *testing.T) {
 	dpa, err := NewArrayFromIterator(di)
 	require.NoError(t, err)
 	require.Equal(t, len(dpa), 1)
-	require.Equal(t, dpa.String(), dpa1[0:1].String())
+	require.True(t, dpa.IsEqual(dpa1[0:1]), "%s different from %s", dpa1[0:1].String(), dpa.String())
 
 	di, err = s.Query(&Query{
 		Timeseries: oid1,
@@ -183,9 +183,9 @@ func TestDatabase(t *testing.T) {
 	dpa, err = NewArrayFromIterator(di)
 	require.NoError(t, err)
 	require.Equal(t, len(dpa), 2)
-	require.NotEqual(t, dpa.String(), dpa1.String())
-	require.Equal(t, dpa[0].String(), dpa3[0].String())
-	require.Equal(t, dpa[1].String(), dpa1[1].String())
+	require.False(t, dpa.IsEqual(dpa1), "%s same as %s", dpa1.String(), dpa.String())
+	require.True(t, dpa[0].IsEqual(dpa3[0]), "%s different from %s", dpa[0].String(), dpa3[0].String())
+	require.True(t, dpa[1].IsEqual(dpa1[1]), "%s different from %s", dpa[1].String(), dpa1[1].String())
 
 	l, err = s.Length(oid1, true)
 	require.NoError(t, err)
@@ -206,7 +206,7 @@ func TestDatabase(t *testing.T) {
 	dpa, err = NewArrayFromIterator(di)
 	require.NoError(t, err)
 	require.Equal(t, len(dpa), 1)
-	require.Equal(t, dpa[0].String(), dpa1[1].String())
+	require.True(t, dpa[0].IsEqual(dpa1[1]), "%s different from %s", dpa[0].String(), dpa1[1].String())
 
 	err = s.Insert(oid2, NewDatapointArrayIterator(dpa7), &InsertQuery{
 		Method: &imethod,
@@ -664,5 +664,5 @@ func TestDurationUpdate(t *testing.T) {
 		&Datapoint{4., 1., 4, ""},
 	}
 
-	require.Equal(t, output.String(), dpa.String())
+	require.True(t, output.IsEqual(dpa), "%s different from %s", dpa.String(), output.String())
 }

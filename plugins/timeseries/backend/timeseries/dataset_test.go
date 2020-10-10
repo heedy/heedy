@@ -76,7 +76,7 @@ func TestTDataset(t *testing.T) {
 		}},
 	}
 
-	require.Equal(t, dpa.String(), result.String())
+	require.True(t, result.IsEqual(dpa), "%s different from %s", result.String(), dpa.String())
 
 }
 
@@ -159,7 +159,7 @@ func TestXDataset(t *testing.T) {
 			"x": 7,
 		}},
 	}
-	require.Equal(t, dpa.String(), result.String())
+	require.True(t, result.IsEqual(dpa), "%s different from %s", result.String(), dpa.String())
 
 	di, err = (&Dataset{
 		Query: Query{
@@ -189,7 +189,7 @@ func TestXDataset(t *testing.T) {
 		&Datapoint{Timestamp: 5, Data: false},
 	}
 
-	require.Equal(t, dpa.String(), result.String())
+	require.True(t, result.IsEqual(dpa), "%s different from %s", result.String(), dpa.String())
 }
 
 func TestDatasetErrors(t *testing.T) {

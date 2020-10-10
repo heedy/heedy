@@ -6,13 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/pipescript"
 	"github.com/jmoiron/sqlx"
 	"github.com/klauspost/compress/zstd"
+	"github.com/mailru/easyjson"
 	"github.com/sirupsen/logrus"
 )
 
@@ -98,7 +99,7 @@ type Datapoint struct {
 
 //IsEqual checks if the datapoint is equal to another datapoint
 func (d *Datapoint) IsEqual(dp *Datapoint) bool {
-	return (dp.Timestamp == d.Timestamp && dp.Duration == d.Duration && dp.Actor == d.Actor && reflect.DeepEqual(d.Data, dp.Data))
+	return (dp.Timestamp == d.Timestamp && dp.Duration == d.Duration && dp.Actor == d.Actor && pipescript.Equal(d.Data, dp.Data))
 }
 
 func (d *Datapoint) EndTime() float64 {
@@ -107,7 +108,7 @@ func (d *Datapoint) EndTime() float64 {
 
 // String returns a json representation of the datapoint
 func (d *Datapoint) String() string {
-	b, _ := json.Marshal(d)
+	b, _ := easyjson.Marshal(d)
 	return string(b)
 }
 
@@ -125,7 +126,7 @@ type DatapointArray []*Datapoint
 
 // String returns a json representation of the datapoint
 func (dpa DatapointArray) String() string {
-	b, _ := json.Marshal(dpa)
+	b, _ := easyjson.Marshal(dpa)
 	return string(b)
 }
 
@@ -142,78 +143,9 @@ func (dpa DatapointArray) IsEqual(d DatapointArray) bool {
 	return true
 }
 
-/*
-func (dpa DatapointArray) ToBytes() ([]byte, error) {
-	return json.Marshal(dpa)
-}
-
-//DatapointArrayFromBytes decompresses a gzipped byte array for the compressed representation of a DatapointArray
-func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
-	json.Unmarshal(cdata, &dpa)
-	return dpa, err
-}
-*/
-/*
-func (dpa DatapointArray) ToBytes() ([]byte, error) {
-	//b, err := json.Marshal(dpa)
-	b, err := easyjson.Marshal(dpa)
-
-	if err != nil {
-		return nil, err
-	}
-	buf := bytes.NewBuffer([]byte{})
-	gzw := gzip.NewWriter(buf)
-	_, err = gzw.Write(b)
-	gzw.Close()
-	return buf.Bytes(), err
-}
-
-//DatapointArrayFromBytes decompresses a gzipped byte array for the compressed representation of a DatapointArray
-func DatapointArrayFromBytes(cdata []byte) (dpa DatapointArray, err error) {
-
-	r, err := gzip.NewReader(bytes.NewBuffer(cdata))
-	if err != nil {
-		return nil, err
-	}
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	//json.Unmarshal(b, &dpa)
-	easyjson.Unmarshal(b, &dpa)
-	return dpa, err
-}
-*/
-
 // The zstandard encoder used for compression into the database
 var zencoder *zstd.Encoder
 var zdecoder, _ = zstd.NewReader(nil)
-
-/*
-func (dpa DatapointArray) ToBytes() ([]byte, error) {
-	//b, err := json.Marshal(dpa)
-	b, err := easyjson.Marshal(dpa)
-
-	if err != nil || zencoder == nil {
-		return b, err
-	}
-
-	b = zencoder.EncodeAll(b, make([]byte, 0, len(b)/2))
-	return b, err
-}
-
-//DatapointArrayFromBytes decompresses a gzipped byte array for the compressed representation of a DatapointArray
-func DatapointArrayFromBytes(b []byte) (dpa DatapointArray, err error) {
-	if zencoder != nil {
-		b, err = zdecoder.DecodeAll(b, make([]byte, 0, len(b)*10))
-		if err != nil {
-			return nil, err
-		}
-	}
-	easyjson.Unmarshal(b, &dpa)
-	return
-}
-*/
 
 func (dpa DatapointArray) ToBytes() ([]byte, error) {
 	//b, err := easyjson.Marshal(dpa)
