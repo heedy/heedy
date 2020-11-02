@@ -93,7 +93,7 @@ function queryLabel(q) {
   }
 
   let tstring = "";
-  if (q.i1 !== undefined) {
+  if (q.i1 !== undefined && q.i1!=0) {
     tstring = tstring + `i1:${q.i1};`;
   }
   if (q.i2 !== undefined) {
@@ -126,7 +126,9 @@ export default {
     // items using index queries
     indexItems: [{ i1: -1000 }, { i1: -100000 }],
     items: [
-      {},
+      {
+        i1:0
+      },
       {
         t1: "now-1d"
       },

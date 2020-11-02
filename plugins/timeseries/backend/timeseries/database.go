@@ -1028,7 +1028,8 @@ func (ts *TimeseriesDB) append(tx database.TxWrapper, table, tsid string, curBat
 }
 
 type InsertQuery struct {
-	Actions *bool `json:"actions,omitempty"`
+	Actions  *bool `json:"actions,omitempty"`
+	Validate *bool `json:"validate,omitempty"` // Whether or not to validate the insert against the schema
 
 	// insert, append, update - default is update
 	Method *string `json:"method,omitempty"`

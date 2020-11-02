@@ -1,27 +1,7 @@
 import { LTTB } from "../../../dist/downsample.mjs";
 
-function extractor(arr) {
-  if (arr.length == 1) {
-    if (arr[0] == "t") {
-      return (dp) => dp.t * 1000; // Timestamps are multiplied by 1000
-    }
-    if (arr[0] == "d") {
-      return (dp) => dp.d;
-    }
-    if (arr[0] == "dt") {
-      return (dp) => dp.dt * 1000;
-    }
-  }
-  return (dp) => {
-    for (let i = 0; i < arr.length; i++) {
-      dp = dp[arr[i]];
-      if (dp === undefined) {
-        return null;
-      }
-    }
-    return dp;
-  };
-}
+import query from "../../analysis.mjs";
+
 
 function prepareDataset(qd, ds) {
   let newds = {
@@ -30,9 +10,9 @@ function prepareDataset(qd, ds) {
 
   // First, extract the desired data from the dataset
 
-  let extractX = extractor(ds.data.x);
-  let extractY = extractor(ds.data.y);
-  if (ds.data.withDuration !== undefined && ds.data.widthDuration) {
+  let extractX = query(ds.data.x);
+  let extractY = query(ds.data.y);
+  if (ds.data.withDuration !== undefined && ds.data.withDuration) {
     let data = qd.dataset[ds.data.series].map((dp) => ({
       t: dp.t * 1000,
       y: extractY(dp),
@@ -42,7 +22,7 @@ function prepareDataset(qd, ds) {
       data = data.filter((dp) => dp.y !== null);
     }
 
-    dataset = new Array(data.length * 3); // Start point, endpoint, and a null to break the line
+    let dataset = new Array(data.length * 3); // Start point, endpoint, and a null to break the line
 
     for (let i = 0; i < data.length; i++) {
       dataset[i * 3] = {
@@ -141,10 +121,10 @@ function preprocess(qd, visualization) {
             ds.data.length == 0
               ? -Infinity
               : ds.data[ds.data.length - 1] !== null
-              ? ds.data[ds.data.length - 1].x
-              : ds.data.length >= 2 && ds.data[ds.data.length - 2] !== null
-              ? ds.data[ds.data.length - 2].x
-              : -Infinity
+                ? ds.data[ds.data.length - 1].x
+                : ds.data.length >= 2 && ds.data[ds.data.length - 2] !== null
+                  ? ds.data[ds.data.length - 2].x
+                  : -Infinity
           )
         )
       )

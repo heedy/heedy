@@ -268,7 +268,7 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 		datapoints[i].Actor = actor
 	}
 
-	if len(si.Schema) > 0 {
+	if len(si.Schema) > 0 && (iq.Validate == nil || iq.Validate != nil && *iq.Validate || action) {
 		// JSON schema validation can take a long time, so do it before we start insert so that it doesn't block the database
 		dv, err := NewDataValidator(NewDatapointArrayIterator(datapoints), si.Schema, actor)
 		if err != nil {

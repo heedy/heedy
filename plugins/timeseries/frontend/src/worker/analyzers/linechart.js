@@ -1,3 +1,6 @@
+
+import query, { dq, dtq } from "../../analysis.mjs";
+
 // The colors supported by object views.
 const multiSeriesColors = [
   {
@@ -78,8 +81,8 @@ let chartjsSettings = (isLarge, aspectRatio, ylabel, datasets) => ({
 
 function generateDataset(d, y, colors, idx, yid) {
   // Generate a chartjs config for this specific data array
-  let isbool = d.isBoolean();
-  let showDuration = d.length < 500 && d.hasDuration();
+  let isbool = dq.isBoolean(d);
+  let showDuration = d.length < 500 && dtq.sum(d) > 0;
   let fillBackground = isbool || showDuration || d.length < 50;
   let pointColor = d.length > 5000 ? colors.high : colors.low;
 
@@ -114,19 +117,19 @@ function analyze(qd) {
 
   let charts = null;
 
-  if (!qd.dataset.every((da) => da.isNumeric())) {
+  if (!qd.dataset.every((da) => dq.isNumeric(da))) {
     // The data is not numeric. Find keys if it is an object
-    if (qd.dataset.length != 1 || qd.dataset[0].dataType() != "object") {
+    if (qd.dataset.length != 1 || dq.dataType(qd.dataset[0]) != "object") {
       return {}; // We only handle objects for single series
     }
 
     let d = qd.dataset[0];
-    let k = d.keys();
+    let k = dq.keys(d);
     // Filter out the keys with less than half data, and which are not numbers
     let usefulKeys = Object.keys(k)
       .filter((kv) => k[kv] >= d.length / 2)
       .filter((kv) => {
-        let kt = d.keyType(kv);
+        let kt = query(["d", kv]).dataType(d);
         return kt === "number" || kt === "boolean";
       });
 
@@ -160,7 +163,7 @@ function analyze(qd) {
           generateDataset(qd.dataset[0], ["d"], singleSeriesColor, 0, "y0"),
         ]),
       ];
-    } else if (qd.dataset.length == 2) {
+    } /*else if (qd.dataset.length == 2) {
       charts = [
         chartjsSettings(
           qd.dataset[0].length > 5000 || qd.dataset[1].length > 5000,
@@ -199,7 +202,7 @@ function analyze(qd) {
           drawOnChartArea: false,
         },
       });
-    } else {
+    }*/ else {
       charts = qd.dataset.map((d, i) =>
         chartjsSettings(d.length > 5000, qd.dataset.length, `Series ${i + 1}`, [
           generateDataset(d, ["d"], multiSeriesColors[i], i, "y0"),

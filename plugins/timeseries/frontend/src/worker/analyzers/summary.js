@@ -1,28 +1,31 @@
+
+import query, { dq, dtq } from "../../analysis.mjs";
+
 function getTypeDisplay(t, series, kv) {
   let data = [
-    { name: "type", value: { series: series, key: kv, transform: "type" } },
+    { name: "type", value: { series: series, q: kv, transform: "type" } },
     {
       name: "length",
-      value: { series: series, key: kv, transform: "length" },
+      value: { series: series, q: kv, transform: "length" },
     },
   ];
   switch (t) {
     case "number":
       data.push({
         name: "mean",
-        value: { series: series, key: kv, transform: "mean" },
+        value: { series: series, q: kv, transform: "mean" },
       });
       data.push({
         name: "min",
-        value: { series: series, key: kv, transform: "min" },
+        value: { series: series, q: kv, transform: "min" },
       });
       data.push({
         name: "max",
-        value: { series: series, key: kv, transform: "max" },
+        value: { series: series, q: kv, transform: "max" },
       });
       data.push({
         name: "stdev",
-        value: { series: series, key: kv, transform: "stdev" },
+        value: { series: series, q: kv, transform: "stdev" },
       });
   }
   return data;
@@ -36,9 +39,9 @@ function analyze(qd) {
   // as tabs
 
   let tables = [];
-  if (qd.dataset.length == 1 && qd.dataset[0].dataType() === "object") {
+  if (qd.dataset.length == 1 && dq.dataType(qd.dataset[0]) === "object") {
     let d = qd.dataset[0];
-    let k = d.keys();
+    let k = dq.keys(d);
 
     if (k["latitude"] !== undefined || k["longitude"] !== undefined) {
       return {};
@@ -53,17 +56,25 @@ function analyze(qd) {
         { prop: "name", name: "Quantity" },
         { prop: "value", name: "Value" },
       ],
-      data: getTypeDisplay(d.keyType(kv), 0, kv),
+      data: getTypeDisplay(query(["d", kv]).dataType(d), 0, ["d", kv]),
     }));
   } else {
     tables = qd.dataset.map((d, i) => {
+      let dd = getTypeDisplay(dq.dataType(d), i, ["d"]);
+      let sumDuration = dtq.sum(d);
+      if (sumDuration > 0) {
+        dd.push({
+          name: "duration",
+          value: { series: i, q: ["dt"], transform: "duration" }
+        });
+      }
       return {
         label: `Series ${i + 1}`,
         columns: [
           { prop: "name", name: "Quantity" },
           { prop: "value", name: "Value" },
         ],
-        data: getTypeDisplay(d.dataType(), i, ""),
+        data: dd,
       };
     });
   }

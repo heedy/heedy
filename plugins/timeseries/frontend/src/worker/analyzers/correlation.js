@@ -1,3 +1,6 @@
+
+import query, { dq } from "../../analysis.mjs";
+
 // The colors supported by object views. They are shifted by 1 with respect to linechart colors,
 // to reflect the correlation being used
 const multiSeriesColors = [
@@ -110,18 +113,18 @@ function generateDataset(d, x, y, colors, idx) {
 function analyze(qd) {
   if (
     qd.dataset.length != 1 ||
-    qd.dataset[0].dataType() != "object" ||
+    dq.dataType(qd.dataset[0]) != "object" ||
     qd.dataset[0].length <= 1
   ) {
     return {}; // We only handle objects for correlation scatterplots
   }
 
   let d = qd.dataset[0];
-  let k = d.keys();
+  let k = dq.keys(d);
   // Filter out the keys with less than half data, and which are not numbers
   let usefulKeys = Object.keys(k)
     .filter((kv) => k[kv] >= d.length / 2)
-    .filter((kv) => d.keyType(kv) === "number"); // Only accept numbers, not booleans
+    .filter((kv) => query(["d", kv]).dataType(d) === "number"); // Only accept numbers, not booleans
 
   usefulKeys.sort(); // Sort alphabetically by key
 

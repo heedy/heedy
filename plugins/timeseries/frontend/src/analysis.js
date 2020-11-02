@@ -1,164 +1,119 @@
-function cleanDT(ts) {
-  // TODO: This is actually a bug in the underlying heedy code
-  for (let i = 0; i < ts.length - 1; i++) {
-    if (ts[i].dt !== undefined && ts[i].t + ts[i].dt > ts[i + 1].t) {
-      ts[i].dt = ts[i + 1].t - ts[i].t;
-    }
-  }
-  return ts;
-}
 
-/**
- * Splits datapoints with durations into two elements - one at start of the duration,
- * and one at end of the duration
- *
- * @param {*} ts timeseries
- */
-function explicitDuration(ts, offset = 0.001) {
-  let res = new Array(ts.length * 2);
-  let j = 0;
-  for (let i = 0; i < ts.length; i++) {
-    res[j] = ts[i];
-    j++;
-    if (ts[i].dt !== undefined && ts[i].dt != 0) {
-      res[j] = {
-        t: ts[i].t + ts[i].dt - offset,
-        d: ts[i].d,
-      };
-      j++;
-    }
-  }
-  return res.slice(0, j);
-}
+import { getType, getKeys, getMin, getMax, getSum, getVar, getNonNull } from "./analysis/util.js";
 
-const day = 60 * 60 * 24;
 
-const datesAreOnSameDay = (first, second) =>
-  first.getFullYear() === second.getFullYear() &&
-  first.getMonth() === second.getMonth() &&
-  first.getDate() === second.getDate();
+let qprops = {
+  "keys": getKeys,
+  "dataType": getType,
+  "min": getMin,
+  "max": getMax,
+  "sum": getSum,
+  "nonNull": getNonNull,
+  "stddev": (f, ts) => Math.sqrt((getVar(f, ts) - Math.pow(f.mean(ts), 2)) / (f.nonNull(ts) - 1))
+};
 
-const endDate = (d) =>
-  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-const nextDate = (d) =>
-  new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0, 0);
 
-function perDay(ts) {
-  let days = [];
-  let curday = [];
-  let i = 0;
-  let dp = ts[i];
-  let curDate = new Date(dp.t * 1000);
-  while (true) {
-    let startTime = new Date(dp.t * 1000);
-    let endTime = new Date(1000 * (dp.t + (dp.dt === undefined ? 0 : dp.dt)));
 
-    if (datesAreOnSameDay(curDate, startTime)) {
-      // We add the datapoint to the current day array
-      if (datesAreOnSameDay(curDate, endTime)) {
-        // The entire datapoint fits in the same day, so just add it whole
-        curday.push(dp);
-        i += 1;
-        if (i >= ts.length) {
-          days.push({ date: curDate, data: curday });
-          break;
-        }
-        dp = ts[i];
-      } else {
-        // The datapoint does NOT fit in the day, so split it into a portion in the day, and a portion outside
-        let dt = nextDate(curDate).getTime() / 1000 - dp.t;
-        curday.push({
-          t: dp.t,
-          td: dt,
-          d: dp.d,
-        });
-        dp = {
-          t: nextDate(curDate).getTime() / 1000,
-          td: dp.dt - dt,
-          d: dp.d,
-        };
+function addProps(f) {
+  f.cache = new WeakMap();
+
+  // get is the underlying cache handler function,
+  // which allows caching results of computation for many
+  // analysis functions.
+  f.get = (key, ff, arr) => {
+    let cval = {};
+    if (f.cache.has(arr)) {
+      cval = f.cache.get(arr);
+      if (cval[key] !== undefined) {
+        return cval[key];
       }
-    } else {
-      // The next day!
-      days.push({ date: curDate, data: curday });
-      curday = [];
-      curDate = nextDate(curDate);
     }
+    let res = ff(f, arr);
+    cval[key] = res;
+    f.cache.set(arr, cval);
+
+    return res;
   }
-  return days;
+
+  f.set = (key, ff) => {
+    f[key] = (arr) => f.get(key, ff, arr);
+  }
+
+  // Set up the properties
+  Object.keys(qprops).forEach(k => f.set(k, qprops[k]));
+
+  f.isNumeric = (arr) => {
+    let t = f.dataType(arr)
+    return t === "number" || t === "boolean";
+  }
+  f.isBoolean = (arr) => f.dataType(arr) === "boolean";
+
+  f.mean = (arr) => f.sum(arr) / f.nonNull(arr);
+
+  f.noNulls = (arr) => f.nonNull(arr) == arr.length;
+
+  return f;
 }
 
-function isNumeric(ts) {
-  return ts.every((dp) => !isNaN(dp.d));
-}
 
-function isBoolean(ts) {
-  return ts.every((dp) => typeof dp.d === "boolean");
-}
-
-function getType(ts, extractor) {
-  if (ts.length == 0) {
-    return "";
-  }
-  let i = 0;
-  for (; i < ts.length; i++) {
-    if (extractor(ts[0]) !== null) {
-      break;
-    }
-  }
-  if (i == ts.length) {
-    return ""; // All null
-  }
-  let curtype = typeof extractor(ts[i]);
-  if (
-    ts.every((dp) => typeof extractor(dp) === curtype || extractor(dp) === null)
-  ) {
-    return curtype;
-  }
-  return "";
-}
-
-function getKeys(ts) {
-  let vals = {};
-  ts.forEach((dp) => {
-    Object.keys(dp.d).forEach((k) => {
-      if (vals[k] === undefined) {
-        vals[k] = 0;
+function generateQuery(query) {
+  let f = (dp) => {
+    for (let i = 0; i < query.length; i++) {
+      dp = dp[query[i]];
+      if (dp === undefined) {
+        return null;
       }
-      vals[k]++;
-    });
-  });
-  return vals;
+    }
+    return dp;
+  };
+  addProps(f);
+  return f;
 }
 
-/*
-function getType(ts) {
-  if (isNumeric(ts)) {
-    return "number";
-  }
-  if (ts.every((dp) => typeof dp.d === "string")) {
-    // Check if it is categorical
-    let vals = {};
-    ts.forEach((dp) => {
-      vals[dp.d] = true;
-    });
-    let keynum = Object.keys(vals).length;
-    if (keynum < 100 && keynum < ts.length / 3) {
-      return "categorical";
-    }
 
-    return "string";
+
+let dq = (dp) => dp.d;
+let tq = (dp) => dp.t * 1000; // Timestamps are multiplied by 1000
+let dtq = (dp) => (dp.dt === undefined ? 0 : dp.dt * 1000);
+
+addProps(dq);
+addProps(tq);
+addProps(dtq);
+
+let qcache = {};
+
+function query(q) {
+  if (q.length == 1) {
+    switch (q[0]) {
+      case "d":
+        return dq;
+      case "t":
+        return tq;
+      case "dt":
+        return dtq;
+    }
   }
-  return null;
-}*/
+  let key = JSON.stringify(q.slice(1));
+  if (qcache[key] === undefined) {
+    qcache[key] = generateQuery(q);
+  }
+  return qcache[key];
+}
+
+
+// setQueryProp allows external stuff to set properties of a query that will cache results
+function setQueryProp(key, ff) {
+  qprops[key] = ff;
+
+  // Also add the prop to the existing queries
+  dq.set(key, ff);
+  tq.set(key, ff);
+  dtq.set(key, ff);
+  Object.keys(qcache, k => qcache[k].set(key, ff));
+}
 
 export {
-  perDay,
-  explicitDuration,
-  isNumeric,
-  day,
-  getType,
-  cleanDT,
-  isBoolean,
-  getKeys,
-};
+  dq, tq, dtq, getKeys, getType, setQueryProp
+}
+
+export default query;

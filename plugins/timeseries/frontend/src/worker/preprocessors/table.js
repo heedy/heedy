@@ -1,88 +1,44 @@
-function extractor(q) {
-  if (q.key !== undefined && q.key !== "") {
-    return (dp) => (dp.d[q.key] !== undefined ? dp.d[q.key] : null);
-  }
-  return (dp) => dp.d;
-}
+import moment from "../../../dist/moment.mjs";
 
-function extract(ds, q, f) {
-  let e = extractor(q);
-
-  ds[q.series].forEach((dp) => {
-    let v = e(dp);
-    if (v !== null) {
-      f(v);
-    }
-  });
-}
+import query from "../../analysis.mjs";
 
 let transforms = {
   length(ds, q) {
-    if (q.key !== undefined && q.key !== "") {
+    if (q.q.length > 1) {
       // We need to actually count the non-null values
-      let count = 0;
-      ds[q.series].forEach((dp) => {
-        if (dp.d[q.key] !== undefined && dp.d[q.key] !== null) {
-          count++;
-        }
-      });
-      return count;
+      return query(q.q).nonNull(ds[q.series]);
     }
-
     return ds[q.series].length;
   },
   type(ds, q) {
-    if (q.key !== undefined && q.key !== "") {
-      return ds[q.series].keyType(q.key);
-    }
-    return ds[q.series].dataType();
+    return query(q.q).dataType(ds[q.series]);
   },
   sum(ds, q) {
-    let count = 0;
-    extract(ds, q, (v) => {
-      count += v;
-    });
-
-    return count;
+    return query(q.q).sum(ds[q.series]);
+  },
+  duration(ds, q) {
+    return moment.duration(query(q.q).sum(ds[q.series]) / 1000, "seconds").humanize();
   },
   mean(ds, q) {
-    return transforms.sum(ds, q) / transforms.length(ds, q);
+    return query(q.q).mean(ds[q.series]);
   },
   min(ds, q) {
-    let curval = Infinity;
-    extract(ds, q, (v) => {
-      if (v < curval) {
-        curval = v;
-      }
-    });
-    return curval;
+    return query(q.q).min(ds[q.series]);
   },
   max(ds, q) {
-    let curval = -Infinity;
-    extract(ds, q, (v) => {
-      if (v > curval) {
-        curval = v;
-      }
-    });
-    return curval;
+    return query(q.q).max(ds[q.series]);
   },
   stdev(ds, q) {
-    let curval = 0;
-    let mean = transforms.mean(ds, q);
-    let length = transforms.length(ds, q);
-    extract(ds, q, (v) => {
-      curval += Math.pow(v - mean, 2);
-    });
-    return Math.sqrt(curval / (length - 1));
+    return query(q.q).stddev(ds[q.series]);
   },
 };
-function getData(qd, query) {
-  if (typeof query !== "object") {
-    return query; // Objects are considered queries
+function getData(qd, qq) {
+  if (typeof qq !== "object") {
+    return qq; // Objects are considered queries
   }
 
-  if (transforms[query.transform] !== undefined) {
-    return transforms[query.transform](qd.dataset, query);
+  if (transforms[qq.transform] !== undefined) {
+    return transforms[qq.transform](qd.dataset, qq);
   }
   return "?";
 }
