@@ -5,7 +5,8 @@
 import { TimelinesChart } from "../../dist/d3v.mjs";
 export default {
   props: {
-    data: Object
+    query: Array,
+    config: Object,
   },
   methods: {
     handleResize(event) {
@@ -18,7 +19,7 @@ export default {
   watch: {
     data(nd, old) {
       this._tc
-        .zQualitative(nd.discrete)
+        .zQualitative(true)
         .leftMargin(nd.leftMargin)
         .rightMargin(nd.rightMargin)
         .timeFormat(nd.timeFormat)
@@ -27,7 +28,6 @@ export default {
   },
   mounted() {
     window.addEventListener("resize", this.handleResize);
-    console.log("MOUNT", this.data);
     this._tc = TimelinesChart()
       .enableOverview(false)
       .enableAnimations(false)
@@ -36,11 +36,11 @@ export default {
 
     this._tc
       .width(this.$refs.chart.clientWidth)
-      .zQualitative(this.data.discrete)
-      .leftMargin(this.data.leftMargin)
-      .rightMargin(this.data.rightMargin)
-      .timeFormat(this.data.timeFormat)
-      .data(this.data.data);
+      .zQualitative(true)
+      .leftMargin(this.config.leftMargin)
+      .rightMargin(this.config.rightMargin)
+      .timeFormat(this.config.timeFormat)
+      .data(this.config.data);
   }
 };
 </script>

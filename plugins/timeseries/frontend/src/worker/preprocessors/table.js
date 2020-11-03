@@ -17,7 +17,7 @@ let transforms = {
     return query(q.q).sum(ds[q.series]);
   },
   duration(ds, q) {
-    return moment.duration(query(q.q).sum(ds[q.series]) / 1000, "seconds").humanize();
+    return moment.duration(query(q.q).sum(ds[q.series]), "seconds").humanize();
   },
   mean(ds, q) {
     return query(q.q).mean(ds[q.series]);

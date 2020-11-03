@@ -1,6 +1,6 @@
 import { LTTB } from "../../../dist/downsample.mjs";
 
-import query from "../../analysis.mjs";
+import query, { tq } from "../../analysis.mjs";
 
 
 function prepareDataset(qd, ds) {
@@ -11,6 +11,9 @@ function prepareDataset(qd, ds) {
   // First, extract the desired data from the dataset
 
   let extractX = query(ds.data.x);
+  if (extractX == tq) {
+    extractX = (dp) => dp.t * 1000;
+  }
   let extractY = query(ds.data.y);
   if (ds.data.withDuration !== undefined && ds.data.withDuration) {
     let data = qd.dataset[ds.data.series].map((dp) => ({

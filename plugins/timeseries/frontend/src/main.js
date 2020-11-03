@@ -55,16 +55,11 @@ function setup(frontend) {
   frontend.timeseries.addVisualization("chartjs", () =>
     import("./visualizations/chartjs.mjs")
   );
-  /*
-  frontend.timeseries.addVisualization("insert", () =>
-    import("./visualizations/insert.mjs")
-  );
-  frontend.timeseries.addVisualization("chartjs", () =>
-    import("./visualizations/chartjs.mjs")
-  );
   frontend.timeseries.addVisualization("timeline", () =>
     import("./visualizations/timeline.mjs")
   );
+  /*
+  
   frontend.timeseries.addVisualization("horizon", () =>
     import("./visualizations/horizon.mjs")
   );

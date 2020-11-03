@@ -9,7 +9,7 @@ let qprops = {
   "max": getMax,
   "sum": getSum,
   "nonNull": getNonNull,
-  "stddev": (f, ts) => Math.sqrt((getVar(f, ts) - Math.pow(f.mean(ts), 2)) / (f.nonNull(ts) - 1))
+  "stddev": (f, ts) => Math.sqrt((getVar(f, ts) - Math.pow(f.mean(ts), 2)) / (f.nonNull(ts) - 1)),
 };
 
 
@@ -73,8 +73,8 @@ function generateQuery(query) {
 
 
 let dq = (dp) => dp.d;
-let tq = (dp) => dp.t * 1000; // Timestamps are multiplied by 1000
-let dtq = (dp) => (dp.dt === undefined ? 0 : dp.dt * 1000);
+let tq = (dp) => dp.t;
+let dtq = (dp) => (dp.dt === undefined ? 0 : dp.dt);
 
 addProps(dq);
 addProps(tq);
