@@ -1,7 +1,7 @@
 import pytest
 from heedy import App
 
-
+"""Dashboard has been temporarily disabled
 def lists_equal(l1, l2):
     assert len(l1) == len(l2)
     for i in range(len(l1)):
@@ -157,3 +157,4 @@ def test_dashboard_indices():
 
     for o in a.objects():
         o.delete()
+"""
