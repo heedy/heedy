@@ -11,7 +11,7 @@
   </h-dataset-visualization>
 </template>
 <script>
-import Insert from "./insert.vue";
+import Insert from "./inserter/insert.vue";
 export default {
   components: {
     Insert,

@@ -111,7 +111,7 @@ function generateDataset(d, y, colors, idx, yid) {
 }
 
 function analyze(qd) {
-  if (qd.dataset.length == 0 || qd.dataset.length > 4) {
+  if (qd.dataset.length == 0 || qd.dataset.length > 4 || !qd.dataset.every(da => da.length > 2)) {
     return {};
   }
 

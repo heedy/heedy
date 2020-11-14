@@ -18,11 +18,22 @@ class TimeseriesInjector {
     );
   }
 
-  addVisualization(name, obj) {
+  addVisualization(name, component) {
     this.app.store.commit("addTSVisualization", {
       key: name,
-      component: obj,
+      component: component,
     });
+  }
+
+  addCustomInserter(name, component) {
+    this.app.store.commit("addTSCustomInserter", {
+      key: name,
+      component: component,
+    });
+  }
+
+  addType(value) {
+    this.app.store.commit("addTSType", value);
   }
 
   _onQueryResult(ctx, msg) {

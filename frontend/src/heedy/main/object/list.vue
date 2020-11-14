@@ -1,5 +1,10 @@
 <template>
-  <v-list flat style="background: none;padding-top: 0px; margin-top: -5px;" dense expand>
+  <v-list
+    flat
+    style="background: none; padding-top: 0px; margin-top: -5px"
+    dense
+    expand
+  >
     <v-list-group
       color="secondary lighten-2"
       v-for="item in items"
@@ -11,12 +16,19 @@
       <template v-slot:activator>
         <v-list-item-content>
           <v-list-item-title>
-            <v-icon v-if="item.icon!==undefined" style="margin-right: 5px">{{ item.icon }}</v-icon>
-            {{ item.list_title}}
+            <v-icon v-if="item.icon !== undefined" style="margin-right: 5px">{{
+              item.icon
+            }}</v-icon>
+            {{ item.list_title }}
           </v-list-item-title>
         </v-list-item-content>
       </template>
-      <component :is="item.list_component" :objects="item.objects" :defaultIcon="item.icon" />
+      <component
+        :is="item.list_component"
+        :objects="item.objects"
+        :defaultIcon="item.icon"
+        :showApps="showApps"
+      />
     </v-list-group>
   </v-list>
 </template>
@@ -24,7 +36,12 @@
 import ListDefault from "./list_default.vue";
 export default {
   props: {
-    objects: Array
+    objects: Array,
+
+    showApps: {
+      type: Boolean,
+      default: true,
+    },
   },
   computed: {
     items() {
@@ -38,14 +55,14 @@ export default {
 
       let srcType = this.$store.state.heedy.object_types;
 
-      return Object.keys(srcobj).map(k => ({
+      return Object.keys(srcobj).map((k) => ({
         type: k,
         list_title: k.charAt(0).toUpperCase() + k.substring(1) + "s",
         objects: srcobj[k],
         list_component: ListDefault,
-        ...(srcType[k] || {})
+        ...(srcType[k] || {}),
       }));
-    }
-  }
+    },
+  },
 };
 </script>

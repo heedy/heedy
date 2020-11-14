@@ -1,7 +1,21 @@
 <template>
   <v-form @submit="insert" v-model="formValid">
     <div ref="jsform" v-if="!loading">
-      <v-jsf :schema="schema" :options="options" v-model="modified" />
+      <v-jsf :schema="schema" :options="options" v-model="modified">
+        <template
+          v-for="ins in inserters"
+          :slot="`custom-` + ins.k"
+          slot-scope="{ value, label, on }"
+        >
+          <component
+            :key="ins.k"
+            :is="ins.v"
+            :value="value"
+            v-on="on"
+            :label="label"
+          />
+        </template>
+      </v-jsf>
     </div>
     <!-- https://github.com/koumoul-dev/vuetify-jsonschema-form/issues/21 -->
     <div
@@ -10,11 +24,13 @@
     >
       <h4 style="margin: auto">Inserting...</h4>
     </div>
-    <v-btn dark color="info" type="submit" :loading="loading">Insert</v-btn>
+    <div class="text-center" style="width: 100%">
+      <v-btn dark color="info" type="submit" :loading="loading">Insert</v-btn>
+    </div>
   </v-form>
 </template>
 <script>
-import moment from "../../dist/moment.mjs";
+import moment from "../../../dist/moment.mjs";
 export default {
   props: {
     object: Object,
@@ -27,6 +43,10 @@ export default {
     modified: {},
   }),
   computed: {
+    inserters() {
+      let d = this.$store.state.timeseries.customInserters;
+      return Object.keys(d).map((k) => ({ k: k, v: d[k] }));
+    },
     schema() {
       if (
         this.object.meta.schema.type !== undefined &&
@@ -44,7 +64,7 @@ export default {
         type: "object",
         properties: {
           data: {
-            title: "Insert Datapoint",
+            title: " ",
             ...this.object.meta.schema,
           },
         },
@@ -53,7 +73,7 @@ export default {
     },
   },
   methods: {
-    insert: async function(event) {
+    insert: async function (event) {
       event.preventDefault();
       if (this.loading) return;
       if (!this.formValid) {

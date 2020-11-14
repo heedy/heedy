@@ -12,19 +12,25 @@
     >
       <v-layout column fill-height>
         <v-list dense nav>
-          <v-list-item v-if="user==null" two-line to="/login">
+          <v-list-item v-if="user == null" two-line to="/login">
             <v-list-item-avatar>
               <v-icon>fas fa-sign-in-alt</v-icon>
             </v-list-item-avatar>
 
             <v-list-item-content>
               <v-list-item-title>Log In</v-list-item-title>
-              <v-list-item-subtitle>Access your Heedy account</v-list-item-subtitle>
+              <v-list-item-subtitle
+                >Access your Heedy account</v-list-item-subtitle
+              >
             </v-list-item-content>
           </v-list-item>
           <v-list-item v-else two-line :to="'/users/' + user.username">
             <v-list-item-avatar>
-              <h-icon :image="user.icon" defaultIcon="person" :colorHash="user.username"></h-icon>
+              <h-icon
+                :image="user.icon"
+                defaultIcon="person"
+                :colorHash="user.username"
+              ></h-icon>
             </v-list-item-avatar>
 
             <v-list-item-content>
@@ -37,8 +43,14 @@
 
           <v-list-item v-for="item in menu" :key="item.key" :to="item.route">
             <v-list-item-avatar>
-              <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-              <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+              <v-icon v-if="item.component === undefined">{{
+                item.icon
+              }}</v-icon>
+              <component
+                v-else
+                :is="item.component"
+                :status="bottom ? 'bottom' : 'side'"
+              />
             </v-list-item-avatar>
 
             <v-list-item-content>
@@ -48,10 +60,20 @@
         </v-list>
         <v-spacer></v-spacer>
         <v-list dense nav class="py-0">
-          <v-list-item v-for="item in bottomMenu" :key="item.key" :to="item.route">
+          <v-list-item
+            v-for="item in bottomMenu"
+            :key="item.key"
+            :to="item.route"
+          >
             <v-list-item-icon>
-              <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-              <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+              <v-icon v-if="item.component === undefined">{{
+                item.icon
+              }}</v-icon>
+              <component
+                v-else
+                :is="item.component"
+                :status="bottom ? 'bottom' : 'side'"
+              />
             </v-list-item-icon>
 
             <v-list-item-content>
@@ -72,14 +94,24 @@
               </v-list-item>
             </template>
             <v-list dense nav width="200px">
-              <v-list-item v-for="item in secondaryMenu" :key="item.key" :to="item.route">
+              <v-list-item
+                v-for="item in secondaryMenu"
+                :key="item.key"
+                :to="item.route"
+              >
                 <v-list-item-icon>
-                  <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-                  <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+                  <v-icon v-if="item.component === undefined">{{
+                    item.icon
+                  }}</v-icon>
+                  <component
+                    v-else
+                    :is="item.component"
+                    :status="bottom ? 'bottom' : 'side'"
+                  />
                 </v-list-item-icon>
                 <v-list-item-title>{{ item.text }}</v-list-item-title>
               </v-list-item>
-              <v-list-item v-if="user!=null" to="/logout">
+              <v-list-item v-if="user != null" to="/logout">
                 <v-list-item-icon>
                   <v-icon>fas fa-sign-out-alt</v-icon>
                 </v-list-item-icon>
@@ -105,24 +137,37 @@
 
     <router-view></router-view>
     <v-bottom-navigation dark v-if="bottom && shownav" app grow>
-      <v-btn v-if="user==null" to="/login">
+      <v-btn v-if="user == null" to="/login">
         <span v-if="!small">Log In</span>
         <v-icon>fas fa-sign-in-alt</v-icon>
       </v-btn>
       <v-btn v-else :to="'/users/' + user.username">
         <span v-if="!small">{{ username }}</span>
-        <h-icon :image="user.icon" defaultIcon="person" :colorHash="user.username" :size="28"></h-icon>
+        <h-icon
+          :image="user.icon"
+          defaultIcon="person"
+          :colorHash="user.username"
+          :size="28"
+        ></h-icon>
       </v-btn>
 
       <v-btn v-for="item in menu" :key="item.key" :to="item.route">
         <span v-if="!small">{{ item.text }}</span>
-        <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-        <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+        <v-icon v-if="item.component === undefined">{{ item.icon }}</v-icon>
+        <component
+          v-else
+          :is="item.component"
+          :status="bottom ? 'bottom' : 'side'"
+        />
       </v-btn>
       <v-btn v-for="item in bottomMenu" :key="item.key" :to="item.route">
         <span v-if="!small">{{ item.text }}</span>
-        <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-        <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+        <v-icon v-if="item.component === undefined">{{ item.icon }}</v-icon>
+        <component
+          v-else
+          :is="item.component"
+          :status="bottom ? 'bottom' : 'side'"
+        />
       </v-btn>
 
       <v-menu offset-y top v-if="showSecondaryMenu">
@@ -133,14 +178,24 @@
           </v-btn>
         </template>
         <v-list dense nav>
-          <v-list-item v-for="item in secondaryMenu" :key="item.key" :to="item.route">
+          <v-list-item
+            v-for="item in secondaryMenu"
+            :key="item.key"
+            :to="item.route"
+          >
             <v-list-item-avatar>
-              <v-icon v-if="item.component===undefined">{{ item.icon }}</v-icon>
-              <component v-else :is="item.component" :status="(bottom?'bottom':'side')" />
+              <v-icon v-if="item.component === undefined">{{
+                item.icon
+              }}</v-icon>
+              <component
+                v-else
+                :is="item.component"
+                :status="bottom ? 'bottom' : 'side'"
+              />
             </v-list-item-avatar>
             <v-list-item-title>{{ item.text }}</v-list-item-title>
           </v-list-item>
-          <v-list-item v-if="user!=null" to="/logout">
+          <v-list-item v-if="user != null" to="/logout">
             <v-list-item-avatar>
               <v-icon>fas fa-sign-out-alt</v-icon>
             </v-list-item-avatar>
@@ -155,17 +210,17 @@
 export default {
   data: () => ({
     bottom: false, // Whether to display the navigation on bottom, in mobile mode
-    small: false // In mobile mode whether to show text. Only active when mini is true
+    small: false, // In mobile mode whether to show text. Only active when mini is true
   }),
   computed: {
     menu() {
       return Object.values(this.$store.state.app.menu_items).filter(
-        m => m.location === undefined || m.location == "primary"
+        (m) => m.location === undefined || m.location == "primary"
       );
     },
     secondaryMenu() {
       return Object.values(this.$store.state.app.menu_items).filter(
-        m =>
+        (m) =>
           m.location !== undefined &&
           (m.location == "secondary" ||
             (m.location != "primary" && m.location != "primary_bottom"))
@@ -173,7 +228,7 @@ export default {
     },
     bottomMenu() {
       return Object.values(this.$store.state.app.menu_items).filter(
-        m => m.location !== undefined && m.location == "primary_bottom"
+        (m) => m.location !== undefined && m.location == "primary_bottom"
       );
     },
     user() {
@@ -209,10 +264,10 @@ export default {
         this.$store.commit("alert", {
           value: newValue,
           text: "",
-          type: "info"
+          type: "info",
         });
-      }
-    }
+      },
+    },
   },
   mounted() {
     this.onResize();
@@ -221,7 +276,7 @@ export default {
     onResize() {
       this.bottom = window.innerWidth < 960;
       this.small = window.innerWidth < 500;
-    }
-  }
+    },
+  },
 };
 </script>

@@ -1,7 +1,7 @@
 <template>
   <v-combobox
     :value="value"
-    @input="(v) => $emit('input',(v==null?'':v))"
+    @input="(v) => runInput(v)"
     outlined
     :label="'Choose ' + objname"
     :items="objects"
@@ -17,11 +17,13 @@
         <v-list-item-avatar>
           <h-icon image="fas fa-question" colorHash="unknown" />
         </v-list-item-avatar>
-        <span class="subheading" style="margin-right:5px;">{{ objname }} ID:</span>
+        <span class="subheading" style="margin-right: 5px"
+          >{{ objname }} ID:</span
+        >
         <v-chip label>{{ search }}</v-chip>
       </v-list-item>
     </template>
-    <template v-slot:item="{on,item}">
+    <template v-slot:item="{ on, item }">
       <v-list-item dense two-line v-on="on">
         <v-list-item-avatar>
           <h-icon
@@ -30,11 +32,28 @@
             :colorHash="item"
           />
         </v-list-item-avatar>
+        <div
+          v-if="showApps && obj(item).app != null"
+          style="position: absolute; bottom: 10px"
+        >
+          <h-icon
+            :image="getApp(obj(item)).icon"
+            defaultIcon="settings_input_component"
+            :colorHash="obj(item).app"
+            :size="15"
+          ></h-icon>
+        </div>
         <v-list-item-content>
-          <v-list-item-title>{{obj(item).name}}</v-list-item-title>
+          <v-list-item-title>{{ obj(item).name }}</v-list-item-title>
           <v-list-item-subtitle>
-            <v-chip-group v-if="obj(item).tags!=''">
-              <v-chip v-for="tag in obj(item).tags.split(' ')" :key="tag" x-small disabled>{{ tag }}</v-chip>
+            <v-chip-group v-if="obj(item).tags != ''">
+              <v-chip
+                v-for="tag in obj(item).tags.split(' ')"
+                :key="tag"
+                x-small
+                disabled
+                >{{ tag }}</v-chip
+              >
             </v-chip-group>
             <div v-else>{{ item.description }}</div>
           </v-list-item-subtitle>
@@ -42,15 +61,16 @@
         <v-list-item-action></v-list-item-action>
       </v-list-item>
     </template>
-    <template v-slot:selection="{item,attrs}">
-      <v-chip :key="item" v-bind="attrs" label @click="()=>chipClick(item)">
+    <template v-slot:selection="{ item, attrs }">
+      <v-chip :key="item" v-bind="attrs" label @click="() => chipClick(item)">
         <h-icon
           :size="25"
           :image="obj(item).icon"
           :defaultIcon="defaultIcon(obj(item).type)"
           :colorHash="item"
-          style="margin-right: 10px;"
+          style="margin-right: 10px"
         />
+
         {{ obj(item).name }}
       </v-chip>
     </template>
@@ -61,29 +81,33 @@ export default {
   props: {
     owner: {
       type: String,
-      default: ""
+      default: "",
     },
     type: {
       type: String,
-      default: ""
+      default: "",
     },
     app: {
       type: String,
-      default: ""
+      default: "",
     },
     access: {
       type: String,
-      default: ""
+      default: "",
     },
     multiple: {
       type: Boolean,
-      default: false
+      default: false,
     },
-    value: [String, Array]
+    showApps: {
+      type: Boolean,
+      default: true,
+    },
+    value: [String, Array],
   },
   data: () => ({
     search: "",
-    extra: []
+    extra: [],
   }),
   computed: {
     objname() {
@@ -104,20 +128,20 @@ export default {
       } else {
         objs = Object.keys(
           this.$store.state.heedy.userObjects[this.owner] || {}
-        ).map(id => this.$store.state.heedy.objects[id]);
+        ).map((id) => this.$store.state.heedy.objects[id]);
       }
-      objs = objs.filter(o => o != null);
+      objs = objs.filter((o) => o != null);
 
       if (this.app != "") {
-        objs = objs.filter(o => o.app == this.app);
+        objs = objs.filter((o) => o.app == this.app);
       }
 
       if (this.type != "") {
-        objs = objs.filter(o => o.type == this.type);
+        objs = objs.filter((o) => o.type == this.type);
       }
       if (this.access != "") {
         let tac = this.access.split(" ");
-        objs = objs.filter(o => {
+        objs = objs.filter((o) => {
           let oa = o.access.split(" ");
           if (oa.includes("*")) {
             return true;
@@ -125,19 +149,33 @@ export default {
           if (tac.includes("*")) {
             return false;
           }
-          return tac.every(scope => oa.includes(scope));
+          return tac.every((scope) => oa.includes(scope));
         });
       }
 
-      objs = objs.map(obj => obj.id);
+      objs = objs.map((obj) => obj.id);
       if (this.extra.length > 0) {
-        this.extra = this.extra.filter(e => !objs.includes(e));
+        this.extra = this.extra.filter((e) => !objs.includes(e));
         objs = [...objs, ...this.extra];
       }
       return objs;
-    }
+    },
   },
   methods: {
+    getApp(obj) {
+      let empty_app = {
+        id: obj.id,
+        icon: "settings_input_component",
+      };
+      if (this.$store.state.heedy.apps == null) {
+        return empty_app;
+      }
+      return this.$store.state.heedy.apps[obj.app] || empty_app;
+    },
+    runInput(v) {
+      this.search = "";
+      this.$emit("input", v == null ? "" : v);
+    },
     addItem(id) {
       this.search = "";
       if (!this.multiple) {
@@ -154,7 +192,7 @@ export default {
       }
       this.$emit(
         "input",
-        this.value.filter(e => e != id)
+        this.value.filter((e) => e != id)
       );
     },
     filter(iid, queryText, itemText) {
@@ -165,10 +203,10 @@ export default {
       let name = item.name.toLowerCase();
 
       return queryWords.every(
-        w =>
+        (w) =>
           name.includes(w) ||
           item.id.includes(w) ||
-          !tags.every(t => !t.includes(w)) ||
+          !tags.every((t) => !t.includes(w)) ||
           (item.type.includes(w) && this.type == "")
       );
     },
@@ -184,25 +222,25 @@ export default {
           type: "",
           app: null,
           description: "",
-          tags: ""
+          tags: "",
         };
       }
       return this.$store.state.heedy.objects[id];
     },
     defaultIcon(otype) {
       let oti = this.$store.state.heedy.object_types[otype] || {
-        icon: "assignment"
+        icon: "assignment",
       };
       return oti.icon;
-    }
+    },
   },
   watch: {
-    owner: function(o) {
+    owner: function (o) {
       if (o != "") {
         this.$store.dispatch("readUserObjects", { username: o });
       } else if (this.$store.state.app.info.user != null) {
         this.$store.dispatch("readUserObjects", {
-          username: this.$store.state.app.info.user.username
+          username: this.$store.state.app.info.user.username,
         });
       }
     },
@@ -213,7 +251,7 @@ export default {
       if (typeof olist === "string") {
         olist = [olist];
       }
-      olist.forEach(oid => {
+      olist.forEach((oid) => {
         if (oid != "" && oid != null) {
           if (
             this.$store.state.heedy.objects[oid] === undefined ||
@@ -221,7 +259,7 @@ export default {
           ) {
             // The object doesn't exist in the cache. Add it to the extra, and query it
             this.$store.dispatch("readObject", {
-              id: oid
+              id: oid,
             });
             if (!this.extra.includes(oid)) {
               this.extra.push(oid);
@@ -229,7 +267,7 @@ export default {
           }
         }
       });
-    }
+    },
   },
 
   created() {
@@ -237,9 +275,12 @@ export default {
       this.$store.dispatch("readUserObjects", { username: this.owner });
     } else if (this.$store.state.app.info.user != null) {
       this.$store.dispatch("readUserObjects", {
-        username: this.$store.state.app.info.user.username
+        username: this.$store.state.app.info.user.username,
       });
     }
-  }
+    if (this.showApps) {
+      this.$store.dispatch("listApps");
+    }
+  },
 };
 </script>

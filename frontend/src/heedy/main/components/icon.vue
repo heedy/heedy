@@ -4,9 +4,12 @@
     <v-icon
       v-else-if="image.length > 0"
       :size="iconSize"
-      :style="{'fontSize': fontSize}"
-    >{{ image }}</v-icon>
-    <v-icon v-else :size="iconSize" :style="{'fontSize': fontSize}">{{ defaultIcon }}</v-icon>
+      :style="{ fontSize: fontSize }"
+      >{{ image }}</v-icon
+    >
+    <v-icon v-else :size="iconSize" :style="{ fontSize: fontSize }">{{
+      defaultIcon
+    }}</v-icon>
   </v-avatar>
 </template>
 
@@ -19,17 +22,17 @@ export default {
   props: {
     image: {
       type: String,
-      default: ""
+      default: "",
     },
     colorHash: String,
     size: {
       type: Number,
-      default: 48
+      default: 48,
     },
     defaultIcon: {
       type: String,
-      default: "brightness_1"
-    }
+      default: "brightness_1",
+    },
   },
   computed: {
     color() {
@@ -43,7 +46,7 @@ export default {
         return Math.round(0.65 * this.iconSize) + "px";
       }
       return Math.round(0.9 * this.iconSize) + "px";
-    }
+    },
     /*
     imageStyle() {
       let s = { maxWidth: "100%", maxHeight: "100%" };
@@ -54,6 +57,6 @@ export default {
       console.log(s);
       return s;
     }*/
-  }
+  },
 };
 </script>

@@ -1,11 +1,6 @@
 <template>
   <h-object-updater :object="object" :meta="meta">
     <template v-slot:advanced>
-      <v-text-field
-        label="Subtype"
-        v-model="subtype"
-        placeholder
-      ></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
           <v-container>
@@ -36,7 +31,6 @@ export default {
   },
   data: () => ({
     scode: null,
-    ssubtype: null,
     cmOptions: {
       tabSize: 2,
       mode: "text/javascript",
@@ -90,26 +84,12 @@ export default {
         this.scode = v;
       },
     },
-    subtype: {
-      get() {
-        if (this.ssubtype != null) {
-          return this.ssubtype;
-        }
-        return this.object.meta.subtype || "";
-      },
-      set(v) {
-        this.ssubtype = v;
-      },
-    },
     meta() {
       let meta = {};
       if (this.scode != null) {
         try {
           meta.schema = JSON.parse(this.scode);
         } catch {}
-      }
-      if (this.ssubtype != null) {
-        meta.subtype = this.ssubtype;
       }
       return meta;
     },

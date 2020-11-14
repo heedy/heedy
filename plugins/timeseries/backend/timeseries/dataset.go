@@ -48,23 +48,13 @@ func (q *Query) Get(db database.DB, tstart float64) (*DatasetIterator, error) {
 	}
 
 	iter, err := TSDB.Query(q)
-
-	var piter pipescript.Iterator
-	piter = PipeIterator{iter}
-
-	if q.Transform != nil && *q.Transform != "" {
-		p, err := pipescript.Parse(*q.Transform)
-		if err != nil {
-			iter.Close()
-			return nil, err
-		}
-		p.InputIterator(piter)
-		piter = p
+	if err != nil {
+		return nil, err
 	}
 
 	return &DatasetIterator{
 		closers: []Closer{iter},
-		it:      piter,
+		it:      PipeIterator{iter},
 	}, nil
 }
 

@@ -6,6 +6,9 @@ import vuexModule from "./main/vuex.js";
 import TimeseriesInjector from "./main/injector";
 import Update from "./main/update.vue";
 import Dataset from "./main/dataset/editor.vue";
+import InputPage from "./main/inserter/inputpage.vue";
+
+import RatingInserter from "./main/inserter/custom/rating.vue";
 
 function setup(frontend) {
   frontend.store.registerModule("timeseries", vuexModule);
@@ -13,6 +16,36 @@ function setup(frontend) {
 
   // The component that permits visualizing a dataset
   frontend.vue.component("h-dataset-visualization", DatasetVisualization);
+
+  // Add the default timeseries types
+  frontend.timeseries.addType({
+    key: "number",
+    schema: {
+      type: "number"
+    },
+    icon: "timeline",
+    title: "Number"
+  });
+  frontend.timeseries.addType({
+    key: "string",
+    schema: {
+      type: "string"
+    },
+    icon: "fas fa-list",
+    title: "String"
+  });
+  frontend.timeseries.addType({
+    key: "rating",
+    schema: {
+      type: "integer",
+      minimum: 0,
+      maximum: 10,
+      "x-display": "custom-rating"
+    },
+    icon: "star",
+    title: "Rating"
+  });
+  frontend.timeseries.addCustomInserter("rating", RatingInserter);
 
   if (frontend.info.user != null) {
     frontend.objects.addCreator({
@@ -29,6 +62,13 @@ function setup(frontend) {
     });
 
     frontend.addMenuItem({
+      key: "insert",
+      text: "Manual Inputs",
+      icon: "fas fa-star",
+      route: "/timeseries/insert"
+    });
+
+    frontend.addMenuItem({
       key: "dataset",
       text: "Data Analysis",
       icon: "fas fa-chart-bar",
@@ -40,6 +80,11 @@ function setup(frontend) {
     path: "/timeseries/dataset",
     component: Dataset,
   });
+  frontend.addRoute({
+    path: "/timeseries/insert",
+    component: InputPage,
+  });
+
 
   frontend.worker.import("timeseries/worker.mjs");
 

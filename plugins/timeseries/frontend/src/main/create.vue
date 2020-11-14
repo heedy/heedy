@@ -7,7 +7,11 @@
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field label="Name" placeholder="My Timeseries" v-model="name"></v-text-field>
+            <v-text-field
+              label="Name"
+              placeholder="My Timeseries"
+              v-model="name"
+            ></v-text-field>
             <v-text-field
               label="Description"
               placeholder="This timeseries holds my data"
@@ -19,7 +23,6 @@
       </v-layout>
     </v-container>
     <v-container v-if="advanced">
-      <v-text-field label="Subtype" v-model="subtype" placeholder></v-text-field>
       <v-row>
         <v-flex sm5 md4 xs12>
           <v-container>
@@ -44,7 +47,8 @@
 
     <v-card-actions>
       <v-btn text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon>Advanced
+        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon
+        >Advanced
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
@@ -58,28 +62,27 @@ export default {
     advanced: false,
     loading: false,
     description: "",
-    subtype: "",
     tags: "",
     code: "{}",
     name: "",
     cmOptions: {
       tabSize: 2,
-      mode: "text/javascript"
+      mode: "text/javascript",
     },
     schemaTypes: [
       {
         label: "Number",
-        value: "number"
+        value: "number",
       },
       {
         label: "String",
-        value: "string"
+        value: "string",
       },
       {
         label: "Other",
-        value: "?"
-      }
-    ]
+        value: "?",
+      },
+    ],
   }),
   computed: {
     curRadio() {
@@ -92,7 +95,7 @@ export default {
         }
       } catch {}
       return "?";
-    }
+    },
   },
   methods: {
     setRadio(v) {
@@ -104,7 +107,7 @@ export default {
           this.code = JSON.stringify({ type: v }, null, "  ");
       }
     },
-    create: async function() {
+    create: async function () {
       if (this.loading) return;
 
       this.loading = true;
@@ -120,10 +123,8 @@ export default {
         type: "timeseries",
         description: this.description,
         tags: this.tags,
-        meta: {
-          subtype: this.subtype
-        },
-        icon: this.$refs.iconEditor.getImage()
+        meta: {},
+        icon: this.$refs.iconEditor.getImage(),
       };
       if (this.advanced) {
         try {
@@ -148,8 +149,8 @@ export default {
       this.$store.commit("setObject", result.data);
       this.loading = false;
       this.$router.replace({ path: `/objects/${result.data.id}` });
-    }
-  }
+    },
+  },
 };
 </script>
 <style>

@@ -463,7 +463,7 @@ func (ts *TimeseriesDB) Query(q *Query) (DatapointIterator, error) {
 	if err != nil {
 		return it, err
 	}
-	if q.Transform != nil {
+	if q.Transform != nil && *q.Transform != "" {
 		it2 := it
 		it, err = NewTransformIterator(*q.Transform, it2)
 		if err != nil {

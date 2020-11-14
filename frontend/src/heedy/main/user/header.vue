@@ -1,9 +1,12 @@
 <template>
   <v-flex>
     <v-card>
-      <div style="position:absolute;top:2px;right:16px;" v-if="editable && !editing">
+      <div
+        style="position: absolute; top: 2px; right: 16px"
+        v-if="editable && !editing"
+      >
         <v-btn icon @click="editing = true">
-          <v-icon style="color:lightgray;opacity:0.3">edit</v-icon>
+          <v-icon style="color: lightgray; opacity: 0.3">edit</v-icon>
         </v-btn>
       </div>
       <v-btn
@@ -11,7 +14,7 @@
         color="blue darken-2"
         dark
         fab
-        style="position:absolute;bottom:15px;right:15px;"
+        style="position: absolute; bottom: 15px; right: 15px"
         @click.stop="dialog = true"
       >
         <v-icon>add</v-icon>
@@ -27,30 +30,45 @@
                 defaultIcon="person"
                 :colorHash="user.username"
               ></h-icon>
-              <h5 style="color:gray;padding-top:10px">{{ user.username }}</h5>
+              <h5 style="color: gray; padding-top: 10px">
+                {{ user.username }}
+              </h5>
             </template>
             <template v-else>
-              <h-icon-editor ref="iconEditor" :image="user.icon" :colorHash="user.username"></h-icon-editor>
+              <h-icon-editor
+                ref="iconEditor"
+                :image="user.icon"
+                :colorHash="user.username"
+              ></h-icon-editor>
             </template>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>
-            <h2 v-if="!editing">{{ user.name == "" ? user.username : user.name }}</h2>
+            <h2 v-if="!editing">
+              {{ user.name == "" ? user.username : user.name }}
+            </h2>
             <v-text-field
               v-else
               :label="user.name == '' ? user.username : user.name"
               solo
               v-model="name"
             ></v-text-field>
-            <v-textarea v-if="editing" solo label="No description given." v-model="description"></v-textarea>
+            <v-textarea
+              v-if="editing"
+              solo
+              label=""
+              v-model="description"
+            ></v-textarea>
             <p v-else-if="user.description != ''">{{ user.description }}</p>
-            <p v-else style="color:lightgray;">No description given.</p>
+            <p v-else style="color: lightgray"></p>
           </v-flex>
         </v-layout>
       </v-container>
       <v-card-actions v-if="editing">
         <v-spacer></v-spacer>
         <v-btn @click="cancel">Cancel</v-btn>
-        <v-btn type="submit" color="primary" @click="save" :loading="loading">Save</v-btn>
+        <v-btn type="submit" color="primary" @click="save" :loading="loading"
+          >Save</v-btn
+        >
       </v-card-actions>
     </v-card>
     <v-dialog v-model="dialog" max-width="1024">
@@ -60,8 +78,7 @@
             <v-list-item-content>
               <v-list-item-title class="headline mb-1">Add</v-list-item-title>
               <v-list-item-subtitle>
-                Create objects that you will manually
-                control.
+                Create objects that you will manually control.
               </v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
@@ -80,16 +97,18 @@
               xl="3"
             >
               <v-card class="pa-2" outlined tile>
-                <v-list-item two-line subheader @click="()=> runCreator(c)">
+                <v-list-item two-line subheader @click="() => runCreator(c)">
                   <v-list-item-avatar>
-                    <h-icon :image="c.icon" :colorHash="c.key" defaultIcon="insert_drive_file"></h-icon>
+                    <h-icon
+                      :image="c.icon"
+                      :colorHash="c.key"
+                      defaultIcon="insert_drive_file"
+                    ></h-icon>
                   </v-list-item-avatar>
                   <v-list-item-content>
                     <v-list-item-title>{{ c.title }}</v-list-item-title>
                     <v-list-item-subtitle>
-                      {{
-                      c.description
-                      }}
+                      {{ c.description }}
                     </v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
@@ -117,10 +136,10 @@ export default {
     modified: {},
     loading: false,
     fab: false,
-    dialog: false
+    dialog: false,
   }),
   props: {
-    user: Object
+    user: Object,
   },
   methods: {
     cancel() {
@@ -128,7 +147,7 @@ export default {
       this.editing = false;
       this.modified = {};
     },
-    save: async function() {
+    save: async function () {
       if (this.loading) return;
       this.loading = true;
       if (this.$refs.iconEditor.hasImage()) {
@@ -150,7 +169,7 @@ export default {
         username: this.user.username,
         callback: () => {
           this.cancel();
-        }
+        },
       });
     },
     runCreator(c) {
@@ -160,7 +179,7 @@ export default {
         // There must be a function to call
         c.fn();
       }
-    }
+    },
   },
   computed: {
     description: {
@@ -169,7 +188,7 @@ export default {
       },
       set(v) {
         this.modified.description = v;
-      }
+      },
     },
     name: {
       get() {
@@ -177,7 +196,7 @@ export default {
       },
       set(v) {
         this.modified.name = v;
-      }
+      },
     },
     editable() {
       if (this.$store.state.app.info.user == null) {
@@ -187,7 +206,7 @@ export default {
     },
     objectCreators() {
       return this.$store.state.heedy.objectCreators;
-    }
-  }
+    },
+  },
 };
 </script>

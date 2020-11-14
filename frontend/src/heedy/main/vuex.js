@@ -137,7 +137,10 @@ export default {
         }
       });
       state.apps = v;
-      state.apps_qtime = moment();
+
+    },
+    setAppsQTime(state, t) {
+      state.apps_qtime = t;
     },
     setObject(state, v) {
       // First check if the object has existing value
@@ -146,7 +149,7 @@ export default {
       // Get the callbacks
       let callbacks =
         state.objects_qtime[v.id] === undefined ||
-        !Array.isArray(state.objects_qtime[v.id])
+          !Array.isArray(state.objects_qtime[v.id])
           ? []
           : state.objects_qtime[v.id];
       Vue.set(state.objects_qtime, v.id, moment());
@@ -249,13 +252,12 @@ export default {
       }
     },
     // This function performs a query on the user, ignoring websocket
-    readUser_: async function({ commit, rootState }, q) {
+    readUser_: async function ({ commit, rootState }, q) {
       let username = q.username;
       console.log("Reading user", username);
       let res = await api("GET", `api/users/${username}`, {
         icon: true,
       });
-      console.log(res);
       if (!res.response.ok) {
         // If the error is 404, set the user to null
         if (res.response.status == 400 || res.response.status == 403) {
@@ -283,7 +285,7 @@ export default {
         q.callback();
       }
     },
-    readApp_: async function({ commit }, q) {
+    readApp_: async function ({ commit }, q) {
       console.log("Reading app", q.id);
       let res = await api("GET", `api/apps/${q.id}`, {
         icon: true,
@@ -309,7 +311,7 @@ export default {
         q.callback();
       }
     },
-    readObject_: async function({ commit, state }, q) {
+    readObject_: async function ({ commit, state }, q) {
       if (
         state.objects_qtime[q.id] !== undefined &&
         Array.isArray(state.objects_qtime[q.id])
@@ -374,25 +376,38 @@ export default {
       }
       dispatch("readUser_", q);
     },
-    readApp: async function({ state, rootState, dispatch }, q) {
+    readApp: async function ({ state, rootState, dispatch }, q) {
       if (state.apps == null) {
         dispatch("listApps", q);
         return;
       }
-      if (
-        state.apps[q.id] !== undefined &&
-        rootState.app.websocket != null &&
-        rootState.app.websocket.isBefore(state.apps[q.id].qtime)
-      ) {
-        console.log(`Not querying ${q.id} - websocket active`);
-        if (q.hasOwnProperty("callback")) {
-          q.callback();
+      if (state.apps[q.id] !== undefined) {
+
+        if (
+          rootState.app.websocket != null &&
+          rootState.app.websocket.isBefore(state.apps[q.id].qtime)
+        ) {
+          console.log(`Not querying ${q.id} - websocket active`);
+          if (q.hasOwnProperty("callback")) {
+            q.callback();
+          }
+          return;
         }
-        return;
+        if (
+          state.apps_qtime !== null &&
+          state.apps_qtime.isAfter(
+            moment().subtract(1, "second")
+          )
+        ) {
+          console.log(
+            `Not re-reading apps - they were just queried!`
+          );
+          return;
+        }
       }
       dispatch("readApp_", q);
     },
-    readObject: async function({ state, rootState, dispatch }, q) {
+    readObject: async function ({ state, rootState, dispatch }, q) {
       if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
         if (
           rootState.app.websocket != null &&
@@ -407,7 +422,7 @@ export default {
       }
       dispatch("readObject_", q);
     },
-    readUserObjects: async function({ commit, state, rootState }, q) {
+    readUserObjects: async function ({ commit, state, rootState }, q) {
       // Only if they are not being kept up-to-date by the websocket
       if (state.userObjects_qtime[q.username] !== undefined) {
         if (
@@ -454,7 +469,7 @@ export default {
         q.callback();
       }
     },
-    readAppObjects: async function({ commit, state, rootState }, q) {
+    readAppObjects: async function ({ commit, state, rootState }, q) {
       // Only if they are not being kept up-to-date by the websocket
       if (
         state.appObjects[q.id] !== undefined &&
@@ -488,7 +503,7 @@ export default {
         q.callback();
       }
     },
-    getAppScope: async function({ commit }) {
+    getAppScope: async function ({ commit }) {
       console.log("Loading available app scopes");
       let res = await api("GET", "api/server/scope");
       if (!res.response.ok) {
@@ -500,7 +515,7 @@ export default {
         commit("setAppScope", res.data);
       }
     },
-    listApps: async function({ commit, state, rootState }, q) {
+    listApps: async function ({ commit, state, rootState }, q) {
       // Only list apps if they are not being kept up-to-date by the websocket
       if (
         state.apps !== null &&
@@ -510,7 +525,19 @@ export default {
         console.log("Not listing apps - websocket active");
         return;
       }
+      if (
+        state.apps_qtime !== null &&
+        state.apps_qtime.isAfter(
+          moment().subtract(1, "second")
+        )
+      ) {
+        console.log(
+          `Not re-reading apps - they were just queried!`
+        );
+        return;
+      }
       console.log("Loading apps");
+      commit("setAppsQTime", moment());
       let res = await api("GET", "api/apps", {
         icon: true,
       });
@@ -534,7 +561,7 @@ export default {
       }
     },
 
-    getUpdates: async function({ commit }) {
+    getUpdates: async function ({ commit }) {
       console.log("Checking if updates ready");
       let res = await api("GET", "api/server/updates");
       if (!res.response.ok) {
@@ -542,7 +569,7 @@ export default {
         commit("setUpdates", res.data);
       }
     },
-    getPluginApps: async function({ commit, state }) {
+    getPluginApps: async function ({ commit, state }) {
       if (state.plugin_apps !== null) {
         return;
       }
