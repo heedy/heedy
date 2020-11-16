@@ -1,8 +1,8 @@
-import api from "../../rest.mjs";
+import api from "../../util.mjs";
 
 import QueryData from "./query_data.js";
 
-import { deepEqual } from "./util.js";
+import { deepEqual } from "../../util.mjs";
 
 function getQueryElementObjects(elem) {
   let qobj = {};

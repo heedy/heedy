@@ -79,7 +79,7 @@
 </template>
 
 <script>
-import api from "../../../rest.mjs";
+import api from "../../../util.mjs";
 import Moment from "../../../dist/moment.mjs";
 export default {
   data: () => ({

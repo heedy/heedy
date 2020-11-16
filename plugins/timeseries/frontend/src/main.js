@@ -7,8 +7,10 @@ import TimeseriesInjector from "./main/injector";
 import Update from "./main/update.vue";
 import Dataset from "./main/dataset/editor.vue";
 import InputPage from "./main/inserter/inputpage.vue";
+import SchemaEditor from "./main/components/schema_editor.vue";
 
 import RatingInserter from "./main/inserter/custom/rating.vue";
+import EnumEditor from "./main/components/enum.vue";
 
 function setup(frontend) {
   frontend.store.registerModule("timeseries", vuexModule);
@@ -16,6 +18,7 @@ function setup(frontend) {
 
   // The component that permits visualizing a dataset
   frontend.vue.component("h-dataset-visualization", DatasetVisualization);
+  frontend.vue.component("h-schema-editor", SchemaEditor);
 
   // Add the default timeseries types
   frontend.timeseries.addType({
@@ -43,9 +46,26 @@ function setup(frontend) {
       "x-display": "custom-rating"
     },
     icon: "star",
-    title: "Rating"
+    title: "Star Rating"
   });
   frontend.timeseries.addCustomInserter("rating", RatingInserter);
+  frontend.timeseries.addType({
+    key: "enum",
+    schema: {
+      type: "string",
+      enum: ["my_event"]
+    },
+    meta: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["string"] },
+        enum: { type: "array", items: { type: "string" } }
+      }
+    },
+    editor: EnumEditor,
+    icon: "star",
+    title: "Events"
+  });
 
   if (frontend.info.user != null) {
     frontend.objects.addCreator({
@@ -57,7 +77,7 @@ function setup(frontend) {
     });
 
     frontend.addRoute({
-      path: "/create/object/timeseries",
+      path: "/create/object/timeseries/:datatype?",
       component: Create,
     });
 

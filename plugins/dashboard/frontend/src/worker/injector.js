@@ -1,4 +1,4 @@
-import api from "../../rest.mjs";
+import api from "../../util.mjs";
 
 class DashboardWorkerInjector {
   constructor(wkr) {

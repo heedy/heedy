@@ -1,98 +1,109 @@
 <template>
-  <h-object-updater :object="object" :meta="meta">
-    <template v-slot:advanced>
+  <h-object-updater :object="object" :meta="meta" :validator="validate">
+    <v-container style="margin-top: -30px; margin-bottom: -20px">
       <v-row>
-        <v-flex sm5 md4 xs12>
-          <v-container>
-            <v-radio-group :value="curRadio" @change="setRadio">
-              <v-radio
-                v-for="item in schemaTypes"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></v-radio>
-            </v-radio-group>
-          </v-container>
+        <v-flex style="margin: auto; flex: 0 0 8em">
+          <h3>Data Type:</h3>
         </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <h5>JSON Schema</h5>
-            <codemirror v-model="code" :options="cmOptions"></codemirror>
-          </v-container>
+        <v-flex style="flex: 1 1">
+          <v-select
+            v-model="curtype"
+            :items="[...types, { title: 'Custom', key: 'custom' }]"
+            item-text="title"
+            item-value="key"
+          />
         </v-flex>
       </v-row>
-    </template>
+      <v-row v-if="curtype == 'custom'">
+        <v-flex>
+          <h-schema-editor v-model="schema" />
+        </v-flex>
+      </v-row>
+      <v-row
+        v-else-if="$store.state.timeseries.types[curtype].editor !== undefined"
+      >
+        <v-flex>
+          <component
+            :is="$store.state.timeseries.types[curtype].editor"
+            v-model="schema"
+          />
+        </v-flex>
+      </v-row>
+    </v-container>
   </h-object-updater>
 </template>
 <script>
+import { deepEqual } from "../../util.mjs";
+import Validator from "../../dist/json-schema.mjs";
 export default {
   props: {
     object: Object,
   },
   data: () => ({
-    scode: null,
-    cmOptions: {
-      tabSize: 2,
-      mode: "text/javascript",
-    },
-    schemaTypes: [
-      {
-        label: "Number",
-        value: "number",
-      },
-      {
-        label: "String",
-        value: "string",
-      },
-      {
-        label: "Other",
-        value: "?",
-      },
-    ],
+    meta: {},
+    ct: "custom",
   }),
   methods: {
-    setRadio(v) {
-      switch (v) {
-        case "?":
-          this.scode = "{}";
-          return;
-        default:
-          this.scode = JSON.stringify({ type: v }, null, "  ");
+    validate(o) {
+      if (o.meta !== undefined && o.meta.schema !== undefined) {
+        if (o.meta.schema == null) {
+          return "Invalid Schema";
+        }
       }
+      return "";
     },
   },
   computed: {
-    curRadio() {
-      try {
-        let s = JSON.parse(this.code);
-        for (let i = 0; i < this.schemaTypes.length; i++) {
-          if (this.schemaTypes[i].value == s.type) {
-            return s.type;
-          }
-        }
-      } catch {}
-      return "?";
+    types() {
+      return Object.values(this.$store.state.timeseries.types);
     },
-    code: {
+    curtype: {
       get() {
-        if (this.scode != null) {
-          return this.scode;
+        return this.ct;
+      },
+      set(ct) {
+        if (ct != "custom") {
+          this.schema = this.$store.state.timeseries.types[ct].schema;
         }
-        return JSON.stringify(this.object.meta.schema, null, "  ");
-      },
-      set(v) {
-        this.scode = v;
+        this.ct = ct;
       },
     },
-    meta() {
-      let meta = {};
-      if (this.scode != null) {
-        try {
-          meta.schema = JSON.parse(this.scode);
-        } catch {}
+    schema: {
+      get() {
+        if (this.meta.schema !== undefined) {
+          return this.meta.schema;
+        }
+        return this.object.meta.schema;
+      },
+      set(s) {
+        if (deepEqual(s, this.object.meta.schema)) {
+          // Remove the modification
+          let m = {};
+          Object.keys(this.meta).forEach((k) => {
+            if (k != "schema") {
+              m[k] = this.meta[k];
+            }
+          });
+          this.meta = m;
+        }
+        this.meta = { ...this.meta, schema: s };
+      },
+    },
+  },
+  created() {
+    // Set up the correct type
+    for (let i = 0; i < this.types.length; i++) {
+      let t = this.types[i];
+      if (t.meta !== undefined) {
+        if (new Validator(t.meta).validate(this.object.meta.schema).valid) {
+          this.ct = t.key;
+          break;
+        }
+      } else if (deepEqual(this.object.meta.schema, t.schema)) {
+        this.ct = t.key;
+        break;
       }
-      return meta;
-    },
+    }
   },
 };
 </script>

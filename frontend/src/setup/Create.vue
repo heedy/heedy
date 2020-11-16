@@ -2,22 +2,25 @@
   <v-card color="rgb(245,245,250)" elevation="24">
     <v-card-title text-center>
       <v-layout row justify-center>
-        <v-flex text-center style="padding-top: 1cm;">
-          <h1 style="color:#1976d2;padding-bottom: 7px;">heedy</h1>
+        <v-flex text-center style="padding-top: 1cm">
+          <h1 style="color: #1976d2; padding-bottom: 7px">heedy</h1>
           <h4>Create your Database</h4>
         </v-flex>
       </v-layout>
     </v-card-title>
-    <v-form @submit="submit" style="padding-left:15px;padding-right:15px;">
+    <v-form @submit="submit" style="padding-left: 15px; padding-right: 15px">
       <v-card-text>
         <v-alert
-          v-if="alert.length>0"
+          v-if="alert.length > 0"
           text
           outlined
           color="deep-orange"
           icon="error_outline"
-        >{{ alert }}</v-alert>
-        <v-alert v-if="success.length>0" text outlined type="success">{{ success }}</v-alert>
+          >{{ alert }}</v-alert
+        >
+        <v-alert v-if="success.length > 0" text outlined type="success">{{
+          success
+        }}</v-alert>
         <v-container>
           <v-layout row wrap>
             <v-flex xs12>
@@ -58,8 +61,9 @@
               ></v-text-field>
             </v-flex>
             <p>
-              Heedy is ready to create a database with default settings, you just need to give it a starting user.
-              For more control on how Heedy is set up, click on the "Server Settings" button.
+              Heedy is ready to create a database with default settings, you
+              just need to give it a starting user. For more control on how
+              Heedy is set up, click on the "Server Settings" button.
             </p>
           </v-layout>
         </v-container>
@@ -77,8 +81,10 @@
               <v-flex xs12>
                 <h3>Database Location</h3>
                 <p>
-                  This is the place where heedy will put all its files. It is also the place where settings are saved, and where plugins will be installed.
-                  You can choose a different folder by specifying it in the heedy command - this field is readonly.
+                  This is the place where heedy will put all its files. It is
+                  also the place where settings are saved, and where plugins
+                  will be installed. You can choose a different folder by
+                  specifying it in the heedy command - this field is readonly.
                 </p>
                 <v-text-field
                   :placeholder="directoryDefault"
@@ -91,10 +97,11 @@
               <v-flex xs12>
                 <h3>Host & Port</h3>
                 <p>
-                  The main host and port on which to run the server. You should leave the host blank
-                  if you want to make Heedy accessible from your phone or other devices on the network.
-                  If you want to run Heedy in local mode, so that only things running on the same computer
-                  as the server can access it, you can use "localhost".
+                  The main host and port on which to run the server. You should
+                  leave the host blank if you want to make Heedy accessible from
+                  your phone or other devices on the network. If you want to run
+                  Heedy in local mode, so that only things running on the same
+                  computer as the server can access it, you can use "localhost".
                 </p>
               </v-flex>
               <v-flex sm8 xs12>
@@ -120,7 +127,12 @@
               </v-flex>
               <v-flex xs12>
                 <h3>Site URL</h3>
-                <p>You will access heedy by putting this in the URL bar of your browser. If left blank, heedy will use its LAN IP and server port. If heedy will be accessible from the internet, make sure to use https.</p>
+                <p>
+                  You will access heedy by putting this in the URL bar of your
+                  browser. If left blank, heedy will use its LAN IP and server
+                  port. If heedy will be accessible from the internet, make sure
+                  to use https.
+                </p>
                 <v-text-field
                   label="URL"
                   :placeholder="urlDefault"
@@ -162,17 +174,22 @@
       </v-slide-y-transition>
       <v-card-actions>
         <v-btn text @click="show = !show" tabindex="11">
-          <v-icon>{{ show ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</v-icon>Server Settings
+          <v-icon>{{
+            show ? "keyboard_arrow_up" : "keyboard_arrow_down"
+          }}</v-icon
+          >Server Settings
         </v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="info" type="submit" tabindex="10" :loading="loading">Create Database</v-btn>
+        <v-btn color="info" type="submit" tabindex="10" :loading="loading"
+          >Create Database</v-btn
+        >
       </v-card-actions>
     </v-form>
   </v-card>
 </template>
 
 <script>
-import api from "../rest.mjs";
+import api from "../util.mjs";
 
 let raw_url = window.location.href.split("/setup/")[0];
 
@@ -199,10 +216,10 @@ export default {
     password2: ctx.user.password,
     alert: "",
     success: "",
-    loading: false
+    loading: false,
   }),
   methods: {
-    submit: async function(event) {
+    submit: async function (event) {
       event.preventDefault();
       if (this.loading) {
         return;
@@ -212,7 +229,7 @@ export default {
       window.scrollTo({
         top: 0,
         left: 0,
-        behavior: "smooth"
+        behavior: "smooth",
       });
       if (this.username === "") {
         this.alert = "A username is required";
@@ -239,13 +256,13 @@ export default {
       let query = {
         user: {
           username: this.username,
-          password: this.password1
+          password: this.password1,
         },
         config: {
           host: this.host,
           port: port,
-          url: this.url
-        }
+          url: this.url,
+        },
       };
 
       // Only add configuration options which have been changed
@@ -257,10 +274,10 @@ export default {
         method: "POST",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(query)
-      }).catch(error => console.error(error));
+        body: JSON.stringify(query),
+      }).catch((error) => console.error(error));
 
       if (result.status != 200) {
         this.alert = (await result.json())["error_description"];
@@ -278,7 +295,7 @@ export default {
       this.success = "Database created! Waiting for heedy to start...";
 
       function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms));
       }
 
       await sleep(200);
@@ -293,7 +310,7 @@ export default {
           {
             grant_type: "password",
             username: this.username,
-            password: this.password1
+            password: this.password1,
           },
           null,
           false
@@ -307,7 +324,7 @@ export default {
 
       // We don't actually care about the result - we just wanted the cookie. Now redirect
       window.location.href = window.location.href.split("setup/")[0];
-    }
-  }
+    },
+  },
 };
 </script>

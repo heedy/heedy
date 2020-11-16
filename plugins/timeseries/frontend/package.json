@@ -28,6 +28,7 @@
   },
   "homepage": "https://heedy.org",
   "dependencies": {
+    "@cfworker/json-schema": "^1.6.0",
     "@rollup/plugin-commonjs": "^15.0.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",

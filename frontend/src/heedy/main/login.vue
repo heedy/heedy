@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import api from "../../rest.mjs";
+import api from "../../util.mjs";
 export default {
   data: () => ({
     loading: false,
@@ -47,7 +47,7 @@ export default {
     password: "",
   }),
   methods: {
-    login: async function(e) {
+    login: async function (e) {
       console.log("run login");
       this.loading = true;
       let result = await api(

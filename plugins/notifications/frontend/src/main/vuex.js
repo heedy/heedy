@@ -1,6 +1,6 @@
 import Vue from "../../dist/vue.mjs";
 import moment from "../../dist/moment.mjs";
-import api from "../../rest.mjs";
+import api from "../../util.mjs";
 
 // The notification key
 function nKey(n) {

@@ -1,5 +1,5 @@
 import Vue from "../../dist/vue.mjs";
-// import api from "../../rest.mjs";
+// import api from "../../util.mjs";
 
 export default {
   state: {

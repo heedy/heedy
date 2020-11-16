@@ -3,11 +3,18 @@
     <v-container fluid grid-list-md>
       <v-layout row>
         <v-flex sm5 md4 xs12>
-          <h-icon-editor ref="iconEditor" image="settings_input_component"></h-icon-editor>
+          <h-icon-editor
+            ref="iconEditor"
+            image="settings_input_component"
+          ></h-icon-editor>
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field label="Name" placeholder="My App" v-model="name"></v-text-field>
+            <v-text-field
+              label="Name"
+              placeholder="My App"
+              v-model="name"
+            ></v-text-field>
             <v-text-field
               label="Description"
               placeholder="This app does stuff"
@@ -26,17 +33,17 @@
   </h-card-page>
 </template>
 <script>
-import api from "../../../rest.mjs";
+import api from "../../../util.mjs";
 export default {
   data: () => ({
     description: "",
     scope: "self.objects",
     name: "",
     loading: false,
-    alert: ""
+    alert: "",
   }),
   methods: {
-    create: async function() {
+    create: async function () {
       if (this.loading) return;
 
       this.loading = true;
@@ -46,7 +53,7 @@ export default {
         name: this.name.trim(),
         description: this.description.trim(),
         scope: this.scope,
-        icon: this.$refs.iconEditor.getImage()
+        icon: this.$refs.iconEditor.getImage(),
       };
 
       if (query.name.length == 0) {
@@ -69,7 +76,7 @@ export default {
       this.$store.commit("setApp", result.data);
       this.loading = false;
       this.$router.replace({ path: `/apps/${result.data.id}` });
-    }
-  }
+    },
+  },
 };
 </script>

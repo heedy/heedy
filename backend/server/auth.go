@@ -172,6 +172,7 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 			Expires:  time.Now().AddDate(5, 0, 0),
 			SameSite: http.SameSiteLaxMode,
 			Path:     "/",
+			HttpOnly: true,
 		})
 
 		// ... and also return the json response

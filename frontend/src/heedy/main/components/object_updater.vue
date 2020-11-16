@@ -12,7 +12,12 @@
         </v-flex>
         <v-flex sm7 md8 xs12>
           <v-container>
-            <v-text-field autofocus label="Name" :placeholder="`My ` + type.title" v-model="name"></v-text-field>
+            <v-text-field
+              autofocus
+              label="Name"
+              :placeholder="`My ` + type.title"
+              v-model="name"
+            ></v-text-field>
             <v-text-field
               label="Description"
               placeholder="A short description goes here"
@@ -30,7 +35,8 @@
     <v-card-actions>
       <v-btn dark color="red" @click="del" :loading="loading">Delete</v-btn>
       <v-btn v-if="hasAdvanced" text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon>Advanced
+        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon
+        >Advanced
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn dark color="blue" @click="update" :loading="loading">Save</v-btn>
@@ -43,17 +49,21 @@ export default {
     object: Object,
     meta: {
       type: Object,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
+    validator: {
+      type: Function,
+      default: () => "",
+    },
   },
   data: () => ({
     alert: "",
     modified: {},
     advanced: false,
-    loading: false
+    loading: false,
   }),
   methods: {
-    update: async function() {
+    update: async function () {
       if (this.loading) return;
 
       this.loading = true;
@@ -70,6 +80,13 @@ export default {
         modified.meta = this.meta;
       }
 
+      let validation = this.validator(modified);
+      if (validation != "") {
+        this.alert = validation;
+        this.loading = false;
+        return;
+      }
+
       if (Object.keys(modified).length > 0) {
         console.log("UPDATING", modified);
         let result = await this.$frontend.rest(
@@ -84,14 +101,14 @@ export default {
           return;
         }
         this.$store.dispatch("readObject", {
-          id: this.object.id
+          id: this.object.id,
         });
       }
 
       this.loading = false;
       this.$router.push(`/objects/${this.object.id}`);
     },
-    del: async function() {
+    del: async function () {
       let s = this.object;
       if (
         confirm(
@@ -113,7 +130,7 @@ export default {
           }
         }
       }
-    }
+    },
   },
   computed: {
     description: {
@@ -125,7 +142,7 @@ export default {
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "description", v);
-      }
+      },
     },
     name: {
       get() {
@@ -136,7 +153,7 @@ export default {
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "name", v);
-      }
+      },
     },
     tags: {
       get() {
@@ -147,7 +164,7 @@ export default {
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "tags", v);
-      }
+      },
     },
 
     type() {
@@ -155,12 +172,12 @@ export default {
       return {
         icon: "assignment",
         title: "Object",
-        ...otype
+        ...otype,
       };
     },
     hasAdvanced() {
       return !!this.$slots["advanced"];
-    }
-  }
+    },
+  },
 };
 </script>

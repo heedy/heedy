@@ -7,7 +7,6 @@
       expand
     >
       <v-list-group
-        v-if="yourInserters.length > 0"
         color="secondary lighten-2"
         :ripple="false"
         value="true"
@@ -31,6 +30,22 @@
             <insert-card :object="ts" />
           </v-col>
         </v-row>
+        <div
+          :style="{
+            width: '100%',
+            'text-align': yourInserters.length > 0 ? 'right' : 'center',
+          }"
+        >
+          <v-btn
+            class="mx-2"
+            fab
+            dark
+            color="primary"
+            to="/create/object/timeseries/rating"
+          >
+            <v-icon dark>add</v-icon>
+          </v-btn>
+        </div>
       </v-list-group>
       <v-list-group
         v-if="appInserters.length > 0"

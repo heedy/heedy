@@ -16,34 +16,17 @@
       </template>
       <span>Edit</span>
     </v-tooltip>
-    <v-tooltip v-if="object.app != null && !$vuetify.breakpoint.xs" bottom>
-      <template #activator="{ on }">
-        <v-btn icon :to="`/apps/${object.app}`" v-on="on">
-          <h-icon
-            :image="app.icon"
-            :defaultIcon="defaultIcon"
-            :colorHash="app.id"
-            :size="30"
-          ></h-icon
-        ></v-btn>
-      </template>
-      <span>{{ app.name }}</span>
-    </v-tooltip>
+    <h-app-button
+      v-if="!$vuetify.breakpoint.xs"
+      :appid="object.app"
+      :size="30"
+    />
   </h-header>
 </template>
 <script>
 export default {
   props: {
     object: Object,
-  },
-  watch: {
-    object(newobj, oobj) {
-      if (newobj.app != null && newobj.app != oobj.app) {
-        this.$store.dispatch("readApp", {
-          id: newobj.app,
-        });
-      }
-    },
   },
   computed: {
     defaultIcon() {
@@ -55,24 +38,6 @@ export default {
     access() {
       return this.object.access.split(" ");
     },
-    app() {
-      let empty_app = {
-        id: this.object.id,
-        icon: "settings_input_component",
-        name: "Go to app",
-      };
-      if (this.$store.state.heedy.apps == null) {
-        return empty_app;
-      }
-      return this.$store.state.heedy.apps[this.object.app] || empty_app;
-    },
-  },
-  created() {
-    if (this.object.app != null) {
-      this.$store.dispatch("readApp", {
-        id: this.object.app,
-      });
-    }
   },
 };
 </script>

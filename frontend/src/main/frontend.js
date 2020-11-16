@@ -1,4 +1,4 @@
-import api from "../rest.mjs";
+import api from "../util.mjs";
 class Frontend {
   /**
    * The frontend object is passed to the setup functions of each plugin,

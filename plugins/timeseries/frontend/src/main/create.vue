@@ -1,161 +1,104 @@
 <template>
-  <h-card-page title="Create a new Timeseries" :alert="alert">
-    <v-container fluid grid-list-md>
-      <v-layout row>
-        <v-flex sm5 md4 xs12>
-          <h-icon-editor ref="iconEditor" image="timeline"></h-icon-editor>
-        </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <v-text-field
-              label="Name"
-              placeholder="My Timeseries"
-              v-model="name"
-            ></v-text-field>
-            <v-text-field
-              label="Description"
-              placeholder="This timeseries holds my data"
-              v-model="description"
-            ></v-text-field>
-            <h-tag-editor v-model="tags" />
-          </v-container>
-        </v-flex>
-      </v-layout>
-    </v-container>
-    <v-container v-if="advanced">
+  <h-object-creator v-model="object" :validator="validate">
+    <v-container style="margin-top: -30px; margin-bottom: -20px">
       <v-row>
-        <v-flex sm5 md4 xs12>
-          <v-container>
-            <v-radio-group :value="curRadio" @change="setRadio">
-              <v-radio
-                v-for="item in schemaTypes"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></v-radio>
-            </v-radio-group>
-          </v-container>
+        <v-flex style="margin: auto; flex: 0 0 8em">
+          <h3>Data Type:</h3>
         </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <h5>JSON Schema</h5>
-            <codemirror v-model="code" :options="cmOptions"></codemirror>
-          </v-container>
+        <v-flex style="flex: 1 1">
+          <v-select
+            v-model="curtype"
+            :items="[...types, { title: 'Custom', key: 'custom' }]"
+            item-text="title"
+            item-value="key"
+          />
+        </v-flex>
+      </v-row>
+      <v-row v-if="curtype == 'custom'">
+        <v-flex>
+          <h-schema-editor v-model="schema" />
+        </v-flex>
+      </v-row>
+      <v-row
+        v-else-if="$store.state.timeseries.types[curtype].editor !== undefined"
+      >
+        <v-flex>
+          <component
+            :is="$store.state.timeseries.types[curtype].editor"
+            v-model="schema"
+          />
         </v-flex>
       </v-row>
     </v-container>
-
-    <v-card-actions>
-      <v-btn text @click="advanced = !advanced">
-        <v-icon left>{{ advanced ? "expand_less" : "expand_more" }}</v-icon
-        >Advanced
-      </v-btn>
-      <v-spacer></v-spacer>
-      <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
-    </v-card-actions>
-  </h-card-page>
+  </h-object-creator>
 </template>
 <script>
 export default {
   data: () => ({
-    alert: "",
-    advanced: false,
-    loading: false,
-    description: "",
-    tags: "",
-    code: "{}",
-    name: "",
-    cmOptions: {
-      tabSize: 2,
-      mode: "text/javascript",
+    object: {
+      name: "My Timeseries",
+      type: "timeseries",
+      meta: {
+        schema: { type: "number" },
+      },
     },
-    schemaTypes: [
-      {
-        label: "Number",
-        value: "number",
-      },
-      {
-        label: "String",
-        value: "string",
-      },
-      {
-        label: "Other",
-        value: "?",
-      },
-    ],
   }),
   computed: {
-    curRadio() {
-      try {
-        let s = JSON.parse(this.code);
-        for (let i = 0; i < this.schemaTypes.length; i++) {
-          if (this.schemaTypes[i].value == s.type) {
-            return s.type;
-          }
-        }
-      } catch {}
-      return "?";
+    types() {
+      return Object.values(this.$store.state.timeseries.types);
+    },
+    schema: {
+      get() {
+        return this.object.meta.schema;
+      },
+      set(s) {
+        this.object = {
+          ...this.object,
+          meta: { ...this.object.meta, schema: s },
+        };
+      },
+    },
+    curtype: {
+      get() {
+        let ct = this.$route.params["datatype"] || "";
+        return ct;
+      },
+      set(v) {
+        this.$router.replace(`/create/object/timeseries/${v}`);
+      },
     },
   },
   methods: {
-    setRadio(v) {
-      switch (v) {
-        case "?":
-          this.code = "{}";
-          return;
-        default:
-          this.code = JSON.stringify({ type: v }, null, "  ");
+    validate(o) {
+      if (o.meta.schema == null) {
+        return "Invalid Schema";
+      }
+      return "";
+    },
+  },
+  watch: {
+    "$route.params": function (params) {
+      let ct = params["datatype"] || "";
+      if (
+        ct == "" ||
+        (this.$store.state.timeseries.types[ct] === undefined && ct != "custom")
+      ) {
+        this.$router.replace(`/create/object/timeseries/number`);
+      } else if (ct != "custom") {
+        this.schema = this.$store.state.timeseries.types[ct].schema;
       }
     },
-    create: async function () {
-      if (this.loading) return;
-
-      this.loading = true;
-
-      if (this.name == "") {
-        this.alert = "Must fill in timeseries name";
-        this.loading = false;
-        return;
-      }
-
-      let toCreate = {
-        name: this.name,
-        type: "timeseries",
-        description: this.description,
-        tags: this.tags,
-        meta: {},
-        icon: this.$refs.iconEditor.getImage(),
-      };
-      if (this.advanced) {
-        try {
-          var s = JSON.parse(this.code);
-        } catch {
-          this.alert = "Could not parse schema";
-          this.loading = false;
-          return;
-        }
-        toCreate.meta.schema = s;
-      }
-      let result = await this.$frontend.rest("POST", `api/objects`, toCreate);
-
-      if (!result.response.ok) {
-        this.alert = result.data.error_description;
-        this.loading = false;
-        return;
-      }
-      // The result comes without the icon, let's set it correctly
-      result.data.icon = toCreate.icon;
-
-      this.$store.commit("setObject", result.data);
-      this.loading = false;
-      this.$router.replace({ path: `/objects/${result.data.id}` });
-    },
+  },
+  created() {
+    let ct = this.$route.params["datatype"] || "";
+    if (
+      ct == "" ||
+      (this.$store.state.timeseries.types[ct] === undefined && ct != "custom")
+    ) {
+      this.$router.replace(`/create/object/timeseries/number`);
+    } else if (ct != "custom") {
+      this.schema = this.$store.state.timeseries.types[ct].schema;
+    }
   },
 };
 </script>
-<style>
-.CodeMirror {
-  border: 1px solid #eee;
-  height: auto;
-}
-</style>

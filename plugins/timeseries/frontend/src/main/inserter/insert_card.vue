@@ -14,19 +14,7 @@
         <span style="padding-left: 10px">{{ object.name }}</span>
       </router-link>
       <v-spacer />
-      <v-tooltip v-if="object.app != null" bottom>
-        <template #activator="{ on }">
-          <v-btn icon :to="`/apps/${object.app}`" v-on="on">
-            <h-icon
-              :image="app.icon"
-              :defaultIcon="defaultIcon"
-              :colorHash="app.id"
-              :size="20"
-            ></h-icon
-          ></v-btn>
-        </template>
-        <span>{{ app.name }}</span>
-      </v-tooltip>
+      <h-app-button :appid="object.app" :size="20" />
     </v-card-title>
     <v-card-text>
       <inserter :object="object"></inserter>
@@ -42,15 +30,6 @@ export default {
   components: {
     Inserter,
   },
-  watch: {
-    object(newobj, oobj) {
-      if (newobj.app != null && newobj.app != oobj.app) {
-        this.$store.dispatch("readApp", {
-          id: newobj.app,
-        });
-      }
-    },
-  },
   computed: {
     defaultIcon() {
       return (
@@ -58,22 +37,6 @@ export default {
         "brightness_1"
       );
     },
-    app() {
-      let empty_app = {
-        id: this.object.id,
-        icon: "settings_input_component",
-        name: "Go to app",
-      };
-      if (this.$store.state.heedy.apps == null) {
-        return empty_app;
-      }
-      return this.$store.state.heedy.apps[this.object.app] || empty_app;
-    },
-  },
-  created() {
-    if (this.object.app != null) {
-      this.$store.dispatch("listApps");
-    }
   },
 };
 </script>
