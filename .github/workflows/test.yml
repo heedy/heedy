@@ -25,8 +25,8 @@ jobs:
           mkdir $GITHUB_WORKSPACE/.npm-global
           npm config set prefix "$GITHUB_WORKSPACE/.npm-global"
           npm install -g jsdoc
-          echo "::add-path::$GITHUB_WORKSPACE/.npm-global/bin"
-          echo "::add-path::$(go env GOPATH)/bin"
+          echo "$GITHUB_WORKSPACE/.npm-global/bin" >> $GITHUB_PATH
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
           pip install -r docs/requirements.txt
 
       - name: Build
