@@ -416,7 +416,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
     "app": "0519420b-e3cf-463f-b794-2adb440bfb9f",
     "tags":"",
     "type":"timeseries",
-    "meta":{"actor":false,"schema":{},"subtype":""},
+    "meta":{"actor":false,"schema":{}},
     "created_date":"2020-03-21",
     "last_modified":null,
     "owner_scope":"*",
@@ -450,7 +450,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
     "app": "0519420b-e3cf-463f-b794-2adb440bfb9f",
     "tags":"",
     "type":"timeseries",
-    "meta":{"actor":false,"schema":{},"subtype":""},
+    "meta":{"actor":false,"schema":{}},
     "created_date":"2020-03-21",
     "last_modified":null,
     "owner_scope":"*",
@@ -464,7 +464,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Updates the object with the included fields.
 
 The `meta` object is updated on a per-field basis, meaning that
-the object sent as the meta field will be merged with the existing meta values. Setting `meta` to `{"schema":{"type":"number"}}` in a timeseries object will update the `schema` of the meta object, leaving all other fields intact. To delete a field from the meta object, set it to null (`{"subtype":null}`).
+the object sent as the meta field will be merged with the existing meta values. Setting `meta` to `{"schema":{"type":"number"}}` in a timeseries object will update the `schema` of the meta object, leaving all other fields intact. To delete a field from the meta object, set it to null (`{"actor":null}`).
 
 <h6 class="rest_body">Body</h6>
 - **name** _(string,null)_ - the object's name
@@ -520,7 +520,6 @@ Each object holds a `meta` field. A timeseries object's meta object has the foll
 
 - **schema** _(object,{})_ - a [JSON Schema](https://json-schema.org/) to which each datapoint must conform.
 - **actor** _(boolean,false)_ - whether the timeseries object can be acted upon (for example, a thermostat can have a temperature time series, which can be acted upon by setting the target temperature).
-- **subtype** _(string,"")_ - a key that identifies what the timeseries holds, so that the frontend can choose the optimal visualizations.
 
 <h4 class="rest_path">/api/objects/<span>{objectid}</span>/timeseries</h4>
 <h5 class="rest_verb">GET</h5>
@@ -534,6 +533,7 @@ Returns the timeseries data subject to the given constraints.
 - **i1** _(int,null)_ - return only datapoints where `index >= i1`
 - **i2** _(int,null)_ - return only datapoints where `index < i2`
 - **limit** _(int,null)_ - return a maximum of this number of datapoints
+- **transform** _(string,null)_ - a [PipeScript](/analysis/pipescript) transform to run on the data
 
 _\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 

@@ -181,11 +181,16 @@ func (db *AdminDB) UpdateUser(u *User) error {
 		return err
 	}
 
-	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded to group owners
+	// This needs to be first, in case user name is modified - the query will use old name here, and the ID will be cascaded
 	if len(userValues) > 1 {
 		// This uses a join to make sure that the group is in fact an existing user
 		result, err := db.Exec(fmt.Sprintf("UPDATE users SET %s WHERE username=?;", userColumns), userValues...)
-		return GetExecError(result, err)
+		err = GetExecError(result, err)
+		if err == nil && u.UserName != nil {
+			// The username was changed - make sure to update the configuration
+			err = db.Assets().SwapAdmin(u.ID, *u.UserName)
+		}
+		return err
 
 	}
 

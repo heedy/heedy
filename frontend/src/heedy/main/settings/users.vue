@@ -1,8 +1,10 @@
 <template>
   <div>
-    <v-flex v-if="alert.length>0">
-      <div style="padding: 10px; padding-bottom: 0;">
-        <v-alert text outlined color="deep-orange" icon="error_outline">{{ alert }}</v-alert>
+    <v-flex v-if="alert.length > 0">
+      <div style="padding: 10px; padding-bottom: 0">
+        <v-alert text outlined color="deep-orange" icon="error_outline">{{
+          alert
+        }}</v-alert>
       </div>
     </v-flex>
     <v-flex>
@@ -11,7 +13,7 @@
         :search="search"
         :headers="headers"
         :items="userItems"
-        :loading="userItems.length==0"
+        :loading="userItems.length == 0"
         loading-text="Loading users..."
         disable-sort
       >
@@ -31,7 +33,9 @@
             <div class="flex-grow-1"></div>
             <v-dialog v-model="createDialog" max-width="500px">
               <template v-slot:activator="{ on }">
-                <v-btn color="primary" dark class="mb-2" v-on="on">Add User</v-btn>
+                <v-btn color="primary" dark class="mb-2" v-on="on"
+                  >Add User</v-btn
+                >
               </template>
               <v-card>
                 <v-card-title>
@@ -44,13 +48,20 @@
                         <h3>Username</h3>
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
-                        <v-text-field label="Username" v-model="creating.username"></v-text-field>
+                        <v-text-field
+                          label="Username"
+                          v-model="creating.username"
+                        ></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
                         <h3>Password</h3>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
-                        <v-text-field type="password" v-model="creating.password" label="Password"></v-text-field>
+                        <v-text-field
+                          type="password"
+                          v-model="creating.password"
+                          label="Password"
+                        ></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
                         <v-text-field
@@ -68,9 +79,21 @@
                   <v-btn
                     color="blue darken-1"
                     text
-                    @click="() => {creating={username: '',password: '',password2: ''};createDialog=false;}"
-                  >Cancel</v-btn>
-                  <v-btn color="blue darken-1" text @click="createUser()">Save</v-btn>
+                    @click="
+                      () => {
+                        creating = {
+                          username: '',
+                          password: '',
+                          password2: '',
+                        };
+                        createDialog = false;
+                      }
+                    "
+                    >Cancel</v-btn
+                  >
+                  <v-btn color="blue darken-1" text @click="createUser()"
+                    >Save</v-btn
+                  >
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -89,13 +112,20 @@
                   <h3>Username</h3>
                 </v-col>
                 <v-col cols="12" sm="12" md="12">
-                  <v-text-field label="Username" v-model="updating.username"></v-text-field>
+                  <v-text-field
+                    label="Username"
+                    v-model="updating.username"
+                  ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="12" md="12">
                   <h3>Password</h3>
                 </v-col>
                 <v-col cols="12" sm="6" md="6">
-                  <v-text-field type="password" label="Reset Password" v-model="updating.password"></v-text-field>
+                  <v-text-field
+                    type="password"
+                    label="Reset Password"
+                    v-model="updating.password"
+                  ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6" md="6">
                   <v-text-field
@@ -108,7 +138,10 @@
                   <h3>Admin</h3>
                 </v-col>
                 <v-col cols="12" sm="12" md="12">
-                  <v-checkbox label="Admin" v-model="updating.admin"></v-checkbox>
+                  <v-checkbox
+                    label="Admin"
+                    v-model="updating.admin"
+                  ></v-checkbox>
                 </v-col>
               </v-row>
             </v-container>
@@ -116,7 +149,9 @@
 
           <v-card-actions>
             <div class="flex-grow-1"></div>
-            <v-btn color="blue darken-1" text @click="updateDialog=false">Cancel</v-btn>
+            <v-btn color="blue darken-1" text @click="updateDialog = false"
+              >Cancel</v-btn
+            >
             <v-btn color="blue darken-1" text @click="updateUser()">Save</v-btn>
           </v-card-actions>
         </v-card>
@@ -132,14 +167,14 @@ export default {
     creating: {
       username: "",
       password: "",
-      password2: ""
+      password2: "",
     },
     updating: {
       id: "",
       password: "",
       password2: "",
       username: "",
-      admin: false
+      admin: false,
     },
     search: "",
     admin: [],
@@ -149,18 +184,18 @@ export default {
       { text: "Username", value: "username" },
       { text: "Name", value: "name" },
       { text: "Admin", value: "admin" },
-      { text: "Actions", value: "action", align: "right", sortable: false }
-    ]
+      { text: "Actions", value: "action", align: "right", sortable: false },
+    ],
   }),
   computed: {
     userItems() {
-      let uv = this.users.map(u => ({
+      let uv = this.users.map((u) => ({
         username: u.username,
         name: u.name,
-        admin: this.admin.includes(u.username) ? "admin" : ""
+        admin: this.admin.includes(u.username) ? "admin" : "",
       }));
       return uv;
-    }
+    },
   },
   methods: {
     editUser(u) {
@@ -170,16 +205,16 @@ export default {
         username: u.username,
         password: "",
         password1: "",
-        admin: u.admin == "admin"
+        admin: u.admin == "admin",
       };
       this.updateDialog = true;
     },
-    createUser: async function() {
+    createUser: async function () {
       let c = this.creating;
       this.creating = {
         username: "",
         password: "",
-        password2: ""
+        password2: "",
       };
       this.createDialog = false;
       if (c.password != c.password2) {
@@ -188,7 +223,7 @@ export default {
       }
       let res = await this.$frontend.rest("POST", `/api/users`, {
         username: c.username,
-        password: c.password
+        password: c.password,
       });
       if (!res.response.ok) {
         this.alert = res.data.error_description;
@@ -197,7 +232,7 @@ export default {
       }
       this.reload();
     },
-    delUser: async function(u) {
+    delUser: async function (u) {
       if (
         confirm(
           `Are you sure you want to delete '${u.username}'? This action is irreversible, and all data associated with the account will be removed.`
@@ -215,7 +250,7 @@ export default {
         this.reload();
       }
     },
-    updateUser: async function() {
+    updateUser: async function () {
       let toUpdate = {};
       if (this.updating.username != this.updating.id) {
         toUpdate.username = this.updating.username;
@@ -238,6 +273,11 @@ export default {
           this.alert = res.data.error_description;
           return;
         }
+        // The user was updated. Now, if the current user name was modified,
+        // reload the entire page
+        if (toUpdate.username !== undefined) {
+          location.reload(true);
+        }
       }
       if (this.updating.admin != this.updating.id_admin) {
         let res = await this.$frontend.rest(
@@ -252,8 +292,8 @@ export default {
       }
       this.reload();
     },
-    reload: async function() {
-      let u = this.$frontend.rest("GET", "/api/users").then(res => {
+    reload: async function () {
+      let u = this.$frontend.rest("GET", "/api/users").then((res) => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.users = [];
@@ -262,7 +302,7 @@ export default {
         console.log("users", res.data);
         this.users = res.data;
       });
-      let a = this.$frontend.rest("GET", "/api/server/admin").then(res => {
+      let a = this.$frontend.rest("GET", "/api/server/admin").then((res) => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.admin = [];
@@ -271,10 +311,10 @@ export default {
         console.log("admins", res.data);
         this.admin = res.data;
       });
-    }
+    },
   },
   created() {
     this.reload();
-  }
+  },
 };
 </script>

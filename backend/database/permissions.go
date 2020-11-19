@@ -48,6 +48,14 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 		tx.Rollback()
 		return err
 	}
+	if err == nil && u.UserName != nil {
+		// The username was changed - make sure to update the configuration
+		err = adb.Assets().SwapAdmin(u.ID, *u.UserName)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
 
 	return tx.Commit()
 }

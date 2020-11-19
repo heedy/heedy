@@ -289,6 +289,22 @@ func (a *Assets) RemAdmin(username string) error {
 	return nil
 }
 
+func (a *Assets) IsAdmin(username string) bool {
+	return a.Config.UserIsAdmin(username)
+}
+
+func (a *Assets) SwapAdmin(username, newname string) error {
+	if a.IsAdmin(username) {
+		err := a.AddAdmin(newname)
+
+		if username != newname && err == nil {
+			err = a.RemAdmin(username)
+		}
+		return err
+	}
+	return nil
+}
+
 // Open opens the assets in a given configuration path
 func Open(configPath string, override *Configuration) (*Assets, error) {
 	a := &Assets{
