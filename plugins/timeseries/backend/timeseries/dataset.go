@@ -305,14 +305,14 @@ func (d *Dataset) Get(db database.DB) (*DatasetIterator, error) {
 		return di, err
 	}
 	// Otherwise, it is either just a query, or a dataset. Either way, get the query.
-	// We use a trick by jsut using DatasetElement code here
+	// We use a trick by just using DatasetElement code here
 	di, err := (&DatasetElement{
 		Query: d.Query,
 		Merge: d.Merge,
 	}).Get(db, math.Inf(-1))
 
 	if err != nil || len(d.Dataset) == 0 {
-		return di, err // if it was jsut a query, return the result as is
+		return di, err // if it was just a query, return the result as is
 	}
 
 	dset := datasets.NewDataset(di)

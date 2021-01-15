@@ -75,6 +75,7 @@ func NewChanBatchIterator(di BatchIterator) *ChanBatchIterator {
 	}
 
 	go func() {
+		defer di.Close()
 		for {
 			dp, err := di.NextBatch()
 			if err != nil {
@@ -334,6 +335,7 @@ func NewChanIterator(di DatapointIterator) *ChanIterator {
 	}
 
 	go func() {
+		defer di.Close()
 		for {
 			dp, err := di.Next()
 			if err != nil {

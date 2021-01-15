@@ -53,8 +53,6 @@ class DatapointArray(list):
         d = list.__getitem__(self, key)
         if isinstance(key, slice):
             d = DatapointArray(d)
-            d._d = self._d[key]
-            d._t = self._t[key]
         return d
 
     def sort(self, f=lambda d: d["t"]):

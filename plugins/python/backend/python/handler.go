@@ -32,7 +32,7 @@ type PythonSettings struct {
 }
 
 var (
-	l        = logrus.WithField("plugin", "python:server")
+	l        = logrus.WithField("plugin", "python:backend")
 	settings = PythonSettings{
 		Cmd: make(map[string]*run.Cmd),
 	}
