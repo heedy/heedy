@@ -33,6 +33,7 @@
         <div
           :style="{
             width: '100%',
+            'padding-top': '10px',
             'text-align': yourInserters.length > 0 ? 'right' : 'center',
           }"
         >

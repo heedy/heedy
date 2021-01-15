@@ -9,7 +9,14 @@ let qprops = {
   "max": getMax,
   "sum": getSum,
   "nonNull": getNonNull,
-  "stddev": (f, ts) => Math.sqrt((getVar(f, ts) - Math.pow(f.mean(ts), 2)) / (f.nonNull(ts) - 1)),
+  "stddev": (f, ts) => {
+    let mu = f.mean(ts);
+    return Math.sqrt(ts.reduce((cur, dp) => {
+      let v = f(dp);
+      if (v == null) return cur;
+      return cur + Math.pow(v - mu, 2)
+    }, 0) / (f.nonNull(ts) - 1))
+  },
 };
 
 

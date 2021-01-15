@@ -36,7 +36,7 @@
 export default {
   data: () => ({
     object: {
-      name: "My Timeseries",
+      name: "",
       type: "timeseries",
       meta: {
         schema: { type: "number" },
