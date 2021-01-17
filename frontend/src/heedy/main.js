@@ -3,7 +3,7 @@ import Draggable from "../dist/draggable.mjs";
 
 import Theme from "./main/theme.vue";
 
-import PublicHome from "./main/public_home.vue";
+import AboutPage from "./main/about.vue";
 import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
 
@@ -175,8 +175,8 @@ function setup(frontend) {
   } else {
     // Pages to set up for public site visitors
     frontend.addRoute({
-      path: "/",
-      component: PublicHome,
+      path: "/about",
+      component: AboutPage,
     });
     frontend.addRoute({
       path: "/login",
@@ -184,11 +184,16 @@ function setup(frontend) {
     });
 
     frontend.addMenuItem({
-      key: "heedyHome",
-      text: "Home",
-      icon: "home",
-      route: "/",
+      key: "about",
+      text: "About",
+      icon: "help_outline",
+      route: "/about",
       location: "primary",
+    });
+
+    frontend.addRoute({
+      path: "/",
+      redirect: `/login`,
     });
   }
 

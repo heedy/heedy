@@ -66,8 +66,16 @@ export default {
         this.$store.dispatch("errnotify", result.data);
         this.password = "";
       } else {
+        let locsplit = window.location.href.split("#");
+
         // Success, so perform a refresh of the page
-        window.location.href = window.location.href.split("#")[0];
+        if (locsplit.length == 2 && locsplit[1] == "/login") {
+          // If at login page, go to root
+          window.location.href = locsplit[0];
+        } else {
+          // If elsewhere, move back there
+          window.location.reload(true);
+        }
       }
     },
   },

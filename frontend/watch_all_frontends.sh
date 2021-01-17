@@ -10,6 +10,12 @@ killall() {
 # https://stackoverflow.com/questions/3349105/how-to-set-current-working-directory-to-the-directory-of-the-script
 cd "${0%/*}"
 
+# Make sure builtin is set
+(cd ../plugins/dashboard; make builtin)
+(cd ../plugins/timeseries; make builtin)
+(cd ../plugins/notifications; make builtin)
+(cd ../plugins/registry; make builtin)
+
 (cd ../plugins/dashboard/frontend;npm run debug) &
 (cd ../plugins/timeseries/frontend;npm run debug) &
 (cd ../plugins/notifications/frontend;npm run debug) &

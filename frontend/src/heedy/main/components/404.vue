@@ -1,5 +1,6 @@
 <template>
-  <v-main class="notfound">
+  <Login v-if="user == null" />
+  <v-main v-else class="notfound">
     <v-container fluid>
       <v-layout justify-center align-center>
         <v-flex text-center>
@@ -10,6 +11,20 @@
     </v-container>
   </v-main>
 </template>
+<script>
+import Login from "../login.vue";
+
+export default {
+  components: {
+    Login,
+  },
+  computed: {
+    user() {
+      return this.$store.state.app.info.user;
+    },
+  },
+};
+</script>
 
 <style>
 .notfound {

@@ -94,16 +94,20 @@ function setup(frontend) {
       icon: "fas fa-chart-bar",
       route: "/timeseries/dataset",
     });
+
+    frontend.addRoute({
+      path: "/timeseries/dataset",
+      component: Dataset,
+    });
+    frontend.addRoute({
+      path: "/timeseries/insert",
+      component: InputPage,
+    });
+
   }
 
-  frontend.addRoute({
-    path: "/timeseries/dataset",
-    component: Dataset,
-  });
-  frontend.addRoute({
-    path: "/timeseries/insert",
-    component: InputPage,
-  });
+
+
 
 
   frontend.worker.import("timeseries/worker.mjs");
