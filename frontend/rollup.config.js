@@ -36,7 +36,7 @@ const plugins = [
         // copy ALMOST does what we want - it renames the asset files... however,
         // what we ACTUALLY want is to move the files AND rename them relative to the root
         // so let's do that here
-        url: function(asset, dir, options, decl, warn, result, addDependency) {
+        url: function (asset, dir, options, decl, warn, result, addDependency) {
           if (asset.url.startsWith("data:")) {
             return asset.url;
           }
@@ -59,6 +59,7 @@ const plugins = [
   }),
   replace({
     "process.env.NODE_ENV": JSON.stringify(production ? "production" : "debug"),
+    "_DEBUG": JSON.stringify(!production)
   }),
 ];
 if (production) {

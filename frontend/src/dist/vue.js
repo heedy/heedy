@@ -16,9 +16,9 @@ import "material-design-icons-iconfont/dist/material-design-icons.css";
 import VJsf from "@koumoul/vjsf";
 import "@koumoul/vjsf/dist/main.css";
 
-// Disable the vue console messages
+// Disable the vue console messages if built with production
 Vue.config.productionTip = false;
-Vue.config.devtools = false;
+Vue.config.devtools = _DEBUG;
 
 Vue.component("VJsf", VJsf.default);
 
