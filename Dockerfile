@@ -15,7 +15,7 @@ FROM golang:alpine AS backend
 WORKDIR /backend
 COPY --from=frontend /frontend .
 
-RUN apk add --update build-base && make heedy && chmod +x ./heedy
+RUN apk add --update alpine-sdk && make heedy && chmod +x ./heedy
 
 
 FROM alpine
