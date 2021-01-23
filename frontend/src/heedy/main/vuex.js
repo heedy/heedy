@@ -363,11 +363,15 @@ export default {
         state.users[username] !== undefined &&
         state.users[username] != null
       ) {
+        // If the user was queried up to 1 second before websocket became active,
+        // or was queried less than a second ago, let's just leave it. This avoids
+        // an unnecessary query to read user on app startup
+        let cmptime = state.users[username].qtime.add(1, "second");
         if (
           rootState.app.websocket != null &&
-          rootState.app.websocket.isBefore(state.users[username].qtime)
+          rootState.app.websocket.isBefore(cmptime) || moment().isBefore(cmptime)
         ) {
-          console.log(`Not querying ${username} - websocket active`);
+          console.log(`Not querying ${username} - websocket active or just queried`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
           }
@@ -400,8 +404,11 @@ export default {
           )
         ) {
           console.log(
-            `Not re-reading apps - they were just queried!`
+            "Not re-reading apps - they were just queried!"
           );
+          if (q.hasOwnProperty("callback")) {
+            q.callback();
+          }
           return;
         }
       }

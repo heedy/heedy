@@ -41,6 +41,8 @@ import Apps from "./main/apps.vue";
 import vuexModule from "./main/vuex.js";
 import registerCoreComponents, { NotFound } from "./main/components.js";
 
+import moment from "../dist/moment.mjs";
+
 function setup(frontend) {
   frontend.vue.use(VueCodemirror);
   frontend.vue.component("draggable", Draggable);
@@ -50,7 +52,10 @@ function setup(frontend) {
 
   // Add the current user to the vuex module
   if (frontend.info.user != null) {
-    vuexModule.state.users[frontend.info.user.username] = frontend.info.user;
+    vuexModule.state.users[frontend.info.user.username] = {
+      ...frontend.info.user,
+      qtime: moment()
+    };
   }
   frontend.store.registerModule("heedy", vuexModule);
 
