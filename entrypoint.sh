@@ -9,4 +9,4 @@ fi
 
 
 # Execute CMD
-"${@}"
+exec "${@}"
