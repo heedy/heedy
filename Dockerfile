@@ -10,15 +10,15 @@ RUN make frontend
 
 
 # We use the alpine tag to be able to execute on the alpine image later
-FROM golang:alpine AS backend
+FROM golang AS backend
 
 WORKDIR /backend
 COPY --from=frontend /frontend .
 
-RUN apk add --update alpine-sdk && make heedy && chmod +x ./heedy
+RUN make heedy && chmod +x ./heedy
 
 
-FROM alpine
+FROM python:3.8
 
 WORKDIR /heedy
 COPY --from=backend /backend/heedy .
