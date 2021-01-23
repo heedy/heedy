@@ -20,10 +20,9 @@
               <p>
                 Heedy is an open-source, extensible home for your
                 quantified-self data, and other information your devices gather
-                about you. It enables you to easily analyze and share things you
-                find in your data, and has a powerful plugin architecture
-                allowing integration with the most popular data gathering
-                services.
+                about you. It enables you to easily analyze and share your data,
+                and has a powerful plugin architecture allowing integration with
+                the most popular data gathering services.
               </p>
             </v-flex>
           </v-layout>
@@ -31,7 +30,7 @@
             <v-flex text-center style="padding-top: 1cm; backgroud-color: blue">
               <h5 style="padding-bottom: 1cm">
                 For more information visit
-                <a hfre="https://heedy.org">heedy.org</a>
+                <a href="https://heedy.org">heedy.org</a>
               </h5>
             </v-flex>
           </v-layout>

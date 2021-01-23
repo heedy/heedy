@@ -104,6 +104,7 @@ var RootCmd = &cobra.Command{
 		if err = writepid(directory); err != nil {
 			return err
 		}
+		defer delpid(directory)
 
 		return updater.Run(updater.Options{
 			ConfigDir:   directory,
@@ -207,6 +208,10 @@ func writepid(cdir string) error {
 
 	// Create pid
 	return ioutil.WriteFile(path.Join(cdir, "heedy.pid"), []byte(strconv.Itoa(os.Getpid())), os.ModePerm)
+}
+
+func delpid(directory string) error {
+	return os.Remove(path.Join(directory, "heedy.pid"))
 }
 
 func init() {

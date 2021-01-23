@@ -3,7 +3,7 @@
 Heedy
 =================================
 
-Heedy is an `open-source <https://github.com/heedy/heedy>`_ database built for storage and analysis of your personal data.
+Heedy is an `open-source <https://github.com/heedy/heedy>`_ aggregator built for storage and analysis of your personal data.
 It provides a powerful plugin system, allowing easy integration with various services, as well as deep extensibility.
 
 .. raw:: html
