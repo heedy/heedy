@@ -6,6 +6,19 @@ import WebsocketInjector from "./main/websocket.js";
 import vuexStore from "./main/vuex.js";
 
 async function setup(appinfo) {
+
+  // First off, if we're in a production environment, disable console logging
+  // unless the server is in verbose mode
+  if (!_DEBUG && !appinfo.verbose) {
+    let c = (a, b) => { };
+    console.log = c;
+    console.warn = c;
+    console.error = c;
+    console.info = c;
+    console.table = c;
+  }
+
+
   console.log("Setting up...", appinfo);
 
   // Start running the import statements

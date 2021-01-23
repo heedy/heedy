@@ -27,7 +27,7 @@ function setup(appinfo) {
                 }
             }
         },
-        plugins: (_DEBUG ? [createLogger()] : [])
+        plugins: ((_DEBUG || appinfo.verbose) ? [createLogger()] : [])
     }
 };
 

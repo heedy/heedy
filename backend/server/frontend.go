@@ -26,6 +26,7 @@ type fContext struct {
 	Admin   bool             `json:"admin"`
 	Plugins []frontendPlugin `json:"plugins"`
 	Preload []string         `json:"preload"`
+	Verbose bool             `json:"verbose"`
 }
 
 type aContext struct {
@@ -132,6 +133,7 @@ func FrontendMux() (*chi.Mux, error) {
 				Admin:   false,
 				Plugins: frontendPlugins,
 				Preload: preloads,
+				Verbose: cfg.Verbose,
 			})
 			if err != nil {
 				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
@@ -144,6 +146,7 @@ func FrontendMux() (*chi.Mux, error) {
 			Admin:   ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
 			Plugins: frontendPlugins,
 			Preload: preloads,
+			Verbose: cfg.Verbose,
 		})
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
