@@ -21,9 +21,9 @@ var RunCmd = &cobra.Command{
 		c.Verbose = verbose
 
 		if err = writepid(directory); err != nil {
-
 			return err
 		}
+		defer delpid(directory)
 
 		return updater.Run(updater.Options{
 			ConfigDir:   directory,

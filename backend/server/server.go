@@ -24,7 +24,6 @@ type RunOptions struct {
 }
 
 func Run(a *assets.Assets, o *RunOptions) error {
-	//return fmt.Errorf("TESTING REVERT")
 	db, err := database.Open(a)
 	if err != nil {
 		return err
