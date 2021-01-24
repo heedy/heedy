@@ -16,7 +16,7 @@ var StartCmd = &cobra.Command{
 			return err
 		}
 
-		return updater.StartHeedy(directory)
+		return updater.StartHeedy(directory, false)
 	},
 }
 

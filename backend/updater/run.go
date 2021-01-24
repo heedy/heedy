@@ -36,7 +36,7 @@ func Run(o Options) error {
 	_, err = os.Stat(heedyPath)
 	restartHeedy := !os.IsNotExist(err)
 
-	curPath, err := filepath.Abs(os.Args[0])
+	curPath, err := os.Executable()
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func Run(o Options) error {
 			a = append(a, "--revert")
 		}
 		a = append(a, os.Args[1:]...)
-		return StartProcess(heedyPath, a...)
+		return ReplaceOrStart(heedyPath, a...)
 
 	}
 	if hadUpdate {
@@ -70,7 +70,7 @@ func Run(o Options) error {
 			return err
 		}
 
-		return StartHeedy(o.ConfigDir)
+		return StartHeedy(o.ConfigDir, true)
 	}
 
 	return err

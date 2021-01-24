@@ -126,9 +126,9 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	if restartServer {
 		logrus.Info("Restarting")
 		if applyUpdates {
-			return updater.StartHeedy(a.FolderPath, "--update")
+			return updater.StartHeedy(a.FolderPath, true, "--update")
 		}
-		return updater.StartHeedy(a.FolderPath)
+		return updater.StartHeedy(a.FolderPath, true)
 	}
 	return err
 }
