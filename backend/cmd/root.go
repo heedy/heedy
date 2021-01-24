@@ -200,6 +200,11 @@ func writepid(cdir string) error {
 	// First check if the pid exists and is running
 	p, err := getpid(cdir)
 	if err == nil {
+		if os.Getpid() == p.Pid {
+			// The pid written is same as current process. This happens whenever heedy is updated,
+			// since heedy replaces itself with a new instance (inheriting the pid), so the correct pid is already written.
+			return nil
+		}
 		err = p.Signal(syscall.Signal(0))
 		if err == nil && !forceRun {
 			return fmt.Errorf("Heedy is already running at pid %d", p.Pid)
@@ -218,7 +223,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
 	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
 	RootCmd.PersistentFlags().BoolVar(&applyUpdates, "update", false, "Applies any pending updates")
-	RootCmd.PersistentFlags().BoolVar(&forceRun, "force", false, "Force the server to start even if it detects a heedy pid running")
+	RootCmd.PersistentFlags().BoolVar(&forceRun, "force", false, "Force the server to start even if it detects a running heedy instance")
 	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprofile", "", "Saves a CPU profile to the given file")
 	RootCmd.PersistentFlags().StringVar(&memprofile, "memprofile", "", "Saves a memory profile to the given file")
 }

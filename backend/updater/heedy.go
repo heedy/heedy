@@ -20,11 +20,13 @@ func UpdateHeedy(configDir, updateDir, backupDir string) error {
 
 	logrus.Info("Updating heedy executable")
 
+	/* Signatures not supported yet
 	// Move the signature file over
 	err := ShiftFiles(updateHeedy+".sig", configHeedy+".sig", backupHeedy+".sig")
 	if err != nil {
 		return err
 	}
+	*/
 
 	return ShiftFiles(updateHeedy, configHeedy, backupHeedy)
 }
