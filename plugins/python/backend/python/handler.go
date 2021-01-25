@@ -19,16 +19,21 @@ import (
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins/run"
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 )
 
 type PythonSettings struct {
-	sync.Mutex
-	IsEnabled bool
-	Path      string
-	PipArgs   []string
-	DB        *database.AdminDB
-	Cmd       map[string]*run.Cmd
+	sync.Mutex                     // Defends Cmd
+	Cmd        map[string]*run.Cmd `mapstructure:"-"`
+
+	IsEnabled bool              `mapstructure:"-"`
+	DB        *database.AdminDB `mapstructure:"-"`
+
+	Path           string   `mapstructure:"path"`
+	PipArgs        []string `mapstructure:"pip_args"`
+	VenvArgs       []string `mapstructure:"venv_args"`
+	PerPluginVenvs bool     `mapstructure:"per_plugin_venvs"`
 }
 
 var (
@@ -40,54 +45,33 @@ var (
 
 // Start checks the currently set python path to make sure that it is valid
 func Start(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) error {
+	settings.DB = db
 
 	pyplugin, ok := db.Assets().Config.Plugins["python"]
 	if !ok {
 		return errors.New("Could not find python plugin configuration")
 	}
-	p, ok := pyplugin.Settings["path"]
-	if !ok || p == nil {
-		// Python is not set up
-		l.Debug("Python is not set up")
-		return nil
-	}
-	ps, ok := p.(string)
-	if !ok {
-		return errors.New("Python path must be a string")
-	}
-	if ps == "" {
-		l.Debug("Python is not set up")
-		return nil
-	}
-	pipargs := make([]string, 0)
-	ipipargs, ok := pyplugin.Settings["pip_args"]
-	if ok {
-		apipargs, ok := ipipargs.([]interface{})
-		if !ok {
-			return errors.New("pip_args must be an array of strings")
-		}
-		for _, pai := range apipargs {
-			pais, ok := pai.(string)
-			if !ok {
-				return errors.New("pip_args must be an array of strings")
-			}
-			pipargs = append(pipargs, pais)
-		}
+
+	err := mapstructure.Decode(pyplugin.Settings, &settings)
+	if err != nil {
+		return err
 	}
 
-	err := TestPython(ps)
-	if err == nil {
-		settings.IsEnabled = true
-		settings.Path = ps
-		settings.PipArgs = pipargs
-		settings.DB = db
+	if settings.Path == "" {
+		// Python is not set up, so don't do anything
+		l.Debug("Python is not set up")
+		return nil
 	}
+
+	err = TestPython(settings.Path)
+	settings.IsEnabled = err == nil
+
 	return err
 }
 
-func StartPython(w http.ResponseWriter, r *http.Request) {
+func StartPythonProcess(w http.ResponseWriter, r *http.Request) {
 	if !settings.IsEnabled {
-		rest.WriteJSONError(w, r, http.StatusFailedDependency, errors.New("No python interpreter is set up. Please check your heedy configuration."))
+		rest.WriteJSONError(w, r, http.StatusFailedDependency, errors.New("No valid python interpreter is set up. Please check your heedy configuration."))
 		return
 	}
 	var i run.Info
@@ -97,51 +81,28 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare the API message
-	sm := run.StartMessage{}
-	apii, ok := i.Run.Settings["api"]
-	if ok {
-		apis, ok := apii.(string)
-		if !ok {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("plugin 'api' must be string"))
-			return
-		}
-		sm.API = apis
+	var rs struct {
+		Path string   `mapstructure:"path"`
+		Args []string `mapstructure:"args,omitempty"`
+		API  string   `mapstructure:"api,omitempty"`
 	}
 
-	// Get the filename to run
-	filenamei, ok := i.Run.Settings["path"]
-	if !ok {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The path to a python file must be specified"))
-		return
-	}
-	filename, ok := filenamei.(string)
-	if !ok {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The 'path' argument must be a string"))
+	if err = mapstructure.Decode(i.Run.Settings, &rs); err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
-	// Extract args
-	var args []string
-	argsi, ok := i.Run.Settings["args"]
-	if ok {
-		argsa, ok := argsi.([]interface{})
-		if !ok {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The 'args' argument must be an array of strings"))
+	pypath := settings.Path
+	if settings.PerPluginVenvs {
+		// The python path is now the venv's python
+		pypath, err = EnsureVenv(pypath, path.Join(i.HeedyDir, "venvs", i.Plugin))
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
-		}
-		args = make([]string, 0, len(argsa))
-		for i := range argsa {
-			s, ok := argsa[i].(string)
-			if !ok {
-				rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The 'args' argument must be an array of strings"))
-				return
-			}
-			args = append(args, s)
 		}
 	}
 
-	fp := path.Join(i.PluginDir, filename)
+	fp := path.Join(i.PluginDir, rs.Path)
 	_, err = os.Stat(fp)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
@@ -151,24 +112,20 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 	_, err = os.Stat(requirementsFile)
 	if err == nil {
 		l.Debugf("Setting up requirements from %s", requirementsFile)
-		fullargs := append([]string{"-m", "pip", "install", "-r", requirementsFile}, settings.PipArgs...)
-		if settings.DB.Verbose {
-			l.Debugf("%s %s", settings.Path, strings.Join(fullargs, " "))
-		}
-		cmd := exec.Command(settings.Path, fullargs...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
+		err = RunCommand(pypath, append([]string{"-m", "pip", "install", "-r", requirementsFile}, settings.PipArgs...))
+
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
 	}
-	fullargs := append([]string{fp}, args...)
+
+	// Run the actual code now
+	fullargs := append([]string{rs.Path}, rs.Args...)
 	if settings.DB.Verbose {
-		l.Debugf("%s %s", settings.Path, strings.Join(fullargs, " "))
+		l.Debugf("%s %s", pypath, strings.Join(fullargs, " "))
 	}
-	cmd := exec.Command(settings.Path, fullargs...)
+	cmd := exec.Command(pypath, fullargs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = i.PluginDir
@@ -208,8 +165,8 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 	settings.Cmd[i.APIKey] = c
 	settings.Unlock()
 
-	if sm.API != "" {
-		method, host, err := run.GetEndpoint(settings.DB.Assets().DataDir(), sm.API)
+	if rs.API != "" {
+		method, host, err := run.GetEndpoint(settings.DB.Assets().DataDir(), rs.API)
 		if err == nil {
 			err = run.WaitForEndpoint(method, host, c)
 		}
@@ -223,12 +180,12 @@ func StartPython(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	rest.WriteJSON(w, r, &sm, nil)
+	rest.WriteJSON(w, r, run.StartMessage{API: rs.API}, nil)
 }
 
 func RunPython(w http.ResponseWriter, r *http.Request) {
 	// TODO: should modify to wait for the process to finish
-	StartPython(w, r)
+	StartPythonProcess(w, r)
 }
 
 func StopPython(w http.ResponseWriter, r *http.Request) {
@@ -285,7 +242,7 @@ var Handler = func() *chi.Mux {
 	mux := chi.NewMux()
 	mux.NotFound(rest.NotFoundHandler)
 	mux.MethodNotAllowed(rest.NotFoundHandler)
-	mux.Post("/runtypes/python", StartPython)
+	mux.Post("/runtypes/python", StartPythonProcess)
 	mux.Delete("/runtypes/python/{apikey}", StopPython)
 	return mux
 }()
