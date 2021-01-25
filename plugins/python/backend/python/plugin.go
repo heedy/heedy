@@ -17,7 +17,7 @@ const PluginName = "python"
 // explicitly requiring those packages, so the user can change the interpreter
 // to anything they want (including a virtualenv)
 func setupDefaultPython(db *database.AdminDB) error {
-	pypath, pipargs, err := SearchPython()
+	pypath, err := SearchPython()
 	if err != nil {
 		logrus.Warn("No supported Python interpreter found - you will need to configure one manually.")
 		return nil
@@ -28,8 +28,7 @@ func setupDefaultPython(db *database.AdminDB) error {
 		Plugins: map[string]*assets.Plugin{
 			"python": &assets.Plugin{
 				Settings: map[string]interface{}{
-					"path":     pypath,
-					"pip_args": pipargs,
+					"path": pypath,
 				},
 			},
 		},
