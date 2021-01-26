@@ -57,7 +57,7 @@ The debug version uses the assets from the `./assets` folder instead of embeddin
 
 #### Watch frontend
 
-To edit the frontend, you will want a debug build, and then run the following
+To edit the frontend, you will want to run the following:
 
 ```
 make watch

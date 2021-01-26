@@ -1,48 +1,64 @@
 <template>
   <v-alert
-    :type="n.type.length>0?n.type:'info'"
-    :border="small && !$vuetify.breakpoint.smAndDown?undefined:'left'"
+    :type="n.type.length > 0 ? n.type : 'info'"
+    :border="small && !$vuetify.breakpoint.smAndDown ? undefined : 'left'"
     :colored-border="!small"
-    :dismissible="n.actions.length<=1 && n.dismissible"
+    :dismissible="n.actions.length <= 1 && n.dismissible"
     :dense="small"
     :outlined="small"
     prominent
     :elevation="1"
-    :icon="$vuetify.breakpoint.smAndDown?false:undefined"
+    :icon="$vuetify.breakpoint.smAndDown ? false : undefined"
     @input="del"
-    style="background-color: #fdfdfd !important;"
+    style="background-color: #fdfdfd !important"
   >
     <v-row>
       <v-col
-        :class="{grow: $vuetify.breakpoint.smAndUp,'col-xs-12':!$vuetify.breakpoint.smAndUp,'col-12':!$vuetify.breakpoint.smAndUp}"
+        :class="{
+          grow: $vuetify.breakpoint.smAndUp,
+          'col-xs-12': !$vuetify.breakpoint.smAndUp,
+          'col-12': !$vuetify.breakpoint.smAndUp,
+        }"
       >
-        <h3 :style="{'padding-top': description.length>0? '10px':'0'}">
-          <router-link :to="linkpath" v-if="showlink">{{ n.title }}</router-link>
+        <h3 :style="{ 'padding-top': description.length > 0 ? '10px' : '0' }">
+          <router-link :to="linkpath" v-if="showlink">{{
+            n.title
+          }}</router-link>
           <span v-else>{{ n.title }}</span>
         </h3>
-        <span v-if="description.length>0" v-html="description" style="padding-top: 5px"></span>
+        <span
+          v-if="description.length > 0"
+          v-html="description"
+          style="padding-top: 5px"
+        ></span>
       </v-col>
       <v-col
-        :class="{shrink: $vuetify.breakpoint.smAndUp,'col-xs-12':!$vuetify.breakpoint.smAndUp,'col-12':!$vuetify.breakpoint.smAndUp,'text-center': true}"
+        :class="{
+          shrink: $vuetify.breakpoint.smAndUp,
+          'col-xs-12': !$vuetify.breakpoint.smAndUp,
+          'col-12': !$vuetify.breakpoint.smAndUp,
+          'text-center': true,
+        }"
       >
         <v-btn
-          v-for="(v,i) in n.actions"
+          v-for="(v, i) in n.actions"
           :key="i"
           outlined
           @click="linkTo(v)"
-          :color="n.type.length>0?n.type:'info'"
-          style="width: 100%;margin: 2px;"
+          :color="n.type.length > 0 ? n.type : 'info'"
+          style="width: 100%; margin: 2px"
         >
-          <v-icon v-if="v.icon!=''" left>{{ v.icon }}</v-icon>
+          <v-icon v-if="v.icon != ''" left>{{ v.icon }}</v-icon>
           {{ v.title }}
         </v-btn>
         <v-btn
-          v-if="n.actions.length>1 && n.dismissible"
+          v-if="n.actions.length > 1 && n.dismissible"
           outlined
-          :color="n.type.length>0?n.type:'info'"
-          style="width: 100%;margin: 2px;"
+          :color="n.type.length > 0 ? n.type : 'info'"
+          style="width: 100%; margin: 2px"
           @click="del"
-        >Close</v-btn>
+          >Close</v-btn
+        >
       </v-col>
     </v-row>
   </v-alert>
@@ -54,16 +70,16 @@ export default {
     n: Object,
     link: {
       type: Boolean,
-      default: false
+      default: false,
     },
     small: {
       type: Boolean,
-      default: false
+      default: false,
     },
     seen: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   computed: {
     description() {
@@ -80,11 +96,11 @@ export default {
       return false;
     },
     linkpath() {
-      console.log(this.n);
+      console.vlog(this.n);
       if (this.n.object !== undefined) return `/objects/${this.n.object}`;
       if (this.n.app !== undefined) return `/apps/${this.n.app}`;
       return `/users/${this.n.user}`;
-    }
+    },
   },
   methods: {
     del(v) {
@@ -117,7 +133,7 @@ export default {
       } else {
         location.href = url;
       }
-    }
+    },
   },
   watch: {
     n(newN) {
@@ -132,10 +148,10 @@ export default {
         }
         this.$store.dispatch("updateNotification", {
           n: nq,
-          u: { seen: true }
+          u: { seen: true },
         });
       }
-    }
+    },
   },
   created() {
     if (this.seen && !this.n.seen) {
@@ -149,9 +165,9 @@ export default {
       }
       this.$store.dispatch("updateNotification", {
         n: nq,
-        u: { seen: true }
+        u: { seen: true },
       });
     }
-  }
+  },
 };
 </script>

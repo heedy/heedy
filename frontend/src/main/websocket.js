@@ -46,7 +46,7 @@ class WebsocketSubscriber {
     this.connect();
   }
   connect() {
-    console.log(`Connecting to websocket ${this.loc}`);
+    console.vlog(`Connecting to websocket ${this.loc}`);
     this.ws = new WebSocket(this.loc);
 
     this.ws.onopen = () => this.onopen();
@@ -54,7 +54,7 @@ class WebsocketSubscriber {
     this.ws.onclose = (e) => this.onclose(e);
   }
   onopen() {
-    console.log("Websocket open");
+    console.vlog("Websocket open");
     this.isopen = true;
     this.retryTimeout = this.resetTimeout;
 
@@ -71,7 +71,7 @@ class WebsocketSubscriber {
                 cmd: "subscribe",
                 ...s.event
             }
-            console.log("<-", m);
+            console.vlog("<-", m);
             this.ws.send(JSON.stringify(m))
         });
         */
@@ -82,7 +82,7 @@ class WebsocketSubscriber {
     this.frontend.worker.postMessage("websocket_status", m.unix());
   }
   onclose(e) {
-    console.log("Websocket closed");
+    console.vlog("Websocket closed");
     this.isopen = false;
     // Set the websocket as disconnected
     this.store.commit("setWebsocket", null);
@@ -92,12 +92,12 @@ class WebsocketSubscriber {
       this.retryTimeout += this.retryTimeoutDelta;
       return;
     }
-    console.log("Not retrying to connect.");
+    console.vlog("Not retrying to connect.");
   }
 
   fire(e) {
     e = JSON.parse(e.data);
-    console.log("->", e);
+    console.vlog("->", e);
     Object.values(this.subscriptions)
       .filter((s) => {
         s = s.event;
@@ -135,7 +135,7 @@ class WebsocketSubscriber {
 
   send(m) {
     if (this.isopen) {
-      console.log("<-", m);
+      console.vlog("<-", m);
       this.ws.send(JSON.stringify(m));
     }
   }

@@ -49,7 +49,7 @@ class WorkerInjector {
 
   async _onMessage(e) {
     let msg = e.data;
-    console.log("from_worker:", msg);
+    console.vlog("from_worker:", msg);
     if (this.handlers[msg.key] !== undefined) {
       let ctx = {
         key: msg.key,

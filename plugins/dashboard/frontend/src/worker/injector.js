@@ -45,7 +45,7 @@ class DashboardWorkerInjector {
   }
 
   _subscribe(ctx, msg) {
-    console.log("dashboard_worker: subscribe", msg.id);
+    console.vlog("dashboard_worker: subscribe", msg.id);
     if (this.subscribed[msg.id] === undefined) {
       this.subscribed[msg.id] = 0;
     }
@@ -55,7 +55,7 @@ class DashboardWorkerInjector {
     this._getDashboard(msg.id);
   }
   _unsubscribe(ctx, msg) {
-    console.log("dashboard_worker: unsubscribe", msg.id);
+    console.vlog("dashboard_worker: unsubscribe", msg.id);
     this.subscribed[msg.id] -= 1;
     if (this.subscribed[msg.id] <= 0) {
       delete this.subscribed[msg.id];

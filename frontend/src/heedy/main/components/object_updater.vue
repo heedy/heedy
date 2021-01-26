@@ -88,7 +88,7 @@ export default {
       }
 
       if (Object.keys(modified).length > 0) {
-        console.log("UPDATING", modified);
+        console.vlog("UPDATING", modified);
         let result = await this.$frontend.rest(
           "PATCH",
           `api/objects/${this.object.id}`,

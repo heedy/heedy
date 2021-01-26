@@ -154,7 +154,7 @@ export default {
         // We are in the image picker, and an image was chosen
         this.modified.icon = this.$refs.iconEditor.getImage();
       }
-      console.log(this.modified);
+      console.vlog(this.modified);
       let result = await api(
         "PATCH",
         `api/users/${this.user.username}`,

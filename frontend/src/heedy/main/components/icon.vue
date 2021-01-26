@@ -54,7 +54,7 @@ export default {
         s.width = this.width + "px";
         s.height = this.width + "px";
       }
-      console.log(s);
+      console.vlog(s);
       return s;
     }*/
   },

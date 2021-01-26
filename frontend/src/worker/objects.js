@@ -25,7 +25,7 @@ class ObjectInjector {
   }
 
   _ws_status(evt) {
-    console.log("WS STATUS:", evt);
+    console.vlog("WS STATUS:", evt);
     if (evt !== null && !this.ws_initialized) {
       // This subscribe needs to be deferred until at least the info message is sent,
       // since no guarantee frontend is listening until then.

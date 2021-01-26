@@ -48,7 +48,7 @@ class Query {
 
     this.qdata = null; // Raw result of query
     this.output = null; // The output of the query
-    console.log(
+    console.vlog(
       "Query",
       q,
       "includes the following timeseries:",
@@ -94,7 +94,7 @@ class Query {
     return deepEqual(this.query, other);
   }
   close() {
-    console.log("DatasetQuery: Closing", this.query);
+    console.vlog("DatasetQuery: Closing", this.query);
     Object.values(this.object_subscriptions).forEach((v) =>
       this.worker.objects.unsubscribe(v)
     );
@@ -105,7 +105,7 @@ class Query {
   onDataEvent(evt) {
     if (this.objects[evt.object] !== undefined) {
       if (this.deactivator !== null) {
-        console.log(
+        console.vlog(
           "DatasetQuery: Query output might have changed. Removing from cache.",
           evt,
           this.query
@@ -114,7 +114,7 @@ class Query {
         this.close();
       } else {
         // Still active - rerun query
-        console.log(
+        console.vlog(
           "DatasetQuery: Query output might have changed. Rerunning query.",
           evt,
           this.query
@@ -124,7 +124,7 @@ class Query {
     }
   }
   onObjectEvent(obj) {
-    console.log("OBJECT EVENT", obj);
+    console.vlog("OBJECT EVENT", obj);
     if (this.deactivator === null) {
       this.prepareOutput();
     } else {
@@ -134,7 +134,7 @@ class Query {
 
   async runquery() {
     if (this.querypromise != null) {
-      console.log(
+      console.vlog(
         "DatasetQuery: waiting until current query finishes before re-querying"
       );
       this.requery = true;
@@ -170,7 +170,7 @@ class Query {
   }
   async prepareOutput() {
     if (this.querypromise != null) {
-      console.log(
+      console.vlog(
         "DatasetQuery: waiting until current query finishes before re-processing"
       );
       this.reprepare = true;
@@ -206,7 +206,7 @@ class Query {
   }
 
   async _runquery(q) {
-    console.log("DatasetQuery: Getting dataset for query", this.query);
+    console.vlog("DatasetQuery: Getting dataset for query", this.query);
     this.onStatus("Querying Data...");
     this.requery = false;
     let result = await api("POST", `api/timeseries/dataset`, this.query);
@@ -231,7 +231,7 @@ class Query {
   }
 
   async _prepareOutput() {
-    console.log("DatasetQuery: Processing data...", this.query);
+    console.vlog("DatasetQuery: Processing data...", this.query);
     this.onStatus("Processing Data...");
     this.reprepare = false;
     // Start running all the analyzers

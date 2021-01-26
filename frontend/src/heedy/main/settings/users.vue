@@ -299,7 +299,7 @@ export default {
           this.users = [];
           return;
         }
-        console.log("users", res.data);
+        console.vlog("users", res.data);
         this.users = res.data;
       });
       let a = this.$frontend.rest("GET", "/api/server/admin").then((res) => {
@@ -308,7 +308,7 @@ export default {
           this.admin = [];
           return;
         }
-        console.log("admins", res.data);
+        console.vlog("admins", res.data);
         this.admin = res.data;
       });
     },

@@ -4,20 +4,21 @@
       justify-center
       align-center
       text-center
-      style="padding: 10px; padding-bottom: 20px;padding-top:20px;"
+      style="padding: 10px; padding-bottom: 20px; padding-top: 20px"
     >
-      <h1 style="color:#1976d2;">Data Analysis</h1>
+      <h1 style="color: #1976d2">Data Analysis</h1>
     </v-flex>
     <v-flex>
       <v-card>
-        <div style="padding: 10px; padding-bottom: 0;">
+        <div style="padding: 10px; padding-bottom: 0">
           <v-alert
             v-if="alert.length > 0"
             text
             outlined
             color="deep-orange"
             icon="error_outline"
-          >{{ alert }}</v-alert>
+            >{{ alert }}</v-alert
+          >
         </div>
         <multi-query v-model="query"></multi-query>
         <v-card-actions>
@@ -25,13 +26,15 @@
             <v-icon left>add_circle</v-icon>Add Series
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn dark color="blue" @click="runQuery" :loading="loading">Run Query</v-btn>
+          <v-btn dark color="blue" @click="runQuery" :loading="loading"
+            >Run Query</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-flex>
     <v-flex v-if="errmessage != ''">
-      <div style="width:100%;text-align:center;">
-        <h1 style="color: #c9c9c9;margin-top: 5%;">{{ errmessage }}</h1>
+      <div style="width: 100%; text-align: center">
+        <h1 style="color: #c9c9c9; margin-top: 5%">{{ errmessage }}</h1>
       </div>
     </v-flex>
     <h-dataset-visualization v-else :query="visquery"></h-dataset-visualization>
@@ -64,7 +67,7 @@ export default {
   methods: {
     runQuery: async function () {
       let qjson = JSON.stringify(this.query);
-      console.log("Running query", qjson);
+      console.vlog("Running query", qjson);
       let qb = btoa(qjson);
 
       if (this.$route.query.q !== undefined && this.$route.query.q == qb) {

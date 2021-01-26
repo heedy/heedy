@@ -116,10 +116,10 @@ export default {
             rootState
         }) {
             if (state.global != null && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.global_qtime)) {
-                console.log("Not querying global notifications - websocket active");
+                console.vlog("Not querying global notifications - websocket active");
                 return;
             }
-            console.log("Reading global notifications");
+            console.vlog("Reading global notifications");
             let res = await api("GET", `api/notifications`, {
                 global: true
             });
@@ -139,10 +139,10 @@ export default {
             rootState
         }, q) {
             if (state.apps[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.apps_qtime[q.id])) {
-                console.log(`Not querying notifications for ${q.id} - websocket active`);
+                console.vlog(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
-            console.log("Reading notifications for", q.id);
+            console.vlog("Reading notifications for", q.id);
             let res = await api("GET", `api/notifications`, {
                 app: q.id
             });
@@ -165,10 +165,10 @@ export default {
             rootState
         }, q) {
             if (state.objects[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.objects_qtime[q.id])) {
-                console.log(`Not querying notifications for ${q.id} - websocket active`);
+                console.vlog(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
-            console.log("Reading notifications for", q.id);
+            console.vlog("Reading notifications for", q.id);
             let res = await api("GET", `api/notifications`, {
                 object: q.id
             });
@@ -188,7 +188,7 @@ export default {
         updateNotification: async function ({
             commit
         }, q) {
-            console.log("Updating notification", q);
+            console.vlog("Updating notification", q);
             let res = await api("PATCH", `api/notifications`, q.u, q.n);
             if (!res.response.ok) {
                 commit("alert", {
@@ -201,7 +201,7 @@ export default {
         deleteNotification: async function ({
             commit
         }, q) {
-            console.log("DELETING notification", q);
+            console.vlog("DELETING notification", q);
             let res = await api("DELETE", `api/notifications`, null, q);
             if (!res.response.ok) {
                 commit("alert", {
