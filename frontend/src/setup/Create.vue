@@ -316,7 +316,7 @@ export default {
           false
         );
         isok = res.response.ok;
-        console.log(res);
+        console.vlog(res);
         if (!isok) {
           await sleep(200);
         }

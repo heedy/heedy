@@ -2,19 +2,17 @@
   <h-card-page title="Settings">
     <v-tabs v-model="tab" show-arrows>
       <v-tabs-slider color="teal lighten-3"></v-tabs-slider>
-      <v-tab
-        v-for="r in routes"
-        :key="r.path"
-        :to="`/settings/${r.path}`"
-      >{{ r.title!==undefined?r.title:r.path }}</v-tab>
+      <v-tab v-for="r in routes" :key="r.path" :to="`/settings/${r.path}`">{{
+        r.title !== undefined ? r.title : r.path
+      }}</v-tab>
     </v-tabs>
     <router-view></router-view>
-    <v-flex v-if="hasUpdate>0">
-      <div style="padding: 10px; padding-bottom: 0;">
+    <v-flex v-if="hasUpdate > 0">
+      <div style="padding: 10px; padding-bottom: 0">
         <v-alert outlined type="info" prominent border="left">
           <v-row align="center">
             <v-col class="grow">Heedy needs to restart to apply changes.</v-col>
-            <v-col class="shrink" style="min-width: 190px;max-width: 100%;">
+            <v-col class="shrink" style="min-width: 190px; max-width: 100%">
               <v-checkbox
                 :input-value="hasBackup"
                 value
@@ -25,8 +23,16 @@
               ></v-checkbox>
             </v-col>
             <v-col class="shrink">
-              <v-btn color="info" style="width:100%" outlined @click="restart">Apply</v-btn>
-              <v-btn color="info" style="width:100%" outlined @click="undoUpdates">Undo</v-btn>
+              <v-btn color="info" style="width: 100%" outlined @click="restart"
+                >Apply</v-btn
+              >
+              <v-btn
+                color="info"
+                style="width: 100%"
+                outlined
+                @click="undoUpdates"
+                >Undo</v-btn
+              >
             </v-col>
           </v-row>
         </v-alert>
@@ -35,15 +41,17 @@
         <v-card>
           <v-card-title>Restarting...</v-card-title>
           <v-card-text>
-            Please be patient while the server restarts. This may take several minutes if you enabled a plugin and/or have enabled database backup,
-            since heedy might need to install plugin dependencies or copy all of your data to backup. This page will automatically reload once
-            the server has restarted.
+            Please be patient while the server restarts. This may take several
+            minutes if you enabled a plugin and/or have enabled database backup,
+            since heedy might need to install plugin dependencies or copy all of
+            your data to backup. This page will automatically reload once the
+            server has restarted.
           </v-card-text>
         </v-card>
       </v-dialog>
     </v-flex>
-    <v-flex v-if="alert.length >0">
-      <div style="padding: 10px; padding-bottom: 0;">
+    <v-flex v-if="alert.length > 0">
+      <div style="padding: 10px; padding-bottom: 0">
         <v-alert outlined type="error" prominent border="left">
           <v-row align="center">
             <v-col class="grow">
@@ -51,7 +59,7 @@
               {{ alert }}
             </v-col>
             <v-col class="shrink">
-              <v-btn color="error" outlined @click="alert=''">OK</v-btn>
+              <v-btn color="error" outlined @click="alert = ''">OK</v-btn>
             </v-col>
           </v-row>
         </v-alert>
@@ -65,7 +73,7 @@ export default {
   data: () => ({
     tab: null,
     restarting: false,
-    alert: ""
+    alert: "",
   }),
   computed: {
     routes() {
@@ -79,20 +87,20 @@ export default {
       let o = this.$store.state.heedy.updates.options;
       if (o == null) return false;
       return o.backup;
-    }
+    },
   },
   methods: {
-    setBackup: async function(newValue) {
+    setBackup: async function (newValue) {
       let o = this.$store.state.heedy.updates.options;
       if (o == null) {
         o = {
           backup: true,
-          deleted: []
+          deleted: [],
         };
       }
       o = {
         ...o,
-        backup: newValue
+        backup: newValue,
       };
       let res = await this.$frontend.rest(
         "POST",
@@ -100,28 +108,28 @@ export default {
         o
       );
       if (!res.response.ok) {
-        console.log("Update error: ", res.data.error_description);
+        console.verror("Update error: ", res.data.error_description);
         this.alert = res.data.error_description;
       }
       this.$store.dispatch("getUpdates");
     },
-    undoUpdates: async function() {
+    undoUpdates: async function () {
       let res = await this.$frontend.rest("DELETE", "api/server/updates");
       if (!res.response.ok) {
-        console.log("Update error: ", res.data.error_description);
+        console.verror("Update error: ", res.data.error_description);
         this.alert = res.data.error_description;
       } else {
         // Perform a refresh - undoing the update might have changed stuff in settings
         location.reload(true);
       }
     },
-    restart: async function() {
+    restart: async function () {
       let res = await this.$frontend.rest("GET", "api/server/restart");
 
       this.restarting = true;
 
       function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms));
       }
       await sleep(1000);
 
@@ -135,17 +143,17 @@ export default {
       res = await this.$frontend.rest("GET", "api/server/updates/status");
       this.restarting = false;
       if (!res.response.ok) {
-        console.log("Update error: ", res.data.error_description);
+        console.verror("Update error: ", res.data.error_description);
         this.$store.dispatch("getUpdates");
         this.alert = res.data.error_description;
       } else {
         // Perform a refresh, the update might have activated plugins/modified the frontend
         location.reload(true);
       }
-    }
+    },
   },
   created() {
     this.$store.dispatch("getUpdates");
-  }
+  },
 };
 </script>

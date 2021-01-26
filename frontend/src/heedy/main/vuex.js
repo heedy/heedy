@@ -254,7 +254,7 @@ export default {
     // This function performs a query on the user, ignoring websocket
     readUser_: async function ({ commit, rootState }, q) {
       let username = q.username;
-      console.log("Reading user", username);
+      console.vlog("Reading user", username);
       let res = await api("GET", `api/users/${username}`, {
         icon: true,
       });
@@ -286,7 +286,7 @@ export default {
       }
     },
     readApp_: async function ({ commit }, q) {
-      console.log("Reading app", q.id);
+      console.vlog("Reading app", q.id);
       let res = await api("GET", `api/apps/${q.id}`, {
         icon: true,
       });
@@ -316,7 +316,7 @@ export default {
         state.objects_qtime[q.id] !== undefined &&
         Array.isArray(state.objects_qtime[q.id])
       ) {
-        console.log(`waiting for object ${q.id}`);
+        console.vlog(`waiting for object ${q.id}`);
         if (q.callback !== undefined) {
           commit("addObjectQTimeCallback", {
             id: q.id,
@@ -331,7 +331,7 @@ export default {
         id: q.id,
       });
 
-      console.log("Reading object", q.id);
+      console.vlog("Reading object", q.id);
       let res = await api("GET", `api/objects/${q.id}`, {
         icon: true,
       });
@@ -371,7 +371,7 @@ export default {
           rootState.app.websocket != null &&
           rootState.app.websocket.isBefore(cmptime) || moment().isBefore(cmptime)
         ) {
-          console.log(`Not querying ${username} - websocket active or just queried`);
+          console.vlog(`Not querying ${username} - websocket active or just queried`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
           }
@@ -391,7 +391,7 @@ export default {
           rootState.app.websocket != null &&
           rootState.app.websocket.isBefore(state.apps[q.id].qtime)
         ) {
-          console.log(`Not querying ${q.id} - websocket active`);
+          console.vlog(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
           }
@@ -403,7 +403,7 @@ export default {
             moment().subtract(1, "second")
           )
         ) {
-          console.log(
+          console.vlog(
             "Not re-reading apps - they were just queried!"
           );
           if (q.hasOwnProperty("callback")) {
@@ -420,7 +420,7 @@ export default {
           rootState.app.websocket != null &&
           rootState.app.websocket.isBefore(state.objects[q.id].qtime)
         ) {
-          console.log(`Not querying ${q.id} - websocket active`);
+          console.vlog(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
             q.callback();
           }
@@ -436,7 +436,7 @@ export default {
           rootState.app.websocket !== null &&
           rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])
         ) {
-          console.log(`Not reading ${q.username} objects - websocket active`);
+          console.vlog(`Not reading ${q.username} objects - websocket active`);
           return;
         }
         // Check if we JUST queried less than a second ago
@@ -445,14 +445,14 @@ export default {
             moment().subtract(1, "second")
           )
         ) {
-          console.log(
+          console.vlog(
             `Not re-reading ${q.username} objects - they were just queried!`
           );
           return;
         }
       }
       commit("setUserObjectsQTime", q.username);
-      console.log("Reading objects for user", q.username);
+      console.vlog("Reading objects for user", q.username);
       let query = {
         owner: q.username,
         icon: true,
@@ -483,10 +483,10 @@ export default {
         rootState.app.websocket !== null &&
         rootState.app.websocket.isBefore(state.appObjects_qtime[q.id])
       ) {
-        console.log(`Not reading ${q.id} objects - websocket active`);
+        console.vlog(`Not reading ${q.id} objects - websocket active`);
         return;
       }
-      console.log("Reading objects for app", q.id);
+      console.vlog("Reading objects for app", q.id);
       let query = {
         app: q.id,
         icon: true,
@@ -511,7 +511,7 @@ export default {
       }
     },
     getAppScope: async function ({ commit }) {
-      console.log("Loading available app scopes");
+      console.vlog("Loading available app scopes");
       let res = await api("GET", "api/server/scope");
       if (!res.response.ok) {
         commit("alert", {
@@ -529,7 +529,7 @@ export default {
         rootState.app.websocket !== null &&
         rootState.app.websocket.isBefore(state.apps_qtime)
       ) {
-        console.log("Not listing apps - websocket active");
+        console.vlog("Not listing apps - websocket active");
         return;
       }
       if (
@@ -538,12 +538,12 @@ export default {
           moment().subtract(1, "second")
         )
       ) {
-        console.log(
+        console.vlog(
           `Not re-reading apps - they were just queried!`
         );
         return;
       }
-      console.log("Loading apps");
+      console.vlog("Loading apps");
       commit("setAppsQTime", moment());
       let res = await api("GET", "api/apps", {
         icon: true,
@@ -569,7 +569,7 @@ export default {
     },
 
     getUpdates: async function ({ commit }) {
-      console.log("Checking if updates ready");
+      console.vlog("Checking if updates ready");
       let res = await api("GET", "api/server/updates");
       if (!res.response.ok) {
       } else {

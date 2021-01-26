@@ -31,7 +31,7 @@ export default {
   props: {
     app: Object,
   },
-  data: function() {
+  data: function () {
     return {
       formValid: false,
       modified: { ...this.app.settings },
@@ -67,15 +67,15 @@ export default {
         s.description = s.properties.description;
         delete s.properties.description;
       }
-      console.log(s);
+      console.vlog(s);
       return s;
     },
   },
   methods: {
     show(e) {
-      console.log(e);
+      console.vlog(e);
     },
-    update: async function(event) {
+    update: async function (event) {
       event.preventDefault();
       if (this.loading) return;
       if (!this.formValid) {
@@ -90,7 +90,7 @@ export default {
           ...this.modified,
         },
       };
-      console.log("Update app settings", this.app.id);
+      console.vlog("Update app settings", this.app.id);
 
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$frontend.rest(
@@ -113,7 +113,7 @@ export default {
       this.loading = false;
       this.$router.push({ path: `/apps/${this.app.id}` });
     },
-    del: async function() {},
+    del: async function () {},
   },
 };
 </script>

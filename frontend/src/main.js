@@ -7,19 +7,29 @@ import vuexStore from "./main/vuex.js";
 
 async function setup(appinfo) {
 
-  // First off, if we're in a production environment, disable console logging
-  // unless the server is in verbose mode
+  // Add heedy logging/debugging constructs to console - they allow logging to be conditional
+  // on whether the server is running in verbose mode
   if (!_DEBUG && !appinfo.verbose) {
+    Vue.config.devtools = false;
+
     let c = (a, b) => { };
-    console.log = c;
-    console.warn = c;
-    console.error = c;
-    console.info = c;
-    console.table = c;
+    console.vlog = c;
+    console.vwarn = c;
+    console.verror = c;
+    console.vinfo = c;
+    console.vtable = c;
+  } else {
+    Vue.config.devtools = true;
+
+    console.vlog = console.log;
+    console.vwarn = console.warn;
+    console.verror = console.error;
+    console.vinfo = console.info;
+    console.vtable = console.table;
   }
 
 
-  console.log("Setting up...", appinfo);
+  console.vlog("Setting up...", appinfo);
 
   // Start running the import statements
   let plugins = appinfo.plugins.map(f => import("./" + f.path));
@@ -34,7 +44,7 @@ async function setup(appinfo) {
   frontend.inject("websocket", new WebsocketInjector(frontend));
 
   for (let i = 0; i < plugins.length; i++) {
-    console.log("Preparing", appinfo.plugins[i].name);
+    console.vlog("Preparing", appinfo.plugins[i].name);
     try {
       (await plugins[i]).default(frontend);
     } catch (err) {

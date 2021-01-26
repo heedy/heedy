@@ -12,8 +12,8 @@
 
 <script>
 export default {
-  mounted: function() {
-    console.log("Logging out");
+  mounted: function () {
+    console.vlog("Logging out");
     location.href = location.href.split("#")[0] + "auth/logout";
   },
 };

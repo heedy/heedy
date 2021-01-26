@@ -9,26 +9,34 @@ class Wrkr {
 
     // Start out not logging until we get info message to determine whether
     // logging is OK
-    this.log = (a, b) => { }
+    if (console.vlog === undefined) {
+      console.vlog = (a, b) => { }
+    }
+
 
     this.handlers = {
       import: (ctx, data) => this._importHandler(ctx, data),
       info: (ctx, data) => {
         this.info = data;
 
-        // The console can be enabled/disabled by the verbose
-        // setting
+        // The v-functions are logging functions that are conditional on whether
+        // the server is in verbose mode
         if (!_DEBUG && !data.verbose) {
           let c = (a, b) => { };
-          console.log = c;
-          console.warn = c;
-          console.error = c;
-          console.info = c;
-          console.table = c;
+          console.vlog = c;
+          console.vwarn = c;
+          console.verror = c;
+          console.vinfo = c;
+          console.vtable = c;
+        } else {
+          console.vlog = console.log;
+          console.vwarn = console.warn;
+          console.verror = console.error;
+          console.vinfo = console.info;
+          console.vtable = console.table;
         }
-        this.log = console.log;
 
-        this.log("worker: started");
+        console.vlog("worker: started");
       },
     };
 
@@ -63,7 +71,7 @@ class Wrkr {
     while (this.messageQueue.length > 0) {
       let msg = this.messageQueue[0];
 
-      this.log("worker: processing ", msg);
+      console.vlog("worker: processing ", msg);
       if (this.handlers[msg.key] !== undefined) {
         let ctx = {
           key: msg.key,
@@ -78,11 +86,11 @@ class Wrkr {
 
   _onMessage(e) {
     let msg = e.data;
-    this.log("worker: received ", msg);
+    console.vlog("worker: received ", msg);
 
     // We use special handling for import messages, so that they start loading right away
     if (msg.key == "import") {
-      this.log("worker: import", msg.msg);
+      console.vlog("worker: import", msg.msg);
       msg.msg = import("./" + msg.msg);
     }
     this.messageQueue.push(msg);

@@ -63,7 +63,7 @@ class TimeseriesInjector {
   _getQuery(q, cbk, status) {
     for (let i = 0; i < this.inactive.length; i++) {
       if (this.inactive[i].isEqual(q)) {
-        console.log("Using cached data for query", q);
+        console.vlog("Using cached data for query", q);
         let qv = this.inactive[i];
         this.inactive.splice(i, 1);
         qv.activate(cbk, status);
@@ -76,7 +76,7 @@ class TimeseriesInjector {
     if (this.worker.websocket.status !== null && !q.outdated) {
       // If there is an active websocket, keep the query until it no longer holds
       // up-to-date data
-      console.log("Caching unused query data", q.query);
+      console.vlog("Caching unused query data", q.query);
       this.inactive.push(q);
       q.deactivate(() => {
         this.inactive = this.inactive.filter((v) => v != q);
@@ -86,7 +86,7 @@ class TimeseriesInjector {
     }
   }
   _query(ctx, msg) {
-    console.log("Running single query", msg);
+    console.vlog("Running single query", msg);
     let qval = null;
     qval = this._getQuery(
       msg.query,
@@ -106,7 +106,7 @@ class TimeseriesInjector {
     );
   }
   _subscribeQuery(ctx, msg) {
-    console.log("Subscribing to timeseries query", msg);
+    console.vlog("Subscribing to timeseries query", msg);
     this.queries[msg.key] = this._getQuery(
       msg.query,
       (d, o) => {
@@ -124,7 +124,7 @@ class TimeseriesInjector {
     );
   }
   _unsubscribeQuery(ctx, msg) {
-    console.log("Unsubscribing from timeseries query", msg);
+    console.vlog("Unsubscribing from timeseries query", msg);
     if (this.queries[msg.key] !== undefined) {
       let q = this.queries[msg.key];
 
@@ -134,7 +134,7 @@ class TimeseriesInjector {
     }
   }
   _dataEvent(event) {
-    console.log(
+    console.vlog(
       "Data event - checking if any timeseries queries need to be updated",
       event
     );

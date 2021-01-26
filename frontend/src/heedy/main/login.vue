@@ -48,7 +48,7 @@ export default {
   }),
   methods: {
     login: async function (e) {
-      console.log("run login");
+      console.vlog("run login");
       this.loading = true;
       let result = await api(
         "POST",

@@ -111,7 +111,7 @@ export default {
   },
   methods: {
     getKey: async function () {
-      console.log("Reading access token for", this.app.id);
+      console.vlog("Reading access token for", this.app.id);
       let result = await api("GET", `api/apps/${this.app.id}`, {
         token: true,
       });

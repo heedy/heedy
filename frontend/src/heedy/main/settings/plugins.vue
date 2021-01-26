@@ -1,8 +1,10 @@
 <template>
   <div>
-    <v-flex v-if="alert.length>0">
-      <div style="padding: 10px; padding-bottom: 0;">
-        <v-alert text outlined color="deep-orange" icon="error_outline">{{ alert }}</v-alert>
+    <v-flex v-if="alert.length > 0">
+      <div style="padding: 10px; padding-bottom: 0">
+        <v-alert text outlined color="deep-orange" icon="error_outline">{{
+          alert
+        }}</v-alert>
       </div>
     </v-flex>
     <v-toolbar flat color="white">
@@ -22,7 +24,10 @@
               accept="application/zip"
               label="Zipped Plugin Folder"
             ></v-file-input>
-            <v-progress-linear v-else :value="uploadPercent"></v-progress-linear>
+            <v-progress-linear
+              v-else
+              :value="uploadPercent"
+            ></v-progress-linear>
           </v-card-text>
           <v-card-actions>
             <v-btn text @click="cancelUpload">Cancel</v-btn>
@@ -41,7 +46,7 @@
                 <v-checkbox
                   v-on="on"
                   :input-value="isActive(pi.name)"
-                  @change="(v) => changeActive(pi.name,v)"
+                  @change="(v) => changeActive(pi.name, v)"
                 ></v-checkbox>
               </template>
               <span>Enable/Disable Plugin</span>
@@ -75,32 +80,53 @@
         </v-list-item>
       </v-list>
     </div>
-    <div
-      v-else
-      style="color: gray; text-align: center; padding: 1cm;"
-    >You don't have any plugins installed.</div>
-    <v-dialog v-if="plugins[dvalue]!==undefined" v-model="dialog" max-width="1024px">
+    <div v-else style="color: gray; text-align: center; padding: 1cm">
+      You don't have any plugins installed.
+    </div>
+    <v-dialog
+      v-if="plugins[dvalue] !== undefined"
+      v-model="dialog"
+      max-width="1024px"
+    >
       <v-card>
         <v-card-title class="headline grey lighten-2" primary-title>
-          <v-list-item two-line style="overflow:hidden;">
+          <v-list-item two-line style="overflow: hidden">
             <v-list-item-avatar>
-              <h-icon :image="plugins[dvalue].icon" :colorHash="plugins[dvalue].name"></h-icon>
+              <h-icon
+                :image="plugins[dvalue].icon"
+                :colorHash="plugins[dvalue].name"
+              ></h-icon>
             </v-list-item-avatar>
             <v-list-item-content>
               <v-list-item-title>{{ plugins[dvalue].name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ plugins[dvalue].description }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{
+                plugins[dvalue].description
+              }}</v-list-item-subtitle>
             </v-list-item-content>
-            <v-list-item-action v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
+            <v-list-item-action
+              v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs"
+            >
               <v-checkbox
                 label="Enabled"
                 :input-value="isActive(dvalue)"
-                @change="(v) => changeActive(dvalue,v)"
+                @change="(v) => changeActive(dvalue, v)"
               ></v-checkbox>
             </v-list-item-action>
-            <v-list-item-action v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs">
+            <v-list-item-action
+              v-if="!$vuetify.breakpoint.sm && !$vuetify.breakpoint.xs"
+            >
               <v-tooltip bottom>
                 <template v-slot:activator="{ on }">
-                  <v-btn icon v-on="on" @click="() => {dialog=false;deletePlugin(plugins[dvalue])}">
+                  <v-btn
+                    icon
+                    v-on="on"
+                    @click="
+                      () => {
+                        dialog = false;
+                        deletePlugin(plugins[dvalue]);
+                      }
+                    "
+                  >
                     <v-icon>fas fa-trash</v-icon>
                   </v-btn>
                 </template>
@@ -110,8 +136,8 @@
           </v-list-item>
         </v-card-title>
 
-        <v-card-text style="padding-top: 20px;">
-          <v-container fluid v-if="plugins[dvalue].readme===undefined">
+        <v-card-text style="padding-top: 20px">
+          <v-container fluid v-if="plugins[dvalue].readme === undefined">
             <v-layout justify-center align-center>
               <v-flex text-center>
                 <h1>Loading...</h1>
@@ -135,7 +161,7 @@
             v-else
             label="Enabled"
             :input-value="isActive(dvalue)"
-            @change="(v) => changeActive(dvalue,v)"
+            @change="(v) => changeActive(dvalue, v)"
           ></v-checkbox>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="dialog = false">ok</v-btn>
@@ -158,7 +184,7 @@ export default {
     uploading: false,
     uploadPercent: 0,
     xhr: null,
-    dvalue: ""
+    dvalue: "",
   }),
   computed: {
     pluginItems() {
@@ -167,11 +193,11 @@ export default {
       if (o == null || o.deleted == null) {
         return pvals;
       }
-      return pvals.filter(v => !o.deleted.includes(v.name));
+      return pvals.filter((v) => !o.deleted.includes(v.name));
     },
     getMD() {
       return md.render(this.plugins[this.dvalue].readme);
-    }
+    },
   },
   methods: {
     showDetails(p) {
@@ -179,7 +205,7 @@ export default {
       this.dialog = true;
       this.getReadme(p.name);
     },
-    deletePlugin: async function(p) {
+    deletePlugin: async function (p) {
       if (
         confirm(
           `Are you sure you want to delete plugin '${p.name}'? You can disable it instead.`
@@ -189,12 +215,12 @@ export default {
         if (o == null) {
           o = {
             backup: true,
-            deleted: []
+            deleted: [],
           };
         }
         o = {
           ...o,
-          deleted: [...o.deleted, p.name]
+          deleted: [...o.deleted, p.name],
         };
         let res = await this.$frontend.rest(
           "POST",
@@ -202,14 +228,14 @@ export default {
           o
         );
         if (!res.response.ok) {
-          console.log("Update error: ", res.data.error_description);
+          console.vlog("Update error: ", res.data.error_description);
           this.alert = res.data.error_description;
         }
         this.$store.dispatch("getUpdates");
       }
     },
     changeActive(pname, v) {
-      console.log(pname, v);
+      console.vlog(pname, v);
       let pindex = this.active.indexOf(pname);
       if (pindex > -1) {
         if (!v) {
@@ -222,14 +248,14 @@ export default {
       }
       this.update();
     },
-    upload: async function() {
+    upload: async function () {
       if (this.uploading) {
-        console.log("Already uploading.");
+        console.vlog("Already uploading.");
         return;
       }
-      console.log(this.file);
+      console.vlog(this.file);
       if (this.file == null) {
-        console.log("no file selected");
+        console.vlog("no file selected");
         return;
       }
       this.alert = "";
@@ -243,7 +269,7 @@ export default {
       var xhr = new XMLHttpRequest();
       xhr.upload.addEventListener(
         "progress",
-        evt => {
+        (evt) => {
           if (evt.lengthComputable) {
             this.uploadPercent = Math.floor((100 * evt.loaded) / evt.total);
           }
@@ -257,7 +283,7 @@ export default {
         this.xhr = null;
         this.$store.dispatch("getUpdates");
       };
-      xhr.addEventListener("load", evt => {
+      xhr.addEventListener("load", (evt) => {
         if (evt.target.status != 200) {
           try {
             this.alert =
@@ -272,13 +298,13 @@ export default {
         endRequest();
         this.reload();
       });
-      xhr.addEventListener("error", evt => {
-        console.log("ERROR", evt);
+      xhr.addEventListener("error", (evt) => {
+        console.vlog("ERROR", evt);
         endRequest();
         this.alert = "Upload failed";
       });
-      xhr.addEventListener("abort", evt => {
-        console.log("ABORT", evt);
+      xhr.addEventListener("abort", (evt) => {
+        console.vlog("ABORT", evt);
         endRequest();
       });
       xhr.open("POST", "api/server/updates/plugins");
@@ -293,13 +319,13 @@ export default {
         this.uploader = false;
       }
     },
-    update: async function() {
-      console.log(this.active);
+    update: async function () {
+      console.vlog(this.active);
       let res = await this.$frontend.rest(
         "PATCH",
         "api/server/updates/config",
         {
-          active_plugins: this.active
+          active_plugins: this.active,
         }
       );
       if (!res.response.ok) {
@@ -310,17 +336,17 @@ export default {
       this.$store.dispatch("getUpdates");
       this.reload();
     },
-    reload: async function() {
-      this.$frontend.rest("GET", "api/server/updates/plugins").then(res => {
+    reload: async function () {
+      this.$frontend.rest("GET", "api/server/updates/plugins").then((res) => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.plugins = {};
           return;
         }
-        console.log("plugins", res.data);
+        console.vlog("plugins", res.data);
 
         let plugineer = {};
-        Object.keys(res.data).map(k => {
+        Object.keys(res.data).map((k) => {
           plugineer[k] = {
             name: k,
             description:
@@ -338,31 +364,31 @@ export default {
             icon:
               res.data[k].icon !== undefined
                 ? res.data[k].icon
-                : "fas fa-puzzle-piece"
+                : "fas fa-puzzle-piece",
           };
         });
 
         this.plugins = plugineer;
       });
-      this.$frontend.rest("GET", "api/server/updates/config").then(res => {
+      this.$frontend.rest("GET", "api/server/updates/config").then((res) => {
         if (!res.response.ok) {
           this.alert = res.data.error_description;
           this.active = [];
           return;
         }
-        console.log("active", res.data.active_plugins);
+        console.vlog("active", res.data.active_plugins);
         this.active = res.data.active_plugins;
       });
     },
     isActive(k) {
       return this.active.includes(k);
     },
-    getReadme: async function(pname) {
-      console.log("Getting readme for", pname);
-      let setreadme = r => {
+    getReadme: async function (pname) {
+      console.vlog("Getting readme for", pname);
+      let setreadme = (r) => {
         this.plugins[pname] = {
           ...this.plugins[pname],
-          readme: r
+          readme: r,
         };
       };
       try {
@@ -373,22 +399,22 @@ export default {
       let res = await fetch(`api/server/updates/plugins/${pname}/README.md`, {
         method: "GET",
         credentials: "include",
-        redirect: "follow"
+        redirect: "follow",
       });
-      console.log("README", res);
+      console.vlog("README", res);
       if (!res.ok) {
         // this.alert = res.data.error_description;
-        console.log("Plugin has no README");
+        console.vlog("Plugin has no README");
         setreadme("This plugin has no README.md");
         return;
       }
       setreadme(await res.text());
-    }
+    },
   },
 
   created() {
     this.reload();
-  }
+  },
 };
 </script>
 <style>

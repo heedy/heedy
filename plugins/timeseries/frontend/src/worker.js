@@ -19,7 +19,7 @@ import linechart from "./worker/preprocessors/linechart.js";
 import dayview from "./worker/preprocessors/dayview.js";
 */
 function setup(wkr) {
-  console.log("timeseries_worker: starting");
+  console.vlog("timeseries_worker: starting");
 
   wkr.inject("timeseries", new TimeseriesInjector(wkr));
 
