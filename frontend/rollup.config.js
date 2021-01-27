@@ -73,21 +73,6 @@ if (production) {
       module: true,
     })
   );
-  /* WTF: firefox doesn't support brotli on localhost without https!!! We have to use gzip :(
-  plugins.push(
-    gzipPlugin({
-      customCompression: (content) =>
-        brotliCompressSync(Buffer.from(content), {
-          params: {
-            [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_TEXT,
-            [constants.BROTLI_PARAM_QUALITY]: constants.BROTLI_MAX_QUALITY,
-            [constants.BROTLI_PARAM_SIZE_HINT]: content.length,
-          },
-        }),
-      fileName: ".br",
-    })
-  );
-  */
   plugins.push(gzipPlugin());
 } else {
   console.log("Running debug build");
