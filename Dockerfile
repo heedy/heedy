@@ -20,7 +20,10 @@ RUN make heedy && chmod +x ./heedy
 
 FROM python:3.8
 
+WORKDIR /data
 WORKDIR /heedy
+
+ENV HOME=/data
 COPY --from=backend /backend/heedy .
 
 EXPOSE 1324
