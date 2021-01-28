@@ -26,6 +26,9 @@ WORKDIR /heedy
 ENV HOME=/data
 COPY --from=backend /backend/heedy .
 
+RUN chgrp -R 0 /heedy /data && chmod -R g=u /heedy /data
+USER 12938
+
 EXPOSE 1324
 
 CMD [ "./heedy" ]
