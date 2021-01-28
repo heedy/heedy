@@ -25,7 +25,4 @@ COPY --from=backend /backend/heedy .
 
 EXPOSE 1324
 
-COPY ./entrypoint.sh .
-ENTRYPOINT [ "./entrypoint.sh" ]
-
 CMD [ "./heedy" ]
