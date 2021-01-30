@@ -18,7 +18,7 @@ COPY --from=frontend /frontend .
 RUN make heedy && chmod +x ./heedy
 
 
-FROM python:3.8
+FROM python:3.9-slim-buster
 
 WORKDIR /data
 WORKDIR /heedy
