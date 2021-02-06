@@ -9,7 +9,6 @@ COPY . .
 RUN make frontend
 
 
-# We use the alpine tag to be able to execute on the alpine image later
 FROM golang AS backend
 
 WORKDIR /backend
@@ -26,6 +25,7 @@ WORKDIR /heedy
 ENV HOME=/data
 COPY --from=backend /backend/heedy .
 
+# Grant docker user group access
 RUN chgrp -R 0 /heedy /data && chmod -R g=u /heedy /data
 USER 12938
 
