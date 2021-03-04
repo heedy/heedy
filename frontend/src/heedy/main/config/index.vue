@@ -1,5 +1,5 @@
 <template >
-  <h-card-page title="Server Configuration">
+  <h-card-page title="Server Config">
     <v-tabs v-model="tab" show-arrows>
       <v-tabs-slider color="teal lighten-3"></v-tabs-slider>
       <v-tab v-for="r in routes" :key="r.path" :to="`/config/${r.path}`">{{

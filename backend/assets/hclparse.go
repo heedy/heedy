@@ -83,8 +83,8 @@ type hclPlugin struct {
 	Routes *map[string]string `hcl:"routes" json:"routes"`
 	Events *map[string]string `hcl:"events" json:"events,omitempty"`
 
-	ConfigSchema      *cty.Value `hcl:"config_schema"`
-	PreferencesSchema *cty.Value `hcl:"preferences_schema"`
+	ConfigSchema       *cty.Value `hcl:"config_schema"`
+	UserSettingsSchema *cty.Value `hcl:"user_settings_schema"`
 
 	Run []hclRun `hcl:"run,block"`
 
@@ -146,7 +146,7 @@ type hclConfiguration struct {
 	LogLevel *string `json:"log_level" hcl:"log_level"`
 	LogFile  *string `json:"log_file" hcl:"log_file"`
 
-	PreferencesSchema *cty.Value `hcl:"preferences_schema"`
+	UserSettingsSchema *cty.Value `hcl:"user_settings_schema"`
 }
 
 func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {
@@ -275,12 +275,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	c := NewConfiguration()
 	CopyStructIfPtrSet(c, hc)
 
-	if hc.PreferencesSchema != nil {
-		sobj, err := loadJSONObject(hc.PreferencesSchema)
+	if hc.UserSettingsSchema != nil {
+		sobj, err := loadJSONObject(hc.UserSettingsSchema)
 		if err != nil {
 			return nil, err
 		}
-		c.PreferencesSchema = *sobj
+		c.UserSettingsSchema = *sobj
 	}
 
 	// Loop through the objects
@@ -366,12 +366,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			}
 			p.ConfigSchema = *sobj
 		}
-		if hp.PreferencesSchema != nil {
-			sobj, err := loadJSONObject(hp.PreferencesSchema)
+		if hp.UserSettingsSchema != nil {
+			sobj, err := loadJSONObject(hp.UserSettingsSchema)
 			if err != nil {
 				return nil, err
 			}
-			p.PreferencesSchema = *sobj
+			p.UserSettingsSchema = *sobj
 		}
 
 		// Load the apps that the plugin wants to set up

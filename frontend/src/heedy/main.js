@@ -13,10 +13,10 @@ import ConfigServer from "./main/config/server.vue";
 import ConfigUsers from "./main/config/users.vue";
 import ConfigPlugins from "./main/config/plugins.vue";
 
-import PreferencesPage from "./main/preferences/index.vue";
-import PreferencesInjector, { preferencesRoutes } from "./main/preferences/injector.js";
-import PreferencesUser from "./main/preferences/user.vue";
-import PreferencesPlugins from "./main/preferences/plugins.vue";
+import SettingsPage from "./main/settings/index.vue";
+import SettingsInjector, { settingsRoutes } from "./main/settings/injector.js";
+import SettingsUser from "./main/settings/user.vue";
+import SettingsPlugins from "./main/settings/plugins.vue";
 
 import UserInjector, { userRoutes } from "./main/user/injector.js";
 import UserRouter from "./main/user/router.vue";
@@ -73,7 +73,7 @@ function setup(frontend) {
   frontend.inject("apps", new AppInjector(frontend));
   frontend.inject("objects", new ObjectInjector(frontend));
   frontend.inject("config", new ConfigInjector(frontend));
-  frontend.inject("preferences", new PreferencesInjector(frontend));
+  frontend.inject("settings", new SettingsInjector(frontend));
 
   frontend.users.addComponent({
     key: "header",
@@ -93,10 +93,10 @@ function setup(frontend) {
   if (frontend.info.user != null) {
 
     // Set up websocket listening for preference updates
-    frontend.websocket.subscribe("user_preferences_update", {
-      event: "user_preferences_update",
+    frontend.websocket.subscribe("user_settings_update", {
+      event: "user_settings_update",
       user: frontend.info.user.username //"*"
-    }, e => frontend.store.dispatch("readPluginPreferences", { plugin: e.plugin }))
+    }, e => frontend.store.dispatch("ReadUserPluginSettings", { plugin: e.plugin }))
 
     // Pages to set up when user is logged in
 
@@ -161,33 +161,33 @@ function setup(frontend) {
     });
 
     frontend.addMenuItem({
-      key: "heedyPreferences",
-      text: "Preferences",
+      key: "heedySettings",
+      text: "User Settings",
       icon: "fas fa-user-cog",
-      route: "/preferences/user",
+      route: "/settings/user",
       location: "secondary",
     });
     frontend.addRoute({
-      path: "/preferences",
-      component: PreferencesPage,
-      children: preferencesRoutes,
+      path: "/settings",
+      component: SettingsPage,
+      children: settingsRoutes,
     });
-    frontend.preferences.addPage({
+    frontend.settings.addPage({
       path: "user",
-      component: PreferencesUser,
+      component: SettingsUser,
       title: "My Account"
     });
-    frontend.preferences.addPage({
+    frontend.settings.addPage({
       path: "plugins",
-      component: PreferencesPlugins,
-      title: "General"
+      component: SettingsPlugins,
+      title: "Settings"
     });
 
     // Pages to show when the user is an admin
     if (frontend.info.admin) {
       frontend.addMenuItem({
         key: "heedyConfig",
-        text: "Configuration",
+        text: "Server Config",
         icon: "settings",
         route: "/config/plugins",
         location: "secondary",

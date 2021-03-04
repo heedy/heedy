@@ -23,7 +23,7 @@ type AdminDB struct {
 
 func (db *AdminDB) ReadPluginDatabaseVersion(plugin string) (int, error) {
 	var curVersion int
-	err := db.Get(&curVersion, `SELECT version FROM heedy WHERE plugin=?`, plugin)
+	err := db.Get(&curVersion, `SELECT version FROM dbversion WHERE plugin=?`, plugin)
 	if err != nil && err != sql.ErrNoRows {
 		return 0, err
 	}
@@ -34,7 +34,7 @@ func (db *AdminDB) ReadPluginDatabaseVersion(plugin string) (int, error) {
 }
 
 func (db *AdminDB) WritePluginDatabaseVersion(plugin string, version int) error {
-	_, err := db.Exec(`INSERT OR REPLACE INTO heedy(plugin,version) VALUES (?,?)`, plugin, version)
+	_, err := db.Exec(`INSERT OR REPLACE INTO dbversion(plugin,version) VALUES (?,?)`, plugin, version)
 	return err
 }
 
@@ -396,8 +396,8 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 
 }
 
-// ReadUserPreferences gets the given user's preferences. Returns default preferences if the user does not exist.
-func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]interface{}, error) {
+// ReadUserSettings gets the given user's preferences. Returns default preferences if the user does not exist.
+func (db *AdminDB) ReadUserSettings(username string) (map[string]map[string]interface{}, error) {
 	var res []struct {
 		Plugin string
 		Key    string
@@ -408,9 +408,9 @@ func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]i
 	cfg := db.a.Config
 	m := make(map[string]map[string]interface{})
 
-	if len(cfg.PreferencesSchema) > 0 {
+	if len(cfg.UserSettingsSchema) > 0 {
 		v := make(map[string]interface{})
-		err := cfg.InsertPreferenceDefaults(v)
+		err := cfg.InsertUserSettingsDefaults(v)
 		m["heedy"] = v
 		if err != nil {
 			return nil, err
@@ -418,9 +418,9 @@ func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]i
 	}
 
 	for _, p := range cfg.GetActivePlugins() {
-		if len(cfg.Plugins[p].PreferencesSchema) > 0 {
+		if len(cfg.Plugins[p].UserSettingsSchema) > 0 {
 			v := make(map[string]interface{})
-			err := cfg.Plugins[p].InsertPreferenceDefaults(v)
+			err := cfg.Plugins[p].InsertUserSettingsDefaults(v)
 			m[p] = v
 			if err != nil {
 				return nil, err
@@ -428,8 +428,8 @@ func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]i
 		}
 	}
 
-	// Next, fill in preferences that were updated by the user
-	err := db.Select(&res, `SELECT plugin,key,value FROM plugin_preferences WHERE user=?`, username)
+	// Next, fill in settings that were updated by the user
+	err := db.Select(&res, `SELECT plugin,key,value FROM user_settings WHERE user=?`, username)
 	if err != nil {
 		return nil, err
 	}
@@ -441,8 +441,8 @@ func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]i
 		}
 		m2, ok := m[resv.Plugin]
 		if !ok {
-			// There are preferences for the plugin in the database despite there being no schema for them... This should be a warning
-			logrus.Warnf("Existing preferences found for plugin '%s', but no schema given.", resv.Plugin)
+			// There are settings for the plugin in the database despite there being no schema for them... This should be a warning
+			logrus.Warnf("Existing settings found for plugin '%s', but no schema given.", resv.Plugin)
 			m2 = make(map[string]interface{})
 			m[resv.Plugin] = m2
 		}
@@ -453,19 +453,19 @@ func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]i
 	return m, nil
 }
 
-func (db *AdminDB) ReadPluginPreferences(username string, plugin string) (v map[string]interface{}, err error) {
+func (db *AdminDB) ReadUserPluginSettings(username string, plugin string) (v map[string]interface{}, err error) {
 	v = make(map[string]interface{})
 
 	// First fill in the defaults
 	cfg := db.a.Config
 	if plugin == "heedy" {
-		err = cfg.InsertPreferenceDefaults(v)
+		err = cfg.InsertUserSettingsDefaults(v)
 	} else {
 		pv, ok := cfg.Plugins[plugin]
 		if !ok {
 			return nil, errors.New("Unrecognized plugin")
 		}
-		err = pv.InsertPreferenceDefaults(v)
+		err = pv.InsertUserSettingsDefaults(v)
 	}
 	if err != nil {
 		return nil, err
@@ -477,7 +477,7 @@ func (db *AdminDB) ReadPluginPreferences(username string, plugin string) (v map[
 	}
 
 	// Next, fill in preferences that were updated by the user
-	err = db.Select(&res, `SELECT key,value FROM plugin_preferences WHERE user=? AND plugin=?`, username, plugin)
+	err = db.Select(&res, `SELECT key,value FROM user_settings WHERE user=? AND plugin=?`, username, plugin)
 	if err != nil {
 		return nil, err
 	}
@@ -493,20 +493,20 @@ func (db *AdminDB) ReadPluginPreferences(username string, plugin string) (v map[
 	return
 }
 
-func (db *AdminDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) (err error) {
+func (db *AdminDB) UpdateUserPluginSettings(username string, plugin string, preferences map[string]interface{}) (err error) {
 	if len(preferences) == 0 {
 		return nil
 	}
 
 	cfg := db.a.Config
 	if plugin == "heedy" {
-		err = cfg.ValidateHeedyPreferencesUpdate(preferences)
+		err = cfg.ValidateUserSettingsUpdate(preferences)
 	} else {
 		pv, ok := cfg.Plugins[plugin]
 		if !ok {
 			return errors.New("Unrecognized plugin")
 		}
-		err = pv.ValidatePreferencesUpdate(preferences)
+		err = pv.ValidateUserSettingsUpdate(preferences)
 	}
 	if err != nil {
 		return err
@@ -528,7 +528,7 @@ func (db *AdminDB) UpdatePluginPreferences(username string, plugin string, prefe
 				karray = append(karray, k)
 			}
 			events.Fire(&events.Event{
-				Event:  "user_preferences_update",
+				Event:  "user_settings_update",
 				User:   username,
 				Plugin: &plugin,
 				Data: map[string]interface{}{
@@ -545,10 +545,10 @@ func (db *AdminDB) UpdatePluginPreferences(username string, plugin string, prefe
 			if err != nil {
 				return err
 			}
-			_, err = tx.Exec(`INSERT OR REPLACE INTO plugin_preferences(user,plugin,key,value) VALUES (?,?,?,?);`, username, plugin, k, b)
+			_, err = tx.Exec(`INSERT OR REPLACE INTO user_settings(user,plugin,key,value) VALUES (?,?,?,?);`, username, plugin, k, b)
 		} else {
 			// The value is nil, so we delete the element
-			_, err = tx.Exec("DELETE FROM plugin_preferences WHERE user=? AND plugin=? AND key=?", username, plugin, k)
+			_, err = tx.Exec("DELETE FROM user_settings WHERE user=? AND plugin=? AND key=?", username, plugin, k)
 		}
 		if err != nil {
 			return err

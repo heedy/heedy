@@ -83,21 +83,21 @@ type Plugin struct {
 
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 
-	Run               map[string]Run         `json:"run,omitempty"`
-	Config            map[string]interface{} `json:"config,omitempty"`
-	ConfigSchema      map[string]interface{} `json:"config_schema,omitempty"`
-	PreferencesSchema map[string]interface{} `json:"preferences_schema,omitempty"`
+	Run                map[string]Run         `json:"run,omitempty"`
+	Config             map[string]interface{} `json:"config,omitempty"`
+	ConfigSchema       map[string]interface{} `json:"config_schema,omitempty"`
+	UserSettingsSchema map[string]interface{} `json:"user_settings_schema,omitempty"`
 
 	Apps map[string]*App `json:"apps,omitempty"`
 
-	preferencesSchema *JSONSchema
+	userSettingsSchema *JSONSchema
 }
 
 func (p *Plugin) Copy() *Plugin {
 	np := *p
 	np.Run = make(map[string]Run)
 	np.Config = make(map[string]interface{})
-	np.PreferencesSchema = make(map[string]interface{})
+	np.UserSettingsSchema = make(map[string]interface{})
 	np.ConfigSchema = make(map[string]interface{})
 	np.On = make([]Event, len(p.On))
 
@@ -118,8 +118,8 @@ func (p *Plugin) Copy() *Plugin {
 	for skey, sval := range p.ConfigSchema {
 		np.ConfigSchema[skey] = sval
 	}
-	for skey, sval := range p.PreferencesSchema {
-		np.PreferencesSchema[skey] = sval
+	for skey, sval := range p.UserSettingsSchema {
+		np.UserSettingsSchema[skey] = sval
 	}
 	for si, sval := range p.On {
 		np.On[si] = sval
@@ -128,33 +128,33 @@ func (p *Plugin) Copy() *Plugin {
 	return &np
 }
 
-func (p *Plugin) InsertPreferenceDefaults(prefs map[string]interface{}) (err error) {
-	if p.preferencesSchema == nil {
-		p.preferencesSchema, err = NewSchema(p.PreferencesSchema)
+func (p *Plugin) InsertUserSettingsDefaults(prefs map[string]interface{}) (err error) {
+	if p.userSettingsSchema == nil {
+		p.userSettingsSchema, err = NewSchema(p.UserSettingsSchema)
 	}
-	p.preferencesSchema.InsertDefaults(prefs)
+	p.userSettingsSchema.InsertDefaults(prefs)
 	return
 }
 
-func (p *Plugin) ValidatePreferencesUpdate(prefs map[string]interface{}) (err error) {
-	if p.preferencesSchema == nil {
-		p.preferencesSchema, err = NewSchema(p.PreferencesSchema)
+func (p *Plugin) ValidateUserSettingsUpdate(prefs map[string]interface{}) (err error) {
+	if p.userSettingsSchema == nil {
+		p.userSettingsSchema, err = NewSchema(p.UserSettingsSchema)
 	}
-	return p.preferencesSchema.ValidateUpdate(prefs)
+	return p.userSettingsSchema.ValidateUpdate(prefs)
 }
 
-func (p *Plugin) GetPreferenceSchema() map[string]interface{} {
-	if len(p.PreferencesSchema) == 0 {
+func (p *Plugin) GetUserSettingsSchema() map[string]interface{} {
+	if len(p.UserSettingsSchema) == 0 {
 		return nil
 	}
-	if p.preferencesSchema == nil {
+	if p.userSettingsSchema == nil {
 		var err error
-		p.preferencesSchema, err = NewSchema(p.PreferencesSchema)
+		p.userSettingsSchema, err = NewSchema(p.UserSettingsSchema)
 		if err != nil {
 			return nil
 		}
 	}
-	return p.preferencesSchema.Schema
+	return p.userSettingsSchema.Schema
 }
 
 type ObjectType struct {
@@ -279,13 +279,13 @@ type Configuration struct {
 	LogLevel *string `json:"log_level,omitempty" hcl:"log_level"`
 	LogFile  *string `json:"log_file,omitempty" hcl:"log_file"`
 
-	// Schema for the core UI preferences
-	PreferencesSchema map[string]interface{} `json:"preferences_schema,omitempty"`
+	// Schema for the core heedy settings
+	UserSettingsSchema map[string]interface{} `json:"user_settings_schema,omitempty"`
 
 	// The verbose option is not possible to set in config, it is passed as an arg. It is only here so that it is passed to plugins
 	Verbose bool `json:"verbose,omitempty"`
 
-	preferencesSchema *JSONSchema
+	userSettingsSchema *JSONSchema
 }
 
 func copyStringArrayPtr(s *[]string) *[]string {
@@ -300,13 +300,13 @@ func (c *Configuration) Copy() *Configuration {
 	nc := *c // LOCK VALUE COPY is OK, since we don't use the locks until the config is all loaded.
 
 	nc.Plugins = make(map[string]*Plugin)
-	nc.PreferencesSchema = make(map[string]interface{})
+	nc.UserSettingsSchema = make(map[string]interface{})
 
 	for pkey, pval := range c.Plugins {
 		nc.Plugins[pkey] = pval.Copy()
 	}
-	for skey, sval := range c.PreferencesSchema {
-		nc.PreferencesSchema[skey] = sval
+	for skey, sval := range c.UserSettingsSchema {
+		nc.UserSettingsSchema[skey] = sval
 	}
 
 	nc.ObjectTypes = make(map[string]ObjectType)
@@ -318,33 +318,33 @@ func (c *Configuration) Copy() *Configuration {
 
 }
 
-func (c *Configuration) InsertPreferenceDefaults(prefs map[string]interface{}) (err error) {
-	if c.preferencesSchema == nil {
-		c.preferencesSchema, err = NewSchema(c.PreferencesSchema)
+func (c *Configuration) InsertUserSettingsDefaults(prefs map[string]interface{}) (err error) {
+	if c.userSettingsSchema == nil {
+		c.userSettingsSchema, err = NewSchema(c.UserSettingsSchema)
 	}
-	c.preferencesSchema.InsertDefaults(prefs)
+	c.userSettingsSchema.InsertDefaults(prefs)
 	return
 }
 
-func (c *Configuration) ValidateHeedyPreferencesUpdate(prefs map[string]interface{}) (err error) {
-	if c.preferencesSchema == nil {
-		c.preferencesSchema, err = NewSchema(c.PreferencesSchema)
+func (c *Configuration) ValidateUserSettingsUpdate(prefs map[string]interface{}) (err error) {
+	if c.userSettingsSchema == nil {
+		c.userSettingsSchema, err = NewSchema(c.UserSettingsSchema)
 	}
-	return c.preferencesSchema.ValidateUpdate(prefs)
+	return c.userSettingsSchema.ValidateUpdate(prefs)
 }
 
-func (c *Configuration) GetPreferenceSchema() map[string]interface{} {
-	if len(c.PreferencesSchema) == 0 {
+func (c *Configuration) GetUserSettingsSchema() map[string]interface{} {
+	if len(c.UserSettingsSchema) == 0 {
 		return nil
 	}
-	if c.preferencesSchema == nil {
+	if c.userSettingsSchema == nil {
 		var err error
-		c.preferencesSchema, err = NewSchema(c.PreferencesSchema)
+		c.userSettingsSchema, err = NewSchema(c.UserSettingsSchema)
 		if err != nil {
 			return nil
 		}
 	}
-	return c.preferencesSchema.Schema
+	return c.userSettingsSchema.Schema
 }
 
 func NewConfiguration() *Configuration {
@@ -403,8 +403,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 
 	CopyStructIfPtrSet(base, overlay)
 
-	if len(overlay.PreferencesSchema) > 0 {
-		MergeMap(base.PreferencesSchema, overlay.PreferencesSchema)
+	if len(overlay.UserSettingsSchema) > 0 {
+		MergeMap(base.UserSettingsSchema, overlay.UserSettingsSchema)
 	}
 
 	// Merge the ObjectTypes map
@@ -504,8 +504,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 			if len(oplugin.ConfigSchema) > 0 {
 				MergeMap(bplugin.ConfigSchema, oplugin.ConfigSchema)
 			}
-			if len(oplugin.PreferencesSchema) > 0 {
-				MergeMap(bplugin.PreferencesSchema, oplugin.PreferencesSchema)
+			if len(oplugin.UserSettingsSchema) > 0 {
+				MergeMap(bplugin.UserSettingsSchema, oplugin.UserSettingsSchema)
 			}
 
 			// Settings copy

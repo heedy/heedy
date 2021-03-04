@@ -309,9 +309,9 @@ type DB interface {
 
 	ListObjects(o *ListObjectsOptions) ([]*Object, error)
 
-	ReadUserPreferences(username string) (map[string]map[string]interface{}, error)
-	UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error
-	ReadPluginPreferences(username string, plugin string) (map[string]interface{}, error)
+	ReadUserSettings(username string) (map[string]map[string]interface{}, error)
+	UpdateUserPluginSettings(username string, plugin string, preferences map[string]interface{}) error
+	ReadUserPluginSettings(username string, plugin string) (map[string]interface{}, error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {

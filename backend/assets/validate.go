@@ -87,9 +87,9 @@ func Validate(c *Configuration) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	if len(c.PreferencesSchema) > 0 {
+	if len(c.UserSettingsSchema) > 0 {
 		var err error
-		c.preferencesSchema, err = NewSchema(c.PreferencesSchema)
+		c.userSettingsSchema, err = NewSchema(c.UserSettingsSchema)
 		if err != nil {
 			return err
 		}
@@ -180,9 +180,9 @@ func Validate(c *Configuration) error {
 				}
 			}
 		}
-		if len(p.PreferencesSchema) > 0 {
+		if len(p.UserSettingsSchema) > 0 {
 			var err error
-			p.preferencesSchema, err = NewSchema(p.PreferencesSchema)
+			p.userSettingsSchema, err = NewSchema(p.UserSettingsSchema)
 			if err != nil {
 				return err
 			}

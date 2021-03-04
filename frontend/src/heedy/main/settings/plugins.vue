@@ -5,10 +5,8 @@
     </h3>
   </v-flex>
   <v-flex v-else-if="Object.keys(schema).length == 0" text-center>
-    <h3 style="margin-top: 20px; margin-bottom: 20px">
-      No Preferences Available
-    </h3>
-    <p>The installed plugins do not define any user preferences.</p>
+    <h3 style="margin-top: 20px; margin-bottom: 20px">No Settings Available</h3>
+    <p>The installed plugins do not define any user settings.</p>
   </v-flex>
   <v-list
     v-else
@@ -46,7 +44,7 @@ export default {
   components: { PluginSettings },
   computed: {
     schema() {
-      return this.$store.state.heedy.plugin_preferences_schema;
+      return this.$store.state.heedy.plugin_settings_schema;
     },
     categories() {
       let s = this.schema;
@@ -58,7 +56,7 @@ export default {
           key: "heedy",
           title: "HEEDY",
           schema: s["heedy"],
-          value: this.$store.state.app.info.preferences["heedy"] || {},
+          value: this.$store.state.app.info.settings["heedy"] || {},
         });
       }
 
@@ -70,7 +68,7 @@ export default {
               key: k,
               title: k.toUpperCase(),
               schema: s[k],
-              value: this.$store.state.app.info.preferences[k] || {},
+              value: this.$store.state.app.info.settings[k] || {},
             });
           }
         });
@@ -78,7 +76,7 @@ export default {
     },
   },
   created() {
-    this.$store.dispatch("readPluginPreferenceSchema");
+    this.$store.dispatch("ReadUserPluginSettingsSchema");
   },
 };
 </script>

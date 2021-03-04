@@ -63,7 +63,7 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hversion < 2 || hversion > 2 {
+	if hversion != 1 {
 		return nil, errors.New("The given database is incompatible with this version of Heedy")
 	}
 

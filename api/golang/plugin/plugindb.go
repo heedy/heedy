@@ -348,23 +348,23 @@ func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error
 	return cl, err
 }
 
-func (db *PluginDB) ReadUserPreferences(username string) (v map[string]map[string]interface{}, err error) {
-	api := fmt.Sprintf("/api/users/%s/preferences", username)
+func (db *PluginDB) ReadUserSettings(username string) (v map[string]map[string]interface{}, err error) {
+	api := fmt.Sprintf("/api/users/%s/settings", username)
 
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return
 }
-func (db *PluginDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error {
-	api := fmt.Sprintf("/api/users/%s/preferences/%s", username, plugin)
-	b, err := json.Marshal(preferences)
+func (db *PluginDB) UpdateUserPluginSettings(username string, plugin string, settings map[string]interface{}) error {
+	api := fmt.Sprintf("/api/users/%s/settings/%s", username, plugin)
+	b, err := json.Marshal(settings)
 	if err != nil {
 		return err
 	}
 
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
-func (db *PluginDB) ReadPluginPreferences(username string, plugin string) (v map[string]interface{}, err error) {
-	api := fmt.Sprintf("/api/users/%s/preferences/%s", username, plugin)
+func (db *PluginDB) ReadUserPluginSettings(username string, plugin string) (v map[string]interface{}, err error) {
+	api := fmt.Sprintf("/api/users/%s/settings/%s", username, plugin)
 
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return

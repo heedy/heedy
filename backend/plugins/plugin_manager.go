@@ -84,15 +84,15 @@ func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, err
 		logrus.Debug("Cleared database of apps from inactive plugins")
 	}
 
-	// The next cleanup operation cleans up preferences of inactive plugins
+	// The next cleanup operation cleans up user settings of inactive plugins
 	if len(plugins) > 0 {
 		iplugins := make([]interface{}, 0, len(plugins))
 		for _, p := range plugins {
 			iplugins = append(iplugins, p)
 		}
-		r, err = db.Exec(fmt.Sprintf("DELETE FROM plugin_preferences WHERE plugin NOT IN ('heedy', %s);", database.QQ(len(plugins))), iplugins...)
+		r, err = db.Exec(fmt.Sprintf("DELETE FROM user_settings WHERE plugin NOT IN ('heedy',%s);", database.QQ(len(plugins))), iplugins...)
 	} else {
-		r, err = db.Exec("DELETE FROM plugin_preferences WHERE plugin!='heedy';")
+		r, err = db.Exec("DELETE FROM user_settings WHERE plugin!='heedy';")
 	}
 
 	if err != nil {
@@ -104,7 +104,7 @@ func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, err
 		return nil, err
 	}
 	if rows > 0 {
-		logrus.Debug("Cleared database of preferences from inactive plugins")
+		logrus.Debug("Cleared database of user settings from inactive plugins")
 	}
 
 	pm := &PluginManager{

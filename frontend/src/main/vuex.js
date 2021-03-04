@@ -18,8 +18,8 @@ function setup(appinfo) {
                     updateLoggedInUser(state, v) {
                         state.info.user = v;
                     },
-                    updatePluginPreferences(state, v) {
-                        Vue.set(state.info.preferences, v.plugin, v.value);
+                    UpdateUserPluginSettings(state, v) {
+                        Vue.set(state.info.settings, v.plugin, v.value);
                     },
                     addMenuItem(state, m) {
                         state.menu_items[m.key] = m;

@@ -58,20 +58,20 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, sl, err)
 }
 
-func ReadUserPreferences(w http.ResponseWriter, r *http.Request) {
+func ReadUserSettings(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
-	v, err := rest.CTX(r).DB.ReadUserPreferences(username)
+	v, err := rest.CTX(r).DB.ReadUserSettings(username)
 	rest.WriteJSON(w, r, v, err)
 }
 
-func ReadPluginPreferences(w http.ResponseWriter, r *http.Request) {
+func ReadUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 	plugin := chi.URLParam(r, "plugin")
-	v, err := rest.CTX(r).DB.ReadPluginPreferences(username, plugin)
+	v, err := rest.CTX(r).DB.ReadUserPluginSettings(username, plugin)
 	rest.WriteJSON(w, r, v, err)
 }
 
-func UpdatePluginPreferences(w http.ResponseWriter, r *http.Request) {
+func UpdateUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 	plugin := chi.URLParam(r, "plugin")
 
@@ -82,7 +82,7 @@ func UpdatePluginPreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rest.WriteResult(w, r, rest.CTX(r).DB.UpdatePluginPreferences(username, plugin, v))
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateUserPluginSettings(username, plugin, v))
 }
 
 func ListObjects(w http.ResponseWriter, r *http.Request) {

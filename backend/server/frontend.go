@@ -22,12 +22,12 @@ type frontendPlugin struct {
 }
 
 type fContext struct {
-	User        *database.User                    `json:"user"`
-	Preferences map[string]map[string]interface{} `json:"preferences"`
-	Admin       bool                              `json:"admin"`
-	Plugins     []frontendPlugin                  `json:"plugins"`
-	Preload     []string                          `json:"preload"`
-	Verbose     bool                              `json:"verbose"`
+	User     *database.User                    `json:"user"`
+	Settings map[string]map[string]interface{} `json:"settings"`
+	Admin    bool                              `json:"admin"`
+	Plugins  []frontendPlugin                  `json:"plugins"`
+	Preload  []string                          `json:"preload"`
+	Verbose  bool                              `json:"verbose"`
 }
 
 type aContext struct {
@@ -142,19 +142,19 @@ func FrontendMux() (*chi.Mux, error) {
 			return
 		}
 
-		pref, err := ctx.DB.ReadUserPreferences(*u.UserName)
+		pref, err := ctx.DB.ReadUserSettings(*u.UserName)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		err = fTemplate.Execute(w, &fContext{
-			User:        u,
-			Preferences: pref,
-			Admin:       ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
-			Plugins:     frontendPlugins,
-			Preload:     preloads,
-			Verbose:     cfg.Verbose,
+			User:     u,
+			Settings: pref,
+			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
+			Plugins:  frontendPlugins,
+			Preload:  preloads,
+			Verbose:  cfg.Verbose,
 		})
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)

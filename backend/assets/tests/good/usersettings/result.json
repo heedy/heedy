@@ -1,12 +1,12 @@
 {
-    "preferences_schema": {
+    "user_settings_schema": {
         "trees": {
             "type": "string"
         }
     },
     "plugin": {
         "yomomma": {
-            "preferences_schema": {
+            "user_settings_schema": {
                 "yeet": {
                     "type": "number"
                 },

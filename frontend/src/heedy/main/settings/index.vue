@@ -1,8 +1,8 @@
 <template >
-  <h-card-page title="User Preferences">
+  <h-card-page title="User Settings">
     <v-tabs v-model="tab" show-arrows>
       <v-tabs-slider color="teal lighten-3"></v-tabs-slider>
-      <v-tab v-for="r in routes" :key="r.path" :to="`/preferences/${r.path}`">{{
+      <v-tab v-for="r in routes" :key="r.path" :to="`/settings/${r.path}`">{{
         r.title !== undefined ? r.title : r.path
       }}</v-tab>
     </v-tabs>
@@ -16,7 +16,7 @@ export default {
   }),
   computed: {
     routes() {
-      return this.$store.state.heedy.preferences_routes;
+      return this.$store.state.heedy.settings_routes;
     },
   },
 };

@@ -12,12 +12,12 @@ import (
 
 func newAssets(t *testing.T) (*assets.Assets, func()) {
 	a, err := assets.Open("", &assets.Configuration{
-		PreferencesSchema: map[string]interface{}{
+		UserSettingsSchema: map[string]interface{}{
 			"testPreference": map[string]interface{}{"type": "string", "default": "hi"},
 		},
 		Plugins: map[string]*assets.Plugin{
 			"kv": &assets.Plugin{
-				PreferencesSchema: map[string]interface{}{
+				UserSettingsSchema: map[string]interface{}{
 					"anotherTestPreference": map[string]interface{}{"type": "string", "default": "hello"},
 				},
 			},
@@ -491,15 +491,15 @@ func TestTags(t *testing.T) {
 	require.Equal(t, objs[0].ID, oid1)
 }
 
-func TestPreferences(t *testing.T) {
+func TestUserSettings(t *testing.T) {
 	db, cleanup := newDBWithUser(t)
 	defer cleanup()
 
 	// Check default values for preferences (the shchema was set up in newAssets function)
-	p2, err := db.ReadUserPreferences("testy")
+	p2, err := db.ReadUserSettings("testy")
 	require.NoError(t, err)
 
-	pref, err := db.ReadUserPreferences("testy")
+	pref, err := db.ReadUserSettings("testy")
 	require.NoError(t, err)
 	require.Equal(t, pref, p2)
 	require.Contains(t, pref, "heedy")
@@ -509,23 +509,23 @@ func TestPreferences(t *testing.T) {
 	require.Contains(t, pref["kv"], "anotherTestPreference")
 	require.Equal(t, pref["kv"]["anotherTestPreference"], "hello")
 
-	pp, err := db.ReadPluginPreferences("testy", "heedy")
+	pp, err := db.ReadUserPluginSettings("testy", "heedy")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["heedy"], pp)
 
-	pp, err = db.ReadPluginPreferences("testy", "kv")
+	pp, err = db.ReadUserPluginSettings("testy", "kv")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["kv"], pp)
 
-	require.Error(t, db.UpdatePluginPreferences("testy", "heedy", map[string]interface{}{"notaPreference": "hi"}))
+	require.Error(t, db.UpdateUserPluginSettings("testy", "heedy", map[string]interface{}{"notaPreference": "hi"}))
 
 	// Make sure preference updates are actually saved
-	require.NoError(t, db.UpdatePluginPreferences("testy", "heedy", map[string]interface{}{"testPreference": "heedifyme"}))
-	require.NoError(t, db.UpdatePluginPreferences("testy", "kv", map[string]interface{}{"anotherTestPreference": "h2o"}))
+	require.NoError(t, db.UpdateUserPluginSettings("testy", "heedy", map[string]interface{}{"testPreference": "heedifyme"}))
+	require.NoError(t, db.UpdateUserPluginSettings("testy", "kv", map[string]interface{}{"anotherTestPreference": "h2o"}))
 
-	pref, err = db.ReadUserPreferences("testy")
+	pref, err = db.ReadUserSettings("testy")
 	require.NoError(t, err)
 	require.Contains(t, pref, "heedy")
 	require.Contains(t, pref["heedy"], "testPreference")
@@ -534,21 +534,21 @@ func TestPreferences(t *testing.T) {
 	require.Contains(t, pref["kv"], "anotherTestPreference")
 	require.Equal(t, pref["kv"]["anotherTestPreference"], "h2o")
 
-	pp, err = db.ReadPluginPreferences("testy", "heedy")
+	pp, err = db.ReadUserPluginSettings("testy", "heedy")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["heedy"], pp)
 
-	pp, err = db.ReadPluginPreferences("testy", "kv")
+	pp, err = db.ReadUserPluginSettings("testy", "kv")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["kv"], pp)
 
 	// Now check preferences are reset back to default when deleted
-	require.NoError(t, db.UpdatePluginPreferences("testy", "heedy", map[string]interface{}{"testPreference": nil}))
-	require.NoError(t, db.UpdatePluginPreferences("testy", "kv", map[string]interface{}{"anotherTestPreference": nil}))
+	require.NoError(t, db.UpdateUserPluginSettings("testy", "heedy", map[string]interface{}{"testPreference": nil}))
+	require.NoError(t, db.UpdateUserPluginSettings("testy", "kv", map[string]interface{}{"anotherTestPreference": nil}))
 
-	pref, err = db.ReadUserPreferences("testy")
+	pref, err = db.ReadUserSettings("testy")
 	require.NoError(t, err)
 	require.Equal(t, pref, p2)
 	require.Contains(t, pref, "heedy")
@@ -558,12 +558,12 @@ func TestPreferences(t *testing.T) {
 	require.Contains(t, pref["kv"], "anotherTestPreference")
 	require.Equal(t, pref["kv"]["anotherTestPreference"], "hello")
 
-	pp, err = db.ReadPluginPreferences("testy", "heedy")
+	pp, err = db.ReadUserPluginSettings("testy", "heedy")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["heedy"], pp)
 
-	pp, err = db.ReadPluginPreferences("testy", "kv")
+	pp, err = db.ReadUserPluginSettings("testy", "kv")
 	require.NoError(t, err)
 
 	require.Equal(t, pref["kv"], pp)

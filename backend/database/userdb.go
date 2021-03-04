@@ -209,22 +209,22 @@ func (db *UserDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	return listApps(db.adb, o, selectStmt, a...)
 }
 
-func (db *UserDB) ReadUserPreferences(username string) (map[string]map[string]interface{}, error) {
+func (db *UserDB) ReadUserSettings(username string) (map[string]map[string]interface{}, error) {
 	if username != db.user {
-		return nil, ErrAccessDenied("Cannot read other users' preferences.")
+		return nil, ErrAccessDenied("Cannot read other users' settings.")
 	}
-	return db.AdminDB().ReadUserPreferences(username)
+	return db.AdminDB().ReadUserSettings(username)
 }
 
-func (db *UserDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error {
+func (db *UserDB) UpdateUserPluginSettings(username string, plugin string, preferences map[string]interface{}) error {
 	if username != db.user {
-		return ErrAccessDenied("Cannot update other users' preferences.")
+		return ErrAccessDenied("Cannot update other users' settings.")
 	}
-	return db.AdminDB().UpdatePluginPreferences(username, plugin, preferences)
+	return db.AdminDB().UpdateUserPluginSettings(username, plugin, preferences)
 }
-func (db *UserDB) ReadPluginPreferences(username string, plugin string) (map[string]interface{}, error) {
+func (db *UserDB) ReadUserPluginSettings(username string, plugin string) (map[string]interface{}, error) {
 	if username != db.user {
-		return nil, ErrAccessDenied("Cannot read other users' preferences.")
+		return nil, ErrAccessDenied("Cannot read other users' settings.")
 	}
-	return db.AdminDB().ReadPluginPreferences(username, plugin)
+	return db.AdminDB().ReadUserPluginSettings(username, plugin)
 }
