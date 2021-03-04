@@ -87,6 +87,14 @@ func Validate(c *Configuration) error {
 	c.RLock()
 	defer c.RUnlock()
 
+	if len(c.PreferencesSchema) > 0 {
+		var err error
+		c.preferencesSchema, err = NewSchema(c.PreferencesSchema)
+		if err != nil {
+			return err
+		}
+	}
+
 	for k, v := range c.ObjectTypes {
 		err := v.ValidateMeta(nil)
 		if err != nil {
@@ -160,7 +168,7 @@ func Validate(c *Configuration) error {
 		}
 	}
 
-	// Ensure that all routes use permitted verbs and start with permitted route prefix
+	// Ensure that all routes use permitted verbs and start with permitted route prefix, and validate schemas there too
 	for pname, p := range c.Plugins {
 		if p.Routes != nil {
 			for k, v := range *p.Routes {
@@ -170,6 +178,13 @@ func Validate(c *Configuration) error {
 				if err := isValidTarget(c, pname, v); err != nil {
 					return err
 				}
+			}
+		}
+		if len(p.PreferencesSchema) > 0 {
+			var err error
+			p.preferencesSchema, err = NewSchema(p.PreferencesSchema)
+			if err != nil {
+				return err
 			}
 		}
 
@@ -214,6 +229,15 @@ func Validate(c *Configuration) error {
 				}
 			}
 		}
+		if s.MetaSchema != nil {
+			// Can't actually use the schema value here
+			_, err := NewSchema(*s.MetaSchema)
+			if err != nil {
+				return err
+			}
+
+		}
+
 	}
 
 	// Finally, set the URL if it isn't set

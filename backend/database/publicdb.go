@@ -118,3 +118,12 @@ func (db *PublicDB) DelApp(cid string) error {
 func (db *PublicDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	return nil, ErrAccessDenied("You must be logged in to list apps")
 }
+func (db *PublicDB) ReadUserPreferences(username string) (map[string]map[string]interface{}, error) {
+	return nil, ErrAccessDenied("You must be logged in to read preferences")
+}
+func (db *PublicDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error {
+	return ErrAccessDenied("You must be logged in to update preferences")
+}
+func (db *PublicDB) ReadPluginPreferences(username string, plugin string) (map[string]interface{}, error) {
+	return nil, ErrAccessDenied("You must be logged in to read preferences")
+}

@@ -59,5 +59,13 @@ func Open(a *assets.Assets) (*AdminDB, error) {
 		adminDB.SqlxCache.Verbose = true
 	}
 
+	hversion, err := adminDB.ReadPluginDatabaseVersion("heedy")
+	if err != nil {
+		return nil, err
+	}
+	if hversion < 2 || hversion > 2 {
+		return nil, errors.New("The given database is incompatible with this version of Heedy")
+	}
+
 	return adminDB, nil
 }

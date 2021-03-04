@@ -21,13 +21,13 @@ const schema = `
 -- This is a meta-table, which specifies the versions of database tables
 -- Every plugin that includes tables in the core database must add itself to the table
 CREATE TABLE heedy (
-	name VARCHAR(36) PRIMARY KEY NOT NULL,
+	plugin VARCHAR(36) PRIMARY KEY NOT NULL,
 	version INTEGER
 );
 
 -- This makes sure that the heedy version is specified, so that future upgrades will know
 -- whether a schema modification is necessary
-INSERT INTO heedy VALUES ("heedy",1);
+INSERT INTO heedy VALUES ('heedy',2);
 
 CREATE TABLE users (
 	username VARCHAR(36) PRIMARY KEY NOT NULL,
@@ -187,6 +187,30 @@ CREATE TABLE user_logintokens (
 
 -- This will be requested on every single query
 CREATE INDEX login_tokens ON user_logintokens(token);
+
+------------------------------------------------------------------
+-- Plugin Preferences
+------------------------------------------------------------------
+-- The preferences are per-user k/v pairs for each plugin . Heedy preferences
+-- use the plugin 'heedy'. The schemas are defined in heedy.conf
+
+CREATE TABLE plugin_preferences (
+	user VARCHAR NOT NULL,
+
+	plugin VARCHAR NOT NULL,
+	key VARCHAR NOT NULL,
+	value VARCHAR NOT NULL DEFAULT 'null',
+
+	CONSTRAINT pk PRIMARY KEY (user,plugin,key),
+	CONSTRAINT valid_value CHECK(json_valid(value)),
+
+	CONSTRAINT fk
+		FOREIGN KEY (user)
+		REFERENCES users(username)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
 
 ------------------------------------------------------------------
 -- Database Views

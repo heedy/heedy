@@ -26,6 +26,10 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Patch("/users/{username}", UpdateUser)
 	apiMux.Delete("/users/{username}", DeleteUser)
 
+	apiMux.Get("/users/{username}/preferences", ReadUserPreferences)
+	apiMux.Get("/users/{username}/preferences/{plugin}", ReadPluginPreferences)
+	apiMux.Patch("/users/{username}/preferences/{plugin}", UpdatePluginPreferences)
+
 	apiMux.Post("/objects", CreateObject)
 	apiMux.Get("/objects", ListObjects)
 	apiMux.Get("/objects/{objectid}", ReadObject)
@@ -41,6 +45,7 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/server/scope/{objecttype}", GetObjectScope)
 	apiMux.Get("/server/scope", GetAppScope)
 	apiMux.Get("/server/apps", GetPluginApps)
+	apiMux.Get("/server/preferences", GetPreferenceSchemas)
 	apiMux.Get("/server/version", GetVersion)
 
 	apiMux.Get("/server/admin", GetAdminUsers)

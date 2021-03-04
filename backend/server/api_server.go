@@ -94,7 +94,7 @@ func GetPluginApps(w http.ResponseWriter, r *http.Request) {
 
 	db := rest.CTX(r).DB
 	if db.Type() == database.PublicType || db.Type() == database.AppType {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only logged in users can list available apps"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only logged in users can list available apps"))
 		return
 	}
 
@@ -113,6 +113,28 @@ func GetPluginApps(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, appmap, nil)
 }
 
+func GetPreferenceSchemas(w http.ResponseWriter, r *http.Request) {
+	db := rest.CTX(r).DB
+	if db.Type() == database.PublicType || db.Type() == database.AppType {
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only logged in users can read preference schemas"))
+		return
+	}
+
+	schemaMap := make(map[string]map[string]interface{})
+
+	cfg := db.AdminDB().Assets().Config
+	if len(cfg.PreferencesSchema) > 0 {
+		schemaMap["heedy"] = cfg.GetPreferenceSchema()
+	}
+	for p, pv := range cfg.Plugins {
+		if len(pv.PreferencesSchema) > 0 {
+			schemaMap[p] = pv.GetPreferenceSchema()
+		}
+	}
+
+	rest.WriteJSON(w, r, schemaMap, nil)
+}
+
 func GetVersion(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(buildinfo.Version))
@@ -122,7 +144,7 @@ func GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can list admins"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only admins can list admins"))
 		return
 	}
 	if a.Config.AdminUsers == nil {
@@ -136,7 +158,7 @@ func AddAdminUser(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add admin users"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only admins can add admin users"))
 		return
 	}
 	username := chi.URLParam(r, "username")
@@ -150,7 +172,7 @@ func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can add remove admin status"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only admins can add remove admin status"))
 		return
 	}
 	username := chi.URLParam(r, "username")
@@ -161,7 +183,7 @@ func GetUpdates(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	ui, err := updater.GetInfo(a.FolderPath)
@@ -172,7 +194,7 @@ func ClearUpdates(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	rest.WriteResult(w, r, updater.ClearUpdates(a.FolderPath))
@@ -182,7 +204,7 @@ func GetConfigFile(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	b, err := updater.ReadConfigFile(a.FolderPath)
@@ -197,7 +219,7 @@ func PostConfigFile(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	defer r.Body.Close()
@@ -214,7 +236,7 @@ func PatchUConfig(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	defer r.Body.Close()
@@ -232,7 +254,7 @@ func GetUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	rest.WriteResult(w, r, updater.Status(a.FolderPath))
@@ -242,7 +264,7 @@ func GetUConfig(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	c, err := updater.ReadConfig(a.FolderPath)
@@ -253,7 +275,7 @@ func GetAllPlugins(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	p, err := updater.ListPlugins(a.FolderPath)
@@ -264,7 +286,7 @@ func GetPluginReadme(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	pluginName := chi.URLParam(r, "pluginname")
@@ -291,7 +313,7 @@ func PostPlugin(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	r.ParseMultipartForm(50 << 20)
@@ -332,7 +354,7 @@ func GetUpdateOptions(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	c, err := updater.ReadOptions(a.FolderPath)
@@ -343,7 +365,7 @@ func PostUpdateOptions(w http.ResponseWriter, r *http.Request) {
 	db := rest.CTX(r).DB
 	a := db.AdminDB().Assets()
 	if db.Type() != database.AdminType && !a.Config.UserIsAdmin(db.ID()) {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Server settings are admin-only"))
+		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
 	var o updater.UpdateOptions

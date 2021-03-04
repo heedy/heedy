@@ -326,3 +326,14 @@ func (db *AppDB) DelApp(cid string) error {
 func (db *AppDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	return nil, ErrUnimplemented
 }
+
+func (db *AppDB) ReadUserPreferences(username string) (map[string]map[string]interface{}, error) {
+	return nil, ErrUnimplemented
+}
+
+func (db *AppDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error {
+	return ErrUnimplemented
+}
+func (db *AppDB) ReadPluginPreferences(username string, plugin string) (map[string]interface{}, error) {
+	return nil, ErrUnimplemented
+}

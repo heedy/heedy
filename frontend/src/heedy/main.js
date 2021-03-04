@@ -13,6 +13,11 @@ import SettingsServer from "./main/settings/server.vue";
 import SettingsUsers from "./main/settings/users.vue";
 import SettingsPlugins from "./main/settings/plugins.vue";
 
+import PreferencesPage from "./main/preferences/index.vue";
+import PreferencesInjector, { preferencesRoutes } from "./main/preferences/injector.js";
+import PreferencesUser from "./main/preferences/user.vue";
+import PreferencesPlugins from "./main/preferences/plugins.vue";
+
 import UserInjector, { userRoutes } from "./main/user/injector.js";
 import UserRouter from "./main/user/router.vue";
 import User from "./main/user/index.vue";
@@ -68,6 +73,7 @@ function setup(frontend) {
   frontend.inject("apps", new AppInjector(frontend));
   frontend.inject("objects", new ObjectInjector(frontend));
   frontend.inject("settings", new SettingsInjector(frontend));
+  frontend.inject("preferences", new PreferencesInjector(frontend));
 
   frontend.users.addComponent({
     key: "header",
@@ -85,6 +91,13 @@ function setup(frontend) {
   });
 
   if (frontend.info.user != null) {
+
+    // Set up websocket listening for preference updates
+    frontend.websocket.subscribe("user_preferences_update", {
+      event: "user_preferences_update",
+      user: frontend.info.user.username //"*"
+    }, e => frontend.store.dispatch("readPluginPreferences", { plugin: e.plugin }))
+
     // Pages to set up when user is logged in
 
     frontend.addRoute({
@@ -145,6 +158,29 @@ function setup(frontend) {
       icon: "settings_input_component",
       route: "/apps",
       location: "secondary",
+    });
+
+    frontend.addMenuItem({
+      key: "heedyPreferences",
+      text: "Preferences",
+      icon: "fas fa-user-cog",
+      route: "/preferences/user",
+      location: "secondary",
+    });
+    frontend.addRoute({
+      path: "/preferences",
+      component: PreferencesPage,
+      children: preferencesRoutes,
+    });
+    frontend.preferences.addPage({
+      path: "user",
+      component: PreferencesUser,
+      title: "My Account"
+    });
+    frontend.preferences.addPage({
+      path: "plugins",
+      component: PreferencesPlugins,
+      title: "General"
     });
 
     // Pages to show when the user is an admin

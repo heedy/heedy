@@ -12,7 +12,7 @@ const PluginName = "notifications"
 // for when it is compiled directly into the main heedy executable.
 func init() {
 	withversion := run.WithVersion(PluginName, SQLVersion, func(db *database.AdminDB, i *run.Info, h run.BuiltinHelper, sqlVersion int) error {
-		e := events.NewFilledHandler(db, events.GlobalHandler)
+		e := database.NewFilledHandler(db, events.GlobalHandler)
 		RegisterNotificationHooks(e)
 
 		return SQLUpdater(db, i, sqlVersion)

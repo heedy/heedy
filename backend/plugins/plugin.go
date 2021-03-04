@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ func assetEventToEvent(ev assets.Event) events.Event {
 		evt.Type = *ev.Type
 	}
 	if ev.Tags != nil {
-		evt.Tags = &database.StringArray{}
+		evt.Tags = &dbutil.StringArray{}
 		evt.Tags.Load(*ev.Tags)
 	}
 	evt.Plugin = ev.Plugin
@@ -128,7 +129,7 @@ func (p *Plugin) Start() error {
 				if evt.Tags != nil {
 					evt.Tags.Load(skey + " " + *ev.Tags)
 				} else {
-					evt.Tags = &database.StringArray{}
+					evt.Tags = &dbutil.StringArray{}
 					evt.Tags.Load(skey)
 				}
 				logrus.Debugf("%s: Forwarding event %s -> %s", p.Name, evt.String(), *ev.Post)

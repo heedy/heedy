@@ -48,7 +48,7 @@ func RequestWithContext(adb *database.AdminDB, h http.Handler, method, path stri
 	}
 
 	c := &rest.Context{
-		Events: events.NewFilledHandler(adb, events.GlobalHandler),
+		Events: database.NewFilledHandler(adb, events.GlobalHandler),
 		DB:     adb,
 		Log:    rest.RequestLogger(req),
 	}

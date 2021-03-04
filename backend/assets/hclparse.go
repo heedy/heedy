@@ -83,7 +83,8 @@ type hclPlugin struct {
 	Routes *map[string]string `hcl:"routes" json:"routes"`
 	Events *map[string]string `hcl:"events" json:"events,omitempty"`
 
-	SettingSchema *cty.Value `hcl:"settings_schema"`
+	SettingSchema     *cty.Value `hcl:"settings_schema"`
+	PreferencesSchema *cty.Value `hcl:"preferences_schema"`
 
 	Run []hclRun `hcl:"run,block"`
 
@@ -103,8 +104,8 @@ type hclObjectType struct {
 
 	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
-	Meta  *cty.Value         `hcl:"meta,attr"`
-	Scope *map[string]string `json:"scope,omitempty" hcl:"scope" cty:"scope"`
+	MetaSchema *cty.Value         `hcl:"meta_schema,attr"`
+	Scope      *map[string]string `json:"scope,omitempty" hcl:"scope" cty:"scope"`
 }
 
 type hclRunType struct {
@@ -144,6 +145,8 @@ type hclConfiguration struct {
 
 	LogLevel *string `json:"log_level" hcl:"log_level"`
 	LogFile  *string `json:"log_file" hcl:"log_file"`
+
+	PreferencesSchema *cty.Value `hcl:"preferences_schema"`
 }
 
 func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {
@@ -272,6 +275,14 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 	c := NewConfiguration()
 	CopyStructIfPtrSet(c, hc)
 
+	if hc.PreferencesSchema != nil {
+		sobj, err := loadJSONObject(hc.PreferencesSchema)
+		if err != nil {
+			return nil, err
+		}
+		c.PreferencesSchema = *sobj
+	}
+
 	// Loop through the objects
 	for _, ht := range hc.ObjectTypes {
 		t := ObjectType{}
@@ -279,7 +290,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		CopyStructIfPtrSet(&t, ht)
 
 		var err error
-		t.Meta, err = loadJSONObject(ht.Meta)
+		t.MetaSchema, err = loadJSONObject(ht.MetaSchema)
 		if err != nil {
 			return nil, err
 		}
@@ -354,6 +365,13 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 				return nil, err
 			}
 			p.SettingsSchema = *sobj
+		}
+		if hp.PreferencesSchema != nil {
+			sobj, err := loadJSONObject(hp.PreferencesSchema)
+			if err != nil {
+				return nil, err
+			}
+			p.PreferencesSchema = *sobj
 		}
 
 		// Load the apps that the plugin wants to set up

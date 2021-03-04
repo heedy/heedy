@@ -1,16 +1,7 @@
 <template>
   <v-flex>
     <v-card>
-      <div
-        style="position: absolute; top: 2px; right: 16px"
-        v-if="editable && !editing"
-      >
-        <v-btn icon @click="editing = true">
-          <v-icon style="color: lightgray; opacity: 0.3">edit</v-icon>
-        </v-btn>
-      </div>
       <v-btn
-        v-if="!editing"
         color="blue darken-2"
         dark
         fab
@@ -23,53 +14,25 @@
       <v-container grid-list-md fluid>
         <v-layout row wrap>
           <v-flex xs12 sm4 md3 lg2 text-center justify-center>
-            <template v-if="!editing">
-              <h-icon
-                :size="120"
-                :image="user.icon"
-                defaultIcon="person"
-                :colorHash="user.username"
-              ></h-icon>
-              <h5 style="color: gray; padding-top: 10px">
-                {{ user.username }}
-              </h5>
-            </template>
-            <template v-else>
-              <h-icon-editor
-                ref="iconEditor"
-                :image="user.icon"
-                :colorHash="user.username"
-              ></h-icon-editor>
-            </template>
+            <h-icon
+              :size="120"
+              :image="user.icon"
+              defaultIcon="person"
+              :colorHash="user.username"
+            ></h-icon>
+            <h5 style="color: gray; padding-top: 10px">
+              {{ user.username }}
+            </h5>
           </v-flex>
           <v-flex xs12 sm8 md9 lg10>
-            <h2 v-if="!editing">
+            <h2>
               {{ user.name == "" ? user.username : user.name }}
             </h2>
-            <v-text-field
-              v-else
-              :label="user.name == '' ? user.username : user.name"
-              solo
-              v-model="name"
-            ></v-text-field>
-            <v-textarea
-              v-if="editing"
-              solo
-              label=""
-              v-model="description"
-            ></v-textarea>
-            <p v-else-if="user.description != ''">{{ user.description }}</p>
+            <p v-if="user.description != ''">{{ user.description }}</p>
             <p v-else style="color: lightgray"></p>
           </v-flex>
         </v-layout>
       </v-container>
-      <v-card-actions v-if="editing">
-        <v-spacer></v-spacer>
-        <v-btn @click="cancel">Cancel</v-btn>
-        <v-btn type="submit" color="primary" @click="save" :loading="loading"
-          >Save</v-btn
-        >
-      </v-card-actions>
     </v-card>
     <v-dialog v-model="dialog" max-width="1024">
       <v-card>
@@ -132,9 +95,6 @@ import api from "../../../util.mjs";
 
 export default {
   data: () => ({
-    editing: false,
-    modified: {},
-    loading: false,
     fab: false,
     dialog: false,
   }),
@@ -142,36 +102,6 @@ export default {
     user: Object,
   },
   methods: {
-    cancel() {
-      this.loading = false;
-      this.editing = false;
-      this.modified = {};
-    },
-    save: async function () {
-      if (this.loading) return;
-      this.loading = true;
-      if (this.$refs.iconEditor.hasImage()) {
-        // We are in the image picker, and an image was chosen
-        this.modified.icon = this.$refs.iconEditor.getImage();
-      }
-      console.vlog(this.modified);
-      let result = await api(
-        "PATCH",
-        `api/users/${this.user.username}`,
-        this.modified
-      );
-      if (!result.response.ok) {
-        this.$store.dispatch("errnotify", result.data);
-        this.loading = false;
-        return;
-      }
-      this.$store.dispatch("readUser", {
-        username: this.user.username,
-        callback: () => {
-          this.cancel();
-        },
-      });
-    },
     runCreator(c) {
       if (c.route !== undefined) {
         this.$router.push({ path: c.route });
@@ -182,28 +112,6 @@ export default {
     },
   },
   computed: {
-    description: {
-      get() {
-        return this.modified.description || this.user.description;
-      },
-      set(v) {
-        this.modified.description = v;
-      },
-    },
-    name: {
-      get() {
-        return this.modified["name"] || this.user.name;
-      },
-      set(v) {
-        this.modified.name = v;
-      },
-    },
-    editable() {
-      if (this.$store.state.app.info.user == null) {
-        return false;
-      }
-      return this.user.username == this.$store.state.app.info.user.username;
-    },
     objectCreators() {
       return this.$store.state.heedy.objectCreators;
     },

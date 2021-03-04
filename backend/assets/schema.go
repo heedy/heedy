@@ -125,14 +125,7 @@ func (s *JSONSchema) Validate(data map[string]interface{}) error {
 	return nil
 }
 
-// ValidateWithDefaults both validates the given data, and inserts defaults for any missing
-// values in the root object
-func (s *JSONSchema) ValidateWithDefaults(data map[string]interface{}) (err error) {
-	// The actual validation happens here
-	defer func() {
-		err = s.Validate(data)
-	}()
-
+func (s *JSONSchema) InsertDefaults(data map[string]interface{}) {
 	// Insert defaults into the object wherever the data is not provided
 	propMapV, ok := s.Schema["properties"]
 	if !ok {
@@ -154,7 +147,13 @@ func (s *JSONSchema) ValidateWithDefaults(data map[string]interface{}) (err erro
 			}
 		}
 	}
-	return
+}
+
+// ValidateWithDefaults both validates the given data, and inserts defaults for any missing
+// values in the root object
+func (s *JSONSchema) ValidateWithDefaults(data map[string]interface{}) (err error) {
+	s.InsertDefaults(data)
+	return s.Validate(data)
 }
 
 // ValidateUpdate checks an update struct for validity

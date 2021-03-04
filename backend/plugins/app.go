@@ -7,6 +7,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 )
 
 func App(pluginKey string, owner string, cv *assets.App) *database.App {
@@ -31,11 +32,11 @@ func App(pluginKey string, owner string, cv *assets.App) *database.App {
 		c.AccessToken = &empty
 	}
 	if cv.SettingsSchema != nil {
-		jo := database.JSONObject(*cv.SettingsSchema)
+		jo := dbutil.JSONObject(*cv.SettingsSchema)
 		c.SettingsSchema = &jo
 	}
 	if cv.Settings != nil {
-		jo := database.JSONObject(*cv.Settings)
+		jo := dbutil.JSONObject(*cv.Settings)
 		c.Settings = &jo
 	}
 	return c
@@ -53,11 +54,11 @@ func AppObject(app string, key string, as *assets.Object) *database.Object {
 		Type: &as.Type,
 	}
 	if as.Tags != nil {
-		s.Tags = &database.StringArray{}
+		s.Tags = &dbutil.StringArray{}
 		s.Tags.Load(*as.Tags)
 	}
 	if as.Meta != nil {
-		jo := database.JSONObject(*as.Meta)
+		jo := dbutil.JSONObject(*as.Meta)
 		s.Meta = &jo
 	}
 	if as.OwnerScope != nil {

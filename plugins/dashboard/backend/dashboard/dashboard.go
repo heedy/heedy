@@ -9,6 +9,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins/run"
 	"github.com/mitchellh/mapstructure"
@@ -285,16 +286,16 @@ func (dp *DashboardProcessor) Fire(e *events.Event) {
 
 	// Otherwise, get the API calls for matching events
 	var s []struct {
-		ElementID string                `db:"element_id"`
-		Type      string                `db:"type"`
-		Query     []byte                `db:"query"`
-		Owner     string                `db:"owner"`
-		ObjectID  string                `db:"objectID"`
-		OnDemand  bool                  `db:"on_demand"`
-		App       string                `db:"app"`
-		Plugin    *string               `json:"plugin,omitempty" db:"plugin"`
-		Key       *string               `json:"key,omitempty" db:"key"`
-		Tags      *database.StringArray `json:"tags,omitempty" db:"tags"`
+		ElementID string              `db:"element_id"`
+		Type      string              `db:"type"`
+		Query     []byte              `db:"query"`
+		Owner     string              `db:"owner"`
+		ObjectID  string              `db:"objectID"`
+		OnDemand  bool                `db:"on_demand"`
+		App       string              `db:"app"`
+		Plugin    *string             `json:"plugin,omitempty" db:"plugin"`
+		Key       *string             `json:"key,omitempty" db:"key"`
+		Tags      *dbutil.StringArray `json:"tags,omitempty" db:"tags"`
 	}
 
 	err := dp.ADB.Select(&s, `SELECT dashboard_elements.element_id,dashboard_elements.type,dashboard_elements.query,dashboard_elements.on_demand,objects.owner,objects.id AS objectID,COALESCE(objects.app,'') AS app,apps.plugin,objects.tags,objects.key FROM dashboard_events

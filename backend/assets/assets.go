@@ -114,6 +114,9 @@ func (a *Assets) Reload() error {
 	if a.FolderPath == "" {
 		// If there is no folder path, we are running purely on built-in assets.
 		//log.Debug("No asset folder specified - running on builtin assets.")
+		if a.ConfigOverride != nil {
+			mergedConfiguration = MergeConfig(mergedConfiguration, a.ConfigOverride)
+		}
 
 	} else {
 		// Make sure the folder path is absolute

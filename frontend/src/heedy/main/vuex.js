@@ -51,6 +51,7 @@ export default {
     // The map of app scopes along with their descriptions
     appScope: null,
 
+    preferences_routes: [],
     settings_routes: [],
     updates: {
       heedy: false,
@@ -58,10 +59,18 @@ export default {
       config: false,
       options: null,
     },
+
+    plugin_preferences_schema: null,
   },
   mutations: {
     setSettingsRoutes(state, v) {
       state.settings_routes = v;
+    },
+    setPreferencesRoutes(state, v) {
+      state.preferences_routes = v;
+    },
+    setPluginPreferencesSchema(state, v) {
+      state.plugin_preferences_schema = v;
     },
     addAppComponent(state, v) {
       state.app_components.push(v);
@@ -567,7 +576,6 @@ export default {
         q.callback();
       }
     },
-
     getUpdates: async function ({ commit }) {
       console.vlog("Checking if updates ready");
       let res = await api("GET", "api/server/updates");
@@ -586,5 +594,22 @@ export default {
         commit("setPluginApps", res.data);
       }
     },
+    readPluginPreferenceSchema: async function ({ commit, state }) {
+      if (state.plugin_preferences_schema != null) {
+        return; //Already have it, no need to query again.
+      }
+      let res = await api("GET", "api/server/preferences");
+      if (!res.response.ok) {
+      } else {
+        commit("setPluginPreferencesSchema", res.data);
+      }
+    },
+    readPluginPreferences: async function ({ commit, rootState }, q) {
+      let res = await api("GET", `api/users/${rootState.app.info.user.username}/preferences/${q.plugin}`);
+      if (!res.response.ok) {
+      } else {
+        commit("updatePluginPreferences", { plugin: q.plugin, value: res.data });
+      }
+    }
   },
 };

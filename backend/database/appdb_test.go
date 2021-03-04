@@ -3,6 +3,7 @@ package database
 import (
 	"testing"
 
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +46,7 @@ func TestAppObject(t *testing.T) {
 			ID:   sid,
 			Name: &name2,
 		},
-		Meta: &JSONObject{
+		Meta: &dbutil.JSONObject{
 			"schema": 4,
 		},
 	}))
@@ -54,7 +55,7 @@ func TestAppObject(t *testing.T) {
 			ID:   sid,
 			Name: &name2,
 		},
-		Meta: &JSONObject{
+		Meta: &dbutil.JSONObject{
 			"actor": true,
 		},
 	}))

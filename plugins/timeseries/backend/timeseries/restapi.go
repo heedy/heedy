@@ -18,6 +18,7 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
 )
@@ -288,7 +289,7 @@ func WriteData(w http.ResponseWriter, r *http.Request, action bool) {
 	err = TSDB.Insert(si.ObjectInfo.ID, ii, &iq)
 	if err == nil && ii.Count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
-			ne := database.Date(time.Now().UTC())
+			ne := dbutil.Date(time.Now().UTC())
 			// The timeseries is now non-empty, so label it as such
 			err = c.DB.AdminDB().UpdateObject(&database.Object{
 				Details: database.Details{
@@ -364,7 +365,7 @@ func Act(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil && ii.Count > 0 {
 		if shouldUpdateModifed(si.LastModified) {
-			ne := database.Date(time.Now().UTC())
+			ne := dbutil.Date(time.Now().UTC())
 			// The timeseries is now non-empty, so label it as such
 			err = c.DB.AdminDB().UpdateObject(&database.Object{
 				Details: database.Details{

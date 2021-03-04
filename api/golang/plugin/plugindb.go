@@ -347,3 +347,25 @@ func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error
 	err := db.UnmarshalRequest(&cl, "GET", api, nil)
 	return cl, err
 }
+
+func (db *PluginDB) ReadUserPreferences(username string) (v map[string]map[string]interface{}, err error) {
+	api := fmt.Sprintf("/api/users/%s/preferences", username)
+
+	err = db.UnmarshalRequest(&v, "GET", api, nil)
+	return
+}
+func (db *PluginDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error {
+	api := fmt.Sprintf("/api/users/%s/preferences/%s", username, plugin)
+	b, err := json.Marshal(preferences)
+	if err != nil {
+		return err
+	}
+
+	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
+}
+func (db *PluginDB) ReadPluginPreferences(username string, plugin string) (v map[string]interface{}, err error) {
+	api := fmt.Sprintf("/api/users/%s/preferences/%s", username, plugin)
+
+	err = db.UnmarshalRequest(&v, "GET", api, nil)
+	return
+}

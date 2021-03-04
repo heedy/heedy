@@ -2,11 +2,16 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database/dbutil"
+	"github.com/heedy/heedy/backend/events"
+	"github.com/sirupsen/logrus"
 )
 
 // AdminDB holds the main database, with admin access
@@ -14,6 +19,23 @@ type AdminDB struct {
 	SqlxCache
 
 	a *assets.Assets
+}
+
+func (db *AdminDB) ReadPluginDatabaseVersion(plugin string) (int, error) {
+	var curVersion int
+	err := db.Get(&curVersion, `SELECT version FROM heedy WHERE plugin=?`, plugin)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, err
+	}
+	if err == sql.ErrNoRows {
+		curVersion = 0
+	}
+	return curVersion, nil
+}
+
+func (db *AdminDB) WritePluginDatabaseVersion(plugin string, version int) error {
+	_, err := db.Exec(`INSERT OR REPLACE INTO heedy(plugin,version) VALUES (?,?)`, plugin, version)
+	return err
 }
 
 // As allows performing a query with the given permissions level
@@ -92,7 +114,7 @@ func (db *AdminDB) AuthUser(username string, password string) (string, string, e
 	return selectResult.UserName, selectResult.Password, nil
 }
 
-func shouldUpdateLastUsed(d Date) bool {
+func shouldUpdateLastUsed(d dbutil.Date) bool {
 	cy, cm, cd := time.Now().Date()
 	dy, dm, dd := time.Time(d).Date()
 	return cd > dd || cm > dm || cy > dy
@@ -101,8 +123,8 @@ func shouldUpdateLastUsed(d Date) bool {
 // LoginToken gets an active login token's username, and sets the last acces date if not today
 func (db *AdminDB) LoginToken(token string) (string, error) {
 	var selectResult struct {
-		UserName     string `db:"username"`
-		DateLastUsed Date   `db:"last_access_date"`
+		UserName     string      `db:"username"`
+		DateLastUsed dbutil.Date `db:"last_access_date"`
 	}
 	err := db.Get(&selectResult, "SELECT username,last_access_date FROM user_logintokens WHERE token=?;", token)
 	if err == nil && shouldUpdateLastUsed(selectResult.DateLastUsed) {
@@ -372,4 +394,166 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	}
 	return listApps(db, o, selectStmt, a...)
 
+}
+
+// ReadUserPreferences gets the given user's preferences. Returns default preferences if the user does not exist.
+func (db *AdminDB) ReadUserPreferences(username string) (map[string]map[string]interface{}, error) {
+	var res []struct {
+		Plugin string
+		Key    string
+		Value  []byte
+	}
+
+	// Start by constructing the result using default preference values from the configuration
+	cfg := db.a.Config
+	m := make(map[string]map[string]interface{})
+
+	if len(cfg.PreferencesSchema) > 0 {
+		v := make(map[string]interface{})
+		err := cfg.InsertPreferenceDefaults(v)
+		m["heedy"] = v
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, p := range cfg.GetActivePlugins() {
+		if len(cfg.Plugins[p].PreferencesSchema) > 0 {
+			v := make(map[string]interface{})
+			err := cfg.Plugins[p].InsertPreferenceDefaults(v)
+			m[p] = v
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Next, fill in preferences that were updated by the user
+	err := db.Select(&res, `SELECT plugin,key,value FROM plugin_preferences WHERE user=?`, username)
+	if err != nil {
+		return nil, err
+	}
+	for _, resv := range res {
+		var v interface{}
+		err = json.Unmarshal(resv.Value, &v)
+		if err != nil {
+			return nil, err
+		}
+		m2, ok := m[resv.Plugin]
+		if !ok {
+			// There are preferences for the plugin in the database despite there being no schema for them... This should be a warning
+			logrus.Warnf("Existing preferences found for plugin '%s', but no schema given.", resv.Plugin)
+			m2 = make(map[string]interface{})
+			m[resv.Plugin] = m2
+		}
+		m2[resv.Key] = v
+
+	}
+
+	return m, nil
+}
+
+func (db *AdminDB) ReadPluginPreferences(username string, plugin string) (v map[string]interface{}, err error) {
+	v = make(map[string]interface{})
+
+	// First fill in the defaults
+	cfg := db.a.Config
+	if plugin == "heedy" {
+		err = cfg.InsertPreferenceDefaults(v)
+	} else {
+		pv, ok := cfg.Plugins[plugin]
+		if !ok {
+			return nil, errors.New("Unrecognized plugin")
+		}
+		err = pv.InsertPreferenceDefaults(v)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var res []struct {
+		Key   string
+		Value []byte
+	}
+
+	// Next, fill in preferences that were updated by the user
+	err = db.Select(&res, `SELECT key,value FROM plugin_preferences WHERE user=? AND plugin=?`, username, plugin)
+	if err != nil {
+		return nil, err
+	}
+	for _, resv := range res {
+		var v2 interface{}
+		err = json.Unmarshal(resv.Value, &v2)
+		if err != nil {
+			return nil, err
+		}
+		v[resv.Key] = v2
+	}
+
+	return
+}
+
+func (db *AdminDB) UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) (err error) {
+	if len(preferences) == 0 {
+		return nil
+	}
+
+	cfg := db.a.Config
+	if plugin == "heedy" {
+		err = cfg.ValidateHeedyPreferencesUpdate(preferences)
+	} else {
+		pv, ok := cfg.Plugins[plugin]
+		if !ok {
+			return errors.New("Unrecognized plugin")
+		}
+		err = pv.ValidatePreferencesUpdate(preferences)
+	}
+	if err != nil {
+		return err
+	}
+
+	// Now set the keys
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			// There was no error, so fire the event
+			karray := make([]string, 0, len(preferences))
+			for k := range preferences {
+				karray = append(karray, k)
+			}
+			events.Fire(&events.Event{
+				Event:  "user_preferences_update",
+				User:   username,
+				Plugin: &plugin,
+				Data: map[string]interface{}{
+					"keys": karray,
+				},
+			})
+		}
+	}()
+
+	for k, vi := range preferences {
+		if vi != nil {
+			var b []byte
+			b, err = json.Marshal(vi)
+			if err != nil {
+				return err
+			}
+			_, err = tx.Exec(`INSERT OR REPLACE INTO plugin_preferences(user,plugin,key,value) VALUES (?,?,?,?);`, username, plugin, k, b)
+		} else {
+			// The value is nil, so we delete the element
+			_, err = tx.Exec("DELETE FROM plugin_preferences WHERE user=? AND plugin=? AND key=?", username, plugin, k)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

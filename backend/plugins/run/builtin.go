@@ -2,7 +2,6 @@ package run
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -36,20 +35,16 @@ type BuiltinRunner struct {
 
 func WithVersion(pluginName string, dbversion int, pstart func(*database.AdminDB, *Info, BuiltinHelper, int) error) BuiltinStartFunc {
 	return func(db *database.AdminDB, i *Info, h BuiltinHelper) error {
-		var curVersion int
-		err := db.Get(&curVersion, `SELECT version FROM heedy WHERE name=?`, pluginName)
-		if err != nil && err != sql.ErrNoRows {
+		curVersion, err := db.ReadPluginDatabaseVersion(pluginName)
+		if err != nil {
 			return err
-		}
-		if err == sql.ErrNoRows {
-			curVersion = 0
 		}
 		err = pstart(db, i, h, curVersion)
 		if err != nil {
 			return err
 		}
 		if dbversion != curVersion {
-			_, err = db.Exec(`INSERT OR REPLACE INTO heedy(name,version) VALUES (?,?)`, pluginName, dbversion)
+			err = db.WritePluginDatabaseVersion(pluginName, dbversion)
 		}
 		return err
 	}

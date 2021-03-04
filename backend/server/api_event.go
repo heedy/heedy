@@ -28,7 +28,7 @@ func FireEvent(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	if err = events.FillEvent(c.DB.AdminDB(), &e); err == nil {
+	if err = database.FillEvent(c.DB.AdminDB(), &e); err == nil {
 		events.Fire(&e)
 
 	}
@@ -126,7 +126,7 @@ func EventWebsocket(w http.ResponseWriter, r *http.Request) {
 			// msg now holds the command
 			switch msg.Cmd {
 			case "subscribe":
-				err = events.CanSubscribe(c.DB, &msg.Event)
+				err = database.CanSubscribe(c.DB, &msg.Event)
 				if err == nil {
 					err = eventRouter.Subscribe(msg.Event, eventHandler)
 				}

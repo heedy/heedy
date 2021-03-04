@@ -1,22 +1,14 @@
 {
-    "active_plugins": [
-        "yeet"
-    ],
+    "preferences_schema": {
+        "trees": {
+            "type": "string"
+        }
+    },
     "plugin": {
-        "yeet": {
-            "settings": {
-                "yeet": "hi",
-                "yo": true,
-                "yay": 5,
-                "feh": {
-                    "yee": "haw",
-                    "re": "nope",
-                    "foo": "bar"
-                }
-            },
-            "settings_schema": {
+        "yomomma": {
+            "preferences_schema": {
                 "yeet": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "yo": {
                     "type": "boolean",
@@ -26,12 +18,15 @@
                     "type": "number",
                     "default": 1
                 },
-                "woo": {
+                "zee": {
                     "type": "string"
                 },
                 "feh": {
                     "type": "object",
                     "additionalProperties": true
+                },
+                "tree": {
+                    "type": "string"
                 }
             }
         }

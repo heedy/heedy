@@ -214,7 +214,7 @@ func WriteDashboard(adb *database.AdminDB, as string, oid string, elements []Das
 		Event:  "DASHBOARD_EVENT",
 		Object: oid,
 	}
-	err := events.FillEvent(adb, &eventTemplate)
+	err := database.FillEvent(adb, &eventTemplate)
 	if err != nil {
 		return err
 	}
@@ -487,7 +487,7 @@ func DeleteDashboardElement(adb *database.AdminDB, oid string, deid string) erro
 			"element_id": deid,
 		},
 	}
-	err := events.FillEvent(adb, evt)
+	err := database.FillEvent(adb, evt)
 	if err != nil {
 		return err
 	}

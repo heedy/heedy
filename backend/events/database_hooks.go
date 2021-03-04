@@ -6,7 +6,7 @@ import (
 
 	"fmt"
 
-	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 )
@@ -56,7 +56,7 @@ func getEvent(c *sqlite3.SQLiteConn, stmt string, rowid interface{}) (*Event, er
 		}
 	}
 
-	taggy := &database.StringArray{}
+	taggy := &dbutil.StringArray{}
 	tagstring := tsel(vals[4])
 	if tagstring == "" {
 		taggy = nil

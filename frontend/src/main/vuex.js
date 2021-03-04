@@ -1,4 +1,4 @@
-import {
+import Vue, {
     createLogger
 } from "../dist/vue.mjs";
 
@@ -17,6 +17,9 @@ function setup(appinfo) {
                 mutations: {
                     updateLoggedInUser(state, v) {
                         state.info.user = v;
+                    },
+                    updatePluginPreferences(state, v) {
+                        Vue.set(state.info.preferences, v.plugin, v.value);
                     },
                     addMenuItem(state, m) {
                         state.menu_items[m.key] = m;

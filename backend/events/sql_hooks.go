@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/heedy/heedy/backend/assets"
-	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 )
 
 type QueryType int
@@ -62,7 +62,7 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 			})
 			if evt != nil {
 				if assets.Get().Config.Verbose {
-					logrus.WithField("stack", database.MiniStack(2)).Debugf("Preparing event %s", evt.String())
+					logrus.WithField("stack", dbutil.MiniStack(2)).Debugf("Preparing event %s", evt.String())
 				}
 				elist.PushBack(evt)
 			}
@@ -89,7 +89,7 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 			})
 			if evt != nil {
 				if assets.Get().Config.Verbose {
-					logrus.WithField("stack", database.MiniStack(2)).Debugf("Preparing event %s", evt.String())
+					logrus.WithField("stack", dbutil.MiniStack(2)).Debugf("Preparing event %s", evt.String())
 				}
 				elist.PushBack(evt)
 			}
@@ -98,14 +98,13 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 
 	// The above hooks are called on each update to the database, before they are committed.
 	// We actually want to fire the events only AFTER they are committed, so that transaction rollbacks don't mess with us.
-	// We therefore gather the
 
 	conn.RegisterCommitHook(func() int {
 		// The transaction was committed, so fire the events
 		if assets.Get().Config.Verbose {
 			ll := elist.Len()
 			if ll > 0 {
-				logrus.WithField("stack", database.MiniStack(2)).Debugf("Database commit - firing %d prepared event(s)", ll)
+				logrus.WithField("stack", dbutil.MiniStack(2)).Debugf("Database commit - firing %d prepared event(s)", ll)
 			}
 		}
 		el2 := elist
@@ -144,7 +143,7 @@ var stmtMap = make(map[sqliteConnStmt]driver.Stmt)
 
 func SQLiteSelectConn(c *sqlite3.SQLiteConn, stmt string, vals ...driver.Value) (driver.Rows, error) {
 	if assets.Get().Config.Verbose {
-		logrus.WithField("stack", database.MiniStack(2)).Debug(stmt)
+		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(stmt)
 	}
 	stmtMutex.RLock()
 	s, ok := stmtMap[sqliteConnStmt{c, stmt}]

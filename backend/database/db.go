@@ -7,141 +7,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database/dbutil"
 )
-
-type Date time.Time
-
-func (d Date) MarshalJSON() ([]byte, error) {
-	t := fmt.Sprintf("\"%s\"", d.String())
-	return []byte(t), nil
-}
-
-func (d *Date) UnmarshalJSON(b []byte) error {
-	var s string
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
-	}
-	t, err := time.Parse("2006-01-02", s)
-	*d = Date(t)
-
-	return err
-}
-
-func (d Date) String() string {
-	return time.Time(d).Format("2006-01-02")
-}
-
-func (d Date) Value() (driver.Value, error) {
-	return d.String(), nil
-}
-
-type JSONArray struct {
-	Elements []interface{}
-}
-
-func (ja *JSONArray) Scan(val interface{}) error {
-	switch v := val.(type) {
-	case []byte:
-		return json.Unmarshal(v, &ja.Elements)
-	case string:
-		return json.Unmarshal([]byte(v), &ja.Elements)
-	default:
-		return fmt.Errorf("Can't scan json array array, unsupported type: %T", v)
-	}
-}
-
-func (ja *JSONArray) Value() (driver.Value, error) {
-	return ja.MarshalJSON()
-}
-
-func (ja *JSONArray) MarshalJSON() ([]byte, error) {
-	return json.Marshal(ja.Elements)
-}
-
-func (ja *JSONArray) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &ja.Elements)
-}
-
-type StringArray struct {
-	Strings []string
-	sMap    map[string]bool
-}
-
-func (s *StringArray) Scan(val interface{}) error {
-	switch v := val.(type) {
-	case []byte:
-		return json.Unmarshal(v, &s.Strings)
-	case string:
-		return json.Unmarshal([]byte(v), &s.Strings)
-	default:
-		return fmt.Errorf("Can't scan string array, unsupported type: %T", v)
-	}
-}
-
-func (s *StringArray) Load(total string) {
-	s.Strings = strings.Fields(total)
-	s.sMap = nil // Clear the old map
-	s.Deduplicate()
-}
-
-func (s *StringArray) String() string {
-	return strings.Join(s.Strings, " ")
-}
-
-func (s *StringArray) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
-}
-
-func (s *StringArray) UnmarshalJSON(b []byte) error {
-	var total string
-	err := json.Unmarshal(b, &total)
-	if err == nil {
-		s.Load(total)
-	}
-	return err
-}
-
-func (s *StringArray) Value() (driver.Value, error) {
-	return json.Marshal(s.Strings)
-}
-
-func (s *StringArray) LoadMap() {
-	if s.sMap == nil {
-		smap := make(map[string]bool)
-		for _, v := range s.Strings {
-			smap[v] = true
-		}
-		s.sMap = smap
-	}
-}
-func (s *StringArray) Deduplicate() {
-	s.LoadMap()
-	s.Strings = make([]string, 0, len(s.sMap))
-	for k := range s.sMap {
-		s.Strings = append(s.Strings, k)
-	}
-}
-
-func (s *StringArray) Contains(v string) bool {
-	s.LoadMap()
-	_, ok := s.sMap[v]
-	return ok
-}
-
-func (s *StringArray) HasSubset(s2 []string) bool {
-	s.LoadMap()
-	for _, v := range s2 {
-		if !s.Contains(v) {
-			return false
-		}
-	}
-	return true
-}
 
 // ScopeArray represents a json column in a table. To handle it correctly, we need to manually scan it
 // and output a value.
@@ -273,26 +143,6 @@ func (s *AppScopeArray) HasScope(sv string) (ok bool) {
 	return
 }
 
-// JSONObject represents a json column in the table. To handle it correctly, we need to manually scan it
-// and output the relevant values
-type JSONObject map[string]interface{}
-
-func (s *JSONObject) Scan(val interface{}) error {
-	switch v := val.(type) {
-	case []byte:
-		json.Unmarshal(v, &s)
-		return nil
-	case string:
-		json.Unmarshal([]byte(v), &s)
-		return nil
-	default:
-		return fmt.Errorf("Can't unmarshal json object, unsupported type: %T", v)
-	}
-}
-func (s *JSONObject) Value() (driver.Value, error) {
-	return json.Marshal(s)
-}
-
 // Details is used in groups, users, apps and objects to hold info
 type Details struct {
 	// The ID is used as a handle for all modification, and as such is also present in users
@@ -321,14 +171,14 @@ type App struct {
 
 	Enabled *bool `json:"enabled,omitempty" db:"enabled"`
 
-	AccessToken    *string `json:"access_token,omitempty" db:"access_token"`
-	CreatedDate    Date    `json:"created_date,omitempty" db:"created_date"`
-	LastAccessDate *Date   `json:"last_access_date" db:"last_access_date"`
+	AccessToken    *string      `json:"access_token,omitempty" db:"access_token"`
+	CreatedDate    dbutil.Date  `json:"created_date,omitempty" db:"created_date"`
+	LastAccessDate *dbutil.Date `json:"last_access_date" db:"last_access_date"`
 
 	Scope *AppScopeArray `json:"scope" db:"scope"`
 
-	Settings       *JSONObject `json:"settings" db:"settings"`
-	SettingsSchema *JSONObject `json:"settings_schema" db:"settings_schema"`
+	Settings       *dbutil.JSONObject `json:"settings" db:"settings"`
+	SettingsSchema *dbutil.JSONObject `json:"settings_schema" db:"settings_schema"`
 }
 
 type Object struct {
@@ -337,15 +187,15 @@ type Object struct {
 	Owner *string `json:"owner,omitempty" db:"owner"`
 	App   *string `json:"app" db:"app"`
 
-	Tags *StringArray `json:"tags,omitempty" db:"tags"`
+	Tags *dbutil.StringArray `json:"tags,omitempty" db:"tags"`
 
 	Key *string `json:"key,omitempty" db:"key"`
 
-	Type *string     `json:"type,omitempty" db:"type"`
-	Meta *JSONObject `json:"meta,omitempty" db:"meta"`
+	Type *string            `json:"type,omitempty" db:"type"`
+	Meta *dbutil.JSONObject `json:"meta,omitempty" db:"meta"`
 
-	CreatedDate  *Date `json:"created_date,omitempty" db:"created_date"`
-	LastModified *Date `json:"last_modified" db:"last_modified"`
+	CreatedDate  *dbutil.Date `json:"created_date,omitempty" db:"created_date"`
+	LastModified *dbutil.Date `json:"last_modified" db:"last_modified"`
 
 	// The scope the owner has to the object. This allows apps to control objects belonging to them.
 	OwnerScope *ScopeArray `json:"owner_scope,omitempty" db:"owner_scope"`
@@ -458,6 +308,10 @@ type DB interface {
 	GetObjectShares(objectid string) (m map[string]*ScopeArray, err error)
 
 	ListObjects(o *ListObjectsOptions) ([]*Object, error)
+
+	ReadUserPreferences(username string) (map[string]map[string]interface{}, error)
+	UpdatePluginPreferences(username string, plugin string, preferences map[string]interface{}) error
+	ReadPluginPreferences(username string, plugin string) (map[string]interface{}, error)
 }
 
 func ErrAccessDenied(err string, args ...interface{}) error {
@@ -734,7 +588,7 @@ func objectCreateQuery(c *assets.Configuration, s *Object) (string, []interface{
 		err = c.ValidateObjectMetaWithDefaults(*s.Type, *s.Meta)
 	} else {
 		// Validate will set up default meta values
-		m := JSONObject{}
+		m := dbutil.JSONObject{}
 		err = c.ValidateObjectMetaWithDefaults(*s.Type, m)
 		s.Meta = &m
 	}
@@ -856,7 +710,7 @@ func listObjectsQuery(o *ListObjectsOptions) (string, []interface{}, error) {
 			}
 		}
 		if o.Tags != nil {
-			ts := StringArray{}
+			ts := dbutil.StringArray{}
 			ts.Load(*o.Tags)
 			if len(ts.Strings) > 0 {
 				// Need to make sure ALL the tags queried here are available. We assume that the values in database are distinct

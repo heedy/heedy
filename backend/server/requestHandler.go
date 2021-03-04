@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/heedy/heedy/api/golang/rest"
+	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins"
 	"github.com/heedy/heedy/backend/plugins/run"
@@ -22,7 +23,7 @@ import (
 
 // RequestHandler is a middleware that authenticates requests and generates a Context object containing
 // the info necessary to complete the request. It also handles generating and parsing the relevant X-Heedy headers
-// that
+// that are used for interaction with plugin backend servers.
 type RequestHandler struct {
 	auth    *Auth
 	Plugins *plugins.PluginManager
@@ -96,7 +97,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: curRequest.RequestID,
 				DB:        curRequest.DB,
-				Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
+				Events:    database.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 			}
 			logger = logger.WithField("addr", curRequest.Log.Data["addr"])
 
@@ -106,7 +107,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c = &rest.Context{
 				RequestID: xid.New().String(),
 				DB:        a.auth.DB,
-				Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
+				Events:    database.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 			}
 		}
 
@@ -136,7 +137,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Make sure that there is no X-Heedy header in the request, because only plugins
 		// are allowed to use those headers
 		for header := range r.Header {
-			if strings.HasPrefix(header, "X-Heedy-As") {
+			if strings.HasPrefix(header, "X-Heedy-") {
 				rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: X-Heedy headers are only permitted with a valid X-Heedy-Key"))
 				return
 			}
@@ -148,7 +149,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Log:       logger.WithField("id", id),
 			RequestID: id,
 			ID:        uuid.New().String(),
-			Events:    events.NewFilledHandler(a.auth.DB, events.GlobalHandler),
+			Events:    database.NewFilledHandler(a.auth.DB, events.GlobalHandler),
 		}
 
 		db, err := a.auth.Authenticate(w, r)
