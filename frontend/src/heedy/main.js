@@ -7,11 +7,11 @@ import AboutPage from "./main/about.vue";
 import Login from "./main/login.vue";
 import Logout from "./main/logout.vue";
 
-import SettingsPage from "./main/settings/index.vue";
-import SettingsInjector, { settingsRoutes } from "./main/settings/injector.js";
-import SettingsServer from "./main/settings/server.vue";
-import SettingsUsers from "./main/settings/users.vue";
-import SettingsPlugins from "./main/settings/plugins.vue";
+import ConfigPage from "./main/config/index.vue";
+import ConfigInjector, { configRoutes } from "./main/config/injector.js";
+import ConfigServer from "./main/config/server.vue";
+import ConfigUsers from "./main/config/users.vue";
+import ConfigPlugins from "./main/config/plugins.vue";
 
 import PreferencesPage from "./main/preferences/index.vue";
 import PreferencesInjector, { preferencesRoutes } from "./main/preferences/injector.js";
@@ -72,7 +72,7 @@ function setup(frontend) {
   frontend.inject("users", new UserInjector(frontend));
   frontend.inject("apps", new AppInjector(frontend));
   frontend.inject("objects", new ObjectInjector(frontend));
-  frontend.inject("settings", new SettingsInjector(frontend));
+  frontend.inject("config", new ConfigInjector(frontend));
   frontend.inject("preferences", new PreferencesInjector(frontend));
 
   frontend.users.addComponent({
@@ -186,30 +186,30 @@ function setup(frontend) {
     // Pages to show when the user is an admin
     if (frontend.info.admin) {
       frontend.addMenuItem({
-        key: "heedySettings",
-        text: "Settings",
+        key: "heedyConfig",
+        text: "Configuration",
         icon: "settings",
-        route: "/settings/plugins",
+        route: "/config/plugins",
         location: "secondary",
       });
       frontend.addRoute({
-        path: "/settings",
-        component: SettingsPage,
-        children: settingsRoutes,
+        path: "/config",
+        component: ConfigPage,
+        children: configRoutes,
       });
-      frontend.settings.addPage({
+      frontend.config.addPage({
         path: "users",
-        component: SettingsUsers,
+        component: ConfigUsers,
         title: "Users",
       });
-      frontend.settings.addPage({
+      frontend.config.addPage({
         path: "server",
-        component: SettingsServer,
+        component: ConfigServer,
         title: "Server",
       });
-      frontend.settings.addPage({
+      frontend.config.addPage({
         path: "plugins",
-        component: SettingsPlugins,
+        component: ConfigPlugins,
         title: "Plugins",
       });
     }

@@ -1,8 +1,8 @@
 <template >
-  <h-card-page title="Settings">
+  <h-card-page title="Server Configuration">
     <v-tabs v-model="tab" show-arrows>
       <v-tabs-slider color="teal lighten-3"></v-tabs-slider>
-      <v-tab v-for="r in routes" :key="r.path" :to="`/settings/${r.path}`">{{
+      <v-tab v-for="r in routes" :key="r.path" :to="`/config/${r.path}`">{{
         r.title !== undefined ? r.title : r.path
       }}</v-tab>
     </v-tabs>
@@ -77,7 +77,7 @@ export default {
   }),
   computed: {
     routes() {
-      return this.$store.state.heedy.settings_routes;
+      return this.$store.state.heedy.config_routes;
     },
     hasUpdate() {
       let u = this.$store.state.heedy.updates;
@@ -119,7 +119,7 @@ export default {
         console.verror("Update error: ", res.data.error_description);
         this.alert = res.data.error_description;
       } else {
-        // Perform a refresh - undoing the update might have changed stuff in settings
+        // Perform a refresh - undoing the update might have changed stuff in config
         location.reload(true);
       }
     },

@@ -4,7 +4,7 @@
     ],
     "plugin": {
         "yeet": {
-            "settings": {
+            "config": {
                 "yeet": "hi",
                 "yo": true,
                 "yay": 5,
@@ -14,7 +14,7 @@
                     "foo": "bar"
                 }
             },
-            "settings_schema": {
+            "config_schema": {
                 "yeet": {
                     "type": "string"
                 },

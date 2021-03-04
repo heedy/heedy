@@ -77,7 +77,7 @@ type HandlerGetter interface {
 
 func NewDashboardProcessor(db *database.AdminDB, p *assets.Plugin, h HandlerGetter) (*DashboardProcessor, error) {
 	var ds DashboardSettings
-	err := mapstructure.Decode(p.Settings, &ds)
+	err := mapstructure.Decode(p.Config, &ds)
 	if err != nil {
 		return nil, err
 	}

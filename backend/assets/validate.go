@@ -115,11 +115,11 @@ func Validate(c *Configuration) error {
 				}
 			}
 		}
-		s, err := NewSchema(v.SettingsSchema)
+		s, err := NewSchema(v.ConfigSchema)
 		if err != nil {
 			return err
 		}
-		if err = s.ValidateWithDefaults(v.Settings); err != nil {
+		if err = s.ValidateWithDefaults(v.Config); err != nil {
 			return err
 		}
 	}
@@ -141,7 +141,7 @@ func Validate(c *Configuration) error {
 				return err
 			}
 		}
-		s, err := NewSchema(v.Schema)
+		s, err := NewSchema(v.ConfigSchema)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func Validate(c *Configuration) error {
 				return fmt.Errorf("Unrecognized run type %s", *r.Type)
 			}
 
-			if err := s.ValidateWithDefaults(r.Settings); err != nil {
+			if err := s.ValidateWithDefaults(r.Config); err != nil {
 				return err
 			}
 		}

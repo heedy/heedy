@@ -27,8 +27,8 @@ type hclRun struct {
 	Enabled *bool   `hcl:"enabled" json:"enabled,omitempty"`
 	Cron    *string `hcl:"cron" json:"cron,omitempty"`
 
-	// Everything that remains is settings specific to the runner
-	Settings hcl.Body `hcl:",remain"`
+	// Everything that remains is config specific to the runner
+	Config hcl.Body `hcl:",remain"`
 }
 
 type hclObject struct {
@@ -83,7 +83,7 @@ type hclPlugin struct {
 	Routes *map[string]string `hcl:"routes" json:"routes"`
 	Events *map[string]string `hcl:"events" json:"events,omitempty"`
 
-	SettingSchema     *cty.Value `hcl:"settings_schema"`
+	ConfigSchema      *cty.Value `hcl:"config_schema"`
 	PreferencesSchema *cty.Value `hcl:"preferences_schema"`
 
 	Run []hclRun `hcl:"run,block"`
@@ -109,9 +109,9 @@ type hclObjectType struct {
 }
 
 type hclRunType struct {
-	Label  string     `hcl:"label,label"`
-	Schema *cty.Value `hcl:"schema,attr"`
-	API    *string    `json:"api,omitempty" hcl:"api" cty:"api"`
+	Label        string     `hcl:"label,label"`
+	ConfigSchema *cty.Value `hcl:"config_schema,attr"`
+	API          *string    `json:"api,omitempty" hcl:"api" cty:"api"`
 }
 
 type hclConfiguration struct {
@@ -302,14 +302,14 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		r := RunType{}
 		CopyStructIfPtrSet(&r, &v)
 
-		if v.Schema != nil {
-			m, err := loadJSONObject(v.Schema)
+		if v.ConfigSchema != nil {
+			m, err := loadJSONObject(v.ConfigSchema)
 			if err != nil {
 				return nil, err
 			}
-			r.Schema = *m
+			r.ConfigSchema = *m
 		} else {
-			r.Schema = make(map[string]interface{})
+			r.ConfigSchema = make(map[string]interface{})
 		}
 
 		c.RunTypes[v.Label] = r
@@ -342,11 +342,11 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 
 			CopyStructIfPtrSet(&ej, &hp.Run[j])
 
-			o, err := loadJSONObjectBody(hp.Run[j].Settings, ctx)
+			o, err := loadJSONObjectBody(hp.Run[j].Config, ctx)
 			if err != nil {
 				return nil, err
 			}
-			ej.Settings = o
+			ej.Config = o
 
 			p.Run[hp.Run[j].Name] = ej
 		}
@@ -359,12 +359,12 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 			}
 		}
 		p.On = hp.On
-		if hp.SettingSchema != nil {
-			sobj, err := loadJSONObject(hp.SettingSchema)
+		if hp.ConfigSchema != nil {
+			sobj, err := loadJSONObject(hp.ConfigSchema)
 			if err != nil {
 				return nil, err
 			}
-			p.SettingsSchema = *sobj
+			p.ConfigSchema = *sobj
 		}
 		if hp.PreferencesSchema != nil {
 			sobj, err := loadJSONObject(hp.PreferencesSchema)
@@ -440,7 +440,7 @@ func loadConfigFromHcl(f *hcl.File, filename string) (*Configuration, error) {
 		if err != nil {
 			return nil, err
 		}
-		p.Settings = obj
+		p.Config = obj
 
 		c.Plugins[hp.Name] = p
 

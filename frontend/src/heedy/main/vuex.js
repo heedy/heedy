@@ -52,7 +52,7 @@ export default {
     appScope: null,
 
     preferences_routes: [],
-    settings_routes: [],
+    config_routes: [],
     updates: {
       heedy: false,
       plugins: [],
@@ -63,8 +63,8 @@ export default {
     plugin_preferences_schema: null,
   },
   mutations: {
-    setSettingsRoutes(state, v) {
-      state.settings_routes = v;
+    setConfigRoutes(state, v) {
+      state.config_routes = v;
     },
     setPreferencesRoutes(state, v) {
       state.preferences_routes = v;

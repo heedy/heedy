@@ -66,7 +66,7 @@ func WriteConfig(filename string, c *Configuration) error {
 			blk = body.AppendNewBlock("plugin", []string{pname})
 		}
 		b := blk.Body()
-		for sname, svalue := range p.Settings {
+		for sname, svalue := range p.Config {
 			var v cty.Value
 			switch sv := svalue.(type) {
 			case int:

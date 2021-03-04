@@ -52,7 +52,7 @@ func Start(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) error {
 		return errors.New("Could not find python plugin configuration")
 	}
 
-	err := mapstructure.Decode(pyplugin.Settings, &settings)
+	err := mapstructure.Decode(pyplugin.Config, &settings)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func StartPythonProcess(w http.ResponseWriter, r *http.Request) {
 		API  string   `mapstructure:"api,omitempty"`
 	}
 
-	if err = mapstructure.Decode(i.Run.Settings, &rs); err != nil {
+	if err = mapstructure.Decode(i.Run.Config, &rs); err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}

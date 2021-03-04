@@ -95,7 +95,7 @@ func (bh *BuiltinHandler) Start(i *Info) (h http.Handler, err error) {
 	err = bh.Run(i)
 	if err == nil {
 		// This was validated in Run
-		bkey := i.Run.Settings["key"].(string)
+		bkey := i.Run.Config["key"].(string)
 		r := Builtin[bkey]
 		h = r.Handler
 
@@ -123,7 +123,7 @@ func (bg *BuiltinHandler) Kill(apikey string) error {
 }
 
 func (bh *BuiltinHandler) Run(i *Info) (err error) {
-	k, ok := i.Run.Settings["key"]
+	k, ok := i.Run.Config["key"]
 	if !ok {
 		err = errors.New("builtin runtype requires a 'key' attribute")
 		return

@@ -41,7 +41,7 @@ func StartTimeseries(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) err
 		return errors.New("Could not find timeseries plugin configuration")
 	}
 
-	err = mapstructure.Decode(tsc.Settings, &TSDB)
+	err = mapstructure.Decode(tsc.Config, &TSDB)
 	if err != nil {
 		return err
 	}

@@ -71,7 +71,7 @@ func NewExecHandler(db *database.AdminDB) *ExecHandler {
 
 func (e *ExecHandler) Start(i *Info) (http.Handler, error) {
 	// Check to make sure that the settings are set up correctly
-	cmdv, ok := i.Run.Settings["cmd"]
+	cmdv, ok := i.Run.Config["cmd"]
 	if !ok {
 		return nil, errors.New("exec requires command to execute")
 	}
@@ -95,7 +95,7 @@ func (e *ExecHandler) Start(i *Info) (http.Handler, error) {
 	var method, host string
 
 	// Next check the API
-	apiv, ok := i.Run.Settings["api"]
+	apiv, ok := i.Run.Config["api"]
 	if ok {
 		apis, ok := apiv.(string)
 		if !ok {

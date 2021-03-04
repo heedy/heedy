@@ -62,10 +62,10 @@ type App struct {
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 }
 type Run struct {
-	Type     *string                `hcl:"type" json:"type,omitempty"`
-	Enabled  *bool                  `hcl:"enabled" json:"enabled,omitempty"`
-	Cron     *string                `hcl:"cron" json:"cron,omitempty"`
-	Settings map[string]interface{} `json:"settings,omitempty"`
+	Type    *string                `hcl:"type" json:"type,omitempty"`
+	Enabled *bool                  `hcl:"enabled" json:"enabled,omitempty"`
+	Cron    *string                `hcl:"cron" json:"cron,omitempty"`
+	Config  map[string]interface{} `json:"config,omitempty"`
 }
 
 type Plugin struct {
@@ -84,8 +84,8 @@ type Plugin struct {
 	On []Event `hcl:"on,block" json:"on,omitempty"`
 
 	Run               map[string]Run         `json:"run,omitempty"`
-	Settings          map[string]interface{} `json:"settings,omitempty"`
-	SettingsSchema    map[string]interface{} `json:"settings_schema,omitempty"`
+	Config            map[string]interface{} `json:"config,omitempty"`
+	ConfigSchema      map[string]interface{} `json:"config_schema,omitempty"`
 	PreferencesSchema map[string]interface{} `json:"preferences_schema,omitempty"`
 
 	Apps map[string]*App `json:"apps,omitempty"`
@@ -96,27 +96,27 @@ type Plugin struct {
 func (p *Plugin) Copy() *Plugin {
 	np := *p
 	np.Run = make(map[string]Run)
-	np.Settings = make(map[string]interface{})
+	np.Config = make(map[string]interface{})
 	np.PreferencesSchema = make(map[string]interface{})
-	np.SettingsSchema = make(map[string]interface{})
+	np.ConfigSchema = make(map[string]interface{})
 	np.On = make([]Event, len(p.On))
 
 	for ekey, eval := range p.Run {
 		newrun := Run{
-			Settings: make(map[string]interface{}),
+			Config: make(map[string]interface{}),
 		}
 		CopyStructIfPtrSet(&newrun, &eval)
-		for k, v := range eval.Settings {
-			newrun.Settings[k] = v
+		for k, v := range eval.Config {
+			newrun.Config[k] = v
 		}
 
 		np.Run[ekey] = newrun
 	}
-	for skey, sval := range p.Settings {
-		np.Settings[skey] = sval
+	for skey, sval := range p.Config {
+		np.Config[skey] = sval
 	}
-	for skey, sval := range p.SettingsSchema {
-		np.SettingsSchema[skey] = sval
+	for skey, sval := range p.ConfigSchema {
+		np.ConfigSchema[skey] = sval
 	}
 	for skey, sval := range p.PreferencesSchema {
 		np.PreferencesSchema[skey] = sval
@@ -234,15 +234,15 @@ func (s *ObjectType) ValidateMetaUpdate(meta map[string]interface{}) (err error)
 }
 
 type RunType struct {
-	Schema map[string]interface{} `json:"schema,omitempty" hcl:"schema" cty:"schema"`
-	API    *string                `json:"api,omitempty" hcl:"api" cty:"api"`
+	ConfigSchema map[string]interface{} `json:"config_schema,omitempty" hcl:"schema" cty:"schema"`
+	API          *string                `json:"api,omitempty" hcl:"api" cty:"api"`
 }
 
 func (r *RunType) Copy() RunType {
 	rnew := RunType{}
 	CopyStructIfPtrSet(&rnew, r)
 
-	rnew.Schema = r.Schema
+	rnew.ConfigSchema = r.ConfigSchema
 	return rnew
 }
 
@@ -357,10 +357,10 @@ func NewConfiguration() *Configuration {
 
 func NewPlugin() *Plugin {
 	return &Plugin{
-		Run:      make(map[string]Run),
-		Settings: make(map[string]interface{}),
-		Apps:     make(map[string]*App),
-		On:       make([]Event, 0),
+		Run:    make(map[string]Run),
+		Config: make(map[string]interface{}),
+		Apps:   make(map[string]*App),
+		On:     make([]Event, 0),
 	}
 }
 
@@ -438,8 +438,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 		bv, ok := base.RunTypes[k]
 		if ok {
 			CopyStructIfPtrSet(&bv, &v)
-			if len(v.Schema) > 0 {
-				bv.Schema = v.Schema
+			if len(v.ConfigSchema) > 0 {
+				bv.ConfigSchema = v.ConfigSchema
 			}
 			base.RunTypes[k] = bv
 		} else {
@@ -466,8 +466,8 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 					bplugin.Run[execName] = oexecValue
 				} else {
 					CopyStructIfPtrSet(&bexecValue, &oexecValue)
-					for rsn, rsv := range oexecValue.Settings {
-						bexecValue.Settings[rsn] = rsv
+					for rsn, rsv := range oexecValue.Config {
+						bexecValue.Config[rsn] = rsv
 					}
 					bplugin.Run[execName] = bexecValue
 				}
@@ -501,19 +501,19 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 			}
 
 			// Schema copy
-			if len(oplugin.SettingsSchema) > 0 {
-				MergeMap(bplugin.SettingsSchema, oplugin.SettingsSchema)
+			if len(oplugin.ConfigSchema) > 0 {
+				MergeMap(bplugin.ConfigSchema, oplugin.ConfigSchema)
 			}
 			if len(oplugin.PreferencesSchema) > 0 {
 				MergeMap(bplugin.PreferencesSchema, oplugin.PreferencesSchema)
 			}
 
 			// Settings copy
-			for settingName, osettingValue := range oplugin.Settings {
+			for settingName, osettingValue := range oplugin.Config {
 				// If the setting values are both objects,
 				// then merge the object's first level. Otherwise, replace
 
-				v, ok := bplugin.Settings[settingName]
+				v, ok := bplugin.Config[settingName]
 				if ok {
 					var v2 map[string]interface{}
 					var ov2 map[string]interface{}
@@ -522,12 +522,12 @@ func MergeConfig(base *Configuration, overlay *Configuration) *Configuration {
 						ov2, ok = osettingValue.(map[string]interface{})
 						if ok {
 							MergeMap(v2, ov2)
-							bplugin.Settings[settingName] = v2
+							bplugin.Config[settingName] = v2
 						}
 					}
 				}
 				if !ok {
-					bplugin.Settings[settingName] = osettingValue
+					bplugin.Config[settingName] = osettingValue
 				}
 
 			}

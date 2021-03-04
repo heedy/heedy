@@ -1,9 +1,11 @@
 {
-    "active_plugins": ["testy"],
+    "active_plugins": [
+        "testy"
+    ],
     "runtype": {
         "myrunner": {
             "api": "builtin://ayy",
-            "schema": {
+            "config_schema": {
                 "yeet": {
                     "type": "string"
                 },
@@ -26,7 +28,7 @@
             "run": {
                 "server": {
                     "type": "myrunner",
-                    "settings": {
+                    "config": {
                         "yeet": "hi",
                         "yo": true,
                         "yay": 5

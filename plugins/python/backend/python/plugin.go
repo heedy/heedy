@@ -27,7 +27,7 @@ func setupDefaultPython(db *database.AdminDB) error {
 	return assets.WriteConfig(path.Join(a.FolderPath, "heedy.conf"), &assets.Configuration{
 		Plugins: map[string]*assets.Plugin{
 			"python": &assets.Plugin{
-				Settings: map[string]interface{}{
+				Config: map[string]interface{}{
 					"path": pypath,
 				},
 			},
