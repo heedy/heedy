@@ -369,3 +369,14 @@ func (db *PluginDB) ReadUserPluginSettings(username string, plugin string) (v ma
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return
 }
+
+func (db *PluginDB) ListUserSessions(username string) (v []database.UserSession, err error) {
+	api := fmt.Sprintf("/api/users/%s/sessions", username)
+
+	err = db.UnmarshalRequest(&v, "GET", api, nil)
+	return
+}
+func (db *PluginDB) DelUserSession(username, sessionid string) error {
+	api := fmt.Sprintf("/api/users/%s/sessions/%s", sessionid)
+	return db.BasicRequest("DELETE", api, nil)
+}

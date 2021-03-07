@@ -95,7 +95,7 @@ func (db *AdminDB) User() (*User, error) {
 	return nil, nil
 }
 
-// AuthUser returns the user corresponding to the username and password, or an authentication error
+// AuthUser returns the username corresponding to the username and password, or an authentication error
 func (db *AdminDB) AuthUser(username string, password string) (string, string, error) {
 	var selectResult struct {
 		UserName string
@@ -120,17 +120,18 @@ func shouldUpdateLastUsed(d dbutil.Date) bool {
 	return cd > dd || cm > dm || cy > dy
 }
 
-// LoginToken gets an active login token's username, and sets the last acces date if not today
-func (db *AdminDB) LoginToken(token string) (string, error) {
+// GetUserSessionByToken gets an active login token's username/session ID, and sets the last access date if not today
+func (db *AdminDB) GetUserSessionByToken(token string) (string, string, error) {
 	var selectResult struct {
 		UserName     string      `db:"username"`
+		SessionID    string      `db:"sessionid"`
 		DateLastUsed dbutil.Date `db:"last_access_date"`
 	}
-	err := db.Get(&selectResult, "SELECT username,last_access_date FROM user_logintokens WHERE token=?;", token)
+	err := db.Get(&selectResult, "SELECT username,sessionid,last_access_date FROM user_sessions WHERE token=?;", token)
 	if err == nil && shouldUpdateLastUsed(selectResult.DateLastUsed) {
-		_, err = db.Exec("UPDATE user_logintokens SET last_access_date=DATE('now') WHERE token=?;", token)
+		_, err = db.Exec("UPDATE user_sessions SET last_access_date=DATE('now') WHERE token=?;", token)
 	}
-	return selectResult.UserName, err
+	return selectResult.UserName, selectResult.SessionID, err
 }
 
 // GetAppByAccessToken reads the app corresponding to the given access token,
@@ -150,20 +151,33 @@ func (db *AdminDB) GetAppByAccessToken(accessToken string) (*App, error) {
 	return c, err
 }
 
-// AddLoginToken gets the token for a given user
-func (db *AdminDB) AddLoginToken(username string, description string) (token string, err error) {
+// CreateUserSession creates a new session for the given user
+func (db *AdminDB) CreateUserSession(username string, description string) (token string, sessionid string, err error) {
 	token, err = GenerateKey(15)
 	if err != nil {
 		return
 	}
-	result, err2 := db.Exec("INSERT INTO user_logintokens (username,token,description) VALUES (?,?,?);", username, token, description)
+	sessionid, err = GenerateKey(8)
+	if err != nil {
+		return
+	}
+	result, err2 := db.Exec("INSERT INTO user_sessions (username,token,sessionid,description) VALUES (?,?,?,?);", username, token, sessionid, description)
 	err = GetExecError(result, err2)
 	return
 }
 
-// RemoveLoginToken deletes the given token from the database
-func (db *AdminDB) RemoveLoginToken(token string) error {
-	result, err := db.Exec("DELETE FROM user_logintokens WHERE token=?;", token)
+// DelUserSessionByToken deletes the given token from the database
+func (db *AdminDB) DelUserSessionByToken(token string) error {
+	result, err := db.Exec("DELETE FROM user_sessions WHERE token=?;", token)
+	return GetExecError(result, err)
+}
+
+func (db *AdminDB) ListUserSessions(username string) (u []UserSession, err error) {
+	err = db.Select(&u, "SELECT sessionid,description,last_access_date,created_date FROM user_sessions WHERE username=?", username)
+	return
+}
+func (db *AdminDB) DelUserSession(username, sessionid string) error {
+	result, err := db.Exec("DELETE FROM user_sessions WHERE username=? AND sessionid=?;", username, sessionid)
 	return GetExecError(result, err)
 }
 

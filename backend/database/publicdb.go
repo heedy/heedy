@@ -127,3 +127,9 @@ func (db *PublicDB) UpdateUserPluginSettings(username string, plugin string, pre
 func (db *PublicDB) ReadUserPluginSettings(username string, plugin string) (map[string]interface{}, error) {
 	return nil, ErrAccessDenied("You must be logged in to read preferences")
 }
+func (db *PublicDB) ListUserSessions(name string) ([]UserSession, error) {
+	return nil, ErrAccessDenied("You must be logged in to list sessions")
+}
+func (db *PublicDB) DelUserSession(name, id string) error {
+	return ErrAccessDenied("You must be logged in to delete sessions")
+}

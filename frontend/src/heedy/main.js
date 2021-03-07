@@ -17,6 +17,7 @@ import SettingsPage from "./main/settings/index.vue";
 import SettingsInjector, { settingsRoutes } from "./main/settings/injector.js";
 import SettingsUser from "./main/settings/user.vue";
 import SettingsPlugins from "./main/settings/plugins.vue";
+import SettingsSessions from "./main/settings/usersessions.vue";
 
 import UserInjector, { userRoutes } from "./main/user/injector.js";
 import UserRouter from "./main/user/router.vue";
@@ -181,6 +182,11 @@ function setup(frontend) {
       path: "plugins",
       component: SettingsPlugins,
       title: "Settings"
+    });
+    frontend.settings.addPage({
+      path: "sessions",
+      component: SettingsSessions,
+      title: "Sessions"
     });
 
     // Pages to show when the user is an admin

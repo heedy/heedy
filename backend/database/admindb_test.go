@@ -568,3 +568,56 @@ func TestUserSettings(t *testing.T) {
 
 	require.Equal(t, pref["kv"], pp)
 }
+
+func TestUserSessions(t *testing.T) {
+	db, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	s, err := db.ListUserSessions("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s), 0)
+
+	tok, sid, err := db.CreateUserSession("testy", "mysession")
+	require.NoError(t, err)
+
+	s, err = db.ListUserSessions("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s), 1)
+	require.Equal(t, s[0].SessionID, sid)
+	require.Equal(t, s[0].Description, "mysession")
+
+	tok2, sid2, err := db.CreateUserSession("testy", "mysession2")
+	require.NoError(t, err)
+
+	s, err = db.ListUserSessions("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s), 2)
+
+	uname, sid3, err := db.GetUserSessionByToken(tok)
+	require.NoError(t, err)
+	require.Equal(t, uname, "testy")
+	require.Equal(t, sid3, sid)
+
+	require.NoError(t, db.DelUserSessionByToken(tok))
+
+	_, _, err = db.GetUserSessionByToken(tok)
+	require.Error(t, err)
+
+	s, err = db.ListUserSessions("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s), 1)
+	require.Equal(t, s[0].SessionID, sid2)
+	require.Equal(t, s[0].Description, "mysession2")
+
+	uname, sid3, err = db.GetUserSessionByToken(tok2)
+	require.NoError(t, err)
+	require.Equal(t, uname, "testy")
+	require.Equal(t, sid3, sid2)
+
+	require.NoError(t, db.DelUserSession("testy", sid2))
+
+	s, err = db.ListUserSessions("testy")
+	require.NoError(t, err)
+	require.Equal(t, len(s), 0)
+
+}

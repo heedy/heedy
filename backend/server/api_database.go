@@ -85,6 +85,18 @@ func UpdateUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateUserPluginSettings(username, plugin, v))
 }
 
+func ListUserSessions(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	v, err := rest.CTX(r).DB.ListUserSessions(username)
+	rest.WriteJSON(w, r, v, err)
+}
+
+func DeleteUserSession(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	sessionid := chi.URLParam(r, "sessionid")
+	rest.WriteResult(w, r, rest.CTX(r).DB.DelUserSession(username, sessionid))
+}
+
 func ListObjects(w http.ResponseWriter, r *http.Request) {
 	var o database.ListObjectsOptions
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())

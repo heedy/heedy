@@ -210,6 +210,13 @@ func (s *Object) String() string {
 	return string(b)
 }
 
+type UserSession struct {
+	SessionID      string      `db:"sessionid" json:"sessionid"`
+	Description    string      `db:"description" json:"description"`
+	LastAccessDate dbutil.Date `db:"last_access_date" json:"last_access_date"`
+	CreatedDate    dbutil.Date `db:"created_date" json:"created_date"`
+}
+
 // ReadUserOptions gives options for reading a user
 type ReadUserOptions struct {
 	Icon bool `json:"icon,omitempty" schema:"icon"`
@@ -289,6 +296,9 @@ type DB interface {
 	UpdateUser(u *User) error
 	DelUser(name string) error
 	ListUsers(o *ListUsersOptions) ([]*User, error)
+
+	ListUserSessions(name string) ([]UserSession, error)
+	DelUserSession(name, id string) error
 
 	CreateApp(c *App) (string, string, error)
 	ReadApp(cid string, o *ReadAppOptions) (*App, error)

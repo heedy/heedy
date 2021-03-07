@@ -228,3 +228,15 @@ func (db *UserDB) ReadUserPluginSettings(username string, plugin string) (map[st
 	}
 	return db.AdminDB().ReadUserPluginSettings(username, plugin)
 }
+func (db *UserDB) ListUserSessions(username string) ([]UserSession, error) {
+	if username != db.user {
+		return nil, ErrAccessDenied("Cannot read other users' sessions.")
+	}
+	return db.adb.ListUserSessions(username)
+}
+func (db *UserDB) DelUserSession(username, id string) error {
+	if username != db.user {
+		return ErrAccessDenied("Cannot delete other users' sessions.")
+	}
+	return db.adb.DelUserSession(username, id)
+}

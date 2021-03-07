@@ -105,7 +105,7 @@ func (a *Auth) Authenticate(w http.ResponseWriter, r *http.Request) (database.DB
 		// as if the auth didn't exist.
 
 		if cookie.Name == "token" && cookie.Value != "" {
-			username, err := a.DB.LoginToken(cookie.Value) // user name not currently used
+			username, _, err := a.DB.GetUserSessionByToken(cookie.Value) // user name not currently used
 			if err == nil {
 				// Return the logged in user database
 				return database.NewUserDB(a.DB, username), nil
@@ -157,7 +157,7 @@ func (a *Auth) ServeToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Add the token
-		tok, err := a.DB.AddLoginToken(uname, r.Header.Get("User-Agent"))
+		tok, _, err := a.DB.CreateUserSession(uname, r.Header.Get("User-Agent"))
 		if err != nil {
 			writeAuthError(w, r, 400, "server_error", err.Error())
 			return
@@ -263,7 +263,7 @@ func AuthMux(a *Auth) (*chi.Mux, error) {
 			return
 		}
 		if v.Value != "" {
-			err = c.DB.AdminDB().RemoveLoginToken(v.Value)
+			err = c.DB.AdminDB().DelUserSessionByToken(v.Value)
 			if err != nil {
 				c.Log.Error(err)
 			}

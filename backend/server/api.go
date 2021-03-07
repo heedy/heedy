@@ -30,6 +30,9 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/users/{username}/settings/{plugin}", ReadUserPluginSettings)
 	apiMux.Patch("/users/{username}/settings/{plugin}", UpdateUserPluginSettings)
 
+	apiMux.Get("/users/{username}/sessions", ListUserSessions)
+	apiMux.Delete("/users/{username}/sessions/{sessionid}", DeleteUserSession)
+
 	apiMux.Post("/objects", CreateObject)
 	apiMux.Get("/objects", ListObjects)
 	apiMux.Get("/objects/{objectid}", ReadObject)

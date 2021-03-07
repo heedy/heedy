@@ -165,18 +165,23 @@ CREATE INDEX share_objectid on shared_objects(objectid);
 
 
 ------------------------------------------------------------------
--- User Login Tokens
+-- User Sessions
 ------------------------------------------------------------------
--- These are used to control manually logged in devices,
--- so that we don't need to put passwords in cookies
+-- These are used to control manually logged in users,
+-- so that we don't need to put passwords in cookies,
+-- and can remotely log out from other browsers
 
-CREATE TABLE user_logintokens (
+CREATE TABLE user_sessions (
 	username VARCHAR(36) NOT NULL,
+	sessionid VARCHAR NOT NULL,
+
 	token VARCHAR UNIQUE NOT NULL,
 
 	description VARCHAR,
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
 	last_access_date DATE NOT NULL DEFAULT CURRENT_DATE,
+
+	CONSTRAINT pk PRIMARY KEY (username,sessionid),
 
 	CONSTRAINT fk_user
 		FOREIGN KEY(username) 
@@ -186,7 +191,7 @@ CREATE TABLE user_logintokens (
 );
 
 -- This will be requested on every single query
-CREATE INDEX login_tokens ON user_logintokens(token);
+CREATE INDEX user_login_tokens ON user_sessions(token);
 
 ------------------------------------------------------------------
 -- User Settings

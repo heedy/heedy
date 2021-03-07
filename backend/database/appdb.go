@@ -337,3 +337,9 @@ func (db *AppDB) UpdateUserPluginSettings(username string, plugin string, prefer
 func (db *AppDB) ReadUserPluginSettings(username string, plugin string) (map[string]interface{}, error) {
 	return nil, ErrUnimplemented
 }
+func (db *AppDB) ListUserSessions(name string) ([]UserSession, error) {
+	return nil, ErrUnimplemented
+}
+func (db *AppDB) DelUserSession(name, id string) error {
+	return ErrUnimplemented
+}
