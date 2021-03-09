@@ -76,7 +76,7 @@ class Plugin:
         """
         req_res = await self.forward(request, **kwargs)
 
-        response = aiohttp.web.TimeseriesResponse(
+        response = aiohttp.web.StreamResponse(
             status=req_res.status, headers=req_res.headers
         )
         await response.prepare(request)
@@ -90,13 +90,13 @@ class Plugin:
 
     def objectRequest(self, request):
         h = request.headers
-        last_modified = h["X-Heedy-Last-Modified"]
-        if last_modified == "null":
-            last_modified = None
+        modified_date = h["X-Heedy-Modified-Date"]
+        if modified_date == "null":
+            modified_date = None
         return {
             "request": h["X-Heedy-Request"],
             "id": h["X-Heedy-Id"],
-            "last_modified": last_modified,
+            "modified_date": modified_date,
             "meta": json.loads(base64.b64decode(h["X-Heedy-Meta"])),
             "object": h["X-Heedy-Object"],
             "type": h["X-Heedy-Type"],

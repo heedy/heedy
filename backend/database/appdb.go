@@ -177,7 +177,7 @@ func (db *AppDB) CreateObject(s *Object) (string, error) {
 	if s.App == nil || *s.App == "self" {
 		s.App = &db.c.ID
 	}
-	if s.LastModified != nil {
+	if s.ModifiedDate != nil {
 		return "", ErrAccessDenied("Last Modified for object is readonly")
 	}
 	if *s.App != db.c.ID {
@@ -207,7 +207,7 @@ func (db *AppDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
 
 // UpdateObject allows editing a object
 func (db *AppDB) UpdateObject(s *Object) error {
-	if s.LastModified != nil {
+	if s.ModifiedDate != nil {
 		return ErrAccessDenied("Modification date of object is readonly")
 	}
 	curs, err := db.ReadObject(s.ID, &ReadObjectOptions{

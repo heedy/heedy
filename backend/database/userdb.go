@@ -100,7 +100,7 @@ func (db *UserDB) CreateObject(s *Object) (string, error) {
 	if s.App != nil {
 		return "", ErrAccessDenied("You cannot create objects belonging to a app")
 	}
-	if s.LastModified != nil {
+	if s.ModifiedDate != nil {
 		return "", ErrAccessDenied("Last Modified status of object is readonly")
 	}
 	if s.Owner == nil {
@@ -121,7 +121,7 @@ func (db *UserDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
 
 // UpdateObject allows editing a object
 func (db *UserDB) UpdateObject(s *Object) error {
-	if s.LastModified != nil {
+	if s.ModifiedDate != nil {
 		return ErrAccessDenied("Modification date of object is readonly")
 	}
 	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss

@@ -108,7 +108,7 @@ CREATE TABLE objects (
 	type VARCHAR NOT NULL, 	                 -- The object type
 	meta VARCHAR NOT NULL DEFAULT '{}',      -- Metadata for the object
 	created_date DATE NOT NULL DEFAULT CURRENT_DATE,
-	last_modified DATE DEFAULT NULL,		 -- Modification date for the object
+	modified_date DATE DEFAULT NULL,		 -- Modification date for the object
 
 	-- Maximal scope that the owner has
 	owner_scope VARCHAR NOT NULL DEFAULT '["*"]',

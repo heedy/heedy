@@ -418,7 +418,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
     "type":"timeseries",
     "meta":{"actor":false,"schema":{}},
     "created_date":"2020-03-21",
-    "last_modified":null,
+    "modified_date":null,
     "owner_scope":"*",
     "access":"*"
 }
@@ -452,7 +452,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
     "type":"timeseries",
     "meta":{"actor":false,"schema":{}},
     "created_date":"2020-03-21",
-    "last_modified":null,
+    "modified_date":null,
     "owner_scope":"*",
     "access":"*"
 }

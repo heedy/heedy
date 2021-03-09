@@ -30,6 +30,8 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/users/{username}/settings/{plugin}", ReadUserPluginSettings)
 	apiMux.Patch("/users/{username}/settings/{plugin}", UpdateUserPluginSettings)
 
+	apiMux.Get("/users/{username}/settings_schema", GetUserSettingSchemas)
+
 	apiMux.Get("/users/{username}/sessions", ListUserSessions)
 	apiMux.Delete("/users/{username}/sessions/{sessionid}", DeleteUserSession)
 
@@ -48,7 +50,7 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/server/scope/{objecttype}", GetObjectScope)
 	apiMux.Get("/server/scope", GetAppScope)
 	apiMux.Get("/server/apps", GetPluginApps)
-	apiMux.Get("/server/user_settings_schema", GetUserSettingSchemas)
+
 	apiMux.Get("/server/version", GetVersion)
 
 	apiMux.Get("/server/admin", GetAdminUsers)

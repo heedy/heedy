@@ -70,7 +70,7 @@ func (db *PublicDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error)
 
 // UpdateObject allows editing a object
 func (db *PublicDB) UpdateObject(s *Object) error {
-	if s.LastModified != nil {
+	if s.ModifiedDate != nil {
 		return ErrAccessDenied("Last Modified of object is readonly")
 	}
 	return updateObject(db.adb, s, `SELECT type,json_group_array(ss.scope) AS access FROM objects, user_object_scope AS ss

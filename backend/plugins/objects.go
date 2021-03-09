@@ -203,9 +203,9 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)
 		return
 	}
-	lastModified := "null"
-	if s.LastModified != nil {
-		lastModified = (*s.LastModified).String()
+	modifiedDate := "null"
+	if s.ModifiedDate != nil {
+		modifiedDate = (*s.ModifiedDate).String()
 	}
 	app := "null"
 	if s.App != nil {
@@ -215,7 +215,7 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	r.Header["X-Heedy-Owner"] = []string{*s.Owner}
 	r.Header["X-Heedy-App"] = []string{app}
 	r.Header["X-Heedy-Type"] = []string{*s.Type}
-	r.Header["X-Heedy-Last-Modified"] = []string{lastModified}
+	r.Header["X-Heedy-Modified-Date"] = []string{modifiedDate}
 	r.Header["X-Heedy-Access"] = s.Access.Scope
 
 	b, err := json.Marshal(s.Meta)

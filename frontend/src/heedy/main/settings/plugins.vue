@@ -44,7 +44,7 @@ export default {
   components: { PluginSettings },
   computed: {
     schema() {
-      return this.$store.state.heedy.plugin_settings_schema;
+      return this.$store.state.heedy.user_settings_schema;
     },
     categories() {
       let s = this.schema;
@@ -76,7 +76,7 @@ export default {
     },
   },
   created() {
-    this.$store.dispatch("ReadUserPluginSettingsSchema");
+    this.$store.dispatch("ReadUserSettingsSchema");
   },
 };
 </script>

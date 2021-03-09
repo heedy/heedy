@@ -113,28 +113,6 @@ func GetPluginApps(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, appmap, nil)
 }
 
-func GetUserSettingSchemas(w http.ResponseWriter, r *http.Request) {
-	db := rest.CTX(r).DB
-	if db.Type() == database.PublicType || db.Type() == database.AppType {
-		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only logged in users can read preference schemas"))
-		return
-	}
-
-	schemaMap := make(map[string]map[string]interface{})
-
-	cfg := db.AdminDB().Assets().Config
-	if len(cfg.UserSettingsSchema) > 0 {
-		schemaMap["heedy"] = cfg.GetUserSettingsSchema()
-	}
-	for p, pv := range cfg.Plugins {
-		if len(pv.UserSettingsSchema) > 0 {
-			schemaMap[p] = pv.GetUserSettingsSchema()
-		}
-	}
-
-	rest.WriteJSON(w, r, schemaMap, nil)
-}
-
 func GetVersion(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(buildinfo.Version))

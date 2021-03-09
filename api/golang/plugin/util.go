@@ -54,7 +54,7 @@ type ObjectInfo struct {
 	ID           string
 	Owner        string
 	App          string
-	LastModified *string
+	ModifiedDate *string
 	Meta         map[string]interface{}
 	Access       database.ScopeArray
 }
@@ -78,12 +78,12 @@ func GetObjectInfo(r *http.Request) (*ObjectInfo, error) {
 	if si.Type == "" || si.ID == "" || si.Owner == "" {
 		return nil, ErrPlugin("No type or ID or Owner headers were present in object request")
 	}
-	ne, ok := r.Header["X-Heedy-Last-Modified"]
+	ne, ok := r.Header["X-Heedy-Modified-Date"]
 	if !ok || len(ne) != 1 {
-		return nil, ErrPlugin("No Last-Modified in object request")
+		return nil, ErrPlugin("No Modified-Date in object request")
 	}
 	if ne[0] != "null" {
-		si.LastModified = &ne[0]
+		si.ModifiedDate = &ne[0]
 	}
 	ne, ok = r.Header["X-Heedy-App"]
 	if ok && len(ne) > 0 {

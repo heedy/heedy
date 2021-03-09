@@ -115,8 +115,8 @@ func (db *AdminDB) AuthUser(username string, password string) (string, string, e
 }
 
 func shouldUpdateLastUsed(d dbutil.Date) bool {
-	cy, cm, cd := time.Now().Date()
-	dy, dm, dd := time.Time(d).Date()
+	cy, cm, cd := time.Now().UTC().Date()
+	dy, dm, dd := time.Time(d).UTC().Date()
 	return cd > dd || cm > dm || cy > dy
 }
 

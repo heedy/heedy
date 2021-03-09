@@ -18,11 +18,9 @@
               style="padding-top: 1cm; backgroud-color: blue"
             >
               <p>
-                Heedy is an open-source, extensible home for your
-                quantified-self data, and other information your devices gather
-                about you. It enables you to easily analyze and share your data,
-                and has a powerful plugin architecture allowing integration with
-                the most popular data gathering services.
+                Heedy is an open-source, extensible home for your personal data.
+                It enables aggregating and analyzing the data your devices and
+                apps gather about you.
               </p>
             </v-flex>
           </v-layout>

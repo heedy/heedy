@@ -195,7 +195,7 @@ type Object struct {
 	Meta *dbutil.JSONObject `json:"meta,omitempty" db:"meta"`
 
 	CreatedDate  *dbutil.Date `json:"created_date,omitempty" db:"created_date"`
-	LastModified *dbutil.Date `json:"last_modified" db:"last_modified"`
+	ModifiedDate *dbutil.Date `json:"modified_date" db:"modified_date"`
 
 	// The scope the owner has to the object. This allows apps to control objects belonging to them.
 	OwnerScope *ScopeArray `json:"owner_scope,omitempty" db:"owner_scope"`

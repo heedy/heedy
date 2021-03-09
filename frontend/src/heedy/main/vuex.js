@@ -60,7 +60,7 @@ export default {
       options: null,
     },
 
-    plugin_settings_schema: null,
+    user_settings_schema: null,
   },
   mutations: {
     setConfigRoutes(state, v) {
@@ -69,8 +69,8 @@ export default {
     setSettingsRoutes(state, v) {
       state.settings_routes = v;
     },
-    setPluginSettingsSchema(state, v) {
-      state.plugin_settings_schema = v;
+    setUserSettingsSchema(state, v) {
+      state.user_settings_schema = v;
     },
     addAppComponent(state, v) {
       state.app_components.push(v);
@@ -594,14 +594,14 @@ export default {
         commit("setPluginApps", res.data);
       }
     },
-    ReadUserPluginSettingsSchema: async function ({ commit, state }) {
-      if (state.plugin_settings_schema != null) {
+    ReadUserSettingsSchema: async function ({ commit, state, rootState }) {
+      if (state.user_settings_schema != null) {
         return; //Already have it, no need to query again.
       }
-      let res = await api("GET", "api/server/user_settings_schema");
+      let res = await api("GET", `api/users/${rootState.app.info.user.username}/settings_schema`);
       if (!res.response.ok) {
       } else {
-        commit("setPluginSettingsSchema", res.data);
+        commit("setUserSettingsSchema", res.data);
       }
     },
     ReadUserPluginSettings: async function ({ commit, rootState }, q) {

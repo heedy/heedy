@@ -68,11 +68,11 @@ func NewPluginManager(db *database.AdminDB, h http.Handler) (*PluginManager, err
 		pluginexclusion = pluginexclusion + " AND NOT plugin LIKE ?"
 		neworder = append(neworder, pname+":%")
 	}
-	r, err := db.Exec(fmt.Sprintf("DELETE FROM objects WHERE last_modified IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=objects.app);", pluginexclusion), neworder...)
+	r, err := db.Exec(fmt.Sprintf("DELETE FROM objects WHERE modified_date IS NULL AND EXISTS (SELECT 1 FROM apps WHERE plugin IS NOT NULL %s AND apps.id=objects.app);", pluginexclusion), neworder...)
 	if err != nil {
 		return nil, err
 	}
-	r, err = db.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM objects WHERE app=apps.id AND last_modified IS NOT NULL);", pluginexclusion), neworder...)
+	r, err = db.Exec(fmt.Sprintf("DELETE FROM apps WHERE plugin IS NOT NULL %s AND NOT EXISTS (SELECT 1 FROM objects WHERE app=apps.id AND modified_date IS NOT NULL);", pluginexclusion), neworder...)
 	if err != nil {
 		return nil, err
 	}
