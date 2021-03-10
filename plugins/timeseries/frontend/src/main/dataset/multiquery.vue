@@ -9,12 +9,12 @@
     >
       <template v-slot:activator>
         <v-list-item-content>
-          <v-list-item-title>Series {{ idx + 1 }}</v-list-item-title>
+          <v-list-item-title>{{ idx }}</v-list-item-title>
         </v-list-item-content>
       </template>
       <Query
         :value="item"
-        :remove-series="value.length > 1"
+        :remove-series="Object.keys(value).length > 1"
         @input="(v) => setValue(idx, v)"
         @remove-series="() => removeSeries(idx)"
       ></Query>
@@ -28,17 +28,17 @@ export default {
     Query,
   },
   props: {
-    value: Array,
+    value: Object,
   },
   methods: {
     setValue(idx, v) {
-      let vv = [...this.value];
+      let vv = { ...this.value };
       vv[idx] = v;
       this.$emit("input", vv);
     },
     removeSeries(idx) {
-      let vv = [...this.value];
-      vv.splice(idx, 1);
+      let vv = { ...this.value };
+      delete vv[idx];
       this.$emit("input", vv);
     },
   },

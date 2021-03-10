@@ -14,7 +14,7 @@ function processChart(qd, chart) {
 
         let ds = dss.data;
         let q = query(ds.x);
-        let d = qd.dataset[ds.series];
+        let d = qd.dataset[ds.key];
         let m = q.min(d);
         if (m < tmin) {
             tmin = m;
@@ -58,7 +58,7 @@ function processChart(qd, chart) {
                 let ds = dss.data
                 let q = query(ds.x);
                 let hist = new Array(bins).fill(0);
-                qd.dataset[ds.series].forEach(dp => {
+                qd.dataset[ds.key].forEach(dp => {
                     let d = q(dp);
                     if (d != null) {
                         let binindex = Math.floor((d - tmin) / binwidth);

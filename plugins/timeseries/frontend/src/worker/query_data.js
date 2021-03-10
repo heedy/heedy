@@ -9,6 +9,12 @@ class QueryData {
     this.query = qobj.query;
     // The dataset that results from the query
     this.dataset = dataset;
+
+    // The keys of the dataset in alphabetical order
+    this.keys = Object.keys(this.dataset);
+    this.keys.sort();
+
+    this.dataset_array = this.keys.map(k => dataset[k]);
   }
 
   /**

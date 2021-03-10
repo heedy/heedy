@@ -6,30 +6,30 @@ let transforms = {
   length(ds, q) {
     if (q.q.length > 1) {
       // We need to actually count the non-null values
-      return query(q.q).nonNull(ds[q.series]);
+      return query(q.q).nonNull(ds[q.key]);
     }
-    return ds[q.series].length;
+    return ds[q.key].length;
   },
   type(ds, q) {
-    return query(q.q).dataType(ds[q.series]);
+    return query(q.q).dataType(ds[q.key]);
   },
   sum(ds, q) {
-    return query(q.q).sum(ds[q.series]);
+    return query(q.q).sum(ds[q.key]);
   },
   duration(ds, q) {
-    return moment.duration(query(q.q).sum(ds[q.series]), "seconds").humanize();
+    return moment.duration(query(q.q).sum(ds[q.key]), "seconds").humanize();
   },
   mean(ds, q) {
-    return query(q.q).mean(ds[q.series]);
+    return query(q.q).mean(ds[q.key]);
   },
   min(ds, q) {
-    return query(q.q).min(ds[q.series]);
+    return query(q.q).min(ds[q.key]);
   },
   max(ds, q) {
-    return query(q.q).max(ds[q.series]);
+    return query(q.q).max(ds[q.key]);
   },
   stdev(ds, q) {
-    return query(q.q).stddev(ds[q.series]);
+    return query(q.q).stddev(ds[q.key]);
   },
 };
 function getData(qd, qq) {

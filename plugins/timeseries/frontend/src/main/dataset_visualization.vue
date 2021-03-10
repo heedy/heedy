@@ -38,10 +38,13 @@
 import VisNotFound from "./vis_notfound.vue";
 
 function CleanQuery(q) {
-  return q.map((e) => {
+  let q2 = {};
+  Object.keys(q).forEach((k) => {
+    let e = q[k];
     let e2 = {
-      ...e,
+      ...q[k],
     };
+
     if (e.i1 !== undefined && !isNaN(e.i1)) {
       e2.i1 = parseInt(e.i1);
     }
@@ -54,13 +57,14 @@ function CleanQuery(q) {
     if (e.i !== undefined && !isNaN(e.i)) {
       e2.i = parseInt(e.i);
     }
-    return e2;
+    q2[k] = e2;
   });
+  return q2;
 }
 
 export default {
   props: {
-    query: Array,
+    query: Object,
     live: {
       type: Boolean,
       default: true,
@@ -115,8 +119,8 @@ export default {
         this.$frontend.timeseries.unsubscribeQuery(this.qkey);
         this.qkey = "";
       }
-      if (n.length > 0) {
-        this.subscribe(this.query);
+      if (Object.keys(n).length > 0) {
+        this.subscribe(n);
       } else {
         this.datavis = [];
         this.message = "";
@@ -126,7 +130,7 @@ export default {
   },
   created() {
     // Only subscribe if non-empty query, or modify the query to be the default
-    if (this.query.length > 0) {
+    if (Object.keys(this.query).length > 0) {
       this.subscribe(this.query);
     } else {
       this.message = "";

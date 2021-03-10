@@ -29,7 +29,7 @@ function getQueryElementObjects(elem) {
 }
 
 function getQueryObjects(q) {
-  return q.reduce(
+  return Object.values(q).reduce(
     (qobj, qv) => ({ ...qobj, ...getQueryElementObjects(qv) }),
     {}
   );

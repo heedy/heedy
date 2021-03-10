@@ -12,6 +12,12 @@
 </template>
 <script>
 import Insert from "./inserter/insert.vue";
+
+function getQ(name, q) {
+  let res = {};
+  res[name] = q;
+  return res;
+}
 export default {
   components: {
     Insert,
@@ -21,7 +27,7 @@ export default {
   },
   data: () => ({
     defaultQuery: { i1: -1000 },
-    query: [],
+    query: {},
   }),
   computed: {
     haswrite() {
@@ -33,16 +39,14 @@ export default {
     },
   },
   watch: {
-    "$route.query": function(n, o) {
+    "$route.query": function (n, o) {
       if (Object.keys(n).length == 0) {
         this.$router.replace({ query: this.defaultQuery });
       } else {
-        this.query = [
-          {
-            ...n,
-            timeseries: this.object.id,
-          },
-        ];
+        this.query = getQ(this.object.name, {
+          ...n,
+          timeseries: this.object.id,
+        });
       }
     },
     object(n, o) {
@@ -59,12 +63,10 @@ export default {
     if (Object.keys(this.$route.query).length == 0) {
       this.$router.replace({ query: this.defaultQuery });
     } else {
-      this.query = [
-        {
-          ...this.$route.query,
-          timeseries: this.object.id,
-        },
-      ];
+      this.query = getQ(this.object.name, {
+        ...this.$route.query,
+        timeseries: this.object.id,
+      });
     }
   },
 };

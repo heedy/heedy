@@ -84,13 +84,13 @@ let chartjsSettings = (isLarge, aspectRatio, xlabel, ylabel, datasets) => ({
   },
 });
 
-function generateDataset(d, x, y, colors, idx) {
+function generateDataset(d, x, y, colors, skey) {
   // Generate a chartjs config for this specific data array
   let pointColor = d.length > 5000 ? colors.high : colors.low;
 
   return {
     lineTension: 0,
-    label: `Series ${idx + 1}`,
+    label: skey,
     showLine: false,
     pointRadius: d.length > 500 ? (d.length > 10000 ? 1 : 2) : 3,
     fill: false,
@@ -100,7 +100,7 @@ function generateDataset(d, x, y, colors, idx) {
     pointBorderColor: pointColor,
     data: {
       // The data object is replaced with query data
-      series: idx,
+      key: skey,
       x: x,
       y: y,
       downsample: d.length > 50000 ? 50000 : 0,
@@ -112,14 +112,14 @@ function generateDataset(d, x, y, colors, idx) {
 
 function analyze(qd) {
   if (
-    qd.dataset.length != 1 ||
-    dq.dataType(qd.dataset[0]) != "object" ||
-    qd.dataset[0].length <= 1
+    qd.keys.length != 1 ||
+    dq.dataType(qd.dataset_array[0]) != "object" ||
+    qd.dataset_array[0].length <= 1
   ) {
     return {}; // We only handle objects for correlation scatterplots
   }
 
-  let d = qd.dataset[0];
+  let d = qd.dataset_array[0];
   let k = dq.keys(d);
   // Filter out the keys with less than half data, and which are not numbers
   let usefulKeys = Object.keys(k)
@@ -144,13 +144,13 @@ function analyze(qd) {
   if (yKeys.length > 1) {
     charts = yKeys.map((yk, i) =>
       chartjsSettings(k[xkey] > 5000, yKeys.length, xkey, yk, [
-        generateDataset(d, ["d", xkey], ["d", yk], multiSeriesColors[i], 0),
+        generateDataset(d, ["d", xkey], ["d", yk], multiSeriesColors[i], qd.keys[0]),
       ])
     );
   } else {
     charts = [
       chartjsSettings(k[xkey] > 5000, 1, xkey, yKeys[0], [
-        generateDataset(d, ["d", xkey], ["d", yKeys[0]], singleSeriesColor, 0),
+        generateDataset(d, ["d", xkey], ["d", yKeys[0]], singleSeriesColor, qd.keys[0]),
       ]),
     ];
   }

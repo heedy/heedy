@@ -40,7 +40,7 @@ let chartOptions = (colors, bins, series, q, label, aspectRatio) => ({
             borderWidth: 1,
             borderColor: colors.border,
             data: {
-                series: series,
+                key: series,
                 x: q
             }
         }]
@@ -89,15 +89,15 @@ function prepareObjectHist(dp) {
 
 
 function analyze(qd) {
-    if (qd.dataset.length == 0 || qd.dataset.length > 4) {
+    if (qd.keys.length == 0 || qd.keys.length > 4) {
         return {};
     }
 
     let charts = null;
 
     // If the dataset is just an object
-    if (qd.dataset.length == 1 && qd.dataset[0].length > 40 && dq.dataType(qd.dataset[0]) == "object") {
-        let d = qd.dataset[0];
+    if (qd.dataset_array.length == 1 && qd.dataset_array[0].length > 40 && dq.dataType(qd.dataset_array[0]) == "object") {
+        let d = qd.dataset_array[0];
         let k = dq.keys(d);
         // Filter out the keys with less than half data, and which are not numbers
         let usefulKeys = Object.keys(k)
@@ -122,10 +122,10 @@ function analyze(qd) {
         }
 
         // OK, so now construct the plots using only the useful keys
-        charts = usefulKeys.map((kv, i) => chartOptions(multiSeriesColors[i], k[kv] > 500 ? 20 : 10, 0, ["d", kv], kv, usefulKeys.length));
-    } else if (qd.dataset.every(ds => ds.length > 40 && dq.isNumeric(ds))) {
+        charts = usefulKeys.map((kv, i) => chartOptions(multiSeriesColors[i], k[kv] > 500 ? 20 : 10, qd.keys[0], ["d", kv], kv, usefulKeys.length));
+    } else if (qd.dataset_array.every(ds => ds.length > 40 && dq.isNumeric(ds))) {
         // The dataset is a histogram for each
-        charts = qd.dataset.map((ds, i) => chartOptions(qd.dataset.length == 1 ? singleSeriesColor : multiSeriesColors[i], ds.length > 500 ? 20 : 10, i, ["d"], qd.dataset.length == 1 ? "Number of Datapoints" : `Series ${i + 1}`, qd.dataset.length == 1 ? 1.2 : qd.dataset.length))
+        charts = qd.dataset_array.map((ds, i) => chartOptions(qd.dataset_array.length == 1 ? singleSeriesColor : multiSeriesColors[i], ds.length > 500 ? 20 : 10, qd.keys[i], ["d"], qd.dataset_array.length == 1 ? "Number of Datapoints" : qd.keys[i], qd.dataset_array.length == 1 ? 1.2 : qd.dataset_array.length))
 
     } else {
         return {};

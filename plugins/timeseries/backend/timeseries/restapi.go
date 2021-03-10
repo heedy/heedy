@@ -3,6 +3,7 @@ package timeseries
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -392,18 +393,30 @@ func Act(w http.ResponseWriter, r *http.Request) {
 func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 	// Generate a dataset
 	c := rest.CTX(r)
-	var d []*Dataset
+	var d map[string]*Dataset
 	err := rest.UnmarshalRequest(r, &d)
 	if err != nil {
 		rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
 		return
 	}
+	if _, ok := d["error"]; ok {
+		rest.WriteJSONError(rw, r, http.StatusBadRequest, errors.New("The key 'error' is disallowed in dataset query."))
+		return
+	}
+	if _, ok := d["error_description"]; ok {
+		rest.WriteJSONError(rw, r, http.StatusBadRequest, errors.New("The key 'error_description' is disallowed in datset query."))
+		return
+	}
 
-	readers := make([]*JsonArrayReader, len(d))
-	for i := range d {
-		di, err := d[i].Get(c.DB)
+	readers := make(map[string]*JsonArrayReader)
+	for k, v := range d {
+		if v == nil {
+			rest.WriteJSONError(rw, r, http.StatusBadRequest, fmt.Errorf("Invalid query at '%s'", k))
+			return
+		}
+		di, err := v.Get(c.DB)
 		if err != nil {
-			rest.WriteJSONError(rw, r, http.StatusBadRequest, err)
+			rest.WriteJSONError(rw, r, http.StatusBadRequest, fmt.Errorf("Invalid query at '%s': %w", k, err))
 			return
 		}
 		var pi DatapointIterator
@@ -422,7 +435,7 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(rw, r, http.StatusInternalServerError, err)
 			return
 		}
-		readers[i] = ai
+		readers[k] = ai
 	}
 	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 	var w io.Writer
@@ -442,40 +455,57 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 	}
 
-	_, err = w.Write([]byte(`[`))
+	_, err = w.Write([]byte(`{`))
 	if err != nil {
 		c.Log.Warnf("Dataset: %s", err.Error())
 		return
 	}
-	for i := range readers {
-		_, err = io.Copy(w, readers[i])
-
-		if err != nil {
-			c.Log.Warnf("Dataset: %s", err.Error())
-			return
-		}
-		if i < len(readers)-1 {
+	hasPrev := false
+	for k, v := range readers {
+		if hasPrev {
 			_, err = w.Write([]byte{','})
 			if err != nil {
 				c.Log.Warnf("Dataset: %s", err.Error())
 				return
 			}
 		}
+		hasPrev = true
+		ks, err := json.Marshal(k)
+		if err != nil {
+			c.Log.Warnf("Dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = w.Write(ks)
+		if err != nil {
+			c.Log.Warnf("Dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = w.Write([]byte(`:`))
+		if err != nil {
+			c.Log.Warnf("Dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = io.Copy(w, v)
+
+		if err != nil {
+			c.Log.Warnf("Dataset key '%s': %s", k, err.Error())
+			return
+		}
 	}
-	_, err = w.Write([]byte(`]`))
+	_, err = w.Write([]byte(`}`))
 	if err != nil {
 		c.Log.Warnf("Dataset: %s", err.Error())
 		return
 	}
 }
 
-func getEvents(d []*Dataset) []dashboard.DashboardEvent {
+func getEvents(d map[string]*Dataset) []dashboard.DashboardEvent {
 	if len(d) == 0 {
 		return nil
 	}
-	m := d[0].GetTimeseries()
-	for i := 1; i < len(d); i++ {
-		m2 := d[i].GetTimeseries()
+	m := make(map[string]int)
+	for _, v := range d {
+		m2 := v.GetTimeseries()
 		for k := range m2 {
 			// don't care about numbers
 			m[k] = 1
@@ -503,23 +533,41 @@ type dashboardQueryResult struct {
 func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 	// Generate a dataset
 	c := rest.CTX(r)
-	var d []*Dataset
+	var d map[string]*Dataset
 	err := rest.UnmarshalRequest(r, &d)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if _, ok := d["error"]; ok {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The key 'error' is disallowed in dataset query."))
+		return
+	}
+	if _, ok := d["error_description"]; ok {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The key 'error_description' is disallowed in datset query."))
+		return
+	}
 
-	readers := make([]*JsonArrayReader, len(d))
-	for i := range d {
-		di, err := d[i].Get(c.DB)
-		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+	readers := make(map[string]*JsonArrayReader)
+	for k, v := range d {
+		if v == nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("Invalid query at '%s'", k))
 			return
 		}
-		// pi := NewChanIterator(&TransformIterator{dpi: di, it: di})
-		pi := &TransformIterator{dpi: di, it: di}
+		di, err := v.Get(c.DB)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("Invalid query at '%s': %w", k, err))
+			return
+		}
+		var pi DatapointIterator
+		/*
+			if len(d[i].Dataset) > 0 || d[i].Transform != nil {
+				pi = NewChanIterator(&TransformIterator{dpi: di, it: di})
+			} else {
+				pi = &TransformIterator{dpi: di, it: di}
+			}
+		*/
+		pi = &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
 		ai, err := NewJsonArrayReader(pi, 2048)
@@ -527,7 +575,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		readers[i] = ai
+		readers[k] = ai
 	}
 
 	evts, err := json.Marshal(getEvents(d))
@@ -535,7 +583,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
 	}
-
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte(`{"events":`))
 	if err != nil {
@@ -547,27 +595,45 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 		c.Log.Warnf("Dashboard dataset: %s", err.Error())
 		return
 	}
-	_, err = w.Write([]byte(`,"data":[`))
+	_, err = w.Write([]byte(`,"data":{`))
 	if err != nil {
 		c.Log.Warnf("Dashboard dataset: %s", err.Error())
 		return
 	}
-	for i := range readers {
-		_, err = io.Copy(w, readers[i])
 
-		if err != nil {
-			c.Log.Warnf("Dashboard dataset: %s", err.Error())
-			return
-		}
-		if i < len(readers)-1 {
+	hasPrev := false
+	for k, v := range readers {
+		if hasPrev {
 			_, err = w.Write([]byte{','})
 			if err != nil {
-				c.Log.Warnf("Dashboard dataset: %s", err.Error())
+				c.Log.Warnf("Dataset: %s", err.Error())
 				return
 			}
 		}
+		hasPrev = true
+		ks, err := json.Marshal(k)
+		if err != nil {
+			c.Log.Warnf("Dashboard dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = w.Write(ks)
+		if err != nil {
+			c.Log.Warnf("Dashboard dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = w.Write([]byte(`:`))
+		if err != nil {
+			c.Log.Warnf("Dashboard dataset key '%s': %s", k, err.Error())
+			return
+		}
+		_, err = io.Copy(w, v)
+
+		if err != nil {
+			c.Log.Warnf("Dashboard dataset key '%s': %s", k, err.Error())
+			return
+		}
 	}
-	_, err = w.Write([]byte(`]}`))
+	_, err = w.Write([]byte(`}}`))
 	if err != nil {
 		c.Log.Warnf("Dashboard dataset: %s", err.Error())
 		return

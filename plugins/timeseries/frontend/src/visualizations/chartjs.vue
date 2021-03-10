@@ -105,7 +105,7 @@ export default {
     scatterchart: getChart(Chartjs.Scatter),
   },
   props: {
-    query: Array,
+    query: Object,
     config: Object,
   },
 };

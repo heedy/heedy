@@ -6,7 +6,7 @@ function preprocessor(qd, visualization) {
     visualization: "table",
     config: visualization.config.map((c, i) => ({
       ...c,
-      data: qd.dataset[i].map((dp) => {
+      data: qd.dataset_array[i].map((dp) => {
         let obj = {
           t: new Date(dp.t * 1000).toLocaleString(),
           d: JSON.stringify(dp.d),

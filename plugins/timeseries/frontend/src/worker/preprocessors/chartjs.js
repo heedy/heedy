@@ -16,7 +16,7 @@ function prepareDataset(qd, ds) {
   }
   let extractY = query(ds.data.y);
   if (ds.data.withDuration !== undefined && ds.data.withDuration) {
-    let data = qd.dataset[ds.data.series].map((dp) => ({
+    let data = qd.dataset[ds.data.key].map((dp) => ({
       t: dp.t * 1000,
       y: extractY(dp),
       dt: dp.dt * 1000,
@@ -64,7 +64,7 @@ function prepareDataset(qd, ds) {
       newds.pointBorderColor = pointColor;
     }
   } else {
-    newds.data = qd.dataset[ds.data.series].map((dp) => ({
+    newds.data = qd.dataset[ds.data.key].map((dp) => ({
       x: extractX(dp),
       y: extractY(dp),
     }));

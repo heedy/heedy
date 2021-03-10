@@ -1,11 +1,11 @@
 async function analyze(qd) {
   if (
-    qd.dataset.length > 6 ||
-    !qd.dataset.every((ds) => ds.length < 50000 && ds.length > 0)
+    qd.keys.length > 6 ||
+    !qd.dataset_array.every((ds) => ds.length < 50000 && ds.length > 0)
   ) {
     return {}; // Don't display table for huge datasets.
   }
-  let cols = qd.dataset.map((data, i) => {
+  let cols = qd.dataset_array.map((data, i) => {
     let columns = [{ prop: "t", name: "Timestamp" }];
     if (data.some((dp) => dp.dt !== undefined)) {
       columns.push({
@@ -39,7 +39,7 @@ async function analyze(qd) {
         });
       }
     }
-    return { columns, label: `Series ${i + 1}` };
+    return { columns, label: qd.keys[i] };
   });
 
   return {

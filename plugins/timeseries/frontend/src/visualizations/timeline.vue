@@ -5,13 +5,13 @@
 import { TimelinesChart } from "../../dist/d3v.mjs";
 export default {
   props: {
-    query: Array,
+    query: Object,
     config: Object,
   },
   methods: {
     handleResize(event) {
       this._tc.width(this.$refs.chart.clientWidth);
-    }
+    },
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.handleResize);
@@ -24,7 +24,7 @@ export default {
         .rightMargin(nd.rightMargin)
         .timeFormat(nd.timeFormat)
         .data(nd.data);
-    }
+    },
   },
   mounted() {
     window.addEventListener("resize", this.handleResize);
@@ -41,6 +41,6 @@ export default {
       .rightMargin(this.config.rightMargin)
       .timeFormat(this.config.timeFormat)
       .data(this.config.data);
-  }
+  },
 };
 </script>

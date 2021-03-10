@@ -35,8 +35,8 @@ class Merge:
     def run(self):
         return self.h.session.post(
             "/api/timeseries/dataset",
-            [{"merge": self.query}],
-            f=lambda x: DatapointArray(x[0]),
+            {"data": {"merge": self.query}},
+            f=lambda x: DatapointArray(x["data"]),
         )
 
 
@@ -173,5 +173,7 @@ class Dataset(object):
     def run(self):
         """Runs the dataset query, and returns the result"""
         return self.h.session.post(
-            "/api/timeseries/dataset", [self.query], f=lambda x: DatapointArray(x[0])
+            "/api/timeseries/dataset",
+            {"data": self.query},
+            f=lambda x: DatapointArray(x["data"]),
         )

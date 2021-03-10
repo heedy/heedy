@@ -22,7 +22,7 @@
         </div>
         <multi-query v-model="query"></multi-query>
         <v-card-actions>
-          <v-btn text @click="addSeries">
+          <v-btn v-if="Object.keys(query).length < 10" text @click="addSeries">
             <v-icon left>add_circle</v-icon>Add Series
           </v-btn>
           <v-spacer></v-spacer>
@@ -41,6 +41,7 @@
   </h-page-container>
 </template>
 <script>
+import Vue from "../../../dist/vue.mjs";
 import MultiQuery from "./multiquery.vue";
 export default {
   components: {
@@ -48,19 +49,19 @@ export default {
   },
   data: () => ({
     alert: "",
-    defaultQuery: [
-      {
+    defaultQuery: {
+      "Series 1": {
         timeseries: "",
         t1: "now-3mo",
       },
-    ],
-    query: [
-      {
+    },
+    query: {
+      "Series 1": {
         timeseries: "",
         t1: "now-3mo",
       },
-    ],
-    visquery: [],
+    },
+    visquery: {},
     loading: false,
     errmessage: "",
   }),
@@ -79,10 +80,17 @@ export default {
       }
     },
     addSeries() {
-      this.query.push({
-        timeseries: "",
-        t1: "now-3mo",
-      });
+      console.vlog("Adding query", this.query);
+      for (let i = 1; i < 10; i++) {
+        let k = `Series ${i}`;
+        if (this.query[k] === undefined) {
+          Vue.set(this.query, k, {
+            timeseries: "",
+            t1: "now-3mo",
+          });
+          break;
+        }
+      }
     },
     processQuery(qstring) {
       this.errmessage = "";
@@ -90,10 +98,10 @@ export default {
         let qval = atob(qstring);
         let qjson = JSON.parse(qval);
         this.visquery = qjson;
-        this.query = qjson.map((q) => ({ ...q }));
+        this.query = JSON.parse(qval); // actually just want a deep copy
       } catch (err) {
         console.error(err);
-        this.visquery = [];
+        this.visquery = {};
         this.query = this.defaultQuery.map((q) => ({ ...q }));
         this.errmessage = "Error reading query";
       }
@@ -105,8 +113,8 @@ export default {
       if (n.q !== undefined) {
         this.processQuery(n.q);
       } else {
-        this.visquery = [];
-        this.query = this.defaultQuery.map((q) => ({ ...q }));
+        this.visquery = {};
+        this.query = JSON.parse(JSON.stringify(this.defaultQuery));
       }
     },
   },

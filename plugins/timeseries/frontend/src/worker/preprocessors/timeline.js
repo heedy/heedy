@@ -84,7 +84,7 @@ function preprocess(qd, visualization) {
                 let extractor = query(d.q);
                 return {
                     label: d.label,
-                    data: qd.dataset[d.series].map(dp => prepareTimeline(extractor, dp))
+                    data: qd.dataset[d.key].map(dp => prepareTimeline(extractor, dp))
                 }
             })
         }];
@@ -93,7 +93,7 @@ function preprocess(qd, visualization) {
         let extractor = query(visualization.config.data[0].q);
         data = [{
             group: "",
-            data: perDay(qd.dataset[visualization.config.data[0].series]).map(dval => ({
+            data: perDay(qd.dataset[visualization.config.data[0].key]).map(dval => ({
                 label: moment(dval.date).format("YYYY-MM-DD"),
                 data: dval.data.map(dp => prepareTimeline(extractor, dp)).map(dp => {
                     resetYear(dp.timeRange[0]);
@@ -110,7 +110,7 @@ function preprocess(qd, visualization) {
         let sperday = visualization.config.data.map(s => {
             let dateGroup = {};
             let extractor = query(s.q);
-            perDay(qd.dataset[s.series]).forEach(dval => {
+            perDay(qd.dataset[s.key]).forEach(dval => {
                 let curday = moment(dval.date).format("YYYY-MM-DD");
                 groups[curday] = true;
                 dateGroup[curday] = {

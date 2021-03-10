@@ -1,15 +1,15 @@
 <template>
-  <div style="width:100%" ref="widthdiv">
+  <div style="width: 100%" ref="widthdiv">
     <virtual-table
-      v-if="config.length==1"
+      v-if="config.length == 1"
       :minWidth="width"
       :height="height"
       :config="config[0].columns"
       :data="config[0].data"
     ></virtual-table>
     <v-tabs v-else v-model="tab">
-      <v-tab v-for="(tval,i) in config" :key="i">{{ config[i].label }}</v-tab>
-      <v-tab-item v-for="(tval,i) in config" :key="i" :value="i">
+      <v-tab v-for="(tval, i) in config" :key="i">{{ config[i].label }}</v-tab>
+      <v-tab-item v-for="(tval, i) in config" :key="i" :value="i">
         <virtual-table
           :minWidth="width"
           :height="height"
@@ -28,7 +28,7 @@ export default {
     VirtualTable,
   },
   props: {
-    query: Array,
+    query: Object,
     config: Array,
   },
   data: () => ({

@@ -79,7 +79,7 @@ let chartjsSettings = (isLarge, aspectRatio, ylabel, datasets) => ({
   },
 });
 
-function generateDataset(d, y, colors, idx, yid) {
+function generateDataset(d, y, colors, key, yid) {
   // Generate a chartjs config for this specific data array
   let isbool = dq.isBoolean(d);
   let showDuration = d.length < 500 && dtq.sum(d) > 0;
@@ -88,7 +88,7 @@ function generateDataset(d, y, colors, idx, yid) {
 
   return {
     lineTension: 0,
-    label: `Series ${idx + 1}`,
+    label: key,
     showLine: isbool || d.length < 500,
     steppedLine: isbool,
     pointRadius: d.length > 500 ? (d.length > 10000 ? 1 : 2) : 3,
@@ -100,7 +100,7 @@ function generateDataset(d, y, colors, idx, yid) {
     yAxisID: yid,
     data: {
       // The data object is replaced with query data
-      series: idx,
+      key: key,
       x: ["t"],
       y: y,
       downsample: d.length > 50000 ? 50000 : 0,
@@ -111,19 +111,19 @@ function generateDataset(d, y, colors, idx, yid) {
 }
 
 function analyze(qd) {
-  if (qd.dataset.length == 0 || qd.dataset.length > 4 || !qd.dataset.every(da => da.length > 2)) {
+  if (qd.dataset_array.length == 0 || qd.dataset_array.length > 4 || !qd.dataset_array.every(da => da.length > 2)) {
     return {};
   }
 
   let charts = null;
 
-  if (!qd.dataset.every((da) => dq.isNumeric(da))) {
+  if (!qd.dataset_array.every((da) => dq.isNumeric(da))) {
     // The data is not numeric. Find keys if it is an object
-    if (qd.dataset.length != 1 || dq.dataType(qd.dataset[0]) != "object") {
+    if (qd.dataset_array.length != 1 || dq.dataType(qd.dataset_array[0]) != "object") {
       return {}; // We only handle objects for single series
     }
 
-    let d = qd.dataset[0];
+    let d = qd.dataset_array[0];
     let k = dq.keys(d);
     // Filter out the keys with less than half data, and which are not numbers
     let usefulKeys = Object.keys(k)
@@ -153,32 +153,32 @@ function analyze(qd) {
     // OK, so now construct the plots using only the useful keys
     charts = usefulKeys.map((kv, i) =>
       chartjsSettings(k[kv] > 5000, usefulKeys.length, kv, [
-        generateDataset(d, ["d", kv], multiSeriesColors[i], 0, "y0"),
+        generateDataset(d, ["d", kv], multiSeriesColors[i], qd.keys[0], "y0"),
       ])
     );
   } else {
-    if (qd.dataset.length == 1) {
+    if (qd.dataset_array.length == 1) {
       charts = [
-        chartjsSettings(qd.dataset[0].length > 5000, 1.2, "", [
-          generateDataset(qd.dataset[0], ["d"], singleSeriesColor, 0, "y0"),
+        chartjsSettings(qd.dataset_array[0].length > 5000, 1.2, "", [
+          generateDataset(qd.dataset_array[0], ["d"], singleSeriesColor, qd.keys[0], "y0"),
         ]),
       ];
-    } /*else if (qd.dataset.length == 2) {
+    } /*else if (qd.dataset_array.length == 2) {
       charts = [
         chartjsSettings(
-          qd.dataset[0].length > 5000 || qd.dataset[1].length > 5000,
+          qd.dataset_array[0].length > 5000 || qd.dataset_array[1].length > 5000,
           1.2,
           "Series 1",
           [
             generateDataset(
-              qd.dataset[0],
+              qd.dataset_array[0],
               ["d"],
               multiSeriesColors[0],
               0,
               "y0"
             ),
             generateDataset(
-              qd.dataset[1],
+              qd.dataset_array[1],
               ["d"],
               multiSeriesColors[1],
               1,
@@ -203,9 +203,9 @@ function analyze(qd) {
         },
       });
     }*/ else {
-      charts = qd.dataset.map((d, i) =>
-        chartjsSettings(d.length > 5000, qd.dataset.length, `Series ${i + 1}`, [
-          generateDataset(d, ["d"], multiSeriesColors[i], i, "y0"),
+      charts = qd.dataset_array.map((d, i) =>
+        chartjsSettings(d.length > 5000, qd.dataset_array.length, qd.keys[i], [
+          generateDataset(d, ["d"], multiSeriesColors[i], qd.keys[i], "y0"),
         ])
       );
     }
