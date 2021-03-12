@@ -201,8 +201,11 @@ func (db *AppDB) ReadObject(id string, o *ReadObjectOptions) (*Object, error) {
 		return nil, err
 	}
 	s.Access = db.GetObjectAccess(s)
+	if s.Access.HasScope("read") {
+		return s, nil
+	}
+	return nil, ErrNotFound
 
-	return s, nil
 }
 
 // UpdateObject allows editing a object

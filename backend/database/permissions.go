@@ -162,7 +162,8 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 }
 
 func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) (err error) {
-	tx, err := adb.Beginx()
+	var tx TxWrapper
+	tx, err = adb.Beginx()
 	if err != nil {
 		return
 	}
@@ -214,6 +215,9 @@ func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{})
 	}
 
 	cColumns, cValues, err := appUpdateQuery(c)
+	if err != nil {
+		return err
+	}
 	cValues = append(cValues, args...)
 	result, err := tx.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE %s", cColumns, whereStatement), cValues...)
 	return GetExecError(result, err)

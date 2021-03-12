@@ -364,9 +364,10 @@ func (db *AdminDB) ReadApp(aid string, o *ReadAppOptions) (*App, error) {
 // UpdateApp updates the given app (by ID). Note that the inserted values will be written directly to
 // the object.
 func (db *AdminDB) UpdateApp(c *App) (err error) {
-	tx, err := db.Beginx()
+	var tx TxWrapper
+	tx, err = db.Beginx()
 	if err != nil {
-		return
+		return err
 	}
 	defer func() {
 		if err != nil {

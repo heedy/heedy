@@ -43,7 +43,10 @@ export default {
     },
     description: {
       get() {
-        return this.modified.description || this.user.description;
+        if (this.modified.description === undefined) {
+          return this.user.description;
+        }
+        return this.modified.description;
       },
       set(v) {
         this.modified.description = v;
@@ -51,7 +54,10 @@ export default {
     },
     name: {
       get() {
-        return this.modified["name"] || this.user.name;
+        if (this.modified.name === undefined) {
+          return this.user.name;
+        }
+        return this.modified["name"];
       },
       set(v) {
         this.modified.name = v;

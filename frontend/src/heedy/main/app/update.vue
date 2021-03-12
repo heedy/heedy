@@ -141,7 +141,10 @@ export default {
   computed: {
     description: {
       get() {
-        return this.modified.description || this.app.description;
+        if (this.modified.description !== undefined) {
+          return this.modified.description;
+        }
+        return this.app.description;
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "description", v);
@@ -149,7 +152,10 @@ export default {
     },
     name: {
       get() {
-        return this.modified["name"] || this.app.name;
+        if (this.modified.name !== undefined) {
+          return this.modified.name;
+        }
+        return this.app.name;
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "name", v);
@@ -157,7 +163,10 @@ export default {
     },
     scope: {
       get() {
-        return this.modified["scope"] || this.app.scope;
+        if (this.modified.scope !== undefined) {
+          return this.modified.scope;
+        }
+        return this.app.scope;
       },
       set(v) {
         this.$frontend.vue.set(this.modified, "scope", v);

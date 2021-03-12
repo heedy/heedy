@@ -386,6 +386,14 @@ func extractDetails(d *Details) (columns []string, values []interface{}, err err
 			return
 		}
 	}
+	if d.Name != nil {
+		trimmedName := strings.TrimSpace(*d.Name)
+		if trimmedName == "" || strings.ContainsAny(trimmedName, "\n\r\t\b\f") {
+			err = ErrInvalidName
+			return
+		}
+		d.Name = &trimmedName
+	}
 
 	columns, values = extractPointers(d)
 
@@ -594,6 +602,9 @@ func appCreateQuery(c *App) (string, []interface{}, error) {
 
 func appUpdateQuery(c *App) (string, []interface{}, error) {
 	cColumns, cValues, err := extractApp(c)
+	if err != nil {
+		return "", nil, err
+	}
 	if len(cValues) == 0 {
 		return "", nil, ErrNoUpdate
 	}

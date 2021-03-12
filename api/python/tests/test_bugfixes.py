@@ -28,3 +28,6 @@ def test_metamod():
 
     with pytest.raises(Exception):
         o.meta = {"foo": "bar"}
+
+    with pytest.raises(Exception):
+        o.meta = {"schema": "lol"}

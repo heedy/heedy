@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/go-chi/chi"
@@ -63,11 +64,15 @@ func SetupCreate(sc SetupContext) error {
 		return err
 	}
 
+	// An empty-string username isn't allowed, but users with unset names are allowed when creating
+	dbdetails := database.Details{}
+	if strings.TrimSpace(sc.User.Name) != "" {
+		dbdetails.Name = &sc.User.Name
+	}
+
 	// Now add the default user
 	if err = db.CreateUser(&database.User{
-		Details: database.Details{
-			Name: &sc.User.Name,
-		},
+		Details:  dbdetails,
 		UserName: &sc.User.UserName,
 		Password: &sc.User.Password,
 	}); err != nil {

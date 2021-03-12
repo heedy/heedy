@@ -12,8 +12,9 @@ import (
 // that the root level is defining properties of an object
 
 type jsonSchema_prop struct {
-	s        *gojsonschema.Schema
-	required bool
+	s            *gojsonschema.Schema
+	required     bool
+	defaultValue interface{}
 }
 type JSONSchema struct {
 	Schema map[string]interface{}
@@ -80,9 +81,19 @@ func NewSchema(schema map[string]interface{}) (*JSONSchema, error) {
 				if err != nil {
 					return nil, err
 				}
+				var defaultValue interface{}
+				vmap, ok := v.(map[string]interface{})
+				if ok {
+					dval, ok := vmap["default"]
+					if ok {
+						defaultValue = dval
+					}
+				}
+
 				props[k] = jsonSchema_prop{
-					s:        sp,
-					required: false,
+					s:            sp,
+					required:     false,
+					defaultValue: defaultValue,
 				}
 			}
 		}
@@ -132,25 +143,14 @@ func (s *JSONSchema) Validate(data map[string]interface{}) error {
 
 func (s *JSONSchema) InsertDefaults(data map[string]interface{}) {
 	// Insert defaults into the object wherever the data is not provided
-	propMapV, ok := s.Schema["properties"]
-	if !ok {
-		return
-	}
-	propMap, ok := propMapV.(map[string]interface{})
-	if !ok {
-		return
-	}
-	for k, v := range propMap {
-		_, ok := data[k]
-		if !ok {
-			vmap, ok := v.(map[string]interface{})
-			if ok {
-				dval, ok := vmap["default"]
-				if ok {
-					data[k] = dval
-				}
+	for k, v := range s.props {
+		if v.defaultValue != nil {
+			_, ok := data[k]
+			if !ok {
+				data[k] = v.defaultValue
 			}
 		}
+
 	}
 }
 
@@ -171,7 +171,7 @@ func (s *JSONSchema) ValidateAndInsertDefaults(data map[string]interface{}) (err
 	return s.Validate(data)
 }
 
-// ValidateUpdate checks an update struct for validity
+// ValidateUpdate checks an update struct for validity, and resets deleted defaults
 func (s *JSONSchema) ValidateUpdate(data map[string]interface{}) (err error) {
 	for k, v := range data {
 		jsp, ok := s.props[k]
@@ -184,7 +184,10 @@ func (s *JSONSchema) ValidateUpdate(data map[string]interface{}) (err error) {
 		} else {
 			if v == nil {
 				if jsp.required {
-					return fmt.Errorf("Property '%s' can't be deleted", k)
+					if jsp.defaultValue == nil {
+						return fmt.Errorf("Property '%s' can't be deleted", k)
+					}
+					data[k] = jsp.defaultValue
 				}
 			} else {
 				res, err := jsp.s.Validate(gojsonschema.NewGoLoader(v))
@@ -194,6 +197,7 @@ func (s *JSONSchema) ValidateUpdate(data map[string]interface{}) (err error) {
 				if !res.Valid() {
 					return errors.New(res.Errors()[0].String())
 				}
+
 			}
 		}
 	}
