@@ -55,9 +55,6 @@ func TestAppObject(t *testing.T) {
 			ID:   sid,
 			Name: &name2,
 		},
-		Meta: &dbutil.JSONObject{
-			"actor": true,
-		},
 	}))
 
 	s, err := cdb.ReadObject(sid, nil)

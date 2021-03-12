@@ -46,18 +46,21 @@ func GetTimeseriesInfo(r *http.Request) (*TimeseriesInfo, error) {
 	if !ok {
 		return nil, plugin.ErrPlugin("Timeseries schema invalid")
 	}
-	actorInterface, ok := si.Meta["actor"]
-	if !ok {
-		return nil, plugin.ErrPlugin("Timeseries has incomplete metadata")
-	}
-	actor, ok := actorInterface.(bool)
-	if !ok {
-		return nil, plugin.ErrPlugin("Timeseries actor info invalid")
-	}
+	/*
+		actorInterface, ok := si.Meta["actor"]
+		if !ok {
+			return nil, plugin.ErrPlugin("Timeseries has incomplete metadata")
+		}
+
+		actor, ok := actorInterface.(bool)
+		if !ok {
+			return nil, plugin.ErrPlugin("Timeseries actor info invalid")
+		}
+	*/
 	return &TimeseriesInfo{
 		ObjectInfo: *si,
 		Schema:     schemaMap,
-		Actor:      actor,
+		Actor:      false,
 	}, nil
 }
 

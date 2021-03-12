@@ -176,7 +176,9 @@ func (s *JSONSchema) ValidateUpdate(data map[string]interface{}) (err error) {
 	for k, v := range data {
 		jsp, ok := s.props[k]
 		if !ok {
-			if !s.additionalProps {
+			// if v is nil it means we are deleting the property - we should allow deleting properties that are not permitted,
+			// since they can be left over from a previous configuration version
+			if !s.additionalProps && v != nil {
 				return fmt.Errorf("Property '%s' not permitted", k)
 			}
 		} else {

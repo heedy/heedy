@@ -307,10 +307,11 @@ func TestAdminObject(t *testing.T) {
 			ID:   sid,
 			Name: &badname,
 		},
-
-		Meta: &dbutil.JSONObject{
-			"actor": true,
-		},
+		/*
+			Meta: &dbutil.JSONObject{
+				"actor": true,
+			},
+		*/
 
 		OwnerScope: &ScopeArray{
 			Scope: []string{"myscope1", "myscope2"},
@@ -323,7 +324,7 @@ func TestAdminObject(t *testing.T) {
 	require.NotNil(t, s.OwnerScope)
 	require.NotNil(t, s.Meta)
 	require.Equal(t, len((*s.OwnerScope).Scope), 2)
-	require.Equal(t, (*s.Meta)["actor"], true)
+	//require.Equal(t, (*s.Meta)["actor"], true)
 
 	sl, err := db.ListObjects(nil)
 	require.NoError(t, err)

@@ -150,7 +150,7 @@ func TestUserObject(t *testing.T) {
 			Name: &name2,
 		},
 		Meta: &dbutil.JSONObject{
-			"actor": true,
+			"schema": map[string]interface{}{"lol": map[string]interface{}{"type": "number"}},
 		},
 	}))
 	s, err := db.ReadObject(sid, nil)

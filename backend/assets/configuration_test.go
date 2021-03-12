@@ -108,7 +108,7 @@ func TestSchemaValidation(t *testing.T) {
 
 	v := map[string]interface{}{
 		"schema": map[string]interface{}{},
-		"actor":  false,
+		//"actor":  false,
 	}
 
 	require.NoError(t, c.ValidateObjectMeta("timeseries", &v))
