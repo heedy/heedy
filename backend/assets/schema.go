@@ -3,6 +3,7 @@ package assets
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -71,6 +72,10 @@ func NewSchema(schema map[string]interface{}) (*JSONSchema, error) {
 				return nil, errors.New("schema: properties should be an object")
 			}
 			for k, v := range pps {
+				if strings.Contains(k, "\"") {
+					// This is because we do per-prop updates, which cannot be escaped in sqlite, so they are quoted.
+					return nil, errors.New("Root schema properties cannot contain \"")
+				}
 				sp, err := gojsonschema.NewSchema(gojsonschema.NewGoLoader(v))
 				if err != nil {
 					return nil, err
@@ -92,7 +97,7 @@ func NewSchema(schema map[string]interface{}) (*JSONSchema, error) {
 			for _, v := range rp {
 				vs, ok := v.(string)
 				if !ok {
-					return nil, errors.New("schema: elements of required props array msut be strings")
+					return nil, errors.New("schema: elements of required props array must be strings")
 				}
 				jsp, ok := props[vs]
 				if !ok {
@@ -149,9 +154,19 @@ func (s *JSONSchema) InsertDefaults(data map[string]interface{}) {
 	}
 }
 
-// ValidateWithDefaults both validates the given data, and inserts defaults for any missing
-// values in the root object
+// ValidateWithDefaults assumes that defaults are given for missing entries for validation purposes.
+// Does not modify the input data
 func (s *JSONSchema) ValidateWithDefaults(data map[string]interface{}) (err error) {
+	rootCopy := make(map[string]interface{})
+	for k, v := range data {
+		rootCopy[k] = v
+	}
+	return s.ValidateAndInsertDefaults(data)
+}
+
+// ValidateAndInsertDefaults both validates the given data, and inserts defaults for any missing
+// values in the root object
+func (s *JSONSchema) ValidateAndInsertDefaults(data map[string]interface{}) (err error) {
 	s.InsertDefaults(data)
 	return s.Validate(data)
 }

@@ -119,7 +119,7 @@ func Validate(c *Configuration) error {
 		if err != nil {
 			return err
 		}
-		if err = s.ValidateWithDefaults(v.Config); err != nil {
+		if err = s.ValidateAndInsertDefaults(v.Config); err != nil {
 			return err
 		}
 	}
@@ -162,7 +162,7 @@ func Validate(c *Configuration) error {
 				return fmt.Errorf("Unrecognized run type %s", *r.Type)
 			}
 
-			if err := s.ValidateWithDefaults(r.Config); err != nil {
+			if err := s.ValidateAndInsertDefaults(r.Config); err != nil {
 				return err
 			}
 		}

@@ -184,6 +184,9 @@ func (db *UserDB) UpdateApp(c *App) error {
 	if c.Plugin != nil {
 		return ErrAccessDenied("Cannot modify app plugin value")
 	}
+	if c.SettingsSchema != nil {
+		return ErrAccessDenied("Cannot modify app settings schema - only the app itself can do that.")
+	}
 	return updateApp(db.adb, c, `id=? AND owner=?`, c.ID, db.user)
 }
 func (db *UserDB) DelApp(cid string) error {

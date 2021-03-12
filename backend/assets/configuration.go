@@ -215,7 +215,7 @@ func (s *ObjectType) ValidateMetaWithDefaults(meta map[string]interface{}) (err 
 			return
 		}
 	}
-	return s.metaSchema.ValidateWithDefaults(meta)
+	return s.metaSchema.ValidateAndInsertDefaults(meta)
 }
 
 // ValidateMetaUpdate validates an update query

@@ -59,34 +59,69 @@ def test_kv():
     del a.kv["test"]
     assert len(a.kv()) == 0
 
+
 def test_tags_and_keys():
     a = App("testkey")
-    a.objects.create("obj1",tags="tag1 tag2",key="key1")
-    a.objects.create("obj2",tags="tag1 tag3",key="key2")
+    a.objects.create("obj1", tags="tag1 tag2", key="key1")
+    a.objects.create("obj2", tags="tag1 tag3", key="key2")
 
-    assert len(a.objects(key="key1"))==1
-    assert len(a.objects(key="key2"))==1
-    assert len(a.objects(key="key3"))==0
-    assert len(a.objects(key=""))==0
+    assert len(a.objects(key="key1")) == 1
+    assert len(a.objects(key="key2")) == 1
+    assert len(a.objects(key="key3")) == 0
+    assert len(a.objects(key="")) == 0
 
-    assert len(a.objects(tags="tag1"))==2
-    assert len(a.objects(tags="tag1 tag3"))==1
-    assert len(a.objects(tags="tag1 tag3",key="key1"))==0
+    assert len(a.objects(tags="tag1")) == 2
+    assert len(a.objects(tags="tag1 tag3")) == 1
+    assert len(a.objects(tags="tag1 tag3", key="key1")) == 0
 
     with pytest.raises(Exception):
-        a.objects.create("obj3",tags="tag1 tag3",key="key2")
+        a.objects.create("obj3", tags="tag1 tag3", key="key2")
 
     a.objects(key="key1")[0].tags = "tag4"
-    assert len(a.objects(tags="tag1"))==1
-    assert len(a.objects(tags="tag4"))==1
+    assert len(a.objects(tags="tag1")) == 1
+    assert len(a.objects(tags="tag4")) == 1
 
     a.objects(key="key2")[0].key = ""
-    assert len(a.objects(key="key2"))==0
-    assert len(a.objects(key=""))==1
+    assert len(a.objects(key="key2")) == 0
+    assert len(a.objects(key="")) == 1
 
     for o in a.objects():
         o.delete()
 
+
+def test_appschema():
+    a = App("testkey")
+
+    with pytest.raises(Exception):
+        a.settings = {"lol": 12}
+
+    a.settings_schema = {"lol": {"type": "number", "default": 42}}
+    assert a.settings["lol"] == 42
+
+    a.settings = {"lol": 12}
+    assert a.settings["lol"] == 12
+
+    with pytest.raises(Exception):
+        a.settings = {"lol": "hi"}
+    with pytest.raises(Exception):
+        a.settings = {"lol": 24, "hee": 1}
+
+    with pytest.raises(Exception):
+        a.settings_schema = {"lol": {"type": "string", "default": "hi"}}
+
+    a.update(
+        settings={"lol": "hi"},
+        settings_schema={"lol": {"type": "string", "default": "hello"}},
+    )
+    assert a.settings["lol"] == "hi"
+
+    a.settings_schema = {"lol": {"type": "string"}, "li": {"type": "number"}}
+    with pytest.raises(Exception):
+        a.settings_schema = {
+            "lol": {"type": "string"},
+            "li": {"type": "number"},
+            "required": ["li"],
+        }
 
 
 @pytest.mark.asyncio

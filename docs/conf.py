@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../api/python"))
 # -- Project information -----------------------------------------------------
 
 project = "Heedy"
-copyright = "2020, Heedy Contributors"
+copyright = "2021, Heedy Contributors"
 author = "Heedy Contributors"
 
 # The full version, including alpha/beta/rc tags

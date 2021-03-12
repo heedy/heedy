@@ -363,7 +363,58 @@ func (db *AdminDB) ReadApp(aid string, o *ReadAppOptions) (*App, error) {
 
 // UpdateApp updates the given app (by ID). Note that the inserted values will be written directly to
 // the object.
-func (db *AdminDB) UpdateApp(c *App) error {
+func (db *AdminDB) UpdateApp(c *App) (err error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+			if err == nil && c.Settings != nil {
+				e := &events.Event{
+					App:   c.ID,
+					Event: "app_settings_update",
+				}
+				if FillEvent(db, e) == nil {
+					events.Fire(e)
+				}
+			}
+		}
+	}()
+
+	// If either settings or schema are being updated, we need to make sure that the settings and schema are compatible
+	if c.Settings != nil || c.SettingsSchema != nil {
+		// If the schema was changed, we need to overwrite the settings ANYWAYS, because the defaults/extra fields might have been added
+		if c.Settings == nil {
+			var vsettings dbutil.JSONObject
+			c.Settings = &vsettings
+			err = tx.Get(c.Settings, "SELECT settings FROM apps WHERE id=?", c.ID)
+		}
+		var vschema dbutil.JSONObject
+		if c.SettingsSchema == nil {
+			err = tx.Get(&vschema, "SELECT settings_schema FROM apps WHERE id=?", c.ID)
+		} else {
+			vschema = *c.SettingsSchema
+		}
+		if err != nil {
+			if err == sql.ErrNoRows {
+				err = ErrNotFound
+			}
+			return err
+		}
+		ss, err := assets.NewSchema(vschema)
+		if err != nil {
+			return err
+		}
+		err = ss.ValidateAndInsertDefaults(*c.Settings)
+		if err != nil {
+			return err
+		}
+	}
+
 	cColumns, cValues, err := appUpdateQuery(c)
 	if err != nil {
 		return err
@@ -372,7 +423,7 @@ func (db *AdminDB) UpdateApp(c *App) error {
 	cValues = append(cValues, c.ID)
 
 	// Allow updating groups that are not users
-	result, err := db.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE id=?;", cColumns), cValues...)
+	result, err := tx.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE id=?;", cColumns), cValues...)
 	return GetExecError(result, err)
 
 }

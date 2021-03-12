@@ -3,6 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/database/dbutil"
+	"github.com/heedy/heedy/backend/events"
 )
 
 func readUser(adb *AdminDB, name string, o *ReadUserOptions, selectStatement string, args ...interface{}) (*User, error) {
@@ -157,13 +161,61 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 	return GetExecError(result, err)
 }
 
-func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) error {
+func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) (err error) {
+	tx, err := adb.Beginx()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+			if err == nil && c.Settings != nil {
+				e := &events.Event{
+					App:   c.ID,
+					Event: "app_settings_update",
+				}
+				if FillEvent(adb, e) == nil {
+					events.Fire(e)
+				}
+			}
+		}
+	}()
 
-	// TODO: need to check if app belongs to plugin, and determine if any of the fields are readonly
+	// If either settings or schema are being updated, we need to make sure that the settings and schema are compatible
+	if c.Settings != nil || c.SettingsSchema != nil {
+		// If the schema was changed, we need to overwrite the settings ANYWAYS, because the defaults/extra fields might have been added
+		if c.Settings == nil {
+			var vsettings dbutil.JSONObject
+			c.Settings = &vsettings
+			err = tx.Get(c.Settings, fmt.Sprintf("SELECT settings FROM apps WHERE %s", whereStatement), args...)
+		}
+		var vschema dbutil.JSONObject
+		if c.SettingsSchema == nil {
+			err = tx.Get(&vschema, fmt.Sprintf("SELECT settings_schema FROM apps WHERE %s", whereStatement), args...)
+		} else {
+			vschema = *c.SettingsSchema
+		}
+		if err != nil {
+			if err == sql.ErrNoRows {
+				err = ErrNotFound
+			}
+			return err
+		}
+		ss, err := assets.NewSchema(vschema)
+		if err != nil {
+			return err
+		}
+		err = ss.ValidateAndInsertDefaults(*c.Settings)
+		if err != nil {
+			return err
+		}
+	}
 
 	cColumns, cValues, err := appUpdateQuery(c)
 	cValues = append(cValues, args...)
-	result, err := adb.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE %s", cColumns, whereStatement), cValues...)
+	result, err := tx.Exec(fmt.Sprintf("UPDATE apps SET %s WHERE %s", cColumns, whereStatement), cValues...)
 	return GetExecError(result, err)
 }
 

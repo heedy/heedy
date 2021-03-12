@@ -25,3 +25,6 @@ def test_metamod():
 
     assert o.meta["schema"]["type"] == "number"
     assert o.meta["actor"] == False
+
+    with pytest.raises(Exception):
+        o.meta = {"foo": "bar"}

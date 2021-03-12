@@ -173,12 +173,26 @@ func TestAdminApp(t *testing.T) {
 
 	badname := "derp"
 	noAccessToken := ""
+	myschema := dbutil.JSONObject{"lol": map[string]interface{}{"type": "number"}, "required": []interface{}{"lol"}}
+	_, _, err := db.CreateApp(&App{
+		Details: Details{
+			Name: &name,
+		},
+		Owner:          &name,
+		AccessToken:    &noAccessToken,
+		SettingsSchema: &myschema,
+	})
+	require.Error(t, err)
+
+	mysettings := dbutil.JSONObject{"lol": 42}
 	conn, AccessToken, err := db.CreateApp(&App{
 		Details: Details{
 			Name: &name,
 		},
-		Owner:       &name,
-		AccessToken: &noAccessToken,
+		Owner:          &name,
+		AccessToken:    &noAccessToken,
+		SettingsSchema: &myschema,
+		Settings:       &mysettings,
 	})
 	require.NoError(t, err)
 	require.Equal(t, AccessToken, "")
@@ -203,6 +217,40 @@ func TestAdminApp(t *testing.T) {
 	c2, err := db.GetAppByAccessToken(*c.AccessToken)
 	require.NoError(t, err)
 	require.Equal(t, c2.ID, c.ID)
+
+	mysettings = dbutil.JSONObject{"lol": 45}
+	c = &App{
+		Details: Details{
+			ID: conn,
+		},
+		Settings: &mysettings,
+	}
+	require.NoError(t, db.UpdateApp(c))
+	mysettings = dbutil.JSONObject{"lol": "hi"}
+	c = &App{
+		Details: Details{
+			ID: conn,
+		},
+		Settings: &mysettings,
+	}
+	require.Error(t, db.UpdateApp(c))
+
+	myschema = dbutil.JSONObject{"lol": map[string]interface{}{"type": "string"}, "required": []interface{}{"lol"}}
+	c = &App{
+		Details: Details{
+			ID: conn,
+		},
+		SettingsSchema: &myschema,
+	}
+	require.Error(t, db.UpdateApp(c))
+	c = &App{
+		Details: Details{
+			ID: conn,
+		},
+		SettingsSchema: &myschema,
+		Settings:       &mysettings,
+	}
+	require.NoError(t, db.UpdateApp(c))
 
 	require.NoError(t, db.DelApp(c.ID))
 

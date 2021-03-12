@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -543,6 +544,23 @@ func appCreateQuery(c *App) (string, []interface{}, error) {
 	if c.Owner == nil {
 		return "", nil, ErrBadQuery("An app must have an owner")
 	}
+	if c.Settings != nil || c.SettingsSchema != nil {
+		if c.SettingsSchema == nil {
+			return "", nil, ErrBadQuery("A settings_schema is needed to set app settings")
+		}
+		ss, err := assets.NewSchema(*c.SettingsSchema)
+		if err != nil {
+			return "", nil, err
+		}
+		if c.Settings == nil {
+			settingMap := dbutil.JSONObject(make(map[string]interface{}))
+			c.Settings = &settingMap
+		}
+		err = ss.ValidateAndInsertDefaults(*c.Settings)
+		if err != nil {
+			return "", nil, err
+		}
+	}
 	cColumns, cValues, err := extractApp(c)
 	if err != nil {
 		return "", nil, err
@@ -648,14 +666,17 @@ func objectUpdateQuery(c *assets.Configuration, s *Object, objectType string) (s
 	deletes := make([]interface{}, 0)
 	adds := make([]interface{}, 0)
 	for k, v := range *metav {
+		if bytes.Contains([]byte(k), []byte{'"'}) {
+			return "", nil, ErrBadQuery("Invalid meta key")
+		}
 		if v == nil {
-			deletes = append(deletes, "$."+k)
+			deletes = append(deletes, "$.\""+k+"\"")
 		} else {
 			jsonvalue, err := json.Marshal(v)
 			if err != nil {
 				return "", nil, err
 			}
-			adds = append(adds, "$."+k, string(jsonvalue))
+			adds = append(adds, "$.\""+k+"\"", string(jsonvalue))
 		}
 	}
 	if len(deletes) == 0 && len(adds) == 0 {

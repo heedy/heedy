@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/heedy/heedy/backend/events"
 	"github.com/heedy/heedy/backend/plugins"
 
 	"github.com/heedy/heedy/api/golang/rest"
@@ -244,12 +243,6 @@ func UpdateApp(w http.ResponseWriter, r *http.Request) {
 	}
 	c.ID = chi.URLParam(r, "appid")
 	err := rest.CTX(r).DB.UpdateApp(&c)
-	if err == nil && c.Settings != nil {
-		rest.CTX(r).Events.Fire(&events.Event{
-			App:   c.ID,
-			Event: "app_settings_update",
-		})
-	}
 	rest.WriteResult(w, r, err)
 
 }
