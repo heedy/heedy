@@ -3,6 +3,7 @@ package python
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -97,7 +98,7 @@ func StartPythonProcess(w http.ResponseWriter, r *http.Request) {
 		// The python path is now the venv's python
 		pypath, err = EnsureVenv(pypath, path.Join(i.HeedyDir, "venvs", i.Plugin))
 		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("Failed to create venv: %w", err))
 			return
 		}
 	}

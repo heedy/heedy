@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,24 +40,26 @@ func SearchPython() (string, error) {
 
 // TestPython checks if the given python version satisfies all requirements
 func TestPython(exepath string) error {
-	logrus.Debugf("Checking python at %s", exepath)
 	var testScript = `
 import sys
 try:
-	import pkg_resources
-
 	if sys.version_info.major < 3 or sys.version_info.minor < 7:
 		raise Exception("Heedy's Python support requires at least Python 3.7")
 
-	requirements = [
-		"pip"
-	]
-	pkg_resources.require(requirements)
+	import pip
+	import venv
+	import ensurepip
+
 	print("OK")
 except Exception as e:
 	print(e)
 	sys.exit(1)
 `
+	if assets.Config().Verbose {
+		logrus.Debugf("Checking python at %s with script: %s", exepath, testScript)
+	} else {
+		logrus.Debugf("Checking python at %s", exepath)
+	}
 	testResult, err := exec.Command(exepath, "-c", testScript).CombinedOutput()
 	if err != nil {
 		if len(testResult) > 0 {
