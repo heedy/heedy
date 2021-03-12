@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
 
@@ -55,7 +54,7 @@ except Exception as e:
 	print(e)
 	sys.exit(1)
 `
-	if assets.Config().Verbose {
+	if settings.DB.Verbose {
 		logrus.Debugf("Checking python at %s with script: %s", exepath, testScript)
 	} else {
 		logrus.Debugf("Checking python at %s", exepath)

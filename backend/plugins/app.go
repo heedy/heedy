@@ -131,6 +131,9 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 
 	aid, akey, err := adb.CreateApp(App(pluginKey, owner, app))
 	if err != nil {
+		if a.Config.Verbose {
+			c.Log.Warnf("Creating plugin app failed: %s\n%s", err.Error(), App(pluginKey, owner, app))
+		}
 		return aid, akey, err
 	}
 	for skey, sv := range app.Objects {

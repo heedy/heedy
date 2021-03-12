@@ -18,6 +18,8 @@ plugin "python" {
 }
 ```
 
+In order for an interpreter to be seen as valid, it must have the ability to create venvs. On Ubuntu, this means that you need to install `python3-venv`.
+
 ## Custom Database Location
 
 For advanced users, if you want control over your database location, you can tell heedy to create a new database in the `mydb` folder with:

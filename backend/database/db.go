@@ -182,6 +182,11 @@ type App struct {
 	SettingsSchema *dbutil.JSONObject `json:"settings_schema" db:"settings_schema"`
 }
 
+func (a *App) String() string {
+	b, _ := json.MarshalIndent(a, "", "  ")
+	return string(b)
+}
+
 type Object struct {
 	Details
 

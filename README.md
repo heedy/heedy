@@ -25,7 +25,7 @@ chmod +x ./heedy # Allow execution of file
 
 3. Open your browser to http://localhost:1324 to set up your database!
 
-_Before setting up Heedy, it is recommended that you have Python >=3.7 installed, because most heedy plugins use Python!_
+_Before setting up Heedy, it is recommended that you have Python >=3.7 with venv support installed, because most heedy plugins use Python! On Ubuntu/PiOS, you just need to install `python3-venv`._
 
 ## Plugins
 

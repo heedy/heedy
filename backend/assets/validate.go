@@ -196,7 +196,7 @@ func Validate(c *Configuration) error {
 				return err
 			}
 		}
-		for _, app := range p.Apps {
+		for appname, app := range p.Apps {
 			for _, e := range app.On {
 				if e.Post == nil {
 					return errors.New("'on' must have post specified")
@@ -214,6 +214,26 @@ func Validate(c *Configuration) error {
 						return err
 					}
 				}
+			}
+
+			if app.SettingsSchema != nil {
+				s, err := NewSchema(*app.SettingsSchema)
+				if err != nil {
+					return fmt.Errorf("Plugin %s, app %s settings_schema: %w", pname, appname, err)
+				}
+				var svals map[string]interface{}
+				if app.Settings == nil {
+					svals = make(map[string]interface{})
+				} else {
+					svals = *app.Settings
+				}
+				err = s.ValidateWithDefaults(svals)
+				if err != nil {
+					return fmt.Errorf("Plugin %s, app %s settings: %w", pname, appname, err)
+				}
+
+			} else if app.Settings != nil && len(*app.Settings) > 0 {
+				return errors.New("Found app settings without associated schema")
 			}
 
 		}
