@@ -519,7 +519,6 @@ The timeseries is a builtin object type. It defines its own API for interacting 
 Each object holds a `meta` field. A timeseries object's meta object has the following fields:
 
 - **schema** _(object,{})_ - a [JSON Schema](https://json-schema.org/) to which each datapoint must conform.
-- **actor** _(boolean,false)_ - whether the timeseries object can be acted upon (for example, a thermostat can have a temperature time series, which can be acted upon by setting the target temperature).
 
 <h4 class="rest_path">/api/objects/<span>{objectid}</span>/timeseries</h4>
 <h5 class="rest_verb">GET</h5>

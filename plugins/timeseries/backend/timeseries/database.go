@@ -63,7 +63,10 @@ CREATE TABLE timeseries (
 
 );
 CREATE INDEX timeseries_duration ON timeseries(tsid,tend,tstart);
+`
 
+/* Timeseries actions are not enabled for 0.4
+`
 CREATE TABLE timeseries_actions (
 	tsid VARCHAR(36) NOT NULL,
 	tstart REAL NOT NULL,
@@ -83,6 +86,7 @@ CREATE TABLE timeseries_actions (
 );
 CREATE INDEX timeseries_actions_duration ON timeseries_actions(tsid,tend,tstart);
 `
+*/
 
 //go:generate msgp -o=database_msgp.go -tests=false
 //msgp:ignore Query

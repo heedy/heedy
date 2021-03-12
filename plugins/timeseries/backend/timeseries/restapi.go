@@ -21,7 +21,6 @@ import (
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/heedy/heedy/backend/events"
-	"github.com/heedy/heedy/plugins/dashboard/backend/dashboard"
 )
 
 var queryDecoder = schema.NewDecoder()
@@ -499,6 +498,8 @@ func GenerateDataset(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+
 func getEvents(d map[string]*Dataset) []dashboard.DashboardEvent {
 	if len(d) == 0 {
 		return nil
@@ -560,13 +561,6 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var pi DatapointIterator
-		/*
-			if len(d[i].Dataset) > 0 || d[i].Transform != nil {
-				pi = NewChanIterator(&TransformIterator{dpi: di, it: di})
-			} else {
-				pi = &TransformIterator{dpi: di, it: di}
-			}
-		*/
 		pi = &TransformIterator{dpi: di, it: di}
 		defer pi.Close()
 
@@ -639,6 +633,7 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+*/
 
 // Handler is the global router for the timeseries API
 var Handler = func() *chi.Mux {
@@ -656,25 +651,26 @@ var Handler = func() *chi.Mux {
 	m.Get("/object/timeseries/length", func(w http.ResponseWriter, r *http.Request) {
 		DataLength(w, r, false)
 	})
+	/*
+		m.Get("/object/actions", func(w http.ResponseWriter, r *http.Request) {
+			ReadData(w, r, true)
+		})
+		m.Delete("/object/actions", func(w http.ResponseWriter, r *http.Request) {
+			DeleteData(w, r, true)
+		})
+		m.Post("/object/actions", func(w http.ResponseWriter, r *http.Request) {
+			WriteData(w, r, true)
+		})
+		m.Get("/object/actions/length", func(w http.ResponseWriter, r *http.Request) {
+			DataLength(w, r, true)
+		})
 
-	m.Get("/object/actions", func(w http.ResponseWriter, r *http.Request) {
-		ReadData(w, r, true)
-	})
-	m.Delete("/object/actions", func(w http.ResponseWriter, r *http.Request) {
-		DeleteData(w, r, true)
-	})
-	m.Post("/object/actions", func(w http.ResponseWriter, r *http.Request) {
-		WriteData(w, r, true)
-	})
-	m.Get("/object/actions/length", func(w http.ResponseWriter, r *http.Request) {
-		DataLength(w, r, true)
-	})
-
-	m.Post("/object/act", Act)
+		m.Post("/object/act", Act)
+	*/
 
 	m.Post("/api/timeseries/dataset", GenerateDataset)
 
-	m.Post("/dashboard/", GenerateDashboardDataset)
+	//m.Post("/dashboard/", GenerateDashboardDataset)
 
 	m.NotFound(rest.NotFoundHandler)
 	m.MethodNotAllowed(rest.NotFoundHandler)

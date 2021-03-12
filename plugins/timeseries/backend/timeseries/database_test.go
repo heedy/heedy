@@ -131,7 +131,8 @@ func TestDatabase(t *testing.T) {
 		MaxBatchSize:          5,
 		BatchCompressionLevel: 2,
 	}
-	action := true
+	// TODO: SET ACTION FALSE - if ever reenable actions, set this to true
+	action := false
 
 	l, err := s.Length(oid1, false)
 	require.NoError(t, err)
@@ -187,7 +188,7 @@ func TestDatabase(t *testing.T) {
 	require.True(t, dpa[0].IsEqual(dpa3[0]), "%s different from %s", dpa[0].String(), dpa3[0].String())
 	require.True(t, dpa[1].IsEqual(dpa1[1]), "%s different from %s", dpa[1].String(), dpa1[1].String())
 
-	l, err = s.Length(oid1, true)
+	l, err = s.Length(oid1, action)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), l)
 
