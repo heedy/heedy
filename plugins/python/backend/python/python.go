@@ -105,5 +105,10 @@ func EnsureVenv(pypath, folder string) (string, error) {
 	// Create the venv!
 	err := RunCommand(pypath, append([]string{"-m", "venv", folder}, settings.VenvArgs...))
 
+	if err != nil {
+		// If there was an error creating the venv, clear it!
+		os.RemoveAll(folder)
+	}
+
 	return newpypath, err
 }

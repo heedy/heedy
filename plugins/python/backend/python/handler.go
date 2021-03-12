@@ -116,7 +116,7 @@ func StartPythonProcess(w http.ResponseWriter, r *http.Request) {
 		err = RunCommand(pypath, append([]string{"-m", "pip", "install", "-r", requirementsFile}, settings.PipArgs...))
 
 		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+			rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("Failed to install plugin requirements: %w", err))
 			return
 		}
 	}
