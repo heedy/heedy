@@ -35,17 +35,28 @@
           "
           >See available icons</a
         >
-        <v-btn small text @click="iconMode = false">Custom Image</v-btn>
+        <v-btn small text @click="iconMode = false">Use Custom Image</v-btn>
       </template>
       <template v-else>
         <v-flex style="margin-bottom: 5px">
           <croppa
+            v-if="hasPlaceholderImage"
+            :width="size - 30"
+            :height="size - 30"
+            ref="imageCropper"
+            placeholder=""
+            auto-sizing
+          >
+            <img slot="placeholder" :src="image" />
+          </croppa>
+          <croppa
+            v-else
             :width="size - 30"
             :height="size - 30"
             ref="imageCropper"
           ></croppa>
         </v-flex>
-        <v-btn small text @click="iconMode = true">Font Icons</v-btn>
+        <v-btn small text @click="iconMode = true">Use Font Icon</v-btn>
       </template>
     </v-layout>
   </v-container>
@@ -90,6 +101,11 @@ export default {
         this.iconMode = iconMode;
         this.iconText = iconText;
       },
+    },
+  },
+  computed: {
+    hasPlaceholderImage() {
+      return this.image.startsWith("data:image/");
     },
   },
   methods: {

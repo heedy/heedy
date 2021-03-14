@@ -15,8 +15,8 @@ import ConfigPlugins from "./main/config/plugins.vue";
 
 import SettingsPage from "./main/settings/index.vue";
 import SettingsInjector, { settingsRoutes } from "./main/settings/injector.js";
-import SettingsUser from "./main/settings/user.vue";
-import SettingsPlugins from "./main/settings/plugins.vue";
+import SettingsUserEdit from "./main/settings/useredit.vue";
+import SettingsUserSettings from "./main/settings/usersettings.vue";
 import SettingsSessions from "./main/settings/usersessions.vue";
 
 import UserInjector, { userRoutes } from "./main/user/injector.js";
@@ -175,12 +175,12 @@ function setup(frontend) {
     });
     frontend.settings.addPage({
       path: "user",
-      component: SettingsUser,
+      component: SettingsUserEdit,
       title: "My Account"
     });
     frontend.settings.addPage({
       path: "plugins",
-      component: SettingsPlugins,
+      component: SettingsUserSettings,
       title: "Settings"
     });
     frontend.settings.addPage({

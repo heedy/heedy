@@ -14,7 +14,6 @@
         :items="sessions"
         :loading="sessions.length == 0"
         loading-text="Loading sessions..."
-        disable-sort
       >
         <template v-slot:item.action="{ item }">
           <v-icon small @click="delSession(item)">delete</v-icon>

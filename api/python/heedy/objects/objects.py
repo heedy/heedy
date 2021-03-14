@@ -93,19 +93,15 @@ class Objects(APIList):
         return super()._getitem(item, f=lambda x: registry.getObject(x, self.session))
 
     def __call__(self, **kwargs):
-        # To query by object type, we use _type
-        if "_type" in kwargs:
-            kwargs["type"] = kwargs["_type"]
-            del kwargs["_type"]
         return super()._call(
             f=lambda x: [registry.getObject(xx, self.session) for xx in x], **kwargs
         )
 
-    def create(self, name, meta={}, _type="timeseries", **kwargs):
+    def create(self, name, meta={}, type="timeseries", **kwargs):
         """
         Creates a new object of the given type (timeseries by default).
         """
         return super()._create(
             f=lambda x: registry.getObject(x, self.session),
-            **{"name": name, "type": _type, "meta": meta, **kwargs},
+            **{"name": name, "type": type, "meta": meta, **kwargs},
         )

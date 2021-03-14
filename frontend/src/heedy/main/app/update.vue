@@ -1,71 +1,78 @@
 <template>
   <h-card-page :title="'Update ' + app.name" :alert="alert">
-    <v-container fluid grid-list-md>
-      <v-layout row>
-        <v-flex sm5 md4 xs12>
-          <h-icon-editor
-            ref="iconEditor"
-            :image="app.icon"
-            :colorHash="app.id"
-          ></h-icon-editor>
-        </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <v-text-field
-              label="Name"
-              placeholder="My App"
-              v-model="name"
-            ></v-text-field>
-            <v-text-field
-              label="Description"
-              placeholder="This app does stuff"
-              v-model="description"
-            ></v-text-field>
-            <h-scope-editor v-model="scope"></h-scope-editor>
-            <v-layout row style="padding: 0; margin-top: -25px">
-              <v-flex style="padding-right: 0; margin-bottom: -40px">
-                <v-checkbox
+    <v-form @submit="update">
+      <v-container fluid grid-list-md>
+        <v-layout row>
+          <v-flex sm5 md4 xs12>
+            <h-icon-editor
+              ref="iconEditor"
+              :image="app.icon"
+              :colorHash="app.id"
+            ></h-icon-editor>
+          </v-flex>
+          <v-flex sm7 md8 xs12>
+            <v-container>
+              <v-text-field
+                label="Name"
+                placeholder="My App"
+                autofocus
+                v-model="name"
+              ></v-text-field>
+              <v-text-field
+                label="Description"
+                placeholder="This app does stuff"
+                v-model="description"
+              ></v-text-field>
+              <h-scope-editor v-model="scope"></h-scope-editor>
+              <v-layout row style="padding: 0; margin-top: -25px">
+                <v-flex style="padding-right: 0; margin-bottom: -40px">
+                  <v-checkbox
+                    style="
+                      margin-top: 0;
+                      padding-bottom: 0;
+                      padding-top: 0;
+                      margin-bottom: 0;
+                      padding-right: 0;
+                    "
+                    v-model="reset_token"
+                    label="Reset Token"
+                  ></v-checkbox>
+                </v-flex>
+                <v-flex
                   style="
-                    margin-top: 0;
-                    padding-bottom: 0;
-                    padding-top: 0;
-                    margin-bottom: 0;
-                    padding-right: 0;
+                    text-align: right;
+                    padding-left: 0;
+                    margin-bottom: -40px;
                   "
-                  v-model="reset_token"
-                  label="Reset Token"
-                ></v-checkbox>
-              </v-flex>
-              <v-flex
-                style="text-align: right; padding-left: 0; margin-bottom: -40px"
-              >
-                <v-checkbox
-                  style="
-                    margin-top: 0;
-                    padding-bottom: 0;
-                    padding-top: 0;
-                    margin-bottom: 0;
-                    padding-right: 0;
-                    float: right;
-                  "
-                  v-model="enabled"
-                  label="Enabled"
-                ></v-checkbox>
-              </v-flex>
-            </v-layout>
-          </v-container>
-        </v-flex>
-      </v-layout>
-    </v-container>
+                >
+                  <v-checkbox
+                    style="
+                      margin-top: 0;
+                      padding-bottom: 0;
+                      padding-top: 0;
+                      margin-bottom: 0;
+                      padding-right: 0;
+                      float: right;
+                    "
+                    v-model="enabled"
+                    label="Enabled"
+                  ></v-checkbox>
+                </v-flex>
+              </v-layout>
+            </v-container>
+          </v-flex>
+        </v-layout>
+      </v-container>
 
-    <v-card-actions>
-      <v-btn v-if="!enabled" dark color="red" @click="del" :loading="loading"
-        >Delete</v-btn
-      >
-      <v-spacer></v-spacer>
+      <v-card-actions>
+        <v-btn v-if="!enabled" dark color="red" @click="del" :loading="loading"
+          >Delete</v-btn
+        >
+        <v-spacer></v-spacer>
 
-      <v-btn dark color="blue" @click="update" :loading="loading">Update</v-btn>
-    </v-card-actions>
+        <v-btn color="primary" type="submit" :loading="loading">Update</v-btn>
+      </v-card-actions>
+    </v-form>
   </h-card-page>
 </template>
 <script>
@@ -80,7 +87,8 @@ export default {
     alert: "",
   }),
   methods: {
-    update: async function () {
+    update: async function (e) {
+      e.preventDefault();
       if (this.loading) return;
 
       this.loading = true;

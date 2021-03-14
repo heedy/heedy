@@ -61,7 +61,7 @@
                   style="position: absolute; bottom: 10px"
                 >
                   <h-icon
-                    :image="s.icon"
+                    :image="app(s).icon"
                     defaultIcon="settings_input_component"
                     :colorHash="s.app"
                     :size="15"

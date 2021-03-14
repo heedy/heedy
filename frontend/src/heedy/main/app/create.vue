@@ -1,35 +1,38 @@
 <template>
   <h-card-page title="Create a new App" :alert="alert">
-    <v-container fluid grid-list-md>
-      <v-layout row>
-        <v-flex sm5 md4 xs12>
-          <h-icon-editor
-            ref="iconEditor"
-            image="settings_input_component"
-          ></h-icon-editor>
-        </v-flex>
-        <v-flex sm7 md8 xs12>
-          <v-container>
-            <v-text-field
-              label="Name"
-              placeholder="My App"
-              v-model="name"
-            ></v-text-field>
-            <v-text-field
-              label="Description"
-              placeholder="This app does stuff"
-              v-model="description"
-            ></v-text-field>
-            <h-scope-editor v-model="scope"></h-scope-editor>
-          </v-container>
-        </v-flex>
-      </v-layout>
-    </v-container>
+    <v-form @submit="create">
+      <v-container fluid grid-list-md>
+        <v-layout row>
+          <v-flex sm5 md4 xs12>
+            <h-icon-editor
+              ref="iconEditor"
+              image="settings_input_component"
+            ></h-icon-editor>
+          </v-flex>
+          <v-flex sm7 md8 xs12>
+            <v-container>
+              <v-text-field
+                label="Name"
+                placeholder="My App"
+                v-model="name"
+                autofocus
+              ></v-text-field>
+              <v-text-field
+                label="Description"
+                placeholder="This app does stuff"
+                v-model="description"
+              ></v-text-field>
+              <h-scope-editor v-model="scope"></h-scope-editor>
+            </v-container>
+          </v-flex>
+        </v-layout>
+      </v-container>
 
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn dark color="blue" @click="create" :loading="loading">Create</v-btn>
-    </v-card-actions>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn type="submit" color="primary" :loading="loading">Create</v-btn>
+      </v-card-actions>
+    </v-form>
   </h-card-page>
 </template>
 <script>
@@ -43,7 +46,8 @@ export default {
     alert: "",
   }),
   methods: {
-    create: async function () {
+    create: async function (e) {
+      e.preventDefault();
       if (this.loading) return;
 
       this.loading = true;

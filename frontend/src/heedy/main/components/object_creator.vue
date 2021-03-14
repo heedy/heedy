@@ -45,7 +45,7 @@
           >Advanced
         </v-btn>
         <v-spacer></v-spacer>
-        <v-btn type="submit" dark color="blue" :loading="loading">Create</v-btn>
+        <v-btn type="submit" color="primary" :loading="loading">Create</v-btn>
       </v-card-actions>
     </v-form>
   </h-card-page>

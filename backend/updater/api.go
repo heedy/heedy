@@ -277,6 +277,9 @@ func UpdatePlugin(configDir string, zipFile string) error {
 	}
 
 	if !d[0].IsDir() {
+		return errors.New("The plugin must be in a folder")
+		/* Uploading heedy executable updates is disabled for now.
+
 		// HACK: update the main heedy executable
 		if d[0].Name() != "heedy" && d[0].Name() != "heedy.exe" {
 			return errors.New("The plugin must be in a folder")
@@ -305,7 +308,7 @@ func UpdatePlugin(configDir string, zipFile string) error {
 
 		logrus.Debugf("Moving %s -> %s", tmpName, outName)
 		return os.Rename(tmpName, outName)
-
+		*/
 	}
 	pn := d[0].Name()
 	pfile := path.Join(tmpDir, pn, "heedy.conf")

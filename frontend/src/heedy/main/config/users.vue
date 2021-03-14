@@ -38,63 +38,64 @@
                 >
               </template>
               <v-card>
-                <v-card-title>
-                  <span class="headline">Add User</span>
-                </v-card-title>
-                <v-card-text>
-                  <v-container>
-                    <v-row>
-                      <v-col cols="12" sm="12" md="12">
-                        <h3>Username</h3>
-                      </v-col>
-                      <v-col cols="12" sm="12" md="12">
-                        <v-text-field
-                          label="Username"
-                          v-model="creating.username"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="12" md="12">
-                        <h3>Password</h3>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="6">
-                        <v-text-field
-                          type="password"
-                          v-model="creating.password"
-                          label="Password"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="6">
-                        <v-text-field
-                          type="password"
-                          v-model="creating.password2"
-                          label="Repeat Password"
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
+                <v-form @submit="createUser">
+                  <v-card-title>
+                    <span class="headline">Add User</span>
+                  </v-card-title>
+                  <v-card-text>
+                    <v-container>
+                      <v-row>
+                        <v-col cols="12" sm="12" md="12">
+                          <h3>Username</h3>
+                        </v-col>
+                        <v-col cols="12" sm="12" md="12">
+                          <v-text-field
+                            autofocus
+                            label="Username"
+                            v-model="creating.username"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="12" md="12">
+                          <h3>Password</h3>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="6">
+                          <v-text-field
+                            type="password"
+                            v-model="creating.password"
+                            label="Password"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="6">
+                          <v-text-field
+                            type="password"
+                            v-model="creating.password2"
+                            label="Repeat Password"
+                          ></v-text-field>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </v-card-text>
 
-                <v-card-actions>
-                  <div class="flex-grow-1"></div>
-                  <v-btn
-                    color="blue darken-1"
-                    text
-                    @click="
-                      () => {
-                        creating = {
-                          username: '',
-                          password: '',
-                          password2: '',
-                        };
-                        createDialog = false;
-                      }
-                    "
-                    >Cancel</v-btn
-                  >
-                  <v-btn color="blue darken-1" text @click="createUser()"
-                    >Save</v-btn
-                  >
-                </v-card-actions>
+                  <v-card-actions>
+                    <div class="flex-grow-1"></div>
+                    <v-btn
+                      color="primary"
+                      text
+                      @click="
+                        () => {
+                          creating = {
+                            username: '',
+                            password: '',
+                            password2: '',
+                          };
+                          createDialog = false;
+                        }
+                      "
+                      >Cancel</v-btn
+                    >
+                    <v-btn type="submit" color="primary" text>Create</v-btn>
+                  </v-card-actions>
+                </v-form>
               </v-card>
             </v-dialog>
           </v-toolbar>
@@ -102,58 +103,65 @@
       </v-data-table>
       <v-dialog v-model="updateDialog" max-width="500px">
         <v-card>
-          <v-card-title>
-            <span class="headline">Update {{ updating.id }}</span>
-          </v-card-title>
-          <v-card-text>
-            <v-container>
-              <v-row>
-                <v-col cols="12" sm="12" md="12">
-                  <h3>Username</h3>
-                </v-col>
-                <v-col cols="12" sm="12" md="12">
-                  <v-text-field
-                    label="Username"
-                    v-model="updating.username"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="12" md="12">
-                  <h3>Password</h3>
-                </v-col>
-                <v-col cols="12" sm="6" md="6">
-                  <v-text-field
-                    type="password"
-                    label="Reset Password"
-                    v-model="updating.password"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="6" md="6">
-                  <v-text-field
-                    type="password"
-                    label="Repeat Password"
-                    v-model="updating.password2"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="12" md="12">
-                  <h3>Admin</h3>
-                </v-col>
-                <v-col cols="12" sm="12" md="12">
-                  <v-checkbox
-                    label="Admin"
-                    v-model="updating.admin"
-                  ></v-checkbox>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-card-text>
+          <v-form @submit="updateUser">
+            <v-card-title>
+              <span class="headline">Update {{ updating.id }}</span>
+            </v-card-title>
+            <v-card-text>
+              <v-container>
+                <v-row>
+                  <v-col cols="12" sm="12" md="12">
+                    <h3>Username</h3>
+                  </v-col>
+                  <v-col cols="12" sm="12" md="12">
+                    <v-text-field
+                      label="Username"
+                      autofocus
+                      v-model="updating.username"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="12" md="12">
+                    <h3>Password</h3>
+                  </v-col>
+                  <v-col cols="12" sm="6" md="6">
+                    <v-text-field
+                      type="password"
+                      label="Reset Password (Optional)"
+                      filled
+                      clearable
+                      v-model="updating.password"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="6" md="6">
+                    <v-text-field
+                      type="password"
+                      label="Repeat Password"
+                      filled
+                      clearable
+                      v-model="updating.password2"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="12" md="12">
+                    <h3>Admin</h3>
+                  </v-col>
+                  <v-col cols="12" sm="12" md="12">
+                    <v-checkbox
+                      label="Admin"
+                      v-model="updating.admin"
+                    ></v-checkbox>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card-text>
 
-          <v-card-actions>
-            <div class="flex-grow-1"></div>
-            <v-btn color="blue darken-1" text @click="updateDialog = false"
-              >Cancel</v-btn
-            >
-            <v-btn color="blue darken-1" text @click="updateUser()">Save</v-btn>
-          </v-card-actions>
+            <v-card-actions>
+              <div class="flex-grow-1"></div>
+              <v-btn color="primary" text @click="updateDialog = false"
+                >Cancel</v-btn
+              >
+              <v-btn type="submit" color="primary" text>Save</v-btn>
+            </v-card-actions>
+          </v-form>
         </v-card>
       </v-dialog>
     </v-flex>
@@ -209,7 +217,8 @@ export default {
       };
       this.updateDialog = true;
     },
-    createUser: async function () {
+    createUser: async function (e) {
+      e.preventDefault();
       let c = this.creating;
       this.creating = {
         username: "",
@@ -250,7 +259,8 @@ export default {
         this.reload();
       }
     },
-    updateUser: async function () {
+    updateUser: async function (e) {
+      e.preventDefault();
       let toUpdate = {};
       if (this.updating.username != this.updating.id) {
         toUpdate.username = this.updating.username;

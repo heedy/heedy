@@ -19,9 +19,6 @@ class Notifications:
         if "_global" in n:
             n["global"] = n["_global"]
             del n["_global"]
-        if "_type" in n:
-            n["type"] = n["_type"]
-            del n["_type"]
         return self.session.post("api/notifications", n)
 
     def delete(self, key=None, **kwargs):
