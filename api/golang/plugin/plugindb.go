@@ -189,7 +189,7 @@ func (db *PluginDB) CreateUser(u *database.User) error {
 }
 
 func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*database.User, error) {
-	api := fmt.Sprintf("/api/users/%s", name)
+	api := fmt.Sprintf("/api/users/%s", url.PathEscape(name))
 
 	if o != nil {
 		form := url.Values{}
@@ -202,7 +202,7 @@ func (db *PluginDB) ReadUser(name string, o *database.ReadUserOptions) (*databas
 	return &u, err
 }
 func (db *PluginDB) UpdateUser(u *database.User) error {
-	api := fmt.Sprintf("/api/users/%s", u.ID)
+	api := fmt.Sprintf("/api/users/%s", url.PathEscape(u.ID))
 	b, err := json.Marshal(u)
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (db *PluginDB) UpdateUser(u *database.User) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelUser(name string) error {
-	api := fmt.Sprintf("/api/users/%s", name)
+	api := fmt.Sprintf("/api/users/%s", url.PathEscape(name))
 	return db.BasicRequest("DELETE", api, nil)
 }
 
@@ -242,7 +242,7 @@ func (db *PluginDB) CreateObject(s *database.Object) (string, error) {
 	return s.ID, err
 }
 func (db *PluginDB) ReadObject(id string, o *database.ReadObjectOptions) (*database.Object, error) {
-	api := fmt.Sprintf("/api/objects/%s", id)
+	api := fmt.Sprintf("/api/objects/%s", url.PathEscape(id))
 
 	if o != nil {
 		form := url.Values{}
@@ -255,7 +255,7 @@ func (db *PluginDB) ReadObject(id string, o *database.ReadObjectOptions) (*datab
 	return &s, err
 }
 func (db *PluginDB) UpdateObject(s *database.Object) error {
-	api := fmt.Sprintf("/api/objects/%s", s.ID)
+	api := fmt.Sprintf("/api/objects/%s", url.PathEscape(s.ID))
 	b, err := json.Marshal(s)
 	if err != nil {
 		return err
@@ -264,7 +264,7 @@ func (db *PluginDB) UpdateObject(s *database.Object) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelObject(id string) error {
-	api := fmt.Sprintf("/api/objects/%s", id)
+	api := fmt.Sprintf("/api/objects/%s", url.PathEscape(id))
 	return db.BasicRequest("DELETE", api, nil)
 }
 
@@ -310,7 +310,7 @@ func (db *PluginDB) CreateApp(c *database.App) (string, string, error) {
 	return c.ID, accessToken, err
 }
 func (db *PluginDB) ReadApp(id string, o *database.ReadAppOptions) (*database.App, error) {
-	api := fmt.Sprintf("/api/apps/%s", id)
+	api := fmt.Sprintf("/api/apps/%s", url.PathEscape(id))
 
 	if o != nil {
 		form := url.Values{}
@@ -332,7 +332,7 @@ func (db *PluginDB) UpdateApp(c *database.App) error {
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) DelApp(id string) error {
-	api := fmt.Sprintf("/api/apps/%s", id)
+	api := fmt.Sprintf("/api/apps/%s", url.PathEscape(id))
 	return db.BasicRequest("DELETE", api, nil)
 }
 func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error) {
@@ -349,13 +349,13 @@ func (db *PluginDB) ListApps(o *database.ListAppOptions) ([]*database.App, error
 }
 
 func (db *PluginDB) ReadUserSettings(username string) (v map[string]map[string]interface{}, err error) {
-	api := fmt.Sprintf("/api/users/%s/settings", username)
+	api := fmt.Sprintf("/api/users/%s/settings", url.PathEscape(username))
 
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return
 }
 func (db *PluginDB) UpdateUserPluginSettings(username string, plugin string, settings map[string]interface{}) error {
-	api := fmt.Sprintf("/api/users/%s/settings/%s", username, plugin)
+	api := fmt.Sprintf("/api/users/%s/settings/%s", url.PathEscape(username), url.PathEscape(plugin))
 	b, err := json.Marshal(settings)
 	if err != nil {
 		return err
@@ -364,19 +364,19 @@ func (db *PluginDB) UpdateUserPluginSettings(username string, plugin string, set
 	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
 }
 func (db *PluginDB) ReadUserPluginSettings(username string, plugin string) (v map[string]interface{}, err error) {
-	api := fmt.Sprintf("/api/users/%s/settings/%s", username, plugin)
+	api := fmt.Sprintf("/api/users/%s/settings/%s", url.PathEscape(username), url.PathEscape(plugin))
 
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return
 }
 
 func (db *PluginDB) ListUserSessions(username string) (v []database.UserSession, err error) {
-	api := fmt.Sprintf("/api/users/%s/sessions", username)
+	api := fmt.Sprintf("/api/users/%s/sessions", url.PathEscape(username))
 
 	err = db.UnmarshalRequest(&v, "GET", api, nil)
 	return
 }
 func (db *PluginDB) DelUserSession(username, sessionid string) error {
-	api := fmt.Sprintf("/api/users/%s/sessions/%s", sessionid)
+	api := fmt.Sprintf("/api/users/%s/sessions/%s", url.PathEscape(username), url.PathEscape(sessionid))
 	return db.BasicRequest("DELETE", api, nil)
 }

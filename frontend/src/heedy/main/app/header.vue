@@ -112,9 +112,13 @@ export default {
   methods: {
     getKey: async function () {
       console.vlog("Reading access token for", this.app.id);
-      let result = await api("GET", `api/apps/${this.app.id}`, {
-        token: true,
-      });
+      let result = await api(
+        "GET",
+        `api/apps/${encodeURIComponent(this.app.id)}`,
+        {
+          token: true,
+        }
+      );
       if (!result.response.ok) {
         this.token = result.data.error_description;
         return;

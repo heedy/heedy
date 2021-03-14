@@ -109,7 +109,7 @@ export default {
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$frontend.rest(
           "PATCH",
-          `api/apps/${this.app.id}`,
+          `api/apps/${encodeURIComponent(this.app.id)}`,
           this.modified
         );
 
@@ -135,7 +135,7 @@ export default {
       ) {
         let res = await this.$frontend.rest(
           "DELETE",
-          `/api/apps/${this.app.id}`
+          `/api/apps/${encodeURIComponent(this.app.id)}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;

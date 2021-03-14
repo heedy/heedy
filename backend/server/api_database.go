@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins"
 
@@ -13,8 +12,12 @@ import (
 
 func ReadUser(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadUserOptions
-	username := chi.URLParam(r, "username")
-	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	err = rest.QueryDecoder.Decode(&o, r.URL.Query())
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -33,16 +36,20 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var u database.User
-
-	if err := rest.UnmarshalRequest(r, &u); err != nil {
-		rest.WriteJSONError(w, r, 400, err)
+	err := rest.UnmarshalRequest(r, &u)
+	u.ID, err = rest.URLParam(r, "username", err)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	u.ID = chi.URLParam(r, "username")
 	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateUser(&u))
 }
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	rest.WriteResult(w, r, rest.CTX(r).DB.DelUser(username))
 }
 
@@ -58,21 +65,34 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReadUserSettings(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	v, err := rest.CTX(r).DB.ReadUserSettings(username)
 	rest.WriteJSON(w, r, v, err)
 }
 
 func ReadUserPluginSettings(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
-	plugin := chi.URLParam(r, "plugin")
+	username, err := rest.URLParam(r, "username", nil)
+	plugin, err := rest.URLParam(r, "plugin", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+
 	v, err := rest.CTX(r).DB.ReadUserPluginSettings(username, plugin)
 	rest.WriteJSON(w, r, v, err)
 }
 
 func UpdateUserPluginSettings(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
-	plugin := chi.URLParam(r, "plugin")
+	username, err := rest.URLParam(r, "username", nil)
+	plugin, err := rest.URLParam(r, "plugin", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 
 	var v map[string]interface{}
 
@@ -107,14 +127,22 @@ func GetUserSettingSchemas(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListUserSessions(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	v, err := rest.CTX(r).DB.ListUserSessions(username)
 	rest.WriteJSON(w, r, v, err)
 }
 
 func DeleteUserSession(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
-	sessionid := chi.URLParam(r, "sessionid")
+	username, err := rest.URLParam(r, "username", nil)
+	sessionid, err := rest.URLParam(r, "sessionid", err)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	rest.WriteResult(w, r, rest.CTX(r).DB.DelUserSession(username, sessionid))
 }
 
@@ -156,8 +184,8 @@ func CreateObject(w http.ResponseWriter, r *http.Request) {
 
 func ReadObject(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadObjectOptions
-	srcid := chi.URLParam(r, "objectid")
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	srcid, err := rest.URLParam(r, "objectid", err)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -168,17 +196,21 @@ func ReadObject(w http.ResponseWriter, r *http.Request) {
 
 func UpdateObject(w http.ResponseWriter, r *http.Request) {
 	var s database.Object
-
-	if err := rest.UnmarshalRequest(r, &s); err != nil {
-		rest.WriteJSONError(w, r, 400, err)
+	err := rest.UnmarshalRequest(r, &s)
+	s.ID, err = rest.URLParam(r, "objectid", err)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	s.ID = chi.URLParam(r, "objectid")
 	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateObject(&s))
 }
 
 func DeleteObject(w http.ResponseWriter, r *http.Request) {
-	sid := chi.URLParam(r, "objectid")
+	sid, err := rest.URLParam(r, "objectid", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	rest.WriteResult(w, r, rest.CTX(r).DB.DelObject(sid))
 }
 
@@ -224,8 +256,8 @@ func CreateApp(w http.ResponseWriter, r *http.Request) {
 
 func ReadApp(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadAppOptions
-	cid := chi.URLParam(r, "appid")
 	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	cid, err := rest.URLParam(r, "appid", err)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -236,19 +268,22 @@ func ReadApp(w http.ResponseWriter, r *http.Request) {
 
 func UpdateApp(w http.ResponseWriter, r *http.Request) {
 	var c database.App
-
-	if err := rest.UnmarshalRequest(r, &c); err != nil {
-		rest.WriteJSONError(w, r, 400, err)
+	err := rest.UnmarshalRequest(r, &c)
+	c.ID, err = rest.URLParam(r, "appid", err)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	c.ID = chi.URLParam(r, "appid")
-	err := rest.CTX(r).DB.UpdateApp(&c)
-	rest.WriteResult(w, r, err)
+	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateApp(&c))
 
 }
 
 func DeleteApp(w http.ResponseWriter, r *http.Request) {
-	cid := chi.URLParam(r, "appid")
+	cid, err := rest.URLParam(r, "appid", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	rest.WriteResult(w, r, rest.CTX(r).DB.DelApp(cid))
 }
 

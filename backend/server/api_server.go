@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/buildinfo"
@@ -25,7 +24,11 @@ func GetObjectScope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a := rest.CTX(r).DB.AdminDB().Assets()
-	stype := chi.URLParam(r, "objecttype")
+	stype, err := rest.URLParam(r, "objecttype", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	scope, err := a.Config.GetObjectScope(stype)
 	rest.WriteJSON(w, r, scope, err)
 }
@@ -139,8 +142,12 @@ func AddAdminUser(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only admins can add admin users"))
 		return
 	}
-	username := chi.URLParam(r, "username")
-	_, err := rest.CTX(r).DB.ReadUser(username, nil)
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	_, err = rest.CTX(r).DB.ReadUser(username, nil)
 	if err == nil {
 		err = a.AddAdmin(username)
 	}
@@ -153,7 +160,11 @@ func RemoveAdminUser(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Only admins can add remove admin status"))
 		return
 	}
-	username := chi.URLParam(r, "username")
+	username, err := rest.URLParam(r, "username", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	rest.WriteResult(w, r, a.RemAdmin(username))
 }
 
@@ -267,7 +278,11 @@ func GetPluginReadme(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("access_denied: Server settings are admin-only"))
 		return
 	}
-	pluginName := chi.URLParam(r, "pluginname")
+	pluginName, err := rest.URLParam(r, "pluginname", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	// Make sure the pluginName is valid
 	if strings.ContainsAny(pluginName, "/.\\") {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("Invalid character in plugin name"))

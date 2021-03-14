@@ -95,7 +95,7 @@ export default {
       if (Object.keys(this.modified).length > 0) {
         let result = await this.$frontend.rest(
           "PATCH",
-          `api/apps/${this.app.id}`,
+          `api/apps/${encodeURIComponent(this.app.id)}`,
           modified
         );
 
@@ -111,7 +111,7 @@ export default {
       }
 
       this.loading = false;
-      this.$router.push({ path: `/apps/${this.app.id}` });
+      this.$router.push({ path: `/apps/${encodeURIComponent(this.app.id)}` });
     },
     del: async function () {},
   },

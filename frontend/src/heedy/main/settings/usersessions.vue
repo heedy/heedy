@@ -41,7 +41,7 @@ export default {
         let uname = this.$store.state.app.info.user.username;
         let res = await this.$frontend.rest(
           "DELETE",
-          `/api/users/${uname}/sessions/${s.sessionid}`
+          `/api/users/${uname}/sessions/${encodeURIComponent(s.sessionid)}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -55,7 +55,7 @@ export default {
       let uname = this.$store.state.app.info.user.username;
       let res = await this.$frontend.rest(
         "GET",
-        `/api/users/${uname}/sessions`
+        `/api/users/${encodeURIComponent(uname)}/sessions`
       );
       if (!res.response.ok) {
         this.alert = res.data.error_description;

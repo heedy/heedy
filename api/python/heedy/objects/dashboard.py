@@ -1,4 +1,4 @@
-from ..base import APIObject, Session
+from ..base import APIObject, Session, q
 from .objects import Object
 from .registry import registerObjectType
 
@@ -9,7 +9,7 @@ class DashboardElement(APIObject):
     def __init__(self, dashboard, cached_data={}):
 
         super().__init__(
-            f"api/objects/{dashboard.id}/dashboard/{cached_data['id']}",
+            f"api/objects/{q(dashboard.id)}/dashboard/{q(cached_data['id'])}",
             {},
             dashboard.session,
             cached_data,
@@ -21,12 +21,11 @@ class DashboardElement(APIObject):
 
 class Dashboard(Object):
     def __getitem__(self, getrange):
-        """Allows accessing the dashboard's elements as if it were a big python array
-        """
+        """Allows accessing the dashboard's elements as if it were a big python array"""
         if isinstance(getrange, str):
             # The item is an ID, so return the dashboard element
             return self.session.get(
-                self.uri + "/dashboard/" + getrange,
+                self.uri + "/dashboard/" + q(getrange),
                 f=lambda x: DashboardElement(self, x),
             )
 
@@ -36,7 +35,7 @@ class Dashboard(Object):
         )
 
     def __setitem__(self, elementid, value):
-        return self.session.post(self.uri + "/dashboard/" + elementid, value)
+        return self.session.post(self.uri + "/dashboard/" + q(elementid), value)
 
     def add(self, query, etype="dataset", **kwargs):
         kwargs["type"] = etype
@@ -45,4 +44,3 @@ class Dashboard(Object):
 
 
 registerObjectType("dashboard", Dashboard)
-

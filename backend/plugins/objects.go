@@ -197,7 +197,11 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 	// Get the object from the database, and find its type. Then, extract the scopes available for us
 	// and set the X-Heedy-Scope and X-Heedy-Object headers, and forward to the object API.
 	ctx := rest.CTX(r)
-	srcid := chi.URLParam(r, "objectid")
+	srcid, err := rest.URLParam(r, "objectid", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	s, err := ctx.DB.ReadObject(srcid, nil)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusForbidden, err)

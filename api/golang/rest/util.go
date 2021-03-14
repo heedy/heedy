@@ -3,6 +3,7 @@ package rest
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"reflect"
@@ -13,7 +14,9 @@ import (
 	"encoding/json"
 
 	"net/http"
+	"net/url"
 
+	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/klauspost/compress/gzip"
@@ -29,13 +32,28 @@ func apiHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8") // All API requests return json
 }
 
+func URLParam(r *http.Request, param string, err error) (string, error) {
+	if err != nil {
+		return "", err
+	}
+	pval := chi.URLParam(r, param)
+	if pval == "" {
+		return "", fmt.Errorf("bad_query: No value found for %s", param)
+	}
+	return url.PathUnescape(pval)
+}
+
 // RequestLogger generates a basic logger that holds relevant request info
 func RequestLogger(r *http.Request) *logrus.Entry {
 	raddr := r.RemoteAddr
 	if fwdFor := r.Header.Get("X-Forwarded-For"); fwdFor != "" {
 		raddr = fwdFor
 	}
-	fields := logrus.Fields{"addr": raddr, "path": r.URL.Path, "method": r.Method}
+	path := r.URL.RawPath
+	if path == "" {
+		path = r.URL.Path
+	}
+	fields := logrus.Fields{"addr": raddr, "path": path, "method": r.Method}
 	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
 		fields["realip"] = realIP
 	}

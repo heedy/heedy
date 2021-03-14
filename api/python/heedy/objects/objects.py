@@ -1,6 +1,6 @@
 from typing import Dict
 
-from ..base import APIObject, APIList, Session
+from ..base import APIObject, APIList, Session, q
 from ..kv import KV
 
 from .. import users
@@ -24,7 +24,7 @@ class Object(APIObject):
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(
-            f"api/objects/{objectData['id']}",
+            f"api/objects/{q(objectData['id'])}",
             {"object": objectData["id"]},
             session,
             cached_data=objectData,
@@ -32,7 +32,7 @@ class Object(APIObject):
         # The object ID
         self.id = objectData["id"]
 
-        self._kv = KV(f"api/kv/objects/{objectData['id']}", self.session)
+        self._kv = KV(f"api/kv/objects/{q(objectData['id'])}", self.session)
 
     @property
     def kv(self):

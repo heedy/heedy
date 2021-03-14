@@ -7,10 +7,19 @@ import requests
 # Used for the asynchronous session
 import aiohttp
 
+import urllib.parse
+
 import pprint
 from typing import Dict
 
 DEFAULT_URL = "http://localhost:1324"
+
+
+def q(value):
+    """
+    Quotes values so they are safe to use as elements of a URL
+    """
+    return urllib.parse.quote(value, safe="")
 
 
 class HeedyError(Exception):

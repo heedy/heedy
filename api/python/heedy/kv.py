@@ -1,5 +1,4 @@
-from .base import Session
-import urllib.parse
+from .base import Session, q
 
 
 class KV:
@@ -10,15 +9,13 @@ class KV:
     def _uri(self, namespace):
         if namespace is None:
             namespace = self.session.namespace
-        return self.uri + "/" + namespace
+        return self.uri + "/" + q(namespace)
 
     def get(self, namespace=None):
         return self.session.get(self._uri(namespace))
 
     def getkey(self, key: str, namespace=None):
-        return self.session.get(
-            self._uri(namespace) + "/" + urllib.parse.quote(key, safe="")
-        )
+        return self.session.get(self._uri(namespace) + "/" + q(key))
 
     def set(self, namespace=None, **kwargs):
         return self.session.post(self._uri(namespace), kwargs)
@@ -27,9 +24,7 @@ class KV:
         return self.session.patch(self._uri(namespace), kwargs)
 
     def delete(self, key, namespace=None):
-        return self.session.delete(
-            self._uri(namespace) + "/" + urllib.parse.quote(key, safe="")
-        )
+        return self.session.delete(self._uri(namespace) + "/" + q(key))
 
     def __getitem__(self, key: str):
         return self.getkey(key)

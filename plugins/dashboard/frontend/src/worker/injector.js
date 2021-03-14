@@ -83,14 +83,14 @@ class DashboardWorkerInjector {
   }
 
   async _fullquery(id) {
-    let result = await api("GET", `api/objects/${id}/dashboard`);
+    let result = await api("GET", `api/objects/${encodeURIComponent(id)}/dashboard`);
     if (!result.response.ok) {
       throw result.response.error_message;
     }
     return result.data;
   }
   async _query(id, eid) {
-    let result = await api("GET", `api/objects/${id}/dashboard/${eid}`);
+    let result = await api("GET", `api/objects/${encodeURIComponent(id)}/dashboard/${encodeURIComponent(eid)}`);
     if (!result.response.ok) {
       throw result.response.error_message;
     }

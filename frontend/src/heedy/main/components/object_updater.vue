@@ -96,7 +96,7 @@ export default {
         console.vlog("UPDATING", modified);
         let result = await this.$frontend.rest(
           "PATCH",
-          `api/objects/${this.object.id}`,
+          `api/objects/${encodeURIComponent(this.object.id)}`,
           modified
         );
 
@@ -122,7 +122,7 @@ export default {
       ) {
         let res = await this.$frontend.rest(
           "DELETE",
-          `/api/objects/${this.object.id}`
+          `/api/objects/${encodeURIComponent(this.object.id)}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;

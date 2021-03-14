@@ -44,7 +44,9 @@ export default {
       if (Object.keys(modified).length > 0) {
         let result = await this.$frontend.rest(
           "PATCH",
-          `api/users/${this.$store.state.app.info.user.username}/settings/${this.plugin}`,
+          `api/users/${encodeURIComponent(
+            this.$store.state.app.info.user.username
+          )}/settings/${encodeURIComponent(this.plugin)}`,
           modified
         );
 

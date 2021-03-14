@@ -57,7 +57,11 @@ func ReadElementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := rest.CTX(r)
-	eid := chi.URLParam(r, "element_id")
+	eid, err := rest.URLParam(r, "element_id", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	de, err := ReadDashboardElement(c.DB.AdminDB(), oi.AsObject(), oi.ID, eid, oi.Access.HasScope("write"))
 	rest.WriteGzipJSON(w, r, de, err)
 
@@ -69,8 +73,12 @@ func DeleteElementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := rest.CTX(r)
-	eid := chi.URLParam(r, "element_id")
-	err := DeleteDashboardElement(c.DB.AdminDB(), oi.ID, eid)
+	eid, err := rest.URLParam(r, "element_id", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	err = DeleteDashboardElement(c.DB.AdminDB(), oi.ID, eid)
 	rest.WriteResult(w, r, err)
 }
 
@@ -80,9 +88,13 @@ func WriteElementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := rest.CTX(r)
-	eid := chi.URLParam(r, "element_id")
+	eid, err := rest.URLParam(r, "element_id", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
 	var element DashboardElement
-	err := rest.UnmarshalRequest(r, &element)
+	err = rest.UnmarshalRequest(r, &element)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return

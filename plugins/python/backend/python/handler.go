@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -194,7 +193,7 @@ func StopPython(w http.ResponseWriter, r *http.Request) {
 		KillPython(w, r)
 		return
 	}
-	apikey, err := url.PathUnescape(chi.URLParam(r, "apikey"))
+	apikey, err := rest.URLParam(r, "apikey", nil)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return
@@ -223,7 +222,7 @@ func StopPython(w http.ResponseWriter, r *http.Request) {
 }
 
 func KillPython(w http.ResponseWriter, r *http.Request) {
-	apikey, err := url.PathUnescape(chi.URLParam(r, "apikey"))
+	apikey, err := rest.URLParam(r, "apikey", nil)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
 		return

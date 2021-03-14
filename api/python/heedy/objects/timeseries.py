@@ -144,18 +144,15 @@ class DatapointArray(list):
 
 
 class Timeseries(Object):
-    def __call__(self, actions=False, **kwargs):
+    def __call__(self, **kwargs):
         """
         Gets timeseries data. You can query by index with i1 and i2, or by timestamp by t1 and t2.
         Timestamps can be strings such as "last month", "1pm" or "jun 5, 2019, 1pm", which will be
         parsed and converted to the corresponding unix timestamps
         """
         fixTimestamps(kwargs)
-        urimod = "/timeseries"
-        if actions:
-            urimod = "/actions"
         return self.session.get(
-            self.uri + urimod, params=kwargs, f=lambda x: DatapointArray(x)
+            self.uri + "/timeseries", params=kwargs, f=lambda x: DatapointArray(x)
         )
 
     def __getitem__(self, getrange):
@@ -183,11 +180,9 @@ class Timeseries(Object):
             qkwargs["i2"] = getrange.stop
         return self(**qkwargs)
 
-    def length(self, actions=False):
-        urimod = "/timeseries/length"
-        if actions:
-            urimod = "/actions/length"
-        return self.session.get(self.uri + urimod)
+    def length(self):
+        """Returns the number of datapoints in the timeseries"""
+        return self.session.get(self.uri + "/timeseries/length")
 
     def insert_array(self, datapoint_array, **kwargs):
         """given an array of datapoints, inserts them to the timeseries. This is different from append(),

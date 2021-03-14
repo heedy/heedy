@@ -110,7 +110,7 @@ export default {
       console.vlog(this.modified);
       let result = await this.$frontend.rest(
         "PATCH",
-        `api/users/${this.user.username}`,
+        `api/users/${encodeURIComponent(this.user.username)}`,
         this.modified
       );
       if (!result.response.ok) {

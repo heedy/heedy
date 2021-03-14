@@ -1,5 +1,5 @@
 from typing import Dict
-from .base import APIObject, APIList, Session, getSessionType, DEFAULT_URL
+from .base import APIObject, APIList, Session, getSessionType, DEFAULT_URL, q
 from .kv import KV
 
 from . import users
@@ -21,7 +21,7 @@ class App(APIObject):
             # the app id
             appid = access_token
             super().__init__(
-                f"api/apps/{appid}", {"app": appid}, session, cached_data=cached_data
+                f"api/apps/{q(appid)}", {"app": appid}, session, cached_data=cached_data
             )
 
         else:
@@ -32,7 +32,7 @@ class App(APIObject):
         # The objects belonging to the app
         self.objects = objects.Objects({"app": appid}, self.session)
         # Key-value store associated with the app
-        self.kv = KV(f"api/kv/apps/{appid}", self.session)
+        self.kv = KV(f"api/kv/apps/{q(appid)}", self.session)
 
     @property
     def owner(self):

@@ -249,7 +249,7 @@ export default {
       ) {
         let res = await this.$frontend.rest(
           "DELETE",
-          `/api/users/${u.username}`
+          `/api/users/${encodeURIComponent(u.username)}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;
@@ -276,7 +276,7 @@ export default {
       if (Object.keys(toUpdate).length > 0) {
         let res = await this.$frontend.rest(
           "PATCH",
-          `/api/users/${this.updating.id}`,
+          `/api/users/${encodeURIComponent(this.updating.id)}`,
           toUpdate
         );
         if (!res.response.ok) {
@@ -292,7 +292,7 @@ export default {
       if (this.updating.admin != this.updating.id_admin) {
         let res = await this.$frontend.rest(
           this.updating.admin ? "POST" : "DELETE",
-          `/api/server/admin/${this.updating.username}`
+          `/api/server/admin/${encodeURIComponent(this.updating.username)}`
         );
         if (!res.response.ok) {
           this.alert = res.data.error_description;

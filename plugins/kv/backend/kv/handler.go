@@ -1,7 +1,6 @@
 package kv
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -13,10 +12,10 @@ func GenerateHandler(authenticator func(ctx *rest.Context, id string, namespace 
 
 	getauth := func(r *http.Request) (KV, error) {
 		ctx := rest.CTX(r)
-		id := chi.URLParam(r, "id")
-		namespace := chi.URLParam(r, "namespace")
-		if id == "" || namespace == "" {
-			return nil, errors.New("bad_request: Incomplete information for request")
+		id, err := rest.URLParam(r, "id", nil)
+		namespace, err := rest.URLParam(r, "namespace", err)
+		if err != nil {
+			return nil, err
 		}
 		return authenticator(ctx, id, namespace)
 	}
@@ -65,11 +64,12 @@ func GenerateHandler(authenticator func(ctx *rest.Context, id string, namespace 
 
 	kvmux.Get("/{id}/{namespace}/{key}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v, err := getauth(r)
+		key, err := rest.URLParam(r, "key", err)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusForbidden, err)
 			return
 		}
-		m, err := v.GetKey(chi.URLParam(r, "key"))
+		m, err := v.GetKey(key)
 		rest.WriteJSON(w, r, m, err)
 	}))
 
@@ -81,21 +81,23 @@ func GenerateHandler(authenticator func(ctx *rest.Context, id string, namespace 
 		}
 		var m interface{}
 		err = rest.UnmarshalRequest(r, &m)
+		key, err := rest.URLParam(r, "key", err)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		rest.WriteResult(w, r, v.SetKey(chi.URLParam(r, "key"), m))
+		rest.WriteResult(w, r, v.SetKey(key, m))
 	}))
 
 	kvmux.Delete("/{id}/{namespace}/{key}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v, err := getauth(r)
+		key, err := rest.URLParam(r, "key", err)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusForbidden, err)
 			return
 		}
-		rest.WriteResult(w, r, v.DelKey(chi.URLParam(r, "key")))
+		rest.WriteResult(w, r, v.DelKey(key))
 	}))
 
 	return kvmux

@@ -264,7 +264,7 @@ export default {
     readUser_: async function ({ commit, rootState }, q) {
       let username = q.username;
       console.vlog("Reading user", username);
-      let res = await api("GET", `api/users/${username}`, {
+      let res = await api("GET", `api/users/${encodeURIComponent(username)}`, {
         icon: true,
       });
       if (!res.response.ok) {
@@ -296,7 +296,7 @@ export default {
     },
     readApp_: async function ({ commit }, q) {
       console.vlog("Reading app", q.id);
-      let res = await api("GET", `api/apps/${q.id}`, {
+      let res = await api("GET", `api/apps/${encodeURIComponent(q.id)}`, {
         icon: true,
       });
       if (!res.response.ok) {
@@ -341,7 +341,7 @@ export default {
       });
 
       console.vlog("Reading object", q.id);
-      let res = await api("GET", `api/objects/${q.id}`, {
+      let res = await api("GET", `api/objects/${encodeURIComponent(q.id)}`, {
         icon: true,
       });
       if (!res.response.ok) {
@@ -598,14 +598,14 @@ export default {
       if (state.user_settings_schema != null) {
         return; //Already have it, no need to query again.
       }
-      let res = await api("GET", `api/users/${rootState.app.info.user.username}/settings_schema`);
+      let res = await api("GET", `api/users/${encodeURIComponent(rootState.app.info.user.username)}/settings_schema`);
       if (!res.response.ok) {
       } else {
         commit("setUserSettingsSchema", res.data);
       }
     },
     ReadUserPluginSettings: async function ({ commit, rootState }, q) {
-      let res = await api("GET", `api/users/${rootState.app.info.user.username}/settings/${q.plugin}`);
+      let res = await api("GET", `api/users/${encodeURIComponent(rootState.app.info.user.username)}/settings/${encodeURIComponent(q.plugin)}`);
       if (!res.response.ok) {
       } else {
         commit("UpdateUserPluginSettings", { plugin: q.plugin, value: res.data });

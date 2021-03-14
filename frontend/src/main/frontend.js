@@ -98,7 +98,7 @@ class Frontend {
    * It explicitly returns the decoded json object, or returns the error response.
    * @example
    * let username = "myuser"
-   * let res = await frontend.rest("GET",`api/users/{username}`,{
+   * let res = await frontend.rest("GET",`api/users/{encodeURIComponent(username)}`,{
    *  icon: true // urlparam to include icon with request
    * })
    * if (!res.response.ok) {
