@@ -1,4 +1,5 @@
 from typing import Dict
+import pprint
 
 from ..base import APIObject, APIList, Session, q
 from ..kv import KV
@@ -8,6 +9,66 @@ from .. import apps
 from ..notifications import Notifications
 
 from . import registry
+
+
+class ObjectMeta:
+    """ObjectMeta is a wrapper class that makes metadata access more pythonic, allowing simple updates
+    such as::
+
+        o.meta.schema = {"type":"number"}
+
+    """
+
+    def __init__(self, obj):
+        super().__setattr__("_object", obj)
+
+    @property
+    def cached_data(self):
+        return self._object.cached_data["meta"]
+
+    def update(self, **kwargs):
+        """Update the given elements of object metadata"""
+        return self._object.update({"meta": kwargs})
+
+    def delete(self, *args):
+        toDelete = {}
+        for a in args:
+            toDelete[a] = None
+        return self._object.update(meta=toDelete)
+
+    def __getattr__(self, attr):
+        return self.cached_data[attr]
+
+    def __getitem__(self, i):
+        # Gets the item from the cache - assumes that the data is in the cache. If not, need to call .read() first
+        return self.cached_data[i]
+
+    def __setitem__(self, name, value):
+        return self._object.update(meta={name: value})
+
+    def __delitem__(self, name):
+        return self.delete(name)
+
+    def __setattr__(self, name, value):
+        return self.__setitem__(name, value)
+
+    def __delattr__(self, name):
+        return self.__delitem__(name)
+
+    def __iter__(self):
+        return iter(self.cached_data)
+
+    def __contains__(self, item):
+        return item in self.cached_data
+
+    def __len__(self):
+        return len(self.cached_data)
+
+    def __str__(self):
+        return pprint.pformat(self.cached_data)
+
+    def __repr__(self):
+        return str(self)
 
 
 class Object(APIObject):
@@ -41,6 +102,14 @@ class Object(APIObject):
     @kv.setter
     def kv(self, v):
         return self._kv.set(**v)
+
+    @property
+    def meta(self):
+        return ObjectMeta(self)
+
+    @meta.setter
+    def meta(self, v):
+        return self.update(meta=v)
 
     def __getattr__(self, attr):
         try:

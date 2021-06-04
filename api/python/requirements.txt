@@ -5,7 +5,6 @@ pytest-aiohttp
 pytest-cov
 pytest-timeout
 
-numpy
 aiohttp
 dateparser
 requests

@@ -4,8 +4,9 @@ from .registry import registerObjectType
 import time
 import datetime
 import json
-import os.path
 from urllib.parse import urljoin
+
+from typing import Union
 
 # Allows querying by string times
 from dateparser import parse
@@ -36,8 +37,13 @@ class DatapointArray(list):
     It allows a bit of extra functionality to make working with timeseries simpler.
     """
 
-    def __init__(self, data=[]):
-        list.__init__(self, data)
+    def __init__(self, data: Union[list, str] = []):
+        """ Initializes the datapoint array. If given a filename, loads the data from the file"""
+        if isinstance(data, str):
+            list.__init__(self, [])
+            self.load(data)
+        else:
+            list.__init__(self, data)
 
     def __add__(self, other):
         return DatapointArray(self).merge(other)
@@ -94,7 +100,7 @@ class DatapointArray(list):
         """
         return list.__getitem__(self, slice(None, None))
 
-    def writeJSON(self, filename):
+    def write(self, filename):
         """Writes the data to the given file::
 
             DatapointArray([{"t": unix timestamp, "d": data}]).writeJSON("myfile.json")
@@ -104,7 +110,7 @@ class DatapointArray(list):
         with open(filename, "w") as f:
             json.dump(self, f)
 
-    def loadJSON(self, filename):
+    def load(self, filename):
         """Adds the data from a JSON file. The file is expected to be in datapoint format::
 
             d = DatapointArray().loadJSON("myfile.json")
@@ -141,6 +147,16 @@ class DatapointArray(list):
     def mean(self):
         """Gets the mean of the data portions of all datapoints within"""
         return self.sum() / float(len(self))
+
+    def pd(self):
+        """Returns the data as a pandas dataframe"""
+        import pandas
+
+        df = pandas.json_normalize(self)
+        df["t"] = pandas.to_datetime(df["t"], unit="s")
+        if "dt" in df:
+            df["dt"] = pandas.to_timedelta(df["dt"], unit="s")
+        return df
 
 
 class Timeseries(Object):

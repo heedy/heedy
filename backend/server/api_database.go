@@ -12,12 +12,8 @@ import (
 
 func ReadUser(w http.ResponseWriter, r *http.Request) {
 	var o database.ReadUserOptions
-	username, err := rest.URLParam(r, "username", nil)
-	if err != nil {
-		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
-		return
-	}
-	err = rest.QueryDecoder.Decode(&o, r.URL.Query())
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	username, err := rest.URLParam(r, "username", err)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -76,7 +72,7 @@ func ReadUserSettings(w http.ResponseWriter, r *http.Request) {
 
 func ReadUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 	username, err := rest.URLParam(r, "username", nil)
-	plugin, err := rest.URLParam(r, "plugin", nil)
+	plugin, err := rest.URLParam(r, "plugin", err)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
@@ -88,7 +84,7 @@ func ReadUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 
 func UpdateUserPluginSettings(w http.ResponseWriter, r *http.Request) {
 	username, err := rest.URLParam(r, "username", nil)
-	plugin, err := rest.URLParam(r, "plugin", nil)
+	plugin, err := rest.URLParam(r, "plugin", err)
 	if err != nil {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
