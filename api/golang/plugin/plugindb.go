@@ -29,17 +29,12 @@ type PluginDB struct {
 
 	RequestID string
 
+	host   string
 	client http.Client
 }
 
 func (db *PluginDB) NewRequest(method, path string, body io.Reader) (*http.Request, error) {
-	host := db.P.Meta.Config.GetHost()
-	if host == "" {
-		host = "localhost"
-	}
-	host = "http://" + host + ":" + strconv.Itoa(int(db.P.Meta.Config.GetPort())) + path
-
-	r, err := http.NewRequest(method, host, body)
+	r, err := http.NewRequest(method, db.host, body)
 	if err == nil {
 		r.Header.Add("X-Heedy-As", db.Entity)
 		r.Header.Add("X-Heedy-Key", db.P.Meta.APIKey)

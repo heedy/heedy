@@ -30,11 +30,11 @@ func WriteConfig(filename string, c *Configuration) error {
 		}
 		body.SetAttributeValue("url", cty.StringVal(*c.URL))
 	}
-	if c.Host != nil {
-		body.SetAttributeValue("host", cty.StringVal(*c.Host))
+	if c.Addr != nil {
+		body.SetAttributeValue("addr", cty.StringVal(*c.Addr))
 	}
-	if c.Port != nil {
-		body.SetAttributeValue("port", cty.NumberIntVal(int64(*c.Port)))
+	if c.API != nil {
+		body.SetAttributeValue("api", cty.StringVal(*c.API))
 	}
 	if c.ActivePlugins != nil {
 		plist := make([]cty.Value, 0)

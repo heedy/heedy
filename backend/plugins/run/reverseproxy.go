@@ -31,7 +31,7 @@ func NewReverseProxy(datadir, uri string) (http.Handler, error) {
 		rest.WriteJSONError(w, r, http.StatusBadGateway, fmt.Errorf("plugin_error: %s", err.Error()))
 	}
 
-	if !strings.HasPrefix(uri, "unix://") {
+	if !strings.HasPrefix(uri, "unix:") {
 		parsedURL, err := url.Parse(uri)
 		if err != nil {
 			return nil, err

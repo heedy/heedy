@@ -27,6 +27,7 @@ func NoOverlay(db database.DB) database.DB {
 		Entity:    pdb.Entity,
 		Overlay:   -1,
 		RequestID: pdb.RequestID,
+		host:      pdb.host,
 		client:    pdb.client,
 	}
 	return pdb2

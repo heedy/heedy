@@ -189,7 +189,10 @@ func Setup(sc SetupContext, setupBind string) error {
 	})
 
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/setup/", http.StatusFound)
+		http.Redirect(w, r, "/setup/#", http.StatusFound)
+	})
+	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/setup/#", http.StatusTemporaryRedirect)
 	})
 
 	host, port, err := net.SplitHostPort(setupBind)

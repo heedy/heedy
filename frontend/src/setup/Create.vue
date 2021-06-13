@@ -198,10 +198,10 @@ export default {
     show: false,
     directoryDefault: ctx.directory,
     directory: ctx.directory,
-    hostDefault: ctx.config["host"],
-    host: ctx.config["host"],
-    portDefault: ctx.config["port"].toString(),
-    port: ctx.config["port"].toString(),
+    hostDefault: ctx.config["addr"].split(":")[0],
+    host: ctx.config["addr"].split(":")[0],
+    portDefault: ctx.config["addr"].split(":")[1],
+    port: ctx.config["addr"].split(":")[1],
     url:
       raw_url.includes("localhost") ||
       raw_url.includes("127.0.0.1") ||
@@ -259,8 +259,7 @@ export default {
           password: this.password1,
         },
         config: {
-          host: this.host,
-          port: port,
+          addr: this.host + ":" + port,
           url: this.url,
         },
       };

@@ -19,8 +19,7 @@ var (
 	testapp    string
 	setupHost  string
 	configFile string
-	port       uint16
-	host       string
+	addr       string
 	username   string
 	password   string
 )
@@ -57,11 +56,8 @@ It is recommended that new users use the web setup, which will guide you in prep
 			directory = path.Join(f, "heedy")
 		}
 		c := assets.NewConfiguration()
-		if port != 0 {
-			c.Port = &port
-		}
-		if host != "_" {
-			c.Host = &host
+		if addr != "" {
+			c.Addr = &addr
 		}
 		c.Verbose = verbose
 
@@ -112,16 +108,14 @@ It is recommended that new users use the web setup, which will guide you in prep
 		} else if testapp != "" {
 			return errors.New("testapp can only be set in noserver mode")
 		}
-		return server.Setup(sc, setupHost)
+		return server.Setup(sc, addr)
 
 	},
 }
 
 func init() {
-	CreateCmd.Flags().Uint16VarP(&port, "port", "p", 0, "The port on which to run heedy")
-	CreateCmd.Flags().StringVar(&host, "host", "_", "The host on which to run heedy")
+	CreateCmd.Flags().StringVar(&addr, "addr", ":1324", "The address at which to run heedy")
 	CreateCmd.Flags().BoolVar(&noserver, "noserver", false, "Don't start the setup server - directly create the database.")
-	CreateCmd.Flags().StringVar(&setupHost, "setup", ":1324", "Run a setup server on the given host:port")
 	CreateCmd.Flags().StringVarP(&configFile, "config", "c", "", "Path to an existing configuration file to use for the database.")
 	CreateCmd.Flags().StringVar(&username, "username", "", "Default user's username")
 	CreateCmd.Flags().StringVar(&password, "password", "", "Default user's password")

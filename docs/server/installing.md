@@ -73,16 +73,12 @@ You can then run heedy to create your database, and access the setup at `https:/
 If your database was already created, you can achieve the same effect by modifying your heedy configuration, and restarting:
 
 ```javascript
-// This is the host on which to listen to connections.
-// An empty string means to listen on all interfaces
-host = "localhost";
-
-// The port on which to run heedy
-port = 1324;
+// This is the address on which heedy will listen for connections
+addr = "localhost:1324"
 
 // URL at which the server can be accessed. Used for callbacks. If empty,
-// this value is populated automatically with the server port and LAN IP.
-url = "https://heedy.mydomain.com";
+// this value is populated automatically with the addr value
+url = "https://heedy.mydomain.com"
 ```
 
 ## Encrypting your Database

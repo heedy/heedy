@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -184,8 +185,43 @@ func (a *Assets) Reload() error {
 
 	}
 
+	// Next clean up the addresses
+	c := mergedConfiguration
+
+	addr, err := ParseAddress(a.DataDir(), c.GetAddr())
+	if err != nil {
+		return err
+	}
+	c.Addr = &addr
+	api, err := ParseAddress(a.DataDir(), c.GetAPI())
+	if err != nil {
+		return err
+	}
+	c.API = &api
+
+	// Finally, set the URL if it isn't set
+	if c.URL == nil || *c.URL == "" {
+		if strings.HasPrefix(*c.Addr, "unix:") {
+			c.URL = c.Addr
+		} else {
+			host, port, err := net.SplitHostPort(*c.Addr)
+			if err != nil {
+				return err
+			}
+			if host == "" {
+				host = GetOutboundIP()
+			}
+			myurl := fmt.Sprintf("http://%s:%s", host, port)
+			c.URL = &myurl
+		}
+	}
+	if strings.HasSuffix(*c.URL, "/") {
+		noslash := (*c.URL)[:len(*c.URL)-1]
+		c.URL = &noslash
+	}
+
 	// Set the new config and assets
-	a.Config = mergedConfiguration
+	a.Config = c
 	a.FS = FS
 	a.Stack = assetStack
 

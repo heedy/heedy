@@ -1,5 +1,5 @@
 from typing import Dict
-from .base import APIObject, Session, q
+from .base import APIObject, APIList, Session, q
 from .kv import KV
 
 from . import apps
@@ -42,13 +42,13 @@ class User(APIObject):
         return self._kv.set(**v)
 
 
-class Users(APIObject):
+class Users(APIList):
     def __init__(self, constraints: Dict, session: Session):
         super().__init__("api/users", constraints, session)
 
     def __getitem__(self, item):
         return self._getitem(
-            item, f=lambda x: User(x["id"], session=self.session, cached_data=x)
+            item, f=lambda x: User(x["username"], session=self.session, cached_data=x)
         )
 
     def __call__(self, **kwargs):
@@ -61,6 +61,6 @@ class Users(APIObject):
 
     def create(self, username, password, **kwargs):
         return self._create(
-            f=lambda x: User(x["id"], session=self.session, cached_data=x),
+            f=lambda x: User(x["username"], session=self.session, cached_data=x),
             **{"username": username, "password": password, **kwargs},
         )

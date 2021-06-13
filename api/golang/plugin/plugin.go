@@ -2,15 +2,19 @@ package plugin
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
+	"github.com/heedy/heedy/backend/database/dbutil"
 	"github.com/heedy/heedy/backend/plugins/run"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -74,11 +78,27 @@ func (p *Plugin) AdminDB() (*database.AdminDB, error) {
 
 // Returns the PluginDB acting as the given entity
 func (p *Plugin) As(entity string) *PluginDB {
+
+	method, host, err := run.GetEndpoint(p.Meta.DataDir, p.Meta.Config.GetAPI())
+	if err != nil {
+		logrus.Panicf("Got an error parsing config API %v at %s", err, dbutil.MiniStack(0))
+	}
+
+	c := http.Client{
+		Timeout: time.Duration(5 * time.Second),
+	}
+	if method == "unix" {
+		c.Transport = &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", host)
+			},
+		}
+	}
+
 	return &PluginDB{
-		P: p,
-		client: http.Client{
-			Timeout: time.Duration(5 * time.Second),
-		},
+		P:      p,
+		host:   host,
+		client: c,
 		Entity: entity,
 	}
 }

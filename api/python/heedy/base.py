@@ -3,6 +3,11 @@ from urllib.parse import urljoin
 
 # Used for the synchronous session
 import requests
+import socket
+from urllib3.connection import HTTPConnection
+from urllib3.connectionpool import HTTPConnectionPool
+from requests.adapters import HTTPAdapter
+
 
 # Used for the asynchronous session
 import aiohttp
@@ -51,10 +56,14 @@ class Session:
         self.namespace = namespace
 
         # Set up the API url
-        if not url.startswith("http"):
-            url = "https://" + url
-        if not url.endswith("/"):
-            url = url + "/"
+        if not url.startswith("unix:"):
+            if url.startswith(":"):
+                # No host was given, let's use localhost
+                url = "localhost" + url
+            if not url.startswith("http"):
+                url = "https://" + url
+            if not url.endswith("/"):
+                url = url + "/"
         self.url = url
 
     def f(self, func, x):
@@ -92,6 +101,34 @@ class Session:
         raise NotImplementedError()
 
 
+class UnixConnection(HTTPConnection):
+    def __init__(self, sockloc):
+        super().__init__("localhost")
+        self.sockloc = sockloc
+
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.connect(self.sockloc)
+
+
+class UnixConnectionPool(HTTPConnectionPool):
+    def __init__(self, sockloc):
+        super().__init__("localhost")
+        self.sockloc = sockloc
+
+    def _new_conn(self):
+        return UnixConnection(self.sockloc)
+
+
+class UnixAdapter(HTTPAdapter):
+    def __init__(self, sockloc):
+        super().__init__()
+        self.sockloc = sockloc
+
+    def get_connection(self, url, proxies=None):
+        return UnixConnectionPool(self.sockloc)
+
+
 class SyncSession(Session):
     """
     SyncSession is to be used in synchronous programs. It uses requests internally.
@@ -101,6 +138,9 @@ class SyncSession(Session):
         super().__init__(namespace, url)
         self.s = requests.Session()
         self.s.headers.update({"Content-Type": "application/json"})
+        if url.startswith("unix:"):
+            self.url = "http://unixsocket/"
+            self.s.mount(self.url, UnixAdapter(url[5:]))
 
     def f(self, x, func):
         return func(x)
@@ -208,7 +248,12 @@ class AsyncSession(Session):
 
     def initSession(self):
         if self.s is None:
-            self.s = aiohttp.ClientSession()
+            if self.url.startswith("unix:"):
+                conn = aiohttp.UnixConnector(path=self.url[5:])
+                self.s = aiohttp.ClientSession(connector=conn)
+                self.url = "http://unixsocket/"
+            else:
+                self.s = aiohttp.ClientSession()
 
     async def handleResponse(self, r):
         if r.status >= 400:

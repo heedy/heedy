@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"path/filepath"
@@ -223,4 +224,25 @@ func GetOutboundIP() string {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	return localAddr.IP.String()
+}
+
+// Extracts the unix socket file and request path
+func ParseAddress(datadir string, uri string) (address string, err error) {
+	if !strings.HasPrefix(uri, "unix:") {
+		_, _, err := net.SplitHostPort(uri)
+		return uri, err
+	}
+	// Otherwise, we set up a unix domain socket.
+	sockfile := uri[5:]
+	if !strings.HasSuffix(sockfile, ".sock") {
+		err = fmt.Errorf("A unix socket must have its file end with .sock ('%s')", uri)
+		return
+	}
+	if strings.HasPrefix(sockfile, "http://") {
+		sockfile = sockfile[7:]
+	}
+	if !filepath.IsAbs(sockfile) {
+		sockfile = filepath.Join(datadir, sockfile)
+	}
+	return "unix:" + sockfile, err
 }

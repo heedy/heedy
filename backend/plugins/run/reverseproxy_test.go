@@ -18,7 +18,7 @@ func TestReverseProxy(t *testing.T) {
 
 	os.MkdirAll(path.Join(a.FolderPath, "data"), 0775)
 
-	p, err := NewReverseProxy(a.DataDir(), "unix://test/server.sock/test")
+	p, err := NewReverseProxy(a.DataDir(), "unix:test/server.sock/test")
 	require.NoError(t, err)
 
 	m := NewExecManager(a)

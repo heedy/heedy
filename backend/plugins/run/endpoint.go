@@ -149,13 +149,13 @@ func Route(m *chi.Mux, route string, h http.Handler) error {
 }
 
 func GetPlugin(plugin, uri string) (string, string, string) {
-	if !strings.HasPrefix(uri, "run://") {
+	if !strings.HasPrefix(uri, "run:") {
 		return "", "", ""
 	}
 
-	// The uri starts with run://, which means that it is referring to a runner.
-	splitstring := strings.SplitN(uri[6:len(uri)], "/", 2)
-	pluginv := strings.SplitN(splitstring[0], ":", 2)
+	// The uri starts with run:, which means that it is referring to a runner.
+	splitstring := strings.SplitN(uri[4:], "/", 2)
+	pluginv := strings.SplitN(splitstring[0], ".", 2)
 	pname := pluginv[0]
 	if len(pluginv) > 1 {
 		pname = pluginv[1]
@@ -171,17 +171,20 @@ func GetPlugin(plugin, uri string) (string, string, string) {
 
 // Extracts the unix socket file and request path
 func ParseUnixSock(datadir string, uri string) (sockfile string, requestPath string, err error) {
-	if !strings.HasPrefix(uri, "unix://") {
+	if !strings.HasPrefix(uri, "unix:") {
 		err = errors.New("Not a unix socket")
 		return
 	}
 	// Otherwise, we set up a unix domain socket.
 
-	splitopath := strings.SplitAfterN(uri[7:], ".sock", 2)
+	splitopath := strings.SplitAfterN(uri[5:], ".sock", 2)
 	sockfile = splitopath[0]
 	if !strings.HasSuffix(sockfile, ".sock") {
 		err = fmt.Errorf("A unix socket must have its file end with .sock ('%s')", uri)
 		return
+	}
+	if strings.HasPrefix(sockfile, "http://") {
+		sockfile = sockfile[7:]
 	}
 	if !filepath.IsAbs(sockfile) {
 		sockfile = filepath.Join(datadir, sockfile)
@@ -199,7 +202,7 @@ func ParseUnixSock(datadir string, uri string) (sockfile string, requestPath str
 
 // GetEndpoint parses the given URI and returns an endpoint
 func GetEndpoint(datadir string, uri string) (method string, host string, err error) {
-	if strings.HasPrefix(uri, "unix://") {
+	if strings.HasPrefix(uri, "unix:") {
 		method = "unix"
 		host, _, err = ParseUnixSock(datadir, uri)
 	} else {
@@ -216,7 +219,7 @@ func GetEndpoint(datadir string, uri string) (method string, host string, err er
 
 // WaitForEndpoint waits for the given endpoint
 func WaitForEndpoint(method string, host string, e *Cmd) error {
-	logrus.Debugf("Waiting for %s://%s", method, host)
+	logrus.Debugf("Waiting for %s:%s", method, host)
 	// The endpoint is not available, so let's keep checking it
 	d := 30 * time.Second
 	sleepDuration := 100 * time.Millisecond
@@ -224,7 +227,7 @@ func WaitForEndpoint(method string, host string, e *Cmd) error {
 		c, err := net.Dial(method, host)
 		if err == nil {
 			c.Close()
-			logrus.Debugf("endpoint open %s://%s", method, host)
+			logrus.Debugf("endpoint open %s:%s", method, host)
 			return nil
 		}
 		if e.Done() {
@@ -237,13 +240,13 @@ func WaitForEndpoint(method string, host string, e *Cmd) error {
 
 // WaitForAPI is like WaitForEndpoint, but it doesn't have a cmd.
 func WaitForAPI(method string, host string, timeout time.Duration) error {
-	logrus.Debugf("Waiting for %s://%s", method, host)
+	logrus.Debugf("Waiting for %s:%s", method, host)
 	sleepDuration := 100 * time.Millisecond
 	for i := time.Duration(0); i < timeout; i += sleepDuration {
 		c, err := net.Dial(method, host)
 		if err == nil {
 			c.Close()
-			logrus.Debugf("endpoint open %s://%s", method, host)
+			logrus.Debugf("endpoint open %s:%s", method, host)
 			return nil
 		}
 		time.Sleep(sleepDuration)

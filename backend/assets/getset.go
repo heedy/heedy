@@ -14,22 +14,25 @@ func (c *Configuration) GetRequestBodyByteLimit() int64 {
 	return 0
 }
 
-func (c *Configuration) GetHost() string {
+func (c *Configuration) GetAddr() string {
 	c.RLock()
 	defer c.RUnlock()
-	if c.Host != nil {
-		return *c.Host
+	if c.Addr != nil {
+		return *c.Addr
 	}
 	return ""
 }
 
-func (c *Configuration) GetPort() uint16 {
+func (c *Configuration) GetAPI() string {
 	c.RLock()
 	defer c.RUnlock()
-	if c.Port != nil {
-		return *c.Port
+	if c.API != nil {
+		return *c.API
 	}
-	return 0
+	if c.Addr != nil {
+		return *c.Addr
+	}
+	return ""
 }
 
 func (c *Configuration) GetActivePlugins() []string {

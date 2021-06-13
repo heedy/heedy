@@ -93,7 +93,9 @@ var notificationEventType = map[events.SqliteHook]string{
 }
 
 func RegisterNotificationHooks(e events.Handler) {
-
+	// Instead of using the event handler request API, plug into the builtin backend heedy machinery
+	// so that we don't request this through the API - the notifications plugin is assumed to
+	// be built-in
 	databaseHook := func(s events.SqliteHookData) *events.Event {
 		getStmt := func(tblname string) string {
 			switch tblname {

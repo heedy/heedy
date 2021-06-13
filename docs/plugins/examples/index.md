@@ -10,5 +10,5 @@ The full code for each of the tutorials can be seen in the [examples directory](
 .. toctree::
     :maxdepth: 1
 
-    hello_world/README.md
+    hello/README.md
 ```

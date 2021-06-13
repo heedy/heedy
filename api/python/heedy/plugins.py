@@ -22,9 +22,7 @@ class Plugin:
             # Change the directory to the data dir
             os.chdir(self.config["data_dir"])
 
-        self.session = getSessionType(
-            session, self.name, f"http://localhost:{self.config['config']['port']}"
-        )
+        self.session = getSessionType(session, self.name, self.config["config"]["api"])
         self.session.setPluginKey(self.config["apikey"])
 
         self.notifications = Notifications({}, self.session)

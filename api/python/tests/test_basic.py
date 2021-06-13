@@ -124,6 +124,39 @@ def test_appschema():
         }
 
 
+def test_metamod():
+    a = App("testkey")
+    o = a.objects.create("myobj", otype="timeseries")
+
+    o.meta = {"schema": {"type": "number"}}
+    assert o.cached_data["meta"]["schema"]["type"] == "number"
+
+    assert o.meta["schema"]["type"] == "number"
+    assert o.meta.schema["type"] == "number"
+
+    with pytest.raises(Exception):
+        o.meta = {"foo": "bar"}
+
+    with pytest.raises(Exception):
+        o.meta = {"schema": "lol"}
+
+    del o.meta.schema
+
+    o.read()  # TODO: this is currently needed because the schema is reset to default on server, and this is not reflected in local cache
+
+    assert o.meta.schema is not None
+    assert len(o.meta.schema) == 0
+
+    o.meta.schema = {"type": "number"}
+    assert o.meta.schema["type"] == "number"
+
+    with pytest.raises(Exception):
+        o.meta.lol = "lel"
+
+    for o in a.objects():
+        o.delete()
+
+
 @pytest.mark.asyncio
 async def test_basics_async():
     a = App("testkey", session="async")

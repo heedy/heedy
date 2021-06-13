@@ -18,11 +18,11 @@ var httpVerbs = map[string]bool{
 
 // The permitted prefixes
 var routePrefix = map[string]bool{
-	"http://":    true,
-	"https://":   true,
-	"unix://":    true,
-	"builtin://": true,
-	"run://":     true,
+	"http:":    true,
+	"https:":   true,
+	"unix:":    true,
+	"builtin:": true,
+	"run:":     true,
 }
 
 func isValidRoute(s string) error {
@@ -47,7 +47,7 @@ func isValidRoute(s string) error {
 }
 
 func isValidTarget(c *Configuration, plugin string, s string) error {
-	ss := strings.SplitAfterN(s, "://", 2)
+	ss := strings.SplitAfterN(s, ":", 2)
 	if len(ss) != 2 {
 		return fmt.Errorf("Route target '%s' is missing a prefix", s)
 	}
@@ -55,10 +55,10 @@ func isValidTarget(c *Configuration, plugin string, s string) error {
 	if !ok {
 		return fmt.Errorf("Route target '%s': unrecognized prefix '%s'", s, ss[0])
 	}
-	if ss[0] == "run://" {
+	if ss[0] == "run:" {
 		// Check to ensure that the given runner was actually defined
 		sss := strings.SplitN(ss[1], "/", 2)
-		ssss := strings.Split(sss[0], ":")
+		ssss := strings.Split(sss[0], ".")
 		if len(ssss) == 0 || len(ssss) > 2 {
 			return fmt.Errorf("Route target '%s' invalid", s)
 		}
@@ -258,22 +258,6 @@ func Validate(c *Configuration) error {
 
 		}
 
-	}
-
-	// Finally, set the URL if it isn't set
-	if c.URL == nil || *c.URL == "" {
-		if c.Port != nil {
-			// If port is not set, it means we're testing
-			myurl := fmt.Sprintf("http://%s:%d", GetOutboundIP(), *c.Port)
-			c.URL = &myurl
-		} else {
-			testurl := "http://localhost"
-			c.URL = &testurl
-		}
-	}
-	if strings.HasSuffix(*c.URL, "/") {
-		noslash := (*c.URL)[:len(*c.URL)-1]
-		c.URL = &noslash
 	}
 
 	return nil
