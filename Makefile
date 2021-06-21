@@ -60,6 +60,9 @@ clean:
 	# Clear any assets packed by statik
 	rm -f ./backend/assets/statik.go
 
+	# Clear frontend node_modules
+	rm -rf ./frontend/node_modules
+
 	# Clear the plugins
 	cd plugins/dashboard; make clean
 	cd plugins/timeseries; make clean

@@ -30,3 +30,5 @@ clean:
 	# Clear all generated assets for webapp
 	rm -rf ./assets/public
 	rm -f ./assets/server
+	# Clear frontend node_modules
+	rm -rf ./frontend/node_modules
