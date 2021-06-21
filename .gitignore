@@ -22,12 +22,10 @@ __pycache__/
 test_db/
 testdb/
 
-# Eh, package lock is not needed temporarily
-package-lock.json
-go.sum
-
 docs/_build
 docs/_govars
 
 docs/analysis/pipescript/index.md
 docs/analysis/pipescript/transforms/
+
+pytest/
