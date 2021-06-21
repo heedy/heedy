@@ -38,7 +38,7 @@ class DatapointArray(list):
     """
 
     def __init__(self, data: Union[list, str] = []):
-        """ Initializes the datapoint array. If given a filename, loads the data from the file"""
+        """Initializes the datapoint array. If given a filename, loads the data from the file"""
         if isinstance(data, str):
             list.__init__(self, [])
             self.load(data)
@@ -113,7 +113,7 @@ class DatapointArray(list):
     def load(self, filename):
         """Adds the data from a JSON file. The file is expected to be in datapoint format::
 
-            d = DatapointArray().loadJSON("myfile.json")
+            d = DatapointArray().load("myfile.json")
 
         Can be used to read data dumped by writeJSON.
         """
@@ -148,11 +148,11 @@ class DatapointArray(list):
         """Gets the mean of the data portions of all datapoints within"""
         return self.sum() / float(len(self))
 
-    def pd(self):
+    def to_df(self):
         """Returns the data as a pandas dataframe"""
         import pandas
 
-        df = pandas.json_normalize(self)
+        df = pandas.json_normalize(self, sep="_")
         df["t"] = pandas.to_datetime(df["t"], unit="s")
         if "dt" in df:
             df["dt"] = pandas.to_timedelta(df["dt"], unit="s")
@@ -160,16 +160,27 @@ class DatapointArray(list):
 
 
 class Timeseries(Object):
+    # default_output can be one of "list" of "dataframe" for pandas dataframe
+    output_type = "list"
+
     def __call__(self, **kwargs):
         """
         Gets timeseries data. You can query by index with i1 and i2, or by timestamp by t1 and t2.
         Timestamps can be strings such as "last month", "1pm" or "jun 5, 2019, 1pm", which will be
         parsed and converted to the corresponding unix timestamps
         """
+
+        # Do we return a datapoint array or a pandas dataframe?
+        conversion = lambda x: DatapointArray(x)
+        if "output_type" in kwargs:
+            if kwargs["output_type"] == "dataframe":
+                conversion = lambda x: DatapointArray(x).to_df()
+            del kwargs["output_type"]
+        elif self.output_type == "dataframe":
+            conversion = lambda x: DatapointArray(x).to_df()
+
         fixTimestamps(kwargs)
-        return self.session.get(
-            self.uri + "/timeseries", params=kwargs, f=lambda x: DatapointArray(x)
-        )
+        return self.session.get(self.uri + "/timeseries", params=kwargs, f=conversion)
 
     def __getitem__(self, getrange):
         """Allows accessing the timeseries just as if it were just one big python array.
@@ -252,7 +263,7 @@ class Timeseries(Object):
         ts.load("myts.json")
 
         """
-        return self.insert_array(DatapointArray().loadJSON(filename), **kwargs)
+        return self.insert_array(DatapointArray().load(filename), **kwargs)
 
     def __len__(self):
         return self.length()

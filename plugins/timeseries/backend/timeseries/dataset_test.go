@@ -172,7 +172,7 @@ func TestXDataset(t *testing.T) {
 				},
 			},
 		},
-		PostTransform: "$('x')==$('y')",
+		PostTransform: "d('x')==d('y')",
 	}).Get(adb)
 	require.NoError(t, err)
 

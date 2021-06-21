@@ -19,7 +19,7 @@ import "@koumoul/vjsf/dist/main.css";
 // Disable the vue console messages if built with production
 Vue.config.productionTip = false;
 
-Vue.component("VJsf", VJsf.default);
+Vue.component("VJsf", VJsf);
 
 Vue.use(VueRouter);
 Vue.use(Vuex);

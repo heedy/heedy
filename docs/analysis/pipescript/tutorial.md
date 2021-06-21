@@ -31,10 +31,10 @@ Unless explicitly stated, transforms focus on the datapoint's data content. To s
 Let's check which datapoints have their data >= 1.
 
 ```
-$ >= 1
+d >= 1
 ```
 
-If you are familiar with programming, this is just a simple comparison statement. In PipeScript, \$ represents the "current datapoint". The transform is then run on each consecutive datapoint in the timeseries:
+If you are familiar with programming, this is just a simple comparison statement. In PipeScript, d represents the "current datapoint". The transform is then run on each consecutive datapoint in the timeseries:
 
 ```json
 [
@@ -48,7 +48,7 @@ If you are familiar with programming, this is just a simple comparison statement
 You can also use `and`, `or`, and `not` to create logic of arbitrary complexity:
 
 ```
-$ < 0 or not $ < 1
+d < 0 or not d < 1
 ```
 
 ```json
@@ -65,7 +65,7 @@ $ < 0 or not $ < 1
 PipeScript also supports basic algebra. In particular, `+-/*%^` are all built into the language, with `x^y` meaning `pow(x,y)`.
 
 ```
-($+5)/2
+(d+5)/2
 ```
 
 gives:
@@ -98,7 +98,7 @@ As expected, the sum transform returns a single datapoint, which has in its data
 Transforms can take arguments as input. For example, the `filter` transform removes all datapoints that don't satisfy the condition given in its first argument:
 
 ```
-filter($>=2)
+filter(d>=2)
 ```
 
 ```json
@@ -111,7 +111,7 @@ filter($>=2)
 Note that the parentheses are optional here. The above transform is equivalent to:
 
 ```
-filter $>=2
+filter d>=2
 ```
 
 ## Chaining Transforms
@@ -164,10 +164,10 @@ Suppose we want to get the **total number of steps we took while running**. We c
 First off, let's filter the datapoints so that we have just those where we were running:
 
 ```
-filter $("activity")=="running"
+filter d("activity")=="running"
 ```
 
-Notice that the \$ accepts an argument - it allows you to return a sub-object of the datapoint. Our result is:
+Notice that the `d` accepts an argument - it allows you to return a sub-object of the datapoint. Our result is:
 
 ```json
 [
@@ -192,7 +192,7 @@ We can now add a `|` after the first part of our statement, and we can perform f
 After extracting only the datapoints that have their activity as "running", we return only the "steps" portion of the datapoint:
 
 ```
-filter $("activity")=="running" | $("steps")
+filter d("activity")=="running" | d("steps")
 ```
 
 ```json
@@ -211,7 +211,7 @@ filter $("activity")=="running" | $("steps")
 Finally, we want to sum the datapoints to get the total number of steps while running:
 
 ```
-filter $("activity")=="running" | $("steps") | sum
+filter d("activity")=="running" | d("steps") | sum
 ```
 
 ```json
@@ -229,13 +229,13 @@ filter $("activity")=="running" | $("steps") | sum
 All arguments to each transform are actually transform pipelines. For example, one can go multiple levels into a nested object within an argument to the filter transform:
 
 ```
-filter( ($("level1") | $("level2")) == 4 )
+filter( (d("level1") | d("level2")) == 4 )
 ```
 
 For convenience, PipeScript also includes `:` as a pipe symbol with high prescedence (the pipe will be taken before algebra is done) which can allow you to simplify your script a bit by dropping the internal parentheses:
 
 ```
-filter( $("level1"):$("level2") == 4 )
+filter( d("level1"):d("level2") == 4 )
 ```
 
 In order for the parent (`filter`) to always get SOME result in its argument, sub-transforms cannot include transforms that are not One-To-One (for each datapoint that they get as input, they output one datapoint). This means that you cannot nest `filter` transforms.
@@ -281,12 +281,12 @@ We will once again use the timeseries from the previous example:
 ]
 ```
 
-Remember that previously, we found the total number of steps while running with the transform `filter $("activity")=="running" | $("steps") | sum`.
+Remember that previously, we found the total number of steps while running with the transform `filter d("activity")=="running" | d("steps") | sum`.
 
 We will now extend that to find the number of steps for each activity, using the `map` transform:
 
 ```
-map( $("activity") , $("steps"):sum )
+map( d("activity") , d("steps"):sum )
 ```
 
 ```json
@@ -308,8 +308,8 @@ When calling `map(arg1,arg2)`, the `map` transform uses `arg2` as a Pipe. It the
 
 To clarify, we will see exactly what happened in the above call:
 
-1. The `map` transform saw the first datapoint. The value of `arg1`, (`$("activity")`) was `walking`. It created a new instance of `arg2`, `$("steps"):sum`, and sent the datapoint through this transform, giving a total of `14` so far for `walking`.
-2. The next datapoint had as its activity `running`. Another new instance of `$("steps"):sum` was created, and the datapoint was sent through it. The sum for `running` starts at `10`
+1. The `map` transform saw the first datapoint. The value of `arg1`, (`d("activity")`) was `walking`. It created a new instance of `arg2`, `d("steps"):sum`, and sent the datapoint through this transform, giving a total of `14` so far for `walking`.
+2. The next datapoint had as its activity `running`. Another new instance of `d("steps"):sum` was created, and the datapoint was sent through it. The sum for `running` starts at `10`
 3. The third datapoint is `walking`. `map` already has a pipeline started for this value, so it passes the new datapoint through the first pipe, giving a sum of `26` (14+12)
 4. The fourth datapoint is `running`. Passing it to the the corresponding pipe, we get `15`.
 5. There are no more datapoints. The `map` transform returns an object with the last value of each pipe as a result.
@@ -329,9 +329,9 @@ This transform will return both the sum of all of the datapoints' values, and th
 Finally, since transforms can get fairly complex with objects, PipeScript does accept multiline scripts. That is, the following is a valid script format:
 
 ```
-filter $("activity")!="still"
+filter d("activity")!="still"
 | {
-    "total": $("steps"):sum,
-    "some_random_stuff": ( $("steps") | something | something else )
+    "total": d("steps"):sum,
+    "some_random_stuff": ( d("steps") | something | something else )
 }
 ```
