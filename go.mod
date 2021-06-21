@@ -20,7 +20,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/schema v1.2.0
 	github.com/hashicorp/hcl/v2 v2.10.0
-	github.com/heedy/pipescript v0.0.0-20210617061041-2290ddc5d23b
+	github.com/heedy/pipescript v0.0.0-20210621041153-5e0ed37ed381
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/karrick/tparse v2.4.2+incompatible
