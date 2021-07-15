@@ -83,6 +83,7 @@ Returns a list of users in the heedy instance that are accessible with the given
 - **icon** _(boolean,false)_ - whether or not to include each user's icon.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      http://localhost:1324/api/users
@@ -100,6 +101,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Create a new user. Only accessible from plugins and admin users.
 
 <h6 class="rest_body">Body</h6>
+
 - **username** _(string, required)_ - the username of the user
 - **password** _(string, required)_ - the user's password
 - **name** _(string,"")_ - the user's full name
@@ -109,6 +111,7 @@ Create a new user. Only accessible from plugins and admin users.
 - **users_read** _(boolean,false)_ - whether the user is visible to other users.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --header "Content-Type: application/json" \
@@ -157,6 +160,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Updates the user with the included fields.
 
 <h6 class="rest_body">Body</h6>
+
 - **password** _(string,null)_ - the user's password
 - **name** _(string,null)_ - the user's full name
 - **description** _(string,null)_ - the user's description
@@ -165,6 +169,7 @@ Updates the user with the included fields.
 - **users_read** _(boolean,null)_ - whether the user is visible to other users.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --header "Content-Type: application/json" \
@@ -185,6 +190,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Deletes the user with the given username, and all of the user's data.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request DELETE \
@@ -213,6 +219,7 @@ Returns a list of apps in the heedy instance that satisfy the given constraints,
 - **plugin** _(string,null)_ - limit results to apps with the given plugin key
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      http://localhost:1324/api/apps?owner=myuser
@@ -230,6 +237,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Create a new app. Only accessible from plugins and users. If authenticated as a user, the owner parameter is optional.
 
 <h6 class="rest_body">Body</h6>
+
 - **name** _(string,required)_ - the app's name
 - **owner** _(string,required)_ - the user to own the app. Automatically set to the current user when authenticated as a user.
 - **description** _(string,"")_ - the app's description
@@ -241,6 +249,7 @@ Create a new app. Only accessible from plugins and users. If authenticated as a 
 - **settings_schema** _(object,{})_ - the json schema for the app's settings.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --header "Content-Type: application/json" \
@@ -277,6 +286,7 @@ Returns the app with the given ID
 - **token** _(boolean,false)_ - whether or not to include the app's access token.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
  http://localhost:1324/api/apps/0519420b-e3cf-463f-b794-2adb440bfb9f
@@ -305,6 +315,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Updates the app with the included fields.
 
 <h6 class="rest_body">Body</h6>
+
 - **name** _(string,null)_ - the app's full name
 - **description** _(string,null)_ - the app's description
 - **icon** _(string,null)_ - app's icon, base64 urlencoded
@@ -315,6 +326,7 @@ Updates the app with the included fields.
 - **settings_schema** _(object,null)_ - the json schema for the app's settings.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --header "Content-Type: application/json" \
@@ -335,6 +347,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Deletes the given app, and all of its data, including objects it manages.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request DELETE \
@@ -368,6 +381,7 @@ Returns a list of objects in the heedy instance satisfying the given constraints
 - **limit** _(int,null)_ - set a maximum number of results to return
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      http://localhost:1324/api/objects?owner=myuser
@@ -385,6 +399,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Create a new object of the given type. Unless owner/app is set, the object will belong to the authenticated entity.
 
 <h6 class="rest_body">Body</h6>
+
 - **name** _(string,required)_ - the object's name
 - **type** _(string,required)_ - the object's type
 - **owner** _(string,current_user)_ - the user to own the object.
@@ -397,6 +412,7 @@ Create a new object of the given type. Unless owner/app is set, the object will 
 - **meta** _(object,{})_ - object metadata. Each object type defines its own metadata.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --header "Content-Type: application/json" \
@@ -434,6 +450,7 @@ Returns the object with the given ID
 - **icon** _(boolean,false)_ - whether or not to include the object's icon.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
  http://localhost:1324/api/objects/1a1f624e-96f9-416a-9982-6b1ef618661c
@@ -467,6 +484,7 @@ The `meta` object is updated on a per-field basis, meaning that
 the object sent as the meta field will be merged with the existing meta values. Setting `meta` to `{"schema":{"type":"number"}}` in a timeseries object will update the `schema` of the meta object, leaving all other fields intact. To delete a field from the meta object, set it to null (`{"actor":null}`).
 
 <h6 class="rest_body">Body</h6>
+
 - **name** _(string,null)_ - the object's name
 - **description** _(string,null)_ - the object's description
 - **icon** _(string,null)_ - object's icon, base64 urlencoded
@@ -476,6 +494,7 @@ the object sent as the meta field will be merged with the existing meta values. 
 - **meta** _(object,null)_ - the fields of object metadata to update. Each object type defines its own metadata.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --header "Content-Type: application/json" \
@@ -496,6 +515,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Deletes the given object, and all of its data.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --request DELETE \
@@ -537,6 +557,7 @@ Returns the timeseries data subject to the given constraints.
 _\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
  http://localhost:1324/api/objects/1a1f624e-96f9-416a-9982-6b1ef618661c/timeseries?t1=now-2h
@@ -566,6 +587,7 @@ Insert new datapoints into the timeseries
 
 <h6 class="rest_body">Body</h6>
 A json array of datapoints, conforming to the timeseries schema, with each datapoint in the following format:
+
 ```javascript
 {
     // unix timestamp in seconds
@@ -578,6 +600,7 @@ A json array of datapoints, conforming to the timeseries schema, with each datap
 ```
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --header "Content-Type: application/json" \
@@ -608,6 +631,7 @@ Delete the timeseries data that satisfies the given constraints
 _\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      --request DELETE \
@@ -659,6 +683,7 @@ Read the list of notifications subject to the given constraints.
 - **include_self** \_(boolean,false) - whether to include self when `*` present. For example, when `user=myuser&app=*`, notifications for user myuser are included if and only if `include_self` is true.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
       http://localhost:1324/api/notifications?user=myuser
@@ -669,6 +694,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Create a notification for a user/app/object. If a notification with the given key exists for the given user/app/object, update the notification with the given data.
 
 <h6 class="rest_body">Body</h6>
+
 - **key** _(string,required)_ - set the notification's key (unique for the user/app/object's notifications)
 - **title** _(string,"")_ - the header text to show
 - **description** _(string,"")_ - main notification content. Can include markdown.
@@ -690,6 +716,7 @@ Create a notification for a user/app/object. If a notification with the given ke
 _\*: Only one of the user/app/object fields can be set (the notification can only belong to a user or an app, or an object, not all at the same time)_
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --header "Content-Type: application/json" \
@@ -723,6 +750,7 @@ Modify the included fields of all notifications that satisfy the constraints giv
 - **include_self** \_(boolean,false) - whether to include self when `*` present. For example, when `user=myuser&app=*`, notifications for user myuser are included if and only if `include_self` is true.
 
 <h6 class="rest_body">Body</h6>
+
 - **key** _(string,null)_ - set the notification's key (unique for the user/app/object's notifications)
 - **title** _(string,null)_ - the header text to show
 - **description** _(string,null)_ - main notification content. Can include markdown.
@@ -739,6 +767,7 @@ Modify the included fields of all notifications that satisfy the constraints giv
     - **dismiss** _(boolean,false)_ - whether to dismiss the notification on click
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --header "Content-Type: application/json" \
@@ -772,6 +801,7 @@ Deletes the notifications that satisfy the given constraints.
 - **include_self** \_(boolean,false) - whether to include self when `*` present. For example, when `user=myuser&app=*`, notifications for user myuser are included if and only if `include_self` is true.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request DELETE \
@@ -797,6 +827,7 @@ An app can also store its own metadata, by using its app ID or `self` as the nam
 Returns a json object containing all of the key-value pairs in the given namespace
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      http://localhost:1324/api/kv/users/myuser/myplugin
@@ -817,6 +848,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Sets the key/values of the namespace to the posted body
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request POST \
@@ -838,6 +870,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Updates only the given key/value pairs for the given namespace
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request PATCH \
@@ -859,6 +892,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Get the value of the given key in the given namespace.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      http://localhost:1324/api/kv/users/myuser/myplugin/mykey
@@ -877,6 +911,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Sets the given key to the posted json value
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request POST \
@@ -898,6 +933,7 @@ curl --header "X-Heedy-Key: MYPLUGINKEY" \
 Deletes the given key from the given namespace.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "X-Heedy-Key: MYPLUGINKEY" \
      --request DELETE \
