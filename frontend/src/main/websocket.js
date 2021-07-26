@@ -1,5 +1,8 @@
 import moment from "../dist/moment.mjs";
 
+/**
+ * @alias frontend.websocket
+ */
 class WebsocketSubscriber {
   /**
    * The websocket

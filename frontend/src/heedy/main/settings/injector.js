@@ -1,6 +1,9 @@
 var settingsPageMap = {};
 var settingsRoutes = [];
 
+/**
+ * @alias frontend.settings
+ */
 class SettingsInjector {
     /**
      * Handle settings

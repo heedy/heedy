@@ -3,6 +3,6 @@
 
 ## API
 ```eval_rst
-.. js:autoclass:: WebsocketSubscriber
+.. js:autoclass:: frontend.websocket
     :members:
 ```

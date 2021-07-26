@@ -2,6 +2,6 @@
 
 ## API 
 ```eval_rst
-.. js:autoclass:: UserInjector
+.. js:autoclass:: frontend.users
     :members:
 ```

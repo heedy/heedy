@@ -1,10 +1,18 @@
+
 var randomKey = () =>
   "_" +
   Math.random()
     .toString(36)
     .substr(2, 9);
 
+/**
+ * @alias frontend.timeseries
+ */
 class TimeseriesInjector {
+  /**
+   * Hello
+   * @param {*} app 
+   */
   constructor(app) {
     this.app = app;
 
@@ -17,7 +25,11 @@ class TimeseriesInjector {
       this._onQueryResult(c, m)
     );
   }
-
+  /**
+   * Add a visualization by key
+   * @param {*} name 
+   * @param {*} component 
+   */
   addVisualization(name, component) {
     this.app.store.commit("addTSVisualization", {
       key: name,

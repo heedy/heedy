@@ -1,6 +1,9 @@
 var configPageMap = {};
 var configRoutes = [];
 
+/**
+ * @alias frontend.config
+ */
 class ConfigInjector {
     /**
      * Handle config

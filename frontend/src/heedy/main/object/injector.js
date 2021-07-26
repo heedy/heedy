@@ -1,9 +1,12 @@
 var objectRoutesMap = {};
 var objectRoutes = [];
 
+/**
+ * @alias frontend.objects
+ */
 class ObjectInjector {
   /**
-   * Deals with objects
+   * This portion of the API handles the pages that deal with generic objects.
    * @param {*} frontend
    */
   constructor(frontend) {
@@ -90,6 +93,30 @@ class ObjectInjector {
   addCreator(c) {
     this.store.commit("addObjectCreator", c);
   }
+
+  /**
+   * Add a component to display on each object's page (/#/objectss/myobjectid)
+   * @param {object} c Object containing component and display information
+   * @param {string} c.key Key of the component, calling addComponent
+   *          multiple times with the same key replaces the existing component
+   *          with the new one. By default, heedy defines the "header" key, which
+   *          contains the main card containing object icon and main options,
+   *          and the "body" key, which is a display of the object's info for unregistered objects, 
+   *          and plots for timeseries. The
+   *          notifications plugin adds a "notifications" component, which is only
+   *          rendered when there are notifications for the app.
+   * @param {float} c.weight the component's weight, with heavier components coming below
+   *          lighter ones. The header has weight 0, and body has weight 5. Notifications have weight 0.1.
+   * @param {vue.Component} c.component The vue component object to display. Takes "app" object
+   *          as a prop.
+   * 
+   * @example
+   * frontend.objects.addComponent({
+   *  key: "myComponentKey",
+   *  weight: 2,
+   *  component: MyComponent
+   * });
+   */
   addComponent(c) {
     this.store.commit("addObjectComponent", c);
   }
@@ -106,7 +133,15 @@ class ObjectInjector {
    * automatically takes /object/:objectid/{r.path}.
    * If the route works only on a specific object type, it is recommended to
    * prefix it with the type, ie: r.path = /timeseries/...
-   * @param {*} r
+   * @example
+   * frontend.objects.addRoute({
+   *  path: "myplugin/path", // This means /#/objects/:objectid/myplugin/path
+   *  component: MyComponent
+   * });
+   * 
+   * @param {string} r.path The path, relative to /#/objects/:objectid
+   * @param {vue.Component} r.component Vue component object to show as the page at that route. 
+   *          The component should have an `object` prop of type Object that is given the specific object.
    */
   addRoute(r) {
     objectRoutesMap[r.path] = r;

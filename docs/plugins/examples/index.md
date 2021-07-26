@@ -11,4 +11,5 @@ The full code for each of the tutorials can be seen in the [examples directory](
     :maxdepth: 1
 
     hello/README.md
+    template/README.md
 ```

@@ -1,5 +1,14 @@
 {
     "opts": {
         "recurse": true
+    },
+    "source": {
+        "excludePattern": "(node_modules|testdb|assets|docs)"
+    },
+    "sourceType": "module",
+    "templates": {
+        "outputSourcePath": false,
+        "outputSourceFiles": false,
+        "collapseSymbols": true
     }
 }

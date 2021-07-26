@@ -1,5 +1,8 @@
 import worker from "../worker.mjs";
 
+/**
+ * @alias frontend.worker
+ */
 class WorkerInjector {
   /**
    * The worker

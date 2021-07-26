@@ -1,4 +1,7 @@
 import api from "../util.mjs";
+/**
+ * @alias frontend
+ */
 class Frontend {
   /**
    * The frontend object is passed to the setup functions of each plugin,
@@ -120,13 +123,20 @@ class Frontend {
   }
 
   /**
-   * Routes sets up the app's routes, one by one. It allows
-   * for overriding routes, however, it only allows overriding the
-   * base route, it does not handle child routes. To set up different
+   * Routes sets up the app's browser bar routing (portion of the path after /#/)
+   * 
+   * To set up different
    * routes for logged in users and the public, the plugin can check
    * if info.user is null.
+   * 
+   * @example
+   * frontend.addRoute({
+   *  path: "myplugin/mypath", // This means /#/myplugin/mypath
+   *  component: MyComponent
+   * });
    *
-   * @param {*} r a single route element.
+   * @param {string} r.path The path at which to define the route
+   * @param {vue.Component} r.component The vue component object to show as the page at that route.
    */
   addRoute(r) {
     this.routes[r.path] = r;
@@ -135,14 +145,24 @@ class Frontend {
   /**
    * Add an item to the main app menu.
    *
-   * @param {object} m Menu item to add. It is given an object
-   *        with items "key", which is a unique ID, text, the text to display,
-   *        icon, the icon to show, and route, which is the route to navigate to.
-   *        Optionally also has a "location" attribute which hints at where the user
+   * @param {object} m Menu item to add.
+   * @param {string} m.key a unique ID for the menu item
+   * @param {string} m.text the text to display
+   * @param {string} m.icon The icon to show
+   * @param {string} m.route the route to navigate to on clicking the menu item
+   * @param {string} [m.location] optional, hints at where the user
    *        might want the menu (primary,secondary,spaced_primary).
-   *        Can also have "component" which is a vue component to display instead of icon.
+   * @param {vue.Component} [m.component] an optional vue component to display instead of icon.
    *        Be aware that the component must have a "state" prop, where it is told how to behave
    *        i.e. whether the menu is small, on bottom, etc.
+   * @example
+   * frontend.addMenuItem({
+   *    key: "myMenuItem",
+   *    text: "My Menu Item",
+   *    icon: "fas fa-handshake",
+   *    route: "/myplugin/mypath",
+   *    location: "primary"
+   * });
    */
   addMenuItem(m) {
     this.store.commit("addMenuItem", m);

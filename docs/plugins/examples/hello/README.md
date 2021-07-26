@@ -153,6 +153,10 @@ With that, we restart heedy by exiting it in the terminal with `CTRL+C`, and sta
 heedy run testdb
 ```
 
+```{warning}
+Make sure that you have a recent version of Python installed, along with venv support. On ubuntu/raspbian, run `sudo apt-get install python3-venv` before creating the database, so that heedy automatically detects your Python install! If you already created the database, you will need to set the Python plugin's path in the global `heedy.conf`.
+```
+
 Now, navigating to `localhost:1324/api/hello` will give the plugin server's response!
 
 
@@ -204,7 +208,7 @@ plugin "hello" {
     // FRONTEND - the location is relative to /static on the server
     frontend = "hello/main.mjs"
 
-    // Tell heedy to run a python server at backend/hello.py, which
+    // Tell heedy to run a python server at hello.py, which
     // can be accessed using unix socket hello.sock
     run "mybackend" {
         type = "python"

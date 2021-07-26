@@ -22,7 +22,7 @@ and plugin-writers, to help them extend heedy.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    
    server/index
    analysis/index

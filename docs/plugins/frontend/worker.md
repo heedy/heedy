@@ -3,6 +3,6 @@
 
 ## API
 ```eval_rst
-.. js:autoclass:: WorkerInjector
+.. js:autoclass:: frontend.worker
     :members:
 ```

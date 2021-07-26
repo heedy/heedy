@@ -1,8 +1,11 @@
 var userRoutesMap = {};
 var userRoutes = [];
+/**
+ * @alias frontend.users
+ */
 class UserInjector {
     /**
-     * Handle users
+     * This portion of the API handles pages dealing with users.
      * @param {*} frontend 
      */
     constructor(frontend) {
@@ -46,11 +49,45 @@ class UserInjector {
         }
 
     }
-
+    /**
+     * Adds a route to the user. Same as objects/apps addRoute. 
+     * The resulting page will be rendered with prefix /#/users/myuser/.
+     * 
+     * Adding these paths can only be done during app initialization.
+     * @param {object} r Object containing route information
+     * @param {string} r.path The subpath at which to mount the route
+     * @param {vue.Component} r.component The vue component to show at the path. 
+     *          Takes user object as prop.
+     * @example
+     * frontend.users.addRoute({
+     *  path: "mysubpath", // will be at /#/users/myuser/mysubpath
+     *  component: MyComponent
+     * });
+     */
     addRoute(r) {
         userRoutesMap[r.path] = r;
     }
 
+    /**
+     * Add a component to display on each user's page (/#/users/myuser)
+     * @param {object} c Object containing component and display information
+     * @param {string} c.key Key of the component, calling addComponent
+     *          multiple times with the same key replaces the existing component
+     *          with the new one. By default, heedy defines the "header" key, which
+     *          contains the main card containing user picture and descrition,
+     *          and the "objects" key, which is the list of the user's objects
+     * @param {float} c.weight the component's weight, with heavier components coming below
+     *          lighter ones. The header has weight 0, and object list has weight 1.
+     * @param {vue.Component} c.component The vue component object to display. Takes "user" object
+     *          as a prop.
+     * 
+     * @example
+     * frontend.users.addComponent({
+     *  key: "myComponentKey",
+     *  weight: 2,
+     *  component: MyComponent
+     * });
+     */
     addComponent(c) {
         this.store.commit("addUserComponent", c);
     }

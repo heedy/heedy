@@ -1,5 +1,20 @@
 # Frontend
 
+```eval_rst
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+
+    users
+    apps
+    objects
+    timeseries
+    settings
+    config
+    websocket
+    worker
+```
+
 A plugin performs all of its modifications to the heedy frontend through the use of
 a single javascript module. Heedy is made aware of this module in the plugin's `heedy.conf`, by setting the `frontend` variable in the plugin's block. The variable is set to the module's path relative to the `public/static` directory in the plugin's folder.
 
@@ -43,28 +58,26 @@ function setup(frontend) {
 export default setup;
 ```
 
-### Injected Functionality
+Each of these can be accessed as a property of the `frontend` object (e.g. `frontend.websocket`, `frontend.worker`, `frontend.timeseries`).
 
-Each heedy plugin can attach additional functionality to the frontend object (i.e. inject their own objects into the frontend). In a bare heedy install, the following registered classes extend the frontend's functionality:
 
-```eval_rst
-.. toctree::
-    :maxdepth: 1
+## Injected Functionality
 
-    users
-    apps
-    objects
-    settings
-    websocket
-    worker
-    timeseries
-```
+Each heedy plugin can attach additional functionality to the frontend object (i.e. inject their own objects into the frontend). In a bare heedy install, the following extensions are injected into the raw frontend object, giving specialized APIs for specific portions of the UI:
 
-Each of these can be accessed as a property of the `frontend` object (ex: `frontend.websocket`, `frontend.worker`, `frontend.timeseries`).
+- [Users](./users.md) 
+- [Apps](./apps.md) 
+- [Objects](./objects.md) 
+- [Timeseries Visualization](./timeseries.md) 
+- [User Settings](./settings.md) 
+- [Server Configuration](./config.md) 
+- [Event Websocket](./websocket.md) 
+- [Background Worker](./worker.md) 
 
-### Frontend API
+## Frontend API
 
 ```eval_rst
-.. js:autoclass:: Frontend
+.. js:autoclass:: frontend
     :members:
 ```
+

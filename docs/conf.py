@@ -63,7 +63,7 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-js_source_path = "../frontend/src"
+js_source_path = "../"
 jsdoc_config_path = "_jsdoc.json"
 
 # -- Options for HTML output -------------------------------------------------

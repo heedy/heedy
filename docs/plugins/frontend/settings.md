@@ -1,7 +1,7 @@
-# Settings
+# User Settings
 
 ## API 
 ```eval_rst
-.. js:autoclass:: SettingsInjector
+.. js:autoclass:: frontend.settings
     :members:
 ```

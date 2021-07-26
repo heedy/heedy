@@ -1,4 +1,4 @@
 Sphinx
-recommonmark
+myst-parser
 sphinx-autodoc-typehints
 sphinx-js
