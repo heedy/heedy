@@ -1,6 +1,14 @@
 <template>
   <v-flex>
     <v-card>
+      <div
+        style="position: absolute; top: 2px; right: 2px; background: none"
+        v-if="toolbar.length > 0"
+      >
+        <v-toolbar dense collapse flat>
+          <h-menu-toolbar-items :toolbar="toolbar" :maxSize="toolbarSize" />
+        </v-toolbar>
+      </div>
       <v-btn
         color="blue darken-2"
         dark
@@ -114,6 +122,26 @@ export default {
   computed: {
     objectCreators() {
       return this.$store.state.heedy.objectCreators;
+    },
+    toolbar() {
+      return Object.values(
+        this.$store.state.heedy.userMenu.reduce(
+          (o, m) => ({ ...o, ...m(this.user) }),
+          {}
+        )
+      );
+    },
+    toolbarSize() {
+      if (this.$vuetify.breakpoint.xs) {
+        return 1;
+      }
+      if (this.$vuetify.breakpoint.sm) {
+        return 2;
+      }
+      if (this.$vuetify.breakpoint.md) {
+        return 3;
+      }
+      return 6;
     },
   },
 };

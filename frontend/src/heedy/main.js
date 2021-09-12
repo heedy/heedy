@@ -41,6 +41,9 @@ import AppCreate from "./main/app/create.vue";
 import AppUpdate from "./main/app/update.vue";
 import AppObjects from "./main/app/objects.vue";
 import AppSettings from "./main/app/settings.vue";
+import AppToolbarItem from "./main/app/toolbar_item.vue";
+import AppAccessTokenToolbarItem from "./main/app/toolbar_access_token_item.vue";
+import AppSettingsToolbarItem from "./main/app/toolbar_settings_item.vue";
 
 import Apps from "./main/apps.vue";
 
@@ -279,6 +282,72 @@ function setup(frontend) {
     weight: 5,
     component: ObjectBody,
   });
+
+
+  // Toolbars to show in User/object/app headers
+  frontend.objects.addMenu((o) => {
+    let m = {};
+    let access = o.access.split(" ");
+    if (access.includes('*') || access.includes('write')) {
+      m["edit"] = {
+        icon: "edit",
+        text: "Edit",
+        to: `/objects/${o.id}/update`,
+        toolbar: true
+      };
+    }
+    if (o.app != null) {
+      m["app"] = {
+        icon: "code",
+        text: "Go To App",
+        to: `/apps/${o.app}`,
+        toolbar_component: AppToolbarItem,
+        menu_component: AppToolbarItem,
+        toolbar_props: { appid: o.app },
+        menu_props: { appid: o.app, isList: true },
+        toolbar: true,
+        weight: 1
+      };
+    }
+    return m;
+  });
+
+  frontend.apps.addMenu((app) => {
+    let m = {
+      edit: {
+        icon: "edit",
+        text: "Edit App",
+        to: `/apps/${app.id}/update`,
+        toolbar: true
+      }
+    };
+    if (app.access_token === undefined || app.access_token != '') {
+      m["access_token"] = {
+        toolbar: true,
+        toolbar_component: AppAccessTokenToolbarItem,
+        menu_component: AppAccessTokenToolbarItem,
+        toolbar_props: { appid: app.id },
+        menu_props: { appid: app.id, isList: true },
+        weight: -0.5
+      }
+    }
+    if (Object.keys(app.settings_schema).length > 0) {
+      m["settings"] = {
+        icon: "fas fa-cog",
+        text: "App Settings",
+        to: `/apps/${app.id}/settings`,
+        toolbar: true,
+        toolbar_component: AppSettingsToolbarItem,
+        menu_component: AppSettingsToolbarItem,
+        toolbar_props: { appid: app.id },
+        menu_props: { appid: app.id, isList: true },
+        weight: 1
+      }
+    }
+    return m;
+  });
+
+
 }
 
 export default setup;

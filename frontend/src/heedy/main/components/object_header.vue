@@ -5,22 +5,11 @@
     :colorHash="object.id"
     :name="object.name"
     :description="object.description"
-    :showTitle="!$vuetify.breakpoint.xs"
+    :showTitle="!$slots.default || !$vuetify.breakpoint.xs"
+    :toolbar="toolbar"
+    :toolbarSize="toolbarSize"
   >
     <slot></slot>
-    <v-tooltip bottom v-if="access.includes('*') || access.includes('write')">
-      <template #activator="{ on }">
-        <v-btn icon v-on="on" :to="`/objects/${object.id}/update`">
-          <v-icon>edit</v-icon>
-        </v-btn>
-      </template>
-      <span>Edit</span>
-    </v-tooltip>
-    <h-app-button
-      v-if="!$vuetify.breakpoint.xs"
-      :appid="object.app"
-      :size="30"
-    />
   </h-header>
 </template>
 <script>
@@ -35,8 +24,29 @@ export default {
       };
       return otype.icon;
     },
+    toolbar() {
+      // Generate the menu items from the objectMenu
+      return Object.values(
+        this.$store.state.heedy.objectMenu.reduce(
+          (o, m) => ({ ...o, ...m(this.object) }),
+          {}
+        )
+      );
+    },
     access() {
       return this.object.access.split(" ");
+    },
+    toolbarSize() {
+      if (this.$vuetify.breakpoint.xs) {
+        return 1;
+      }
+      if (this.$vuetify.breakpoint.sm) {
+        return 1;
+      }
+      if (this.$vuetify.breakpoint.md) {
+        return 3;
+      }
+      return 6;
     },
   },
 };

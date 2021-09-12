@@ -28,6 +28,7 @@ export default {
     // and the timestamp of queries already completed.
     objects: {},
     objects_qtime: {},
+    objectMenu: [],
 
     // Components to show for a object
     object_components: [],
@@ -37,10 +38,12 @@ export default {
     // a map keyed by username, where each element is a map of ids to null
     userObjects: {},
     userObjects_qtime: {},
+    userMenu: [],
 
     // a map keyed by app id, where each element is a map of ids to null
     appObjects: {},
     appObjects_qtime: {},
+    appMenu: [],
 
     // The following are initialized by the objectInjector
     objectCreators: [],
@@ -77,6 +80,15 @@ export default {
     },
     addUserComponent(state, v) {
       state.user_components.push(v);
+    },
+    addUserMenu(state, v) {
+      state.userMenu.push(v);
+    },
+    addAppMenu(state, v) {
+      state.appMenu.push(v);
+    },
+    addObjectMenu(state, v) {
+      state.objectMenu.push(v);
     },
     setObjectType(state, v) {
       if (state.object_types[v.type] !== undefined) {

@@ -8,6 +8,7 @@ import Update from "./main/update.vue";
 import Dataset from "./main/dataset/editor.vue";
 import InputPage from "./main/inserter/inputpage.vue";
 import SchemaEditor from "./main/components/schema_editor.vue";
+import DatasetToolbarItem from "./main/components/dataset_toolbar_item.vue";
 
 import RatingInserter from "./main/inserter/custom/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
@@ -147,6 +148,22 @@ function setup(frontend) {
     icon: "timeline",
     update: Update,
   });
+
+  frontend.objects.addMenu((o) => {
+    if (o.type != "timeseries") {
+      return {};
+    }
+    return {
+      analysis: {
+        toolbar_component: DatasetToolbarItem,
+        menu_component: DatasetToolbarItem,
+        toolbar_props: { objectid: o.id },
+        menu_props: { objectid: o.id, isList: true },
+        toolbar: true,
+        weight: -0.5
+      }
+    }
+  })
 }
 
 export default setup;

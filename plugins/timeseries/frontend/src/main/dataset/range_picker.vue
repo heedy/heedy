@@ -1,9 +1,15 @@
 <template>
   <div>
-    <v-select prepend-icon="event" :items="selectItems" v-model="selectValue"></v-select>
+    <v-select
+      :prepend-icon="icon ? 'event' : ''"
+      :items="selectItems"
+      v-model="selectValue"
+    ></v-select>
     <v-dialog v-model="dialog" max-width="500">
       <v-card>
-        <v-card-title class="headline grey lighten-2" primary-title>Custom Query</v-card-title>
+        <v-card-title class="headline grey lighten-2" primary-title
+          >Custom Query</v-card-title
+        >
 
         <v-card-text>
           <v-row v-if="allowIndex">
@@ -93,7 +99,7 @@ function queryLabel(q) {
   }
 
   let tstring = "";
-  if (q.i1 !== undefined && q.i1!=0) {
+  if (q.i1 !== undefined && q.i1 != 0) {
     tstring = tstring + `i1:${q.i1};`;
   }
   if (q.i2 !== undefined) {
@@ -117,8 +123,12 @@ export default {
     value: Object,
     allowIndex: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
+    icon: {
+      type: Boolean,
+      default: true,
+    },
   },
   data: () => ({
     dialog: false,
@@ -127,21 +137,21 @@ export default {
     indexItems: [{ i1: -1000 }, { i1: -100000 }],
     items: [
       {
-        i1:0
+        i1: 0,
       },
       {
-        t1: "now-1d"
+        t1: "now-1d",
       },
       {
-        t1: "now-1w"
+        t1: "now-1w",
       },
       {
-        t1: "now-1mo"
+        t1: "now-1mo",
       },
       {
-        t1: "now-3mo"
-      }
-    ]
+        t1: "now-3mo",
+      },
+    ],
   }),
   methods: {
     customquery() {
@@ -177,7 +187,7 @@ export default {
       delete newq.limit;
 
       this.$emit("input", { ...newq, ...q });
-    }
+    },
   },
   computed: {
     selectItems() {
@@ -185,16 +195,16 @@ export default {
         ...this.items.map((q, i) => ({ text: queryLabel(q), value: i })),
         {
           text: "Custom",
-          value: "custom"
-        }
+          value: "custom",
+        },
       ];
       if (this.allowIndex) {
         items = [
           ...this.indexItems.map((q, i) => ({
             text: queryLabel(q),
-            value: i + this.items.length
+            value: i + this.items.length,
           })),
-          ...items
+          ...items,
         ];
       }
       return items;
@@ -219,15 +229,15 @@ export default {
         }
         if (v < this.items.length) {
           this.setInput({
-            ...this.items[v]
+            ...this.items[v],
           });
           return;
         }
         this.setInput({
-          ...this.indexItems[v - this.items.length]
+          ...this.indexItems[v - this.items.length],
         });
-      }
-    }
+      },
+    },
   },
   watch: {
     value(o) {
@@ -238,7 +248,7 @@ export default {
         }
       }
       this.items.push(o);
-    }
+    },
   },
   created() {
     let ql = queryLabel(this.value);
@@ -248,6 +258,6 @@ export default {
       }
     }
     this.items.push(this.value);
-  }
+  },
 };
 </script>

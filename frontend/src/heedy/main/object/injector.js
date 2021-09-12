@@ -121,6 +121,23 @@ class ObjectInjector {
     this.store.commit("addObjectComponent", c);
   }
   /**
+   * A function that given an object, returns a map where each key is menu item key, and each value is
+   * a menu item, and has icon, text, and action props.
+   * @param {function(object)} mf 
+   * 
+   * @example
+   * frontend.objects.addMenu((o)=> ({
+   *  my_menu_item: {
+   *    text: "My Menu Item",
+   *    icon: "fas fa-code",
+   *    path: `myplugin/${o.id}`
+   *  }
+   * }));
+   */
+  addMenu(mf) {
+    this.store.commit("addObjectMenu", mf)
+  }
+  /**
    * Adds or overwrites an object type. It is passed a dictionary of things to set.
    * @param {*} c
    */

@@ -92,6 +92,24 @@ class UserInjector {
         this.store.commit("addUserComponent", c);
     }
 
+    /**
+   * A function that given a user object, returns a map where each key is menu item key, and each value is
+   * a menu item, and has icon, text, and action props.
+   * @param {function(object)} mf 
+   * 
+   * @example
+   * frontend.objects.addMenu((o)=> ({
+   *  my_menu_item: {
+   *    text: "My Menu Item",
+   *    icon: "fas fa-code",
+   *    path: `myplugin/${o.id}`
+   *  }
+   * }));
+   */
+    addMenu(mf) {
+        this.store.commit("addUserMenu", mf)
+    }
+
     $onInit() {
         Object.values(userRoutesMap).reduce((_, r) => {
             if (r.path.startsWith("/")) {

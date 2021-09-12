@@ -1,8 +1,9 @@
 <template>
   <h-object-header :object="object">
     <range-picker
-      style="padding-top: 17px;padding-right: 10px; max-width: 280px;"
+      style="padding-top: 17px; padding-right: 10px; max-width: 280px"
       v-model="query"
+      :icon="!$vuetify.breakpoint.xs"
     ></range-picker>
   </h-object-header>
 </template>
