@@ -4,7 +4,7 @@
     defaultIcon="settings_input_component"
     :colorHash="app.id"
     :name="app.name"
-    :description="app.description"
+    :description="app.enabled ? app.description : '(disabled)'"
     :toolbar="toolbar"
     :toolbarSize="toolbarSize"
   >

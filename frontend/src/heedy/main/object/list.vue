@@ -52,6 +52,20 @@ export default {
         o[s.type].push(s);
         return o;
       }, {});
+      Object.keys(srcobj).forEach((k) =>
+        srcobj[k].sort((a, b) => {
+          if (a.app == b.app) {
+            return a.name.localeCompare(b.name);
+          }
+          if (a.app == null) {
+            return -1;
+          }
+          if (b.app == null) {
+            return 1;
+          }
+          return a.app.localeCompare(b.app);
+        })
+      );
 
       let srcType = this.$store.state.heedy.object_types;
 

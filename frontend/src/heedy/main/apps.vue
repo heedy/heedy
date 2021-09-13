@@ -43,15 +43,23 @@
             xl="3"
           >
             <v-card class="pa-2" outlined tile>
-              <v-list-item two-line subheader :to="`/apps/${c.id}`">
+              <v-list-item
+                two-line
+                subheader
+                :to="`/apps/${c.id}`"
+                :style="c.enabled ? '' : 'opacity:0.8'"
+              >
                 <v-list-item-avatar>
                   <h-icon :image="c.icon" :colorHash="c.id"></h-icon>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>{{ c.name }}</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    c.description
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle
+                    ><span style="font-style: italic" v-if="!c.enabled">
+                      (disabled)
+                    </span>
+                    {{ c.description }}</v-list-item-subtitle
+                  >
                 </v-list-item-content>
               </v-list-item>
             </v-card>
@@ -146,9 +154,16 @@ export default {
       return this.$store.state.heedy.apps == null;
     },
     apps() {
-      let c = this.$store.state.heedy.apps;
+      let c = Object.values(this.$store.state.heedy.apps);
 
-      return Object.keys(c).map((k) => c[k]);
+      // Show disabled apps last
+      c.sort((a, b) => {
+        if (a.enabled != b.enabled) {
+          return a.enabled ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+      return c;
     },
     pluginApps() {
       let pa = this.$store.state.heedy.plugin_apps;
