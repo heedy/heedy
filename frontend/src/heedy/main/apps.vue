@@ -50,7 +50,11 @@
                 :style="c.enabled ? '' : 'opacity:0.8'"
               >
                 <v-list-item-avatar>
-                  <h-icon :image="c.icon" :colorHash="c.id"></h-icon>
+                  <h-icon
+                    :image="c.icon"
+                    :colorHash="c.id"
+                    defaultIcon="settings_input_component"
+                  ></h-icon>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>{{ c.name }}</v-list-item-title>

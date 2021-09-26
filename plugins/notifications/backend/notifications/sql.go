@@ -129,15 +129,62 @@ func SQLUpdater(db *database.AdminDB, i *run.Info, curversion int) error {
 var ErrAccessDenied = errors.New("access_denied: You don't have necessary permissions for the given query")
 
 type Action struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	Href        string `json:"href"`
-	NewWindow   bool   `json:"new_window"`
-	Dismiss     bool   `json:"dismiss"`
+	Title       string                 `json:"title"`
+	Tooltip     string                 `json:"tooltip,omitempty"`
+	Description string                 `json:"description,omitempty"` // MD description shown if type is form, or if link is not given
+	Icon        string                 `json:"icon,omitempty"`
+	Href        string                 `json:"href,omitempty"`
+	NewWindow   bool                   `json:"new_window,omitempty"`
+	Dismiss     bool                   `json:"dismiss,omitempty"`
+	Type        string                 `json:"type"`                  // The type is link by default, but can be "post/json" and "post/form-data"
+	FormSchema  map[string]interface{} `json:"form_schema,omitempty"` // For post requests
+}
+
+func (a *Action) Validate() error {
+	if a.Title == "" {
+		return errors.New("bad_query: Action must have a title")
+	}
+	if a.Href == "" && a.Type == "link" {
+		return errors.New("bad_query: Link actions must have a href attribute")
+	}
+	if a.Href == "" && a.Description == "" {
+		return errors.New("bad_query: An action must have either a href attribute or a description")
+	}
+
+	if len(a.FormSchema) > 0 {
+		if a.Type == "" {
+			a.Type = "post/json"
+		}
+		if a.Type != "post/json" && a.Type != "post/form-data" {
+			return errors.New("bad_query: Form schema can only be set for 'post/json' or 'post/form-data'")
+		}
+	}
+
+	if a.Type == "" {
+		if a.Href != "" {
+			a.Type = "link"
+		} else {
+			a.Type = "md"
+		}
+	}
+
+	return nil
 }
 
 type ActionArray []Action
+
+func (aa *ActionArray) Validate() (err error) {
+	if aa == nil {
+		return nil
+	}
+	for a := range *aa {
+		err = (*aa)[a].Validate()
+		if err != nil {
+			return
+		}
+	}
+	return
+}
 
 func (aa *ActionArray) Scan(val interface{}) error {
 	switch v := val.(type) {
@@ -157,21 +204,21 @@ func (aa *ActionArray) Value() (driver.Value, error) {
 }
 
 type Notification struct {
-	Key       string  `json:"key,omitempty"`
-	Timestamp float64 `json:"timestamp,omitempty"`
+	Key       string  `json:"key"`
+	Timestamp float64 `json:"timestamp"`
 
 	User   *string `json:"user,omitempty"`
 	App    *string `json:"app,omitempty"`
 	Object *string `json:"object,omitempty"`
 
-	Type        *string      `json:"type,omitempty"`
-	Title       *string      `json:"title,omitempty"`
-	Description *string      `json:"description,omitempty"`
-	Actions     *ActionArray `json:"actions,omitempty"`
+	Type        *string      `json:"type"`
+	Title       *string      `json:"title"`
+	Description *string      `json:"description"`
+	Actions     *ActionArray `json:"actions"`
 
-	Dismissible *bool `json:"dismissible,omitempty"`
-	Seen        *bool `json:"seen,omitempty"`
-	Global      *bool `json:"global,omitempty"`
+	Dismissible *bool `json:"dismissible"`
+	Seen        *bool `json:"seen"`
+	Global      *bool `json:"global"`
 }
 
 type NotificationsQuery struct {
@@ -189,6 +236,16 @@ type NotificationsQuery struct {
 	// Whether  or not to include self when * present. For example {user="test",app="*"}
 	// is unclear whether the user's notifications should be included or not. False by default
 	IncludeSelf *bool `json:"include_self,omitempty" schema:"include_self"`
+}
+
+func (n *Notification) Validate() (err error) {
+	if n.Actions != nil {
+		err = n.Actions.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return
 }
 
 func queryAllowed(db database.DB, o *NotificationsQuery) (*NotificationsQuery, error) {
@@ -409,6 +466,9 @@ func WriteNotification(db database.DB, n *Notification) error {
 	if n.Timestamp != 0 {
 		return errors.New("bad_request: timestamps are set automatically")
 	}
+	if err := n.Validate(); err != nil {
+		return err
+	}
 	if n.User == nil && n.App == nil && n.Object == nil && dbid != "heedy" {
 		// The notification is to be inserted to itself
 		i := strings.Index(dbid, "/")
@@ -484,6 +544,9 @@ func UpdateNotification(db database.DB, n *Notification, o *NotificationsQuery) 
 	includeUser, includeApp, includeObject := includeTable(o)
 	if n.Timestamp != 0 {
 		return errors.New("bad_request: timestamps are set automatically")
+	}
+	if err := n.Validate(); err != nil {
+		return err
 	}
 
 	o, err := queryAllowed(db, o)

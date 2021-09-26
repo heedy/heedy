@@ -1,24 +1,24 @@
 <template>
   <v-alert
     :type="n.type.length > 0 ? n.type : 'info'"
-    :border="small && !$vuetify.breakpoint.smAndDown ? undefined : 'left'"
-    :colored-border="!small"
-    :dismissible="n.actions.length <= 1 && n.dismissible"
-    :dense="small"
-    :outlined="small"
+    border="left"
+    :colored-border="false"
+    :dismissible="n.actions.length < 1 && n.dismissible"
+    :dense="true"
+    :outlined="true"
     prominent
     :elevation="1"
-    :icon="$vuetify.breakpoint.smAndDown ? false : undefined"
+    :icon="false"
     @input="del"
     style="background-color: #fdfdfd !important"
   >
-    <v-row>
+    <v-row no-gutters>
       <v-col
-        :class="{
-          grow: $vuetify.breakpoint.smAndUp,
-          'col-xs-12': !$vuetify.breakpoint.smAndUp,
-          'col-12': !$vuetify.breakpoint.smAndUp,
-        }"
+        :cols="
+          n.actions.length == 0 || actionCols.actions == 12
+            ? 12
+            : 12 - actionCols.actions
+        "
       >
         <h3 :style="{ 'padding-top': description.length > 0 ? '10px' : '0' }">
           <router-link :to="linkpath" v-if="showlink">{{
@@ -33,38 +33,126 @@
         ></span>
       </v-col>
       <v-col
-        :class="{
-          shrink: $vuetify.breakpoint.smAndUp,
-          'col-xs-12': !$vuetify.breakpoint.smAndUp,
-          'col-12': !$vuetify.breakpoint.smAndUp,
-          'text-center': true,
-        }"
+        v-if="n.actions.length > 0"
+        class="text-center"
+        :cols="actionCols.actions"
       >
-        <v-btn
-          v-for="(v, i) in n.actions"
-          :key="i"
-          outlined
-          @click="linkTo(v)"
-          :color="n.type.length > 0 ? n.type : 'info'"
-          style="width: 100%; margin: 2px"
-        >
-          <v-icon v-if="v.icon != ''" left>{{ v.icon }}</v-icon>
-          {{ v.title }}
-        </v-btn>
-        <v-btn
-          v-if="n.actions.length > 1 && n.dismissible"
-          outlined
-          :color="n.type.length > 0 ? n.type : 'info'"
-          style="width: 100%; margin: 2px"
-          @click="del"
-          >Close</v-btn
+        <v-container :style="{ padding: 0, margin: 0 }" fluid>
+          <v-row no-gutters>
+            <v-col
+              v-for="(v, i) in n.actions"
+              :key="i"
+              :cols="actionCols.buttons"
+              style="padding-left: 2px; padding-right: 2px"
+            >
+              <v-tooltip
+                bottom
+                :disabled="v.tooltip === undefined || v.tooltip == ''"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    outlined
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="runAction(v)"
+                    :color="n.type.length > 0 ? n.type : 'info'"
+                    style="width: 100%; margin: 2px"
+                  >
+                    <v-icon v-if="v.icon !== undefined && v.icon != ''" left>{{
+                      v.icon
+                    }}</v-icon>
+                    {{ v.title }}
+                  </v-btn>
+                </template>
+                <span>{{ v.tooltip }}</span>
+              </v-tooltip>
+            </v-col>
+            <v-col
+              :cols="actionCols.buttons"
+              style="padding-left: 2px; padding-right: 2px"
+            >
+              <v-btn
+                v-if="n.actions.length >= 1 && n.dismissible"
+                outlined
+                :color="n.type.length > 0 ? n.type : 'info'"
+                style="width: 100%; margin: 2px"
+                @click="del"
+                ><v-icon left>cancel</v-icon>Dismiss</v-btn
+              >
+            </v-col>
+          </v-row></v-container
         >
       </v-col>
     </v-row>
+    <v-dialog
+      v-if="dialog"
+      :value="true"
+      @input="cancelButton"
+      max-width="800px"
+    >
+      <v-card>
+        <v-card-text v-if="actionDescription.length > 0">
+          <span v-html="actionDescription" class="markdownview"></span>
+        </v-card-text>
+        <v-form
+          v-model="formValid"
+          @submit="
+            (e) => {
+              e.preventDefault();
+              linkTo(dialogAction);
+            }
+          "
+        >
+          <v-card-text v-if="dialogSchema != null">
+            <v-progress-linear
+              v-if="loading"
+              :value="uploadPercent"
+            ></v-progress-linear>
+            <v-jsf v-else :schema="dialogSchema" v-model="actionForm" />
+          </v-card-text>
+          <v-card-text v-if="alert.length > 0">
+            <v-alert text outlined color="deep-orange" icon="error_outline">{{
+              alert
+            }}</v-alert>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn text @click="cancelButton">
+              {{ dialogAction.type == "md" ? "Dismiss" : "Cancel" }}
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              v-if="dialogAction.href !== undefined && dialogAction.href != ''"
+              :disabled="!formValid"
+              color="primary"
+              type="submit"
+              :loading="loading"
+            >
+              {{ dialogAction.type == "link" ? dialogAction.title : "Submit" }}
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
   </v-alert>
 </template>
 <script>
+/*
+There are several different cases for views
+- If only actions, show just the action buttons
+- If actions and title, but no description
+  - If title is short, and not a lot of buttons, show buttons to side in a row
+  - Otherwise have title, then buttons under it
+- If description, show actions to the side, but show two columns of buttons if there are many
+*/
 import { md } from "../../dist/markdown-it.mjs";
+
+function convertURL(href) {
+  if (href.startsWith("/")) {
+    href = location.href.split("#")[0] + href.substr(1);
+  }
+  return href;
+}
+
 export default {
   props: {
     n: Object,
@@ -81,14 +169,33 @@ export default {
       default: false,
     },
   },
+  data: () => ({
+    dialog: false,
+    dialogAction: {},
+    actionForm: {},
+    formValid: false,
+    loading: false,
+    uploadPercent: 0,
+    xhr: null,
+    alert: "",
+  }),
   computed: {
     description() {
-      if (this.n.description.length == 0) {
+      if (this.n.description === undefined || this.n.description.length == 0) {
         return "";
       }
       let r = md.render(this.n.description);
       // TODO: cache instead of rendering each time
       return r;
+    },
+    actionDescription() {
+      if (
+        this.dialogAction.description === undefined ||
+        this.dialogAction.description.length == 0
+      ) {
+        return "";
+      }
+      return md.render(this.dialogAction.description);
     },
     showlink() {
       if (!this.link) return false;
@@ -96,10 +203,85 @@ export default {
       return false;
     },
     linkpath() {
-      console.vlog(this.n);
       if (this.n.object !== undefined) return `/objects/${this.n.object}`;
       if (this.n.app !== undefined) return `/apps/${this.n.app}`;
       return `/users/${this.n.user}`;
+    },
+    dialogSchema() {
+      if (
+        this.dialogAction.form_schema === undefined ||
+        Object.keys(this.dialogAction.form_schema).length == 0
+      ) {
+        return null;
+      }
+      if (this.dialogAction.form_schema.type !== undefined) {
+        return this.dialogAction.form_schema;
+      }
+      let s = {
+        type: "object",
+        properties: {
+          ...this.dialogAction.form_schema,
+        },
+      };
+      if (s.properties.required !== undefined) {
+        s.required = s.properties.required;
+        delete s.properties.required;
+      }
+      return s;
+    },
+    actionCols() {
+      if (this.$vuetify.breakpoint.xs) {
+        // On phone screens we don't even worry about it
+        return { buttons: 12, actions: 12 };
+      }
+
+      let actionButtons = this.n.actions.length;
+      if (this.n.dismissible) {
+        actionButtons += 1;
+      }
+
+      // Now let's count how many buttons we can show side by side if we do full width actions vs actions to the right
+      let full_width_count = 6;
+      if (this.$vuetify.breakpoint.sm) {
+        full_width_count = 4;
+      }
+
+      if (this.description.length > 0) {
+        if (this.description.length < 1000) {
+          // If there is a description, then try doing at most 2 columns to the side
+          if (actionButtons < 6) {
+            return { buttons: 12, actions: 12 / full_width_count };
+          }
+          if (
+            actionButtons <= 12 &&
+            this.$vuetify.breakpoint.mdAndUp &&
+            this.description.length < 500
+          ) {
+            return { buttons: 6, actions: (2 * 12) / full_width_count };
+          }
+        }
+
+        // Otherwise, just add it at the bottom.
+        return { buttons: 12 / full_width_count, actions: 12 };
+      }
+
+      // If we have just a title, then either show buttons on the side OR on bottom
+      // with up to 3 buttons on the side
+      if (actionButtons <= 3) {
+        if (
+          this.$vuetify.breakpoint.lgAndUp ||
+          (this.$vuetify.breakpoint.mdAndUp && actionButtons <= 2) ||
+          (this.$vuetify.breakpoint.smAndUp && actionButtons <= 1)
+        ) {
+          return {
+            buttons: 12 / actionButtons,
+            actions: (actionButtons * 12) / full_width_count,
+          };
+        }
+      }
+
+      // Otherwise, just add it at the bottom.
+      return { buttons: 12 / full_width_count, actions: 12 };
     },
   },
   methods: {
@@ -114,8 +296,103 @@ export default {
       }
       this.$store.dispatch("deleteNotification", nq);
     },
+    postForm: async function () {
+      // We have 2 types of post. The first is json post, which is default, then there is form-data.
+
+      this.loading = true;
+      this.alert = "";
+
+      let xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener(
+        "progress",
+        (evt) => {
+          if (evt.lengthComputable) {
+            this.uploadPercent = Math.floor((100 * evt.loaded) / evt.total);
+          }
+        },
+        false
+      );
+
+      let endRequest = () => {
+        this.xhr = null;
+        this.uploadPercent = 0;
+        this.loading = false;
+      };
+      xhr.addEventListener("load", (evt) => {
+        if (evt.target.status != 200) {
+          try {
+            this.alert =
+              "Failure: " + JSON.parse(evt.target.response).error_description;
+          } catch {
+            this.alert = "Failed to Submit";
+          }
+          endRequest();
+          return;
+        }
+        endRequest();
+        // Success!
+        this.dialog = false;
+        if (this.dialogAction.dismiss) {
+          this.del(null);
+        }
+      });
+      xhr.addEventListener("error", (evt) => {
+        console.vlog("XHR ERROR", evt);
+        endRequest();
+        this.alert = "Upload failed";
+      });
+      xhr.addEventListener("abort", (evt) => {
+        console.vlog("XHR ABORT", evt);
+        endRequest();
+      });
+
+      this.xhr = xhr;
+
+      xhr.open("POST", convertURL(this.dialogAction.href));
+
+      if (this.dialogAction.type == "post/form-data") {
+        let form = new FormData();
+        Object.entries(this.actionForm).forEach(([k, v]) => {
+          if (typeof v === "object") {
+            if (this.dialogSchema.properties[k] !== undefined) {
+              let s = this.dialogSchema.properties[k];
+              if (s.contentMediaType !== undefined && v.data instanceof Blob) {
+                // Add it as a file blob!
+                console.vlog("File blob", k, v);
+                form.append(k, v.data);
+                return;
+              }
+            }
+            form.append(k, JSON.stringify(v));
+          } else {
+            form.append(k, v);
+          }
+        });
+        xhr.send(form);
+      } else {
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(this.actionForm));
+      }
+    },
+    cancelButton(b) {
+      if (this.xhr != null) {
+        this.xhr.abort();
+      }
+      this.dialog = false;
+    },
     linkTo(v) {
+      if (this.loading) {
+        return;
+      }
+      this.alert = "";
+
+      if (this.dialogSchema != null) {
+        this.postForm();
+        return;
+      }
+
       let url = v.href;
+
       if (v.dismiss) {
         this.del(null);
       }
@@ -133,6 +410,16 @@ export default {
       } else {
         location.href = url;
       }
+    },
+    runAction(v) {
+      if (v.description !== undefined || v.form_schema !== undefined) {
+        this.dialogAction = v;
+        this.actionForm = {};
+        this.dialog = true;
+        this.alert = "";
+        return;
+      }
+      this.linkTo(v);
     },
   },
   watch: {
@@ -171,3 +458,23 @@ export default {
   },
 };
 </script>
+<style>
+.markdownview p {
+  padding-top: 15px;
+}
+.markdownview h1 {
+  padding-top: 15px;
+}
+.markdownview h2 {
+  padding-top: 15px;
+}
+.markdownview h3 {
+  padding-top: 15px;
+}
+.markdownview h4 {
+  padding-top: 15px;
+}
+.markdownview img {
+  max-width: 100%;
+}
+</style>

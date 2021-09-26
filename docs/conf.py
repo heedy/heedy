@@ -10,7 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-from recommonmark.transform import AutoStructify
 import subprocess
 import os
 import sys
@@ -91,10 +90,3 @@ html_theme_options = {
 html_static_path = ["_static"]
 
 html_css_files = ["css/custom.css"]
-
-
-# https://recommonmark.readthedocs.io/en/latest/#autostructify
-
-
-def setup(app):
-    app.add_transform(AutoStructify)

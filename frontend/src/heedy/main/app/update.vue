@@ -8,6 +8,7 @@
               ref="iconEditor"
               :image="app.icon"
               :colorHash="app.id"
+              defaultIcon="settings_input_component"
             ></h-icon-editor>
           </v-flex>
           <v-flex sm7 md8 xs12>
@@ -27,6 +28,9 @@
               <v-layout row style="padding: 0; margin-top: -25px">
                 <v-flex style="padding-right: 0; margin-bottom: -40px">
                   <v-checkbox
+                    v-if="
+                      app.access_token === undefined || app.access_token != ''
+                    "
                     style="
                       margin-top: 0;
                       padding-bottom: 0;

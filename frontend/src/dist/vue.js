@@ -15,6 +15,7 @@ import "material-design-icons-iconfont/dist/material-design-icons.css";
 // Add Vuetify-jsonschema-form
 import VJsf from "@koumoul/vjsf";
 import "@koumoul/vjsf/dist/main.css";
+import "regenerator-runtime/runtime"; // Needed to vjsf file upload support https://github.com/koumoul-dev/vuetify-jsonschema-form/issues/301
 
 // Disable the vue console messages if built with production
 Vue.config.productionTip = false;
