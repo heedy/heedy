@@ -1,8 +1,8 @@
 # Event Websocket
 
-
 ## API
-```eval_rst
+
+```{eval-rst}
 .. js:autoclass:: frontend.websocket
     :members:
 ```

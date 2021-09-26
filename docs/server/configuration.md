@@ -41,7 +41,7 @@ by setting their values in your heedy.conf.
 The built-in configuration, shown here, contains a lot of heedy's internals, including the configurations for the plugins that are built into heedy by default.
 For this reason, unless you know what you are doing, it is recommended that you leave most options at their default values.
 
-```eval_rst
+```{eval-rst}
 .. literalinclude:: ../../assets/heedy.conf
     :language: javascript
 ```

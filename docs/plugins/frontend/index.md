@@ -1,6 +1,6 @@
 # Frontend
 
-```eval_rst
+```{eval-rst}
 .. toctree::
     :maxdepth: 1
     :hidden:
@@ -44,7 +44,7 @@ function setup(frontend) {
   // Add a route to the ui, which will be accessibe from `/#/myplugin/myroute`
   frontend.addRoute({
     path: "/myplugin/myroute",
-    component: MyComponent
+    component: MyComponent,
   });
   // Add an item to the main menu that will redirect to the registered route
   frontend.addMenuItem({
@@ -52,7 +52,7 @@ function setup(frontend) {
     text: "My Plugin",
     icon: "home",
     route: "/myplugin/myroute",
-    location: "primary"
+    location: "primary",
   });
 }
 export default setup;
@@ -60,24 +60,22 @@ export default setup;
 
 Each of these can be accessed as a property of the `frontend` object (e.g. `frontend.websocket`, `frontend.worker`, `frontend.timeseries`).
 
-
 ## Injected Functionality
 
 Each heedy plugin can attach additional functionality to the frontend object (i.e. inject their own objects into the frontend). In a bare heedy install, the following extensions are injected into the raw frontend object, giving specialized APIs for specific portions of the UI:
 
-- [Users](./users.md) 
-- [Apps](./apps.md) 
-- [Objects](./objects.md) 
-- [Timeseries Visualization](./timeseries.md) 
-- [User Settings](./settings.md) 
-- [Server Configuration](./config.md) 
-- [Event Websocket](./websocket.md) 
-- [Background Worker](./worker.md) 
+- [Users](./users.md)
+- [Apps](./apps.md)
+- [Objects](./objects.md)
+- [Timeseries Visualization](./timeseries.md)
+- [User Settings](./settings.md)
+- [Server Configuration](./config.md)
+- [Event Websocket](./websocket.md)
+- [Background Worker](./worker.md)
 
 ## Frontend API
 
-```eval_rst
+```{eval-rst}
 .. js:autoclass:: frontend
     :members:
 ```
-

@@ -15,7 +15,7 @@ The API can be accessed in three separate ways:
 
 Each of these access methods is described individually below.
 
-```eval_rst
+```{eval-rst}
 .. warning::
     Because access credentials are sent directly with each request, it is important to `use https <./installing.html#putting-heedy-online>`_ to secure
     any internet-accessible heedy instance.
@@ -408,7 +408,7 @@ Create a new object of the given type. Unless owner/app is set, the object will 
 - **icon** _(string,"")_ - object's icon, base64 urlencoded
 - **tags** _(string,"")_ - a set of space-separated tags to give the object
 - **key** _(string,null)_ - a key to give the object for easy programmatic access (only objects belonging to apps can have keys)
-- **owner_scope** _(string,"*")_ - the set of space-separated scopes to give the object's owner, if the object belongs to an app. "*" means all scopes.
+- **owner_scope** _(string,"\*")_ - the set of space-separated scopes to give the object's owner, if the object belongs to an app. "\*" means all scopes.
 - **meta** _(object,{})_ - object metadata. Each object type defines its own metadata.
 
 <h6 class="rest_output">Example</h6>
@@ -490,7 +490,7 @@ the object sent as the meta field will be merged with the existing meta values. 
 - **icon** _(string,null)_ - object's icon, base64 urlencoded
 - **tags** _(string,null)_ - a set of space-separated tags to give the object
 - **key** _(string,null)_ - a key to give the object for easy programmatic access (only objects belonging to apps can have keys)
-- **owner_scope** _(string,null)_ - the set of space-separated scopes to give the object's owner, if the object belongs to an app. "*" means all scopes.
+- **owner_scope** _(string,null)_ - the set of space-separated scopes to give the object's owner, if the object belongs to an app. "\*" means all scopes.
 - **meta** _(object,null)_ - the fields of object metadata to update. Each object type defines its own metadata.
 
 <h6 class="rest_output">Example</h6>
@@ -698,20 +698,20 @@ Create a notification for a user/app/object. If a notification with the given ke
 - **key** _(string,required)_ - set the notification's key (unique for the user/app/object's notifications)
 - **title** _(string,"")_ - the header text to show
 - **description** _(string,"")_ - main notification content. Can include markdown.
-- **user** _(string,required*)_ - add the notification to the given username
-- **app** _(string,required*)_ - add the notification to the given app
-- **object** _(string,required*)_ - add the notification to the given object
+- **user** _(string,required\*)_ - add the notification to the given username
+- **app** _(string,required\*)_ - add the notification to the given app
+- **object** _(string,required\*)_ - add the notification to the given object
 - **global** _(boolean,false)_ - show in the global notification page?
 - **seen** _(boolean,false)_ - has the notification been seen by the user?
 - **dismissible** _(boolean,true)_ - allow the user to dismiss the notifcation
 - **type** _(string,null)_ - the notification type, one of `info,warning,error`
 - **actions** _(array,[])_ - the list of actions to give the notification, which are shown to the user as buttons. Each action object has the following fields:
-    - **title** _(string,required)_ - the text to display in the button
-    - **href** _(string,required)_ - the url to navigate to. If it starts with `#`, it is relative to the UI. If starts with `/`, relative to heedy's root. Otherwise, it is considered a raw URL.
-    - **description** _(string,"")_ - the tooltip to show on button hover
-    - **icon** _(string,"")_ - the icon to show in the button
-    - **new_window** _(boolean,false)_ - whether to open href in a new window
-    - **dismiss** _(boolean,false)_ - whether to dismiss the notification on click
+  - **title** _(string,required)_ - the text to display in the button
+  - **href** _(string,required)_ - the url to navigate to. If it starts with `#`, it is relative to the UI. If starts with `/`, relative to heedy's root. Otherwise, it is considered a raw URL.
+  - **description** _(string,"")_ - the tooltip to show on button hover
+  - **icon** _(string,"")_ - the icon to show in the button
+  - **new_window** _(boolean,false)_ - whether to open href in a new window
+  - **dismiss** _(boolean,false)_ - whether to dismiss the notification on click
 
 _\*: Only one of the user/app/object fields can be set (the notification can only belong to a user or an app, or an object, not all at the same time)_
 
@@ -759,12 +759,12 @@ Modify the included fields of all notifications that satisfy the constraints giv
 - **dismissible** _(boolean,null)_ - allow the user to dismiss the notifcation
 - **type** _(string,null)_ - the notification type, one of `info,warning,error`
 - **actions** _(array,null)_ - the list of actions to give the notification, which are shown to the user as buttons. Each action object has the following fields:
-    - **title** _(string,required)_ - the text to display in the button
-    - **href** _(string,required)_ - the url to navigate to. If it starts with `#`, it is relative to the UI. If starts with `/`, relative to heedy's root. Otherwise, it is considered a raw URL.
-    - **description** _(string,"")_ - the tooltip to show on button hover
-    - **icon** _(string,"")_ - the icon to show in the button
-    - **new_window** _(boolean,false)_ - whether to open href in a new window
-    - **dismiss** _(boolean,false)_ - whether to dismiss the notification on click
+  - **title** _(string,required)_ - the text to display in the button
+  - **href** _(string,required)_ - the url to navigate to. If it starts with `#`, it is relative to the UI. If starts with `/`, relative to heedy's root. Otherwise, it is considered a raw URL.
+  - **description** _(string,"")_ - the tooltip to show on button hover
+  - **icon** _(string,"")_ - the icon to show in the button
+  - **new_window** _(boolean,false)_ - whether to open href in a new window
+  - **dismiss** _(boolean,false)_ - whether to dismiss the notification on click
 
 <h6 class="rest_output">Example</h6>
 

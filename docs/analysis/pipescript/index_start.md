@@ -8,7 +8,7 @@ they are actually part of a powerful time-series analysis language called PipeSc
 - [Extending PipeScript](golang/index.rst)
 -->
 
-```eval_rst
+```{eval-rst}
 .. toctree::
    :maxdepth: 2
 

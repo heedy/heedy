@@ -1,8 +1,8 @@
 # Background Worker
 
-
 ## API
-```eval_rst
+
+```{eval-rst}
 .. js:autoclass:: frontend.worker
     :members:
 ```

@@ -2,7 +2,7 @@
 
 ## API
 
-```eval_rst
+```{eval-rst}
 .. js:autoclass:: frontend.timeseries
     :members:
 ```

@@ -45,7 +45,7 @@ Timeseries{'access': '*',
  'type': 'timeseries'}
 ```
 
-```eval_rst
+```{eval-rst}
 .. note::
     If you get an access denied error, make sure your app has the `self.objects` permission scope.
 ```

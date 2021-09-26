@@ -6,7 +6,7 @@ Each tutorial builds upon the previous one's material, so it is important to go 
 
 The full code for each of the tutorials can be seen in the [examples directory](https://github.com/heedy/heedy/tree/master/docs/plugins/examples).
 
-```eval_rst
+```{eval-rst}
 .. toctree::
     :maxdepth: 1
 

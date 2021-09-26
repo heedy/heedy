@@ -1,7 +1,8 @@
 # Objects
 
-## API 
-```eval_rst
+## API
+
+```{eval-rst}
 .. js:autoclass:: frontend.objects
     :members:
 ```

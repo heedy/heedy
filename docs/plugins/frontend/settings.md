@@ -1,7 +1,8 @@
 # User Settings
 
-## API 
-```eval_rst
+## API
+
+```{eval-rst}
 .. js:autoclass:: frontend.settings
     :members:
 ```
