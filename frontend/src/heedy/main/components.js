@@ -19,6 +19,8 @@ import ObjectCreator from "./components/object_creator.vue";
 import ObjectPicker from "./components/object_picker.vue";
 import AppButton from "./components/app_button.vue";
 import MenuToolbarItems from "./components/menu_toolbar_items.vue";
+import JSF from "./components/jsf.vue";
+import MD from "./components/md.vue";
 
 function register(Vue) {
   Vue.component("h-loading", Loading);
@@ -36,6 +38,8 @@ function register(Vue) {
   Vue.component("h-app-button", AppButton);
   Vue.component("h-object-creator", ObjectCreator);
   Vue.component("h-menu-toolbar-items", MenuToolbarItems);
+  Vue.component("h-jsf", JSF);
+  Vue.component("h-md", MD);
 }
 
 export {
@@ -53,7 +57,8 @@ export {
   ObjectCreator,
   ObjectPicker,
   AppButton,
-  MenuToolbarItems
+  MenuToolbarItems,
+  JSF, MD
 };
 
 export default register;

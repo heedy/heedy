@@ -4,14 +4,7 @@
       <v-container fluid grid-list-md>
         <v-layout row>
           <v-flex>
-            <v-jsf
-              :schema="schema"
-              v-model="modified"
-              :options="options"
-              @error="show"
-              @change="show"
-              @input="show"
-            />
+            <h-jsf :schema="schema" v-model="modified" :options="options" />
           </v-flex>
         </v-layout>
       </v-container>
@@ -72,9 +65,6 @@ export default {
     },
   },
   methods: {
-    show(e) {
-      console.vlog(e);
-    },
     update: async function (event) {
       event.preventDefault();
       if (this.loading) return;

@@ -100,18 +100,18 @@ func connectHook(conn *sqlite3.SQLiteConn) error {
 	// We actually want to fire the events only AFTER they are committed, so that transaction rollbacks don't mess with us.
 
 	conn.RegisterCommitHook(func() int {
-		// The transaction was committed, so fire the events
-		if assets.Get().Config.Verbose {
-			ll := elist.Len()
-			if ll > 0 {
-				logrus.WithField("stack", dbutil.MiniStack(2)).Debugf("Database commit - firing %d prepared event(s)", ll)
-			}
-		}
 		el2 := elist
 		elist = list.New()
 
 		// Want to let the event firing to happen asynchronously, since we want the commit to finish ASAP
 		go func() {
+			// The transaction was committed, so fire the events
+			if assets.Get().Config.Verbose {
+				ll := el2.Len()
+				if ll > 0 {
+					logrus.Debugf("Database commit - firing %d prepared event(s)", ll)
+				}
+			}
 			el := el2.Front()
 			for el != nil {
 				go Fire(el.Value.(*Event))

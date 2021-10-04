@@ -144,7 +144,7 @@
               </v-flex>
             </v-layout>
           </v-container>
-          <span v-else v-html="getMD" class="markdownview"></span>
+          <h-md v-else :value="getMD" />
         </v-card-text>
 
         <v-divider></v-divider>
@@ -171,8 +171,6 @@
   </div>
 </template>
 <script>
-import { md } from "../../../dist/markdown-it.mjs";
-
 export default {
   data: () => ({
     plugins: {},
@@ -196,7 +194,7 @@ export default {
       return pvals.filter((v) => !o.deleted.includes(v.name));
     },
     getMD() {
-      return md.render(this.plugins[this.dvalue].readme);
+      return this.plugins[this.dvalue].readme;
     },
   },
   methods: {
@@ -417,23 +415,3 @@ export default {
   },
 };
 </script>
-<style>
-.markdownview p {
-  padding-top: 15px;
-}
-.markdownview h1 {
-  padding-top: 15px;
-}
-.markdownview h2 {
-  padding-top: 15px;
-}
-.markdownview h3 {
-  padding-top: 15px;
-}
-.markdownview h4 {
-  padding-top: 15px;
-}
-.markdownview img {
-  max-width: 100%;
-}
-</style>

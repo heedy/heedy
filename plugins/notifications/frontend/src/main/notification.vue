@@ -19,18 +19,19 @@
             ? 12
             : 12 - actionCols.actions
         "
+        :style="titleStyle.col"
       >
-        <h3 :style="{ 'padding-top': description.length > 0 ? '10px' : '0' }">
+        <h3 :style="titleStyle.h3">
           <router-link :to="linkpath" v-if="showlink">{{
             n.title
           }}</router-link>
           <span v-else>{{ n.title }}</span>
         </h3>
-        <span
+        <h-md
           v-if="description.length > 0"
-          v-html="description"
+          :value="description"
           style="padding-top: 5px"
-        ></span>
+        />
       </v-col>
       <v-col
         v-if="n.actions.length > 0"
@@ -91,8 +92,10 @@
       max-width="800px"
     >
       <v-card>
-        <v-card-text v-if="actionDescription.length > 0">
-          <span v-html="actionDescription" class="markdownview"></span>
+        <v-card-text
+          v-if="dialogSchema == null && actionDescription.length > 0"
+        >
+          <h-md :value="actionDescription" />
         </v-card-text>
         <v-form
           v-model="formValid"
@@ -108,7 +111,7 @@
               v-if="loading"
               :value="uploadPercent"
             ></v-progress-linear>
-            <v-jsf v-else :schema="dialogSchema" v-model="actionForm" />
+            <h-jsf v-else :schema="dialogSchema" v-model="actionForm" />
           </v-card-text>
           <v-card-text v-if="alert.length > 0">
             <v-alert text outlined color="deep-orange" icon="error_outline">{{
@@ -180,22 +183,33 @@ export default {
     alert: "",
   }),
   computed: {
+    titleStyle() {
+      if (this.description.length > 0) {
+        return { col: "", h3: "padding-top:10px" };
+      }
+      if (this.n.actions.length == 0 || this.actionCols.actions == 12) {
+        return { col: "", h3: "padding-top:0" };
+      }
+      return {
+        col: "position: relative",
+        h3: {
+          position: "absolute",
+          top: "50%",
+          transform: "translate(0,-50%)",
+        },
+      };
+    },
     description() {
-      if (this.n.description === undefined || this.n.description.length == 0) {
+      if (this.n.description === undefined) {
         return "";
       }
-      let r = md.render(this.n.description);
-      // TODO: cache instead of rendering each time
-      return r;
+      return this.n.description;
     },
     actionDescription() {
-      if (
-        this.dialogAction.description === undefined ||
-        this.dialogAction.description.length == 0
-      ) {
+      if (this.dialogAction.description === undefined) {
         return "";
       }
-      return md.render(this.dialogAction.description);
+      return this.dialogAction.description;
     },
     showlink() {
       if (!this.link) return false;
@@ -226,6 +240,12 @@ export default {
       if (s.properties.required !== undefined) {
         s.required = s.properties.required;
         delete s.properties.required;
+      }
+      if (
+        this.dialogAction.description !== undefined &&
+        this.dialogAction.description.length > 0
+      ) {
+        s.description = this.dialogAction.description;
       }
       return s;
     },

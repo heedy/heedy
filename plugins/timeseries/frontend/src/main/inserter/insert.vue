@@ -1,7 +1,12 @@
 <template>
   <v-form @submit="insert" v-model="formValid">
     <div ref="jsform" v-if="!loading">
-      <v-jsf :schema="schema" :options="options" v-model="modified">
+      <v-jsf
+        :schema="schema"
+        :options="options"
+        v-model="modified"
+        class="markdownview"
+      >
         <template
           v-for="ins in inserters"
           :slot="`custom-` + ins.k"
@@ -31,6 +36,7 @@
 </template>
 <script>
 import moment from "../../../dist/moment.mjs";
+import { md } from "../../../dist/markdown-it.mjs";
 export default {
   props: {
     object: Object,
@@ -39,7 +45,14 @@ export default {
     formValid: false,
     loading: false,
     height: "20px",
-    options: {},
+    options: {
+      markdown: (r) => {
+        if (r === undefined || r == null || r == "") {
+          return null;
+        }
+        return md.render(r);
+      },
+    },
     modified: {},
   }),
   computed: {
@@ -102,3 +115,23 @@ export default {
   },
 };
 </script>
+<style>
+.markdownview p {
+  padding-top: 15px;
+}
+.markdownview h1 {
+  padding-top: 15px;
+}
+.markdownview h2 {
+  padding-top: 15px;
+}
+.markdownview h3 {
+  padding-top: 15px;
+}
+.markdownview h4 {
+  padding-top: 15px;
+}
+.markdownview img {
+  max-width: 100%;
+}
+</style>

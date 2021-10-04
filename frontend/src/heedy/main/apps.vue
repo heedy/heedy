@@ -29,7 +29,7 @@
           v-else-if="apps.length == 0"
           style="color: gray; text-align: center"
         >
-          You don't have any apps.
+          You don't have any apps. Click the + button to add an app.
         </div>
         <v-row no-gutters v-else>
           <v-col
@@ -88,7 +88,7 @@
 
         <v-card-text>
           <v-row no-gutters>
-            <v-col cols="12" xs="12" sm="6" md="6" lg="4" xl="3">
+            <v-col cols="12" xs="12" sm="6" md="6" lg="4" xl="4">
               <v-card class="pa-2" outlined tile>
                 <v-list-item two-line subheader :to="`/create/app`">
                   <v-list-item-avatar>
@@ -100,8 +100,8 @@
                   <v-list-item-content>
                     <v-list-item-title>Custom App</v-list-item-title>
                     <v-list-item-subtitle
-                      >Get an access token to use with your own
-                      software</v-list-item-subtitle
+                      >Get an access token for external
+                      use</v-list-item-subtitle
                     >
                   </v-list-item-content>
                 </v-list-item>
@@ -115,7 +115,7 @@
               sm="6"
               md="6"
               lg="4"
-              xl="3"
+              xl="4"
             >
               <v-card class="pa-2" outlined tile>
                 <v-list-item two-line subheader @click="addApp(pa.key)">

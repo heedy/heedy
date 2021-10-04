@@ -1,6 +1,6 @@
 <template>
   <v-form @submit="update" v-model="formValid" style="padding: 20px">
-    <v-jsf :schema="schema" v-model="modified" :options="options" />
+    <h-jsf :schema="schema" v-model="modified" />
     <v-card-actions>
       <v-spacer></v-spacer>
 
@@ -16,7 +16,6 @@ export default {
     formValid: false,
     modified: {},
     loading: false,
-    options: {},
   }),
   props: {
     schema: Object,

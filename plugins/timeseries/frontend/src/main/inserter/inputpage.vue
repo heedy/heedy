@@ -101,7 +101,7 @@ export default {
         this.$store.state.heedy.userObjects[this.user.username] || {}
       )
         .map((id) => this.$store.state.heedy.objects[id])
-        .filter((o) => o.type === "timeseries" && hasWrite(o));
+        .filter((o) => o != null && o.type === "timeseries" && hasWrite(o));
     },
     yourInserters() {
       return this.inserters.filter((o) => o.app == null);

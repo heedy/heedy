@@ -45,13 +45,15 @@ export default {
   },
   computed: {
     items() {
-      let srcobj = this.objects.reduce((o, s) => {
-        if (o[s.type] === undefined) {
-          o[s.type] = [];
-        }
-        o[s.type].push(s);
-        return o;
-      }, {});
+      let srcobj = this.objects
+        .filter((o) => o != null)
+        .reduce((o, s) => {
+          if (o[s.type] === undefined) {
+            o[s.type] = [];
+          }
+          o[s.type].push(s);
+          return o;
+        }, {});
       Object.keys(srcobj).forEach((k) =>
         srcobj[k].sort((a, b) => {
           if (a.app == b.app) {

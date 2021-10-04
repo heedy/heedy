@@ -34,8 +34,10 @@ class Plugin:
     def name(self):
         return self.config["plugin"]
 
-    def copy(self):
-        return Plugin(self.config, "async" if self.session.isasync else "sync")
+    def copy(self, session=None):
+        if session is None:
+            session = "async" if self.session.isasync else "sync"
+        return Plugin(self.config, session)
 
     def query_as(self, accessor):
         p = self.copy()
