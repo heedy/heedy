@@ -14,3 +14,10 @@ def test_appscope():
     assert o.read()["key"] == "lol"
     o.key = "hiya"
     assert o.read()["key"] == "hiya"
+
+
+def test_indexerror():
+    a = App("testkey")
+    ts = a.objects.create("myobj")
+    ts.insert("hi!")
+    assert len(ts(i1=-1, i2=0)) == 0

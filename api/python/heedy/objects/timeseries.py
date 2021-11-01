@@ -197,7 +197,7 @@ class Timeseries(Object):
         """
         if not isinstance(getrange, slice):
             # Return the single datapoint
-            return self(i1=getrange, i2=getrange + 1)[0]
+            return self(i=getrange)[0]
 
         # The query is a slice - return the range
         qkwargs = {}

@@ -371,6 +371,22 @@ func TestEdgeCases(t *testing.T) {
 		&Datapoint{10., 5, "test0", ""},
 	})
 
+	// Test getting a single datapoint
+	iv := int64(-1)
+	cmpQuery(t, s, &Query{
+		Timeseries: oid1,
+		I:          &iv,
+	}, DatapointArray{
+		&Datapoint{10., 5, "test0", ""},
+	})
+	iv2 := int64(0)
+
+	cmpQuery(t, s, &Query{
+		Timeseries: oid1,
+		I1:         &iv,
+		I2:         &iv2,
+	}, DatapointArray{})
+
 	// Clear the timeseries
 	require.NoError(t, s.Delete(&Query{
 		Timeseries: oid1,

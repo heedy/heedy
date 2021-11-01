@@ -11,7 +11,11 @@ def test_ts():
     assert len(ts) == 1
     assert len(ts(t1="now-10s")) == 1
     assert len(ts(t1="now")) == 0
-
+    assert ts[0]["d"] == "hi!"
+    assert ts[-1]["d"] == "hi!"
+    ts.insert("hello")
+    assert ts[0]["d"] == "hi!"
+    assert ts[-1]["d"] == "hello"
     ts.delete()
 
 
