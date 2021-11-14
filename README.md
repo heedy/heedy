@@ -40,9 +40,9 @@ Installing a plugin is as simple as [uploading its zip file to heedy](https://he
 
 The first screenshot is of sleep data uploaded by the [fitbit plugin](https://github.com/heedy/heedy-fitbit-plugin). The second is a jupyter notebook enabled by the [notebook plugin](https://github.com/heedy/heedy-notebook-plugin). The final screenshot shows Heedy's built-in analysis capabilities.
 
-[![Fitbit Plugin Example](./screenshot1.png)](https://github.com/heedy/heedy-fitbit-plugin)
-[![Fitbit Notebook Example](./screenshot2.png)](https://github.com/heedy/heedy-notebook-plugin)
-![Data Analysis Example](./screenshot3.png)
+[![Fitbit Plugin Example](docs/_static/img/screenshots/1.png)](https://github.com/heedy/heedy-fitbit-plugin)
+[![Fitbit Notebook Example](docs/_static/img/screenshots/2.png)](https://github.com/heedy/heedy-notebook-plugin)
+![Data Analysis Example](docs/_static/img/screenshots/3.png)
 
 ## Building
 
