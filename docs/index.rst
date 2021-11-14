@@ -9,8 +9,10 @@ It provides a powerful plugin system, allowing easy integration with various ser
 .. raw:: html
 
    <div style="width:100%;text-align:center;">
+   <a href="https://github.com/heedy/heedy" class="btn btn-lg btn-outline-dark">View on Github</a>
    <a href="https://github.com/heedy/heedy/releases/latest" class="btn btn-lg btn-outline-dark">Download Heedy</a>
    </div>
+   <img src="_static/img/screenshots/3.png" style="width: 100%; margin-top: 10px; border: 3px solid gray"/>
    
 
 .. note::

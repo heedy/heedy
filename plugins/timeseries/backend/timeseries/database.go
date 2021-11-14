@@ -430,6 +430,11 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 		bi = BatchEndTime{bi, t2}
 	}
 	da, err := bi.NextBatch()
+	// In certain cases, the first batch may be empty, such as when querying past the last datapoint but within its duration
+	// In this case, read the next batch
+	if err == nil && da != nil && len(da) == 0 {
+		da, err = bi.NextBatch()
+	}
 	if err != nil || da == nil || len(da) == 0 {
 		bi.Close()
 		return EmptyIterator{}, err

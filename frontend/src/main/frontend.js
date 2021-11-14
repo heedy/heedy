@@ -114,11 +114,11 @@ class Frontend {
    * @param {string} uri - uri to query (api/users/...)
    * @param {object} data - optional object to send as a json payload. If the method is GET, the data is sent as url params.
    * @param {object} params - params to set as url params
-   * @param {boolean} json - whether data should be sent as standard POST url encoded or as json
+   * @param {string} json - format of POST data, default is json. Can also be form-data or x-www-form-urlencoded
    *
    * @returns {object} an object with two fields, response and data. response gives a fetch query response object, and data contains the response content decoded from json.
    */
-  async rest(method, uri, data = null, params = null, json = true) {
+  async rest(method, uri, data = null, params = null, json = "json") {
     return await api(method, uri, data, params, json);
   }
 

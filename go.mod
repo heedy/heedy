@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/dkumor/revhttpfs v1.0.0
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible

@@ -95,10 +95,10 @@ As expected, the sum transform returns a single datapoint, which has in its data
 
 ### Filtering Data
 
-Transforms can take arguments as input. For example, the `filter` transform removes all datapoints that don't satisfy the condition given in its first argument:
+Transforms can take arguments as input. For example, the `where` transform removes all datapoints that don't satisfy the condition given in its first argument:
 
 ```
-filter(d>=2)
+where(d>=2)
 ```
 
 ```json
@@ -111,8 +111,10 @@ filter(d>=2)
 Note that the parentheses are optional here. The above transform is equivalent to:
 
 ```
-filter d>=2
+where d>=2
 ```
+
+The where transform is similar to `SELECT WHERE` in SQL.
 
 ## Chaining Transforms
 
@@ -159,12 +161,12 @@ For this section, we will use the following dataset from a fitness tracker:
 ]
 ```
 
-Suppose we want to get the **total number of steps we took while running**. We cannot do this with one transform, but by chaining together a couple simple transforms, we can get there!
+Suppose we want to get the **total number of steps we took while running**. We cannot do this with one transform, but by chaining together a couple of simple transforms, we can get there!
 
 First off, let's filter the datapoints so that we have just those where we were running:
 
 ```
-filter d("activity")=="running"
+where d("activity")=="running"
 ```
 
 Notice that the `d` accepts an argument - it allows you to return a sub-object of the datapoint. Our result is:
@@ -192,7 +194,7 @@ We can now add a `|` after the first part of our statement, and we can perform f
 After extracting only the datapoints that have their activity as "running", we return only the "steps" portion of the datapoint:
 
 ```
-filter d("activity")=="running" | d("steps")
+where d("activity")=="running" | d("steps")
 ```
 
 ```json
@@ -211,7 +213,7 @@ filter d("activity")=="running" | d("steps")
 Finally, we want to sum the datapoints to get the total number of steps while running:
 
 ```
-filter d("activity")=="running" | d("steps") | sum
+where d("activity")=="running" | d("steps") | sum
 ```
 
 ```json
@@ -226,19 +228,19 @@ filter d("activity")=="running" | d("steps") | sum
 
 ## Advanced Pipes
 
-All arguments to each transform are actually transform pipelines. For example, one can go multiple levels into a nested object within an argument to the filter transform:
+All arguments to each transform are actually transform pipelines. For example, one can go multiple levels into a nested object within an argument to the where transform:
 
 ```
-filter( (d("level1") | d("level2")) == 4 )
+where( (d("level1") | d("level2")) == 4 )
 ```
 
-For convenience, PipeScript also includes `:` as a pipe symbol with high prescedence (the pipe will be taken before algebra is done) which can allow you to simplify your script a bit by dropping the internal parentheses:
+For convenience, PipeScript also includes `:` as a pipe symbol with high precedence (the pipe will be taken before algebra is done), allowing simplification of the script a bit by dropping the internal parentheses:
 
 ```
-filter( d("level1"):d("level2") == 4 )
+where( d("level1"):d("level2") == 4 )
 ```
 
-In order for the parent (`filter`) to always get SOME result in its argument, sub-transforms cannot include transforms that are not One-To-One (for each datapoint that they get as input, they output one datapoint). This means that you cannot nest `filter` transforms.
+In order for the parent (`where`) to always get SOME result in its argument, sub-transforms cannot include transforms that are not One-To-One (for each datapoint that they get as input, they output one datapoint). This means that you cannot nest `where` transforms.
 
 ### Pipe Args
 
@@ -281,7 +283,7 @@ We will once again use the timeseries from the previous example:
 ]
 ```
 
-Remember that previously, we found the total number of steps while running with the transform `filter d("activity")=="running" | d("steps") | sum`.
+Remember that previously, we found the total number of steps while running with the transform `where d("activity")=="running" | d("steps") | sum`.
 
 We will now extend that to find the number of steps for each activity, using the `map` transform:
 
@@ -329,7 +331,7 @@ This transform will return both the sum of all of the datapoints' values, and th
 Finally, since transforms can get fairly complex with objects, PipeScript does accept multiline scripts. That is, the following is a valid script format:
 
 ```
-filter d("activity")!="still"
+where d("activity")!="still"
 | {
     "total": d("steps"):sum,
     "some_random_stuff": ( d("steps") | something | something else )

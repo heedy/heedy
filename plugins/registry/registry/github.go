@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/google/go-github/v24/github"
 	"golang.org/x/oauth2"
 

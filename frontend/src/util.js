@@ -13,11 +13,11 @@ export function urlify(obj) {
  * It explicitly returns the resulting object, or throws the error given
  * @param {string} method - HTTP verb to use (GET/POST/...)
  * @param {string} uri - uri to query (api/heedy/...)
- * @param {object} data - optional object to send as a json payload
+ * @param {object} data - optional object to send as a json payload (or FormData)
  * @param {object} params - params to set as url params
- * @param {boolean} json - whether data should be sent as standard POST url encoded or as json
+ * @param {string} content - format to use for data (json/form-data)
  */
-async function api(method, uri, data = null, params = null, json = true) {
+async function api(method, uri, data = null, params = null, content = "json") {
   let options = {
     method: method,
     credentials: "include",
@@ -42,9 +42,15 @@ async function api(method, uri, data = null, params = null, json = true) {
       if (data != null && params == null) {
         uri = uri + "?" + urlify(data);
       }
-    } else if (json) {
+    } else if (content == "json") {
       options.body = JSON.stringify(data);
       options.headers["Content-Type"] = "application/json";
+    } else if (content == "form-data") {
+      let fd = new FormData();
+      for (let key in data) {
+        fd.append(key, data[key]);
+      }
+      options.body = fd;
     } else {
       options.body = urlify(data);
       options.headers["Content-Type"] = "application/x-www-form-urlencoded";
@@ -169,11 +175,11 @@ export default async function consoleAPI(
   uri,
   data = null,
   params = null,
-  json = true
+  content = "json"
 ) {
-  let res = await api(method, uri, data, params, json);
+  let res = await api(method, uri, data, params, content);
   if (!res.response.ok) {
-    console.error(method, uri, data, params, json, res);
+    console.error(method, uri, data, params, content, res);
   }
   return res;
 }

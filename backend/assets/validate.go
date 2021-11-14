@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/blang/semver/v4"
+	"github.com/heedy/heedy/backend/buildinfo"
 )
 
 // The http verbs to permit in router
@@ -24,6 +27,8 @@ var routePrefix = map[string]bool{
 	"builtin:": true,
 	"run:":     true,
 }
+
+var heedy_semver = semver.MustParse(buildinfo.Version)
 
 func isValidRoute(s string) error {
 	ss := strings.Fields(s)
@@ -108,6 +113,17 @@ func Validate(c *Configuration) error {
 		if !ok {
 			return fmt.Errorf("Plugin '%s' config not found", p)
 		}
+		// Make sure the plugin will run with the current heedy version
+		if v.HeedyVersion != nil {
+			vrange, err := semver.ParseRange(*v.HeedyVersion)
+			if err != nil {
+				return fmt.Errorf("Plugin '%s' heedy_version invalid: %s", p, err.Error())
+			}
+			if !vrange(heedy_semver) {
+				return fmt.Errorf("Plugin '%s' is not compatible with Heedy version %s, only %s accepted", p, buildinfo.Version, *v.HeedyVersion)
+			}
+		}
+
 		for conn, v2 := range v.Apps {
 			for s, v3 := range v2.Objects {
 				if _, ok := c.ObjectTypes[v3.Type]; !ok {

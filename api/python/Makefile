@@ -1,4 +1,4 @@
-.PHONY: dist publish test
+.PHONY: dist publish test clean
 
 dist:
 	rm -rf ./dist
@@ -9,3 +9,9 @@ publish: dist
 
 test:
 	./runtests
+
+clean:
+	rm -rf ./dist
+	rm -rf ./build
+	rm -rf ./heedy.egg-info
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete

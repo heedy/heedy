@@ -70,12 +70,13 @@ type hclApp struct {
 }
 
 type hclPlugin struct {
-	Name        string  `hcl:"name,label"`
-	Icon        *string `hcl:"icon" json:"icon"`
-	Version     *string `hcl:"version" json:"version"`
-	Description *string `hcl:"description" json:"description"`
-	Homepage    *string `hcl:"homepage" json:"homepage"`
-	License     *string `hcl:"license" json:"license"`
+	Name         string  `hcl:"name,label"`
+	Icon         *string `hcl:"icon" json:"icon"`
+	Version      *string `hcl:"version" json:"version"`
+	Description  *string `hcl:"description" json:"description"`
+	Homepage     *string `hcl:"homepage" json:"homepage"`
+	License      *string `hcl:"license" json:"license"`
+	HeedyVersion *string `hcl:"heedy_version" json:"heedy_version"`
 
 	Frontend *string   `hcl:"frontend" json:"frontend"`
 	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`

@@ -128,7 +128,10 @@ func Run(a *assets.Assets, o *RunOptions) error {
 
 	var apisrvl net.Listener
 	if strings.HasPrefix(apiAddress, "unix:") {
-		apisrvl, err = net.Listen("unix", apiAddress[5:])
+		err = os.RemoveAll(apiAddress[5:]) // Make sure the socket is removed it
+		if err == nil {
+			apisrvl, err = net.Listen("unix", apiAddress[5:])
+		}
 	} else {
 		apisrvl, err = net.Listen("tcp", apiAddress)
 	}
@@ -164,7 +167,10 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	logrus.Infof("Running heedy on %s", serverAddress)
 	var srvl net.Listener
 	if strings.HasPrefix(serverAddress, "unix:") {
-		srvl, err = net.Listen("unix", serverAddress[5:])
+		err = os.RemoveAll(serverAddress[5:])
+		if err == nil {
+			srvl, err = net.Listen("unix", serverAddress[5:])
+		}
 	} else {
 		srvl, err = net.Listen("tcp", serverAddress)
 	}

@@ -147,12 +147,15 @@ func (a *Action) Validate() error {
 	if a.Href == "" && a.Type == "link" {
 		return errors.New("bad_query: Link actions must have a href attribute")
 	}
+	if a.Href == "" && (a.Type == "post" || strings.HasPrefix(a.Type, "post/")) {
+		return errors.New("bad_query: post actions must have a href attribute")
+	}
 	if a.Href == "" && a.Description == "" {
 		return errors.New("bad_query: An action must have either a href attribute or a description")
 	}
 
 	if len(a.FormSchema) > 0 {
-		if a.Type == "" {
+		if a.Type == "" || a.Type == "post" {
 			a.Type = "post/json"
 		}
 		if a.Type != "post/json" && a.Type != "post/form-data" {

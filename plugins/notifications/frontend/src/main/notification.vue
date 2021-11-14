@@ -1,6 +1,8 @@
 <template>
   <v-alert
-    :type="n.type.length > 0 ? n.type : 'info'"
+    :type="
+      n.type.length > 0 ? (n.type == 'toolbar' ? undefined : n.type) : 'info'
+    "
     border="left"
     :colored-border="false"
     :dismissible="n.actions.length < 1 && n.dismissible"
@@ -9,6 +11,7 @@
     prominent
     :elevation="1"
     :icon="false"
+    :color="n.type == 'toolbar' ? 'rgba(0,0,0,.6)' : undefined"
     @input="del"
     style="background-color: #fdfdfd !important"
   >
@@ -224,7 +227,8 @@ export default {
     dialogSchema() {
       if (
         this.dialogAction.form_schema === undefined ||
-        Object.keys(this.dialogAction.form_schema).length == 0
+        Object.keys(this.dialogAction.form_schema).length == 0 ||
+        this.dialogAction.form_schema.const !== undefined
       ) {
         return null;
       }
@@ -318,7 +322,6 @@ export default {
     },
     postForm: async function () {
       // We have 2 types of post. The first is json post, which is default, then there is form-data.
-
       this.loading = true;
       this.alert = "";
 
@@ -367,8 +370,9 @@ export default {
       });
 
       this.xhr = xhr;
-
-      xhr.open("POST", convertURL(this.dialogAction.href));
+      let posturl = convertURL(this.dialogAction.href);
+      console.vlog("Notification Action POST ", posturl);
+      xhr.open("POST", posturl);
 
       if (this.dialogAction.type == "post/form-data") {
         let form = new FormData();
@@ -378,7 +382,7 @@ export default {
               let s = this.dialogSchema.properties[k];
               if (s.contentMediaType !== undefined && v.data instanceof Blob) {
                 // Add it as a file blob!
-                console.vlog("File blob", k, v);
+                console.vlog("Notification Action: File blob at key", k);
                 form.append(k, v.data);
                 return;
               }
@@ -394,11 +398,38 @@ export default {
         xhr.send(JSON.stringify(this.actionForm));
       }
     },
+    blindPost: async function (v) {
+      let data = null;
+      if (v.form_schema !== undefined && v.form_schema.const !== undefined) {
+        data = v.form_schema.const;
+      }
+      let post_type = v.type === "post/form-data" ? "form-data" : "json";
+      let posturl = convertURL(v.href);
+      console.vlog("Notification Action POST ", posturl);
+      let res = await this.$frontend.rest(
+        "POST",
+        posturl,
+        data,
+        null,
+        post_type
+      );
+      if (!res.response.ok) {
+        this.alert = "Failed to Submit";
+        this.dialog = true;
+        return;
+      }
+
+      if (v.dismiss) {
+        this.del(null);
+      }
+      this.dialog = false;
+    },
     cancelButton(b) {
       if (this.xhr != null) {
         this.xhr.abort();
       }
       this.dialog = false;
+      this.dialogAction = {};
     },
     linkTo(v) {
       if (this.loading) {
@@ -406,8 +437,15 @@ export default {
       }
       this.alert = "";
 
-      if (this.dialogSchema != null) {
-        this.postForm();
+      if (v.type.startsWith("post")) {
+        // If it is actively a form dialog, use the data input there.
+        if (this.dialogSchema != null) {
+          this.postForm();
+          return;
+        }
+
+        // Otherwise, we do a blind post, using the const data if available, and nothing if not.
+        this.blindPost(v);
         return;
       }
 
@@ -432,7 +470,12 @@ export default {
       }
     },
     runAction(v) {
-      if (v.description !== undefined || v.form_schema !== undefined) {
+      if (
+        v.description !== undefined ||
+        (v.form_schema !== undefined &&
+          Object.keys(v.form_schema).length > 0 &&
+          v.form_schema.const === undefined)
+      ) {
         this.dialogAction = v;
         this.actionForm = {};
         this.dialog = true;

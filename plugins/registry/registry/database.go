@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/jmoiron/sqlx"
 
 	// The regsitry is _always_ an sqlite database
@@ -58,25 +58,25 @@ CREATE TABLE metadata (
 type Registry struct {
 	db *sqlx.DB
 
-	heedyVersion *semver.Version
-	RegistryVersion    semver.Version
-	Updated            time.Time
+	heedyVersion    *semver.Version
+	RegistryVersion semver.Version
+	Updated         time.Time
 }
 
 // Plugin holds info about the plugin from the registry
 type Plugin struct {
-	Name        string
-	Icon        string
-	FullName    string
-	Description string
-	Version     semver.Version
-	heedyVersion  semver.Version
-	Webpage     string
-	ReleaseURL  string
-	Python      bool
-	License     string
-	Stars       int
-	Timestamp   time.Time
+	Name         string
+	Icon         string
+	FullName     string
+	Description  string
+	Version      semver.Version
+	heedyVersion semver.Version
+	Webpage      string
+	ReleaseURL   string
+	Python       bool
+	License      string
+	Stars        int
+	Timestamp    time.Time
 }
 
 // Create generates a new regsitry database file

@@ -40,7 +40,7 @@
     "markdown-it": "^12.0.6",
     "markdown-it-highlightjs": "^3.5.0",
     "markdown-it-link-attributes": "^3.0.0",
-    "material-design-icons-iconfont": "^6.1.0",
+    "material-design-icons-iconfont": "^6.1.1",
     "moment": "^2.29.1",
     "nodemon": "^2.0.7",
     "npm-run-all": "^4.1.5",

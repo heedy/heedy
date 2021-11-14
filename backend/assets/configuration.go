@@ -69,11 +69,12 @@ type Run struct {
 }
 
 type Plugin struct {
-	Version     *string `hcl:"version" json:"version,omitempty"`
-	Description *string `hcl:"description" json:"description,omitempty"`
-	Icon        *string `hcl:"icon" json:"icon,omitempty"`
-	Homepage    *string `hcl:"homepage" json:"homepage,omitempty"`
-	License     *string `hcl:"license" json:"license,omitempty"`
+	Version      *string `hcl:"version" json:"version,omitempty"`
+	Description  *string `hcl:"description" json:"description,omitempty"`
+	Icon         *string `hcl:"icon" json:"icon,omitempty"`
+	Homepage     *string `hcl:"homepage" json:"homepage,omitempty"`
+	License      *string `hcl:"license" json:"license,omitempty"`
+	HeedyVersion *string `hcl:"heedy_version" json:"heedy_version,omitempty"`
 
 	Frontend *string   `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
 	Preload  *[]string `json:"preload,omitempty" hcl:"preload"`
