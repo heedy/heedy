@@ -6,6 +6,17 @@ async function analyze(qd) {
     return {}; // Don't display table for huge datasets.
   }
   let cols = qd.dataset_array.map((data, i) => {
+    // If the dataset has only one datapoint that is an object, tell datatable to run a pre-transform,
+    // to display the keys as rows instead of columns
+    if (data.length == 1 && typeof data[0].d === "object" && Object.keys(data[0].d).length > 1) {
+      return {
+        label: qd.keys[i],
+        transform: "expand",
+        columns: [{ prop: 'd_k', name: "Key" }, { prop: 'd_v', name: "Value" }]
+      };
+    }
+
+    // Otherwise, show one row per datapoint
     let columns = [{ prop: "t", name: "Timestamp" }];
     if (data.some((dp) => dp.dt !== undefined)) {
       columns.push({
@@ -32,10 +43,10 @@ async function analyze(qd) {
 
       if (isWeird) {
         // Just give the raw data, since wtf
-        columns.push({ prop: "d", name: "Data" });
+        columns.push({ prop: "d_", name: "Data" });
       } else {
         Object.keys(headers).forEach((k) => {
-          columns.push({ prop: k, name: k });
+          columns.push({ prop: "d_" + k, name: k });
         });
       }
     }

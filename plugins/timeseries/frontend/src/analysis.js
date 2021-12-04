@@ -119,8 +119,32 @@ function setQueryProp(key, ff) {
   Object.keys(qcache, k => qcache[k].set(key, ff));
 }
 
+
+function transform(arr, script) {
+  //console.vlog("TRANSFORM", arr)
+  // TODO: make this also use weakmap and cache results.
+  if (script == "expand") {
+    if (arr.length == 0) {
+      return arr;
+    }
+    let dp = arr[0];
+    arr = Object.keys(dp.d).map(k => ({
+      t: dp.t,
+      d: {
+        k: k,
+        v: dp.d[k]
+      }
+    }));
+    //console.log("T2", arr)
+    return arr
+  }
+
+  //console.verror("Unrecognized transform", script);
+  return arr;
+}
+
 export {
-  dq, tq, dtq, getKeys, getType, setQueryProp
+  dq, tq, dtq, getKeys, getType, setQueryProp, transform
 }
 
 export default query;

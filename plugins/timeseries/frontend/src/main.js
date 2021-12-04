@@ -13,9 +13,15 @@ import DatasetToolbarItem from "./main/components/dataset_toolbar_item.vue";
 import RatingInserter from "./main/inserter/custom/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
 
+import VCalendar from "../dist/v-calendar.mjs";
+
 function setup(frontend) {
   frontend.store.registerModule("timeseries", vuexModule);
   frontend.inject("timeseries", new TimeseriesInjector(frontend));
+
+  frontend.vue.use(VCalendar, {
+    componentPrefix: 'vc'
+  });
 
   // The component that permits visualizing a dataset
   frontend.vue.component("h-dataset-visualization", DatasetVisualization);

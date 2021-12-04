@@ -1,6 +1,27 @@
 <template>
   <v-form @submit="insert" v-model="formValid">
     <div ref="jsform" v-if="!loading">
+      <div
+        v-if="customTimestamp"
+        style="
+          width: 100%;
+          text-align: center;
+          background-color: #e8f4f8;
+          border-radius: 3px;
+          padding: 10px;
+          padding-bottom: 5px;
+        "
+      >
+        <vc-date-picker v-model="date" mode="dateTime">
+          <template v-slot="{ inputValue, inputEvents }">
+            <v-text-field
+              label="Timestamp"
+              :value="inputValue"
+              v-on="inputEvents"
+            />
+          </template>
+        </vc-date-picker>
+      </div>
       <v-jsf
         :schema="schema"
         :options="options"
@@ -40,6 +61,10 @@ import { md } from "../../../dist/markdown-it.mjs";
 export default {
   props: {
     object: Object,
+    customTimestamp: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     formValid: false,
@@ -53,6 +78,7 @@ export default {
         return md.render(r);
       },
     },
+    date: new Date(),
     modified: {},
   }),
   computed: {
@@ -85,6 +111,13 @@ export default {
       };
     },
   },
+  watch: {
+    customTimestamp(ts) {
+      if (ts) {
+        this.date = new Date();
+      }
+    },
+  },
   methods: {
     insert: async function (event) {
       event.preventDefault();
@@ -97,11 +130,15 @@ export default {
 
       this.loading = true;
 
-      console.vlog("Inserting datapoint:", this.modified.data);
+      let ts = moment().unix();
+      if (this.customTimestamp) {
+        ts = moment(this.date).unix();
+      }
+      console.vlog("Inserting datapoint:", ts, this.modified.data);
       let res = await this.$frontend.rest(
         "POST",
         `api/objects/${encodeURIComponent(this.object.id)}/timeseries`,
-        [{ t: moment().unix(), d: this.modified.data }]
+        [{ t: ts, d: this.modified.data }]
       );
 
       if (!res.response.ok) {
@@ -111,6 +148,7 @@ export default {
       }
       this.modified = { data: null };
       this.loading = false;
+      this.$emit("inserted");
     },
   },
 };

@@ -2,9 +2,28 @@
   <h-dataset-visualization :query="query">
     <v-col v-if="haswrite" cols="12" sm="12" md="6" lg="6" xl="4">
       <v-card>
-        <v-card-title>Insert</v-card-title>
+        <v-card-title
+          >Insert
+          <v-spacer />
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn icon @click="toggleCustomTimestamp" v-on="on">
+                <v-icon :color="customTimestamp ? 'primary' : undefined"
+                  >more_time</v-icon
+                >
+              </v-btn>
+            </template>
+            <span
+              >{{ customTimestamp ? "Remove " : "Use " }}Custom Timestamp</span
+            >
+          </v-tooltip>
+        </v-card-title>
         <v-card-text>
-          <insert :object="object"></insert>
+          <insert
+            :object="object"
+            :customTimestamp="customTimestamp"
+            @inserted="resetCustomTimestamp"
+          ></insert>
         </v-card-text>
       </v-card>
     </v-col>
@@ -28,6 +47,7 @@ export default {
   data: () => ({
     defaultQuery: { i1: -1000 },
     query: {},
+    customTimestamp: false,
   }),
   computed: {
     haswrite() {
@@ -36,6 +56,14 @@ export default {
         this.object.meta.schema.type !== undefined &&
         (access.includes("*") || access.includes("write"))
       );
+    },
+  },
+  methods: {
+    toggleCustomTimestamp() {
+      this.customTimestamp = !this.customTimestamp;
+    },
+    resetCustomTimestamp() {
+      this.customTimestamp = false;
     },
   },
   watch: {
