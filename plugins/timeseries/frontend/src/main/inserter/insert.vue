@@ -132,6 +132,11 @@ export default {
 
       let ts = moment().unix();
       if (this.customTimestamp) {
+        if (this.date == null) {
+          console.error("Invalid custom timestamp");
+          this.loading = false;
+          return;
+        }
         ts = moment(this.date).unix();
       }
       console.vlog("Inserting datapoint:", ts, this.modified.data);

@@ -4,48 +4,79 @@
       :prepend-icon="icon ? 'event' : ''"
       :items="selectItems"
       v-model="selectValue"
+      class="fit"
     ></v-select>
-    <v-dialog v-model="dialog" max-width="500">
+    <v-dialog v-if="dialog" v-model="dialog" max-width="600">
       <v-card>
-        <v-card-title class="headline grey lighten-2" primary-title
-          >Custom Query</v-card-title
+        <v-card-title
+          class="headline grey lighten-2"
+          primary-title
+          style="font-size: 1em !important"
         >
-
-        <v-card-text>
-          <v-row v-if="allowIndex">
-            <v-col cols="12" xs="12" sm="6" md="6">
-              <v-text-field label="Start Index" v-model="custom.i1" />
-            </v-col>
-            <v-col cols="12" xs="12" sm="6" md="6">
-              <v-text-field label="End Index" v-model="custom.i2" />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" xs="12" sm="6" md="6">
-              <v-text-field label="Start Time" v-model="custom.t1" />
-            </v-col>
-            <v-col cols="12" xs="12" sm="6" md="6">
-              <v-text-field label="End Time" v-model="custom.t2" />
-            </v-col>
-          </v-row>
-        </v-card-text>
+          <v-icon left v-if="!$vuetify.breakpoint.xs">event</v-icon>
+          {{ dialogTitle }}
+        </v-card-title>
+        <v-tabs v-model="dialogTab" grow>
+          <v-tab> Time Range </v-tab>
+          <v-tab> Relative </v-tab>
+        </v-tabs>
+        <v-tabs-items v-model="dialogTab">
+          <v-tab-item>
+            <vc-date-picker
+              mode="dateTime"
+              is-range
+              is-expanded
+              :toPage="calendarOptions.toPage"
+              :attributes="calendarOptions.attributes"
+              :columns="calendarOptions.columns"
+              v-model="timeRange"
+            />
+          </v-tab-item>
+          <v-tab-item>
+            <v-card-text>
+              <v-row v-if="allowIndex">
+                <v-col cols="12" xs="6" sm="8" md="8">
+                  <v-combobox
+                    v-model="dialogRelativeNumber"
+                    :items="dialogRelativeNumbers"
+                  />
+                </v-col>
+                <v-col cols="12" xs="6" sm="4" md="4">
+                  <v-select
+                    :items="dialogRelativeItems"
+                    v-model="dialogRelativeItem"
+                  />
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-tab-item>
+        </v-tabs-items>
 
         <v-divider></v-divider>
 
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="secondary" text @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" text @click="customquery">Set</v-btn>
+          <v-btn
+            color="primary"
+            text
+            @click="setDialogQuery"
+            :disabled="!canSet"
+            >Set</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
 </template>
 <script>
+import moment from "../../../dist/moment.mjs";
+
+let fmtString = "YYYY-MM-DD HH:mm";
 function parseTime(ts) {
   let tsf = parseFloat(ts);
   if (!isNaN(tsf)) {
-    return moment.unix(tsf).calendar();
+    return moment.unix(tsf).format(fmtString);
   }
   if (ts == "now") {
     return "now";
@@ -53,7 +84,7 @@ function parseTime(ts) {
   if (ts.startsWith("now-")) {
     return `${ts.substring("now-".length, ts.length)} ago`;
   }
-  return moment(ts).calendar();
+  return moment(ts).format(fmtString);
 }
 function queryLabel(q) {
   let append = "";
@@ -78,7 +109,7 @@ function queryLabel(q) {
       return `Last ${q.t1.substring("now-".length, q.t1.length)}${append}`;
     }
     if (q.i1 === undefined && q.t1 !== undefined) {
-      return `${parseTime(q.t1)} - now`;
+      return `${parseTime(q.t1)} ⇨ now`;
     }
   }
   if (
@@ -87,11 +118,11 @@ function queryLabel(q) {
     q.i1 === undefined &&
     q.i2 === undefined
   ) {
-    return `${parseTime(q.t1)} - ${parseTime(q.t2)}${append}`;
+    return `${parseTime(q.t1)} ⇨ ${parseTime(q.t2)}${append}`;
   }
   if (q.t1 === undefined && q.t2 === undefined) {
     if (q.i1 !== undefined && q.i2 !== undefined) {
-      return `#${q.i1} - #${q.i2}${append}`;
+      return `#${q.i1} ⇨ #${q.i2}${append}`;
     }
     if (q.i1 === undefined && q.i2 !== undefined) {
       return `First ${q.i2} datapoints${append}`;
@@ -131,8 +162,10 @@ export default {
     },
   },
   data: () => ({
+    dialogTab: 0,
     dialog: false,
-    custom: { i1: "", i2: "", t1: "", t2: "" },
+    timeRange: { start: null, end: null },
+    calendarOptions: null,
     // items using index queries
     indexItems: [{ i1: -1000 }, { i1: -100000 }],
     items: [
@@ -152,26 +185,45 @@ export default {
         t1: "now-3mo",
       },
     ],
+    dialogRelativeItems: [
+      { text: "Datapoints", value: "dp" },
+      { text: "Minutes", value: "m" },
+      { text: "Hours", value: "h" },
+      { text: "Days", value: "d" },
+      { text: "Weeks", value: "w" },
+      { text: "Months", value: "mo" },
+      { text: "Years", value: "y" },
+    ],
+    dialogRelativeNumbers: [
+      "1",
+      "2",
+      "3",
+      "4",
+      "6",
+      "7",
+      "10",
+      "12",
+      "15",
+      "30",
+      "45",
+      "60",
+      "90",
+      "120",
+      "1000",
+      "10,000",
+      "100,000",
+      "1,000,000",
+    ],
+    dialogRelativeNumber: "1000",
+    dialogRelativeItem: "dp",
   }),
   methods: {
-    customquery() {
-      let q = {};
-      if (this.custom.t1 != "") {
-        q.t1 = this.custom.t1;
+    setDialogQuery() {
+      let q = this.dialogQuery();
+      if (q !== null) {
+        this.dialog = false;
+        this.setInput(q);
       }
-      if (this.custom.t2 != "") {
-        q.t2 = this.custom.t2;
-      }
-      if (this.custom.i1 != "") {
-        q.i1 = parseInt(this.custom.i1);
-      }
-      if (this.custom.i2 != "") {
-        q.i2 = parseInt(this.custom.i2);
-      }
-
-      this.dialog = false;
-      this.custom = { i1: "", i2: "", t1: "", t2: "" };
-      this.setInput(q);
     },
     setInput(q) {
       // We want to send the full query with just the relevant elements exchanged
@@ -188,8 +240,62 @@ export default {
 
       this.$emit("input", { ...newq, ...q });
     },
+    showDialog() {
+      let t = new Date();
+      this.calendarOptions = {
+        toPage: {
+          month: t.getMonth() + 1,
+          year: t.getFullYear(),
+        },
+        columns: this.$vuetify.breakpoint.xs ? 1 : 2,
+        attributes: [
+          {
+            dot: true,
+            dates: t,
+          },
+        ],
+      };
+
+      this.dialog = true;
+    },
+    dialogQuery() {
+      if (
+        this.dialogTab == 0 &&
+        this.timeRange.start != null &&
+        this.timeRange.end != null
+      ) {
+        return {
+          t1: moment(this.timeRange.start).unix(),
+          t2: moment(this.timeRange.end).unix(),
+        };
+      }
+      if (this.dialogTab == 1) {
+        let counter = parseInt(this.dialogRelativeNumber.replace(/,/g, ""), 10);
+        if (!isNaN(counter) && counter > 0) {
+          if (this.dialogRelativeItem == "dp") {
+            return {
+              i1: -counter,
+            };
+          }
+          return {
+            t1: `now-${counter}${this.dialogRelativeItem}`,
+          };
+        }
+      }
+      return null;
+    },
   },
   computed: {
+    dialogTitle() {
+      let dq = this.dialogQuery();
+      if (dq != null) {
+        return queryLabel(dq);
+      }
+      return "Custom Range";
+    },
+    canSet() {
+      return this.dialogQuery() != null;
+    },
     selectItems() {
       let items = [
         ...this.items.map((q, i) => ({ text: queryLabel(q), value: i })),
@@ -224,7 +330,7 @@ export default {
       },
       set(v) {
         if (v == "custom") {
-          this.dialog = true;
+          this.showDialog();
           return;
         }
         if (v < this.items.length) {
@@ -247,7 +353,11 @@ export default {
           return;
         }
       }
-      this.items.push(o);
+      if (o.i1 !== undefined || o.i2 !== undefined || o.i !== undefined) {
+        this.indexItems.push(o);
+      } else {
+        this.items.push(o);
+      }
     },
   },
   created() {
@@ -261,3 +371,17 @@ export default {
   },
 };
 </script>
+<style>
+.v-select.fit {
+  font-size: 100%;
+}
+.v-select.fit .v-select__selections {
+  margin-right: -30px;
+}
+.v-select.fit .v-select__selections input {
+  width: 30px;
+}
+.v-select.fit .v-select__selection--comma {
+  margin-right: 0;
+}
+</style>

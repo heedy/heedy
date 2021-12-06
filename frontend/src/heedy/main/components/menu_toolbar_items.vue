@@ -115,7 +115,6 @@ export default {
       }
 
       // Decide which elements to show on the outside, and which elements to show on the inside
-      console.log({ toolbarItems, toolbarMenu, menuItems });
       return { toolbarItems, toolbarMenu, menuItems };
     },
   },

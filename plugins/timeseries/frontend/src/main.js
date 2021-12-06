@@ -8,6 +8,7 @@ import Update from "./main/update.vue";
 import Dataset from "./main/dataset/editor.vue";
 import InputPage from "./main/inserter/inputpage.vue";
 import SchemaEditor from "./main/components/schema_editor.vue";
+import RangePicker from "./main/components/range_picker.vue";
 import DatasetToolbarItem from "./main/components/dataset_toolbar_item.vue";
 
 import RatingInserter from "./main/inserter/custom/rating.vue";
@@ -26,6 +27,7 @@ function setup(frontend) {
   // The component that permits visualizing a dataset
   frontend.vue.component("h-dataset-visualization", DatasetVisualization);
   frontend.vue.component("h-schema-editor", SchemaEditor);
+  frontend.vue.component("h-timeseries-range-picker", RangePicker);
 
   // Add the default timeseries types
   frontend.timeseries.addType({

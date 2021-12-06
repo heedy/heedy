@@ -1,24 +1,22 @@
 <template>
   <h-object-header :object="object">
-    <range-picker
-      style="padding-top: 17px; padding-right: 10px; max-width: 280px"
+    <h-timeseries-range-picker
+      :style="rangeStyle"
       v-model="query"
       :icon="!$vuetify.breakpoint.xs"
-    ></range-picker>
+      :expanded="$vuetify.breakpoint.xs"
+    ></h-timeseries-range-picker>
   </h-object-header>
 </template>
 <script>
-import RangePicker from "./dataset/range_picker.vue";
 export default {
-  components: {
-    RangePicker,
-  },
   props: {
     object: Object,
   },
   data: () => ({
     dialog: false,
     live: true,
+    windowWidth: window.innerWidth,
   }),
   computed: {
     query: {
@@ -29,6 +27,32 @@ export default {
         this.$router.replace({ query: v });
       },
     },
+    rangeStyle() {
+      let o = {
+        paddingTop: this.$vuetify.breakpoint.xs ? "17px" : "15px",
+        paddingRight: "10px",
+        fontSize: "70%",
+      };
+      if (this.$vuetify.breakpoint.xs) {
+        // Get the screen size, we have to do this manually, idk why it isn't working normally...
+
+        o.width = this.windowWidth - 200 + "px";
+      } else {
+        o.maxWidth = "350px";
+      }
+      return o;
+    },
+  },
+  methods: {
+    onResize(event) {
+      this.windowWidth = window.innerWidth;
+    },
+  },
+  mounted() {
+    window.addEventListener("resize", this.onResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.onResize);
   },
 };
 </script>

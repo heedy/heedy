@@ -21,10 +21,12 @@
             grid-gap: 0px;
           "
         >
-          <range-picker
-            :value="value"
-            @input="(v) => $emit('input', v)"
-          ></range-picker>
+          <div style="overflow: hidden">
+            <h-timeseries-range-picker
+              :value="value"
+              @input="(v) => $emit('input', v)"
+            />
+          </div>
           <div style="margin: auto; padding-left: 10px">
             <v-menu offset-y>
               <template v-slot:activator="{ on: menu, attrs }">
@@ -149,7 +151,6 @@
   </v-container>
 </template>
 <script>
-import RangePicker from "./range_picker.vue";
 import Transform from "./transform.vue";
 import Duration from "./duration.vue";
 import Correlate from "./correlate.vue";
@@ -162,7 +163,6 @@ export default {
     },
   },
   components: {
-    RangePicker,
     Transform,
     Correlate,
     Duration,
