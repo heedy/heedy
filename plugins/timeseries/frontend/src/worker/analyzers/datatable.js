@@ -1,3 +1,21 @@
+import query, { dq } from "../../analysis.mjs";
+
+function canEdit(q) {
+  if (q.transform !== undefined && q.transform.length >0) {
+    return false;
+  }
+  if (q.post_transform !== undefined && q.post_transform.length >0) {
+    return false;
+  }
+  if (q.timeseries === undefined) {
+    return false;
+  }
+  if (q.dataset!==undefined) {
+    return false;
+  }
+  return true;
+}
+
 async function analyze(qd) {
   if (
     qd.keys.length > 6 ||
@@ -5,52 +23,44 @@ async function analyze(qd) {
   ) {
     return {}; // Don't display table for huge datasets.
   }
-  let cols = qd.dataset_array.map((data, i) => {
-    // If the dataset has only one datapoint that is an object, tell datatable to run a pre-transform,
-    // to display the keys as rows instead of columns
-    if (data.length == 1 && typeof data[0].d === "object" && Object.keys(data[0].d).length > 1) {
-      return {
-        label: qd.keys[i],
-        transform: "expand",
-        columns: [{ prop: 'd_k', name: "Key" }, { prop: 'd_v', name: "Value" }]
-      };
-    }
+  const datasets = qd.dataset_array.map((data, i) => {
 
-    // Otherwise, show one row per datapoint
-    let columns = [{ prop: "t", name: "Timestamp" }];
+    // Add the timestamp and duration columns if relevant
+    let columns = [{ prop: "t", name: "Timestamp", size: 200, type: "timestamp" }];
     if (data.some((dp) => dp.dt !== undefined)) {
       columns.push({
         prop: "dt",
         name: "Duration",
+        type: "duration",
       });
     }
 
-    if (typeof data[0].d !== "object") {
-      columns.push({ prop: "d", name: "Data" });
-    } else {
-      // It is an object, so find the properties, and make them table headers rather than just the raw data
-      let headers = {};
-      let isWeird = false;
-      data.forEach((dp) => {
-        if (typeof dp.d !== "object") {
-          isWeird = true;
-        } else {
-          Object.keys(dp.d).forEach((k) => {
-            headers[k] = true;
-          });
-        }
-      });
-
-      if (isWeird) {
-        // Just give the raw data, since wtf
-        columns.push({ prop: "d_", name: "Data" });
-      } else {
-        Object.keys(headers).forEach((k) => {
-          columns.push({ prop: "d_" + k, name: k });
+    const dtype = dq.dataType(data);
+    if (dtype === "object") {
+      const keys = dq.keys(data);
+      Object.keys(keys).forEach((key) => {
+        columns.push({
+          prop: "d." + key,
+          name: key.charAt(0).toUpperCase() + key.substring(1),
+          type: query(["d", key]).dataType(data),
         });
-      }
+      });
+
+    } else {
+      // If the data is not objects with columns per key, just display the raw data
+      columns.push({ prop: "d", name: "Data", type: dtype });
     }
-    return { columns, label: qd.keys[i] };
+
+    // Now determine whether the data can be edited. This is only
+    // possible if the data is from a single timeseries, and does not have any transforms active.
+
+    const editable = canEdit(qd.query[qd.keys[i]]);
+    let timeseries = null;
+    if (editable) {
+      timeseries = qd.query[qd.keys[i]].timeseries;
+    }
+
+    return { columns, label: qd.keys[i], editable: editable,timeseries: timeseries };
   });
 
   return {
@@ -58,7 +68,7 @@ async function analyze(qd) {
       weight: 20,
       title: "Data Table",
       visualization: "datatable",
-      config: cols,
+      config: datasets,
     },
   };
 }

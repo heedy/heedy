@@ -8,6 +8,16 @@ function cleanDT(ts) {
     return ts;
 }
 
+function flatten(ts, depth = 1) {
+    return ts.map((dp) => {
+        let res = { ...dp };
+        Object.keys(dp.d).forEach((k) => {
+            res["d." + k] = dp.d[k];
+        });
+        return res;
+    });
+}
+
 /**
  * Splits datapoints with durations into two elements - one at start of the duration,
  * and one at end of the duration
@@ -51,7 +61,7 @@ function getType(extractor, ts) {
         if (curtype != "string") {
             return curtype;
         }
-        // Check if the data is categorical if it is a string
+        // Check if the data is categorical (enum) if it is a string
         let vals = {};
         let uniques = 0;
         for (i = 0; i < ts.length; i++) {
@@ -64,7 +74,7 @@ function getType(extractor, ts) {
                 }
             }
         }
-        return "categorical";
+        return "enum";
     }
     return "";
 }
@@ -131,5 +141,6 @@ export {
     getMax,
     getSum,
     getVar,
-    getNonNull
+    getNonNull,
+    flatten
 };

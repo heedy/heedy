@@ -25,7 +25,7 @@ async function api(method, uri, data = null, params = null, content = "json") {
     headers: {}
   };
   if (params != null) {
-    if (data != null && method == "GET") {
+    if (data != null && (method == "GET")) {
       uri =
         uri +
         "?" +
@@ -42,7 +42,9 @@ async function api(method, uri, data = null, params = null, content = "json") {
       if (data != null && params == null) {
         uri = uri + "?" + urlify(data);
       }
-    } else if (content == "json") {
+    } else if (method=="DELETE" && params==null) {
+      uri = uri + "?" + urlify(data);
+    }else if (content == "json") {
       options.body = JSON.stringify(data);
       options.headers["Content-Type"] = "application/json";
     } else if (content == "form-data") {

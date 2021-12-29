@@ -5,7 +5,7 @@
     :value="value"
     @input="onInput"
     :hide-details="true"
-    style="padding-bottom: 20px"
+    style="padding-bottom: 20px; font-family: monospace"
   ></v-text-field>
 </template>
 <script>

@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-layout row>
       <v-flex sm6 xs12 :md7="!showTransform" :md4="showTransform">
-        <duration v-if="tsquery" v-model="dt"></duration>
+        <h-duration-editor label="Each" v-if="tsquery" v-model="dt" />
         <h-object-picker
           v-else
           v-model="timeseries"
@@ -152,7 +152,6 @@
 </template>
 <script>
 import Transform from "./transform.vue";
-import Duration from "./duration.vue";
 import Correlate from "./correlate.vue";
 export default {
   props: {
@@ -165,7 +164,6 @@ export default {
   components: {
     Transform,
     Correlate,
-    Duration,
   },
   data: () => ({
     dialog: false,

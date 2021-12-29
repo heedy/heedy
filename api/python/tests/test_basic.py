@@ -30,7 +30,7 @@ def test_basics():
     assert len(d) == 2
     assert d[1]["d"] == 3
     assert d[1]["dt"] == 9
-    o.remove()  # Clear the timeseries
+    o.remove(i1=0)  # Clear the timeseries
     assert len(o) == 0
 
     o.delete()

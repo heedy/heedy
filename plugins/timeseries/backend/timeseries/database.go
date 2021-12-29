@@ -116,6 +116,12 @@ func (d *Datapoint) String() string {
 	return string(b)
 }
 
+// Overlaps returns whether there is an overlap in the datapoints, meaning
+// that either they share a common timestamp, or there is an overlap in duration.
+func (d *Datapoint) Overlaps(d2 *Datapoint) bool {
+	return d.Timestamp == d2.Timestamp || d.Timestamp >= d2.Timestamp && d.Timestamp < d2.EndTime() || d2.Timestamp >= d.Timestamp && d2.Timestamp < d.EndTime()
+}
+
 // NewDatapoint returns a datapoint with the current timestamp
 func NewDatapoint(data interface{}) *Datapoint {
 	return &Datapoint{
@@ -492,6 +498,9 @@ func (ts *TimeseriesDB) Delete(q *Query) error {
 	if q.Timeseries == "" {
 		return errors.New("bad_query: no timeseries specified")
 	}
+	if q.I == nil && q.T == nil && q.T1 == nil && q.T2 == nil && q.I1 == nil && q.I2 == nil {
+		return errors.New("bad_query: no index or time range specified")
+	}
 
 	if q.Actions != nil && *q.Actions {
 		table = "timeseries_actions"
@@ -843,16 +852,20 @@ func (ts *TimeseriesDB) mergeBatch(tx database.TxWrapper, table, tsid string, cb
 			if dp.Duration == 0 {
 				if !dp.IsEqual(curBatch[len(curBatch)-1]) {
 					modified = true
+					curBatch[len(curBatch)-1] = dp
 					if method > 0 {
 						err = errConflict
 						return
 					}
-					curBatch[len(curBatch)-1] = dp
 				}
 				dp, err = dpi.Next()
 			} else {
 				modified = true
 				curBatch = curBatch[:len(curBatch)-1]
+				if method > 0 {
+					err = errConflict
+					return
+				}
 			}
 
 		}
@@ -901,7 +914,7 @@ func (ts *TimeseriesDB) mergeBatch(tx database.TxWrapper, table, tsid string, cb
 		for dp != nil && dp.Timestamp <= cdp.Timestamp && dp.EndTime() <= cdp.EndTime() {
 			if !dp.IsEqual(cdp) {
 				modified = true
-				if method > 0 {
+				if method >= 2 || method == 1 && dp.Overlaps(cdp) {
 					err = errConflict
 					return
 				}
@@ -955,7 +968,7 @@ type batchinfo struct {
 
 func (ts *TimeseriesDB) append(tx database.TxWrapper, table, tsid string, curBatch DatapointArray, data DatapointIterator, dp *Datapoint) error {
 	// This is an appending insert. Let's DO THIS, we are now free to go crazy - we can prepare the batches in another thread entirely,
-	// and just use this thread for pure database writes. This helps because in general json marshalling and gzipping takes some time
+	// and just use this thread for pure database writes. This helps because in general marshalling and compressing takes some time
 
 	var gerr error
 	closer := make(chan bool, 1)
@@ -1153,7 +1166,7 @@ func (ts *TimeseriesDB) Insert(tsid string, data DatapointIterator, q *InsertQue
 		if err != nil {
 			return err
 		}
-		if modified && method > 0 {
+		if modified && method >= 2 { // If we are appending, can't have data added before the overlap time
 			return errConflict
 		}
 		if dp == nil { // No need for more data, we're finished

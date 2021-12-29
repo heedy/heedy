@@ -3,10 +3,10 @@ import { dq, dtq } from "../../analysis.mjs";
 const day = 60 * 60 * 24;
 
 async function analyze(qd) {
-    if (qd.dataset_array.length == 0 || !qd.dataset_array.every(ds => dq.dataType(ds) == "categorical")) {
+    if (qd.dataset_array.length == 0 || !qd.dataset_array.every(ds => dq.dataType(ds) == "enum")) {
         return {};
     }
-    // All the datasets are categorical, so let's display them!
+    // All the datasets are enum, so let's display them!
     if (qd.dataset_array.every(ds => dtq.sum(ds) > 0)) {
         // They all have durations, so can be displayed on the swimlane timeline chart
         let scale = "day";

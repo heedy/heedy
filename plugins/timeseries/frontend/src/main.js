@@ -6,12 +6,16 @@ import vuexModule from "./main/vuex.js";
 import TimeseriesInjector from "./main/injector";
 import Update from "./main/update.vue";
 import Dataset from "./main/dataset/editor.vue";
-import InputPage from "./main/inserter/inputpage.vue";
+import InputPage from "./main/inputpage.vue";
 import SchemaEditor from "./main/components/schema_editor.vue";
 import RangePicker from "./main/components/range_picker.vue";
 import DatasetToolbarItem from "./main/components/dataset_toolbar_item.vue";
+import DatapointInserter from "./main/components/datapoint_inserter.vue";
+import TimeseriesDataTable from "./main/components/timeseries_datatable.vue";
+import DurationEditor from "./main/components/duration.vue";
+import DataTableVisualization from "./visualizations/datatable.vue";
 
-import RatingInserter from "./main/inserter/custom/rating.vue";
+import RatingInserter from "./main/components/schema/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
 
 import VCalendar from "../dist/v-calendar.mjs";
@@ -27,7 +31,10 @@ function setup(frontend) {
   // The component that permits visualizing a dataset
   frontend.vue.component("h-dataset-visualization", DatasetVisualization);
   frontend.vue.component("h-schema-editor", SchemaEditor);
+  frontend.vue.component("h-timeseries-datapoint-inserter", DatapointInserter);
   frontend.vue.component("h-timeseries-range-picker", RangePicker);
+  frontend.vue.component("h-timeseries-datatable", TimeseriesDataTable);
+  frontend.vue.component("h-duration-editor", DurationEditor);
 
   // Add the default timeseries types
   frontend.timeseries.addType({
@@ -57,7 +64,7 @@ function setup(frontend) {
     icon: "star",
     title: "Star Rating"
   });
-  frontend.timeseries.addCustomInserter("rating", RatingInserter);
+  frontend.addSchemaFormElement("rating", RatingInserter);
   frontend.timeseries.addType({
     key: "enum",
     schema: {
@@ -136,6 +143,8 @@ function setup(frontend) {
   frontend.timeseries.addVisualization("timeline", () =>
     import("./visualizations/timeline.mjs")
   );
+  // The data table doesn't use any external libraries, so we can just import it
+  frontend.timeseries.addVisualization("datatable", DataTableVisualization);
   /*
   
   frontend.timeseries.addVisualization("horizon", () =>

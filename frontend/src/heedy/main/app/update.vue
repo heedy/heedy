@@ -69,9 +69,7 @@
       </v-container>
 
       <v-card-actions>
-        <v-btn v-if="!enabled" dark color="red" @click="del" :loading="loading"
-          >Delete</v-btn
-        >
+        <v-btn dark color="red" @click="del" :loading="loading">Delete</v-btn>
         <v-spacer></v-spacer>
 
         <v-btn color="primary" type="submit" :loading="loading">Update</v-btn>

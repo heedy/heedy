@@ -1,5 +1,5 @@
 
-import { getType, getKeys, getMin, getMax, getSum, getVar, getNonNull } from "./analysis/util.js";
+import { getType, getKeys, getMin, getMax, getSum, getVar, getNonNull, flatten } from "./analysis/util.js";
 
 
 let qprops = {
@@ -144,7 +144,7 @@ function transform(arr, script) {
 }
 
 export {
-  dq, tq, dtq, getKeys, getType, setQueryProp, transform
+  dq, tq, dtq, getKeys, getType, setQueryProp, transform, flatten
 }
 
 export default query;

@@ -167,7 +167,7 @@ export default {
     timeRange: { start: null, end: null },
     calendarOptions: null,
     // items using index queries
-    indexItems: [{ i1: -1000 }, { i1: -100000 }],
+    indexItems: [{ i1: -1000 }],
     items: [
       {
         i1: 0,

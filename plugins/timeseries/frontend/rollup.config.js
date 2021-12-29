@@ -53,7 +53,8 @@ function checkExternal(modid, parent, isResolved) {
   );
 }
 
-function out(name, loc = "", format = "es") {
+function out(name, loc = "", format = "es", inlineDynamicImports = false) {
+  console.log(`${name}${loc}${format} ${inlineDynamicImports ? "inline" : ""}`);
   let filename = name.split(".");
   return {
     input: "src/" + name,
@@ -65,6 +66,7 @@ function out(name, loc = "", format = "es") {
         filename[0] +
         (format == "es" ? ".mjs" : ".js"),
       format: format,
+      inlineDynamicImports: inlineDynamicImports,
     },
     plugins: plugins,
     external: checkExternal,
@@ -88,5 +90,5 @@ export default [
       .sync("dist/*.js", {
         cwd: "./src",
       })
-      .map((a) => out(a, "../"))
+      .map((a) => out(a, "../", undefined, true))
   );

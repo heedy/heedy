@@ -17,18 +17,16 @@
       <h-app-button :appid="object.app" :size="20" />
     </v-card-title>
     <v-card-text>
-      <inserter :object="object"></inserter>
+      <h-timeseries-datapoint-inserter
+        :object="object"
+      ></h-timeseries-datapoint-inserter>
     </v-card-text>
   </v-card>
 </template>
 <script>
-import Inserter from "./insert.vue";
 export default {
   props: {
     object: Object,
-  },
-  components: {
-    Inserter,
   },
   computed: {
     defaultIcon() {

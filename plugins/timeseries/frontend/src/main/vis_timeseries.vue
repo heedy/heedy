@@ -19,28 +19,23 @@
           </v-tooltip>
         </v-card-title>
         <v-card-text>
-          <insert
+          <h-timeseries-datapoint-inserter
             :object="object"
             :customTimestamp="customTimestamp"
             @inserted="resetCustomTimestamp"
-          ></insert>
+          ></h-timeseries-datapoint-inserter>
         </v-card-text>
       </v-card>
     </v-col>
   </h-dataset-visualization>
 </template>
 <script>
-import Insert from "./inserter/insert.vue";
-
 function getQ(name, q) {
   let res = {};
   res[name] = q;
   return res;
 }
 export default {
-  components: {
-    Insert,
-  },
   props: {
     object: Object,
   },

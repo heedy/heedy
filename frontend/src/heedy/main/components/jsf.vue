@@ -5,7 +5,21 @@
     :options="opts"
     :value="value"
     @input="(e) => $emit('input', e)"
-  />
+  >
+    <template
+      v-for="ins in schemaFormElements"
+      :slot="`custom-` + ins.k"
+      slot-scope="{ value, label, on }"
+    >
+      <component
+        :key="ins.k"
+        :is="ins.v"
+        :value="value"
+        v-on="on"
+        :label="label"
+      />
+    </template>
+  </v-jsf>
 </template>
 <script>
 import { md } from "../../../dist/markdown-it.mjs";
@@ -25,6 +39,10 @@ export default {
     },
   },
   computed: {
+    schemaFormElements() {
+      const el = this.$store.state.heedy.schema_form_elements;
+      return Object.keys(el).map((k) => ({ k: k, v: el[k] }));
+    },
     opts() {
       return {
         markdown: (r) => {

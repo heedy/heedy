@@ -1,4 +1,5 @@
 import Vue from "vue";
+import VueCompositionAPI, { ref, reactive } from '@vue/composition-api'
 import VueRouter from "vue-router";
 import Vuex, { mapState } from "vuex";
 import createLogger from "vuex/dist/logger";
@@ -20,11 +21,13 @@ import "regenerator-runtime/runtime"; // Needed to vjsf file upload support http
 // Disable the vue console messages if built with production
 Vue.config.productionTip = false;
 
+Vue.use(VueCompositionAPI);
+
 Vue.component("VJsf", VJsf);
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(Vuetify);
 
-export { VJsf, VueRouter, Vuex, Vuetify, mapState, createLogger };
+export { ref,reactive, VJsf, VueRouter, Vuex, Vuetify, mapState, createLogger };
 export default Vue;

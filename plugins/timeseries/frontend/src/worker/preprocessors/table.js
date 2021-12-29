@@ -3,7 +3,7 @@ import moment from "../../../dist/moment.mjs";
 import query from "../../analysis.mjs";
 
 let transforms = {
-  length(ds, q) {
+  count(ds, q) {
     if (q.q.length > 1) {
       // We need to actually count the non-null values
       return query(q.q).nonNull(ds[q.key]);

@@ -289,6 +289,48 @@ func TestDatabase(t *testing.T) {
 
 }
 
+func TestInsert(t *testing.T) {
+	adb, oid1, _, cleanup := newDBWithObjects(t)
+	defer cleanup()
+
+	s := TimeseriesDB{
+		DB:                    adb,
+		BatchSize:             4,
+		MaxBatchSize:          7,
+		BatchCompressionLevel: 2,
+	}
+
+	method_insert := "insert"
+
+	test_data := DatapointArray{
+		&Datapoint{3.0, 0, 1, ""},
+		&Datapoint{4.0, 0, 2, ""},
+		&Datapoint{5.0, 0, 3, ""},
+		&Datapoint{6.0, 0, 4, ""},
+		&Datapoint{7.0, 1, 5, ""},
+		&Datapoint{8.0, 0, 6, ""},
+	}
+
+	bad_data := DatapointArray{&Datapoint{6.3, 1, 1, ""}}
+
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[1:2]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[0:1]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[3:4]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[2:3]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[5:6]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[4:5]), &InsertQuery{Method: &method_insert}))
+	require.Error(t, s.Insert(oid1, NewDatapointArrayIterator(bad_data), &InsertQuery{Method: &method_insert}))
+
+	cmpQuery(t, s, &Query{Timeseries: oid1}, test_data)
+	zero := int64(0)
+	require.NoError(t, s.Delete(&Query{Timeseries: oid1, I1: &zero}))
+
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[5:6]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[0:2]), &InsertQuery{Method: &method_insert}))
+	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(test_data[2:5]), &InsertQuery{Method: &method_insert}))
+	cmpQuery(t, s, &Query{Timeseries: oid1}, test_data)
+}
+
 func TestEdgeCases(t *testing.T) {
 	adb, oid1, _, cleanup := newDBWithObjects(t)
 	defer cleanup()
@@ -329,8 +371,10 @@ func TestEdgeCases(t *testing.T) {
 	})
 
 	// Clear the timeseries
+	zero := int64(0)
 	require.NoError(t, s.Delete(&Query{
 		Timeseries: oid1,
+		I1:         &zero,
 	}))
 	l, err := s.Length(oid1, false)
 	require.NoError(t, err)
@@ -390,6 +434,7 @@ func TestEdgeCases(t *testing.T) {
 	// Clear the timeseries
 	require.NoError(t, s.Delete(&Query{
 		Timeseries: oid1,
+		I1:         &zero,
 	}))
 	l, err = s.Length(oid1, false)
 	require.NoError(t, err)
@@ -442,6 +487,7 @@ func TestEdgeCases(t *testing.T) {
 	// Clear the timeseries
 	require.NoError(t, s.Delete(&Query{
 		Timeseries: oid1,
+		I1:         &zero,
 	}))
 	l, err = s.Length(oid1, false)
 	require.NoError(t, err)
@@ -469,6 +515,7 @@ func TestEdgeCases(t *testing.T) {
 	// Clear the timeseries
 	require.NoError(t, s.Delete(&Query{
 		Timeseries: oid1,
+		I1:         &zero,
 	}))
 	l, err = s.Length(oid1, false)
 	require.NoError(t, err)
@@ -575,9 +622,17 @@ func TestDelete(t *testing.T) {
 	require.NoError(t, s.Insert(oid1, NewDatapointArrayIterator(dpa8), nil))
 	cmpQuery(t, s, &Query{Timeseries: oid1}, dpa8)
 
-	require.NoError(t, s.Delete(&Query{
+	// An empty delete should give an error
+	require.Error(t, s.Delete(&Query{
 		Timeseries: oid1,
 	}))
+	// Adding start index as first datapoint should succeed
+	i1 = 0
+	require.NoError(t, s.Delete(&Query{
+		Timeseries: oid1,
+		I1:         &i1,
+	}))
+
 	l, err = s.Length(oid1, false)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), l)

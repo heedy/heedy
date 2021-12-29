@@ -5,8 +5,8 @@ function getTypeDisplay(t, key, kv) {
   let data = [
     { name: "type", value: { key: key, q: kv, transform: "type" } },
     {
-      name: "length",
-      value: { key: key, q: kv, transform: "length" },
+      name: "count",
+      value: { key: key, q: kv, transform: "count" },
     },
   ];
   switch (t) {

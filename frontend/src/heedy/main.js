@@ -71,6 +71,8 @@ function setup(frontend) {
   // Adds the components that are used throughout the UI
   registerCoreComponents(frontend.vue);
   frontend.vue.component("h-object-list", ObjectList);
+  // Add form elements for the json schema component
+  frontend.inject("addSchemaFormElement",(k,c) => frontend.store.commit("addSchemaFormElement",{key:k,component:c}));
 
   // Inject the user/app/object handlers into the frontend
   frontend.inject("users", new UserInjector(frontend));
@@ -79,6 +81,7 @@ function setup(frontend) {
   frontend.inject("config", new ConfigInjector(frontend));
   frontend.inject("settings", new SettingsInjector(frontend));
 
+  
   frontend.users.addComponent({
     key: "header",
     weight: 0,

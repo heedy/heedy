@@ -64,8 +64,14 @@ export default {
     },
 
     user_settings_schema: null,
+
+    // Custom elements to show in json schema form
+    schema_form_elements: {},
   },
   mutations: {
+    addSchemaFormElement(state,{key,component}) {
+      Vue.set(state.schema_form_elements,key,component);
+    },
     setConfigRoutes(state, v) {
       state.config_routes = v;
     },

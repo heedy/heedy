@@ -16,7 +16,7 @@ It provides a powerful plugin system, allowing easy integration with various ser
    
 
 .. note::
-   The documentation is currently under construction, and will be iteratively filled throughout the 0.4.x release cycle.
+   The documentation is currently under construction, and will be iteratively filled throughout the 0.x release cycle.
    Until then, expect many stub pages, as well as missing/incorrect content.
 
 This documentation provides a description of heedy's features, as well as examples of their usage. Much of it is focused on programmers

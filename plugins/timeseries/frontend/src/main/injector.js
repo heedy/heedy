@@ -37,13 +37,6 @@ class TimeseriesInjector {
     });
   }
 
-  addCustomInserter(name, component) {
-    this.app.store.commit("addTSCustomInserter", {
-      key: name,
-      component: component,
-    });
-  }
-
   addType(value) {
     this.app.store.commit("addTSType", value);
   }

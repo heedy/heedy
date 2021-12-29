@@ -4,7 +4,6 @@
       :style="rangeStyle"
       v-model="query"
       :icon="!$vuetify.breakpoint.xs"
-      :expanded="$vuetify.breakpoint.xs"
     ></h-timeseries-range-picker>
   </h-object-header>
 </template>

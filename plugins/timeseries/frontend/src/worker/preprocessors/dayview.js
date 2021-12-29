@@ -23,7 +23,7 @@ function process(o, ts) {
   }
   let dt = ts[ts.length - 1].t - ts[0].t;
   let dataType = getType(ts);
-  if (dataType == "categorical") {
+  if (dataType == "enum") {
     if (dt <= 1.5 * day) {
       return {
         dayview: {

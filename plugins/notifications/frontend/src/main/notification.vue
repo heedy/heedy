@@ -150,7 +150,6 @@ There are several different cases for views
   - Otherwise have title, then buttons under it
 - If description, show actions to the side, but show two columns of buttons if there are many
 */
-import { md } from "../../dist/markdown-it.mjs";
 
 function convertURL(href) {
   if (href.startsWith("/")) {

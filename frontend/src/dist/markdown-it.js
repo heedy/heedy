@@ -5,6 +5,7 @@ import mila from "markdown-it-link-attributes";
 import MdiHljs from "markdown-it-highlightjs";
 import hljs from "highlight.js/lib/core"
 import js_lang from "highlight.js/lib/languages/javascript";
+import json_lang from "highlight.js/lib/languages/json";
 import py_lang from "highlight.js/lib/languages/python";
 import bash_lang from "highlight.js/lib/languages/bash";
 import 'highlight.js/styles/github.css';
@@ -18,6 +19,7 @@ import 'highlight.js/styles/github.css';
 hljs.registerLanguage(
   'javascript', js_lang
 );
+hljs.registerLanguage("json", json_lang);
 hljs.registerLanguage(
   'python', py_lang
 );
