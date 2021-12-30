@@ -71,7 +71,7 @@
       <v-card-actions>
         <v-btn dark color="red" @click="del" :loading="loading">Delete</v-btn>
         <v-spacer></v-spacer>
-
+        <v-btn text @click="$router.go(-1)">Cancel</v-btn>
         <v-btn color="primary" type="submit" :loading="loading">Update</v-btn>
       </v-card-actions>
     </v-form>

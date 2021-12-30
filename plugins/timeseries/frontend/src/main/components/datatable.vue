@@ -1,14 +1,43 @@
 <template>
-  <div style="overflow-x: scroll; whitespace: nowrap; border: 1px solid #ccc">
-    <div :style="{ width: '100%', minWidth: `${minWidth}px` }">
+  <div style="overflow-x: auto; whitespace: nowrap; border: 1px solid #ccc">
+    <div
+      :style="{
+        width: '100%',
+        minWidth: `${minWidth}px`,
+      }"
+    >
       <div
         :style="{
           borderBottom: 'solid 1px #ccc',
           display: 'grid',
           gridTemplateColumns: gridTemplateColumns,
           justifyContent: 'space-around',
+          position: 'relative',
         }"
       >
+        <v-tooltip bottom v-if="canEdit">
+          <template v-slot:activator="{ on, attrs }">
+            <div
+              v-bind="attrs"
+              v-on="on"
+              style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 30px;
+                width: 30px;
+                text-align: center;
+                padding-top: 2px;
+              "
+            >
+              <v-icon x-small>edit</v-icon>
+            </div>
+          </template>
+          <span
+            >This timeseries is writable. Double-click on a row to edit
+            data.</span
+          >
+        </v-tooltip>
         <div
           style="
             height: 30px;
@@ -26,8 +55,9 @@
       <v-virtual-scroll
         :height="tblheight"
         item-height="30"
+        bench="1"
         :items="data"
-        style="overflow-x: visible"
+        style="overflow-x: hidden"
       >
         <template v-slot:default="{ index, item }">
           <div
@@ -39,6 +69,7 @@
               background: index % 2 === 0 ? '#f6f6f6' : 'white',
             }"
             @dblclick.prevent="() => editData(index)"
+            class="column-darken"
           >
             <div
               :style="{
@@ -70,45 +101,9 @@
   </div>
 </template>
 <script>
-import JSONCell from "./timeseries_datatable/json.vue";
-import TimestampCell from "./timeseries_datatable/timestamp.vue";
-import NumberCell from "./timeseries_datatable/number.vue";
-import StringCell from "./timeseries_datatable/string.vue";
-import BooleanCell from "./timeseries_datatable/boolean.vue";
-import DurationCell from "./timeseries_datatable/duration.vue";
+import getCol from "./datatable/columns.js";
 
-import EditDialog from "./timeseries_datatable/edit_dialog.vue";
-
-const columnTypes = {
-  timestamp: {
-    component: TimestampCell,
-    width: 180,
-  },
-  duration: {
-    component: DurationCell,
-    width: 80,
-  },
-  number: {
-    component: NumberCell,
-    width: 100,
-  },
-  string: {
-    component: StringCell,
-    width: 150,
-  },
-  boolean: {
-    component: BooleanCell,
-    width: 8 * 5,
-  },
-  enum: {
-    component: StringCell,
-    width: 100,
-  },
-  json: {
-    component: JSONCell,
-    width: 250,
-  },
-};
+import EditDialog from "./datatable/edit_dialog.vue";
 
 export default {
   components: {
@@ -149,7 +144,7 @@ export default {
       return res;
     },
     getColumn(col) {
-      return columnTypes[col.type] || columnTypes.json;
+      return getCol(col.type);
     },
     editData(idx) {
       if (!this.canEdit) {
@@ -223,3 +218,8 @@ export default {
   },
 };
 </script>
+<style scoped>
+.column-darken:hover {
+  filter: brightness(93%);
+}
+</style>

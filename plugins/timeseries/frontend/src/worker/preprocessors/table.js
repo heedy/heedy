@@ -1,5 +1,3 @@
-import moment from "../../../dist/moment.mjs";
-
 import query from "../../analysis.mjs";
 
 let transforms = {
@@ -17,7 +15,7 @@ let transforms = {
     return query(q.q).sum(ds[q.key]);
   },
   duration(ds, q) {
-    return moment.duration(query(q.q).sum(ds[q.key]), "seconds").humanize();
+    return query(q.q).sum(ds[q.key]);
   },
   mean(ds, q) {
     return query(q.q).mean(ds[q.key]);
@@ -32,15 +30,26 @@ let transforms = {
     return query(q.q).stddev(ds[q.key]);
   },
 };
+
+const types = {
+  count: "number",
+  sum: "number",
+  mean: "number",
+  min: "number",
+  max: "number",
+  stdev: "number",
+  duration: "duration",
+}
+
 function getData(qd, qq) {
   if (typeof qq !== "object") {
-    return qq; // Objects are considered queries
+    return [qq, '']; // Objects are considered queries
   }
 
   if (transforms[qq.transform] !== undefined) {
-    return transforms[qq.transform](qd.dataset, qq);
+    return [transforms[qq.transform](qd.dataset, qq), types[qq.transform]];
   }
-  return "?";
+  return ["", ""];
 }
 
 function preprocessor(qd, visualization) {
@@ -52,7 +61,9 @@ function preprocessor(qd, visualization) {
       data: c.data.map((d) =>
         Object.keys(d).reduce((o, k) => {
           let newo = { ...o };
-          newo[k] = getData(qd, d[k]);
+          const [v, t] = getData(qd, d[k]);
+          newo[k] = v;
+          newo[k + ".type"] = t;
           return newo;
         }, {})
       ),

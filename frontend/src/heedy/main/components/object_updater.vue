@@ -40,6 +40,7 @@
           >Advanced
         </v-btn>
         <v-spacer></v-spacer>
+        <v-btn text @click="$router.go(-1)">Cancel</v-btn>
         <v-btn type="submit" dark color="primary" :loading="loading"
           >Save</v-btn
         >

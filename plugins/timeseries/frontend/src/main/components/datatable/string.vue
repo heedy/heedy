@@ -3,7 +3,6 @@
     <template v-slot:activator="{ on, attrs }">
       <div
         style="
-          width: 100%;
           overflow-x: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;

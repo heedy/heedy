@@ -45,6 +45,7 @@
           >Advanced
         </v-btn>
         <v-spacer></v-spacer>
+        <v-btn text @click="$router.go(-1)">Cancel</v-btn>
         <v-btn type="submit" color="primary" :loading="loading">Create</v-btn>
       </v-card-actions>
     </v-form>

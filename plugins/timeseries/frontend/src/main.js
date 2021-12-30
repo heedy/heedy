@@ -11,7 +11,8 @@ import SchemaEditor from "./main/components/schema_editor.vue";
 import RangePicker from "./main/components/range_picker.vue";
 import DatasetToolbarItem from "./main/components/dataset_toolbar_item.vue";
 import DatapointInserter from "./main/components/datapoint_inserter.vue";
-import TimeseriesDataTable from "./main/components/timeseries_datatable.vue";
+import DataTable from "./main/components/datatable.vue";
+import BasicTable from "./main/components/table.vue";
 import DurationEditor from "./main/components/duration.vue";
 import DataTableVisualization from "./visualizations/datatable.vue";
 
@@ -33,7 +34,8 @@ function setup(frontend) {
   frontend.vue.component("h-schema-editor", SchemaEditor);
   frontend.vue.component("h-timeseries-datapoint-inserter", DatapointInserter);
   frontend.vue.component("h-timeseries-range-picker", RangePicker);
-  frontend.vue.component("h-timeseries-datatable", TimeseriesDataTable);
+  frontend.vue.component("h-timeseries-datatable", DataTable);
+  frontend.vue.component("h-table", BasicTable);
   frontend.vue.component("h-duration-editor", DurationEditor);
 
   // Add the default timeseries types
