@@ -30,10 +30,10 @@ type PythonSettings struct {
 	IsEnabled bool              `mapstructure:"-"`
 	DB        *database.AdminDB `mapstructure:"-"`
 
-	Path           string   `mapstructure:"path"`
-	PipArgs        []string `mapstructure:"pip_args"`
-	VenvArgs       []string `mapstructure:"venv_args"`
-	PerPluginVenvs bool     `mapstructure:"per_plugin_venvs"`
+	Path          string   `mapstructure:"path"`
+	PipArgs       []string `mapstructure:"pip_args"`
+	VenvArgs      []string `mapstructure:"venv_args"`
+	PerPluginVenv bool     `mapstructure:"per_plugin_venv"`
 }
 
 var (
@@ -93,9 +93,9 @@ func StartPythonProcess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pypath := settings.Path
-	if settings.PerPluginVenvs {
+	if settings.PerPluginVenv {
 		// The python path is now the venv's python
-		pypath, err = EnsureVenv(pypath, path.Join(i.HeedyDir, "venvs", i.Plugin))
+		pypath, err = EnsureVenv(pypath, path.Join(i.HeedyDir, "venv", i.Plugin))
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("Failed to create venv: %w", err))
 			return

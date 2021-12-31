@@ -92,7 +92,18 @@ func EnsureVenv(pypath, folder string) (string, error) {
 		newpypath = path.Join(folder, "Scripts", "python.exe")
 	}
 	if _, err := os.Stat(newpypath); !os.IsNotExist(err) {
-		return newpypath, err
+
+		// If the venv exists, check if it is compatible
+		if err = TestPython(newpypath); err == nil {
+			return newpypath, err
+		}
+
+		l.Warnf("Found existing venv at %s, but it failed to initialize. Removing it and creating a new one.", newpypath)
+
+		// If it is not compatible, delete it, and attempt to recreate it
+		if err = os.RemoveAll(folder); err != nil {
+			return "", err
+		}
 	}
 
 	// No venv exists. Let's create it.

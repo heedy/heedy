@@ -165,12 +165,6 @@ export default {
       if (!this.formValid) {
         return;
       }
-      console.warn(
-        "CHANGED",
-        this.timestamp_changes,
-        this.duration_changes,
-        this.data_changes
-      );
       if (
         this.timestamp_changes == 0 &&
         this.data_changes == 0 &&
@@ -202,7 +196,7 @@ export default {
         newdp.d = this.newdata.data;
       }
 
-      console.log("Updating Datapoint", this.datapoint, newdp);
+      console.vlog("Updating Datapoint", this.datapoint, newdp);
 
       if (this.timestamp_changes == 0 && this.duration_changes == 0) {
         // Since only the data changed, we can just update the datapoint
