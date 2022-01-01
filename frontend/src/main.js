@@ -12,7 +12,8 @@ async function setup(appinfo) {
   if (!_DEBUG && !appinfo.verbose) {
     Vue.config.devtools = false;
 
-    let c = (a, b) => { };
+    let c = (a, b, d, e) => { };
+    console.vdebug = c;
     console.vlog = c;
     console.vwarn = c;
     console.verror = c;
@@ -21,6 +22,7 @@ async function setup(appinfo) {
   } else {
     Vue.config.devtools = true;
 
+    console.vdebug = console.debug;
     console.vlog = console.log;
     console.vwarn = console.warn;
     console.verror = console.error;

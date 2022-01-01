@@ -22,13 +22,15 @@ class Wrkr {
         // The v-functions are logging functions that are conditional on whether
         // the server is in verbose mode
         if (!_DEBUG && !data.verbose) {
-          let c = (a, b) => { };
+          let c = (a, b, d, e, f) => { };
+          console.vdebug = c;
           console.vlog = c;
           console.vwarn = c;
           console.verror = c;
           console.vinfo = c;
           console.vtable = c;
         } else {
+          console.vdebug = console.debug;
           console.vlog = console.log;
           console.vwarn = console.warn;
           console.verror = console.error;

@@ -63,6 +63,10 @@ export default {
       type: Function,
       default: (o) => "",
     },
+    postCreate: {
+      type: Function,
+      default: (o) => {},
+    },
   },
   data: () => ({ alert: "", advanced: false, loading: false }),
   computed: {
@@ -137,6 +141,17 @@ export default {
         result.data.icon = obj.icon;
       } else {
         result.data.icon = "";
+      }
+
+      // External plugins can now do their own processing after the object is created
+      try {
+        this.postCreate(result.data);
+      } catch (e) {
+        // The postCreate function failed, so we need to delete the object.
+        await this.$frontend.rest("DELETE", `api/objects/${result.data.id}`);
+        this.alert = e.message;
+        this.loading = false;
+        return;
       }
 
       this.$store.commit("setObject", result.data);

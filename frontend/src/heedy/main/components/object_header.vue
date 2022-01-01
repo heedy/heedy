@@ -33,9 +33,6 @@ export default {
         )
       );
     },
-    access() {
-      return this.object.access.split(" ");
-    },
     toolbarSize() {
       if (this.$vuetify.breakpoint.xs) {
         return 1;

@@ -4,7 +4,7 @@
     <template v-for="(item, idx) in items.toolbarItems">
       <v-tooltip bottom :key="idx" v-if="!item.toolbar_component">
         <template #activator="{ on }">
-          <v-btn icon v-on="on" :to="item.to">
+          <v-btn icon v-on="on" :to="item.to" @click="item.click">
             <v-icon>{{ item.icon }}</v-icon>
           </v-btn>
         </template>
@@ -36,6 +36,7 @@
           <v-list-item
             :key="`toolbar-${idx}`"
             :to="item.to"
+            @click="item.click"
             v-if="!item.toolbar_component"
           >
             <v-list-item-icon>
@@ -57,6 +58,7 @@
             v-if="!item.toolbar_component"
             :key="`menu-${idx}`"
             :to="item.to"
+            @click="item.click"
           >
             <v-list-item-icon>
               <v-icon>{{ item.icon }}</v-icon>
@@ -87,7 +89,9 @@ export default {
   },
   computed: {
     items() {
-      const sorted = [...this.toolbar].sort((a, b) => {
+      const sorted = [
+        ...this.toolbar.map((e) => ({ click: () => null, ...e })),
+      ].sort((a, b) => {
         let aWeight = a.weight || 0;
         let bWeight = b.weight || 0;
         return aWeight - bWeight;

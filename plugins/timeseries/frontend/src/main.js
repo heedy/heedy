@@ -15,6 +15,7 @@ import DataTable from "./main/components/datatable.vue";
 import BasicTable from "./main/components/table.vue";
 import DurationEditor from "./main/components/duration.vue";
 import DataTableVisualization from "./visualizations/datatable.vue";
+import BasicTableVisualization from "./visualizations/table.vue";
 
 import RatingInserter from "./main/components/schema/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
@@ -135,18 +136,15 @@ function setup(frontend) {
     type: "timeseries",
     key: "body",
   });
-
-  frontend.timeseries.addVisualization("table", () =>
-    import("./visualizations/table.mjs")
-  );
   frontend.timeseries.addVisualization("chartjs", () =>
     import("./visualizations/chartjs.mjs")
   );
   frontend.timeseries.addVisualization("timeline", () =>
     import("./visualizations/timeline.mjs")
   );
-  // The data table doesn't use any external libraries, so we can just import it
+  // The data table/basic table doesn't use any external libraries, so we can just import it
   frontend.timeseries.addVisualization("datatable", DataTableVisualization);
+  frontend.timeseries.addVisualization("table", BasicTableVisualization);
   /*
   
   frontend.timeseries.addVisualization("horizon", () =>

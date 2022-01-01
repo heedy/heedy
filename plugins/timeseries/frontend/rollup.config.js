@@ -11,6 +11,10 @@ import glob from "glob";
 
 const plugin_name = "timeseries";
 
+const externals = {
+  vue: "/static/dist/vue.mjs",
+}
+
 const production = !(process.env.NODE_ENV === "debug");
 const plugins = [
   VuePlugin({
@@ -47,6 +51,9 @@ if (production) {
 }
 
 function checkExternal(modid, parent, isResolved) {
+  if (externals[modid]) {
+    return true;
+  }
   return (
     (!isResolved && modid.endsWith(".mjs") && modid.startsWith(".")) ||
     modid.startsWith("http")
@@ -67,9 +74,11 @@ function out(name, loc = "", format = "es", inlineDynamicImports = false) {
         (format == "es" ? ".mjs" : ".js"),
       format: format,
       inlineDynamicImports: inlineDynamicImports,
+      paths: externals,
     },
     plugins: plugins,
     external: checkExternal,
+
   };
 }
 export default [
@@ -83,6 +92,7 @@ export default [
       .sync("visualizations/*.vue", {
         cwd: "./src",
       })
+      .filter((e) => !(["datatable.vue", "table.vue"].includes(e.split("/")[1]))) // Exclude direct imports
       .map((a) => out(a))
   )
   .concat(
