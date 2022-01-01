@@ -23,6 +23,8 @@ def test_df():
     a = App("testkey")
     ts = a.objects.create("myts", key="key1")
     assert len(ts) == 0
+    assert isinstance(ts[:].to_df(), pd.DataFrame)
+
     ts.insert(5)
     ts.insert(6)
 

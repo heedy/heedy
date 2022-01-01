@@ -153,9 +153,10 @@ class DatapointArray(list):
         import pandas
 
         df = pandas.json_normalize(self, sep="_")
-        df["t"] = pandas.to_datetime(df["t"], unit="s")
-        if "dt" in df:
-            df["dt"] = pandas.to_timedelta(df["dt"], unit="s")
+        if len(df) > 0:
+            df["t"] = pandas.to_datetime(df["t"], unit="s")
+            if "dt" in df:
+                df["dt"] = pandas.to_timedelta(df["dt"], unit="s")
         return df
 
 
