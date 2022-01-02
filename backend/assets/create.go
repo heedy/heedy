@@ -8,35 +8,31 @@ import (
 	"github.com/spf13/afero"
 )
 
+func EnsureEmptyDatabaseFolder(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if len(files) > 0 {
+		return fmt.Errorf("%s is not empty", dir)
+	}
+	return nil
+}
+
 // Create takes a loaded configuration, as well as a target
 // directory, and creates an associated heedy database.
 // Can also optionally pass in the location of a configuration file
 // which will be copied in, replacing the default config.
 func Create(directory string, cfg *Configuration, configFile string) (*Assets, error) {
-
-	osFs := afero.NewOsFs()
-	f, err := osFs.Open(directory)
-	if !os.IsNotExist(err) && err != nil {
+	err := EnsureEmptyDatabaseFolder(directory)
+	if err != nil {
 		return nil, err
 	}
-	if err == nil {
-		// There is a folder there already. Check if it is empty
-		fi, err := f.Stat()
-		if err != nil {
-			return nil, err
-		}
-		if !fi.IsDir() {
-			return nil, fmt.Errorf("%s is not a directory", directory)
-		}
 
-		finfo, err := f.Readdir(1)
-		if err != nil {
-			return nil, err
-		}
-		if len(finfo) > 0 {
-			return nil, fmt.Errorf("%s already has files in it. Must be empty to initialize heedy in it", directory)
-		}
-	}
+	osFs := afero.NewOsFs()
 
 	// Setting up the database: first we dump the newdb folder there
 	builtinFs := BuiltinAssets()

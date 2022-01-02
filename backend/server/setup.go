@@ -117,6 +117,10 @@ func Setup(sc SetupContext, setupBind string) error {
 	}
 	sc.Directory = directory
 
+	if err = assets.EnsureEmptyDatabaseFolder(directory); err != nil {
+		return err
+	}
+
 	mux := chi.NewMux()
 
 	setupServer := &http.Server{

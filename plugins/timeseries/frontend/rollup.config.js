@@ -61,7 +61,6 @@ function checkExternal(modid, parent, isResolved) {
 }
 
 function out(name, loc = "", format = "es", inlineDynamicImports = false) {
-  console.log(`${name}${loc}${format} ${inlineDynamicImports ? "inline" : ""}`);
   let filename = name.split(".");
   return {
     input: "src/" + name,

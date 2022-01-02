@@ -49,6 +49,9 @@ test:
 	go test -p 1 ./plugins/dashboard/backend/... --tags "sqlite_foreign_keys json1 sqlite_preupdate_hook"
 	cd api/python; make test
 
+docker:
+	docker build -t heedy:$(VERSION) . --build-arg VERSION=$(VERSION)
+
 clean:
 	# $(GO) clean
 	# Clear all generated assets for webapp

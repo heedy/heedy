@@ -9,8 +9,8 @@ import (
 
 var StopCmd = &cobra.Command{
 	Use:   "stop [location of database]",
-	Short: "Stops heedy",
-	Long:  `Shuts down heedy running in the background`,
+	Short: "Stops a heedy server running in the background",
+	Long:  `Shuts down heedy running in the background, the main way to stop servers started using 'heedy start'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		directory, err := GetDirectory(args)
 		if err != nil {

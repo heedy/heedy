@@ -1,0 +1,31 @@
+# The public folder is generated from the frontend
+/assets/public
+/assets/setup
+.gobin
+.vscode
+# test text file
+backend/server/tests/exec/data/test.txt
+
+# Don't save any socket files
+*.sock
+# The built executable
+/heedy
+
+# Node modules are unnecessary
+node_modules/
+
+# Don't include python build cache
+__pycache__/
+*.py[cod]
+
+# Ignore databases generated for testing
+test_db/
+testdb/
+
+docs/_build
+docs/_govars
+
+docs/analysis/pipescript/index.md
+docs/analysis/pipescript/transforms/
+
+pytest/

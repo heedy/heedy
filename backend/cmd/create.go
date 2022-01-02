@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"os"
-	"path"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
@@ -17,7 +16,6 @@ var (
 	// Should we run the setup UI?
 	noserver   bool
 	testapp    string
-	setupHost  string
 	configFile string
 	addr       string
 	username   string
@@ -27,7 +25,7 @@ var (
 // CreateCmd creates a new database
 var CreateCmd = &cobra.Command{
 	Use:   "create [location to put database]",
-	Short: "Create a new database",
+	Short: "Create a new database at the specified location",
 	Long: `Sets up the given directory with a new heedy database.
 Creates the folder if it doesn't exist, but fails if the folder is not empty. If no folder is specified, uses the default database location.
 
@@ -41,20 +39,11 @@ It is recommended that new users use the web setup, which will guide you in prep
 
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return ErrTooManyArgs
+		directory, err := GetDirectory(args)
+		if err != nil {
+			return err
 		}
 
-		var directory string
-		if len(args) == 1 {
-			directory = args[0]
-		} else if len(args) == 0 {
-			f, err := UserDataDir()
-			if err != nil {
-				return err
-			}
-			directory = path.Join(f, "heedy")
-		}
 		c := assets.NewConfiguration()
 		if addr != "" {
 			c.Addr = &addr

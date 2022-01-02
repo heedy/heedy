@@ -11,7 +11,7 @@ Several existing aggregators already perform many of heedy's functions ([see the
 1. **Open-source and self-hosted**: Most existing tools are cloud-based, which means that all of your data is on "someone else's computer". While these companies may claim that they will not [sell your data](https://arstechnica.com/tech-policy/2019/03/ftc-investigates-whether-isps-sell-your-browsing-history-and-location-data/), or won't [turn it over to governments](<https://en.wikipedia.org/wiki/PRISM_(surveillance_program)>), they can change their minds (and terms of service) at any time. The only way to guarantee that your data will never be used against you is for it to be on your computer, operated by software you can audit yourself.
 2. **Extensible**: Even a system with fantastic visualizations and powerful analysis has limited utility. This is because it can only show what the original authors assumed would be useful. Heedy offers a powerful plugin system - plugin writers can add new integrations, plots, or even modify core functionality with a few lines of python or javascript.
 
-## Installing
+## Running
 
 Heedy currently supports Mac and Linux (including the Raspberry Pi). The server is started from the command-line.
 
@@ -26,6 +26,17 @@ chmod +x ./heedy # Allow execution of file
 3. Open your browser to http://localhost:1324 to set up your database!
 
 _Before setting up Heedy, it is recommended that you have Python >=3.7 with venv support installed, because most heedy plugins use Python! On Ubuntu/PiOS, you just need to install `python3-venv`._
+
+### Docker
+
+Heedy is also available for use with docker. You will want to create a folder (`myheedy`) to hold your heedy database, and bind it to the `/data` folder in the container:
+
+```bash
+mkdir myheedy
+docker run --rm -d -p 1324:1324 -v $PWD/myheedy:/data --user $UID --name heedy dkumor/heedy
+```
+
+This runs heedy in the background on port `1324`. To run interactively, use `-it` instead of `-d`.
 
 ## Plugins
 

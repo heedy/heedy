@@ -8,12 +8,14 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
 
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/buildinfo"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/heedy/heedy/backend/plugins"
 	"github.com/heedy/heedy/backend/updater"
@@ -87,7 +89,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
 		// Close the frontend server, but don't yet close the API server,
@@ -164,7 +166,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	}
 
 	// Only start listening once the plugins are all loaded
-	logrus.Infof("Running heedy on %s", serverAddress)
+	logrus.Infof("Running heedy v%s on %s", buildinfo.Version, serverAddress)
 	var srvl net.Listener
 	if strings.HasPrefix(serverAddress, "unix:") {
 		err = os.RemoveAll(serverAddress[5:])

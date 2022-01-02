@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM node AS frontend
 
 # We don't need to clean up after this because this build stage is later discarded
@@ -14,21 +16,28 @@ FROM golang AS backend
 WORKDIR /backend
 COPY --from=frontend /frontend .
 
-RUN make heedy && chmod +x ./heedy
+ARG VERSION
 
+RUN if [[ -z "$VERSION" ]] ; then make heedy ; else make heedy VERSION=$VERSION ; fi
 
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-bullseye
 
+# Things like Jupyter really want a home directory to write their own stuff to.
+WORKDIR /home
+ENV HOME=/home
+
+# The folder which will hold the heedy database
 WORKDIR /data
-WORKDIR /heedy
 
-ENV HOME=/data
+WORKDIR /
+
 COPY --from=backend /backend/heedy .
 
 # Grant docker user group access
-RUN chgrp -R 0 /heedy /data && chmod -R g=u /heedy /data
+RUN chgrp -R 0 /data /home && chmod -R g=u /data /home
+
 USER 12938
 
 EXPOSE 1324
 
-CMD [ "./heedy" ]
+CMD [ "/heedy","run", "/data", "--create" ]
