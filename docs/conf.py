@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../api/python"))
 # -- Project information -----------------------------------------------------
 
 project = "Heedy"
-copyright = "2021, Heedy Contributors"
+copyright = "2022, Heedy Contributors"
 author = "Heedy Contributors"
 
 # The full version, including alpha/beta/rc tags
@@ -39,7 +39,7 @@ release = "%s-git.%s" % (
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_parser",
+    "myst_nb",
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
     "sphinx.ext.mathjax",
@@ -47,7 +47,9 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
+    "sphinx_copybutton",
     "sphinx_js",
+    "sphinx_inline_tabs",
 ]
 
 intersphinx_mapping = {
@@ -70,6 +72,23 @@ jsdoc_config_path = "_jsdoc.json"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+
+html_theme = "sphinx_book_theme"
+html_title = "Heedy"
+html_logo = "logo.png"
+
+html_theme_options = {
+    "repository_url": "https://github.com/heedy/heedy",
+    "repository_branch": "master",
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_issues_button": True,
+    "use_fullscreen_button": False,
+    "use_download_button": False,
+    "path_to_docs": "docs/",
+}
+
+"""
 html_theme = "alabaster"
 
 html_theme_options = {
@@ -83,6 +102,7 @@ html_theme_options = {
     "github_button": False,
     "show_powered_by": False,
 }
+"""
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -4,8 +4,8 @@
 .. toctree::
    :maxdepth: 2
 
-   tutorial
-   api
+   tutorial/index
+   api/index
 ```
 
 The official Python client for heedy. You can install it using:

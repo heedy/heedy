@@ -1,4 +1,4 @@
-# Tutorial
+# Tutorial & Examples
 
 When using the Python library, you will either be calling code using an App access token, in which case you can log in with:
 
@@ -37,7 +37,7 @@ Timeseries{'access': '*',
  'description': '',
  'id': 'a2f0ae8b-73e7-4ffa-b078-a1ca3f260437',
  'modified_date': None,
- 'meta': {'actor': False, 'schema': {}, 'subtype': ''},
+ 'meta': {'schema': {}},
  'name': 'My Timeseries',
  'owner': 'test',
  'owner_scope': '*',

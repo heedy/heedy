@@ -34,3 +34,6 @@ pipesdocs:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile getvars pipesdocs
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+watch: Makefile getvars pipesdocs
+	sphinx-autobuild --port 8888 --watch ../api/python/heedy --re-ignore '\.tmp' -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

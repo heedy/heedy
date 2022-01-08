@@ -370,6 +370,11 @@ class APIObject:
     """
 
     props = {"name", "description", "icon"}
+    full_read = {"icon": True}
+
+    """
+    props are elements of the object that can be accessed and set directly as properties.
+    """
 
     def __init__(self, uri: str, constraints: Dict, session: Session, cached_data={}):
         self.session = session
@@ -380,7 +385,17 @@ class APIObject:
 
     def read(self, **kwargs):
         """
-        Read the object
+        Sends a GET request to the server with function arguments as query parameters::
+
+            o.read(icon=True)
+
+        Returns the server's result directly, or in a promise if the session is async.
+        Caches the result of the read in the `cached_data` attribute, which can
+        also be accessed directly::
+
+            assert o["name"] == o.cached_data["name"]
+
+        The read or update functions both update the cached_data attribute automatically.
         """
 
         def writeCache(o):
@@ -391,9 +406,11 @@ class APIObject:
 
     def update(self, **kwargs):
         """
-        Updates the given data::
+        Sends a PATCH request to the object URI with arguments as a json object::
 
             o.update(name="My new name",description="my new description")
+
+        Returns the server's result. Returns a promise if the session is async.
         """
 
         def updateCache(o):
@@ -405,7 +422,7 @@ class APIObject:
 
     def delete(self, **kwargs):
         """
-        Deletes the object
+        Delete the element. When using an async session, this returns a promise.
         """
         return self.session.delete(self.uri, params=kwargs)
 
@@ -440,7 +457,8 @@ class APIObject:
 
 class APIList:
     """
-    APIList represents a list of objects in heedy (users,apps,objects,etc).
+    APIList is an internal backend class which is used to represent
+    a list of objects in heedy (users,apps,objects,etc).
     """
 
     def __init__(self, uri: str, constraints: Dict, session: Session):

@@ -31,6 +31,29 @@ class ObjectMeta:
         return self._object.update({"meta": kwargs})
 
     def delete(self, *args):
+        """Delete the given keys from the object metadata
+
+        Deleting a key resets the value of that property to its default.
+
+        .. tab:: Sync
+
+            ::
+
+                o.meta.delete("schema")
+
+        .. tab:: Async
+
+            ::
+
+                await o.meta.delete("schema")
+
+
+        Args:
+            *args: The keys to delete
+
+        Returns:
+            The updated object metadata
+        """
         toDelete = {}
         for a in args:
             toDelete[a] = None
@@ -72,6 +95,14 @@ class ObjectMeta:
 
 
 class Object(APIObject):
+    """
+    Object is the base class for all Heedy objects. For example, the Timeseries object type
+    is a subclass of Object, and includes all of the functionality described here.
+
+    When an object of an unrecognized type is returned from the Heedy API, it will be returned
+    as the Object type.
+    """
+
     props = {
         "name",
         "description",
@@ -82,6 +113,24 @@ class Object(APIObject):
         "key",
         "owner_scope",
     }
+    """
+    Each object (including Timeseries) has the above properties available as attributes.
+    In synchronous sessions, they allow you to update the object's properties directly::
+
+        o.name = "My new name"
+        assert o.name == "My new name"
+
+    The above is equivalent to::
+
+        o.update(name="My new name")
+        assert o["name"] == "My new name"
+
+    The available properies are:
+        - `name`: The name of the object, displayed as the title in the Heedy app
+        - `description`: A description of the object, displayed as the subtitle in the Heedy app
+        - `icon`: The icon to display in the Heedy app, either a data uri containing an image, 
+          or name of icon from `Material Icons <https://fonts.google.com/icons>`_ or `Fontawesome <https://fontawesome.com/>`_.
+    """
 
     def __init__(self, objectData: Dict, session: Session):
         super().__init__(
@@ -119,10 +168,22 @@ class Object(APIObject):
 
     @property
     def owner(self):
+        """
+        The user which owns this object::
+
+            print(o.user.name) # prints your username if you own the object
+        """
         return users.User(self.cached_data["owner"], self.session)
 
     @property
     def app(self):
+        """
+        The app that this object belongs to, if any::
+
+            print(o.app.name)
+
+        When accessing the Heedy API as an app, you will not have access to any other apps.
+        """
         if self.cached_data["app"] is None:
             return None
         return apps.App(self.cached_data["app"], session=self.session)

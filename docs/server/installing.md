@@ -56,9 +56,10 @@ to run a basic heedy install.
 While setting up a domain and server is rather technical, and outside the scope of this documentation, [tutorials are readily available online](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04).
 
 If you already have a domain `mydomain.com`, it is recommended that you set up heedy on the subdomain `heedy.mydomain.com`.
-You should put heedy behind a [caddy](https://caddyserver.com/) server, which will automatically set up https, but nginx and others should also work fine, if you're willing to deal with https details.
+You can put heedy behind a [Caddy](https://caddyserver.com/) server, which will automatically set up https, but any server software which can handle reverse proxying and https termination should work.
 
-Adding the following to your `Caddyfile` is sufficient to configure Caddy for heedy:
+When working with Caddy, you can download the server from [here](https://caddyserver.com/download), give the server permissions to bind to ports 80 and 443 using `sudo setcap cap_net_bind_service=+ep caddy`,
+and create a file called `Caddyfile` with the following content:
 
 ```
 heedy.mydomain.com {
@@ -66,7 +67,8 @@ heedy.mydomain.com {
 }
 ```
 
-You can then run heedy to create your database, and access the setup at `https://heedy.mydomain.com`. While setting up, click the "Server Settings" button to make sure that your host is set to localhost, and the site url is set correctly:
+After starting `heedy`, and then starting Caddy with `./caddy run`,
+you can access the heedy setup at `https://heedy.mydomain.com`. While setting up, click the "Server Settings" button to make sure that your host is set to localhost, and the site url is set correctly:
 
 ![Heedy Create Settings](./create_settings.png)
 
@@ -74,11 +76,11 @@ If your database was already created, you can achieve the same effect by modifyi
 
 ```javascript
 // This is the address on which heedy will listen for connections
-addr = "localhost:1324"
+addr = "localhost:1324";
 
 // URL at which the server can be accessed. Used for callbacks. If empty,
 // this value is populated automatically with the addr value
-url = "https://heedy.mydomain.com"
+url = "https://heedy.mydomain.com";
 ```
 
 ## Encrypting your Database

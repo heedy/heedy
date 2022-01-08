@@ -12,7 +12,7 @@ class Notifications:
             "api/notifications", params={**self.constraints, **kwargs}
         )
 
-    def notify(self, key, title=None, **kwargs):
+    def notify(self, key: str, title: str = None, **kwargs):
         n = {**self.constraints, **{"key": key}, **kwargs}
         if title is not None:
             n["title"] = title
@@ -21,7 +21,7 @@ class Notifications:
             del n["_global"]
         return self.session.post("api/notifications", n)
 
-    def delete(self, key=None, **kwargs):
+    def delete(self, key: str = None, **kwargs):
         if key is not None:
             kwargs["key"] = key
         return self.session.delete(

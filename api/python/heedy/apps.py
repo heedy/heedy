@@ -36,21 +36,30 @@ class App(APIObject):
 
     @property
     def owner(self):
+        """
+        Returns the user that owns the app
+        """
         return self.session.f(
             self.read(), lambda x: users.User(x["owner"], self.session)
         )
+
+    def __getitem__(self, key: str):
+        """
+        Gets a child object of the app by key. Shorthand for `app.objects(key=key)[0]`
+        """
+        return self.objects(key=key)[0]
 
 
 class Apps(APIList):
     def __init__(self, constraints: Dict, session: Session):
         super().__init__("api/apps", constraints, session)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> App:
         return self._getitem(
             item, f=lambda x: App(x["id"], session=self.session, cached_data=x)
         )
 
-    def __call__(self, **kwargs):
+    def __call__(self, **kwargs) -> App:
         return self._call(
             f=lambda x: [
                 App(xx["id"], session=self.session, cached_data=xx) for xx in x
@@ -58,7 +67,7 @@ class Apps(APIList):
             **kwargs,
         )
 
-    def create(self, name, **kwargs):
+    def create(self, name: str, **kwargs) -> App:
         return self._create(
             f=lambda x: App(x["id"], session=self.session, cached_data=x),
             **{"name": name, **kwargs},

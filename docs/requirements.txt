@@ -1,4 +1,7 @@
 Sphinx
-myst-parser
+myst-nb
 sphinx-autodoc-typehints
 sphinx-js
+sphinx-copybutton
+sphinx-tabs
+sphinx-book-theme
