@@ -1,3 +1,4 @@
+(pipescript)=
 # Transforms
 
 While for the most part, heedy transforms are extremely simple to use,

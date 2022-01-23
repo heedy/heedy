@@ -62,7 +62,12 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "analysis/pipescript/index_start.md",
+]
 
 js_source_path = "../"
 jsdoc_config_path = "_jsdoc.json"
@@ -87,22 +92,6 @@ html_theme_options = {
     "use_download_button": False,
     "path_to_docs": "docs/",
 }
-
-"""
-html_theme = "alabaster"
-
-html_theme_options = {
-    "logo": "logo.png",
-    "logo_name": True,
-    "logo_text_align": "center",
-    "fixed_sidebar": True,
-    "github_user": "heedy",
-    "github_repo": "heedy",
-    "github_banner": True,
-    "github_button": False,
-    "show_powered_by": False,
-}
-"""
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -29,3 +29,5 @@ docs/analysis/pipescript/index.md
 docs/analysis/pipescript/transforms/
 
 pytest/
+
+.DS_Store

@@ -27,9 +27,9 @@ def q(value):
     return urllib.parse.quote(value, safe="")
 
 
-class HeedyError(Exception):
+class HeedyException(Exception):
     """
-    HeedyError is raised when the server returns an error value
+    HeedyException is raised when the server returns an error value
     in response to a request.
 
     You can get the error contents by accessing the :code:"error" property
@@ -173,7 +173,7 @@ class SyncSession(Session):
                     "error": "malformed_response",
                     "error_description": f'The server returned "{r.text}", which is not json.',
                 }
-            raise HeedyError(msg)
+            raise HeedyException(msg)
         return r
 
     def get(self, path, params={}, f=lambda x: x):
@@ -265,7 +265,7 @@ class AsyncSession(Session):
                     "error": "malformed_response",
                     "error_description": f"The server did not return valid json",
                 }
-            raise HeedyError(msg)
+            raise HeedyException(msg)
         return r
 
     async def version(self):
@@ -370,32 +370,65 @@ class APIObject:
     """
 
     props = {"name", "description", "icon"}
-    full_read = {"icon": True}
+    """
+    Each element has the above properties available as attributes.
+    In synchronous sessions, they allow you to update the properties directly::
+
+        o.name = "My new name"
+        assert o.name == "My new name"
+
+    The above is equivalent to::
+
+        o.update(name="My new name")
+        assert o["name"] == "My new name"
+
+    Note that each time you access the properties, they are fetched from the server.
+    If you want to used cached data instead of :code:`o.name`, use :code:`o["name"]`,
+    and call :code:`o.read()` to update the cache.
 
     """
-    props are elements of the object that can be accessed and set directly as properties.
-    """
+
+    full_read = {"icon": True}
 
     def __init__(self, uri: str, constraints: Dict, session: Session, cached_data={}):
         self.session = session
         self.uri = uri
         self.cached_data = cached_data
 
+        #: A :code:`Notifications` object that allows you to access the notifications
+        #: associated with this element. See :ref:`python_notifications` for details.
         self.notifications = Notifications(constraints, self.session)
 
     def read(self, **kwargs):
         """
-        Sends a GET request to the server with function arguments as query parameters::
+        Sends a GET request to the element's URI with function arguments as query parameters.
+        This method is available for all subclasses of APIObject (objects, apps, users, etc),
+        and is used to read element's properties in heedy.
 
-            o.read(icon=True)
+        .. tab:: Sync
 
-        Returns the server's result directly, or in a promise if the session is async.
-        Caches the result of the read in the `cached_data` attribute, which can
-        also be accessed directly::
+            ::
 
-            assert o["name"] == o.cached_data["name"]
+                data = o.read(icon=True)
 
-        The read or update functions both update the cached_data attribute automatically.
+        .. tab:: Async
+
+            ::
+
+                data = await o.read(icon=True)
+
+        Caches the result of the read as attributes of the object::
+
+            assert data["name"] == o["name"]
+
+        The read or update functions both update the cached data automatically.
+
+        Args:
+            **kwargs: The url parameters to send with the request.
+        Returns:
+            The server's response dict, namely a dict of the element's properties.
+        Raises:
+            HeedyException: If the server returns an error.
         """
 
         def writeCache(o):
@@ -406,11 +439,30 @@ class APIObject:
 
     def update(self, **kwargs):
         """
-        Sends a PATCH request to the object URI with arguments as a json object::
+        Sends a PATCH request to element's URI with arguments as a json object.
+        This method is available for all subclasses of APIObject (objects, apps, users, etc),
+        and is used to update the element's properties in heedy.
 
-            o.update(name="My new name",description="my new description")
+        .. tab:: Sync
 
-        Returns the server's result. Returns a promise if the session is async.
+            ::
+
+                o.update(name="My new name",description="my new description")
+                assert o["name"] == "My new name"
+
+        .. tab:: Async
+
+            ::
+
+                await o.update(name="My new name",description="my new description")
+                assert o["name"] == "My new name"
+
+        Args:
+            **kwargs: The properties to update, sent as the json body of the request.
+        Returns:
+            The server's response as a dict, namely the updated element's properties.
+        Raises:
+            HeedyException: If the server returns an error, such as when there are insufficient permissions.
         """
 
         def updateCache(o):
@@ -422,7 +474,27 @@ class APIObject:
 
     def delete(self, **kwargs):
         """
-        Delete the element. When using an async session, this returns a promise.
+        Calls the element's URI with the DELETE method.
+        This is a method available for all subclasses of APIObject
+        (objects, apps, users, etc), and removes all associated data from Heedy.
+
+        .. tab:: Sync
+
+            ::
+
+                o.delete()
+                o.read() # Throws error - it longer exists!
+
+        .. tab:: Async
+
+            ::
+
+                await o.delete()
+                await o.read() # Throws error - it no longer exists!
+        Args:
+            **kwargs: Arguments to pass as query parameters to the server (usually empty)
+        Raises:
+            HeedyException: If the server returns an error, or when the app does not have permission to delete.
         """
         return self.session.delete(self.uri, params=kwargs)
 
@@ -452,6 +524,9 @@ class APIObject:
         return str(self)
 
     def notify(self, *args, **kwargs):
+        """
+        Shorthand for :code:`self.notifications.notify` (see :ref:`python_notifications`).
+        """
         return self.notifications.notify(*args, **kwargs)
 
 

@@ -167,8 +167,8 @@ async def test_basics_async():
     assert len(await a.objects()) == 0
 
     o = await a.objects.create("myobj2", {"schema": {"type": "number"}})
-    assert o.name == "myobj2"
-    assert o.type == "timeseries"
+    assert o["name"] == "myobj2"
+    assert o["type"] == "timeseries"
     assert len(await a.objects()) == 1
 
     assert o == await a.objects[o.id]

@@ -7,7 +7,7 @@
 ### Users
 
 ```{eval-rst}
-.. autoclass:: heedy.users.User
+.. autoclass:: heedy.users.Users
     :members:
     :inherited-members:
     :show-inheritance:
@@ -18,7 +18,7 @@
 ### User
 
 ```{eval-rst}
-.. autoclass:: heedy.users.user
+.. autoclass:: heedy.users.User
     :members:
     :inherited-members:
     :show-inheritance:

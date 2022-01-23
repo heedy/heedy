@@ -136,6 +136,7 @@ Returns the user with the given username.
 - **icon** _(boolean,false)_ - whether or not to include the user's icon.
 
 <h6 class="rest_output">Example</h6>
+
 ```bash
 curl --header "Authorization: Bearer MYTOKEN" \
      http://localhost:1324/api/users/myuser?icon=true
@@ -545,16 +546,16 @@ Each object holds a `meta` field. A timeseries object's meta object has the foll
 Returns the timeseries data subject to the given constraints.
 <h6 class="rest_params">URL Params</h6>
 
-- **t** _(float,null)_ - get just the datapoint with the given timestamp
+- **t** _(float,string\*,null)_ - get just the datapoint with the given timestamp
 - **i** _(int,null)_ - get just the datapoint at the given index
-- **t1** _(float/string\*,null)_ - return only datapoints where `t >= t1`
-- **t2** _(float/string\*,null)_ - return only datapoints where `t < t2`
+- **t1** _(float,string\*,null)_ - return only datapoints where `t >= t1`
+- **t2** _(float,string\*,null)_ - return only datapoints where `t < t2`
 - **i1** _(int,null)_ - return only datapoints where `index >= i1`
 - **i2** _(int,null)_ - return only datapoints where `index < i2`
 - **limit** _(int,null)_ - return a maximum of this number of datapoints
-- **transform** _(string,null)_ - a [PipeScript](/analysis/pipescript) transform to run on the data
+- **transform** _(string,null)_ - a [PipeScript](pipescript) transform to run on the data
 
-_\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
+_\*: The `t`, `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 
 <h6 class="rest_output">Example</h6>
 
@@ -621,14 +622,14 @@ curl --header "Authorization: Bearer MYTOKEN" \
 Delete the timeseries data that satisfies the given constraints
 <h6 class="rest_params">URL Params</h6>
 
-- **t** _(float,null)_ - remove just the datapoint with the given timestamp
+- **t** _(float,string\*,null)_ - remove just the datapoint with the given timestamp
 - **i** _(int,null)_ - remove just the datapoint at the given index
-- **t1** _(float/string\*,null)_ - remove only datapoints where `t >= t1`
-- **t2** _(float/string\*,null)_ - remove only datapoints where `t < t2`
+- **t1** _(float,string\*,null)_ - remove only datapoints where `t >= t1`
+- **t2** _(float,string\*,null)_ - remove only datapoints where `t < t2`
 - **i1** _(int,null)_ - remove only datapoints where `index >= i1`
 - **i2** _(int,null)_ - remove only datapoints where `index < i2`
 
-_\*: The `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
+_\*: The `t`, `t1` and `t2` queries accept strings of times relative to now. For example, `t1=now-2d` sets `t1` to exactly 2 days ago._
 
 <h6 class="rest_output">Example</h6>
 

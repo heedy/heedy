@@ -34,6 +34,15 @@ class App(APIObject):
         # Key-value store associated with the app
         self.kv = KV(f"api/kv/apps/{q(appid)}", self.session)
 
+        if appid != "self":
+            self.cached_data["id"] = appid
+
+    @property
+    def id(self):
+        if "id" in self.cached_data:
+            return self.cached_data["id"]
+        return self.session.f(self.read(), lambda x: x["id"])
+
     @property
     def owner(self):
         """
@@ -42,12 +51,6 @@ class App(APIObject):
         return self.session.f(
             self.read(), lambda x: users.User(x["owner"], self.session)
         )
-
-    def __getitem__(self, key: str):
-        """
-        Gets a child object of the app by key. Shorthand for `app.objects(key=key)[0]`
-        """
-        return self.objects(key=key)[0]
 
 
 class Apps(APIList):
