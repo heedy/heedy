@@ -227,6 +227,7 @@ func (dp *DashboardProcessor) Query(as string, oid string, eid string, etype str
 			}
 		}
 		if replaceEvents {
+			// TODO: Need to handle sqlite busy, since transaction is not immediate mode
 			_, err = tx.Exec(`DELETE FROM dashboard_events WHERE object_id=? AND element_id=?;`, oid, eid)
 			if err != nil {
 				tx.Rollback()

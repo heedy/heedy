@@ -534,7 +534,7 @@ func (ts *TimeseriesDB) Delete(q *Query) error {
 		}
 	}
 
-	tx, err := ts.DB.Beginx()
+	tx, err := ts.DB.BeginImmediatex()
 	if err != nil {
 		return err
 	}
@@ -1090,7 +1090,7 @@ func (ts *TimeseriesDB) Insert(tsid string, data DatapointIterator, q *InsertQue
 	}
 
 	var tx database.TxWrapper
-	tx, err = ts.DB.Beginx()
+	tx, err = ts.DB.BeginImmediatex()
 	if err != nil {
 		return err
 	}

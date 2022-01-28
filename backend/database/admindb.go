@@ -365,7 +365,7 @@ func (db *AdminDB) ReadApp(aid string, o *ReadAppOptions) (*App, error) {
 // the object.
 func (db *AdminDB) UpdateApp(c *App) (err error) {
 	var tx TxWrapper
-	tx, err = db.Beginx()
+	tx, err = db.BeginImmediatex()
 	if err != nil {
 		return err
 	}

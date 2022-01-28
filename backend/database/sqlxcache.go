@@ -213,3 +213,23 @@ func (db *SqlxCache) Beginx() (TxWrapper, error) {
 		Verbose: db.Verbose,
 	}, err
 }
+
+func (db *SqlxCache) BeginImmediatex() (TxWrapper, error) {
+	if db.Verbose {
+		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("BEGIN IMMEDIATE TRANSACTION")
+	}
+	tx, err := db.DB.Beginx()
+
+	// https://github.com/mattn/go-sqlite3/issues/400
+	if err == nil {
+		_, err = tx.Exec("ROLLBACK; BEGIN IMMEDIATE")
+		if err != nil {
+			tx.Rollback()
+		}
+	}
+
+	return TxWrapper{
+		Tx:      tx,
+		Verbose: db.Verbose,
+	}, err
+}

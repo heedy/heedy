@@ -220,7 +220,7 @@ func WriteDashboard(adb *database.AdminDB, as string, oid string, elements []Das
 	}
 
 	// Perform the entire modification of the dashboard as a single transaction
-	tx, err := adb.Beginx()
+	tx, err := adb.BeginImmediatex()
 	if err != nil {
 		return err
 	}

@@ -170,7 +170,7 @@ func getKVr(w http.ResponseWriter, r *http.Request, selectStatement string, args
 }
 
 func setKV(adb *database.AdminDB, data map[string]interface{}, deleteStatement string, deleteArgs []interface{}, setKeyStatement string, args ...interface{}) error {
-	tx, err := adb.DB.Beginx()
+	tx, err := adb.Beginx()
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func setKV(adb *database.AdminDB, data map[string]interface{}, deleteStatement s
 }
 
 func updateKV(adb *database.AdminDB, data map[string]interface{}, setKeyStatement string, args ...interface{}) error {
-	tx, err := adb.DB.Beginx()
+	tx, err := adb.Beginx()
 	if err != nil {
 		return err
 	}

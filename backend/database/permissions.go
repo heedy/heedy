@@ -29,7 +29,7 @@ func updateUser(adb *AdminDB, u *User, scopeSQL string, args ...interface{}) err
 		return err
 	}
 
-	tx, err := adb.Beginx()
+	tx, err := adb.BeginImmediatex()
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 
 func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) (err error) {
 	var tx TxWrapper
-	tx, err = adb.Beginx()
+	tx, err = adb.BeginImmediatex()
 	if err != nil {
 		return
 	}
@@ -234,7 +234,7 @@ func shareObject(db DB, objectid, username string, sa *ScopeArray, scopeSQL stri
 		return ErrBadQuery("To share a object, it needs to have the read scope active")
 	}
 
-	tx, err := adb.DB.Beginx()
+	tx, err := adb.BeginImmediatex()
 	if err != nil {
 		return err
 	}
