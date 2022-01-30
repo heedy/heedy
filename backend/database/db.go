@@ -269,6 +269,8 @@ type ListObjectsOptions struct {
 type ListAppOptions struct {
 	ReadAppOptions
 
+	// Limit the results either to enabled or disabled apps
+	Enabled *bool `json:"enabled,omitempty" schema:"enabled"`
 	// Limit results to the given user's apps
 	Owner *string `json:"owner,omitempty" schema:"owner"`
 	// Find the apps with the given plugin key

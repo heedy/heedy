@@ -198,18 +198,11 @@ func (db *UserDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	if o != nil && o.Owner != nil && *o.Owner != db.user && *o.Owner != "self" {
 		return nil, ErrAccessDenied("Can only list your own apps")
 	}
-	a := []interface{}{db.user}
-	selectStmt := `SELECT * FROM apps WHERE owner=?`
-	if o != nil && o.Plugin != nil {
-		if *o.Plugin == "" {
-			selectStmt = selectStmt + " AND plugin IS NULL"
-		} else {
-			selectStmt = selectStmt + " AND plugin=?"
-			a = append(a, *o.Plugin)
-		}
+	if o == nil {
+		o = &ListAppOptions{}
 	}
-
-	return listApps(db.adb, o, selectStmt, a...)
+	o.Owner = &db.user // Add the owning user constraint
+	return db.adb.ListApps(o)
 }
 
 func (db *UserDB) ReadUserSettings(username string) (map[string]map[string]interface{}, error) {

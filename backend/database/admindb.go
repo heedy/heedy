@@ -439,7 +439,7 @@ func (db *AdminDB) DelApp(id string) error {
 func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 	a := []interface{}{}
 	selectStmt := "SELECT * FROM apps"
-	if o != nil && (o.Owner != nil || o.Plugin != nil) {
+	if o != nil && (o.Owner != nil || o.Plugin != nil || o.Enabled != nil) {
 		selectStmt = selectStmt + " WHERE"
 		if o.Owner != nil {
 			selectStmt = selectStmt + " owner=?"
@@ -455,7 +455,13 @@ func (db *AdminDB) ListApps(o *ListAppOptions) ([]*App, error) {
 				selectStmt = selectStmt + " plugin=?"
 				a = append(a, *o.Plugin)
 			}
-
+		}
+		if o.Enabled != nil {
+			if o.Owner != nil || o.Plugin != nil {
+				selectStmt = selectStmt + " AND"
+			}
+			selectStmt = selectStmt + " enabled=?"
+			a = append(a, *o.Enabled)
 		}
 	}
 	return listApps(db, o, selectStmt, a...)

@@ -163,3 +163,61 @@ func TestUserObject(t *testing.T) {
 	require.NoError(t, db.DelObject(sid))
 	require.Error(t, db.DelObject(sid))
 }
+
+func TestUserListApps(t *testing.T) {
+	adb, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	name := "testy2"
+	passwd := "testpass"
+	require.NoError(t, adb.CreateUser(&User{
+		UserName: &name,
+		Password: &passwd,
+	}))
+	appname := "testapp"
+	_, _, err := adb.CreateApp(&App{
+		Details: Details{
+			Name: &appname,
+		},
+		Owner: &name,
+	})
+	require.NoError(t, err)
+
+	a, err := adb.ListApps(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+
+	db := NewUserDB(adb, "testy")
+
+	a, err = db.ListApps(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(a), 0)
+
+	badusername := "baduser"
+
+	_, _, err = db.CreateApp(&App{
+		Details: Details{
+			Name: &appname,
+		},
+		Owner: &badusername,
+	})
+	require.Error(t, err)
+
+	appid, _, err := db.CreateApp(&App{
+		Details: Details{
+			Name: &appname,
+		},
+	})
+	require.NoError(t, err)
+
+	a, err = db.ListApps(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+	require.Equal(t, a[0].ID, appid)
+
+	_, err = db.ListApps(&ListAppOptions{
+		Owner: &badusername,
+	})
+	require.Error(t, err)
+
+}

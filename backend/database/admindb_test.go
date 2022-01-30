@@ -670,3 +670,71 @@ func TestUserSessions(t *testing.T) {
 	require.Equal(t, len(s), 0)
 
 }
+
+func TestAdminListApps(t *testing.T) {
+	db, cleanup := newDBWithUser(t)
+	defer cleanup()
+
+	a, err := db.ListApps(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(a), 0)
+
+	username := "testy"
+	appname := "testapp"
+	appid, _, err := db.CreateApp(&App{
+		Details: Details{
+			Name: &appname,
+		},
+		Owner: &username,
+	})
+	require.NoError(t, err)
+
+	a, err = db.ListApps(nil)
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+	require.Equal(t, a[0].ID, appid)
+
+	T := true
+	F := false
+	a, err = db.ListApps(&ListAppOptions{
+		Enabled: &F,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(a), 0)
+
+	a, err = db.ListApps(&ListAppOptions{
+		Enabled: &T,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+
+	_, _, err = db.CreateApp(&App{
+		Details: Details{
+			Name: &appname,
+		},
+		Owner:   &username,
+		Enabled: &F,
+	})
+	require.NoError(t, err)
+
+	a, err = db.ListApps(&ListAppOptions{
+		Enabled: &F,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+
+	a, err = db.ListApps(&ListAppOptions{
+		Owner: &username,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(a), 2)
+
+	a, err = db.ListApps(&ListAppOptions{
+		Owner:   &username,
+		Enabled: &T,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(a), 1)
+	require.Equal(t, a[0].ID, appid)
+
+}
