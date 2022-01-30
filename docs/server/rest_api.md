@@ -218,6 +218,7 @@ Returns a list of apps in the heedy instance that satisfy the given constraints,
 - **token** _(boolean,false)_ - whether or not to include each app's access token.
 - **owner** _(string,null)_ - limit results to the apps belonging to the given username
 - **plugin** _(string,null)_ - limit results to apps with the given plugin key
+- **enabled** _(boolean,null)_ - limit results to apps that are enabled/disabled (true/false)
 
 <h6 class="rest_output">Example</h6>
 
@@ -235,7 +236,7 @@ curl --header "Authorization: Bearer MYTOKEN" \
 </div>
 
 <h5 class="rest_verb">POST</h5>
-Create a new app. Only accessible from plugins and users. If authenticated as a user, the owner parameter is optional.
+Create a new app. Only accessible from plugins and users. If authenticated as a user, the owner parameter is optional. Returns the created app, subject to query URL params identical to a GET request for the app ID.
 
 <h6 class="rest_body">Body</h6>
 
@@ -248,6 +249,7 @@ Create a new app. Only accessible from plugins and users. If authenticated as a 
 - **scope** _(string,"")_ - the scopes given to the app, each separated by a space.
 - **settings** _(object,{})_ - the app's settings
 - **settings_schema** _(object,{})_ - the json schema for the app's settings.
+- **access_token** _(string)_ - If set to empty string, the app will be created without an access token. Otherwise (and by default), the app will have a randomly generated access token (any other string value of access_token is ignored).
 
 <h6 class="rest_output">Example</h6>
 
@@ -325,6 +327,7 @@ Updates the app with the included fields.
 - **scope** _(string,null)_ - the scopes given to the app, each separated by a space.
 - **settings** _(object,null)_ - the app's settings
 - **settings_schema** _(object,null)_ - the json schema for the app's settings.
+- **access_token** _(string,null)_ - If set to empty string, the access token will be removed. Otherwise, if given a value, the app will generate a new random token (the value is ignored).
 
 <h6 class="rest_output">Example</h6>
 
@@ -340,6 +343,17 @@ curl --header "Authorization: Bearer MYTOKEN" \
 
 ```javascript
 {"result":"ok"}
+```
+
+</div>
+
+Since updating an access token randomly generates a new value, if the token was updated,
+it will be returned as part of the result.
+
+<div class="rest_output_result">
+
+```javascript
+{"result":"ok","access_token":"sdf43ri3i3g4j3ook"}
 ```
 
 </div>

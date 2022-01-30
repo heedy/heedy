@@ -383,19 +383,23 @@ class APIObject:
         assert o["name"] == "My new name"
 
     Note that each time you access the properties, they are fetched from the server.
-    If you want to used cached data instead of :code:`o.name`, use :code:`o["name"]`,
-    and call :code:`o.read()` to update the cache.
+    In non-interactive scripts it is useful to avoid redundant querying,
+    so each read of data is cached. To use this cached data, you can access
+    the property as a key. Instead of :code:`o.name`, use :code:`o["name"]`,
+    and call :code:`o.read()` to create/update the cache. 
+    Accessing :code:`o["name"]` will only work after the data was initially read,
+    otherwise it will lead to a :code:`KeyError`.
 
     """
 
-    full_read = {"icon": True}
+    read_qparams = {"icon": {"icon": True}}
 
     def __init__(self, uri: str, constraints: Dict, session: Session, cached_data={}):
         self.session = session
         self.uri = uri
         self.cached_data = cached_data
 
-        #: A :code:`Notifications` object that allows you to access the notifications
+        #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
         #: associated with this element. See :ref:`python_notifications` for details.
         self.notifications = Notifications(constraints, self.session)
 
@@ -417,7 +421,7 @@ class APIObject:
 
                 data = await o.read(icon=True)
 
-        Caches the result of the read as attributes of the object::
+        Caches the result of the read accessible as dict keys::
 
             assert data["name"] == o["name"]
 
@@ -432,7 +436,10 @@ class APIObject:
         """
 
         def writeCache(o):
-            self.cached_data = o
+            if not "error" in o:
+                # This is an update, because we want to keep caching old data
+                # that was not requested by this read (for example icon)
+                self.cached_data.update(o)
             return o
 
         return self.session.f(self.session.get(self.uri, params=kwargs), writeCache)
@@ -506,7 +513,8 @@ class APIObject:
     def __getattr__(self, attr: str):
         if attr.startswith("_"):  # ipython tries a bunch of repr formats
             raise AttributeError(f"Unknown attribute '{attr}'")
-        return self.session.f(self.read(), lambda x: x[attr])
+        qparams = self.read_qparams.get(attr, {})
+        return self.session.f(self.read(**qparams), lambda x: x[attr])
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

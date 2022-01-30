@@ -144,6 +144,32 @@ class ObjectMeta:
             toDelete[a] = None
         return self._object.update(meta=toDelete)
 
+    def __call__(self):
+        """
+        Queries the server for the object's metadata, and returns it as a dictionary.
+        This does not need to be called if the object was already read, since an object
+        read automatically caches its metadata.
+
+        .. tab:: Sync
+
+            ::
+
+                metadict = o.meta()
+
+        .. tab:: Async
+
+            ::
+
+                metadict = await o.meta()
+
+        Usually, you will not need to call this method, since ObjectMeta behaves like a dictionary
+        once the object is read.
+
+        Returns:
+            The object's metadata as a dictionary
+        """
+        return self._object.session.f(self._object.read(), lambda o: o["meta"])
+
     def __getattr__(self, attr):
         return self._object.session.f(self._object.read(), lambda o: o["meta"][attr])
 
@@ -224,7 +250,7 @@ class Object(APIObject):
         The key-value store associated with this object. For details of usage, see :ref:`python_kv`.
 
         Returns:
-            A :code:`KV` object for the element. See :ref:`python_kv`.
+            A :class:`heedy.kv.KV` object for the element.
         """
         return self._kv
 
@@ -236,9 +262,12 @@ class Object(APIObject):
     def meta(self):
         """
         The object type's metadata. For details of usage, see :ref:`python_objectmeta`.
+        This does not need to be awaited in async sessions. Instead, to read the data if it was
+        not yet cached, use :code:`o.meta()` or :code:`await o.meta()` depending on session type.
+
 
         Returns:
-            An :code:`ObjectMeta` object for this element. See :ref:`python_objectmeta`.
+            An :class:`heedy.objects.objects.ObjectMeta` object for this element. See :ref:`python_objectmeta`.
         """
         return ObjectMeta(self)
 
@@ -246,18 +275,45 @@ class Object(APIObject):
     def meta(self, v):
         return self.update(meta=v)
 
+    def __getitem__(self, i):
+        v = super().__getitem__(i)
+        if i == "owner":
+            return users.User(v, self.session)
+        if i == "app" and v is not None:
+            return apps.App(v, self.session)
+        if i == "meta":
+            return self.meta
+        return v
+
     @property
     def owner(self):
         """
-        The user which owns this object::
+        The user which owns this object:
 
-            print(o.user.username) # prints the username of the object's owner
+        .. tab:: Sync
+
+            ::
+
+                print(o.owner.username) # Queries the server for the owner, and prints username
+                print(o["owner"].username) # Uses cached query data to get the owner
+
+
+        .. tab:: Async
+
+            ::
+
+                print((await o.owner).username) # Queries the server for the owner, and prints username
+                print(o["owner"].username) # Uses cached query data to get the owner
+
+
 
         Returns:
-            The :code:`User` object (see :ref:`python_user`) of the user which owns this object,
-            with username cached (:code:`read()` will need to be called on the user to get other properties).
+            The :class:`~heedy.User` object of the user which owns this object.
+            The returned user does not have any cached data other than its username.
         """
-        return users.User(self.cached_data["owner"], self.session)
+        return self.session.f(
+            self.read(), lambda x: users.User(x["owner"], self.session)
+        )
 
     @property
     def app(self):
@@ -268,27 +324,30 @@ class Object(APIObject):
 
             ::
 
-                if obj.app is not None:
-                    print(obj.app.id)
+                if obj.app is not None:  # Query the server for the object's app
+                    print(obj["app"].id) # Use cached value from previous query
 
 
         .. tab:: Async
 
             ::
 
-                if obj.app is not None:
-                    print(obj.app.id) # no need to await id prop in this case, because id is already cached
+                if await obj.app is not None: # Query the server for the object's app
+                    print(obj["app"].id) # Use cached value from previous query
 
         When accessing the Heedy API as an app, you will not be able to see or access any other apps.
 
         Returns:
             The app that this object belongs to, or None if it does not belong to an app.
-            The returned App object does not have any cached data other than its id, so you will need to call
-            :code:`read()` on it if accessing its cached data.
+            The returned :class:`~heedy.App` object does not have any cached data other than its id, so you will need to call
+            :code:`read()` on it if accessing more than its id.
         """
-        if self.cached_data["app"] is None:
-            return None
-        return apps.App(self.cached_data["app"], session=self.session)
+        return self.session.f(
+            self.read(),
+            lambda x: apps.App(x["app"], self.session)
+            if x["app"] is not None
+            else None,
+        )
 
     def update(self, **kwargs):
 
@@ -358,7 +417,7 @@ class Objects(APIList):
                 obj = await p.objects["d233rk43o6kkle43kl"]
 
         Returns:
-            The object with the given ID (or promise for the object)
+            The :class:`~heedy.Object` with the given ID (or promise for the object)
         Throws:
             HeedyException: If the object does not exist
         """
@@ -370,14 +429,6 @@ class Objects(APIList):
         """Gets the objects matching the given constraints.
         If used as a property of a user of an app,
         it will return only the objects belonging to that user/app (the user/app constraint is automatically added).
-
-        The following constraints are supported:
-
-        - type: The type of the objects (like "timeseries")
-        - key: The unique app key of the object (each app can only have one object with a given key)
-        - tags: The tags that the object must have, separated by spaces
-        - owner: The owner username of the object (set automatically when accessed using the objects property of a user)
-        - app: The app ID that the object belongs to. Set to empty string for objects that don't belong to any app. (set automatically when accessing the objects property of an app)
 
         .. tab:: Sync
 
@@ -398,9 +449,15 @@ class Objects(APIList):
                         tags="tag1 tag2",
                         owner="myuser",
                         app="")
-
+        Args:
+            type (str): The type of the objects (like "timeseries")
+            key (str): The unique app key of the object (each app can only have one object with a given key)
+            tags (str): The tags that the object must have, separated by spaces
+            owner (str): The owner username of the object (set automatically when accessed using the objects property of a user)
+            app (str): The app ID that the object belongs to. Set to empty string for objects that don't belong to any app. (set automatically when accessing the objects property of an app)
+            icon (bool,False): Whether to include the icons of the returned objects' data.
         Returns:
-            A list of objects matching the given constraints.
+            A list of :class:`~heedy.Object` matching the given constraints.
         Throws:
             HeedyException: If the request fails.
         """
@@ -440,8 +497,19 @@ class Objects(APIList):
         When creating an object for an app, it is useful to give it a `key`.
         Keys are unique per-app, meaning that the app can have only one object with the given key.
 
+        Args:
+            name (str,""): The name of the object
+            description (str,""): A description of the object
+            icon (str,""): The icon of the object, either a base64 urlencoded image or fontawesome/material icon id.
+            owner (str): The owner of the object (set automatically when accessed using the objects property of a user or app).
+            app (str): The app ID that the object belongs to (set automatically when accessing the objects property of an app).
+            meta (dict,{}): The metadata of the object.
+            type (str,"timeseries"): The type of the object
+            key (str): The unique per-app key of the object
+            tags (str,""): The tags assigned to the object, separated by spaces
+            owner_scope (str,"*"): The space-separated scopes to give the owner of the object if it is managed by an app.
         Returns:
-            The newly created object, with its data cached.
+            The newly created :class:`~heedy.Object`, with its data cached.
 
         Throws:
             HeedyException: if the object could not be created.

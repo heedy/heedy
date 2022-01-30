@@ -25,9 +25,24 @@ class Plugin:
         self.session = getSessionType(session, self.name, self.config["config"]["api"])
         self.session.setPluginKey(self.config["apikey"])
 
+        #: A :class:`~heedy.notifications.Notifications` object that allows you to access
+        #: to notifications in the Heedy instance. See :ref:`python_notifications` for details.
         self.notifications = Notifications({}, self.session)
+
+        #: An :class:`~heedy.Apps` instance, allowing
+        #: to interact with the users in Heedy.
+        #: Listing apps that conform to the given restrictions
+        #: can be done by calling ``plugin.apps()``.
         self.apps = Apps({}, self.session)
+
+        #: An :class:`~heedy.Users` instance, allowing
+        #: to interact with the users in Heedy.
+        #: Users can be listed with ``plugin.objects()``.
         self.users = Users({}, self.session)
+
+        #: An :class:`~heedy.Objects` instance, allowing
+        #: to interact with the objects in Heedy. Listing objects
+        #: that conform to given restrictions can be done by calling ``plugin.objects()``.
         self.objects = Objects({}, self.session)
 
     @property
@@ -130,4 +145,7 @@ class Plugin:
         return self.session.post("/api/events", event)
 
     def notify(self, *args, **kwargs):
+        """
+        Shorthand for :code:`self.notifications.notify` (see :ref:`python_notifications`).
+        """
         return self.notifications.notify(*args, **kwargs)

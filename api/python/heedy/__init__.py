@@ -1,6 +1,7 @@
 from .base import HeedyException
 
-from .apps import App
+from .apps import App, Apps
+from .users import User, Users
 from .plugins import Plugin
 
 # Import the object types

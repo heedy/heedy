@@ -159,7 +159,7 @@ All properties available on the object can be accessed directly as properties in
 # Reads the key property from the server
 assert obj.key == "myts"
 # Uses the previously read cached data, avoiding a server query
-assert obj["key"] == "myts" # Uses only cached read data
+assert obj["key"] == "myts"
 ```
 ````
 
@@ -226,17 +226,17 @@ it has special handling in the API. For example, updating an object to set its m
 
 ````{tab} Sync
 ```python
-obj.meta # Suppose meta={"a": 1,"b":2,"c":3}
-obj.meta = {"c": 4,"b": None}
-obj.meta # {"a": 1,"c":4}
+obj.meta() # Read meta from server ={"a": 1,"b":2,"c":3}
+obj.meta = {"c": 4,"b": None} # Update the b,c values
+print(obj.meta) # {"a": 1,"c":4} # The update results are cached
 ```
 ````
 
 ````{tab} Async
 ```python
-await obj.meta # Suppose meta={"a": 1,"b":2,"c":3}
-await obj.update(meta={"c": 4,"b": None})
-await obj.meta # {"a": 1,"c":4}
+await obj.meta() # Read meta from server ={"a": 1,"b":2,"c":3}
+await obj.update(meta={"c": 4,"b": None}) # Update the b,c values
+print(obj.meta) # {"a": 1,"c":4} # The update results are cached
 ```
 ````
 
