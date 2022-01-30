@@ -270,7 +270,16 @@ func UpdateApp(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	rest.WriteResult(w, r, rest.CTX(r).DB.UpdateApp(&c))
+
+	err = rest.CTX(r).DB.UpdateApp(&c)
+
+	// If the access token has changed, write the new one in the result
+	res := struct {
+		Result      string  `json:"result"`
+		AccessToken *string `json:"access_token,omitempty"`
+	}{Result: "ok", AccessToken: c.AccessToken}
+
+	rest.WriteJSON(w, r, res, err)
 
 }
 

@@ -323,8 +323,16 @@ func (db *PluginDB) UpdateApp(c *database.App) error {
 	if err != nil {
 		return err
 	}
-
-	return db.BasicRequest("PATCH", api, bytes.NewBuffer(b))
+	// An app update will include a new access token if the token is being updated
+	v := struct {
+		Result      string `json:"result"`
+		AccessToken string `json:"access_token,omitempty"`
+	}{}
+	err = db.UnmarshalRequest(&v, "PATCH", api, bytes.NewBuffer(b))
+	if v.AccessToken != "" {
+		c.AccessToken = &v.AccessToken
+	}
+	return err
 }
 func (db *PluginDB) DelApp(id string) error {
 	api := fmt.Sprintf("/api/apps/%s", url.PathEscape(id))
