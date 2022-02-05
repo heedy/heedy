@@ -166,5 +166,34 @@ func FrontendMux() (*chi.Mux, error) {
 	// Handles getting all assets other than the root webpage
 	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
 
+	// The favicon is taken from the root directly
+	mux.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		fbytes, err := afero.ReadFile(frontendFS, "/favicon.ico")
+		if err != nil {
+			// There is no favicon, so just return a 404
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("404 - Not Found"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "image/x-icon")
+		w.Write(fbytes)
+	})
+
+	// The manifest is also in root - in the future, the manifest could be templated depending
+	// on the plugins that are active
+	mux.Get("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
+		fbytes, err := afero.ReadFile(frontendFS, "/manifest.json")
+		if err != nil {
+			// There is no manifest, so just return a 404
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("{}"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(fbytes)
+	})
+
 	return mux, nil
 }
