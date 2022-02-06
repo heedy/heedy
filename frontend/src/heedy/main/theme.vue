@@ -212,6 +212,10 @@ export default {
     bottom: false, // Whether to display the navigation on bottom, in mobile mode
     small: false, // In mobile mode whether to show text. Only active when mini is true
   }),
+  head: {
+    title: "heedy",
+    titleTemplate: "%s - Heedy",
+  },
   computed: {
     menu() {
       return Object.values(this.$store.state.app.menu_items).filter(

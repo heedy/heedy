@@ -46,6 +46,9 @@ export default {
     username: "",
     password: "",
   }),
+  head: {
+    title: "Log In",
+  },
   methods: {
     login: async function (e) {
       console.vlog("run login");

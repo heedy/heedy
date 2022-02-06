@@ -6,7 +6,12 @@ import ObjectDefault from "./index_default.vue";
 
 export default {
   props: {
-    object: Object
+    object: Object,
+  },
+  head() {
+    return {
+      title: this.object.name,
+    };
   },
   computed: {
     is() {
@@ -19,7 +24,7 @@ export default {
         );
       }
       return ObjectDefault;
-    }
-  }
+    },
+  },
 };
 </script>

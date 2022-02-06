@@ -3,6 +3,7 @@ import VueCompositionAPI, { ref, reactive } from '@vue/composition-api'
 import VueRouter from "vue-router";
 import Vuex, { mapState } from "vuex";
 import createLogger from "vuex/dist/logger";
+import VueMeta from 'vue-meta';
 
 // Vuetify internally imports vue, so we need to include it here.
 import Vuetify from "vuetify";
@@ -28,6 +29,7 @@ Vue.component("VJsf", VJsf);
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(Vuetify);
+Vue.use(VueMeta, { keyName: 'head' });
 
-export { ref,reactive, VJsf, VueRouter, Vuex, Vuetify, mapState, createLogger };
+export { ref, reactive, VJsf, VueRouter, Vuex, Vuetify, VueMeta, mapState, createLogger };
 export default Vue;

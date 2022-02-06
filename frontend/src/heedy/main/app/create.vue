@@ -46,6 +46,9 @@ export default {
     loading: false,
     alert: "",
   }),
+  head: {
+    title: "Create App",
+  },
   methods: {
     create: async function (e) {
       e.preventDefault();

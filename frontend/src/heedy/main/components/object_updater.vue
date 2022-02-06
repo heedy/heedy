@@ -67,6 +67,11 @@ export default {
     advanced: false,
     loading: false,
   }),
+  head() {
+    return {
+      title: `Edit ${this.object.name}`,
+    };
+  },
   methods: {
     update: async function (e) {
       e.preventDefault();

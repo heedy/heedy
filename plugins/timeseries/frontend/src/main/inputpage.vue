@@ -92,6 +92,9 @@ export default {
   components: {
     InsertCard,
   },
+  head: {
+    title: "Inputs",
+  },
   computed: {
     user() {
       return this.$store.state.app.info.user;

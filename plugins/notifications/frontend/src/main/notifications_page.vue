@@ -35,6 +35,9 @@
 </template>
 <script>
 export default {
+  head: {
+    title: "Notifications",
+  },
   computed: {
     loading() {
       return this.$store.state.notifications.global == null;

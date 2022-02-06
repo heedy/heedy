@@ -65,6 +65,9 @@ export default {
     loading: false,
     errmessage: "",
   }),
+  head: {
+    title: "Data Analysis",
+  },
   methods: {
     runQuery: async function () {
       let qjson = JSON.stringify(this.query);

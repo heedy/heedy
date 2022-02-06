@@ -14,6 +14,9 @@ export default {
   data: () => ({
     tab: null,
   }),
+  head: {
+    title: "User Settings",
+  },
   computed: {
     routes() {
       return this.$store.state.heedy.settings_routes;

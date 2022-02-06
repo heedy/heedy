@@ -39,5 +39,9 @@
 </template>
 
 <script>
-export default {};
+export default {
+  head: {
+    title: "About",
+  },
+};
 </script>

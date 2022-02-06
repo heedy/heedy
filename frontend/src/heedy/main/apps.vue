@@ -153,6 +153,9 @@ export default {
   data: () => ({
     dialog: false,
   }),
+  head: {
+    title: "Apps",
+  },
   computed: {
     loading() {
       return this.$store.state.heedy.apps == null;
