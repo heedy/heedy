@@ -278,7 +278,7 @@ type Configuration struct {
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 
 	LogLevel *string `json:"log_level,omitempty" hcl:"log_level"`
-	LogFile  *string `json:"log_file,omitempty" hcl:"log_file"`
+	LogDir   *string `json:"log_dir,omitempty" hcl:"log_dir"`
 
 	// Schema for the core heedy settings
 	UserSettingsSchema map[string]interface{} `json:"user_settings_schema,omitempty"`

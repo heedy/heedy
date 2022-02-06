@@ -75,9 +75,6 @@ export default {
     restarting: false,
     alert: "",
   }),
-  head: {
-    title: "Server Config",
-  },
   computed: {
     routes() {
       return this.$store.state.heedy.config_routes;

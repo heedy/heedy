@@ -77,6 +77,9 @@ type Assets struct {
 	// The overlay filesystems that include the builtin assets, as well as all
 	// overrides from active plugins, and user overrides. It is loaded automatically
 	FS afero.Fs
+
+	// LogFile used for logging (if custom)
+	LogFile *os.File
 }
 
 // Reload the assets from scratch
@@ -225,7 +228,41 @@ func (a *Assets) Reload() error {
 	a.FS = FS
 	a.Stack = assetStack
 
+	if err := Validate(a.Config); err != nil {
+		return err
+	}
+
+	// set the logging level based on the config
+	if a.Config.LogLevel != nil {
+		lvl, err := logrus.ParseLevel(*a.Config.LogLevel)
+		if err != nil {
+			return err
+		}
+		logrus.SetLevel(lvl)
+	}
+	if a.Config.LogDir != nil {
+		logdir := a.LogDir()
+		if logdir == "stdout" {
+			logrus.SetOutput(os.Stdout)
+		} else {
+			if _, err = os.Stat(logdir); err != nil {
+				if err = os.Mkdir(logdir, os.ModePerm); err != nil {
+					return err
+				}
+			}
+			logPath := path.Join(logdir, "heedy.log")
+			f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			if err != nil {
+				return err
+			}
+			logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+			logrus.SetOutput(f)
+			a.LogFile = f
+		}
+	}
+
 	if a.Config.Verbose {
+		logrus.SetLevel(logrus.DebugLevel) // Force debug level
 		b, err := json.MarshalIndent(a.Config, "", " ")
 		if err != nil {
 			return err
@@ -234,27 +271,24 @@ func (a *Assets) Reload() error {
 	}
 
 	// Validate the configuration
-	return Validate(a.Config)
+	return nil
 }
 
 // Abs returns config-relative absolute paths
 func (a *Assets) Abs(p string) string {
-	fp := filepath.Join(a.FolderPath, p)
-	fpabs, err := filepath.Abs(fp)
-	if err != nil {
-		return fp
+	if filepath.IsAbs(p) {
+		return p
 	}
-	return fpabs
+	// Folderpath is always absolute
+	return filepath.Join(a.FolderPath, p)
 }
 
-// Abs returns config-relative absolute paths
+// DataAbs returns config-relative absolute paths
 func (a *Assets) DataAbs(p string) string {
-	fp := filepath.Join(a.DataDir(), p)
-	fpabs, err := filepath.Abs(fp)
-	if err != nil {
-		return fp
+	if filepath.IsAbs(p) {
+		return p
 	}
-	return fpabs
+	return filepath.Join(a.DataDir(), p)
 }
 
 // DataDir returns the directory where data is stored
@@ -265,6 +299,13 @@ func (a *Assets) DataDir() string {
 // PluginDir returns the directory where plugin data is stored
 func (a *Assets) PluginDir() string {
 	return path.Join(a.FolderPath, "plugins")
+}
+
+func (a *Assets) LogDir() string {
+	if a.Config == nil || a.Config.LogDir == nil || *a.Config.LogDir == "stdout" {
+		return "stdout"
+	}
+	return a.Abs(*a.Config.LogDir)
 }
 
 func (a *Assets) AddAdmin(username string) error {
@@ -340,6 +381,14 @@ func (a *Assets) SwapAdmin(username, newname string) error {
 			err = a.RemAdmin(username)
 		}
 		return err
+	}
+	return nil
+}
+
+func (a *Assets) Close() error {
+	if a.LogFile != nil {
+		logrus.SetOutput(os.Stdout)
+		a.LogFile.Close()
 	}
 	return nil
 }

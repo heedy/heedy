@@ -25,6 +25,12 @@ var RunCmd = &cobra.Command{
 		}
 		c := assets.NewConfiguration()
 		c.Verbose = verbose
+		if loglevel != "" {
+			c.LogLevel = &loglevel
+		}
+		if logdir != "" {
+			c.LogDir = &logdir
+		}
 
 		if _, err := os.Stat(path.Join(directory, "heedy.conf")); os.IsNotExist(err) {
 			// A heedy database does not exist in the config directory

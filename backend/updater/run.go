@@ -60,6 +60,7 @@ func Run(o Options) error {
 	a, err := assets.Open(o.ConfigDir, o.AddonConfig)
 	if err == nil {
 		assets.SetGlobal(a)
+		defer a.Close()
 		err = o.Runner(a)
 	}
 

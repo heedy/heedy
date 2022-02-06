@@ -144,8 +144,8 @@ type hclConfiguration struct {
 
 	Plugins []hclPlugin `hcl:"plugin,block"`
 
-	LogLevel *string `json:"log_level" hcl:"log_level"`
-	LogFile  *string `json:"log_file" hcl:"log_file"`
+	LogLevel *string `json:"log_level,omitempty" hcl:"log_level"`
+	LogDir   *string `json:"log_dir,omitempty" hcl:"log_dir"`
 
 	UserSettingsSchema *cty.Value `hcl:"user_settings_schema"`
 }

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -79,8 +80,27 @@ func RunCommand(pypath string, args []string) error {
 		l.Debugf("%s %s", pypath, strings.Join(args, " "))
 	}
 	cmd := exec.Command(pypath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	lvl := logrus.GetLevel()
+	if lvl == logrus.DebugLevel || lvl == logrus.InfoLevel {
+		logdir := settings.DB.Assets().LogDir()
+		if logdir == "stdout" {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		} else {
+			logfile := path.Join(logdir, "python.log")
+			f, err := os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+			if err != nil {
+				return err
+			}
+			_, err = f.WriteString(fmt.Sprintf("\n\n%s >>> %s %s\n", time.Now().Format(time.RFC3339), pypath, strings.Join(args, " ")))
+			if err != nil {
+				return err
+			}
+			cmd.Stdout = f
+			cmd.Stderr = f
+			defer f.Close()
+		}
+	}
 	return cmd.Run()
 }
 

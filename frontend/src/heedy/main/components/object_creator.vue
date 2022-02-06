@@ -69,11 +69,6 @@ export default {
     },
   },
   data: () => ({ alert: "", advanced: false, loading: false }),
-  head() {
-    return {
-      title: `Create ${this.type.title}`,
-    };
-  },
   computed: {
     hasAdvanced() {
       return !!this.$slots["advanced"];

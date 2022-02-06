@@ -36,6 +36,9 @@ var cpuprofile string
 var cpuprofileFile *os.File
 var memprofile string
 
+var loglevel string
+var logdir string
+
 // UserDataDir is identical to os.UserConfigDir, but returns the linux app data folder instead of config folder
 func UserDataDir() (string, error) {
 	var dir string
@@ -80,6 +83,12 @@ var RootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := assets.NewConfiguration()
 		c.Verbose = verbose
+		if loglevel != "" {
+			c.LogLevel = &loglevel
+		}
+		if logdir != "" {
+			c.LogDir = &logdir
+		}
 
 		// Check if a database exists in the root directory. If it doesn't runs the equivalent of "heedy create"
 		directory, err := UserDataDir()
@@ -117,6 +126,23 @@ var RootCmd = &cobra.Command{
 		})
 	},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if loglevel != "" {
+			log_level, err := logrus.ParseLevel(loglevel)
+			if err != nil {
+				return err
+			}
+			logrus.SetLevel(log_level)
+		}
+		if logdir != "" && logdir != "stdout" {
+			// The log file will be opened in assets. However, assets use the database dir as pwd
+			// so we want to convert the file path to relative to current folder
+			var err error
+			logdir, err = filepath.Abs(logdir)
+			if err != nil {
+				return err
+			}
+		}
+
 		if cpuprofile != "" {
 			logrus.Warnf("Creating CPU Profile at '%s'", cpuprofile)
 			f, err := os.Create(cpuprofile)
@@ -220,7 +246,9 @@ func delpid(directory string) error {
 }
 
 func init() {
-	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in DEBUG log level.")
+	RootCmd.PersistentFlags().StringVar(&loglevel, "log_level", "", "Set the log level (debug, info, warn, error, fatal, panic)")
+	RootCmd.PersistentFlags().StringVar(&logdir, "log_dir", "", "Write logs to the given folder (or stdout)")
+	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in debug log level.")
 	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
 	RootCmd.PersistentFlags().BoolVar(&applyUpdates, "update", false, "Applies any pending updates")
 	RootCmd.PersistentFlags().BoolVar(&forceRun, "force", false, "Force the server to start even if it detects a running heedy instance")

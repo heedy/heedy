@@ -1,5 +1,5 @@
 <template>
-  <h-card-page title="Create a new App" :alert="alert">
+  <h-card-page title="Create App" :alert="alert">
     <v-form @submit="create">
       <v-container fluid grid-list-md>
         <v-layout row>
@@ -46,9 +46,6 @@ export default {
     loading: false,
     alert: "",
   }),
-  head: {
-    title: "Create App",
-  },
   methods: {
     create: async function (e) {
       e.preventDefault();

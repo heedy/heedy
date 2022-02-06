@@ -88,11 +88,6 @@ export default {
     loading: false,
     alert: "",
   }),
-  head() {
-    return {
-      title: `Update ${this.app.name}`,
-    };
-  },
   methods: {
     update: async function (e) {
       e.preventDefault();

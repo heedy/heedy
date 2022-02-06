@@ -16,6 +16,6 @@ import (
 
 func main() {
 	events.RegisterDatabaseHooks() // We're running the full server, so we want to trigger events on actions in database
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 	cmd.Execute()
 }

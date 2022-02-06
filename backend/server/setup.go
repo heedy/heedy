@@ -220,6 +220,8 @@ func Setup(sc SetupContext, setupBind string) error {
 		return err
 	}
 	logrus.Info("Running Heedy Server")
+	a := assets.Get()
+	defer a.Close()
 	// Setup was successful. Run the full server
-	return Run(assets.Get(), nil)
+	return Run(a, nil)
 }

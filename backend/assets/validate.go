@@ -3,11 +3,14 @@ package assets
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/blang/semver/v4"
 	"github.com/heedy/heedy/backend/buildinfo"
+	"github.com/sirupsen/logrus"
 )
 
 // The http verbs to permit in router
@@ -272,6 +275,39 @@ func Validate(c *Configuration) error {
 				return err
 			}
 
+		}
+
+	}
+
+	if c.LogLevel != nil {
+		if *c.LogLevel == "" {
+			lvl := "info"
+			c.LogLevel = &lvl
+		}
+		_, err := logrus.ParseLevel(*c.LogLevel)
+		if err != nil {
+			return fmt.Errorf("Invalid log level: %s", *c.LogLevel)
+		}
+	}
+	if c.LogDir != nil {
+		if *c.LogDir == "" {
+			ldir := "stdout"
+			c.LogDir = &ldir
+		}
+
+		if *c.LogDir != "stdout" {
+			ap, err := filepath.Abs(*c.LogDir)
+			if err != nil {
+				return fmt.Errorf("Invalid log folder: %s", *c.LogDir)
+			}
+			if ap != "/" {
+				if strings.HasSuffix(ap, "/") {
+					ap = ap[:len(ap)-1]
+				}
+				if _, err = os.Stat(filepath.Dir(ap)); err != nil {
+					return fmt.Errorf("Parent directory does not exist for log dir: %s", *c.LogDir)
+				}
+			}
 		}
 
 	}
