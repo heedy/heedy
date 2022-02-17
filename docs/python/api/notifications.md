@@ -12,4 +12,5 @@
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+    :special-members: __call__
 ```

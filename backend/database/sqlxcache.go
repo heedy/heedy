@@ -157,7 +157,8 @@ func (db *SqlxCache) Queryx(query string, args ...interface{}) (*sqlx.Rows, erro
 
 type TxWrapper struct {
 	*sqlx.Tx
-	Verbose bool
+	Verbose   bool
+	committed bool
 }
 
 func (tx TxWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
@@ -190,16 +191,21 @@ func (tx TxWrapper) Queryx(query string, args ...interface{}) (*sqlx.Rows, error
 }
 
 func (tx TxWrapper) Rollback() error {
+	if tx.committed {
+		return nil
+	}
 	if tx.Verbose {
 		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("ROLLBACK")
 	}
 	return tx.Tx.Rollback()
 }
 
-func (tx TxWrapper) Commit() error {
+func (tx *TxWrapper) Commit() error {
 	if tx.Verbose {
 		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("COMMIT")
+
 	}
+	tx.committed = true
 	return tx.Tx.Commit()
 }
 

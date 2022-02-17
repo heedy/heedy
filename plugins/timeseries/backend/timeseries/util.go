@@ -2,6 +2,7 @@ package timeseries
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/karrick/tparse"
@@ -15,6 +16,14 @@ func Unix(t time.Time) float64 {
 func ParseTimestamp(ts interface{}) (float64, error) {
 	tss, ok := ts.(string)
 	if ok {
+		// First try to parse as a float64, and only then try tparse
+		// tparse loses a bit of precision when converting to float64,
+		// which can lead to mismatches when querying for data by timestamp
+		f, err := strconv.ParseFloat(tss, 64)
+		if err == nil {
+			return f, nil
+		}
+		// It is not a float, try parsing as string
 		t, err := tparse.ParseNow(time.RFC3339, tss)
 		return Unix(t), err
 	}

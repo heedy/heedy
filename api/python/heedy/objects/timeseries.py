@@ -14,9 +14,10 @@ from dateparser import parse
 
 def parseTime(t):
     if isinstance(t, str):
-        tnew = parse(t)
-        if tnew is not None:
-            t = tnew
+        if not t.startswith("now"):
+            tnew = parse(t)
+            if tnew is not None:
+                t = tnew
     if isinstance(t, datetime.datetime):
         t = t.timestamp()
     return t
@@ -52,12 +53,6 @@ class DatapointArray(list):
         return DatapointArray(self).merge(other)
 
     def __getitem__(self, key):
-        if key == "t":
-            return self.t()
-        if key == "d":
-            return self.d()
-        if key == "dt":
-            return self.dt()
         d = list.__getitem__(self, key)
         if isinstance(key, slice):
             d = DatapointArray(d)
@@ -321,7 +316,7 @@ class Timeseries(Object):
             return super().__getitem__(getrange)
         if not isinstance(getrange, slice):
             # Return the single datapoint
-            return self(i=getrange)[0]
+            return self.session.f(self(i=getrange),lambda x: x[0])
 
         # The query is a slice - return the range
         qkwargs = {}

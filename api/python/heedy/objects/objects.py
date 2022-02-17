@@ -106,9 +106,7 @@ class ObjectMeta:
             HeedyException: If writing fails (usually due to insufficient permissions)
 
         """
-        return self._object.session.f(
-            self._object.update({"meta": kwargs}), lambda o: o["meta"]
-        )
+        return self._object.update(meta=kwargs)
 
     def delete(self, *args: str):
         """Delete the given keys from the object metadata.
@@ -202,6 +200,12 @@ class ObjectMeta:
 
     def __repr__(self):
         return str(self)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, ObjectMeta):
+            return self._object == o._object
+        else:
+            return self.cached_data == o
 
 
 class Object(APIObject):
@@ -351,11 +355,11 @@ class Object(APIObject):
 
     def update(self, **kwargs):
 
-        meta = self.cached_data.get("meta", None)
+        meta = self.cached_data.get("meta", {})
 
         def updateMeta(o):
             if "result" in o and o["result"] == "ok" and "meta" in kwargs:
-                if meta is None:
+                if kwargs["meta"] is None:
                     self.cached_data.pop("meta", 0)
                 else:
                     # We have values of meta, so set them correctly

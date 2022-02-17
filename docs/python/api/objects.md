@@ -100,7 +100,7 @@ One can create new objects of a given type by calling the `create` method in [`o
 obj = app.objects.create("My Timeseries",
                     type="timeseries",
                     meta={"schema":{"type":"number"}},
-                    tags="myts mydata"
+                    tags="myts mydata",
                     key="myts")
 ```
 ````
@@ -110,7 +110,7 @@ obj = app.objects.create("My Timeseries",
 obj = await app.objects.create("My Timeseries",
                     type="timeseries",
                     meta={"schema":{"type":"number"}},
-                    tags="myts mydata"
+                    tags="myts mydata",
                     key="myts")
 ```
 ````
@@ -289,7 +289,7 @@ obj[-1]     # Get most recent datapoint
 ```python
 await obj.length()      # Number of datapoints in the series
 await obj(i1=2,i2=5)    # Query by index range
-await obj(i=-1)         # Get most recent datapoint
+await obj(i=-1)[0]      # Get most recent datapoint
 ```
 ````
 
