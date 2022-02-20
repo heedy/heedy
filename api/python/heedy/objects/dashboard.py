@@ -6,7 +6,7 @@ from .registry import registerObjectType
 class DashboardElement(APIObject):
     props = {"query", "settings", "data", "id", "type", "title", "on_demand", "index"}
 
-    def __init__(self, dashboard, cached_data={}):
+    def __init__(self, dashboard, cached_data):
 
         super().__init__(
             f"api/objects/{q(dashboard.id)}/dashboard/{q(cached_data['id'])}",

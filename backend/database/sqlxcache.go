@@ -205,8 +205,11 @@ func (tx *TxWrapper) Commit() error {
 		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("COMMIT")
 
 	}
-	tx.committed = true
-	return tx.Tx.Commit()
+	err := tx.Tx.Commit()
+	if err == nil {
+		tx.committed = true
+	}
+	return err
 }
 
 func (db *SqlxCache) Beginx() (TxWrapper, error) {
@@ -215,8 +218,9 @@ func (db *SqlxCache) Beginx() (TxWrapper, error) {
 	}
 	tx, err := db.DB.Beginx()
 	return TxWrapper{
-		Tx:      tx,
-		Verbose: db.Verbose,
+		Tx:        tx,
+		Verbose:   db.Verbose,
+		committed: false,
 	}, err
 }
 
@@ -235,7 +239,8 @@ func (db *SqlxCache) BeginImmediatex() (TxWrapper, error) {
 	}
 
 	return TxWrapper{
-		Tx:      tx,
-		Verbose: db.Verbose,
+		Tx:        tx,
+		Verbose:   db.Verbose,
+		committed: false,
 	}, err
 }

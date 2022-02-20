@@ -47,7 +47,7 @@ class App(APIObject):
     read_qparams = {"icon": {"icon": True}, "access_token": {"token": True}}
 
     def __init__(
-        self, access_token: str, url: str = DEFAULT_URL, session="sync", cached_data={}
+        self, access_token: str, url: str = DEFAULT_URL, session="sync", cached_data=None
     ):
         appid = "self"
         if isinstance(session, Session):

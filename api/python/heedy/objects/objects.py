@@ -228,15 +228,15 @@ class Object(APIObject):
         "owner_scope",
     }
 
-    def __init__(self, objectData: Dict, session: Session):
+    def __init__(self, cached_data: Dict, session: Session):
         super().__init__(
-            f"api/objects/{q(objectData['id'])}",
-            {"object": objectData["id"]},
+            f"api/objects/{q(cached_data['id'])}",
+            {"object": cached_data["id"]},
             session,
-            cached_data=objectData,
+            cached_data=cached_data,
         )
 
-        self._kv = KV(f"api/kv/objects/{q(objectData['id'])}", self.session)
+        self._kv = KV(f"api/kv/objects/{q(cached_data['id'])}", self.session)
 
     @property
     def id(self):

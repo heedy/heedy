@@ -4,6 +4,7 @@ pytest-asyncio
 pytest-aiohttp
 pytest-cov
 pytest-timeout
+pytest-order
 
 aiohttp
 dateparser

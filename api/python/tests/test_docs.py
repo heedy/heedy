@@ -1,5 +1,5 @@
 import pytest
-from heedy import App
+from heedy import App, HeedyException
 import time
 
 def test_objects():
@@ -182,3 +182,42 @@ async def test_ts_async():
     assert (await obj[-1])["d"]==6
 
     await obj.delete()
+
+@pytest.mark.order("last")
+def test_app_keychange():
+    # This test has to happen last, because once the app key is changed,
+    # there is no more logging in from other tests.
+    app = App("testkey",session="sync")
+    result = app.update(name="My Test App")
+    assert not "access_token" in result
+
+    result = app.update(access_token=True)
+
+    with pytest.raises(HeedyException):
+        app.read()
+
+    assert result["access_token"]!="testkey"
+    newapp = App(result["access_token"],url=app.session.url)
+
+    assert newapp.name == "My Test App"
+
+        
+
+def test_app():
+    app = App("testkey",session="sync")
+    assert app.id == "self"
+    app.read()
+    assert app.id!="self"
+    app.description = "hello worldd"
+
+    assert app["description"] == "hello worldd"
+
+@pytest.mark.asyncio
+async def test_app_async():
+    app = App("testkey",session="async")
+    assert app.id == "self"
+    await app.read()
+    assert app.id!="self"
+    await app.update(description="hello worldd")
+
+    assert app["description"] == "hello worldd"

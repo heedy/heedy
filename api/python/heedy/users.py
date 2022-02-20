@@ -10,7 +10,7 @@ from .notifications import Notifications
 class User(APIObject):
     props = {"name", "description", "icon", "public_read", "users_read"}
 
-    def __init__(self, username: str, session: Session, cached_data={}):
+    def __init__(self, username: str, session: Session, cached_data=None):
         super().__init__(
             f"api/users/{q(username)}",
             {"user": username},
@@ -78,6 +78,13 @@ class User(APIObject):
     @password.setter
     def password(self, v):
         return self.update(password=v)
+
+    def update(self, **kwargs):
+        def remPass(x):
+            # Remove the password from the updated cache
+            self.cached_data.pop("password", None)
+            return x
+        return self.session.f(super().update(**kwargs), remPass)
 
 
 class Users(APIList):

@@ -341,6 +341,7 @@ class AsyncSession(Session):
             urljoin(self.url, path),
             headers={**self.headers, **headers},
             data=data,
+            params=params
         )
 
     async def close(self):
@@ -394,10 +395,10 @@ class APIObject:
 
     read_qparams = {"icon": {"icon": True}}
 
-    def __init__(self, uri: str, constraints: Dict, session: Session, cached_data={}):
+    def __init__(self, uri: str, constraints: Dict, session: Session, cached_data=None):
         self.session = session
         self.uri = uri
-        self.cached_data = cached_data
+        self.cached_data = cached_data if cached_data is not None else {}
 
         #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
         #: associated with this element. See :ref:`python_notifications` for details.
