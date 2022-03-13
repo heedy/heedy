@@ -60,7 +60,7 @@ class Plugin:
         return p
 
     async def forward(
-        self, request, data=None, headers={}, run_as: str = None, overlay=None
+        self, request, data=None, headers=None, overlay=None
     ):
         """
         Forwards the given request to the underlying database.
@@ -68,6 +68,8 @@ class Plugin:
 
         Returns the response.
         """
+        if headers is None:
+            headers = {}
         if data is None:
             data = await request.read()
         headers = {**request.headers, **headers}

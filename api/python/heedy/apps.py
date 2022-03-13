@@ -1,5 +1,5 @@
 from typing import Dict
-from .base import APIObject, APIList, Session, getSessionType, DEFAULT_URL, q
+from .base import APIObject, APIList, HeedyException, Session, getSessionType, DEFAULT_URL, q
 from .kv import KV
 
 from . import users
@@ -172,6 +172,10 @@ class App(APIObject):
             cached_data=self.cached_data.copy(),
         )
 
+    def __eq__(self,other):
+        if self.id=="self" or other.id=="self":
+            raise AttributeError("App object was not read from the server, and cannot be compared. Call .read() first.")
+        return self.id==other.id
 
 class Apps(APIList):
     """
@@ -265,7 +269,7 @@ class Apps(APIList):
             **kwargs,
         )
 
-    def create(self, name: str, **kwargs):
+    def create(self, name: str="", **kwargs):
         """
         Creates a new app. Only the first argument, the app name, is required.
 
@@ -315,7 +319,9 @@ class Apps(APIList):
         """
         if "access_token" in kwargs and isinstance(kwargs["access_token"], bool):
             kwargs["access_token"] = "generate" if kwargs["access_token"] else ""
+        if name!="": # An empty name is allowed if creating a plugin app that is already defined in config
+            kwargs["name"] = name
         return self._create(
             f=lambda x: App(x["id"], session=self.session, cached_data=x),
-            **{"name": name, **kwargs},
+            **kwargs,
         )

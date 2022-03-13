@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# Create a heedy database with a special test app, which has api key "testkey"
+# Create a heedy database with a special test app, which has api key "testkey", and initialize
+# it with the test plugin, which contains tests for plugin functionality
 rm -rf testdb
-../../heedy create testdb --noserver --username=test --password=test --testapp=testkey
+../../heedy create testdb --noserver --username=test --password=test --testapp=testkey --plugin=ln-s:../../tests/testplugin
+if [ $? -ne 0 ]; then
+    echo "Failed to create test database"
+    exit 1
+fi
 
 # Start the database in the background
 ../../heedy start testdb --verbose
+if [ $? -ne 0 ]; then
+    echo "Failed to start test database"
+    exit 1
+fi
 
 # Wait for the port to be open
 # https://stackoverflow.com/questions/27599839/how-to-wait-for-an-open-port-with-netcat

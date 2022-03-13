@@ -69,9 +69,13 @@ func AppObject(app string, key string, as *assets.Object) *database.Object {
 	return s
 }
 
-func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string, error) {
+func CreateApp(c *rest.Context, app *database.App) (string, string, error) {
 	if c.DB.Type() != database.UserType && c.DB.Type() != database.AdminType {
 		return "", "", database.ErrAccessDenied("Only users can create apps")
+	}
+	owner := ""
+	if app.Owner != nil {
+		owner = *app.Owner
 	}
 	if c.DB.Type() == database.UserType && owner == "" {
 		owner = c.DB.ID()
@@ -82,20 +86,25 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 	if owner == "" {
 		return "", "", errors.New("App must have an owner")
 	}
-	pk := strings.Split(pluginKey, ":")
+	pk := strings.Split(*app.Plugin, ":")
 	if len(pk) != 2 {
-		return "", "", database.ErrBadQuery("invalid app plugin key")
+		return "", "", database.ErrBadQuery("plugin keys must be in the format 'plugin_name:key'")
 	}
 	adb := c.DB.AdminDB()
 	a := adb.Assets()
 
 	p, ok := a.Config.Plugins[pk[0]]
 	if !ok {
-		return "", "", database.ErrBadQuery("invalid app plugin key")
+		return "", "", database.ErrBadQuery("unrecognized plugin name for app plugin")
 	}
 
-	app, ok := p.Apps[pk[1]]
+	papp, ok := p.Apps[pk[1]]
 	if !ok {
+		// The plugin doesn't have this app - if trying to create as a user, fail,
+		// if as an admin... just create it.
+		if c.DB.Type() == database.AdminType {
+			return adb.CreateApp(app)
+		}
 		return "", "", database.ErrBadQuery("invalid app plugin key")
 	}
 
@@ -113,30 +122,37 @@ func CreateApp(c *rest.Context, owner string, pluginKey string) (string, string,
 		return "", "", database.ErrBadQuery("invalid app plugin key")
 	}
 
-	if app.Unique != nil && *app.Unique {
+	if papp.Unique != nil && *papp.Unique {
 		a, err := adb.ListApps(&database.ListAppOptions{
 			ReadAppOptions: database.ReadAppOptions{
 				Icon: false,
 			},
-			Plugin: &pluginKey,
+			Plugin: app.Plugin,
 			Owner:  &owner,
 		})
 		if err != nil {
 			return "", "", err
 		}
 		if len(a) >= 1 {
-			return "", "", errors.New("This unique plugin app already exists")
+			return "", "", errors.New("unique plugin app already exists")
 		}
 	}
 
-	aid, akey, err := adb.CreateApp(App(pluginKey, owner, app))
+	appv := App(*app.Plugin, owner, papp)
+	assets.CopyStructIfPtrSet(&appv.Details, &app.Details)
+	if c.DB.Type() == database.AdminType {
+		// Copy all the fields from the app object
+		assets.CopyStructIfPtrSet(appv, app)
+	}
+
+	aid, akey, err := adb.CreateApp(appv)
 	if err != nil {
 		if a.Config.Verbose {
-			c.Log.Warnf("Creating plugin app failed: %s\n%s", err.Error(), App(pluginKey, owner, app))
+			c.Log.Warnf("Creating plugin app failed: %s\n%s", err.Error(), appv)
 		}
 		return aid, akey, err
 	}
-	for skey, sv := range app.Objects {
+	for skey, sv := range papp.Objects {
 		// We perform the next stuff as admin
 		if sv.AutoCreate == nil || *sv.AutoCreate == true {
 			_, err := c.Request(c, "POST", "/api/objects", AppObject(aid, skey, sv), map[string]string{"X-Heedy-As": "heedy"})

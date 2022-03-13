@@ -165,8 +165,6 @@ func (p *Plugin) AfterStart() error {
 			if len(res) > 0 {
 				logrus.Debugf("%s: Creating '%s' app for all users", p.Name, pluginKey)
 
-				// aaand how exactly do I achieve this?
-
 				for _, uname := range res {
 
 					_, _, err = p.DB.CreateApp(App(pluginKey, uname, cv))
@@ -177,7 +175,7 @@ func (p *Plugin) AfterStart() error {
 			}
 		}
 		for skey, sv := range cv.Objects {
-			if sv.AutoCreate == nil || *sv.AutoCreate == true {
+			if sv.AutoCreate == nil || *sv.AutoCreate {
 				res := []string{}
 				err := p.DB.DB.Select(&res, "SELECT id FROM apps WHERE plugin=? AND NOT EXISTS (SELECT 1 FROM objects WHERE app=apps.id AND key=?);", pluginKey, skey)
 				if err != nil {

@@ -162,7 +162,7 @@ class Users(APIList):
         """
         return self._call(
             f=lambda x: [
-                User(xx["id"], session=self.session, cached_data=xx) for xx in x
+                User(xx["username"], session=self.session, cached_data=xx) for xx in x
             ],
             **kwargs,
         )

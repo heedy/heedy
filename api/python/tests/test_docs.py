@@ -1,6 +1,8 @@
 import pytest
-from heedy import App, HeedyException
+from heedy import App, Plugin, HeedyException
 import time
+import requests
+import aiohttp
 
 def test_objects():
     app = App("testkey")
@@ -52,6 +54,15 @@ def test_objects():
 
     assert app.objects(key="myts")[0] == obj
 
+    with pytest.raises(Exception):
+        assert obj["app"]==app
+    with pytest.raises(Exception):
+        assert obj.app == app
+
+    app.read()
+    assert obj["app"]==app
+    assert obj.app == app
+
     obj.delete()
     assert len(app.objects())==0
 
@@ -99,6 +110,15 @@ async def test_objects_async():
     assert (await obj.meta()) == {"schema": {}}
 
     assert (await app.objects(key="myts"))[0] == obj
+
+
+    with pytest.raises(Exception):
+        assert obj["app"]==app
+    with pytest.raises(Exception):
+        assert (await obj.app) == app
+    await app.read()
+    assert obj["app"]==app
+    assert (await obj.app) == app
 
     await obj.delete()
     assert len(await (app.objects()))==0
@@ -212,6 +232,10 @@ def test_app():
 
     assert app["description"] == "hello worldd"
 
+
+    assert app["owner"]["username"]=="test"
+    assert app.owner["username"]=="test"
+
 @pytest.mark.asyncio
 async def test_app_async():
     app = App("testkey",session="async")
@@ -221,3 +245,28 @@ async def test_app_async():
     await app.update(description="hello worldd")
 
     assert app["description"] == "hello worldd"
+
+    assert app["owner"]["username"]=="test"
+    assert (await app.owner)["username"]=="test"
+
+
+def test_apps():
+    plugin_config = requests.get("http://localhost:1324/api/testplugin").json()
+    p = Plugin(plugin_config,session="sync")
+
+    a = p.apps()
+
+    assert len(a)==1 # test app, leave it alone for now
+
+
+
+@pytest.mark.asyncio
+async def test_apps_async():
+    async with aiohttp.ClientSession() as session:
+        async with session.get("http://localhost:1324/api/testplugin") as resp:
+            plugin_config = await resp.json()
+    p = Plugin(plugin_config)
+
+    a = await p.apps()
+
+    assert len(a)==1

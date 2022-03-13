@@ -280,13 +280,14 @@ class Object(APIObject):
         return self.update(meta=v)
 
     def __getitem__(self, i):
+        if i == "meta":
+            return self.meta
         v = super().__getitem__(i)
         if i == "owner":
             return users.User(v, self.session)
         if i == "app" and v is not None:
-            return apps.App(v, self.session)
-        if i == "meta":
-            return self.meta
+            return apps.App(v, session=self.session)
+        
         return v
 
     @property
@@ -348,7 +349,7 @@ class Object(APIObject):
         """
         return self.session.f(
             self.read(),
-            lambda x: apps.App(x["app"], self.session)
+            lambda x: apps.App(x["app"], session=self.session)
             if x["app"] is not None
             else None,
         )
