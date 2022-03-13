@@ -39,9 +39,11 @@ var RunCmd = &cobra.Command{
 			}
 
 			return server.Setup(server.SetupContext{
-				Config:    c,
-				Directory: directory,
-			}, ":1324")
+				CreateOptions: assets.CreateOptions{
+					Config:    c,
+					Directory: directory,
+				},
+			})
 		}
 
 		if err = writepid(directory); err != nil {

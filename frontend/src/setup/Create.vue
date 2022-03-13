@@ -254,14 +254,10 @@ export default {
       }
       // Generate the query used to create the user.
       let query = {
-        user: {
           username: this.username,
           password: this.password1,
-        },
-        config: {
           addr: this.host + ":" + port,
           url: this.url,
-        },
       };
 
       // Only add configuration options which have been changed
@@ -297,7 +293,7 @@ export default {
         return new Promise((resolve) => setTimeout(resolve, ms));
       }
 
-      await sleep(200);
+      await sleep(300);
 
       let i = 0;
       let isok = false;
@@ -316,9 +312,9 @@ export default {
         );
         isok = res.response.ok;
         if (!isok) {
-          await sleep(200);
+          await sleep(400);
         }
-      } while (i < 5 * 30 && !isok);
+      } while (!isok);
 
       // We don't actually care about the result - we just wanted the cookie. Now redirect
       window.location.href = window.location.href.split("setup/")[0];

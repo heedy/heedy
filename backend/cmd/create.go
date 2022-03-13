@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"os"
+	"path"
 
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
@@ -20,6 +21,7 @@ var (
 	addr       string
 	username   string
 	password   string
+	plugins    []string
 )
 
 // CreateCmd creates a new database
@@ -45,15 +47,29 @@ It is recommended that new users use the web setup, which will guide you in prep
 		}
 
 		c := assets.NewConfiguration()
-		if addr != "" {
-			c.Addr = &addr
-		}
+		c.Addr = &addr
 		c.Verbose = verbose
+		if loglevel != "" {
+			c.LogLevel = &loglevel
+		}
+		if logdir != "" {
+			c.LogDir = &logdir
+		}
+		if len(plugins) > 0 {
+			plugin_names := make([]string, len(plugins))
+			for i, p := range plugins {
+				plugin_names[i] = path.Base(p)
+			}
+			c.ActivePlugins = &plugin_names
+		}
 
 		sc := server.SetupContext{
-			Config:    c,
-			Directory: directory,
-			File:      configFile,
+			CreateOptions: assets.CreateOptions{
+				Config:     c,
+				Directory:  directory,
+				ConfigFile: configFile,
+				Plugins:    plugins,
+			},
 			User: server.SetupUser{
 				UserName: username,
 				Password: password,
@@ -97,7 +113,7 @@ It is recommended that new users use the web setup, which will guide you in prep
 		} else if testapp != "" {
 			return errors.New("testapp can only be set in noserver mode")
 		}
-		return server.Setup(sc, addr)
+		return server.Setup(sc)
 
 	},
 }
@@ -109,6 +125,7 @@ func init() {
 	CreateCmd.Flags().StringVar(&username, "username", "", "Default user's username")
 	CreateCmd.Flags().StringVar(&password, "password", "", "Default user's password")
 	CreateCmd.Flags().StringVar(&testapp, "testapp", "", "Whether to create a test app with the given access token. Only works in noserver mode")
+	CreateCmd.Flags().StringSliceVarP(&plugins, "plugin", "p", []string{}, "A plugin folder to auto-enable")
 
 	RootCmd.AddCommand(CreateCmd)
 }

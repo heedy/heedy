@@ -232,42 +232,44 @@ func (a *Assets) Reload() error {
 		return err
 	}
 
-	// set the logging level based on the config
-	if a.Config.LogLevel != nil {
-		lvl, err := logrus.ParseLevel(*a.Config.LogLevel)
-		if err != nil {
-			return err
-		}
-		logrus.SetLevel(lvl)
-	}
-	if a.Config.LogDir != nil {
-		logdir := a.LogDir()
-		if logdir == "stdout" {
-			logrus.SetOutput(os.Stdout)
-		} else {
-			if _, err = os.Stat(logdir); err != nil {
-				if err = os.Mkdir(logdir, os.ModePerm); err != nil {
-					return err
-				}
-			}
-			logPath := path.Join(logdir, "heedy.log")
-			f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if a.FolderPath != "" {
+		// set the logging level based on the config, unless we're going purely from built-in assets
+		if a.Config.LogLevel != nil {
+			lvl, err := logrus.ParseLevel(*a.Config.LogLevel)
 			if err != nil {
 				return err
 			}
-			logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
-			logrus.SetOutput(f)
-			a.LogFile = f
+			logrus.SetLevel(lvl)
 		}
-	}
+		if a.Config.LogDir != nil {
+			logdir := a.LogDir()
+			if logdir == "stdout" {
+				logrus.SetOutput(os.Stdout)
+			} else {
+				if _, err = os.Stat(logdir); err != nil {
+					if err = os.Mkdir(logdir, os.ModePerm); err != nil {
+						return err
+					}
+				}
+				logPath := path.Join(logdir, "heedy.log")
+				f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+				if err != nil {
+					return err
+				}
+				logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+				logrus.SetOutput(f)
+				a.LogFile = f
+			}
+		}
 
-	if a.Config.Verbose {
-		logrus.SetLevel(logrus.DebugLevel) // Force debug level
-		b, err := json.MarshalIndent(a.Config, "", " ")
-		if err != nil {
-			return err
+		if a.Config.Verbose {
+			logrus.SetLevel(logrus.DebugLevel) // Force debug level
+			b, err := json.MarshalIndent(a.Config, "", " ")
+			if err != nil {
+				return err
+			}
+			logrus.Debug(string(b))
 		}
-		logrus.Debug(string(b))
 	}
 
 	// Validate the configuration

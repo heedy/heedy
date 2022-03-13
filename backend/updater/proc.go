@@ -3,7 +3,6 @@ package updater
 import (
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -50,15 +49,8 @@ func ReplaceOrStart(heedyPath string, args ...string) error {
 // it tries to replace the current process with the new one, if not, or if replacement is not
 // supported, it starts the new process in the background.
 func StartHeedy(configDir string, replace bool, extraArgs ...string) error {
-	heedyPath, err := filepath.Abs(path.Join(configDir, "heedy"))
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(heedyPath); os.IsNotExist(err) {
-		// We use the current executable
-		heedyPath, err = os.Executable()
-	}
+	// We use the current executable
+	heedyPath, err := os.Executable()
 	if err != nil {
 		return err
 	}
@@ -67,7 +59,8 @@ func StartHeedy(configDir string, replace bool, extraArgs ...string) error {
 	args := make([]string, 0, len(extraArgs)+len(os.Args)-1)
 	args = append(args, os.Args[1:]...)
 
-	// Only add the extraArgs that are not yet added
+	// Only add the extraArgs that are not yet added - this is hacky,
+	// but works for boolean flags (like --update)
 	for _, ea := range extraArgs {
 		hadArg := false
 		for _, a := range args {
@@ -82,17 +75,51 @@ func StartHeedy(configDir string, replace bool, extraArgs ...string) error {
 	}
 
 	// Now replace whatever command was used with the run command
+	// TODO: This is a nasty hack, but
+outerloop:
 	for i := range args {
 		switch args[i] {
 		case "run":
-			break
+			break outerloop
 		case "start":
 			args[i] = "run"
-			break
+			break outerloop
 		case "create":
-			// TODO: fix flags, since create might have different flags!
+
 			args[i] = "run"
-			break
+
+			// TODO: This is a hacky and crappy solution to the problem of rewriting the args,
+			// but it is not a priority to make it robust right now...
+
+			// Key is arg to replace, value is whether it has arg value itself
+			argmap := map[string]bool{
+				"--noserver": false,
+				"--username": true,
+				"--password": true,
+				"--testapp":  true,
+				"--config":   true,
+				"--plugin":   true,
+			}
+
+			// Fix the flags to remove flags used when creating
+			for j := i + 1; j < len(args); j++ {
+				if strings.HasPrefix(args[j], "-") {
+					// Now args can be of form --flag="value", split
+					fv := strings.SplitN(args[j], "=", 2)
+					val, ok := argmap[fv[0]]
+					if ok {
+						// Remove the arg, and its value if it has one
+						args = append(args[:j], args[j+1:]...)
+						if len(fv) == 1 && val {
+							args = append(args[:j], args[j+1:]...)
+							j--
+						}
+						j--
+
+					}
+				}
+			}
+			break outerloop
 		}
 	}
 	if replace {

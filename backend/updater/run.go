@@ -1,10 +1,6 @@
 package updater
 
 import (
-	"os"
-	"path"
-	"path/filepath"
-
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
@@ -27,31 +23,6 @@ func Run(o Options) error {
 		}
 	}
 
-	// Check if the config directory contains a heedy executable
-
-	heedyPath, err := filepath.Abs(path.Join(o.ConfigDir, "heedy"))
-	if err != nil {
-		return err
-	}
-	_, err = os.Stat(heedyPath)
-	restartHeedy := !os.IsNotExist(err)
-
-	curPath, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	if restartHeedy && (curPath != heedyPath || hadUpdate) {
-		// TODO: check the signature
-		// We run the heedy executable.
-		a := []string{}
-		if hadUpdate {
-			a = append(a, "--revert")
-		}
-		a = append(a, os.Args[1:]...)
-		return ReplaceOrStart(heedyPath, a...)
-
-	}
 	if hadUpdate {
 		o.Revert = true
 	}

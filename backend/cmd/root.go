@@ -100,9 +100,11 @@ var RootCmd = &cobra.Command{
 			// A heedy database does not exist in the config directory
 
 			return server.Setup(server.SetupContext{
-				Config:    c,
-				Directory: directory,
-			}, ":1324")
+				CreateOptions: assets.CreateOptions{
+					Config:    c,
+					Directory: directory,
+				},
+			})
 		}
 
 		directory, err = filepath.Abs(directory)
@@ -132,6 +134,9 @@ var RootCmd = &cobra.Command{
 				return err
 			}
 			logrus.SetLevel(log_level)
+		}
+		if verbose {
+			logrus.SetLevel(logrus.DebugLevel)
 		}
 		if logdir != "" && logdir != "stdout" {
 			// The log file will be opened in assets. However, assets use the database dir as pwd

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
@@ -31,10 +32,8 @@ type SetupUser struct {
 
 // This is the context that is passed to creator function
 type SetupContext struct {
-	Config    *assets.Configuration `json:"config,omitempty"`
-	Directory string                `json:"directory,omitempty"`
-	File      string                `json:"file,omitempty"`
-	User      SetupUser             `json:"user,omitempty"`
+	assets.CreateOptions
+	User SetupUser `json:"user,omitempty"`
 }
 
 func SetupCreate(sc SetupContext) error {
@@ -45,7 +44,7 @@ func SetupCreate(sc SetupContext) error {
 	sc.Config.AdminUsers = &[]string{sc.User.UserName}
 
 	logrus.Infof("Creating database in '%s'", sc.Directory)
-	a, err := assets.Create(sc.Directory, sc.Config, sc.File)
+	a, err := assets.Create(sc.CreateOptions)
 	if err != nil {
 		return err
 	}
@@ -89,7 +88,7 @@ func SetupCreate(sc SetupContext) error {
 // were given.
 // This will load the default config, overwritten with configFile, overwritten with c, and use that
 // as the "defaults" for fields given to the user.
-func Setup(sc SetupContext, setupBind string) error {
+func Setup(sc SetupContext) error {
 
 	frontendFS := afero.NewBasePathFs(assets.FS(), "/public")
 	setupbytes, err := afero.ReadFile(frontendFS, "/setup.html")
@@ -97,10 +96,14 @@ func Setup(sc SetupContext, setupBind string) error {
 		return err
 	}
 	setupTemplate, err := template.New("setup").Parse(string(setupbytes))
+	if err != nil {
+		return err
+	}
 
 	fullConfig := assets.Config()
-	if sc.File != "" {
-		cF, err := assets.LoadConfigFile(sc.File)
+
+	if sc.ConfigFile != "" {
+		cF, err := assets.LoadConfigFile(sc.ConfigFile)
 		if err != nil {
 			return err
 		}
@@ -109,7 +112,6 @@ func Setup(sc SetupContext, setupBind string) error {
 	if sc.Config != nil {
 		fullConfig = assets.MergeConfig(fullConfig, sc.Config)
 	}
-	sc.Config = fullConfig
 
 	directory, err := filepath.Abs(sc.Directory)
 	if err != nil {
@@ -124,13 +126,18 @@ func Setup(sc SetupContext, setupBind string) error {
 	mux := chi.NewMux()
 
 	setupServer := &http.Server{
-		Addr:    setupBind,
-		Handler: mux,
+		Addr: *fullConfig.Addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestStart := time.Now()
+			logger := rest.RequestLogger(r)
+			mux.ServeHTTP(w, r)
+			logger.Debugf("%v", time.Since(requestStart))
+		}),
 	}
 
-	if sc.Config.Verbose {
+	if fullConfig.Verbose {
 		logrus.Warn("Running in verbose mode")
-		setupServer.Handler = VerboseLoggingMiddleware(mux, nil)
+		setupServer.Handler = VerboseLoggingMiddleware(setupServer.Handler, nil)
 	}
 
 	mux.Get("/setup", func(w http.ResponseWriter, r *http.Request) {
@@ -151,28 +158,42 @@ func Setup(sc SetupContext, setupBind string) error {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("Setup is already complete"))
 			return
 		}
-		logrus.Debug("Got create request")
+		logrus.Debug("Processing database creation request")
 
-		var scn SetupContext
+		var scn struct {
+			SetupUser
+			Addr string `json:"addr,omitempty"`
+			URL  string `json:"url,omitempty"`
+		}
 		err := rest.UnmarshalRequest(r, &scn)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
-		if scn.Directory != "" {
-			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("The directory cannot be set from the web setup for security purposes"))
-			return
+		sc.User = scn.SetupUser
+		if (scn.Addr != "" || scn.URL != "") && sc.Config == nil {
+			sc.Config = assets.NewConfiguration()
 		}
-		scn.Directory = sc.Directory
 
-		err = SetupCreate(scn)
+		if scn.Addr != "" {
+			sc.Config.Addr = &scn.Addr
+		}
+		if scn.URL != "" {
+			sc.Config.URL = &scn.URL
+		}
+
+		err = SetupCreate(sc)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		// Now we load the main server, as if run was called
-		a, err := assets.Open(sc.Directory, nil)
+		// Now we load the main server, as if run was called, using the same
+		// logging as during setup
+		runconf := assets.NewConfiguration()
+		runconf.LogDir = sc.Config.LogDir
+		runconf.LogLevel = sc.Config.LogLevel
+		a, err := assets.Open(sc.Directory, runconf)
 		if err != nil {
 			rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 			os.RemoveAll(sc.Directory)
@@ -188,7 +209,6 @@ func Setup(sc SetupContext, setupBind string) error {
 		w.WriteHeader(http.StatusOK)
 
 		go setupServer.Shutdown(context.TODO())
-		return
 
 	})
 
@@ -199,7 +219,7 @@ func Setup(sc SetupContext, setupBind string) error {
 		http.Redirect(w, r, "/setup/#", http.StatusTemporaryRedirect)
 	})
 
-	host, port, err := net.SplitHostPort(setupBind)
+	host, port, err := net.SplitHostPort(*fullConfig.Addr)
 	if err != nil {
 		return err
 	}
