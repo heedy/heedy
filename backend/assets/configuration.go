@@ -275,6 +275,9 @@ type Configuration struct {
 	RequestBodyByteLimit *int64 `hcl:"request_body_byte_limit" json:"request_body_byte_limit,omitempty"`
 	AllowPublicWebsocket *bool  `hcl:"allow_public_websocket" json:"allow_public_websocket,omitempty"`
 
+	WebsocketHeartbeat    *string `hcl:"websocket_heartbeat" json:"websocket_heartbeat,omitempty"`
+	WebsocketWriteTimeout *string `hcl:"websocket_write_timeout" json:"websocket_write_timeout,omitempty"`
+
 	Plugins map[string]*Plugin `json:"plugin,omitempty"`
 
 	LogLevel *string `json:"log_level,omitempty" hcl:"log_level"`

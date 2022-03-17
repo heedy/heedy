@@ -20,11 +20,22 @@ export default {
         id: newValue,
         callback: () => (this.loading = false)
       });
+    },
+    websocket(nv) {
+      if (nv) {
+        // If the websocket gets re-connected, re-read the object
+        this.$store.dispatch("readObject", {
+          id: this.objectid
+        });
+      }
     }
   },
   computed: {
     object() {
       return this.$store.state.heedy.objects[this.objectid] || null;
+    },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
     }
   },
   created() {

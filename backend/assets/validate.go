@@ -149,6 +149,18 @@ func Validate(c *Configuration) error {
 			return errors.New("Invalid exec_timeout")
 		}
 	}
+	if c.WebsocketHeartbeat != nil {
+		_, err := time.ParseDuration(*c.WebsocketHeartbeat)
+		if err != nil {
+			return errors.New("Invalid websocket_heartbeat")
+		}
+	}
+	if c.WebsocketWriteTimeout != nil {
+		_, err := time.ParseDuration(*c.WebsocketWriteTimeout)
+		if err != nil {
+			return errors.New("Invalid websocket_write_timeout")
+		}
+	}
 
 	// Now make sure all runners are set up correctly
 	runners := make(map[string]*JSONSchema)

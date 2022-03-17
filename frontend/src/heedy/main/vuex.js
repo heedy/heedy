@@ -445,7 +445,7 @@ export default {
       if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
         if (
           rootState.app.websocket != null &&
-          rootState.app.websocket.isBefore(state.objects[q.id].qtime)
+          rootState.app.websocket.isBefore(state.objects_qtime[q.id])
         ) {
           console.vlog(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {

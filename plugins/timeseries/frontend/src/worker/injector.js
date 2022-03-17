@@ -58,6 +58,9 @@ class TimeseriesInjector {
       Object.values(this.queries).forEach((q) => {
         q.outdated = true;
       });
+    } else {
+      // The websocket just got (re)connected. Rerun currently subscribed queries to get latest data.
+      Object.values(this.queries).forEach((q) => q.runquery());
     }
   }
   _getQuery(q, cbk, status) {

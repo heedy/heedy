@@ -20,11 +20,22 @@ export default {
         id: newValue,
         callback: () => (this.loading = false)
       });
+    },
+    websocket(nv) {
+      if (nv) {
+        // If the websocket gets re-connected, re-read the app
+        this.$store.dispatch("readApp", {
+          id: this.appid
+        });
+      }
     }
   },
   computed: {
     app() {
       return this.$store.state.heedy.apps[this.appid] || null;
+    },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
     }
   },
   created() {

@@ -112,6 +112,19 @@ export default {
     appInserters() {
       return this.inserters.filter((o) => o.app != null);
     },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
+    }
+  },
+  watch: {
+    websocket(nv) {
+      if (nv) {
+        // If the websocket gets re-connected, re-read the objects
+        this.$store.dispatch("readUserObjects", {
+          username: this.user.username
+        });
+      }
+    }
   },
   created() {
     this.$store.dispatch("readUserObjects", { username: this.user.username });

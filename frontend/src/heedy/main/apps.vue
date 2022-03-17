@@ -190,6 +190,9 @@ export default {
         v.unique ? apps.filter((a) => a.plugin == v.key).length == 0 : true
       );
     },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
+    }
   },
   methods: {
     addAppList() {
@@ -212,6 +215,13 @@ export default {
       }
       this.$store.commit("setApp", result.data);
       this.$router.push({ path: `/apps/${result.data.id}` });
+    },
+  },
+  watch: {
+    websocket(nv) {
+      if (nv) {
+        this.$store.dispatch("listApps");
+      }
     },
   },
   created() {

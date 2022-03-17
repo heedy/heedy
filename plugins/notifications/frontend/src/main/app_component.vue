@@ -25,11 +25,24 @@ export default {
       let narr = Object.values(n);
       narr.sort((a, b) => b.timestamp - a.timestamp);
       return narr;
+    },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
     }
   },
   watch: {
-    app: function(newValue) {
-      this.$store.dispatch("readAppNotifications", { id: newValue.id });
+    app: function(newValue,oldValue) {
+      if (newValue.id!=oldValue.id) {
+        this.$store.dispatch("readAppNotifications", { id: newValue.id });
+      }
+    },
+    websocket(nv) {
+      if (nv) {
+        // If the websocket gets re-connected, re-read notifications
+        this.$store.dispatch("readAppNotifications", {
+          id: this.app.id
+        });
+      }
     }
   },
   created() {

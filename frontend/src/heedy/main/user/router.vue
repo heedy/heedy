@@ -34,11 +34,22 @@ export default {
         callback: () => (this.loading = false),
       });
     },
+    websocket(nv) {
+      if (nv) {
+        // If the websocket gets re-connected, re-read the user
+        this.$store.dispatch("readUser", {
+          username: this.username,
+        });
+      }
+    }
   },
   computed: {
     user() {
       return this.$store.state.heedy.users[this.username] || null;
     },
+    websocket() {
+      return this.$store.state.app.websocket!=null;
+    }
   },
   created() {
     this.$store.dispatch("readUser", {

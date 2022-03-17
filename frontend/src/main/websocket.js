@@ -23,7 +23,8 @@ class WebsocketSubscriber {
     this.loc =
       wsproto + "//" + location.host + location.pathname + "api/events";
 
-    // The websocket server might be disabled for non-logged-in users
+    // The websocket server might be disabled for non-logged-in users,
+    // or if the page is not visible.
     this.retryConnect = frontend.info.user != null;
 
     this.resetTimeout = 200;
@@ -33,6 +34,10 @@ class WebsocketSubscriber {
     // Whether the socket is open, and when it was connected. This allows
     // the frontend to check if it needs to query for stuff
     this.isopen = false;
+    this.openers = [];
+    
+    // Send a ping every 10 minutes to make sure that the socket is still connected
+    this.idleTimeout = 10*60*1000;
 
     frontend.worker.addHandler("websocket_subscribe", (ctx, msg) =>
       this.subscribe(msg.key, msg.event, (e) =>
@@ -46,11 +51,26 @@ class WebsocketSubscriber {
       this.unsubscribe(msg.key)
     );
 
+    document.addEventListener("visibilitychange",()=> this.visibilityChange());
+
     this.connect();
+  }
+  visibilityChange() {
+    this.retryConnect = !document.hidden && this.frontend.info.user != null;
+    if (this.isopen) {
+      console.vlog("Page visibility changed, disconnecting websocket.");
+      this.ws.close()
+      return;
+    }
+    if (this.retryConnect) {
+      console.vlog("Page is visible, reconnecting websocket.");
+      this.connect();
+    }
   }
   connect() {
     console.vlog(`Connecting to websocket ${this.loc}`);
     this.ws = new WebSocket(this.loc);
+    this.isconnecting = true;
 
     this.ws.onopen = () => this.onopen();
     this.ws.onmessage = (m) => this.fire(m);
@@ -60,6 +80,7 @@ class WebsocketSubscriber {
     console.vlog("Websocket open");
     this.isopen = true;
     this.retryTimeout = this.resetTimeout;
+    this.idleTimer = setTimeout(() => this.ping(), this.idleTimeout);
 
     this.send({
       cmd: "subscribe",
@@ -83,10 +104,12 @@ class WebsocketSubscriber {
     let m = moment();
     this.store.commit("setWebsocket", m);
     this.frontend.worker.postMessage("websocket_status", m.unix());
+    this.openers.map(o => o());
   }
   onclose(e) {
     console.vlog("Websocket closed");
     this.isopen = false;
+    clearTimeout(this.idleTimer);
     // Set the websocket as disconnected
     this.store.commit("setWebsocket", null);
     this.frontend.worker.postMessage("websocket_status", null);
@@ -99,8 +122,15 @@ class WebsocketSubscriber {
   }
 
   fire(e) {
+    this.lastMessage = (new Date()).getTime();
+    clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => this.ping(), this.idleTimeout);
     e = JSON.parse(e.data);
     console.vlog("->", e);
+    // If it is a heartbeat, do nothing
+    if (e.event == "pong") {
+      return 
+    }
     Object.values(this.subscriptions)
       .filter((s) => {
         s = s.event;
@@ -136,6 +166,19 @@ class WebsocketSubscriber {
       .forEach((s) => s.callback(e));
   }
 
+  ping() {
+
+    // Ping uses the idleTimer - it clears previous values, and checks to make sure the next message
+    // comes in within 2 seconds. If it doesn't, it will close the socket.
+    clearTimeout(this.idleTimer)
+    this.idleTimer = setTimeout(() => {
+        console.vwarn("Websocket timed out.");
+        this.ws.close();
+    },2000);
+
+    this.send({cmd: "ping"});
+  }
+
   send(m) {
     if (this.isopen) {
       console.vlog("<-", m);
@@ -168,6 +211,10 @@ class WebsocketSubscriber {
       });
       */
     }
+  }
+
+  subscribe_open(callback) {
+    this.openers.push(callback);
   }
 }
 

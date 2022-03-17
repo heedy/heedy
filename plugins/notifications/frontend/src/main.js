@@ -56,6 +56,7 @@ function setup(frontend) {
         })));
 
         frontend.store.dispatch("readGlobalNotifications");
+        frontend.websocket.subscribe_open(()=> frontend.store.dispatch("readGlobalNotifications"));
     }
 
 }
