@@ -245,6 +245,9 @@ func AuthMux(a *Auth) (*chi.Mux, error) {
 	mux.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
 		c := rest.CTX(r)
 
+		// Remove all site data
+		w.Header().Add("Clear-Site-Data", "\"*\"")
+
 		http.SetCookie(w, &http.Cookie{
 			Name:     "token",
 			Value:    "",

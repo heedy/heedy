@@ -39,11 +39,10 @@
       </noscript>
     </div>
   </div>
-
-  <!-- appinfo is a templated variable: the contents are written by the server, containing all routes and relevant info-->
   <script type="module">
     import setup from "./static/main.mjs";
-    window.frontend = setup({{.}});
+    window.frontend = setup({{.}}); // This is filled in by the server
+    navigator.serviceWorker.register("./serviceworker.js");
   </script>
 </body>
 

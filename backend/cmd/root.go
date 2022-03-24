@@ -160,6 +160,10 @@ var RootCmd = &cobra.Command{
 			cpuprofileFile = f
 		}
 
+		if buildinfo.DevMode {
+			logrus.Warn("Running heedy in development mode")
+		}
+
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
@@ -253,7 +257,8 @@ func delpid(directory string) error {
 func init() {
 	RootCmd.PersistentFlags().StringVar(&loglevel, "log_level", "", "Set the log level (debug, info, warn, error, fatal, panic)")
 	RootCmd.PersistentFlags().StringVar(&logdir, "log_dir", "", "Write logs to the given folder (or stdout)")
-	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server requests and responses. Only works in debug log level.")
+	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server/client requests and responses.")
+	RootCmd.PersistentFlags().BoolVar(&buildinfo.DevMode, "development", false, "Put the server into development mode for debugging plugins and frontend code.")
 	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
 	RootCmd.PersistentFlags().BoolVar(&applyUpdates, "update", false, "Applies any pending updates")
 	RootCmd.PersistentFlags().BoolVar(&forceRun, "force", false, "Force the server to start even if it detects a running heedy instance")

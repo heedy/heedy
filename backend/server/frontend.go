@@ -1,33 +1,46 @@
 package server
 
 import (
+	"bytes"
 	"errors"
 	"html/template"
+	"mime"
 	"net/http"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
+	"github.com/heedy/heedy/backend/buildinfo"
 	"github.com/heedy/heedy/backend/database"
 	"github.com/lpar/gzipped/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
+
+var RunID string
+
+func init() {
+	RunID = strconv.FormatInt(buildinfo.StartTime.Unix(), 36)
+}
 
 type frontendPlugin struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
 }
 
-type fContext struct {
+type FrontendContext struct {
 	User     *database.User                    `json:"user"`
 	Settings map[string]map[string]interface{} `json:"settings"`
 	Admin    bool                              `json:"admin"`
 	Plugins  []frontendPlugin                  `json:"plugins"`
 	Preload  []string                          `json:"preload"`
 	Verbose  bool                              `json:"verbose"`
+	DevMode  bool                              `json:"dev_mode"`
+	RunID    string                            `json:"run_id"`
 }
 
 type aContext struct {
@@ -50,150 +63,213 @@ func (we withExists) Exists(name string) bool {
 	return err == nil
 }
 
+func GetFrontendContext(ctx *rest.Context) (*FrontendContext, error) {
+	var u *database.User
+	var err error
+	if _, ok := ctx.DB.(*database.UserDB); ok {
+		u, err = ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
+			Icon: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	cfg := assets.Config()
+
+	frontendPlugins := make([]frontendPlugin, 0)
+	preloads := make([]string, 0)
+	if cfg.Frontend != nil {
+		frontendPlugins = append(frontendPlugins, frontendPlugin{
+			Name: "heedy",
+			Path: *cfg.Frontend,
+		})
+		preloads = append(preloads, *cfg.Frontend)
+
+	}
+	if cfg.Preload != nil {
+		preloads = append(preloads, (*cfg.Preload)...)
+	}
+	for _, p := range cfg.GetActivePlugins() {
+		v, ok := cfg.Plugins[p]
+		if !ok {
+			return nil, errors.New("Failed to find plugin in configuration")
+		}
+		if v.Frontend != nil {
+			frontendPlugins = append(frontendPlugins, frontendPlugin{
+				Name: p,
+				Path: *v.Frontend,
+			})
+			preloads = append(preloads, *v.Frontend)
+		}
+		if v.Preload != nil {
+			preloads = append(preloads, (*v.Preload)...)
+		}
+	}
+
+	if u == nil {
+		return &FrontendContext{
+			User:    nil,
+			Admin:   false,
+			Plugins: frontendPlugins,
+			Preload: preloads,
+			Verbose: cfg.Verbose,
+			DevMode: buildinfo.DevMode,
+			RunID:   RunID,
+		}, nil
+	}
+
+	pref, err := ctx.DB.ReadUserSettings(*u.UserName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FrontendContext{
+		User:     u,
+		Settings: pref,
+		Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
+		Plugins:  frontendPlugins,
+		Preload:  preloads,
+		Verbose:  cfg.Verbose,
+		DevMode:  buildinfo.DevMode,
+		RunID:    RunID,
+	}, nil
+
+}
+
+func handleHTMLTemplate(fname string, fbytes []byte) (http.HandlerFunc, error) {
+	fTemplate, err := template.New(fname).Parse(string(fbytes))
+	if err != nil {
+		return nil, err
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Disallow clickjacking
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Cache-Control", "private, no-cache")
+
+		ctx := rest.CTX(r)
+		fCtx, err := GetFrontendContext(ctx)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		}
+		err = fTemplate.Execute(w, fCtx)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		}
+		return
+	}, nil
+}
+
+func handleJSTemplate(fname string, fbytes []byte) (http.HandlerFunc, error) {
+	// The templating engine understands javascript, but it must be within an html
+	// <script> element. So we write the template like that, and then remove the script elements
+	// when actually serving the page.
+	const startTag = "<script>\n"
+	const endTag = "\n</script>"
+	scriptBytes := make([]byte, len(fbytes)+len(startTag)+len(endTag))
+	copy(scriptBytes, startTag)
+	copy(scriptBytes[len(startTag):], fbytes)
+	copy(scriptBytes[len(scriptBytes)-len(endTag):], endTag)
+	fTemplate, err := template.New(fname).Parse(string(scriptBytes))
+	if err != nil {
+		return nil, err
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "private, no-cache")
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+
+		ctx := rest.CTX(r)
+		fCtx, err := GetFrontendContext(ctx)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		}
+		var buf bytes.Buffer
+		err = fTemplate.Execute(&buf, fCtx)
+		if err != nil {
+			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
+		}
+		// Remove the script tags and write the output
+		outputBytes := buf.Bytes()
+		outputBytes = outputBytes[len(startTag) : len(outputBytes)-len(endTag)]
+		w.Header().Set("Content-Length", strconv.Itoa(len(outputBytes)))
+		w.Write(outputBytes)
+		return
+	}, nil
+}
+
+func HandleTemplate(fname string, fbytes []byte) (http.HandlerFunc, error) {
+	if strings.HasSuffix(fname, ".js") || strings.HasSuffix(fname, ".mjs") {
+		return handleJSTemplate(fname, fbytes)
+	}
+	return handleHTMLTemplate(fname, fbytes)
+}
+
 // FrontendMux represents the frontend
 func FrontendMux() (*chi.Mux, error) {
 	mux := chi.NewMux()
 
 	frontendFS := afero.NewBasePathFs(assets.Get().FS, "/public")
 
-	// The main frontend app
-
+	logrus.Debug("frontend: preparing template index.html")
 	fbytes, err := afero.ReadFile(frontendFS, "/index.html")
 	if err != nil {
 		return nil, err
 	}
-	fTemplate, err := template.New("frontend").Parse(string(fbytes))
+	h, err := HandleTemplate("index.html", fbytes)
 	if err != nil {
 		return nil, err
 	}
 
-	// This is the main function that sets up the frontend template
-	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		// Disallow clickjacking
-		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Cache-Control", "private, no-cache")
+	mux.Get("/", h)
 
-		ctx := rest.CTX(r)
-		var u *database.User
-		var err error
+	// And also prepare all the other templates from the directory
 
-		if _, ok := ctx.DB.(*database.UserDB); ok {
-			u, err = ctx.DB.ReadUser(ctx.DB.ID(), &database.ReadUserOptions{
-				Icon: true,
-			})
-			if err != nil {
-				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-				return
-			}
-		}
-
-		cfg := assets.Config()
-
-		frontendPlugins := make([]frontendPlugin, 0)
-		preloads := make([]string, 0)
-		if cfg.Frontend != nil {
-			frontendPlugins = append(frontendPlugins, frontendPlugin{
-				Name: "heedy",
-				Path: *cfg.Frontend,
-			})
-			preloads = append(preloads, *cfg.Frontend)
-
-		}
-		if cfg.Preload != nil {
-			preloads = append(preloads, (*cfg.Preload)...)
-		}
-		for _, p := range cfg.GetActivePlugins() {
-			v, ok := cfg.Plugins[p]
-			if !ok {
-				rest.WriteJSONError(w, r, http.StatusInternalServerError, errors.New("Failed to find plugin in configuration"))
-				return
-			}
-			if v.Frontend != nil {
-				frontendPlugins = append(frontendPlugins, frontendPlugin{
-					Name: p,
-					Path: *v.Frontend,
+	files, err := afero.ReadDir(frontendFS, "")
+	if err != nil {
+		return nil, err
+	}
+	for i := range files {
+		fname := files[i].Name()
+		if !files[i].IsDir() && fname != "index.html" && fname != "auth.html" && !strings.HasPrefix(fname, "setup") {
+			if strings.HasSuffix(fname, ".html") || strings.HasSuffix(fname, ".js") || strings.HasSuffix(fname, ".mjs") {
+				logrus.Debug("frontend: preparing template ", fname)
+				fbytes, err = afero.ReadFile(frontendFS, fname)
+				if err != nil {
+					return nil, err
+				}
+				h, err = HandleTemplate(fname, fbytes)
+				if err != nil {
+					return nil, err
+				}
+				if strings.HasSuffix(fname, ".html") {
+					mux.Get("/"+fname[0:len(fname)-len(".html")], h)
+				} else {
+					mux.Get("/"+fname, h)
+				}
+			} else {
+				//logrus.Debug("frontend: serving static file ", fname)
+				m := mime.TypeByExtension(filepath.Ext(fname))
+				if m == "" {
+					m = "application/octet-stream"
+				}
+				mux.Get("/"+fname, func(w http.ResponseWriter, r *http.Request) {
+					fbytes, err := afero.ReadFile(frontendFS, fname)
+					if err != nil {
+						w.WriteHeader(http.StatusNotFound)
+						w.Write([]byte("404 - Not Found"))
+						return
+					}
+					w.Header().Set("Content-Type", m)
+					w.Header().Set("Content-Length", strconv.Itoa(len(fbytes)))
+					w.Write(fbytes)
 				})
-				preloads = append(preloads, *v.Frontend)
 			}
-			if v.Preload != nil {
-				preloads = append(preloads, (*v.Preload)...)
-			}
+
 		}
-
-		/*
-			objectMap := make(map[string]*assets.ObjectTypeFrontend)
-			for k, v := range cfg.ObjectTypes {
-				objectMap[k] = v.Frontend
-			}
-		*/
-
-		if u == nil {
-			// Running template as public
-			err = fTemplate.Execute(w, &fContext{
-				User:    nil,
-				Admin:   false,
-				Plugins: frontendPlugins,
-				Preload: preloads,
-				Verbose: cfg.Verbose,
-			})
-			if err != nil {
-				rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-			}
-			return
-		}
-
-		pref, err := ctx.DB.ReadUserSettings(*u.UserName)
-		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		err = fTemplate.Execute(w, &fContext{
-			User:     u,
-			Settings: pref,
-			Admin:    ctx.DB.AdminDB().Assets().Config.UserIsAdmin(*u.UserName),
-			Plugins:  frontendPlugins,
-			Preload:  preloads,
-			Verbose:  cfg.Verbose,
-		})
-		if err != nil {
-			rest.WriteJSONError(w, r, http.StatusInternalServerError, err)
-		}
-		return
-
-	})
+	}
 
 	// Handles getting all assets other than the root webpage
 	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
-
-	// The favicon is taken from the root directly
-	mux.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		fbytes, err := afero.ReadFile(frontendFS, "/favicon.ico")
-		if err != nil {
-			// There is no favicon, so just return a 404
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("404 - Not Found"))
-			return
-		}
-
-		w.Header().Set("Content-Type", "image/x-icon")
-		w.Write(fbytes)
-	})
-
-	// The manifest is also in root - in the future, the manifest could be templated depending
-	// on the plugins that are active
-	mux.Get("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
-		fbytes, err := afero.ReadFile(frontendFS, "/manifest.json")
-		if err != nil {
-			// There is no manifest, so just return a 404
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("{}"))
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Write(fbytes)
-	})
 
 	return mux, nil
 }
