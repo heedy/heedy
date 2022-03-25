@@ -106,8 +106,7 @@ func NewErrorResponse(err error) ErrorResponse {
 // WriteJSONError writes an error message as json. It is assumed that the resulting
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "private, no-cache")
+	apiHeaders(w)
 	c := CTX(r)
 
 	es := NewErrorResponse(err)
@@ -165,8 +164,7 @@ func WriteJSONStatus(w http.ResponseWriter, r *http.Request, data interface{}, s
 			jdata = []byte("[]")
 		}
 	}
-	w.Header().Set("Cache-Control", "private, no-cache")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	apiHeaders(w)
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
 	w.WriteHeader(status)
 	w.Write(jdata)
@@ -180,8 +178,7 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	// success :)
-	w.Header().Set("Cache-Control", "private, no-cache")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	apiHeaders(w)
 	w.Header().Set("Content-Length", "15")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"result":"ok"}`))
@@ -316,7 +313,6 @@ func WriteGzipJSON(w http.ResponseWriter, r *http.Request, data interface{}, err
 			jdata = []byte("[]")
 		}
 	}
-	w.Header().Set("Cache-Control", "private, no-cache")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	apiHeaders(w)
 	WriteCompress(w, r, bytes.NewBuffer(jdata), http.StatusOK)
 }

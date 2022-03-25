@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"html/template"
-	"mime"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -247,21 +246,21 @@ func FrontendMux() (*chi.Mux, error) {
 					mux.Get("/"+fname, h)
 				}
 			} else {
-				//logrus.Debug("frontend: serving static file ", fname)
-				m := mime.TypeByExtension(filepath.Ext(fname))
-				if m == "" {
-					m = "application/octet-stream"
-				}
 				mux.Get("/"+fname, func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Cache-Control", "no-cache")
+					fi, err := frontendFS.Stat(fname)
+					if err != nil {
+						w.WriteHeader(http.StatusNotFound)
+						w.Write([]byte("404 - Not Found"))
+						return
+					}
 					fbytes, err := afero.ReadFile(frontendFS, fname)
 					if err != nil {
 						w.WriteHeader(http.StatusNotFound)
 						w.Write([]byte("404 - Not Found"))
 						return
 					}
-					w.Header().Set("Content-Type", m)
-					w.Header().Set("Content-Length", strconv.Itoa(len(fbytes)))
-					w.Write(fbytes)
+					http.ServeContent(w, r, fname, fi.ModTime(), bytes.NewReader(fbytes))
 				})
 			}
 
@@ -269,7 +268,21 @@ func FrontendMux() (*chi.Mux, error) {
 	}
 
 	// Handles getting all assets other than the root webpage
-	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
+	gzfs := gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)})
+	if buildinfo.DevMode {
+		mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// When in dev mode, we don't want any caching to happen. At all.
+			w.Header().Set("Cache-Control", "no-cache")
+			gzfs.ServeHTTP(w, r)
+		}))
+	} else {
+		mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// We want caching, but we also want revalidation, so that heedy isn't left with old
+			// code. We keep the response fresh for 10s, then keep it stale for a week.
+			w.Header().Set("Cache-Control", "max-age=10,stale-while-revalidate=604800")
+			gzfs.ServeHTTP(w, r)
+		}))
+	}
 
 	return mux, nil
 }
