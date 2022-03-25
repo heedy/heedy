@@ -132,7 +132,17 @@
       :right="!bottom"
     >
       {{ alert.text }}
-      <v-btn dark text @click="alert_value = false">Close</v-btn>
+      <template v-slot:action="{ attrs }">
+        <v-btn dark text @click="alert_value = false" v-bind="attrs"
+          >Close</v-btn
+        >
+      </template>
+    </v-snackbar>
+    <v-snackbar v-model="updateAvailable" :top="bottom" :timeout="-1">
+      Refresh to load updates
+      <template v-slot:action="{ attrs }">
+        <v-btn dark text @click="reload" v-bind="attrs">Refresh</v-btn>
+      </template>
     </v-snackbar>
 
     <router-view></router-view>
@@ -272,6 +282,9 @@ export default {
         });
       },
     },
+    updateAvailable() {
+      return this.$store.state.app.update_available;
+    },
   },
   mounted() {
     this.onResize();
@@ -280,6 +293,9 @@ export default {
     onResize() {
       this.bottom = window.innerWidth < 960;
       this.small = window.innerWidth < 500;
+    },
+    reload() {
+      window.location.reload();
     },
   },
 };

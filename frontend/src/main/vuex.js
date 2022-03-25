@@ -13,6 +13,8 @@ function setup(appinfo) {
                     // The status of the websocket. null means disconnected, and a moment() object
                     // gives the time from which it was connected
                     websocket: null,
+                    // Whether to notify the user that an update is available to the frontend
+                    update_available: false,
                 },
                 mutations: {
                     updateLoggedInUser(state, v) {
@@ -26,6 +28,9 @@ function setup(appinfo) {
                     },
                     setWebsocket(state, v) {
                         state.websocket = v;
+                    },
+                    setUpdateAvailable(state, v) {
+                        state.update_available = v;
                     },
                 }
             }

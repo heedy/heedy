@@ -55,6 +55,20 @@ class WebsocketSubscriber {
 
     this.connect();
   }
+  disable() {
+    console.vlog("Disabling websocket");
+    this.retryConnect = false;
+    if (this.isopen) {
+      this.ws.close();
+    }
+  }
+  enable() {
+    console.vlog("Enabling websocket");
+    this.retryConnect = frontend.info.user != null;
+    if (!this.isopen) {
+      this.connect();
+    }
+  }
   visibilityChange() {
     this.retryConnect = !document.hidden && this.frontend.info.user != null;
     if (this.isopen) {

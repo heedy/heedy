@@ -116,6 +116,29 @@ async function setup(appinfo) {
   // Mount it
   vue.$mount("#frontend");
 
+  // Set up the service worker if it is available
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js").then((registration) => {
+      // Only check update availability if the user is logged in
+      if (appinfo.user !== null) {
+        // Check for new serviceworker updates whenever websocket is opened
+        frontend.websocket.subscribe_open(() => {
+          registration.update();
+        });
+
+
+        registration.addEventListener('updatefound', () => {
+          let newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed') {
+              store.commit('setUpdateAvailable', true);
+            }
+          });
+        });
+      }
+    });
+  }
+
   return frontend;
 }
 

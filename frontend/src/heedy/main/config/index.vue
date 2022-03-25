@@ -124,6 +124,7 @@ export default {
       }
     },
     restart: async function () {
+      this.$frontend.websocket.disable(); // Shut down the websocket
       let res = await this.$frontend.rest("GET", "api/server/restart");
 
       this.restarting = true;
@@ -146,7 +147,34 @@ export default {
         console.verror("Update error: ", res.data.error_description);
         this.$store.dispatch("getUpdates");
         this.alert = res.data.error_description;
+        this.$frontend.websocket.enable();
       } else {
+        // If there is a service worker, update it to a new version if necessary before refreshing
+        if ("serviceWorker" in navigator) {
+          let registration = await navigator.serviceWorker.getRegistration(
+            "/service-worker.js"
+          );
+          if (registration !== undefined) {
+            registration = await registration.update();
+            if (registration !== undefined) {
+              let newWorker = registration.installing;
+              if (newWorker != null) {
+                console.vlog("Waiting for ServiceWorker to install");
+                await Promise.race([
+                  sleep(5000),
+                  new Promise((resolve) => {
+                    newWorker.addEventListener("statechange", () => {
+                      if (newWorker.state === "installed") {
+                        resolve();
+                      }
+                    });
+                  }),
+                ]);
+              }
+            }
+          }
+        }
+        console.vlog("Reloading");
         // Perform a refresh, the update might have activated plugins/modified the frontend
         location.reload(true);
       }
