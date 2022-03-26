@@ -42,7 +42,7 @@ func BuiltinAssets() afero.Fs {
 				_, err = os.Stat(filepath.Join(assetPath, "heedy.conf"))
 			}
 
-			logrus.Warnf("This is a debug build of heedy: using assets from %s", assetPath)
+			logrus.Warnf("This is a debug build of heedy; using assets from %s", assetPath)
 
 			builtinAssets = afero.NewBasePathFs(afero.NewOsFs(), assetPath)
 		} else {

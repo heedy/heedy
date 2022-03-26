@@ -53,7 +53,7 @@
             </v-tooltip>
           </v-list-item-action>
 
-          <v-list-item-content>
+          <v-list-item-content @click="showDetails(pi)">
             <v-list-item-title>{{ pi.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ pi.description }}</v-list-item-subtitle>
           </v-list-item-content>
@@ -61,7 +61,7 @@
             <v-tooltip bottom>
               <template v-slot:activator="{ on }">
                 <v-btn icon v-on="on" @click="() => showDetails(pi)">
-                  <v-icon color="grey">fas fa-info-circle</v-icon>
+                  <h-icon :image="pi.icon" :colorHash="pi.name" :size="35"/>
                 </v-btn>
               </template>
               <span>Plugin Info</span>

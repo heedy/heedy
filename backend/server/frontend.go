@@ -203,6 +203,19 @@ func HandleTemplate(fname string, fbytes []byte) (http.HandlerFunc, error) {
 	return handleHTMLTemplate(fname, fbytes)
 }
 
+func refererCacheControl(w http.ResponseWriter, r *http.Request) {
+	// When not using the serviceworker, we want to cache so that users get fast
+	// load times. But caching leads to stale results in the serviceworker, so we need to disable
+	// the cache whenever the serviceworker is going to be active, and enable it when it is
+	// not active. The serviceworker is active in 1) https, and 2) localhost. All others don't have SW.
+	ref := r.Referer()
+	if len(ref) == 0 || strings.HasPrefix(ref, "https://") || strings.HasPrefix(ref, "http://localhost") || buildinfo.DevMode {
+		w.Header().Set("Cache-Control", "no-cache")
+	} else {
+		w.Header().Set("Cache-Control", "max-age=0,stale-while-revalidate=604800")
+	}
+}
+
 // FrontendMux represents the frontend
 func FrontendMux() (*chi.Mux, error) {
 	mux := chi.NewMux()
@@ -247,7 +260,7 @@ func FrontendMux() (*chi.Mux, error) {
 				}
 			} else {
 				mux.Get("/"+fname, func(w http.ResponseWriter, r *http.Request) {
-					w.Header().Set("Cache-Control", "no-cache")
+					refererCacheControl(w, r)
 					fi, err := frontendFS.Stat(fname)
 					if err != nil {
 						w.WriteHeader(http.StatusNotFound)
@@ -269,20 +282,11 @@ func FrontendMux() (*chi.Mux, error) {
 
 	// Handles getting all assets other than the root webpage
 	gzfs := gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)})
-	if buildinfo.DevMode {
-		mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// When in dev mode, we don't want any caching to happen. At all.
-			w.Header().Set("Cache-Control", "no-cache")
-			gzfs.ServeHTTP(w, r)
-		}))
-	} else {
-		mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// We want caching, but we also want revalidation, so that heedy isn't left with old
-			// code. We keep the response fresh for 10s, then keep it stale for a week.
-			w.Header().Set("Cache-Control", "max-age=10,stale-while-revalidate=604800")
-			gzfs.ServeHTTP(w, r)
-		}))
-	}
+
+	mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		refererCacheControl(w, r)
+		gzfs.ServeHTTP(w, r)
+	}))
 
 	return mux, nil
 }

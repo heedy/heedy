@@ -142,7 +142,7 @@ func Run(a *assets.Assets, o *RunOptions) error {
 		return err
 	}
 	go func() {
-		logrus.Debugf("Running heedy plugin API on %s", serverAddress)
+		logrus.Debugf("Running heedy plugin API on %s", apiAddress)
 		apiserr := apisrv.Serve(apisrvl)
 		if apiserr != http.ErrServerClosed {
 			err = apiserr

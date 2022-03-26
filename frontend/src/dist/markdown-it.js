@@ -20,7 +20,6 @@ const MdiHljs = (md, opts) => MdiHljs_core(md, Object.assign({ auto: true, code:
 //import 'markdown-it-texmath/css/texmath.css';
 //import 'katex/dist/katex.min.css';
 
-
 hljs.registerLanguage(
   'javascript', js_lang
 );

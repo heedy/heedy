@@ -221,6 +221,8 @@ export default {
   data: () => ({
     bottom: false, // Whether to display the navigation on bottom, in mobile mode
     small: false, // In mobile mode whether to show text. Only active when mini is true
+    side_menu_px: 10, // The number of pixels available for buttons in the side menu
+    bottom_menu_px: 10, // The number of pixels available for buttons in the bottom menu
   }),
   head: {
     title: "heedy",
@@ -232,17 +234,17 @@ export default {
         (m) => m.location === undefined || m.location == "primary"
       );
     },
+    bottomMenu() {
+      return Object.values(this.$store.state.app.menu_items).filter(
+        (m) => m.location !== undefined && m.location == "primary_bottom"
+      );
+    },
     secondaryMenu() {
       return Object.values(this.$store.state.app.menu_items).filter(
         (m) =>
           m.location !== undefined &&
           (m.location == "secondary" ||
             (m.location != "primary" && m.location != "primary_bottom"))
-      );
-    },
-    bottomMenu() {
-      return Object.values(this.$store.state.app.menu_items).filter(
-        (m) => m.location !== undefined && m.location == "primary_bottom"
       );
     },
     user() {
@@ -293,6 +295,10 @@ export default {
     onResize() {
       this.bottom = window.innerWidth < 960;
       this.small = window.innerWidth < 500;
+
+      // The user icon and ... menu are always visible, so remove them from consideration
+      this.side_menu_px = window.innerHeight - 75 - 40;
+      this.bottom_menu_px = window.innerWidth - 80 - 80
     },
     reload() {
       window.location.reload();
