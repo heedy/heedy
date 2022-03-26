@@ -1,5 +1,5 @@
 <template>
-  <v-toolbar-items>
+  <v-toolbar-items v-resize="onResize">
     <slot></slot>
     <template v-for="(item, idx) in items.toolbarItems">
       <v-tooltip bottom :key="idx" v-if="!item.toolbar_component">
@@ -31,7 +31,7 @@
           <span>Menu</span>
         </v-tooltip>
       </template>
-      <v-list>
+      <v-list :style="`max-height: ${height}px`" class="overflow-y-auto">
         <template v-for="(item, idx) in items.toolbarMenu">
           <v-list-item
             :key="`toolbar-${idx}`"
@@ -87,6 +87,10 @@ export default {
       default: 1,
     },
   },
+  data: () => ({
+    height: 1000,
+    resizeTimeout: null,
+  }),
   computed: {
     items() {
       const sorted = [
@@ -121,6 +125,20 @@ export default {
       // Decide which elements to show on the outside, and which elements to show on the inside
       return { toolbarItems, toolbarMenu, menuItems };
     },
+  },
+  methods: {
+    onResize() {
+      this.height = window.innerHeight-50;
+    },
+    debounceResize() {
+      if (this.resizeTimeout != null) {
+        clearTimeout(this.resizeTimeout);
+      }
+      this.resizeTimeout = setTimeout(this.onResize, 100);
+    },
+  },
+  mounted() {
+    this.onResize();
   },
 };
 </script>

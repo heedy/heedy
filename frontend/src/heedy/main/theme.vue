@@ -1,5 +1,5 @@
 <template>
-  <v-app id="heedy" v-resize="onResize">
+  <v-app id="heedy" v-resize="debounceResize">
     <v-navigation-drawer
       expand-on-hover
       permanent
@@ -41,7 +41,11 @@
 
           <v-divider></v-divider>
 
-          <v-list-item v-for="item in menu" :key="item.key" :to="item.route">
+          <v-list-item
+            v-for="item in menu.primary"
+            :key="item.key"
+            :to="item.route"
+          >
             <v-list-item-avatar>
               <v-icon v-if="item.component === undefined">{{
                 item.icon
@@ -61,7 +65,7 @@
         <v-spacer></v-spacer>
         <v-list dense nav class="py-0">
           <v-list-item
-            v-for="item in bottomMenu"
+            v-for="item in menu.bottom"
             :key="item.key"
             :to="item.route"
           >
@@ -81,7 +85,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-menu right v-if="showSecondaryMenu">
+          <v-menu right v-if="showSecondaryMenu" >
             <template #activator="{ on }">
               <v-list-item v-on="on" height="30px">
                 <v-list-item-icon>
@@ -93,9 +97,9 @@
                 </v-list-item-content>
               </v-list-item>
             </template>
-            <v-list dense nav width="200px">
+            <v-list dense nav width="200px" :style="`max-height: ${height-50}px`" class="overflow-y-auto">
               <v-list-item
-                v-for="item in secondaryMenu"
+                v-for="item in menu.secondary"
                 :key="item.key"
                 :to="item.route"
               >
@@ -122,7 +126,6 @@
         </v-list>
       </v-layout>
     </v-navigation-drawer>
-
     <v-snackbar
       v-model="alert_value"
       :color="alert.type"
@@ -155,7 +158,7 @@
         ></h-icon>
       </v-btn>
 
-      <v-btn v-for="item in menu" :key="item.key" :to="item.route">
+      <v-btn v-for="item in menu.primary" :key="item.key" :to="item.route">
         <span v-if="!small">{{ item.text }}</span>
         <v-icon v-if="item.component === undefined">{{ item.icon }}</v-icon>
         <component
@@ -164,7 +167,7 @@
           :status="bottom ? 'bottom' : 'side'"
         />
       </v-btn>
-      <v-btn v-for="item in bottomMenu" :key="item.key" :to="item.route">
+      <v-btn v-for="item in menu.bottom" :key="item.key" :to="item.route">
         <span v-if="!small">{{ item.text }}</span>
         <v-icon v-if="item.component === undefined">{{ item.icon }}</v-icon>
         <component
@@ -181,9 +184,9 @@
             <v-icon>more_vert</v-icon>
           </v-btn>
         </template>
-        <v-list dense nav>
+        <v-list dense nav :style="`max-height: ${height-50}px`" class="overflow-y-auto">
           <v-list-item
-            v-for="item in secondaryMenu"
+            v-for="item in menu.secondary"
             :key="item.key"
             :to="item.route"
           >
@@ -215,8 +218,9 @@ export default {
   data: () => ({
     bottom: false, // Whether to display the navigation on bottom, in mobile mode
     small: false, // In mobile mode whether to show text. Only active when mini is true
-    side_menu_px: 10, // The number of pixels available for buttons in the side menu
-    bottom_menu_px: 10, // The number of pixels available for buttons in the bottom menu
+    width: 1000, // The number of pixels available for buttons in the side menu
+    height: 1000, // The number of pixels available for buttons in the bottom menu
+    resizeTimeout: null, // Debounce timeout for resize event
   }),
   head: {
     title: "heedy",
@@ -224,22 +228,64 @@ export default {
   },
   computed: {
     menu() {
-      return Object.values(this.$store.state.app.menu_items).filter(
+      let primary = Object.values(this.$store.state.app.menu_items).filter(
         (m) => m.location === undefined || m.location == "primary"
       );
-    },
-    bottomMenu() {
-      return Object.values(this.$store.state.app.menu_items).filter(
+      let bottom = Object.values(this.$store.state.app.menu_items).filter(
         (m) => m.location !== undefined && m.location == "primary_bottom"
       );
-    },
-    secondaryMenu() {
-      return Object.values(this.$store.state.app.menu_items).filter(
+      let secondary = Object.values(this.$store.state.app.menu_items).filter(
         (m) =>
           m.location !== undefined &&
           (m.location == "secondary" ||
             (m.location != "primary" && m.location != "primary_bottom"))
       );
+
+      // Now we have overflow menus for primary and bottom:
+      if (this.bottom) {
+        const itemSize = this.small ? 80 : 110;
+        // In mobile view, the menu is shown on bottom, so is based on width of viewport
+        let menuSize = Math.floor((this.width - itemSize * 2) / itemSize);
+
+        if (primary.length > menuSize) {
+          bottom = primary.slice(menuSize).concat(bottom);
+          primary = primary.slice(0, menuSize);
+          menuSize = 0;
+        } else {
+          menuSize -= primary.length;
+        }
+
+        if (bottom.length > menuSize) {
+          secondary = bottom.slice(menuSize).concat(secondary);
+          bottom = bottom.slice(0, menuSize);
+          menuSize = 0;
+        } else {
+          menuSize -= bottom.length;
+        }
+      } else {
+        // The side menu has the special top part, and the ... menu
+        const mainItemSize = 60;
+        let remainingHeight = this.height - 95 - 45;
+        let menuSize = Math.floor(remainingHeight / mainItemSize);
+        if (primary.length > menuSize) {
+          secondary = primary.slice(menuSize).concat(bottom).concat(secondary);
+          bottom = [];
+          primary = primary.slice(0, menuSize);
+          menuSize = 0;
+        } else {
+          remainingHeight -= primary.length * mainItemSize;
+
+          const secondaryItemSize = 43;
+          menuSize = Math.floor(remainingHeight / secondaryItemSize);
+          if (bottom.length > menuSize) {
+            secondary = bottom.slice(menuSize).concat(secondary);
+            bottom = bottom.slice(0, menuSize);
+            menuSize = 0;
+          }
+        }
+      }
+
+      return { primary, bottom, secondary };
     },
     user() {
       return this.$store.state.app.info.user;
@@ -254,7 +300,7 @@ export default {
         return true;
       }
       // Otherwise, only show it if there are menu items for it
-      return this.secondaryMenu.length > 0;
+      return this.menu.secondary.length > 0;
     },
     username() {
       let u = this.$store.state.app.info.user;
@@ -288,8 +334,14 @@ export default {
       this.small = window.innerWidth < 500;
 
       // The user icon and ... menu are always visible, so remove them from consideration
-      this.side_menu_px = window.innerHeight - 75 - 40;
-      this.bottom_menu_px = window.innerWidth - 80 - 80
+      this.height = window.innerHeight;
+      this.width = window.innerWidth;
+    },
+    debounceResize() {
+      if (this.resizeTimeout != null) {
+        clearTimeout(this.resizeTimeout);
+      }
+      this.resizeTimeout = setTimeout(this.onResize, 100);
     },
     reload() {
       window.location.reload();
