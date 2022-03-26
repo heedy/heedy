@@ -138,12 +138,6 @@
         >
       </template>
     </v-snackbar>
-    <v-snackbar v-model="updateAvailable" :top="bottom" :timeout="-1">
-      Refresh to load updates
-      <template v-slot:action="{ attrs }">
-        <v-btn dark text @click="reload" v-bind="attrs">Refresh</v-btn>
-      </template>
-    </v-snackbar>
 
     <router-view></router-view>
     <v-bottom-navigation dark v-if="bottom && shownav" app grow>
@@ -283,9 +277,6 @@ export default {
           type: "info",
         });
       },
-    },
-    updateAvailable() {
-      return this.$store.state.app.update_available;
     },
   },
   mounted() {

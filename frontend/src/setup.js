@@ -26,3 +26,12 @@ new Vue({
   vuetify: vuetify,
   render: h => h(Theme)
 }).$mount("#app");
+
+// Remove any prior serviceworkers, so that heedy gets fresh content
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then( (registrations) =>{ 
+    for (let registration of registrations) { 
+      registration.unregister(); 
+    } 
+  });
+}

@@ -14,6 +14,7 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.4 // indirect
+	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/go-github/v24 v24.0.1
@@ -31,7 +32,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.10.2 // indirect
-	github.com/lpar/gzipped/v2 v2.0.2
 	github.com/mailru/easyjson v0.7.7
 	github.com/mattn/go-sqlite3 v1.14.7
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect

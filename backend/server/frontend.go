@@ -15,7 +15,6 @@ import (
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/buildinfo"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/lpar/gzipped/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -203,19 +202,6 @@ func HandleTemplate(fname string, fbytes []byte) (http.HandlerFunc, error) {
 	return handleHTMLTemplate(fname, fbytes)
 }
 
-func refererCacheControl(w http.ResponseWriter, r *http.Request) {
-	// When not using the serviceworker, we want to cache so that users get fast
-	// load times. But caching leads to stale results in the serviceworker, so we need to disable
-	// the cache whenever the serviceworker is going to be active, and enable it when it is
-	// not active. The serviceworker is active in 1) https, and 2) localhost. All others don't have SW.
-	ref := r.Referer()
-	if len(ref) == 0 || strings.HasPrefix(ref, "https://") || strings.HasPrefix(ref, "http://localhost") || buildinfo.DevMode {
-		w.Header().Set("Cache-Control", "no-cache")
-	} else {
-		w.Header().Set("Cache-Control", "max-age=0,stale-while-revalidate=604800")
-	}
-}
-
 // FrontendMux represents the frontend
 func FrontendMux() (*chi.Mux, error) {
 	mux := chi.NewMux()
@@ -260,7 +246,7 @@ func FrontendMux() (*chi.Mux, error) {
 				}
 			} else {
 				mux.Get("/"+fname, func(w http.ResponseWriter, r *http.Request) {
-					refererCacheControl(w, r)
+					refererCacheControl(w, r, buildinfo.DevMode)
 					fi, err := frontendFS.Stat(fname)
 					if err != nil {
 						w.WriteHeader(http.StatusNotFound)
@@ -281,12 +267,7 @@ func FrontendMux() (*chi.Mux, error) {
 	}
 
 	// Handles getting all assets other than the root webpage
-	gzfs := gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)})
-
-	mux.Mount("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		refererCacheControl(w, r)
-		gzfs.ServeHTTP(w, r)
-	}))
+	mux.Mount("/static/", NewStaticHandler(afero.NewHttpFs(frontendFS), buildinfo.DevMode))
 
 	return mux, nil
 }

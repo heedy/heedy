@@ -16,7 +16,6 @@ import (
 	"github.com/heedy/heedy/api/golang/rest"
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/heedy/heedy/backend/database"
-	"github.com/lpar/gzipped/v2"
 	"github.com/spf13/afero"
 
 	"github.com/sirupsen/logrus"
@@ -146,7 +145,9 @@ func Setup(sc SetupContext) error {
 	mux.Get("/setup/", func(w http.ResponseWriter, r *http.Request) {
 		setupTemplate.Execute(w, &sc)
 	})
-	mux.Mount("/static/", gzipped.FileServer(withExists{afero.NewHttpFs(frontendFS)}))
+	// Serve the static files, but without any caching support because serviceworker is not
+	// supported during setup
+	mux.Mount("/static/", NewStaticHandler(afero.NewHttpFs(frontendFS), true))
 
 	// /setup is POSTed with info, and this function prepares the database
 	setupMutex := sync.Mutex{}
