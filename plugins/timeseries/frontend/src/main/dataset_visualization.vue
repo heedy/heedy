@@ -1,14 +1,18 @@
 <template>
   <v-flex style="padding-top: 0px">
     <v-row>
-      <slot>
-        <v-col
-          v-if="datavis.length == 0"
-          style="width: 100%; text-align: center"
-        >
-          <h1 style="color: #c9c9c9; margin-top: 5%">{{ message }}</h1>
-        </v-col>
-      </slot>
+      <slot></slot>
+      <v-col
+        v-if="datavis.length == 0"
+        style="width: 100%; text-align: center"
+        cols="12"
+        sm="12"
+        md="12"
+        lg="12"
+        xl="12"
+      >
+        <h1 style="color: #c9c9c9; margin-top: 5%">{{ message }}</h1>
+      </v-col>
       <v-col
         v-for="d in datavis"
         :key="d.key"

@@ -35,6 +35,13 @@ type SetupContext struct {
 	User SetupUser `json:"user,omitempty"`
 }
 
+type SetupTemplate struct {
+	Directory string    `json:"directory"`
+	URL       string    `json:"url"`
+	Addr      string    `json:"addr"`
+	User      SetupUser `json:"user"`
+}
+
 func SetupCreate(sc SetupContext) error {
 	if sc.User.UserName == "" || sc.User.Password == "" {
 		return errors.New("A default username and password is required to create a heedy database")
@@ -122,6 +129,13 @@ func Setup(sc SetupContext) error {
 		return err
 	}
 
+	st := SetupTemplate{
+		Directory: directory,
+		URL:       *fullConfig.URL,
+		Addr:      *fullConfig.Addr,
+		User:      sc.User,
+	}
+
 	mux := chi.NewMux()
 
 	setupServer := &http.Server{
@@ -143,7 +157,7 @@ func Setup(sc SetupContext) error {
 		http.Redirect(w, r, "/setup/", http.StatusFound)
 	})
 	mux.Get("/setup/", func(w http.ResponseWriter, r *http.Request) {
-		setupTemplate.Execute(w, &sc)
+		setupTemplate.Execute(w, &st)
 	})
 	// Serve the static files, but without any caching support because serviceworker is not
 	// supported during setup

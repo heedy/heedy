@@ -246,7 +246,11 @@ func FrontendMux() (*chi.Mux, error) {
 				}
 			} else {
 				mux.Get("/"+fname, func(w http.ResponseWriter, r *http.Request) {
-					refererCacheControl(w, r, buildinfo.DevMode)
+					if buildinfo.DevMode {
+						w.Header().Set("Cache-Control", "no-cache")
+					} else {
+						w.Header().Set("Cache-Control", cacheControlStatic)
+					}
 					fi, err := frontendFS.Stat(fname)
 					if err != nil {
 						w.WriteHeader(http.StatusNotFound)

@@ -734,7 +734,7 @@ func (ts *TimeseriesDB) Delete(q *Query) error {
 // IteratedBatcher is basically like an SQLBatchIterator, but it closes the sql connection in-between calls to NextBatch,
 // so that updates/edits can happen to the database in the mean time.
 type IteratedBatcher struct {
-	tx        database.TxWrapper
+	tx        *database.TxWrapper
 	tstart    float64
 	tsid      string
 	queueSize int
@@ -780,7 +780,7 @@ func (ib *IteratedBatcher) NextBatch() (DatapointArray, error) {
 	return ib.NextBatch()
 }
 
-func NewIteratedBatcher(tx database.TxWrapper, table string, tsid string, tstart float64, queueSize int) *IteratedBatcher {
+func NewIteratedBatcher(tx *database.TxWrapper, table string, tsid string, tstart float64, queueSize int) *IteratedBatcher {
 	return &IteratedBatcher{
 		tx:            tx,
 		tstart:        tstart,
@@ -792,7 +792,7 @@ func NewIteratedBatcher(tx database.TxWrapper, table string, tsid string, tstart
 	}
 }
 
-func (ts *TimeseriesDB) writeBatch(tx database.TxWrapper, table, tsid string, curBatch DatapointArray) error {
+func (ts *TimeseriesDB) writeBatch(tx *database.TxWrapper, table, tsid string, curBatch DatapointArray) error {
 	if len(curBatch) == 0 {
 		return nil // Don't write an empty batch
 	}
@@ -807,7 +807,7 @@ func (ts *TimeseriesDB) writeBatch(tx database.TxWrapper, table, tsid string, cu
 	return err
 }
 
-func (ts *TimeseriesDB) writeBatchStart(tx database.TxWrapper, table, tsid string, curBatch DatapointArray) (DatapointArray, error) {
+func (ts *TimeseriesDB) writeBatchStart(tx *database.TxWrapper, table, tsid string, curBatch DatapointArray) (DatapointArray, error) {
 	for len(curBatch) > ts.MaxBatchSize {
 		prevBatch := curBatch[:ts.BatchSize]
 		curBatch = curBatch[ts.BatchSize:]
@@ -821,7 +821,7 @@ func (ts *TimeseriesDB) writeBatchStart(tx database.TxWrapper, table, tsid strin
 
 // appendUntil takes the current batch, with the assumption that all data in the DatapointIterator comes after the timestamp of the last element of curBatch,
 // and keeps appending until the timestamps overlap with until time. The resulting batch will never go beyond until time.
-func (ts *TimeseriesDB) appendUntil(tx database.TxWrapper, table, tsid string, curBatch DatapointArray, dp *Datapoint, modified bool, data DatapointIterator, until float64) (*Datapoint, DatapointArray, bool, error) {
+func (ts *TimeseriesDB) appendUntil(tx *database.TxWrapper, table, tsid string, curBatch DatapointArray, dp *Datapoint, modified bool, data DatapointIterator, until float64) (*Datapoint, DatapointArray, bool, error) {
 	var err error
 	for dp != nil && (dp.EndTime() < until || dp.Duration > 0 && dp.EndTime() <= until) {
 		modified = true
@@ -843,7 +843,7 @@ var errConflict = errors.New("bad_query: conflict with existing datapoint")
 
 // mergeBatch merges the data in the given batch with the new data from iterator. It guarantees that once finished,
 // the end time of the resulting batch never exceeds the end time of the original batch
-func (ts *TimeseriesDB) mergeBatch(tx database.TxWrapper, table, tsid string, cb DatapointArray, modif bool, method int, dpi DatapointIterator, idp *Datapoint) (dp *Datapoint, curBatch DatapointArray, modified bool, err error) {
+func (ts *TimeseriesDB) mergeBatch(tx *database.TxWrapper, table, tsid string, cb DatapointArray, modif bool, method int, dpi DatapointIterator, idp *Datapoint) (dp *Datapoint, curBatch DatapointArray, modified bool, err error) {
 	dp = idp
 	modified = modif
 	curBatch = cb
@@ -966,7 +966,7 @@ type batchinfo struct {
 	data   []byte
 }
 
-func (ts *TimeseriesDB) append(tx database.TxWrapper, table, tsid string, curBatch DatapointArray, data DatapointIterator, dp *Datapoint) error {
+func (ts *TimeseriesDB) append(tx *database.TxWrapper, table, tsid string, curBatch DatapointArray, data DatapointIterator, dp *Datapoint) error {
 	// This is an appending insert. Let's DO THIS, we are now free to go crazy - we can prepare the batches in another thread entirely,
 	// and just use this thread for pure database writes. This helps because in general marshalling and compressing takes some time
 
@@ -1089,7 +1089,7 @@ func (ts *TimeseriesDB) Insert(tsid string, data DatapointIterator, q *InsertQue
 		return err
 	}
 
-	var tx database.TxWrapper
+	var tx *database.TxWrapper
 	tx, err = ts.DB.BeginImmediatex()
 	if err != nil {
 		return err

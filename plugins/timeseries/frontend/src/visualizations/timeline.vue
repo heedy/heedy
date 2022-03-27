@@ -17,7 +17,7 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   watch: {
-    data(nd, old) {
+    config(nd, old) {
       this._tc
         .zQualitative(true)
         .leftMargin(nd.leftMargin)

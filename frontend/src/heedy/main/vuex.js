@@ -595,7 +595,7 @@ export default {
       }
     },
     getUpdates: async function ({ commit }) {
-      console.vlog("Checking if updates ready");
+      console.vlog("Checking for updates");
       let res = await api("GET", "api/server/updates");
       if (!res.response.ok) {
       } else {

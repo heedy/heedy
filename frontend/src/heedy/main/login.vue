@@ -15,6 +15,7 @@
                   label="Username"
                   v-model="username"
                   autofocus
+                  autocomplete="username"
                 ></v-text-field>
                 <v-text-field
                   prepend-icon="lock"
@@ -22,6 +23,7 @@
                   label="Password"
                   v-model="password"
                   type="password"
+                  autocomplete="current-password"
                 ></v-text-field>
               </v-card-text>
 

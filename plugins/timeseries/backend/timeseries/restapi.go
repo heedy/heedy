@@ -139,7 +139,7 @@ func ReadData(w http.ResponseWriter, r *http.Request, action bool) {
 	}
 	defer ai.Close()
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	rest.APIHeaders(w)
 
 	if TSDB.CompressQueryResponse {
 		err = rest.WriteCompressAsync(w, r, ai, http.StatusOK)

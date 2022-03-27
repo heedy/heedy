@@ -26,8 +26,8 @@ import (
 var QueryDecoder = schema.NewDecoder()
 var ErrNotFound = errors.New("not_found: The given endpoint is not available")
 
-// apiHeaders writes headers that need to be present in all API requests
-func apiHeaders(w http.ResponseWriter) {
+// APIHeaders writes headers that need to be present in all API requests
+func APIHeaders(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8") // All API requests return json
 }
@@ -106,7 +106,7 @@ func NewErrorResponse(err error) ErrorResponse {
 // WriteJSONError writes an error message as json. It is assumed that the resulting
 // status code is not StatusOK, but rather 4xx
 func WriteJSONError(w http.ResponseWriter, r *http.Request, status int, err error) {
-	apiHeaders(w)
+	APIHeaders(w)
 	c := CTX(r)
 
 	es := NewErrorResponse(err)
@@ -164,7 +164,7 @@ func WriteJSONStatus(w http.ResponseWriter, r *http.Request, data interface{}, s
 			jdata = []byte("[]")
 		}
 	}
-	apiHeaders(w)
+	APIHeaders(w)
 	w.Header().Set("Content-Length", strconv.Itoa(len(jdata)))
 	w.WriteHeader(status)
 	w.Write(jdata)
@@ -178,7 +178,7 @@ func WriteResult(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	// success :)
-	apiHeaders(w)
+	APIHeaders(w)
 	w.Header().Set("Content-Length", "15")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"result":"ok"}`))
@@ -313,6 +313,6 @@ func WriteGzipJSON(w http.ResponseWriter, r *http.Request, data interface{}, err
 			jdata = []byte("[]")
 		}
 	}
-	apiHeaders(w)
+	APIHeaders(w)
 	WriteCompress(w, r, bytes.NewBuffer(jdata), http.StatusOK)
 }

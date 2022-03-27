@@ -1,37 +1,32 @@
+// The Heedy serviceworker resets the cache on every server reboot, unless in dev mode.
+// based on https://github.com/mdn/sw-test/blob/gh-pages/sw.js
+
 const enableNavigationPreload = async () => {
     if (self.registration.navigationPreload) {
         await self.registration.navigationPreload.enable();
     }
 };
 
+const r = (old) => new Request(old, {cache: 'no-cache'});
+const errResponse = (err) => new Response('{"error":"fetch_error","error_description":"Could not connect to the server","id":"?"}', {status: 408,headers: { 'Content-Type': 'application/json; charset=utf-8' }});
+
 const getNetwork = async({ request, preloadResponsePromise}) => {
-    // Try to use the preloaded response, if it's there
     const preloadResponse = await preloadResponsePromise;
-    if (preloadResponse) {
-        console.debug('sw: (preload) ', request.url);
-        return preloadResponse;
-    }
-    // Next try to get the resource from the network
+    if (preloadResponse) return preloadResponse;
     try {
-        console.debug('sw: (net) ', request.url);
-        return await fetch(request);
+        return await fetch(r(request));
     } catch (error) {
-        // there is nothing we can do, but we must always
-        // return a Response object
-        return new Response('Network Error', {
-            status: 408,
-            headers: { 'Content-Type': 'text/plain' },
-        });
+        return errResponse(error);
     }
 }
-
-{{if .DevMode}}
-// If we are running in dev mode, we don't cache any results, so that every refresh
-// always fetches from the server
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(enableNavigationPreload());
 });
+
+{{if .DevMode}}
+// If we are running in dev mode, we don't cache any results, so that every refresh
+// always fetches from the server
 
 self.addEventListener("install", function (event) {
     console.debug("sw: installing (dev mode)");
@@ -42,7 +37,7 @@ self.addEventListener("install", function (event) {
                 return caches.delete(key);
               })
             );
-          }).then(() => console.debug("sw: installed (dev mode)")));
+          }));
 
     self.skipWaiting();
 });
@@ -55,13 +50,9 @@ self.addEventListener("fetch", function (event) {
 });
 
 {{else}}
-// If not in dev mode, then we want to cache the static resources
 // The cache name is reset on each heedy reboot, which will tell the browser to reinstall the serviceworker
 // and therefore refresh the cache whenever plugins or config are changed.
-let cache_name = {{.RunID }};
-
-// -----------------------------------------------------
-// These are based on https://github.com/mdn/sw-test/blob/gh-pages/sw.js
+let cache_name = {{ .RunID }};
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(cache_name);
@@ -74,51 +65,23 @@ const addResourcesToCache = async (resources) => {
 };
 
 const getCache = async ({ request, preloadResponsePromise}) => {
-    // First try to get the resource from the cache
     const responseFromCache = await caches.match(request);
-    if (responseFromCache) {
-        console.debug("sw: (cached) ", request.url);
-        return responseFromCache;
-    }
-
-    // Next try to use the preloaded response, if it's there
+    if (responseFromCache) return responseFromCache;
+    
     const preloadResponse = await preloadResponsePromise;
     if (preloadResponse) {
-        console.debug('sw: (preload->cache) ', request.url);
         putInCache(request, preloadResponse.clone());
         return preloadResponse;
     }
 
-    // Next try to get the resource from the network
     try {
-        console.debug('sw: (net->cache)', request.url);
-        const responseFromNetwork = await fetch(request);
-        // response may be used only once
-        // we need to save clone to put one copy in cache
-        // and serve second one
+        const responseFromNetwork = await fetch(r(request));
         putInCache(request, responseFromNetwork.clone());
         return responseFromNetwork;
     } catch (error) {
-        // there is nothing we can do, but we must always
-        // return a Response object
-        return new Response('Network Error', {
-            status: 408,
-            headers: { 'Content-Type': 'text/plain' },
-        });
+        return errResponse(error);
     }
 };
-
-
-// -----------------------------------------------------
-
-function getPath(request) {
-    let u = new URL(request.url);
-    return u.pathname;
-}
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil(enableNavigationPreload());
-});
 
 self.addEventListener("install", function (event) {
     console.debug("sw: installing",cache_name);
@@ -131,17 +94,17 @@ self.addEventListener("install", function (event) {
             );
           }).then((result) => {
             return addResourcesToCache([{{range .Preload}}
-                "/static/{{.}}",{{end}}
-                "/favicon.ico",
-                "/static/fonts/roboto-latin-400.woff2",
-                "/static/fonts/roboto-latin-700.woff2",
-                "/static/fonts/roboto-latin-500.woff2",
-                "/static/fonts/MaterialIcons-Regular.woff2",
-                "/static/fonts/fa-solid-900.woff2",
-                "/static/fonts/fa-regular-400.woff2",
-                "/manifest.json"
+                r("/static/{{.}}"),{{end}}
+                r("/favicon.ico"),
+                r("/static/fonts/roboto-latin-400.woff2"),
+                r("/static/fonts/roboto-latin-700.woff2"),
+                r("/static/fonts/roboto-latin-500.woff2"),
+                r("/static/fonts/MaterialIcons-Regular.woff2"),
+                r("/static/fonts/fa-solid-900.woff2"),
+                r("/static/fonts/fa-regular-400.woff2"),
+                r("/manifest.json")
               ])
-          }).then(() => console.debug("sw: installed",cache_name)));
+          }));
 
     self.skipWaiting();
 });
@@ -149,7 +112,7 @@ self.addEventListener("install", function (event) {
 const customCached = ["/manifest.json","/favicon.ico"];
 
 self.addEventListener("fetch", function (event) {
-    let path = getPath(event.request);
+    let path = (new URL(event.request.url)).pathname;
 
     if (path.startsWith("/static/") || customCached.includes(path)) {
         // Static resources are always cached
@@ -160,18 +123,14 @@ self.addEventListener("fetch", function (event) {
         return;
     }
     // All others respond from the network
-
     if (path=="/auth/logout") {
-        // Logout is a special case, we need to clear the cache
-        console.debug("sw: clear cache");
+        // Logout is a special case, we clear the cache on logout
         caches.delete(cache_name);
-        // And then do the raw network request
     }
 
     event.respondWith(getNetwork({
         request: event.request,
         preloadResponsePromise: event.preloadResponse,
     }));
-
 });
 {{end}}

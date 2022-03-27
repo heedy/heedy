@@ -85,7 +85,7 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-menu right v-if="showSecondaryMenu" >
+          <v-menu right v-if="menu.showSecondary">
             <template #activator="{ on }">
               <v-list-item v-on="on" height="30px">
                 <v-list-item-icon>
@@ -97,7 +97,13 @@
                 </v-list-item-content>
               </v-list-item>
             </template>
-            <v-list dense nav width="200px" :style="`max-height: ${height-50}px`" class="overflow-y-auto">
+            <v-list
+              dense
+              nav
+              width="200px"
+              :style="`max-height: ${height - 50}px`"
+              class="overflow-y-auto"
+            >
               <v-list-item
                 v-for="item in menu.secondary"
                 :key="item.key"
@@ -177,14 +183,19 @@
         />
       </v-btn>
 
-      <v-menu offset-y top v-if="showSecondaryMenu">
+      <v-menu offset-y top v-if="menu.showSecondary">
         <template #activator="{ on }">
           <v-btn v-on="on">
             <span v-if="!small">More</span>
             <v-icon>more_vert</v-icon>
           </v-btn>
         </template>
-        <v-list dense nav :style="`max-height: ${height-50}px`" class="overflow-y-auto">
+        <v-list
+          dense
+          nav
+          :style="`max-height: ${height - 50}px`"
+          class="overflow-y-auto"
+        >
           <v-list-item
             v-for="item in menu.secondary"
             :key="item.key"
@@ -241,6 +252,8 @@ export default {
             (m.location != "primary" && m.location != "primary_bottom"))
       );
 
+      const logoutbtn = this.$store.state.app.info.user != null;
+
       // Now we have overflow menus for primary and bottom:
       if (this.bottom) {
         const itemSize = this.small ? 80 : 110;
@@ -262,6 +275,11 @@ export default {
         } else {
           menuSize -= bottom.length;
         }
+
+        if (secondary.length == 1 && !logoutbtn) {
+          // If we don't actually need the overflow menu, so add the button directly
+          bottom.push(secondary.pop());
+        }
       } else {
         // The side menu has the special top part, and the ... menu
         const mainItemSize = 60;
@@ -271,7 +289,11 @@ export default {
           secondary = primary.slice(menuSize).concat(bottom).concat(secondary);
           bottom = [];
           primary = primary.slice(0, menuSize);
-          menuSize = 0;
+
+          if (secondary.length == 1 && !logoutbtn) {
+            // If we don't actually need the overflow menu, so add the button directly
+            primary.push(secondary.pop());
+          }
         } else {
           remainingHeight -= primary.length * mainItemSize;
 
@@ -280,12 +302,15 @@ export default {
           if (bottom.length > menuSize) {
             secondary = bottom.slice(menuSize).concat(secondary);
             bottom = bottom.slice(0, menuSize);
-            menuSize = 0;
+          }
+          if (secondary.length == 1 && !logoutbtn) {
+            // If we don't actually need the overflow menu, so add the button directly
+            bottom.push(secondary.pop());
           }
         }
       }
 
-      return { primary, bottom, secondary };
+      return { primary, bottom, secondary,showSecondary: (secondary.length > 0 || logoutbtn) };
     },
     user() {
       return this.$store.state.app.info.user;
@@ -293,14 +318,6 @@ export default {
     shownav() {
       return true;
       //return Object.keys(this.$store.state.app.menu).length > 0; // Only show the nav if there is a menu to show.
-    },
-    showSecondaryMenu() {
-      // Must have logout button
-      if (this.$store.state.app.info.user != null) {
-        return true;
-      }
-      // Otherwise, only show it if there are menu items for it
-      return this.menu.secondary.length > 0;
     },
     username() {
       let u = this.$store.state.app.info.user;

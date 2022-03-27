@@ -29,6 +29,7 @@
                 label="Username"
                 placeholder="admin"
                 v-model.trim="username"
+                autocomplete="username"
                 required
                 autofocus
                 solo
@@ -44,6 +45,7 @@
                 placeholder="Password"
                 type="password"
                 v-model="password1"
+                autocomplete="new-password"
                 required
                 solo
                 tabindex="2"
@@ -55,6 +57,7 @@
                 placeholder="Repeat Password"
                 type="password"
                 v-model="password2"
+                autocomplete="new-password"
                 required
                 solo
                 tabindex="3"
@@ -198,18 +201,18 @@ export default {
     show: false,
     directoryDefault: ctx.directory,
     directory: ctx.directory,
-    hostDefault: ctx.config["addr"].split(":")[0],
-    host: ctx.config["addr"].split(":")[0],
-    portDefault: ctx.config["addr"].split(":")[1],
-    port: ctx.config["addr"].split(":")[1],
+    hostDefault: ctx.addr.split(":")[0],
+    host: ctx.addr.split(":")[0],
+    portDefault: ctx.addr.split(":")[1],
+    port: ctx.addr.split(":")[1],
     url:
       raw_url.includes("localhost") ||
       raw_url.includes("127.0.0.1") ||
       raw_url.includes("::1") ||
-      raw_url == ctx.config["url"]
+      raw_url == ctx.url
         ? ""
         : raw_url,
-    urlDefault: ctx.config["url"],
+    urlDefault: ctx.url,
     tls: "none",
     username: ctx.user.username,
     password1: ctx.user.password,
@@ -280,21 +283,25 @@ export default {
         return;
       }
 
-      let furl = "/auth/token";
-      if (this.host != this.hostDefault || this.port != this.portDefault) {
-        window.location.href = this.url == "" ? ctx.config["url"] : this.url;
-      }
-
-      // The setup went with defaults, so log in
-
       this.success = "Database created! Waiting for heedy to start...";
-
       function sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
       }
 
       await sleep(300);
 
+      let furl = "/auth/token";
+      if (this.host != this.hostDefault || this.port != this.portDefault) {
+        if (this.url!="") {
+          window.location.href = this.url;
+        }
+        // Otherwise, generate a new url using the host and port
+        let host = (this.host == "" ? (this.hostDefault == "" ? "localhost" : this.hostDefault) : this.host);
+        let port = (this.port == "" ? (this.portDefault == "" ? "80" : this.portDefault) : this.port);
+        window.location.href = `http://${host}:${port}`;
+      }
+
+      // The setup went with defaults, so log in
       let i = 0;
       let isok = false;
       do {

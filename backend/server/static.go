@@ -11,16 +11,13 @@ import (
 	"github.com/golang/gddo/httputil/header"
 )
 
-func refererCacheControl(w http.ResponseWriter, r *http.Request, noCache bool) {
-	// When not using the serviceworker, we want to cache so that users get fast
-	// load times. But caching leads to stale results in the serviceworker, so we need to disable
-	// the cache whenever the serviceworker is going to be active, and enable it when it is
-	// not active. The serviceworker is active in 1) https, and 2) localhost. All others don't have SW.
-	ref := r.Referer()
-	if len(ref) == 0 || strings.HasPrefix(ref, "https://") || strings.HasPrefix(ref, "http://localhost") || noCache {
+const cacheControlStatic = "max-age=0,stale-while-revalidate=604800"
+
+func setCacheControl(w http.ResponseWriter, r *http.Request, noCache bool) {
+	if noCache {
 		w.Header().Set("Cache-Control", "no-cache")
 	} else {
-		w.Header().Set("Cache-Control", "max-age=0,stale-while-revalidate=604800")
+		w.Header().Set("Cache-Control", cacheControlStatic)
 	}
 }
 
@@ -114,7 +111,11 @@ func (pch *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set caching headers
-	refererCacheControl(w, r, pch.noCache)
+	if pch.noCache {
+		w.Header().Set("Cache-Control", "no-cache")
+	} else {
+		w.Header().Set("Cache-Control", cacheControlStatic)
+	}
 
 	http.ServeContent(w, r, name, d.ModTime(), f)
 }

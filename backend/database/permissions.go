@@ -162,7 +162,7 @@ func updateObject(adb *AdminDB, s *Object, selectStatement string, args ...inter
 }
 
 func updateApp(adb *AdminDB, c *App, whereStatement string, args ...interface{}) (err error) {
-	var tx TxWrapper
+	var tx *TxWrapper
 	tx, err = adb.BeginImmediatex()
 	if err != nil {
 		return

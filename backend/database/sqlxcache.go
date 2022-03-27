@@ -130,7 +130,7 @@ func (db *SqlxCache) Exec(query string, args ...interface{}) (sql.Result, error)
 
 func (db *SqlxCache) ExecUncached(query string, args ...interface{}) (sql.Result, error) {
 	if db.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(query)
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug(query)
 	}
 	return db.DB.Exec(query, args...)
 }
@@ -161,48 +161,48 @@ type TxWrapper struct {
 	committed bool
 }
 
-func (tx TxWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (tx *TxWrapper) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(query)
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug(query)
 	}
 	return tx.Tx.Exec(query, args...)
 }
-func (tx TxWrapper) Select(dest interface{}, query string, args ...interface{}) error {
+func (tx *TxWrapper) Select(dest interface{}, query string, args ...interface{}) error {
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(query)
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug(query)
 	}
 	return tx.Tx.Select(dest, query, args...)
 }
 
-func (tx TxWrapper) Get(dest interface{}, query string, args ...interface{}) error {
+func (tx *TxWrapper) Get(dest interface{}, query string, args ...interface{}) error {
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(query)
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug(query)
 	}
 
 	return tx.Tx.Get(dest, query, args...)
 }
 
-func (tx TxWrapper) Queryx(query string, args ...interface{}) (*sqlx.Rows, error) {
+func (tx *TxWrapper) Queryx(query string, args ...interface{}) (*sqlx.Rows, error) {
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug(query)
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug(query)
 	}
 
 	return tx.Tx.Queryx(query, args...)
 }
 
-func (tx TxWrapper) Rollback() error {
+func (tx *TxWrapper) Rollback() error {
 	if tx.committed {
 		return nil
 	}
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("ROLLBACK")
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug("ROLLBACK")
 	}
 	return tx.Tx.Rollback()
 }
 
 func (tx *TxWrapper) Commit() error {
 	if tx.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("COMMIT")
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug("COMMIT")
 
 	}
 	err := tx.Tx.Commit()
@@ -212,21 +212,21 @@ func (tx *TxWrapper) Commit() error {
 	return err
 }
 
-func (db *SqlxCache) Beginx() (TxWrapper, error) {
+func (db *SqlxCache) Beginx() (*TxWrapper, error) {
 	if db.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("BEGIN TRANSACTION")
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug("BEGIN TRANSACTION")
 	}
 	tx, err := db.DB.Beginx()
-	return TxWrapper{
+	return &TxWrapper{
 		Tx:        tx,
 		Verbose:   db.Verbose,
 		committed: false,
 	}, err
 }
 
-func (db *SqlxCache) BeginImmediatex() (TxWrapper, error) {
+func (db *SqlxCache) BeginImmediatex() (*TxWrapper, error) {
 	if db.Verbose {
-		logrus.WithField("stack", dbutil.MiniStack(2)).Debug("BEGIN IMMEDIATE TRANSACTION")
+		logrus.WithField("stack", dbutil.MiniStack(1)).Debug("BEGIN IMMEDIATE TRANSACTION")
 	}
 	tx, err := db.DB.Beginx()
 
@@ -238,7 +238,7 @@ func (db *SqlxCache) BeginImmediatex() (TxWrapper, error) {
 		}
 	}
 
-	return TxWrapper{
+	return &TxWrapper{
 		Tx:        tx,
 		Verbose:   db.Verbose,
 		committed: false,

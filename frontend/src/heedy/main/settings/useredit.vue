@@ -30,6 +30,7 @@
               filled
               clearable
               label="New Password (Optional)"
+              autocomplete="new-password"
               v-model="password"
             ></v-text-field>
           </v-flex>
@@ -40,6 +41,7 @@
               clearable
               label="Repeat Password"
               v-model="password2"
+              autocomplete="new-password"
             ></v-text-field>
           </v-flex>
         </v-layout>

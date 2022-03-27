@@ -53,6 +53,7 @@
                             autofocus
                             label="Username"
                             v-model="creating.username"
+                            autocomplete="username"
                           ></v-text-field>
                         </v-col>
                         <v-col cols="12" sm="12" md="12">
@@ -63,6 +64,7 @@
                             type="password"
                             v-model="creating.password"
                             label="Password"
+                            autocomplete="new-password"
                           ></v-text-field>
                         </v-col>
                         <v-col cols="12" sm="6" md="6">
@@ -70,6 +72,7 @@
                             type="password"
                             v-model="creating.password2"
                             label="Repeat Password"
+                            autocomplete="new-password"
                           ></v-text-field>
                         </v-col>
                       </v-row>

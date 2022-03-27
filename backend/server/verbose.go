@@ -48,14 +48,15 @@ func VerboseLoggingMiddleware(h http.Handler, log *logrus.Entry) http.Handler {
 			}
 			headers += curheader + "\n"
 		}
-
-		if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] != "identity" {
-			log.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY COMPRESSED - NOT LOGGING (length: %d)", rec.Code, headers, len(response))
+		if len(response) == 0 {
+			log.Debugf("Response: %d\n\n%s\n\n", rec.Code, headers)
+		} else if v, ok := rec.HeaderMap["Content-Encoding"]; ok && len(v) > 0 && v[0] != "identity" {
+			log.Debugf("Response: %d\n\n%s\n\nRESPONSE BODY COMPRESSED - NOT LOGGING (length: %d)\n\n", rec.Code, headers, len(response))
 		} else if ctype := rec.Header().Get("Content-Type"); strings.HasPrefix(ctype, "font/") || strings.HasPrefix(ctype, "image/") || strings.HasPrefix(ctype, "video/") || strings.HasPrefix(ctype, "audio/") || ctype == "application/octet-timeseries" || ctype == "application/pdf" || ctype == "application/zip" {
-			log.Debugf("Response: %d\n\n%s\n\nBINARY CONTENT-TYPE - NOT LOGGING (length: %d)", rec.Code, headers, len(response))
+			log.Debugf("Response: %d\n\n%s\n\nBINARY CONTENT-TYPE - NOT LOGGING (length: %d)\n\n", rec.Code, headers, len(response))
 		} else {
 			// http://stackoverflow.com/questions/27983893/in-go-how-to-inspect-the-http-response-that-is-written-to-http-responsewriter
-			log.Debugf("Response: %d\n\n%s\n%s\n\n", rec.Code, headers, string(response))
+			log.Debugf("Response: %d\n\n%s\n%s\n", rec.Code, headers, string(response))
 		}
 
 		// Now copy everything from response recorder to actual response writer
