@@ -125,7 +125,17 @@ export default {
     },
     restart: async function () {
       this.$frontend.websocket.disable(); // Shut down the websocket
-      let res = await this.$frontend.rest("GET", "api/server/restart");
+      let res = await this.$frontend.rest("POST", "api/server/restart", {
+        update: true,
+      });
+      if (!res.response.ok) {
+        if (res.response.status !== undefined && res.response.status >=400) {
+          console.verror("Update error: ", res.data.error_description,res);
+          this.alert = res.data.error_description;
+          this.$frontend.websocket.enable();
+          return;
+        }
+      }
 
       this.restarting = true;
 

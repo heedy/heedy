@@ -39,6 +39,7 @@ type FrontendContext struct {
 	Verbose  bool                              `json:"verbose"`
 	DevMode  bool                              `json:"dev_mode"`
 	RunID    string                            `json:"run_id"`
+	Version  string                            `json:"version"`
 }
 
 type aContext struct {
@@ -114,6 +115,7 @@ func GetFrontendContext(ctx *rest.Context) (*FrontendContext, error) {
 			Verbose: cfg.Verbose,
 			DevMode: buildinfo.DevMode,
 			RunID:   RunID,
+			Version: buildinfo.Version,
 		}, nil
 	}
 
@@ -131,6 +133,7 @@ func GetFrontendContext(ctx *rest.Context) (*FrontendContext, error) {
 		Verbose:  cfg.Verbose,
 		DevMode:  buildinfo.DevMode,
 		RunID:    RunID,
+		Version:  buildinfo.Version,
 	}, nil
 
 }

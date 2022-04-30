@@ -231,10 +231,14 @@ class Object(APIObject):
     def __init__(self, cached_data: Dict, session: Session):
         super().__init__(
             f"api/objects/{q(cached_data['id'])}",
-            {"object": cached_data["id"]},
+            {},
             session,
             cached_data=cached_data,
         )
+
+        #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
+        #: associated with this element. See :ref:`python_notifications` for details.
+        self.notifications = Notifications({"object": cached_data["id"]}, self.session)
 
         self._kv = KV(f"api/kv/objects/{q(cached_data['id'])}", self.session)
 
@@ -287,7 +291,7 @@ class Object(APIObject):
             return users.User(v, self.session)
         if i == "app" and v is not None:
             return apps.App(v, session=self.session)
-        
+
         return v
 
     @property
@@ -467,7 +471,7 @@ class Objects(APIList):
             HeedyException: If the request fails.
         """
         return super()._call(
-            f=lambda x: [registry.getObject(xx, self.session) for xx in x], **kwargs
+            kwargs, f=lambda x: [registry.getObject(xx, self.session) for xx in x]
         )
 
     def create(self, name: str, meta: Dict = {}, type: str = "timeseries", **kwargs):
@@ -521,6 +525,6 @@ class Objects(APIList):
 
         """
         return super()._create(
+            {"name": name, "type": type, "meta": meta, **kwargs},
             f=lambda x: registry.getObject(x, self.session),
-            **{"name": name, "type": type, "meta": meta, **kwargs},
         )

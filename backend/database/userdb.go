@@ -80,17 +80,19 @@ func (db *UserDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 
 // CanCreateObject returns whether the given object can be
 func (db *UserDB) CanCreateObject(s *Object) error {
+	if s.Owner == nil {
+		// If no owner is specified, assume the current user
+		s.Owner = &db.user
+	}
+	if s.App != nil {
+		return ErrAccessDenied("You cannot create objects belonging to an app")
+	}
 	_, _, err := objectCreateQuery(db.adb.Assets().Config, s)
 	if err != nil {
 		return err
 	}
-	if s.Owner != nil {
-		if *s.Owner != db.user {
-			return ErrAccessDenied("Cannot create a object for another user")
-		}
-	}
-	if s.App != nil {
-		return ErrAccessDenied("Can't create a object for a app")
+	if *s.Owner != db.user {
+		return ErrAccessDenied("Cannot create a object for another user")
 	}
 	return nil
 }
@@ -98,7 +100,7 @@ func (db *UserDB) CanCreateObject(s *Object) error {
 // CreateObject creates the object.
 func (db *UserDB) CreateObject(s *Object) (string, error) {
 	if s.App != nil {
-		return "", ErrAccessDenied("You cannot create objects belonging to a app")
+		return "", ErrAccessDenied("You cannot create objects belonging to an app")
 	}
 	if s.ModifiedDate != nil {
 		return "", ErrAccessDenied("Last Modified status of object is readonly")

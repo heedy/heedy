@@ -57,7 +57,12 @@ func StartHeedy(configDir string, replace bool, extraArgs ...string) error {
 
 	// Set up the args
 	args := make([]string, 0, len(extraArgs)+len(os.Args)-1)
-	args = append(args, os.Args[1:]...)
+	for _, v := range os.Args[1:] {
+		if v != "--revert" && v != "--update" {
+			// The revert/update args of the old process are not passed to the new one.
+			args = append(args, v)
+		}
+	}
 
 	// Only add the extraArgs that are not yet added - this is hacky,
 	// but works for boolean flags (like --update)
@@ -75,7 +80,7 @@ func StartHeedy(configDir string, replace bool, extraArgs ...string) error {
 	}
 
 	// Now replace whatever command was used with the run command
-	// TODO: This is a nasty hack, but
+	// TODO: This is a nasty hack, but whatever
 outerloop:
 	for i := range args {
 		switch args[i] {

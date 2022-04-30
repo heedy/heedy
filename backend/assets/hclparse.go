@@ -101,8 +101,6 @@ type hclPlugin struct {
 type hclObjectType struct {
 	Label string `hcl:"label,label"`
 
-	Frontend *string `json:"frontend,omitempty" hcl:"frontend" cty:"frontend"`
-
 	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
 	MetaSchema *cty.Value         `hcl:"meta_schema,attr"`
@@ -151,6 +149,9 @@ type hclConfiguration struct {
 	LogDir   *string `json:"log_dir,omitempty" hcl:"log_dir"`
 
 	UserSettingsSchema *cty.Value `hcl:"user_settings_schema"`
+
+	VerboseLogBuffer *int `hcl:"verbose_log_buffer" json:"verbose_log_buffer,omitempty"`
+	MaxBackupCount   *int `hcl:"max_backup_count" json:"max_backup_count,omitempty"`
 }
 
 func loadJSONObject(v *cty.Value) (*map[string]interface{}, error) {

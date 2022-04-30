@@ -48,7 +48,7 @@ func (ah *APIHandler) Start(i *Info) (http.Handler, error) {
 	if ah.M.DB.Verbose {
 		logrus.Debugf("POST %s", *ah.V.API)
 	}
-	b, err := Request(ah.H, "POST", "", i, nil)
+	b, err := RequestBuffer(ah.H, "POST", "", i, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -66,7 +66,7 @@ class Session:
                 url = url + "/"
         self.url = url
 
-    def f(self, x,func):
+    def f(self, x, func):
         raise NotImplementedError()
 
     @property
@@ -341,7 +341,7 @@ class AsyncSession(Session):
             urljoin(self.url, path),
             headers={**self.headers, **headers},
             data=data,
-            params=params
+            params=params,
         )
 
     async def close(self):
@@ -358,9 +358,6 @@ def getSessionType(sessionType: str, namespace: str, url: str = DEFAULT_URL) -> 
     if sessionType == "async":
         return AsyncSession(namespace, url)
     raise NotImplementedError(f"The session type '{sessionType}' is not implemented")
-
-
-from .notifications import Notifications
 
 
 class APIObject:
@@ -400,9 +397,7 @@ class APIObject:
         self.uri = uri
         self.cached_data = cached_data if cached_data is not None else {}
 
-        #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
-        #: associated with this element. See :ref:`python_notifications` for details.
-        self.notifications = Notifications(constraints, self.session)
+        self._constraints = constraints
 
     def read(self, **kwargs):
         """
@@ -443,7 +438,9 @@ class APIObject:
                 self.cached_data.update(o)
             return o
 
-        return self.session.f(self.session.get(self.uri, params=kwargs), writeCache)
+        return self.session.get(
+            self.uri, params={**self._constraints, **kwargs}, f=writeCache
+        )
 
     def update(self, **kwargs):
         """
@@ -478,7 +475,9 @@ class APIObject:
                 self.cached_data.update(kwargs)
             return o
 
-        return self.session.f(self.session.patch(self.uri, kwargs), updateCache)
+        return self.session.patch(
+            self.uri, kwargs, params=self._constraints, f=updateCache
+        )
 
     def delete(self, **kwargs):
         """
@@ -504,7 +503,7 @@ class APIObject:
         Raises:
             HeedyException: If the server returns an error, or when the app does not have permission to delete.
         """
-        return self.session.delete(self.uri, params=kwargs)
+        return self.session.delete(self.uri, params={**self._constraints, **kwargs})
 
     def __setattr__(self, name, value):
         if name in self.props:
@@ -526,7 +525,7 @@ class APIObject:
         # Gets the item from the cache - assumes that the data is in the cache. If not, need to call .read() first
         return self.cached_data[i]
 
-    def __setitem__(self,key,value):
+    def __setitem__(self, key, value):
         if key in self.props:
             return self.update(**{key: value})
         raise KeyError(f"{key} is not a valid property")
@@ -536,12 +535,6 @@ class APIObject:
 
     def __repr__(self):
         return str(self)
-
-    def notify(self, *args, **kwargs):
-        """
-        Shorthand for :code:`self.notifications.notify` (see :ref:`python_notifications`).
-        """
-        return self.notifications.notify(*args, **kwargs)
 
 
 class APIList:
@@ -557,11 +550,13 @@ class APIList:
 
     # These are internal functions that help with implementing the useful parts of
     # lists
-    def _create(self, f=lambda x: x, **kwargs):
-        return self.session.post(self.uri, {**self._constraints, **kwargs}, f=f)
+    def _create(self, kwargs: Dict, params: Dict = {}, f=lambda x: x):
+        return self.session.post(
+            self.uri, {**self._constraints, **kwargs}, params=params, f=f
+        )
 
     def _getitem(self, item, f=lambda x: x):
         return self.session.get(f"{self.uri}/{item}", f=f)
 
-    def _call(self, f=lambda x: x, **kwargs):
+    def _call(self, kwargs: Dict, f=lambda x: x):
         return self.session.get(self.uri, params={**self._constraints, **kwargs}, f=f)

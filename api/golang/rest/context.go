@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 
@@ -29,7 +30,8 @@ func CTX(r *http.Request) *Context {
 }
 
 type Requester interface {
-	Request(c *Context, method, path string, body interface{}, header map[string]string) (io.Reader, error)
+	Request(c *Context, method, path string, body interface{}, header map[string]string) (io.ReadCloser, error)
+	RequestBuffer(c *Context, method, path string, body interface{}, header map[string]string) (*bytes.Buffer, error)
 }
 
 // A Context is generated for all requests, and holds all the info necessary for completing it.

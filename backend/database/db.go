@@ -619,10 +619,10 @@ func objectCreateQuery(c *assets.Configuration, s *Object) (string, []interface{
 		return "", nil, ErrInvalidName
 	}
 	if s.Owner == nil && s.App == nil {
-		return "", nil, ErrBadQuery("You must specify either an owner or a app to which the object should belong")
+		return "", nil, ErrBadQuery("You must specify either an owner or an app to which the object should belong")
 	}
 	if s.App != nil && s.Owner != nil {
-		return "", nil, ErrBadQuery("When creating a object for a app, you must not specify an owner")
+		return "", nil, ErrBadQuery("When creating a object for an app, you must not specify an owner")
 	}
 	if s.Type == nil {
 		return "", nil, ErrBadQuery("Must specify a object type")

@@ -37,16 +37,16 @@ def test_basics():
     assert len(a.objects()) == 0
     # assert len(a.owner.apps())==1
 
-
+"""
 def test_notifications():
     a = App("testkey")
 
     assert len(a.notifications()) == 0
-    a.notify("hi", "hello")
+    a.notifications.notify("hi", "hello")
     assert len(a.notifications()) == 1
     a.notifications.delete("hi")
     assert len(a.notifications()) == 0
-
+"""
 
 def test_kv():
     a = App("testkey")

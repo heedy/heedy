@@ -1,6 +1,8 @@
 package updater
 
 import (
+	"errors"
+
 	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
@@ -21,10 +23,11 @@ func Run(o Options) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	if hadUpdate {
-		o.Revert = true
+	} else if o.Revert {
+		err := Revert(o.ConfigDir, errors.New("reverted from backup"))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Actually run it
@@ -35,7 +38,7 @@ func Run(o Options) error {
 		err = o.Runner(a)
 	}
 
-	if o.Revert && err != nil {
+	if hadUpdate && err != nil {
 		logrus.Error(err)
 		err = Revert(o.ConfigDir, err)
 		if err != nil {

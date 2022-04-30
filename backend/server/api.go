@@ -35,17 +35,23 @@ func APIMux() (*chi.Mux, error) {
 	apiMux.Get("/users/{username}/sessions", ListUserSessions)
 	apiMux.Delete("/users/{username}/sessions/{sessionid}", DeleteUserSession)
 
+	apiMux.Get("/users/{username}/export", ExportUser)
+
 	apiMux.Post("/objects", CreateObject)
 	apiMux.Get("/objects", ListObjects)
 	apiMux.Get("/objects/{objectid}", ReadObject)
 	apiMux.Patch("/objects/{objectid}", UpdateObject)
 	apiMux.Delete("/objects/{objectid}", DeleteObject)
 
+	apiMux.Get("/objects/{objectid}/export", ExportObject)
+
 	apiMux.Post("/apps", CreateApp)
 	apiMux.Get("/apps", ListApps)
 	apiMux.Get("/apps/{appid}", ReadApp)
 	apiMux.Patch("/apps/{appid}", UpdateApp)
 	apiMux.Delete("/apps/{appid}", DeleteApp)
+
+	apiMux.Get("/apps/{appid}/export", ExportApp)
 
 	apiMux.Get("/server/scope/{objecttype}", GetObjectScope)
 	apiMux.Get("/server/scope", GetAppScope)

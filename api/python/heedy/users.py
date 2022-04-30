@@ -13,7 +13,7 @@ class User(APIObject):
     def __init__(self, username: str, session: Session, cached_data=None):
         super().__init__(
             f"api/users/{q(username)}",
-            {"user": username},
+            {},
             session,
             cached_data=cached_data,
         )
@@ -28,6 +28,10 @@ class User(APIObject):
         #: to interact with the user's objects. For example, listing the objects
         #: that are owned by the user can be done with ``usr.objects()``.
         self.objects = objects.Objects({"owner": username}, self.session)
+
+        #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
+        #: associated with this element. See :ref:`python_notifications` for details.
+        self.notifications = Notifications({"user": username}, self.session)
 
         self._kv = KV(f"api/kv/users/{q(username)}", self.session)
 
@@ -84,6 +88,7 @@ class User(APIObject):
             # Remove the password from the updated cache
             self.cached_data.pop("password", None)
             return x
+
         return self.session.f(super().update(**kwargs), remPass)
 
 
@@ -161,10 +166,10 @@ class Users(APIList):
             HeedyException: If insufficient permissions or the request fails.
         """
         return self._call(
+            kwargs,
             f=lambda x: [
                 User(xx["username"], session=self.session, cached_data=xx) for xx in x
             ],
-            **kwargs,
         )
 
     def create(self, username, password, **kwargs):
@@ -207,6 +212,6 @@ class Users(APIList):
             HeedyException: If insufficient permissions or the request fails.
         """
         return self._create(
+            {"username": username, "password": password, **kwargs},
             f=lambda x: User(x["username"], session=self.session, cached_data=x),
-            **{"username": username, "password": password, **kwargs},
         )

@@ -642,6 +642,15 @@ func GenerateDashboardDataset(w http.ResponseWriter, r *http.Request) {
 var Handler = func() *chi.Mux {
 	m := chi.NewMux()
 
+	m.Get("/object/data", func(w http.ResponseWriter, r *http.Request) {
+		ReadData(w, r, false)
+	})
+	m.Delete("/object/data", func(w http.ResponseWriter, r *http.Request) {
+		DeleteData(w, r, false)
+	})
+	m.Post("/object/data", func(w http.ResponseWriter, r *http.Request) {
+		WriteData(w, r, false)
+	})
 	m.Get("/object/timeseries", func(w http.ResponseWriter, r *http.Request) {
 		ReadData(w, r, false)
 	})

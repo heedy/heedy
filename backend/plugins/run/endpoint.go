@@ -84,8 +84,8 @@ func RequestWithContext(adb *database.AdminDB, h http.Handler, method, path stri
 	return rec.Body, nil
 }
 
-// Request runs the given http handler, and optionally unmarshals the result
-func Request(h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
+// RequestBuffer runs the given http handler, and optionally unmarshals the result
+func RequestBuffer(h http.Handler, method, path string, body interface{}, headers map[string]string) (*bytes.Buffer, error) {
 	var bodybuffer io.Reader
 	if body != nil {
 		b, ok := body.([]byte)

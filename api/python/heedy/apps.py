@@ -1,5 +1,13 @@
 from typing import Dict
-from .base import APIObject, APIList, HeedyException, Session, getSessionType, DEFAULT_URL, q
+from .base import (
+    APIObject,
+    APIList,
+    HeedyException,
+    Session,
+    getSessionType,
+    DEFAULT_URL,
+    q,
+)
 from .kv import KV
 
 from . import users
@@ -47,7 +55,11 @@ class App(APIObject):
     read_qparams = {"icon": {"icon": True}, "access_token": {"token": True}}
 
     def __init__(
-        self, access_token: str, url: str = DEFAULT_URL, session="sync", cached_data=None
+        self,
+        access_token: str,
+        url: str = DEFAULT_URL,
+        session="sync",
+        cached_data=None,
     ):
         appid = "self"
         if isinstance(session, Session):
@@ -55,19 +67,21 @@ class App(APIObject):
             # the app id
             appid = access_token
             super().__init__(
-                f"api/apps/{q(appid)}", {"app": appid}, session, cached_data=cached_data
+                f"api/apps/{q(appid)}", {}, session, cached_data=cached_data
             )
 
         else:
             # Initialize the app object as a direct API
             s = getSessionType(session, "self", url)
             s.setAccessToken(access_token)
-            super().__init__(
-                "api/apps/self", {"app": appid}, s, cached_data=cached_data
-            )
+            super().__init__("api/apps/self", {}, s, cached_data=cached_data)
 
             # Cache the used access token
             self.cached_data["access_token"] = access_token
+
+        #: A :class:`~heedy.notifications.Notifications` object that allows you to access the notifications
+        #: associated with this element. See :ref:`python_notifications` for details.
+        self.notifications = Notifications({"app": appid}, self.session)
 
         # Key-value store associated with the app
         self._kv = KV(f"api/kv/apps/{q(appid)}", self.session)
@@ -172,10 +186,13 @@ class App(APIObject):
             cached_data=self.cached_data.copy(),
         )
 
-    def __eq__(self,other):
-        if self.id=="self" or other.id=="self":
-            raise AttributeError("App object was not read from the server, and cannot be compared. Call .read() first.")
-        return self.id==other.id
+    def __eq__(self, other):
+        if self.id == "self" or other.id == "self":
+            raise AttributeError(
+                "App object was not read from the server, and cannot be compared. Call .read() first."
+            )
+        return self.id == other.id
+
 
 class Apps(APIList):
     """
@@ -263,13 +280,13 @@ class Apps(APIList):
             HeedyException: If the request fails.
         """
         return self._call(
+            kwargs,
             f=lambda x: [
                 App(xx["id"], session=self.session, cached_data=xx) for xx in x
             ],
-            **kwargs,
         )
 
-    def create(self, name: str="", **kwargs):
+    def create(self, name: str = "", **kwargs):
         """
         Creates a new app. Only the first argument, the app name, is required.
 
@@ -319,9 +336,10 @@ class Apps(APIList):
         """
         if "access_token" in kwargs and isinstance(kwargs["access_token"], bool):
             kwargs["access_token"] = "generate" if kwargs["access_token"] else ""
-        if name!="": # An empty name is allowed if creating a plugin app that is already defined in config
+        if (
+            name != ""
+        ):  # An empty name is allowed if creating a plugin app that is already defined in config
             kwargs["name"] = name
         return self._create(
-            f=lambda x: App(x["id"], session=self.session, cached_data=x),
-            **kwargs,
+            kwargs, f=lambda x: App(x["id"], session=self.session, cached_data=x)
         )

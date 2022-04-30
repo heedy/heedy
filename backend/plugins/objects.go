@@ -97,6 +97,16 @@ func NewObjectManager(a *assets.Assets, m *run.Manager, h http.Handler) (*Object
 		objects[sname] = s
 	}
 
+	if defaultObject, ok := objects["object"]; ok && defaultObject.Routes != nil {
+		// If there is a default object with routes, we use it as the backup handler for object requests
+		for oName := range a.Config.ObjectTypes {
+			if oName != "object" {
+				objects[oName].Routes.NotFound(defaultObject.Routes.ServeHTTP)
+				objects[oName].Routes.MethodNotAllowed(defaultObject.Routes.ServeHTTP)
+			}
+		}
+	}
+
 	sm := &ObjectManager{
 		A:       a,
 		M:       m,
@@ -162,7 +172,7 @@ func (sm *ObjectManager) handleCreate(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, fmt.Errorf("read_error: %s", err.Error()))
 		return
 	}
-	if src.Type == nil {
+	if src.Type == nil || *src.Type == "object" {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("bad_request: must specify a type of object to create"))
 		return
 	}
@@ -239,6 +249,11 @@ func (sm *ObjectManager) handleAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		ctx.Log.Warnf("Request is for an unrecognized object '%s'", *s.Type)
+		ss, ok = sm.Objects["object"]
+		if ok && ss.Routes != nil {
+			ss.Routes.ServeHTTP(w, r)
+			return
+		}
 	}
 
 	// We need to clear the chi context if forwarding to the builtin REST API, because handleAPI was Mount-ed

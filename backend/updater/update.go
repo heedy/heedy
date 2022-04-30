@@ -2,14 +2,88 @@ package updater
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
+	"github.com/heedy/heedy/backend/assets"
 	"github.com/sirupsen/logrus"
 )
+
+var ErrBackup = errors.New("no backup available")
+
+func PrepareBackupFolder(configDir string) (backupDir string, err error) {
+	backupDir = path.Join(configDir, "backup")
+	_, err = os.Stat(backupDir)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(backupDir, os.ModePerm)
+	}
+	if err != nil {
+		return
+	}
+	backupDir = path.Join(backupDir, time.Now().Format("2006-01-02-15-04-05"))
+	err = os.MkdirAll(backupDir, os.ModePerm)
+	return
+}
+
+func RemoveOldBackups(configDir string) error {
+	backupDir := path.Join(configDir, "backup")
+	_, err := os.Stat(backupDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	// Now check how many backups we have
+	files, err := ioutil.ReadDir(backupDir)
+	if err != nil {
+		return err
+	}
+
+	// And get the maximum number configured.
+	maxBackups := 1
+	cfg := assets.Config()
+	if cfg.MaxBackupCount != nil {
+		maxBackups = *cfg.MaxBackupCount
+	}
+	cfg, err = assets.LoadConfigFile(configDir + "/heedy.conf")
+	if err == nil && cfg.MaxBackupCount != nil {
+		maxBackups = *cfg.MaxBackupCount
+	}
+
+	// Negative numbers/0 mean no limit
+	if len(files) > maxBackups && maxBackups > 0 {
+		// Delete the oldest backup
+		files = files[:len(files)-maxBackups]
+		for _, f := range files {
+			err = os.RemoveAll(path.Join(backupDir, f.Name()))
+		}
+
+	}
+	return err
+}
+
+func GetLatestBackup(configDir string) (backupDir string, err error) {
+	backupDir = path.Join(configDir, "backup")
+	_, err = os.Stat(backupDir)
+	if err != nil {
+		return
+	}
+	files, err := ioutil.ReadDir(backupDir)
+	if err != nil {
+		return "", ErrBackup
+	}
+	if len(files) == 0 {
+		return "", ErrBackup
+	}
+	backupDir = path.Join(backupDir, files[len(files)-1].Name())
+	return
+}
 
 type UpdateOptions struct {
 	BackupData     bool     `json:"backup"`
@@ -36,23 +110,8 @@ func Update(configDir string) (bool, error) {
 		}
 	}
 
-	backupDir := path.Join(configDir, "backup")
-	if _, err := os.Stat(backupDir); !os.IsNotExist(err) {
-		// The backup directory exists. Move it over to backup.old
-		backupOld := path.Join(configDir, "backup.old")
-
-		if _, err = os.Stat(backupOld); !os.IsNotExist(err) {
-			if err = os.RemoveAll(backupOld); err != nil {
-				return true, err
-			}
-		}
-
-		if err = os.Rename(backupDir, backupOld); err != nil {
-			return true, err
-		}
-	}
-
-	if err = os.MkdirAll(backupDir, os.ModePerm); err != nil {
+	backupDir, err := PrepareBackupFolder(configDir)
+	if err != nil {
 		return true, err
 	}
 	if o != nil && o.BackupData {
@@ -76,6 +135,14 @@ func Update(configDir string) (bool, error) {
 		return true, err
 	}
 
+	files, err := ioutil.ReadDir(backupDir)
+	if err == nil && len(files) == 0 {
+		// Nothing was actually backed up... so remove the directory
+		os.RemoveAll(backupDir)
+
+		return false, os.RemoveAll(updateDir)
+	}
+
 	// Remove the revert directory, to avoid confusion: the update will be successful
 	revertDir := path.Join(configDir, "updates.reverted")
 	if _, err := os.Stat(revertDir); !os.IsNotExist(err) {
@@ -84,25 +151,27 @@ func Update(configDir string) (bool, error) {
 		}
 	}
 
+	RemoveOldBackups(configDir)
+
 	return true, os.RemoveAll(updateDir)
 
 }
 
 func Revert(configDir string, failure error) error {
-	logrus.Warn("Reverting update")
+	logrus.Warn("Reverting from backup")
 	configDir, err := filepath.Abs(configDir)
 	if err != nil {
 		return err
 	}
 
-	backupDir := path.Join(configDir, "backup")
-	if _, err := os.Stat(backupDir); os.IsNotExist(err) {
-		return fmt.Errorf("Couldn't revert: no backup available (%s)", backupDir)
+	backupDir, err := GetLatestBackup(configDir)
+	if err != nil {
+		return err
 	}
 
 	// Create the directory where reverted stuff will be stored (while deleting any old reverts)
 	revertDir := path.Join(configDir, "updates.reverted")
-	if _, err := os.Stat(revertDir); !os.IsNotExist(err) {
+	if _, err = os.Stat(revertDir); !os.IsNotExist(err) {
 		if err = os.RemoveAll(revertDir); err != nil {
 			return err
 		}

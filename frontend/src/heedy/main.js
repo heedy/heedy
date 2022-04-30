@@ -10,6 +10,7 @@ import Logout from "./main/logout.vue";
 import ConfigPage from "./main/config/index.vue";
 import ConfigInjector, { configRoutes } from "./main/config/injector.js";
 import ConfigServer from "./main/config/server.vue";
+import ConfigConfiguration from "./main/config/configuration.vue";
 import ConfigUsers from "./main/config/users.vue";
 import ConfigPlugins from "./main/config/plugins.vue";
 
@@ -215,14 +216,19 @@ function setup(frontend) {
         title: "Users",
       });
       frontend.config.addPage({
-        path: "server",
-        component: ConfigServer,
-        title: "Server",
+        path: "configuration",
+        component: ConfigConfiguration,
+        title: "config",
       });
       frontend.config.addPage({
         path: "plugins",
         component: ConfigPlugins,
         title: "Plugins",
+      });
+      frontend.config.addPage({
+        path: "server",
+        component: ConfigServer,
+        title: "Server",
       });
     }
   } else {

@@ -185,6 +185,33 @@ func WriteOptions(configDir string, o *UpdateOptions) error {
 	return DisablePlugins(configDir, o.DeletedPlugins)
 }
 
+func GetBackupCount(configDir string) int {
+	backupDir := path.Join(configDir, "backup")
+	_, err := os.Stat(backupDir)
+	if err != nil {
+		return 0
+	}
+	// Now check how many backups we have
+	files, err := ioutil.ReadDir(backupDir)
+	if err != nil {
+		return 0
+	}
+
+	return len(files)
+}
+
+func EnableDataBackup(configDir string) error {
+	o, err := ReadOptions(configDir)
+	if err != nil {
+		return err
+	}
+	if o == nil {
+		o = &UpdateOptions{}
+	}
+	o.BackupData = true
+	return WriteOptions(configDir, o)
+}
+
 func Status(configDir string) error {
 	errFile := path.Join(configDir, "updates.reverted", "ERROR")
 	if _, err := os.Stat(errFile); os.IsNotExist(err) {

@@ -259,7 +259,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&logdir, "log_dir", "", "Write logs to the given folder (or stdout)")
 	RootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Extremely verbose logging of server/client requests and responses.")
 	RootCmd.PersistentFlags().BoolVar(&buildinfo.DevMode, "development", false, "Put the server into development mode for debugging plugins and frontend code.")
-	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup if server fails to start")
+	RootCmd.PersistentFlags().BoolVar(&revert, "revert", false, "Reverts an update from backup before starting the server.")
 	RootCmd.PersistentFlags().BoolVar(&applyUpdates, "update", false, "Applies any pending updates")
 	RootCmd.PersistentFlags().BoolVar(&forceRun, "force", false, "Force the server to start even if it detects a running heedy instance")
 	RootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprofile", "", "Saves a CPU profile to the given file")

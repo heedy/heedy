@@ -159,8 +159,7 @@ func (p *Plugin) GetUserSettingsSchema() map[string]interface{} {
 }
 
 type ObjectType struct {
-	Frontend *string            `json:"frontend,omitempty" hcl:"frontend,block" cty:"frontend"`
-	Routes   *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
+	Routes *map[string]string `json:"routes,omitempty" hcl:"routes" cty:"routes"`
 
 	MetaSchema *map[string]interface{} `json:"meta_schema,omitempty"`
 
@@ -287,7 +286,9 @@ type Configuration struct {
 	UserSettingsSchema map[string]interface{} `json:"user_settings_schema,omitempty"`
 
 	// The verbose option is not possible to set in config, it is passed as an arg. It is only here so that it is passed to plugins
-	Verbose bool `json:"verbose,omitempty"`
+	Verbose          bool `json:"verbose,omitempty"`
+	VerboseLogBuffer *int `json:"verbose_log_buffer,omitempty"`
+	MaxBackupCount   *int `json:"max_backup_count,omitempty"`
 
 	userSettingsSchema *JSONSchema
 }

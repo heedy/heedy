@@ -3,7 +3,7 @@
         "recurse": true
     },
     "source": {
-        "excludePattern": "(node_modules|testdb|assets|docs)"
+        "excludePattern": "(node_modules|testdb|assets|docs|service-worker.js|.git|.vscode|backend)"
     },
     "sourceType": "module",
     "templates": {

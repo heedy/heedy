@@ -64,7 +64,7 @@ class WebsocketSubscriber {
   }
   enable() {
     console.vlog("Enabling websocket");
-    this.retryConnect = frontend.info.user != null;
+    this.retryConnect = this.frontend.info.user != null;
     if (!this.isopen) {
       this.connect();
     }

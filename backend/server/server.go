@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -110,16 +111,57 @@ func Run(a *assets.Assets, o *RunOptions) error {
 	// We add a special handler to allow restarting the server
 	restartServer := false
 	applyUpdates := false
-	mux.HandleFunc("/api/server/restart", func(w http.ResponseWriter, r *http.Request) {
+	revertUpdates := false
+	var restartMutex sync.Mutex
+	mux.Post("/api/server/restart", func(w http.ResponseWriter, r *http.Request) {
+		restartMutex.Lock()
+		defer func() {
+			if !restartServer {
+				restartMutex.Unlock()
+			}
+		}()
 		db := rest.CTX(r).DB
 		a := db.AdminDB().Assets()
 		if db.ID() != "heedy" && !a.Config.UserIsAdmin(db.ID()) {
-			rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("Only admins can restart heedy"))
+			rest.WriteJSONError(w, r, http.StatusForbidden, errors.New("only admins can restart heedy"))
 			return
 		}
-		rest.CTX(r).Log.Warn("Restart requested")
+
+		var restartOptions struct {
+			Backup bool `json:"backup,omitempty"`
+			Update bool `json:"update,omitempty"`
+			Revert bool `json:"revert,omitempty"`
+		}
+		if r.Body != nil {
+			err = rest.UnmarshalRequest(r, &restartOptions)
+			if err != nil {
+				rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+				return
+			}
+		}
+		if (restartOptions.Backup || restartOptions.Update) && restartOptions.Revert {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("cannot update and revert at the same time"))
+			return
+		}
+
+		if restartOptions.Backup {
+			updater.EnableDataBackup(db.AdminDB().Assets().FolderPath)
+		} else if restartOptions.Revert && updater.GetBackupCount(db.AdminDB().Assets().FolderPath) == 0 {
+			rest.WriteJSONError(w, r, http.StatusBadRequest, errors.New("no backup to revert"))
+			return
+		}
+
 		restartServer = true
-		applyUpdates = true
+		applyUpdates = restartOptions.Update || restartOptions.Backup
+		revertUpdates = restartOptions.Revert
+
+		if applyUpdates {
+			rest.CTX(r).Log.Warn("Restart requested with update")
+		} else if revertUpdates {
+			rest.CTX(r).Log.Warn("Restart requested with update revert")
+		} else {
+			rest.CTX(r).Log.Warn("Restart requested")
+		}
 		c <- os.Interrupt
 
 		rest.WriteResult(w, r, nil)
@@ -197,6 +239,8 @@ func Run(a *assets.Assets, o *RunOptions) error {
 		logrus.Info("Restarting")
 		if applyUpdates {
 			return updater.StartHeedy(a.FolderPath, true, "--update")
+		} else if revertUpdates {
+			return updater.StartHeedy(a.FolderPath, true, "--revert")
 		}
 		return updater.StartHeedy(a.FolderPath, true)
 	}

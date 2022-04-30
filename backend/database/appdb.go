@@ -159,12 +159,18 @@ func (db *AppDB) ListUsers(o *ListUsersOptions) ([]*User, error) {
 
 // CanCreateObject returns whether the given object can be
 func (db *AppDB) CanCreateObject(s *Object) error {
+	if s.App == nil || *s.App == "self" {
+		s.App = &db.c.ID
+	}
 	_, _, err := objectCreateQuery(db.adb.Assets().Config, s)
 	if err != nil {
 		return err
 	}
 	if s.App != nil && *s.App != db.c.ID {
 		return ErrAccessDenied("Can't create a object for a different app")
+	}
+	if s.Owner != nil && *s.Owner != *db.c.Owner {
+		return ErrAccessDenied("Can't create a object for a different user")
 	}
 	if !db.c.Scope.HasScope("self.objects:create") && !db.c.Scope.HasScope("self.objects."+*s.Type+":create") {
 		return ErrAccessDenied("Insufficient access to create a object of this type")

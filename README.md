@@ -57,7 +57,7 @@ The first screenshot is of sleep data uploaded by the [fitbit plugin](https://gi
 
 ## Building
 
-Building heedy requires at least go 1.15 and a recent version of node with at least npm 7.
+Building heedy requires at least go 1.18 and a recent version of node with at least npm 7.
 
 ### Release
 

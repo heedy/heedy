@@ -1,7 +1,9 @@
 package server
 
 import (
+	"archive/zip"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/heedy/heedy/backend/database"
@@ -153,8 +155,23 @@ func ListObjects(w http.ResponseWriter, r *http.Request) {
 	rest.WriteJSON(w, r, sl, err)
 }
 
+type JSONBytes []byte
+
+func (j JSONBytes) MarshalJSON() ([]byte, error) {
+	return j, nil
+}
+func (j *JSONBytes) UnmarshalJSON(data []byte) error {
+	*j = data
+	return nil
+}
+
+type dataObject struct {
+	database.Object
+	Data JSONBytes `json:"data,omitempty"`
+}
+
 func CreateObject(w http.ResponseWriter, r *http.Request) {
-	var s database.Object
+	var s dataObject
 	var o database.ReadObjectOptions
 	err := rest.UnmarshalRequest(r, &s)
 	if err != nil {
@@ -166,14 +183,35 @@ func CreateObject(w http.ResponseWriter, r *http.Request) {
 		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
 		return
 	}
-	adb := rest.CTX(r).DB
+	ctx := rest.CTX(r)
 
-	sid, err := adb.CreateObject(&s)
+	sid, err := ctx.DB.CreateObject(&s.Object)
 	if err != nil {
 		rest.WriteJSONError(w, r, 400, err)
 		return
 	}
-	s2, err := adb.ReadObject(sid, &o)
+	defer func() {
+		// If there was an error, delete the object
+		if err != nil {
+			err2 := ctx.DB.AdminDB().DelObject(sid)
+			if err2 != nil {
+				ctx.Log.Errorf("Failed to delete created object %s after failed data upload: %s", sid, err2)
+			}
+		}
+	}()
+
+	if len(s.Data) > 0 {
+		// There is data to upload to the object, so attempt to do so
+		_, err = ctx.RequestBuffer(ctx, "POST", "/api/objects/"+sid+"/data", s.Data, nil)
+		if err != nil {
+			rest.WriteJSONError(w, r, 400, err)
+			return
+		}
+	}
+
+	var s2 *database.Object
+
+	s2, err = ctx.DB.ReadObject(sid, &o)
 
 	rest.WriteJSON(w, r, s2, err)
 }
@@ -292,4 +330,91 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 	}
 	cl, err := rest.CTX(r).DB.ListApps(&o)
 	rest.WriteJSON(w, r, cl, err)
+}
+
+func ExportUser(w http.ResponseWriter, r *http.Request) {
+	var o plugins.ExportUserOptions
+	err := rest.QueryDecoder.Decode(&o, r.URL.Query())
+	username, err := rest.URLParam(r, "username", err)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	c := rest.CTX(r)
+	u, err := c.DB.ReadUser(username, &database.ReadUserOptions{
+		Icon: true,
+	})
+	if err != nil {
+		rest.WriteJSONError(w, r, 400, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", username))
+	w.WriteHeader(http.StatusOK)
+
+	zipw := zip.NewWriter(w)
+
+	err = plugins.ExportUser(c, u, "/", zipw, &o)
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
+	err = zipw.Close()
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
+}
+
+func ExportApp(w http.ResponseWriter, r *http.Request) {
+	appid, err := rest.URLParam(r, "appid", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	c := rest.CTX(r)
+	a, err := c.DB.ReadApp(appid, &database.ReadAppOptions{Icon: true})
+	if err != nil {
+		rest.WriteJSONError(w, r, 400, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", *a.Name))
+	w.WriteHeader(http.StatusOK)
+
+	zipw := zip.NewWriter(w)
+	err = plugins.ExportApp(c, a, "/", zipw, &plugins.ExportAppOptions{IncludeObjects: true})
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
+	err = zipw.Close()
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
+}
+
+func ExportObject(w http.ResponseWriter, r *http.Request) {
+	srcid, err := rest.URLParam(r, "objectid", nil)
+	if err != nil {
+		rest.WriteJSONError(w, r, http.StatusBadRequest, err)
+		return
+	}
+	c := rest.CTX(r)
+	s, err := c.DB.ReadObject(srcid, &database.ReadObjectOptions{Icon: true})
+	if err != nil {
+		rest.WriteJSONError(w, r, 400, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", *s.Name))
+	w.WriteHeader(http.StatusOK)
+
+	zipw := zip.NewWriter(w)
+	err = plugins.ExportObject(c, s, "/", zipw)
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
+	err = zipw.Close()
+	if err != nil {
+		c.Log.Warn("Failed to export: ", err)
+	}
 }

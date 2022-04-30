@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -176,7 +177,7 @@ func (a *RequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *RequestHandler) Request(c *rest.Context, method, path string, body interface{}, header map[string]string) (io.Reader, error) {
+func (a *RequestHandler) prepHeader(c *rest.Context, header map[string]string) map[string]string {
 	if header == nil {
 		header = make(map[string]string)
 	}
@@ -192,6 +193,15 @@ func (a *RequestHandler) Request(c *rest.Context, method, path string, body inte
 
 		header["X-Heedy-Id"] = c.ID
 	}
+	return header
+}
 
+func (a *RequestHandler) RequestBuffer(c *rest.Context, method, path string, body interface{}, header map[string]string) (*bytes.Buffer, error) {
+	header = a.prepHeader(c, header)
+	return run.RequestBuffer(a, method, path, body, header)
+}
+
+func (a *RequestHandler) Request(c *rest.Context, method, path string, body interface{}, header map[string]string) (io.ReadCloser, error) {
+	header = a.prepHeader(c, header)
 	return run.Request(a, method, path, body, header)
 }
