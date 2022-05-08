@@ -23,23 +23,73 @@
         xl="4"
       >
         <v-card>
-          <v-card-title v-if="d.title !== undefined">{{
-            d.title
-          }}</v-card-title>
+          <v-card-title v-if="d.title !== undefined"
+            >{{ d.title }}
+            <v-spacer />
+            <v-menu bottom left>
+              <template #activator="{ on, attrs }">
+                <v-btn v-on="on" v-bind="attrs" icon>
+                  <v-icon>more_vert</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item @click="showConfig(d)">
+                  <v-list-item-icon>
+                    <v-icon>code</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title>Configuration</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </v-card-title>
           <v-card-text>
             <component
               :is="visualization(d.visualization)"
               :query="query"
               :config="d.config"
+              :data="d.data"
             />
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+    <v-dialog v-if="configDialog" v-model="configDialog" max-width="1024px">
+      <v-card>
+        <v-card-title>
+          <span class="headline">{{ configDialogData.title }}</span>
+        </v-card-title>
+        <v-card-text>
+          <codemirror
+            :value="JSON.stringify(configDialogData.config, null, '  ')"
+            :options="cmOptions"
+          ></codemirror>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn outlined @click="customize">Customize</v-btn>
+          <div class="flex-grow-1"></div>
+          <v-btn color="primary" text @click="configDialog = false"
+            >Close</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-flex>
 </template>
 <script>
 import VisNotFound from "./vis_notfound.vue";
+
+const customizationCode = (k,q,c) => `// Only alter the visualization if the queries match
+const query = ${JSON.stringify(q, null, "  ")};
+// If there is a mismatch, don't modify the visualizations.
+if (!c.query.match(query)) return vis;
+
+// If the conditions are met, set the visualization's configuration
+vis["${k}"] = ${JSON.stringify(c, null, "  ")};
+
+return vis;
+`
 
 function CleanQuery(q) {
   let q2 = {};
@@ -78,6 +128,13 @@ export default {
     message: "Querying Data...",
     datavis: [],
     qkey: "",
+    configDialog: false,
+    configDialogData: {},
+    cmOptions: {
+      tabSize: 2,
+      mode: "text/javascript",
+      readOnly: true,
+    },
   }),
   methods: {
     visualization(v) {
@@ -86,6 +143,10 @@ export default {
         return VisNotFound;
       }
       return vs[v];
+    },
+    showConfig(d) {
+      this.configDialogData = d;
+      this.configDialog = true;
     },
     subscribe(q) {
       if (this.qkey != "") {
@@ -116,6 +177,14 @@ export default {
         }
       );
     },
+    customize() {
+      let c = this.configDialogData;
+      this.$router.push({path:"/timeseries/customize_visualization", query: {
+        name: `Custom ${c.key} visualization`,
+        c: customizationCode(c.key, this.query, c.config),
+        q: btoa(JSON.stringify(this.query)),
+        }});
+    }
   },
   watch: {
     query(n, o) {
@@ -147,3 +216,9 @@ export default {
   },
 };
 </script>
+<style>
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+</style>

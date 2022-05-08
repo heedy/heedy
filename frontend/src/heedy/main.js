@@ -9,7 +9,6 @@ import Logout from "./main/logout.vue";
 
 import ConfigPage from "./main/config/index.vue";
 import ConfigInjector, { configRoutes } from "./main/config/injector.js";
-import ConfigServer from "./main/config/server.vue";
 import ConfigConfiguration from "./main/config/configuration.vue";
 import ConfigUsers from "./main/config/users.vue";
 import ConfigPlugins from "./main/config/plugins.vue";
@@ -172,7 +171,7 @@ function setup(frontend) {
       key: "heedySettings",
       text: "User Settings",
       icon: "fas fa-user-cog",
-      route: "/settings/user",
+      route: "/settings/plugins",
       location: "secondary",
     });
     frontend.addRoute({
@@ -224,11 +223,6 @@ function setup(frontend) {
         path: "plugins",
         component: ConfigPlugins,
         title: "Plugins",
-      });
-      frontend.config.addPage({
-        path: "server",
-        component: ConfigServer,
-        title: "Server",
       });
     }
   } else {

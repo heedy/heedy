@@ -4,7 +4,7 @@
     <v-card-actions>
       <v-spacer></v-spacer>
 
-      <v-btn dark small color="info" type="submit" :loading="loading"
+      <v-btn dark small color="info" type="submit"
         >Update {{ plugin }} Settings</v-btn
       >
     </v-card-actions>
@@ -15,7 +15,6 @@ export default {
   data: () => ({
     formValid: false,
     modified: {},
-    loading: false,
   }),
   props: {
     schema: Object,
@@ -25,13 +24,9 @@ export default {
   methods: {
     update: async function (event) {
       event.preventDefault();
-      if (this.loading) return;
       if (!this.formValid) {
         return;
       }
-      this.loading = true;
-
-      console.vlog(`Updating settings for ${this.plugin}`, this.modified);
 
       let modified = { ...this.modified };
       // Need to check if any keys are being removed
@@ -40,25 +35,8 @@ export default {
           modified[k] = null; // Explicitly delete the variable
         }
       });
-      if (Object.keys(modified).length > 0) {
-        let result = await this.$frontend.rest(
-          "PATCH",
-          `api/users/${encodeURIComponent(
-            this.$store.state.app.info.user.username
-          )}/settings/${encodeURIComponent(this.plugin)}`,
-          modified
-        );
-
-        if (!result.response.ok) {
-          this.$store.commit("alert", {
-            type: "error",
-            text: result.data.error_description,
-          });
-          this.loading = false;
-          return;
-        }
-      }
-      this.loading = false;
+      
+      this.$emit("update", modified);
     },
   },
   watch: {

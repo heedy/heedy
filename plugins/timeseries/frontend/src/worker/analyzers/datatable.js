@@ -16,12 +16,12 @@ function canEdit(q) {
   return true;
 }
 
-async function analyze(qd) {
+function analyze(qd,vis) {
   if (
     qd.keys.length > 6 ||
     !qd.dataset_array.every((ds) => ds.length < 50000 && ds.length > 0)
   ) {
-    return {}; // Don't display table for huge datasets.
+    return vis; // Don't display table for huge datasets.
   }
   const datasets = qd.dataset_array.map((data, i) => {
 
@@ -63,14 +63,14 @@ async function analyze(qd) {
     return { columns, label: qd.keys[i], editable: editable,timeseries: timeseries };
   });
 
-  return {
-    datatable: {
-      weight: 20,
-      title: "Data Table",
-      visualization: "datatable",
-      config: datasets,
-    },
+  vis.datatable = {
+    weight: 20,
+    title: "Data Table",
+    visualization: "datatable",
+    config: datasets,
   };
+
+  return vis;
 }
 
 export default analyze;

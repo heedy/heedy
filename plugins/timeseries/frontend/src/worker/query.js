@@ -1,6 +1,7 @@
 import api from "../../util.mjs";
 
-import QueryData from "./query_data.js";
+import QueryContext from "./context.js";
+import defaultAnalyzer from "./defaultPreprocessor.js";
 
 import { deepEqual } from "../../util.mjs";
 
@@ -219,7 +220,7 @@ class Query {
       this.outdated = false;
     }
 
-    this.qdata = new QueryData(this.worker, this, result.data);
+    this.qdata = new QueryContext(this.worker, this, result.data);
 
     if (this.deactivator !== null) {
       this.deactivator();
@@ -227,21 +228,16 @@ class Query {
       return;
     }
 
-    await this._prepareOutput();
+    this._prepareOutput();
   }
 
-  async _prepareOutput() {
+  _prepareOutput() {
     console.vlog("DatasetQuery: Processing data...", this.query);
     this.onStatus("Processing Data...");
     this.reprepare = false;
-    // Start running all the analyzers
-    let aresults = this.worker.timeseries.analyzers.map((a) => a(this.qdata));
 
-    // Wait for the results
-    let resultarray = await Promise.all(aresults);
+    let results = this.worker.timeseries.analyzers.reduce((v, a) => a(this.qdata, v), {});
 
-    // Reduce results into a single object
-    let results = resultarray.reduce((c, v) => Object.assign(c, v), {});
 
     if (this.deactivator !== null) {
       this.deactivator();
@@ -251,20 +247,18 @@ class Query {
 
     // Now run all preprocessors
     let rkeys = Object.keys(results);
-    let rvalues = await Promise.all(
-      rkeys.map((k) => {
-        if (
-          this.worker.timeseries.preprocessors[results[k].visualization] !==
-          undefined
-        ) {
-          return this.worker.timeseries.preprocessors[results[k].visualization](
-            this.qdata,
-            results[k]
-          );
-        }
-        return results[k];
-      })
-    );
+    let rvalues = rkeys.map((k) => {
+      if (
+        this.worker.timeseries.preprocessors[results[k].visualization] !==
+        undefined
+      ) {
+        return Object.assign(this.worker.timeseries.preprocessors[results[k].visualization](
+          this.qdata,
+          results[k]
+        ), { config: results[k] });
+      }
+      return Object.assign(defaultAnalyzer(this.qdata, results[k]), { config: results[k] });
+    });
 
     this.output = rkeys.reduce((o, cv, i) => {
       o[cv] = rvalues[i];

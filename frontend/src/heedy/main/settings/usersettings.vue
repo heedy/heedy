@@ -30,18 +30,19 @@
           </v-list-item-title>
         </v-list-item-content>
       </template>
-      <plugin-settings
+      <component
+        :is="getComponent(item.key)"
         :schema="item.schema"
         :value="item.value"
         :plugin="item.key"
+        @update="(v) => update(item.key, v)"
       />
     </v-list-group>
   </v-list>
 </template>
 <script>
-import PluginSettings from "./pluginsettings.vue";
+import PluginSettings from "./pluginsettings_default.vue";
 export default {
-  components: { PluginSettings },
   computed: {
     schema() {
       return this.$store.state.heedy.user_settings_schema;
@@ -73,6 +74,33 @@ export default {
           }
         });
       return res;
+    },
+  },
+  methods: {
+    getComponent(plugin) {
+      let components = this.$store.state.heedy.user_settings_custom_components;
+      if (components.hasOwnProperty(plugin)) {
+        return components[plugin];
+      }
+      return PluginSettings;
+    },
+    update: async function (plugin, modified) {
+      console.vlog(`Updating settings for ${plugin}`, modified);
+      let result = await this.$frontend.rest(
+        "PATCH",
+        `api/users/${encodeURIComponent(
+          this.$store.state.app.info.user.username
+        )}/settings/${encodeURIComponent(plugin)}`,
+        modified
+      );
+
+      if (!result.response.ok) {
+        this.$store.commit("alert", {
+          type: "error",
+          text: result.data.error_description,
+        });
+        return;
+      }
     },
   },
   created() {

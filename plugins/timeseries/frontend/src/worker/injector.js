@@ -146,19 +146,19 @@ class TimeseriesInjector {
   }
 
   /**
-   * A preprocessor is an async function which is given the query, its associated dataset, as well as access to apps/timeseries
-   * and the visualization settings given by an analyzer (or by person editing dashboard), and it performs any necessary preprocessing steps that might
+   * A preprocessor is a function which is given dataset context object, and
+   * and the visualization settings given by an analyzer (or by person editing dashboard), and it generates the precise format object required by the given visualizations.
    * take a long time/be computationally intensive. It is permitted to output a visualization of a different type than it is given.
    *
    * @param {*} vistype The visualization type to handle
-   * @param {*} f An async function that performs preprocessing
+   * @param {*} f A function that performs preprocessing
    */
   addPreprocessor(vistype, f) {
     this.preprocessors[vistype] = f;
   }
 
   /**
-   * Analyzers are async functions that given a query, its associated dataset, as well as access to apps/timeseries
+   * Analyzers are functions that given a dataset context object, as well as the visualizations that have been computed so far,
    * decides which visualizations to use and how to set them up. As an example, given a numeric timeseries, an analyzer might
    * output the settings necessary to view the data as a line plot.
    *

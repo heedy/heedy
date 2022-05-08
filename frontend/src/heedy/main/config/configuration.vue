@@ -9,6 +9,7 @@
       <codemirror :options="cmOptions" v-model="config" />
     </v-card-text>
     <v-card-actions>
+      <v-btn outlined @click="setBackup(false)">Restart</v-btn>
       <div class="flex-grow-1"></div>
       <v-btn color="primary" dark class="mb-2" @click="update">Save</v-btn>
     </v-card-actions>
@@ -26,6 +27,29 @@ export default {
     alert: ""
   }),
   methods: {
+    setBackup: async function (newValue) {
+      let o = this.$store.state.heedy.updates.options;
+      if (o == null) {
+        o = {
+          backup: false,
+          deleted: [],
+        };
+      }
+      o = {
+        ...o,
+        backup: o.backup?true:newValue,
+      };
+      let res = await this.$frontend.rest(
+        "POST",
+        "api/server/updates/options",
+        o
+      );
+      if (!res.response.ok) {
+        console.verror("Update error: ", res.data.error_description);
+        this.alert = res.data.error_description;
+      }
+      this.$store.dispatch("getUpdates");
+    },
     reload: async function() {
       try {
         let res = await fetch("/api/server/updates/heedy.conf", {

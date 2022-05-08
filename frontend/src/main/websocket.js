@@ -34,7 +34,9 @@ class WebsocketSubscriber {
     // Whether the socket is open, and when it was connected. This allows
     // the frontend to check if it needs to query for stuff
     this.isopen = false;
+    this.wasopen = false;
     this.openers = [];
+    this.reopeners = [];
     
     // Send a ping every 10 minutes to make sure that the socket is still connected
     this.idleTimeout = 10*60*1000;
@@ -119,6 +121,12 @@ class WebsocketSubscriber {
     this.store.commit("setWebsocket", m);
     this.frontend.worker.postMessage("websocket_status", m.unix());
     this.openers.map(o => o());
+
+    if (this.wasopen) {
+      this.reopeners.map(o => o());
+    }
+
+    this.wasopen = true;
   }
   onclose(e) {
     console.vlog("Websocket closed");
@@ -229,6 +237,9 @@ class WebsocketSubscriber {
 
   subscribe_open(callback) {
     this.openers.push(callback);
+  }
+  subscribe_reopen(callback) {
+    this.reopeners.push(callback);
   }
 }
 

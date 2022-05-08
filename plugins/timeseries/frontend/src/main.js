@@ -16,6 +16,8 @@ import BasicTable from "./main/components/table.vue";
 import DurationEditor from "./main/components/duration.vue";
 import DataTableVisualization from "./visualizations/datatable.vue";
 import BasicTableVisualization from "./visualizations/table.vue";
+import Settings from "./main/settings.vue";
+import VisualizationEditor from "./main/visualization_editor.vue";
 
 import RatingInserter from "./main/components/schema/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
@@ -121,6 +123,12 @@ function setup(frontend) {
     frontend.addRoute({
       path: "/timeseries/insert",
       component: InputPage,
+    });
+
+    frontend.settings.setUserSettingsComponent("timeseries", Settings);
+    frontend.addRoute({
+      path: "/timeseries/customize_visualization",
+      component: VisualizationEditor
     });
 
   }

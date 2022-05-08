@@ -35,8 +35,8 @@ export default {
       });
     },
     websocket(nv) {
-      if (nv) {
-        // If the websocket gets re-connected, re-read the user
+      if (nv && this.username != this.$store.state.app.info.user?.username) {
+        // If the websocket gets re-connected, re-read the user (unless the user is read through appinfo)
         this.$store.dispatch("readUser", {
           username: this.username,
         });

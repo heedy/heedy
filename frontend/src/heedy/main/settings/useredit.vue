@@ -47,6 +47,7 @@
         </v-layout>
       </v-container>
       <v-card-actions>
+        <v-btn outlined :href="`/api/users/${user.username}/export`">Export Data</v-btn>
         <v-spacer></v-spacer>
         <v-btn type="submit" color="primary" :loading="loading">Save</v-btn>
       </v-card-actions>

@@ -55,6 +55,8 @@ export default {
     appScope: null,
 
     settings_routes: [],
+    user_settings_custom_components: {},
+
     config_routes: [],
     updates: {
       heedy: false,
@@ -265,6 +267,9 @@ export default {
     },
     setPluginApps(state, v) {
       state.plugin_apps = v;
+    },
+    setUserSettingsComponent(state, v) {
+      state.user_settings_custom_components[v.plugin] = v.component;
     },
   },
   actions: {
@@ -620,13 +625,6 @@ export default {
       if (!res.response.ok) {
       } else {
         commit("setUserSettingsSchema", res.data);
-      }
-    },
-    ReadUserPluginSettings: async function ({ commit, rootState }, q) {
-      let res = await api("GET", `api/users/${encodeURIComponent(rootState.app.info.user.username)}/settings/${encodeURIComponent(q.plugin)}`);
-      if (!res.response.ok) {
-      } else {
-        commit("UpdateUserPluginSettings", { plugin: q.plugin, value: res.data });
       }
     }
   },

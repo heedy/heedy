@@ -139,6 +139,9 @@ async function setup(appinfo) {
     });
   }
 
+  // reread the appinfo from the server if the websocket is disconnected/reconnected
+  frontend.websocket.subscribe_reopen(() => store.dispatch("ReadAppInfo"))
+
   return frontend;
 }
 

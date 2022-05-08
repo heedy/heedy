@@ -1,6 +1,6 @@
 import { dq } from "../analysis.mjs";
 
-class QueryData {
+class QueryContext {
   constructor(wkr, qobj, dataset) {
     this.qobj = qobj;
     this.worker = wkr;
@@ -27,4 +27,4 @@ class QueryData {
   }
 }
 
-export default QueryData;
+export default QueryContext;

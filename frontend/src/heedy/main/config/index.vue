@@ -129,7 +129,7 @@ export default {
         update: true,
       });
       if (!res.response.ok) {
-        if (res.response.status !== undefined && res.response.status >=400) {
+        if (res.response.status !== undefined && res.response.status >=400 && res.response.status!=408) {
           console.verror("Update error: ", res.data.error_description,res);
           this.alert = res.data.error_description;
           this.$frontend.websocket.enable();

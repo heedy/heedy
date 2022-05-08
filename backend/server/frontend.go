@@ -273,6 +273,13 @@ func FrontendMux() (*chi.Mux, error) {
 		}
 	}
 
+	// The frontend context directly gives the JSON of the frontend context.
+	mux.Get("/frontend_context", func(w http.ResponseWriter, r *http.Request) {
+		ctx := rest.CTX(r)
+		fCtx, err := GetFrontendContext(ctx)
+		rest.WriteJSON(w, r, fCtx, err)
+	})
+
 	// Handles getting all assets other than the root webpage
 	mux.Mount("/static/", NewStaticHandler(afero.NewHttpFs(frontendFS), buildinfo.DevMode))
 

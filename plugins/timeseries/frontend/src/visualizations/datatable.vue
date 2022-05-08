@@ -1,20 +1,20 @@
 <template>
   <div style="width: 100%">
     <h-timeseries-datatable
-      v-if="config.length == 1"
-      :data="config[0].data"
-      :columns="config[0].columns"
-      :timeseries="config[0].timeseries"
-      :editable="config[0].editable"
+      v-if="data.length == 1"
+      :data="data[0].data"
+      :columns="data[0].columns"
+      :timeseries="data[0].timeseries"
+      :editable="data[0].editable"
     />
     <v-tabs v-else v-model="tab">
-      <v-tab v-for="(tval, i) in config" :key="i">{{ config[i].label }}</v-tab>
-      <v-tab-item v-for="(tval, i) in config" :key="i" :value="i">
+      <v-tab v-for="(tval, i) in data" :key="i">{{ data[i].label }}</v-tab>
+      <v-tab-item v-for="(tval, i) in data" :key="i" :value="i">
         <h-timeseries-datatable
-          :columns="config[i].columns"
-          :data="config[i].data"
-          :editable="config[i].editable"
-          :timeseries="config[i].timeseries"
+          :columns="data[i].columns"
+          :data="data[i].data"
+          :editable="data[i].editable"
+          :timeseries="data[i].timeseries"
         />
       </v-tab-item>
     </v-tabs>
@@ -24,7 +24,8 @@
 export default {
   props: {
     query: Object,
-    config: Array,
+    config: Object,
+    data: Array
   },
   data: () => ({
     tab: 0,
