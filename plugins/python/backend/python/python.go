@@ -43,7 +43,7 @@ func SearchPython() (string, error) {
 	for i := range PathNames {
 		exepath, err := exec.LookPath(PathNames[i])
 		if err == nil {
-			err = TestPython(exepath)
+			err = ValidatePython(exepath)
 			if err == nil {
 				return filepath.Abs(exepath)
 			}
@@ -53,8 +53,8 @@ func SearchPython() (string, error) {
 	return "", errors.New("No supported Python found")
 }
 
-// TestPython checks if the given python version satisfies all requirements
-func TestPython(exepath string) error {
+// ValidatePython checks if the given python version satisfies all requirements
+func ValidatePython(exepath string) error {
 	if settings.DB != nil && settings.DB.Verbose {
 		logrus.Debugf("Checking python at %s with script: %s", exepath, testScript)
 	} else {
@@ -113,7 +113,7 @@ func EnsureVenv(pypath, folder string) (string, error) {
 	if _, err := os.Stat(newpypath); !os.IsNotExist(err) {
 
 		// If the venv exists, check if it is compatible
-		if err = TestPython(newpypath); err == nil {
+		if err = ValidatePython(newpypath); err == nil {
 			return newpypath, err
 		}
 

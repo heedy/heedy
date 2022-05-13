@@ -30,10 +30,11 @@ type PythonSettings struct {
 	IsEnabled bool              `mapstructure:"-"`
 	DB        *database.AdminDB `mapstructure:"-"`
 
-	Path          string   `mapstructure:"path"`
-	PipArgs       []string `mapstructure:"pip_args"`
-	VenvArgs      []string `mapstructure:"venv_args"`
-	PerPluginVenv bool     `mapstructure:"per_plugin_venv"`
+	Path           string   `mapstructure:"path"`
+	PipArgs        []string `mapstructure:"pip_args"`
+	VenvArgs       []string `mapstructure:"venv_args"`
+	PerPluginVenv  bool     `mapstructure:"per_plugin_venv"`
+	ValidatePython bool     `mapstructure:"validate_python"`
 }
 
 var (
@@ -62,9 +63,12 @@ func Start(db *database.AdminDB, i *run.Info, h run.BuiltinHelper) error {
 		l.Debug("Python is not set up")
 		return nil
 	}
-
-	err = TestPython(settings.Path)
-	settings.IsEnabled = err == nil
+	if settings.ValidatePython {
+		err = ValidatePython(settings.Path)
+		settings.IsEnabled = err == nil
+	} else {
+		settings.IsEnabled = true
+	}
 
 	return err
 }
