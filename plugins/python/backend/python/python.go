@@ -19,13 +19,12 @@ type PythonCandidate struct {
 	PipArgs []string
 }
 
-var testScript = `
+const testScript = `
 import sys
 try:
-	if sys.version_info.major < 3 or sys.version_info.minor < 7:
+	if sys.version_info.major != 3 or sys.version_info.minor < 7:
 		raise Exception("Heedy's Python support requires at least Python 3.7")
 
-	import pip
 	import venv
 	import ensurepip
 
