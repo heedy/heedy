@@ -53,14 +53,19 @@ func jsonInterfaceMarshaller(out *jwriter.Writer, in interface{}) {
 	case bool:
 		out.Bool(v)
 	case map[string]interface{}:
-		curb := byte('{')
-		for k, vv := range v {
-			out.RawByte(curb)
-			out.String(k)
-			out.RawByte(':')
-			jsonInterfaceMarshaller(out, vv)
-			curb = ','
+		if len(v) == 0 {
+			out.RawByte('{')
+		} else {
+			curb := byte('{')
+			for k, vv := range v {
+				out.RawByte(curb)
+				out.String(k)
+				out.RawByte(':')
+				jsonInterfaceMarshaller(out, vv)
+				curb = ','
+			}
 		}
+
 		out.RawByte('}')
 	case []interface{}:
 		curb := byte('[')
