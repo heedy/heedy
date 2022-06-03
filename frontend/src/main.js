@@ -1,4 +1,8 @@
-import Vue, { VueRouter, Vuex, Vuetify } from "./dist/vue.mjs";
+import Vue, {
+  VueRouter,
+  Vuex,
+  Vuetify
+} from "./dist/vue.mjs";
 
 import Frontend from "./main/frontend.js";
 import WorkerInjector from "./main/worker_injector.js";
@@ -12,7 +16,7 @@ async function setup(appinfo) {
   if (!_DEBUG && !appinfo.verbose) {
     Vue.config.devtools = false;
 
-    let c = (a, b, d, e) => { };
+    const c = (a, b, d, e) => {};
     console.vdebug = c;
     console.vlog = c;
     console.vwarn = c;
@@ -34,15 +38,17 @@ async function setup(appinfo) {
   console.vlog("Setting up...", appinfo);
 
   // Start running the import statements
-  let plugins = appinfo.plugins.map(f => import("./" + f.path));
+  const plugins = appinfo.plugins.map(f => import("./" + f.path));
+
+  const wrkr = new WorkerInjector(appinfo);
 
   // Prepare the vuex store
-  const store = new Vuex.Store(vuexStore(appinfo));
+  const store = new Vuex.Store(vuexStore(appinfo, wrkr));
 
-  let frontend = new Frontend(Vue, appinfo, store);
+  const frontend = new Frontend(Vue, appinfo, store);
 
   // The websocket and worker come by default
-  frontend.inject("worker", new WorkerInjector(appinfo));
+  frontend.inject("worker", wrkr);
   frontend.inject("websocket", new WebsocketInjector(frontend));
 
   for (let i = 0; i < plugins.length; i++) {
@@ -66,7 +72,7 @@ async function setup(appinfo) {
     }
   }
 
-  let routes = Object.values(frontend.routes);
+  const routes = Object.values(frontend.routes);
   if (frontend.notFound !== null) {
     routes.push({
       path: "*",
@@ -81,12 +87,16 @@ async function setup(appinfo) {
     scrollBehavior(to, from, savedPosition) {
       if (savedPosition) {
         return savedPosition;
-      } else {
-        return {
-          x: 0,
-          y: 0
-        };
       }
+      if (to.path===from.path) {
+        // if we're just adding query params, don't scroll
+        return {};
+      }
+
+      return {
+        x: 0,
+        y: 0
+      };
     }
   });
   // Set the router in the frontend

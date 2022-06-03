@@ -24,8 +24,9 @@
 export default {
   props: {
     query: Object,
-    config: Object,
-    data: Array
+    config: Array,
+    data: Array,
+    type: String
   },
   data: () => ({
     tab: 0,

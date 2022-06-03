@@ -189,7 +189,7 @@ export default {
             commit
         }, q) {
             console.vlog("Updating notification", q);
-            let res = await api("PATCH", `api/notifications`, q.u, q.n);
+            let res = await api("PATCH", `api/notifications`, q.u, {params:q.n});
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",
@@ -202,7 +202,7 @@ export default {
             commit
         }, q) {
             console.vlog("DELETING notification", q);
-            let res = await api("DELETE", `api/notifications`, null, q);
+            let res = await api("DELETE", `api/notifications`, null, {params:q});
             if (!res.response.ok) {
                 commit("alert", {
                     type: "error",

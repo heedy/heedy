@@ -112,6 +112,11 @@ func EnsureVenv(pypath, folder string) (string, error) {
 	}
 	if _, err := os.Stat(newpypath); !os.IsNotExist(err) {
 
+		// If the user doesn't want venvs validated, just return what we have.
+		if !settings.ValidateVenv {
+			return newpypath, err
+		}
+
 		// If the venv exists, check if it is compatible
 		if err = ValidatePython(newpypath); err == nil {
 			return newpypath, err

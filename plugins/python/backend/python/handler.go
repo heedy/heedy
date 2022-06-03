@@ -35,6 +35,7 @@ type PythonSettings struct {
 	VenvArgs       []string `mapstructure:"venv_args"`
 	PerPluginVenv  bool     `mapstructure:"per_plugin_venv"`
 	ValidatePython bool     `mapstructure:"validate_python"`
+	ValidateVenv   bool     `mapstructure:"validate_venv"`
 }
 
 var (

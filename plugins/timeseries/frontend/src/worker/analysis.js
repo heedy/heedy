@@ -41,7 +41,10 @@ function explicitDuration(ts, offset = 0.001) {
     return res.slice(0, j);
 }
 
-function getType(extractor, ts) {
+
+
+
+function getType(ts,extractor) {
     if (ts.length == 0) {
         return "";
     }
@@ -79,7 +82,7 @@ function getType(extractor, ts) {
     return "";
 }
 
-function getKeys(f, ts) {
+function getKeys(ts,f) {
     let vals = {};
     ts.forEach((dp) => {
         Object.keys(f(dp)).forEach((k) => {
@@ -92,7 +95,8 @@ function getKeys(f, ts) {
     return vals;
 }
 
-function getMin(f, ts) {
+
+function getMin(ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v >= cur) {
@@ -102,7 +106,7 @@ function getMin(f, ts) {
     }, Infinity)
 }
 
-function getMax(f, ts) {
+function getMax(ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v <= cur) {
@@ -112,7 +116,7 @@ function getMax(f, ts) {
     }, -Infinity)
 }
 
-function getSum(f, ts) {
+function getSum(ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -120,7 +124,7 @@ function getSum(f, ts) {
     }, 0)
 }
 
-function getVar(f, ts) {
+function getVar(ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -128,19 +132,18 @@ function getVar(f, ts) {
     }, 0);
 }
 
-function getNonNull(f, ts) {
+function getNonNull(ts,f) {
     return ts.reduce((cur, dp) => (f(dp) == null ? cur : cur + 1), 0);
 }
 
-export {
-    explicitDuration,
-    getType,
-    cleanDT,
-    getKeys,
-    getMin,
-    getMax,
-    getSum,
-    getVar,
-    getNonNull,
-    flatten
-};
+function registerAnalysis(ts) {
+    ts.addAnalysisFunction("type",getType);
+    ts.addAnalysisFunction("keys",getKeys);
+    ts.addAnalysisFunction("min",getMin);
+    ts.addAnalysisFunction("max",getMax);
+    ts.addAnalysisFunction("sum",getSum);
+    ts.addAnalysisFunction("var",getVar);
+    ts.addAnalysisFunction("nonNull",getNonNull);
+}
+
+export default registerAnalysis;

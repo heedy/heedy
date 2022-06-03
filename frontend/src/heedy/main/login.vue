@@ -63,8 +63,7 @@ export default {
           username: this.username,
           password: this.password,
         },
-        null,
-        false
+        {type: "urlencoded"}
       );
       this.loading = false;
       if (!result.response.ok) {

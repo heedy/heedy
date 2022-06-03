@@ -2,9 +2,9 @@ import Vue, {
     createLogger
 } from "../dist/vue.mjs";
 
-import api from "../util.mjs";
+import api, {deepEqual} from "../util.mjs";
 
-function setup(appinfo) {
+function setup(appinfo,wrkr) {
     return {
         modules: {
             app: {
@@ -20,13 +20,17 @@ function setup(appinfo) {
                 },
                 mutations: {
                     updateLoggedInUser(state, v) {
+                        if (deepEqual(v, state.info.user)) return;
                         state.info.user = v;
                     },
                     updateAppInfo(state,v) {
+                        if (deepEqual(state.info,v)) return;
                         state.info = v;
+                        wrkr.postMessage("info", v);
                     },
                     UpdateUserPluginSettings(state, v) {
                         Vue.set(state.info.settings, v.plugin, v.value);
+                        wrkr.postMessage("user_plugin_settings", v);
                     },
                     addMenuItem(state, m) {
                         state.menu_items[m.key] = m;

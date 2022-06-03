@@ -33,12 +33,12 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item @click="showConfig(d)">
+                <v-list-item @click="customize(d)">
                   <v-list-item-icon>
                     <v-icon>code</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    <v-list-item-title>Configuration</v-list-item-title>
+                    <v-list-item-title>Customize</v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
@@ -46,47 +46,28 @@
           </v-card-title>
           <v-card-text>
             <component
-              :is="visualization(d.visualization)"
+              :is="getVisComponentByType(d.type)"
               :query="query"
               :config="d.config"
               :data="d.data"
+              :type="d.type"
             />
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-    <v-dialog v-if="configDialog" v-model="configDialog" max-width="1024px">
-      <v-card>
-        <v-card-title>
-          <span class="headline">{{ configDialogData.title }}</span>
-        </v-card-title>
-        <v-card-text>
-          <codemirror
-            :value="JSON.stringify(configDialogData.config, null, '  ')"
-            :options="cmOptions"
-          ></codemirror>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn outlined @click="customize">Customize</v-btn>
-          <div class="flex-grow-1"></div>
-          <v-btn color="primary" text @click="configDialog = false"
-            >Close</v-btn
-          >
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-flex>
 </template>
 <script>
 import VisNotFound from "./vis_notfound.vue";
 
-const customizationCode = (k,q,c) => `// Only alter the visualization if the queries match
-const query = ${JSON.stringify(q, null, "  ")};
-// If there is a mismatch, don't modify the visualizations.
-if (!c.query.match(query)) return vis;
+const customizationCode = (k,q,c) => `// The c variable holds context data, and vis holds visualizations
+// Only customize the visualization for queries that match this one
+const q = ${JSON.stringify(q, null, "  ")};
+if (!c.query.isEqual(q)) return vis;
 
 // If the conditions are met, set the visualization's configuration
-vis["${k}"] = ${JSON.stringify(c, null, "  ")};
+vis[${JSON.stringify(k)}] = ${JSON.stringify(c, null, "  ")};
 
 return vis;
 `
@@ -116,6 +97,14 @@ function CleanQuery(q) {
   return q2;
 }
 
+function ValidQuery(q) {
+  for (let k of Object.keys(q)) {
+    const e = q[k];
+    if (e.dt===undefined && (e.timeseries===undefined || e.timeseries.length==0)) return false;
+  }
+  return true;
+}
+
 export default {
   props: {
     query: Object,
@@ -123,13 +112,15 @@ export default {
       type: Boolean,
       default: true,
     },
+    user_visualizations: {
+      type: Array,
+      default: null
+    },
   },
   data: () => ({
     message: "Querying Data...",
     datavis: [],
     qkey: "",
-    configDialog: false,
-    configDialogData: {},
     cmOptions: {
       tabSize: 2,
       mode: "text/javascript",
@@ -137,26 +128,27 @@ export default {
     },
   }),
   methods: {
-    visualization(v) {
-      let vs = this.$store.state.timeseries.visualizations;
+    getVisComponentByType(v) {
+      let vs = this.$store.state.timeseries.visualizationTypes;
       if (vs[v] === undefined) {
         return VisNotFound;
       }
       return vs[v];
     },
-    showConfig(d) {
-      this.configDialogData = d;
-      this.configDialog = true;
-    },
-    subscribe(q) {
+    subscribe(q,uv) {
       if (this.qkey != "") {
         this.$frontend.timeseries.unsubscribeQuery(this.qkey);
         this.qkey = "";
       }
+      q = CleanQuery(q);
+      if (!ValidQuery(q)) {
+        this.message = "Empty Query";
+        return;
+      }
       this.message = "Loading...";
       this.datavis = [];
       this.qkey = this.$frontend.timeseries.subscribeQuery(
-        CleanQuery(q),
+        q,
         (dv) => {
           if (dv.status !== undefined) {
             // Special-case query status messages
@@ -170,19 +162,37 @@ export default {
           v.sort((a, b) => a.weight - b.weight);
           console.vlog(
             "Received visualizations:",
-            v.map((vi) => `${vi.key} (${vi.visualization})`)
+            v.map((vi) => `${vi.key} (${vi.type})`)
           );
           this.datavis = v;
           this.message = "No Data";
-        }
+        },
+        uv
       );
     },
-    customize() {
-      let c = this.configDialogData;
-      this.$router.push({path:"/timeseries/customize_visualization", query: {
-        name: `Custom ${c.key} visualization`,
-        c: customizationCode(c.key, this.query, c.config),
-        q: btoa(JSON.stringify(this.query)),
+    customize(c) {
+      // Create a special title. If the query is a single timeseries,
+      // name the visualization after the timeseries (if available)
+      let name = `Custom ${c.key} visualization`;
+      const keys = Object.keys(this.query);
+      if (keys.length==1) {
+        const k = keys[0];
+        const q = this.query[k];
+        if (q.dt === undefined && q.timeseries !== undefined && typeof q.timeseries === "string") {
+          if (this.$store.state.heedy.objects[q.timeseries]!==undefined) {
+            name = `Custom ${this.$store.state.heedy.objects[q.timeseries].name} ${c.key} visualization`;
+          }
+        }
+      }
+      this.$router.push({path:"/timeseries/visualization/create", query: {
+        name: name,
+        code: customizationCode(c.key,CleanQuery(this.query),{
+          title: c.title,
+          weight: c.weight,
+          type: c.type,
+          config: c.config,
+        }),
+        test_query: btoa(JSON.stringify(this.query)),
         }});
     }
   },
@@ -193,7 +203,7 @@ export default {
         this.qkey = "";
       }
       if (Object.keys(n).length > 0) {
-        this.subscribe(n);
+        this.subscribe(n,this.user_visualizations);
       } else {
         this.datavis = [];
         this.message = "";
@@ -204,7 +214,7 @@ export default {
   created() {
     // Only subscribe if non-empty query, or modify the query to be the default
     if (Object.keys(this.query).length > 0) {
-      this.subscribe(this.query);
+      this.subscribe(this.query,this.user_visualizations);
     } else {
       this.message = "";
     }

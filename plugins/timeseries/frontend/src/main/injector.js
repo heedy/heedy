@@ -26,12 +26,12 @@ class TimeseriesInjector {
     );
   }
   /**
-   * Add a visualization by key
-   * @param {*} name 
+   * Add a visualization display component for a visualization type
+   * @param {*} name - the name of the visualization type
    * @param {*} component 
    */
-  addVisualization(name, component) {
-    this.app.store.commit("addTSVisualization", {
+  addVisualizationType(name, component) {
+    this.app.store.commit("addTSVisualizationType", {
       key: name,
       component: component,
     });
@@ -49,12 +49,13 @@ class TimeseriesInjector {
     this.subscriptions[msg.key](msg);
   }
 
-  subscribeQuery(query, callback) {
+  subscribeQuery(query, callback,user_visualizations=null) {
     let key = randomKey();
     this.subscriptions[key] = callback;
     this.app.worker.postMessage("timeseries_subscribe_query", {
       key,
       query,
+      user_visualizations,
     });
     return key;
   }

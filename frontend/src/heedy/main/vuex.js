@@ -1,6 +1,6 @@
 import Vue from "../../dist/vue.mjs";
 import moment from "../../dist/moment.mjs";
-import api from "../../util.mjs";
+import api, {deepEqual} from "../../util.mjs";
 
 export default {
   state: {
@@ -10,6 +10,8 @@ export default {
       type: "",
     },
     users: {},
+    users_qtime: {},
+
     // Components to show for a user
     user_components: [],
 
@@ -122,6 +124,7 @@ export default {
       };
     },
     setUser(state, v) {
+      Vue.set(state.users_qtime, v.username, moment());
       if (v.isNull !== undefined) {
         if (state.userObjects[v.username] !== undefined) {
           Vue.delete(state.userObjects, v.username);
@@ -129,10 +132,7 @@ export default {
         Vue.set(state.users, v.username, null);
         return;
       }
-      Vue.set(state.users, v.username, {
-        qtime: moment(),
-        ...v,
-      });
+      Vue.set(state.users, v.username, v);
     },
     setApp(state, v) {
       if (state.apps == null) {
@@ -174,7 +174,6 @@ export default {
     setObject(state, v) {
       // First check if the object has existing value
       let curs = state.objects[v.id] || null;
-
       // Get the callbacks
       let callbacks =
         state.objects_qtime[v.id] === undefined ||
@@ -182,6 +181,11 @@ export default {
           ? []
           : state.objects_qtime[v.id];
       Vue.set(state.objects_qtime, v.id, moment());
+
+      if (deepEqual(curs, v)) {
+        callbacks.forEach((c) => c());
+        return;
+      }
 
       if (v.isNull !== undefined) {
         // The object is to be deleted - make sure to take care of all places it could be
@@ -398,7 +402,7 @@ export default {
         // If the user was queried up to 1 second before websocket became active,
         // or was queried less than a second ago, let's just leave it. This avoids
         // an unnecessary query to read user on app startup
-        let cmptime = state.users[username].qtime.add(1, "second");
+        let cmptime = state.users_qtime[username].add(1, "second");
         if (
           rootState.app.websocket != null &&
           rootState.app.websocket.isBefore(cmptime) || moment().isBefore(cmptime)

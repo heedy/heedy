@@ -105,7 +105,7 @@ export default {
       } catch (err) {
         console.error(err);
         this.visquery = {};
-        this.query = this.defaultQuery.map((q) => ({ ...q }));
+        this.query = {...this.defaultQuery}; // Just do a shallow-deep copy.
         this.errmessage = "Error reading query";
       }
     },

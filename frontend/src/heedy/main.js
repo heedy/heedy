@@ -61,10 +61,8 @@ function setup(frontend) {
 
   // Add the current user to the vuex module
   if (frontend.info.user != null) {
-    vuexModule.state.users[frontend.info.user.username] = {
-      ...frontend.info.user,
-      qtime: moment()
-    };
+    vuexModule.state.users[frontend.info.user.username] = frontend.info.user;
+    vuexModule.state.users_qtime[frontend.info.user.username] = moment();
   }
   frontend.store.registerModule("heedy", vuexModule);
 

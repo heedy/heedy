@@ -3,12 +3,12 @@ import Vue from "../../dist/vue.mjs";
 
 export default {
   state: {
-    visualizations: {},
+    visualizationTypes: {},
     types: {}
   },
   mutations: {
-    addTSVisualization(state, v) {
-      Vue.set(state.visualizations, v.key, v.component);
+    addTSVisualizationType(state, v) {
+      Vue.set(state.visualizationTypes, v.key, v.component);
     },
     addTSType(state, v) {
       Vue.set(state.types, v.key, v);

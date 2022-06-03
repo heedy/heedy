@@ -83,15 +83,14 @@ function out(name, loc = "", format = "es", inlineDynamicImports = false) {
 export default [
   // The base files
   out("main.js"),
-  out("worker.js"),
-  out("analysis.js"),
+  out("worker.js")
 ]
   .concat(
     glob
       .sync("visualizations/*.vue", {
         cwd: "./src",
       })
-      .filter((e) => !(["datatable.vue", "table.vue"].includes(e.split("/")[1]))) // Exclude direct imports
+      .filter((e) => !(["datatable.vue", "table.vue","visualization_errors.vue","error.vue"].includes(e.split("/")[1]))) // Exclude direct imports
       .map((a) => out(a))
   )
   .concat(

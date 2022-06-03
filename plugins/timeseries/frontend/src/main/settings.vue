@@ -41,7 +41,7 @@
         fab
         dark
         color="primary"
-        to="/timeseries/customize_visualization"
+        to="/timeseries/visualization/create"
       >
         <v-icon dark>add</v-icon>
       </v-btn>
@@ -57,7 +57,7 @@ export default {
   },
   methods: {
     editVis(name) {
-      this.$router.push({path:"/timeseries/customize_visualization", query: {name: name}});
+      this.$router.push({path:`/timeseries/visualization/update/${name}`});
     },
     setVis(idx,v) {
       const visualizations = [...this.value.visualizations];

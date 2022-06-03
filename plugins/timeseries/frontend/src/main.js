@@ -14,10 +14,13 @@ import DatapointInserter from "./main/components/datapoint_inserter.vue";
 import DataTable from "./main/components/datatable.vue";
 import BasicTable from "./main/components/table.vue";
 import DurationEditor from "./main/components/duration.vue";
+import ErrorsVisualization from "./visualizations/visualization_errors.vue";
+import ErrorVisualization from "./visualizations/error.vue";
 import DataTableVisualization from "./visualizations/datatable.vue";
 import BasicTableVisualization from "./visualizations/table.vue";
 import Settings from "./main/settings.vue";
-import VisualizationEditor from "./main/visualization_editor.vue";
+import VisualizationCreator from "./main/visualization_create.vue";
+import VisualizationUpdater from "./main/visualization_update.vue";
 
 import RatingInserter from "./main/components/schema/rating.vue";
 import EnumEditor from "./main/components/enum.vue";
@@ -127,8 +130,13 @@ function setup(frontend) {
 
     frontend.settings.setUserSettingsComponent("timeseries", Settings);
     frontend.addRoute({
-      path: "/timeseries/customize_visualization",
-      component: VisualizationEditor
+      path: "/timeseries/visualization/create",
+      component: VisualizationCreator
+    });
+    frontend.addRoute({
+      path: "/timeseries/visualization/update/:name",
+      component: VisualizationUpdater,
+      props: true
     });
 
   }
@@ -144,15 +152,20 @@ function setup(frontend) {
     type: "timeseries",
     key: "body",
   });
-  frontend.timeseries.addVisualization("chartjs", () =>
+
+
+  frontend.timeseries.addVisualizationType("visualization_errors", ErrorsVisualization);
+  frontend.timeseries.addVisualizationType("error", ErrorVisualization);
+  frontend.timeseries.addVisualizationType("chartjs", () =>
     import("./visualizations/chartjs.mjs")
   );
-  frontend.timeseries.addVisualization("timeline", () =>
+  frontend.timeseries.addVisualizationType("timeline", () =>
     import("./visualizations/timeline.mjs")
   );
   // The data table/basic table doesn't use any external libraries, so we can just import it
-  frontend.timeseries.addVisualization("datatable", DataTableVisualization);
-  frontend.timeseries.addVisualization("table", BasicTableVisualization);
+  frontend.timeseries.addVisualizationType("datatable", DataTableVisualization);
+  frontend.timeseries.addVisualizationType("table", BasicTableVisualization);
+  // frontend.timeseries.addVisualization("")
   /*
   
   frontend.timeseries.addVisualization("horizon", () =>

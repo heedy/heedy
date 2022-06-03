@@ -66,7 +66,7 @@ export default {
       if (Object.keys(n).length == 0) {
         this.$router.replace({ query: this.defaultQuery });
       } else {
-        this.query = getQ(this.object.name, {
+        this.query = getQ("Series 1", {
           ...n,
           timeseries: this.object.id,
         });
@@ -86,7 +86,7 @@ export default {
     if (Object.keys(this.$route.query).length == 0) {
       this.$router.replace({ query: this.defaultQuery });
     } else {
-      this.query = getQ(this.object.name, {
+      this.query = getQ("Series 1", {
         ...this.$route.query,
         timeseries: this.object.id,
       });

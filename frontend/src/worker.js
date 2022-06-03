@@ -1,5 +1,6 @@
 import WebsocketInjector from "./worker/websocket.js";
 import ObjectInjector from "./worker/objects.js";
+import { deepEqual } from "./util.mjs";
 
 class Wrkr {
   constructor() {
@@ -7,39 +8,57 @@ class Wrkr {
     // app info goes here
     this.info = null;
 
+    this._infoChangedCallbacks = [];
+    this._userSettingsChangedCallbacks = [];
+
     // Start out not logging until we get info message to determine whether
     // logging is OK
     if (console.vlog === undefined) {
-      console.vlog = (a, b) => { }
+      console.vlog = (a, b) => {}
     }
 
 
     this.handlers = {
       import: (ctx, data) => this._importHandler(ctx, data),
       info: (ctx, data) => {
-        this.info = data;
-
-        // The v-functions are logging functions that are conditional on whether
-        // the server is in verbose mode
-        if (!_DEBUG && !data.verbose) {
-          let c = (a, b, d, e, f) => { };
-          console.vdebug = c;
-          console.vlog = c;
-          console.vwarn = c;
-          console.verror = c;
-          console.vinfo = c;
-          console.vtable = c;
+        const noinfo = this.info === null;
+        
+        if (noinfo) {
+          // The v-functions are logging functions that are conditional on whether
+          // the server is in verbose mode
+          if (!_DEBUG && !data.verbose) {
+            let c = (a, b, d, e, f) => {};
+            console.vdebug = c;
+            console.vlog = c;
+            console.vwarn = c;
+            console.verror = c;
+            console.vinfo = c;
+            console.vtable = c;
+          } else {
+            console.vdebug = console.debug;
+            console.vlog = console.log;
+            console.vwarn = console.warn;
+            console.verror = console.error;
+            console.vinfo = console.info;
+            console.vtable = console.table;
+          }
+          this.info = data;
+          console.vlog("worker: started");
         } else {
-          console.vdebug = console.debug;
-          console.vlog = console.log;
-          console.vwarn = console.warn;
-          console.verror = console.error;
-          console.vinfo = console.info;
-          console.vtable = console.table;
+          // Further info messages trigger callbacks
+          const old_info = this.info;
+          this.info = data;
+          this._infoChangedCallbacks.forEach((c) => c(data));
+          if (!deepEqual(old_info.settings, data.settings)) {
+            this._userSettingsChangedCallbacks.forEach((c) => c(data.settings));
+          }
         }
 
-        console.vlog("worker: started");
       },
+      user_plugin_settings: (ctx,data) => {
+        this.info.settings[data.plugin] = data.value;
+        this._userSettingsChangedCallbacks.forEach((c) => c(this.info.settings));
+      }
     };
 
     // The worker needs to enforce an import ordering, because a message
@@ -49,6 +68,13 @@ class Wrkr {
 
     this.inject("websocket", new WebsocketInjector(this));
     this.inject("objects", new ObjectInjector(this));
+  }
+
+  onInfoChanged(f) {
+    this._infoChangedCallbacks.push(f);
+  }
+  onUserSettingsChanged(f) {
+    this._userSettingsChangedCallbacks.push(f);
   }
 
   addHandler(key, f) {

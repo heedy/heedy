@@ -1,8 +1,11 @@
 import TimeseriesInjector from "./worker/injector.js";
 
+import registerAnalysis from "./worker/analysis.js";
+import datatableVisualization from "./worker/visualizations/datatable.js";
+/*
 import datatableAnalyzer from "./worker/analyzers/datatable.js";
 import datatablePreprocessor from "./worker/preprocessors/datatable.js";
-/*
+
 import linechartAnalyzer from "./worker/analyzers/linechart.js";
 import correlationAnalyzer from "./worker/analyzers/correlation.js";
 import summaryAnalyzer from "./worker/analyzers/summary.js";
@@ -25,9 +28,13 @@ function setup(wkr) {
 
   wkr.inject("timeseries", new TimeseriesInjector(wkr));
 
+  registerAnalysis(wkr.timeseries);
+
+  wkr.timeseries.addVisualization("datatable",datatableVisualization);
+/*
   wkr.timeseries.addAnalyzer(datatableAnalyzer);
   wkr.timeseries.addPreprocessor("datatable", datatablePreprocessor);
-/*
+
   
   wkr.timeseries.addAnalyzer(linechartAnalyzer);
   wkr.timeseries.addAnalyzer(correlationAnalyzer);

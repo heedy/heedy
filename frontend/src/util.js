@@ -13,53 +13,58 @@ export function urlify(obj) {
  * It explicitly returns the resulting object, or throws the error given
  * @param {string} method - HTTP verb to use (GET/POST/...)
  * @param {string} uri - uri to query (api/heedy/...)
- * @param {object} data - optional object to send as a json payload (or FormData)
- * @param {object} params - params to set as url params
- * @param {string} content - format to use for data (json/form-data)
+ * @param {object} data - optional object to send as a json payload (or FormData), or as url params if GET/DELETE request
+ * @param {object} opt - options to use for the request
  */
-async function api(method, uri, data = null, params = null, content = "json") {
-  let options = {
+async function api(method,uri,body=null,opt={}) {
+  const fetch_options = Object.assign({
     method: method,
     credentials: "include",
     redirect: "follow",
-    headers: {}
+    headers: Object.assign({},opt.headers)
+  },opt.fetch);
+  if (opt.signal!==undefined) {
+    fetch_options.signal = opt.signal;
+  }
+
+  const setContentType = (content_type) => {
+    if (fetch_options.headers['Content-Type'] === undefined) {
+      fetch_options.headers['Content-Type'] = content_type;
+    }
   };
-  if (params != null) {
-    if (data != null && (method == "GET")) {
-      uri =
-        uri +
-        "?" +
-        urlify({
-          ...data,
-          ...params
-        });
+
+  const urlparams = Object.assign({},opt.params);
+
+  // Figure out how to encode the body if it is data
+  if (body!=null) {
+    if (body instanceof FormData) {
+      fetch_options.body = body;
     } else {
-      uri = uri + "?" + urlify(params);
+      if (opt.type === "form-data") {
+        const fd = new FormData();
+        for (let key in body) {
+          fd.append(key, body[key]);
+        }
+        fetch_options.body = fd;
+      } else if (opt.type === "urlencoded") {
+        fetch_options.body = urlify(body);
+        setContentType("application/x-www-form-urlencoded");
+      } else if (method=="GET" || method=="DELETE") {
+        // For simplified use of the API, GET requests send body as url params
+        Object.assign(urlparams,body);
+      } else {
+        fetch_options.body = JSON.stringify(body);
+        setContentType("application/json");
+      }
     }
   }
-  if (data != null) {
-    if (method == "GET") {
-      if (data != null && params == null) {
-        uri = uri + "?" + urlify(data);
-      }
-    } else if (method=="DELETE" && params==null) {
-      uri = uri + "?" + urlify(data);
-    }else if (content == "json") {
-      options.body = JSON.stringify(data);
-      options.headers["Content-Type"] = "application/json";
-    } else if (content == "form-data") {
-      let fd = new FormData();
-      for (let key in data) {
-        fd.append(key, data[key]);
-      }
-      options.body = fd;
-    } else {
-      options.body = urlify(data);
-      options.headers["Content-Type"] = "application/x-www-form-urlencoded";
-    }
+
+  if (Object.keys(urlparams).length>0) {
+    uri = uri + (uri.indexOf("?")>=0?'&':'?')  + urlify(urlparams);
   }
+
   try {
-    var response = await fetch(uri, options);
+    var resp = await fetch(uri, fetch_options);
   } catch (err) {
     return {
       response: {
@@ -72,15 +77,19 @@ async function api(method, uri, data = null, params = null, content = "json") {
       }
     };
   }
+  if (opt.output_type==="raw") {
+    // If the response isn't 
+    return {response: resp,data: resp.body};
+  }
 
   try {
     return {
-      response: response,
-      data: await response.json()
+      response: resp,
+      data: await resp.json()
     };
   } catch (err) {
     return {
-      response: response,
+      response: resp,
       data: {
         error: "response_error",
         error_description: err.message,
@@ -88,6 +97,7 @@ async function api(method, uri, data = null, params = null, content = "json") {
       }
     };
   }
+
 }
 
 
@@ -176,12 +186,11 @@ export default async function consoleAPI(
   method,
   uri,
   data = null,
-  params = null,
-  content = "json"
+  options = {}
 ) {
-  let res = await api(method, uri, data, params, content);
+  let res = await api(method, uri, data, options);
   if (!res.response.ok) {
-    console.error(method, uri, data, params, content, res);
+    console.error(method, uri, data, options,res);
   }
   return res;
 }
