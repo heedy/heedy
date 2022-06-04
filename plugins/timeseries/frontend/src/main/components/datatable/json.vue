@@ -2,13 +2,13 @@
   <v-tooltip bottom>
     <template v-slot:activator="{ on, attrs }">
       <div
-        style="
-          width: 100%;
-          overflow-x: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          text-align: center;
-        "
+        :style="{
+          width:'100%',
+          overflowX: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          textAlign: align,
+        }"
         v-bind="attrs"
         v-on="on"
       >
@@ -33,6 +33,10 @@ export default {
   props: {
     value: null,
     column: Object,
+    align: {
+      type: String,
+      default: "center",
+    },
   },
   computed: {
     highlighted() {

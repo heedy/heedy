@@ -13,7 +13,7 @@
 export default {
   props: {
     query: Object,
-    config: Object,
+    config: {},
     data: Object,
     type: String,
   },

@@ -6,6 +6,10 @@ export default {
   props: {
     value: Number,
     column: Object,
+    align: {
+      type: String,
+      default: "center"
+    }
   },
   computed: {
     textTime: function () {

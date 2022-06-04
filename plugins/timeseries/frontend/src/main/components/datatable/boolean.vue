@@ -6,6 +6,10 @@ export default {
   props: {
     value: Boolean,
     column: Object,
+    align: {
+      type: String,
+      default: "center",
+    },
   },
 };
 </script>

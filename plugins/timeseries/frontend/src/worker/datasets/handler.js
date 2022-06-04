@@ -42,7 +42,7 @@ const prepareUserVisualizations = (vis, cache = true) => vis.filter(v => v.enabl
 
 // Given a query context, and visualizations arrays, generates the visualization object.
 const getVisualizations = (c, visualizations, user_visualizations) => {
-  let vis = {};
+  let vis = new Map();
   let errors = [];
   for (let v of visualizations) {
     try {
@@ -51,6 +51,7 @@ const getVisualizations = (c, visualizations, user_visualizations) => {
         vis = vis2;
       }
     } catch (e) {
+      console.error(e);
       errors.push({
         type: "plugin",
         error: e.toString(),
@@ -66,6 +67,7 @@ const getVisualizations = (c, visualizations, user_visualizations) => {
         vis = vis2;
       }
     } catch (e) {
+      console.error(e);
       errors.push({
         type: "user",
         error: e.toString(),
@@ -75,14 +77,14 @@ const getVisualizations = (c, visualizations, user_visualizations) => {
   }
 
   if (errors.length > 0) {
-    vis.errors = {
+    vis.set("errors",{
       type: "visualization_errors",
       title: "Visualization Errors",
       weight: -100,
       config: {
         errors
       }
-    };
+    });
   }
   return vis;
 }

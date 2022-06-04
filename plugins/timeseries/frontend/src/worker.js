@@ -2,6 +2,7 @@ import TimeseriesInjector from "./worker/injector.js";
 
 import registerAnalysis from "./worker/analysis.js";
 import datatableVisualization from "./worker/visualizations/datatable.js";
+import summaryVisualization from "./worker/visualizations/summary.js";
 /*
 import datatableAnalyzer from "./worker/analyzers/datatable.js";
 import datatablePreprocessor from "./worker/preprocessors/datatable.js";
@@ -31,6 +32,7 @@ function setup(wkr) {
   registerAnalysis(wkr.timeseries);
 
   wkr.timeseries.addVisualization("datatable",datatableVisualization);
+  wkr.timeseries.addVisualization("summary",summaryVisualization);
 /*
   wkr.timeseries.addAnalyzer(datatableAnalyzer);
   wkr.timeseries.addPreprocessor("datatable", datatablePreprocessor);

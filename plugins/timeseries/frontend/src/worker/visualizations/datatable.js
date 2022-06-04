@@ -1,9 +1,9 @@
 function analyze(c, vis) {
-    if (c.data.size > 6 || !c.data.values.every((ds) => ds.length < 50000 && ds.length > 0)) {
+    if (c.data.size > 6 || !c.data.every((ds) => ds.length < 50000 && ds.length > 0)) {
         return vis; // Don't display table for huge datasets.
     }
 
-    const datasets = c.data.values.map((data, i) => {
+    const datasets = c.data.map((data, i) => {
         // Add the timestamp and duration columns if relevant
         const columns = [{
             prop: "t",
@@ -45,12 +45,12 @@ function analyze(c, vis) {
         };
     });
 
-    vis.datatable = {
+    vis.set("datatable",{
         weight: 20,
         title: "Data Table",
         type: "datatable",
         config: datasets,
-    };
+    });
 
     return vis;
 }

@@ -37,14 +37,15 @@ function analysisAccessor(cache, arr, element, path) {
         // Otherwise, it is a prop accessor, so we add them
         return analysisAccessor(cache, arr, element, path.concat(args));
     }
-
-    return new Proxy(api, {
-        get: (target, prop) => {
-            const {
-                f,
-                cacheResult
-            } = analysisFunctions.get(prop);
-            if (f !== undefined) {
+    let pxy = null;
+    pxy = new Proxy(api, {
+        get(target, prop) {
+            const res = analysisFunctions.get(prop);
+            if (res !== undefined) {
+                const {
+                    f,
+                    cacheResult
+                } = res;
                 if (cacheResult) {
                     return (...args) => {
                         const key = getkey(element, path, prop, args);
@@ -53,7 +54,7 @@ function analysisAccessor(cache, arr, element, path) {
                             return cache.get(key);
                         }
                         console.log(`Analysis ${element}.${path.join('.')}.${prop}`);
-                        const data = f(arr, accessor, ...args);
+                        const data = f(pxy,arr, accessor, ...args);
                         cache.set(key, data);
                         return data;
                     }
@@ -62,9 +63,13 @@ function analysisAccessor(cache, arr, element, path) {
                 return (...args) => f(arr, accessor, ...args);
             }
             // This allows to get elements by index.
+            if (arr[prop]===undefined) {
+                throw new Error(`${element}.${path.join('.')} does not have property ${prop}`);
+            }
             return accessor(arr[prop]);
         }
     });
+    return pxy;
 }
 
 function addAnalysisAPI(arr) {
@@ -82,6 +87,11 @@ function datasetAPI(ctx,d) {
     const data = new Map(Object.entries(d));
 
     data.values = ctx.keys.map((k)=> d[k]);
+    data.map = (f,ta) => data.values.map(f,ta);
+    data.filter = (f,ta) => data.values.filter(f,ta);
+    data.every = (f,ta) => data.values.every(f,ta);
+    data.some = (f,ta) => data.values.some(f,ta);
+    data.length = data.values.length;
 
     // Order the data elements alphabetically by keys
     ctx.keys.forEach((k,i)=> {
@@ -210,7 +220,7 @@ class DatasetContext {
     }
 
     tpls(...strings) {
-        strings.map(s=> "'" + s.replace("'","\\'") + "'").join(",")
+        return strings.map(s=> "'" + s.replace("'","\\'") + "'").join(",")
     }
 
 }

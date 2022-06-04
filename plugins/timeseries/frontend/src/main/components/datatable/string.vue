@@ -2,12 +2,12 @@
   <v-tooltip bottom>
     <template v-slot:activator="{ on, attrs }">
       <div
-        style="
-          overflow-x: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          text-align: center;
-        "
+        :style="{
+          overflowX: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          textAlign: align,
+        }"
         v-bind="attrs"
         v-on="on"
       >
@@ -22,6 +22,10 @@ export default {
   props: {
     value: String,
     column: Object,
+    align: {
+      type: String,
+      default: "center",
+    },
   },
 };
 </script>

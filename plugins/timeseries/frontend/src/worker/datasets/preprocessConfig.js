@@ -39,7 +39,7 @@ function preprocess(ctx, v) {
     }
 }
 
-const preprocessAll = (ctx, vis) => Object.entries(vis).map(([key, v]) => preprocess(ctx, {...v, key}));
+const preprocessAll = (ctx, vis) => Array.from(vis,([key, v]) => preprocess(ctx, {...v, key}));
 
 export {customPreprocessors, preprocessAll}
 export default preprocess;

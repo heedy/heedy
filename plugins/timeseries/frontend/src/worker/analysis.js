@@ -44,7 +44,7 @@ function explicitDuration(ts, offset = 0.001) {
 
 
 
-function getType(ts,extractor) {
+function getType(p,ts,extractor) {
     if (ts.length == 0) {
         return "";
     }
@@ -82,7 +82,7 @@ function getType(ts,extractor) {
     return "";
 }
 
-function getKeys(ts,f) {
+function getKeys(p,ts,f) {
     let vals = {};
     ts.forEach((dp) => {
         Object.keys(f(dp)).forEach((k) => {
@@ -96,7 +96,7 @@ function getKeys(ts,f) {
 }
 
 
-function getMin(ts,f) {
+function getMin(p,ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v >= cur) {
@@ -106,7 +106,7 @@ function getMin(ts,f) {
     }, Infinity)
 }
 
-function getMax(ts,f) {
+function getMax(p,ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v <= cur) {
@@ -116,7 +116,7 @@ function getMax(ts,f) {
     }, -Infinity)
 }
 
-function getSum(ts,f) {
+function getSum(p,ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -124,7 +124,7 @@ function getSum(ts,f) {
     }, 0)
 }
 
-function getVar(ts,f) {
+function getVar(p,ts,f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -132,8 +132,21 @@ function getVar(ts,f) {
     }, 0);
 }
 
-function getNonNull(ts,f) {
+function getNonNull(p,ts,f) {
     return ts.reduce((cur, dp) => (f(dp) == null ? cur : cur + 1), 0);
+}
+
+function getMean(d,ts,f) {
+    return d.sum() / d.nonNull();
+}
+
+function getStdev(d,ts,f) {
+    const mu = d.mean();
+    return Math.sqrt(ts.reduce((cur, dp) => {
+      let v = f(dp);
+      if (v == null) return cur;
+      return cur + Math.pow(v - mu, 2)
+    }, 0) / (d.nonNull() - 1))
 }
 
 function registerAnalysis(ts) {
@@ -144,6 +157,8 @@ function registerAnalysis(ts) {
     ts.addAnalysisFunction("sum",getSum);
     ts.addAnalysisFunction("var",getVar);
     ts.addAnalysisFunction("nonNull",getNonNull);
+    ts.addAnalysisFunction("mean",getMean);
+    ts.addAnalysisFunction("stdev",getStdev);
 }
 
 export default registerAnalysis;

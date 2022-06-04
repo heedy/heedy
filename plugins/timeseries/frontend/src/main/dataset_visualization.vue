@@ -67,7 +67,7 @@ const q = ${JSON.stringify(q, null, "  ")};
 if (!c.query.isEqual(q)) return vis;
 
 // If the conditions are met, set the visualization's configuration
-vis[${JSON.stringify(k)}] = ${JSON.stringify(c, null, "  ")};
+vis.set(${JSON.stringify(k)},${JSON.stringify(c, null, "  ")});
 
 return vis;
 `

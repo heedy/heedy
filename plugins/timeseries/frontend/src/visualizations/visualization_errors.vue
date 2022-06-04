@@ -20,7 +20,7 @@ export default {
     props: {
         query: Object,
         config: Object,
-        data: Array,
+        data: Object,
         type: String,
     },
     data: () => ({

@@ -1,66 +1,66 @@
 <template>
   <div>
-    <div v-for="(data, idx) in config.charts" :key="idx">
+    <div v-for="(d, idx) in data.charts" :key="idx">
       <linechart
-        v-if="data.type == 'line'"
-        :chartData="data.data"
-        :options="data.options"
+        v-if="d.type == 'line'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <barchart
-        v-else-if="data.type == 'bar'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'bar'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <horizontalbarchart
-        v-else-if="data.type == 'horizontalBar'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'horizontalBar'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <doughnutchart
-        v-else-if="data.type == 'doughnut'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'doughnut'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <piechart
-        v-else-if="data.type == 'pie'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'pie'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <polarareachart
-        v-else-if="data.type == 'polarArea'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'polarArea'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <radarchart
-        v-else-if="data.type == 'radar'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'radar'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <bubblechart
-        v-else-if="data.type == 'bubble'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'bubble'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
       <scatterchart
-        v-else-if="data.type == 'scatter'"
-        :chartData="data.data"
-        :options="data.options"
+        v-else-if="d.type == 'scatter'"
+        :chartData="d.data"
+        :chartOptions="d.options"
         :width="null"
         :height="null"
       />
@@ -71,26 +71,12 @@
 <script>
 import Chartjs from "../../dist/chartjs.mjs";
 
+/*
 let getChart = (c) => ({
   extends: c,
-  mixins: [Chartjs.mixins.reactiveProp],
-  props: {
-    chartData: Object,
-    options: Object,
-  },
-  watch: {
-    options: {
-      handler(newOption, oldOption) {
-        this.$data._chart.destroy();
-        this.renderChart(this.chartData, this.options);
-      },
-      deep: true,
-    },
-  },
-  mounted() {
-    this.renderChart(this.chartData, this.options);
-  },
 });
+*/
+const getChart = (c) => c;
 
 export default {
   components: {
@@ -107,6 +93,8 @@ export default {
   props: {
     query: Object,
     config: Object,
+    data: Object,
+    type: String
   },
 };
 </script>
