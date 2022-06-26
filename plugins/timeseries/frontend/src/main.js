@@ -14,8 +14,8 @@ import DatapointInserter from "./main/components/datapoint_inserter.vue";
 import DataTable from "./main/components/datatable.vue";
 import BasicTable from "./main/components/table.vue";
 import DurationEditor from "./main/components/duration.vue";
-import ErrorsVisualization from "./visualizations/visualization_errors.vue";
 import ErrorVisualization from "./visualizations/error.vue";
+import DebugVisualization from "./visualizations/debug.vue";
 import DataTableVisualization from "./visualizations/datatable.vue";
 import BasicTableVisualization from "./visualizations/table.vue";
 import Settings from "./main/settings.vue";
@@ -152,10 +152,8 @@ function setup(frontend) {
     type: "timeseries",
     key: "body",
   });
-
-
-  frontend.timeseries.addVisualizationType("visualization_errors", ErrorsVisualization);
   frontend.timeseries.addVisualizationType("error", ErrorVisualization);
+  frontend.timeseries.addVisualizationType("debug",DebugVisualization);
   frontend.timeseries.addVisualizationType("chartjs", () =>
     import("./visualizations/chartjs.mjs")
   );

@@ -1,4 +1,4 @@
-function analyze(c, vis) {
+function datatable(c, vis) {
     if (c.data.size > 6 || !c.data.every((ds) => ds.length < 50000 && ds.length > 0)) {
         return vis; // Don't display table for huge datasets.
     }
@@ -38,7 +38,7 @@ function analyze(c, vis) {
 
         return {
             columns,
-            label: c.keys[i], 
+            label: c.getSeriesLabelTemplate(i), 
             data: c.tpl(`data[${i}]`),
             timeseries: c.tpl(`query[${i}].timeseries`),
             editable: c.tpl(`query[${i}].isSimple()`)
@@ -55,4 +55,4 @@ function analyze(c, vis) {
     return vis;
 }
 
-export default analyze;
+export default datatable;

@@ -95,6 +95,23 @@ func ExportUser(c *rest.Context, u *database.User, opath string, zipWriter *zip.
 		return err
 	}
 
+	f, err = zipWriter.Create(filepath.Join(opath, "settings.json"))
+	if err != nil {
+		return err
+	}
+	settings, err := c.DB.ReadUserSettings(*u.UserName)
+	if err != nil {
+		return err
+	}
+	b, err = json.Marshal(settings)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	if err != nil {
+		return err
+	}
+
 	if opt != nil && opt.IncludeApps {
 		apps, err := c.DB.ListApps(&database.ListAppOptions{
 			Owner:          u.UserName,

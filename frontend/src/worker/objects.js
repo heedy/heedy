@@ -16,10 +16,13 @@ class ObjectInjector {
     wkr.websocket.subscribe_status((s) => this._ws_status(s));
 
     wkr.addHandler("get_object", (ctx, msg) => {
-      this.objects[msg.id] = msg;
+      this.objects[msg.id] = msg.object;
       if (this.waiting[msg.id] !== undefined) {
-        this.waiting[msg.id].forEach((c) => c(msg));
+        this.waiting[msg.id].forEach((c) => c(msg.object));
         delete this.waiting[msg.id];
+      }
+      if (this.subscriptions[msg.id]!==undefined) {
+        this.subscriptions[msg.id].forEach((c)=> c(msg.object))
       }
     });
   }

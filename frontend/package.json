@@ -36,6 +36,7 @@
     "@vue/composition-api": "^1.4.2",
     "codemirror": "^5.65.2",
     "color-hash": "^2.0.1",
+    "date-fns": "^2.28.0",
     "highlight.js": "^11.2.0",
     "html-minifier": "^4.0.0",
     "markdown-it": "^12.3.2",

@@ -13,6 +13,7 @@ const plugin_name = "timeseries";
 
 const externals = {
   vue: "/static/dist/vue.mjs",
+  "date-fns": "/static/dist/date-fns.mjs"
 }
 
 const production = !(process.env.NODE_ENV === "debug");
@@ -90,7 +91,7 @@ export default [
       .sync("visualizations/*.vue", {
         cwd: "./src",
       })
-      .filter((e) => !(["datatable.vue", "table.vue","visualization_errors.vue","error.vue"].includes(e.split("/")[1]))) // Exclude direct imports
+      .filter((e) => !(["datatable.vue", "table.vue","visualization_errors.vue","error.vue","debug.vue"].includes(e.split("/")[1]))) // Exclude direct imports
       .map((a) => out(a))
   )
   .concat(

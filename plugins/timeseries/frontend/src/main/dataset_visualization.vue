@@ -2,8 +2,20 @@
   <v-flex style="padding-top: 0px">
     <v-row>
       <slot></slot>
+      <v-col v-if="errors.length>0" cols="12"
+        sm="12"
+        md="6"
+        lg="6"
+        xl="4">
+        <v-card>
+          <v-card-title>Visualization Errors</v-card-title>
+          <v-card-text>
+            <vis-errors :errors="errors" :editingName="editing_name" :query="query" />
+          </v-card-text>
+        </v-card>
+      </v-col>
       <v-col
-        v-if="datavis.length == 0"
+        v-if="datavis.length == 0 && errors.length==0"
         style="width: 100%; text-align: center"
         cols="12"
         sm="12"
@@ -33,9 +45,17 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item @click="customize(d)">
+                <v-list-item @click="showConfig(d)">
                   <v-list-item-icon>
                     <v-icon>code</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title>Configuration</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item @click="customize(d)">
+                  <v-list-item-icon>
+                    <v-icon>fas fa-laptop-code</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
                     <v-list-item-title>Customize</v-list-item-title>
@@ -56,20 +76,36 @@
         </v-card>
       </v-col>
     </v-row>
+    <v-dialog v-if="configDialog" v-model="configDialog" max-width="1024px">
+      <v-card>
+        <v-card-title>
+          <span class="headline">{{ configDialogData.title }} Configuration</span>
+          <div class="flex-grow-1"></div>
+          <v-btn color="primary" icon @click="configDialog = false"
+            ><v-icon>close</v-icon></v-btn
+          >
+        </v-card-title>
+        <v-card-text>
+          <codemirror
+            :value="JSON.stringify(configDialogData.config, null, '  ')"
+            :options="cmOptions"
+          ></codemirror>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-flex>
 </template>
 <script>
 import VisNotFound from "./vis_notfound.vue";
+import VisErrors from "./vis_errors.vue";
 
 const customizationCode = (k,q,c) => `// The c variable holds context data, and vis holds visualizations
 // Only customize the visualization for queries that match this one
 const q = ${JSON.stringify(q, null, "  ")};
-if (!c.query.isEqual(q)) return vis;
+if (!c.query.isEqual(q)) return;
 
 // If the conditions are met, set the visualization's configuration
 vis.set(${JSON.stringify(k)},${JSON.stringify(c, null, "  ")});
-
-return vis;
 `
 
 function CleanQuery(q) {
@@ -106,6 +142,9 @@ function ValidQuery(q) {
 }
 
 export default {
+  components: {
+    VisErrors
+  },
   props: {
     query: Object,
     live: {
@@ -116,11 +155,18 @@ export default {
       type: Array,
       default: null
     },
+    editing_name: {
+      type: String,
+      default: ""
+    }
   },
   data: () => ({
     message: "Querying Data...",
     datavis: [],
+    errors: [],
     qkey: "",
+    configDialog: false,
+    configDialogData: {},
     cmOptions: {
       tabSize: 2,
       mode: "text/javascript",
@@ -128,6 +174,10 @@ export default {
     },
   }),
   methods: {
+    showConfig(d) {
+      this.configDialogData = d;
+      this.configDialog = true;
+    },
     getVisComponentByType(v) {
       let vs = this.$store.state.timeseries.visualizationTypes;
       if (vs[v] === undefined) {
@@ -154,6 +204,10 @@ export default {
             // Special-case query status messages
             this.message = dv.status;
             return;
+          }
+          this.errors = [];
+          if (dv.errors!==undefined) {
+            this.errors = dv.errors;
           }
 
           dv = dv.visualizations;
@@ -228,7 +282,6 @@ export default {
 </script>
 <style>
 .CodeMirror {
-  border: 1px solid #eee;
   height: auto;
 }
 </style>

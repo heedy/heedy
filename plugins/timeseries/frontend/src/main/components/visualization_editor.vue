@@ -59,6 +59,7 @@
       v-else
       :query="testVisualization.test_query"
       :user_visualizations="editedVisualizations(testVisualization)"
+      :editing_name="testVisualization.name"
     ></h-dataset-visualization>
     <v-flex>
       <v-card>
@@ -292,7 +293,6 @@ export default {
         } catch (err) {
           console.error(err);
           this.viserrmessage = "Error reading test query";
-          return;
         }
       }
       this.code = code;

@@ -39,22 +39,25 @@ const prepareUserVisualizations = (vis, cache = true) => vis.filter(v => v.enabl
     code: v.code
   };
 });
+const getStack = (err) => {
+  const lines = err.stack.split('\n');
+  if (lines.length<=5) return err.stack;
+  return lines.slice(0,5).join('\n');
+}
 
 // Given a query context, and visualizations arrays, generates the visualization object.
 const getVisualizations = (c, visualizations, user_visualizations) => {
-  let vis = new Map();
-  let errors = [];
+  const vis = new Map();
+  vis.errors = [];
   for (let v of visualizations) {
     try {
-      const vis2 = v.f(c, vis);
-      if (vis2 !== undefined) {
-        vis = vis2;
-      }
+      v.f(c, vis);
     } catch (e) {
       console.error(e);
-      errors.push({
+      vis.errors.push({
         type: "plugin",
         error: e.toString(),
+        stack: getStack(e),
         name: v.name
       });
     }
@@ -62,30 +65,18 @@ const getVisualizations = (c, visualizations, user_visualizations) => {
 
   for (let v of user_visualizations) {
     try {
-      const vis2 = v.f(c, vis);
-      if (vis2 !== undefined) {
-        vis = vis2;
-      }
+      v.f(c, vis);
     } catch (e) {
       console.error(e);
-      errors.push({
+      vis.errors.push({
         type: "user",
         error: e.toString(),
+        stack: getStack(e),
         name: v.name
       });
     }
   }
-
-  if (errors.length > 0) {
-    vis.set("errors",{
-      type: "visualization_errors",
-      title: "Visualization Errors",
-      weight: -100,
-      config: {
-        errors
-      }
-    });
-  }
+  
   return vis;
 }
 
@@ -212,6 +203,7 @@ class DatasetQueryHandler {
       this.worker.postMessage("timeseries_query_result", {
         key: msg.key,
         visualizations: out,
+        errors: vis.errors,
         query: msg.query,
       });
     }

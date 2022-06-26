@@ -15,13 +15,12 @@ function getSummaryForType(type,access) {
     return summary;
 }
 
-function visualization(c,vis) {
+function summary(c,vis) {
     if (!c.data.every((d) => d.length >=5)) {
         return; // Only display if a summary view would actually be useful
     }
     // if it is an object, extract the keys, and use those as tabs.
     let tables = [];
-    console.log("datalan",c.data.length,c.data.size)
     if (c.data.length == 1 && c.data[0].d.type() === "object") {
         const d = c.data[0].d;
         const k = d.keys();
@@ -47,7 +46,7 @@ function visualization(c,vis) {
                 dd.push({name: "duration", value: c.tpl(`data[${i}].dt.sum()`),"value.type": "duration"});
             }
             return {
-                label: c.keys[i],
+                label: c.getSeriesLabelTemplate(i),
                 columns: [
                     { prop: "name", name: "Quantity" },
                     { prop: "value", name: "Value" },
@@ -67,4 +66,4 @@ function visualization(c,vis) {
     return;
 }
 
-export default visualization;
+export default summary;

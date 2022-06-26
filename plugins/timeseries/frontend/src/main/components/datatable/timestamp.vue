@@ -4,16 +4,19 @@
 <script>
 export default {
   props: {
-    value: Number,
+    value: Number | Date,
     column: Object,
     align: {
       type: String,
-      default: "center"
-    }
+      default: "center",
+    },
   },
   computed: {
     textTime: function () {
-      return new Date(this.value * 1000).toLocaleString();
+      if (typeof this.value === "number") {
+        return new Date(this.value * 1000).toLocaleString();
+      }
+      return this.value.toLocaleString();
     },
   },
 };

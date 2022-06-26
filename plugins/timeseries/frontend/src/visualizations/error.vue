@@ -34,4 +34,7 @@ export default {
 .CodeMirror-scroll {
     max-height: 200px;
 }
+.v-alert__content {
+  overflow: hidden;
+}
 </style>

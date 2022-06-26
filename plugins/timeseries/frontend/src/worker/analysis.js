@@ -1,5 +1,12 @@
+import {
+    createLTTB
+} from "../../dist/downsample.mjs";
+
+import {addMilliseconds} from "date-fns";
+
 function cleanDT(ts) {
-    // TODO: This is actually a bug in the underlying heedy code when merging timeseries with durations
+    // TODO: When merging data from multiple timeseries, heedy might not enforce
+    // that there is no timestamp overlap. This function fixes the issue.
     for (let i = 0; i < ts.length - 1; i++) {
         if (ts[i].dt !== undefined && ts[i].t + ts[i].dt > ts[i + 1].t) {
             ts[i].dt = ts[i + 1].t - ts[i].t;
@@ -8,43 +15,8 @@ function cleanDT(ts) {
     return ts;
 }
 
-function flatten(ts, depth = 1) {
-    return ts.map((dp) => {
-        let res = { ...dp };
-        Object.keys(dp.d).forEach((k) => {
-            res["d." + k] = dp.d[k];
-        });
-        return res;
-    });
-}
 
-/**
- * Splits datapoints with durations into two elements - one at start of the duration,
- * and one at end of the duration
- *
- * @param {*} ts timeseries
- */
-function explicitDuration(ts, offset = 0.001) {
-    let res = new Array(ts.length * 2);
-    let j = 0;
-    for (let i = 0; i < ts.length; i++) {
-        res[j] = ts[i];
-        j++;
-        if (ts[i].dt !== undefined && ts[i].dt != 0) {
-            res[j] = {
-                t: ts[i].t + ts[i].dt - offset,
-                d: ts[i].d,
-            };
-            j++;
-        }
-    }
-    return res.slice(0, j);
-}
-
-
-
-
-function getType(p,ts,extractor) {
+function getType(p, ts, extractor) {
     if (ts.length == 0) {
         return "";
     }
@@ -82,7 +54,7 @@ function getType(p,ts,extractor) {
     return "";
 }
 
-function getKeys(p,ts,f) {
+function getKeys(p, ts, f) {
     let vals = {};
     ts.forEach((dp) => {
         Object.keys(f(dp)).forEach((k) => {
@@ -96,7 +68,7 @@ function getKeys(p,ts,f) {
 }
 
 
-function getMin(p,ts,f) {
+function getMin(p, ts, f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v >= cur) {
@@ -106,7 +78,7 @@ function getMin(p,ts,f) {
     }, Infinity)
 }
 
-function getMax(p,ts,f) {
+function getMax(p, ts, f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null || v <= cur) {
@@ -116,7 +88,7 @@ function getMax(p,ts,f) {
     }, -Infinity)
 }
 
-function getSum(p,ts,f) {
+function getSum(p, ts, f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -124,7 +96,7 @@ function getSum(p,ts,f) {
     }, 0)
 }
 
-function getVar(p,ts,f) {
+function getVar(p, ts, f) {
     return ts.reduce((cur, dp) => {
         let v = f(dp);
         if (v == null) return cur;
@@ -132,33 +104,114 @@ function getVar(p,ts,f) {
     }, 0);
 }
 
-function getNonNull(p,ts,f) {
+function getNonNull(p, ts, f) {
     return ts.reduce((cur, dp) => (f(dp) == null ? cur : cur + 1), 0);
 }
 
-function getMean(d,ts,f) {
+function getMean(d, ts, f) {
     return d.sum() / d.nonNull();
 }
 
-function getStdev(d,ts,f) {
+function getStdev(d, ts, f) {
     const mu = d.mean();
     return Math.sqrt(ts.reduce((cur, dp) => {
-      let v = f(dp);
-      if (v == null) return cur;
-      return cur + Math.pow(v - mu, 2)
+        let v = f(dp);
+        if (v == null) return cur;
+        return cur + Math.pow(v - mu, 2)
     }, 0) / (d.nonNull() - 1))
 }
 
+function getDate(d, ts, f) {
+    return ts.map(dp => {
+        const dv = f(dp);
+        if (dv !== null) return new Date(dv * 1000);
+        return null;
+    });
+}
+
+function dateTransform(arr) {
+    return arr.map(d => dv != null ? new Date(dv) : null);
+}
+
+function extract(arr, accesor) {
+    return arr.map(dp => {
+        const out = accesor(dp);
+        return out !== undefined ? out : null;
+    });
+}
+
+// filterNullTransform 
+function filterNullTransform(arr, accessor) {
+    const out = arr.filter(dp => accessor(dp) != null);
+    // If it doesn't actually filter anything, return the original array
+    // to save some memory when caching.
+    if (out.length==arr.length) return arr;
+    return out;
+}
+
+/**
+ * Splits datapoints with durations into two elements - one at start of the duration,
+ * and one at end of the duration
+ *
+ * @param {*} ts timeseries
+ */
+function explicitDuration(ts, options = {}) {
+    options = {offset: 0.000,all:true, ...options};
+    const res = new Array(ts.length * (options.separator !==undefined ? 3 : 2));
+    let j = 0;
+    for (let i = 0; i < ts.length; i++) {
+        res[j] = ts[i];
+        j++;
+        if (options.all || (ts[i].dt !== undefined && ts[i].dt != 0)) {
+            let v = ts[i].dt - options.offset;
+            if (v===undefined || isNaN(v) || v < 0) v=0;
+            res[j] = {
+                t: addMilliseconds(ts[i].t,1000*v),
+                d: ts[i].d,
+                m: ts[i].m
+            };
+            j++;
+        }
+        if (options.separator!==undefined) {
+            res[j] = options.separator;
+            j++;
+        }
+    }
+    return res.slice(0, j);
+}
+
+function downsample(ts, accessor, samples) {
+    return createLTTB({
+        x: (dp) => dp.t.getTime(),
+        y: accessor
+    })(ts, samples);
+}
+
+
 function registerAnalysis(ts) {
-    ts.addAnalysisFunction("type",getType);
-    ts.addAnalysisFunction("keys",getKeys);
-    ts.addAnalysisFunction("min",getMin);
-    ts.addAnalysisFunction("max",getMax);
-    ts.addAnalysisFunction("sum",getSum);
-    ts.addAnalysisFunction("var",getVar);
-    ts.addAnalysisFunction("nonNull",getNonNull);
-    ts.addAnalysisFunction("mean",getMean);
-    ts.addAnalysisFunction("stdev",getStdev);
+    ts.addAnalysisFunction("type", getType);
+    ts.addAnalysisFunction("keys", getKeys);
+    ts.addAnalysisFunction("min", getMin);
+    ts.addAnalysisFunction("max", getMax);
+    ts.addAnalysisFunction("sum", getSum);
+    ts.addAnalysisFunction("var", getVar);
+    ts.addAnalysisFunction("nonNull", getNonNull);
+    ts.addAnalysisFunction("mean", getMean);
+    ts.addAnalysisFunction("stdev", getStdev);
+    ts.addAnalysisFunction("toDates", getDate);
+
+    ts.addTransformFunction("toDates", dateTransform);
+    ts.addTransformFunction("explicitDuration", explicitDuration);
+    ts.addTransformFunction("filterNull", filterNullTransform, {
+        accessor: true
+    });
+    ts.addTransformFunction("extract", extract, {
+        accessor: true
+    });
+    ts.addTransformFunction("downsample", downsample, {
+        accessor: true,
+        extra_args: 1
+    });
 }
 
 export default registerAnalysis;

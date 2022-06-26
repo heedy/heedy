@@ -157,8 +157,16 @@ class Query {
         let result = await api("POST", `api/timeseries/dataset`, this.query);
         
         if (!result.response.ok) {
-            throw result.data.error_description;
-          }
+          throw new Error(result.data.error_description);
+        }
+
+        // Now preprocess the dataset to set all timestamps to Date objects
+        Object.keys(result.data).forEach(k=> {
+            result.data[k].forEach(dp=> {
+                dp.t = new Date(dp.t*1000);
+            });
+        });
+
         this._dataset = result.data;
         this._hasNewData = true;
     }

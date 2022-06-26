@@ -1,13 +1,11 @@
 import DatasetHandler from "./datasets/handler.js";
-import { addAnalysisFunction, initDatasetContext } from "./datasets/context.js";
+import { addAnalysisFunction, addTransformFunction, initDatasetContext } from "./datasets/context.js";
 import {customPreprocessors} from "./datasets/preprocessConfig.js";
 
 class TimeseriesInjector {
   constructor(wkr) {
     this.worker = wkr;
-
     this.datasetHandler = new DatasetHandler(wkr);
-
   }
 
   /**
@@ -34,8 +32,11 @@ class TimeseriesInjector {
     this.datasetHandler.addVisualization({name,f});
   }
 
-  addAnalysisFunction(name,f) {
-    addAnalysisFunction(name,f);
+  addAnalysisFunction(name,f,options={}) {
+    addAnalysisFunction(name,f,options);
+  }
+  addTransformFunction(name,f,options={}) {
+    addTransformFunction(name,f,options);
   }
   initDatasetContext(f) {
     initDatasetContext(f);

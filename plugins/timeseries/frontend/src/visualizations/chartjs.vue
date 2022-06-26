@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-for="(d, idx) in data.charts" :key="idx">
+    <div v-for="(d, idx) in data" :key="idx">
       <linechart
         v-if="d.type == 'line'"
         :chartData="d.data"
@@ -92,8 +92,8 @@ export default {
   },
   props: {
     query: Object,
-    config: Object,
-    data: Object,
+    config: {},
+    data: {},
     type: String
   },
 };

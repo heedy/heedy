@@ -57,7 +57,7 @@ export default {
   },
   methods: {
     editVis(name) {
-      this.$router.push({path:`/timeseries/visualization/update/${name}`});
+      this.$router.push({path:`/timeseries/visualization/update/${encodeURIComponent(name)}`});
     },
     setVis(idx,v) {
       const visualizations = [...this.value.visualizations];

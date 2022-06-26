@@ -68,7 +68,7 @@ class ObjectInjector {
     // Respond to object queries from the worker
     frontend.worker.addHandler("get_object", (ctx, msg) =>
       this.get(msg.id).then((obj) =>
-        frontend.worker.postMessage("get_object", obj)
+        frontend.worker.postMessage("get_object", {id: msg.id,object:obj})
       )
     );
   }
