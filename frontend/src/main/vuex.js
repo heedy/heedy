@@ -12,7 +12,7 @@ function setup(appinfo,wrkr) {
                     info: appinfo,
                     // menu_items gives all the defined menu items
                     menu_items: {},
-                    // The status of the websocket. null means disconnected, and a moment() object
+                    // The status of the websocket. null means disconnected, and a Date object
                     // gives the time from which it was connected
                     websocket: null,
                     // Whether to notify the user that an update is available to the frontend

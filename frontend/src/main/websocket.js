@@ -1,4 +1,3 @@
-import moment from "../dist/moment.mjs";
 
 /**
  * @alias frontend.websocket
@@ -117,9 +116,9 @@ class WebsocketSubscriber {
         */
 
     // Set the websocket frontend time
-    let m = moment();
+    let m = new Date();
     this.store.commit("setWebsocket", m);
-    this.frontend.worker.postMessage("websocket_status", m.unix());
+    this.frontend.worker.postMessage("websocket_status", m);
     this.openers.map(o => o());
 
     if (this.wasopen) {

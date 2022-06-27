@@ -1,5 +1,5 @@
 import Vue from "../../dist/vue.mjs";
-import moment from "../../dist/moment.mjs";
+import {isBefore} from "../../dist/date-fns.mjs";
 import api from "../../util.mjs";
 
 // The notification key
@@ -60,7 +60,7 @@ export default {
         },
 
         setGlobalNotifications(state, v) {
-            let qtime = moment();
+            let qtime = new Date();
             // Turn a list of notifications into an object keyed by nKey
             state.global = v.reduce((o, n) => {
                 n.qtime = qtime;
@@ -89,7 +89,7 @@ export default {
 
         },
         setAppNotifications(state, v) {
-            let qtime = moment();
+            let qtime = new Date();
             let nmap = v.data.reduce((map, o) => {
                 o.qtime = qtime;
                 map[o.key] = o;
@@ -99,7 +99,7 @@ export default {
             Vue.set(state.apps_qtime, v.id, qtime);
         },
         setObjectNotifications(state, v) {
-            let qtime = moment();
+            let qtime = new Date();
             let nmap = v.data.reduce((map, o) => {
                 o.qtime = qtime;
                 map[o.key] = o;
@@ -115,7 +115,7 @@ export default {
             state,
             rootState
         }) {
-            if (state.global != null && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.global_qtime)) {
+            if (state.global != null && rootState.app.websocket != null && isBefore(rootState.app.websocket,state.global_qtime)) {
                 console.vlog("Not querying global notifications - websocket active");
                 return;
             }
@@ -138,7 +138,7 @@ export default {
             state,
             rootState
         }, q) {
-            if (state.apps[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.apps_qtime[q.id])) {
+            if (state.apps[q.id] !== undefined && rootState.app.websocket != null && isBefore(rootState.app.websocket,state.apps_qtime[q.id])) {
                 console.vlog(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }
@@ -164,7 +164,7 @@ export default {
             state,
             rootState
         }, q) {
-            if (state.objects[q.id] !== undefined && rootState.app.websocket != null && rootState.app.websocket.isBefore(state.objects_qtime[q.id])) {
+            if (state.objects[q.id] !== undefined && rootState.app.websocket != null && isBefore(rootState.app.websocket,state.objects_qtime[q.id])) {
                 console.vlog(`Not querying notifications for ${q.id} - websocket active`);
                 return;
             }

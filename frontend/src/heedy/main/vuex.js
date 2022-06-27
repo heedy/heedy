@@ -1,6 +1,7 @@
 import Vue from "../../dist/vue.mjs";
-import moment from "../../dist/moment.mjs";
 import api, {deepEqual} from "../../util.mjs";
+
+import {isBefore,isAfter,subSeconds,addSeconds} from "../../dist/date-fns.mjs";
 
 export default {
   state: {
@@ -124,7 +125,7 @@ export default {
       };
     },
     setUser(state, v) {
-      Vue.set(state.users_qtime, v.username, moment());
+      Vue.set(state.users_qtime, v.username, new Date());
       if (v.isNull !== undefined) {
         if (state.userObjects[v.username] !== undefined) {
           Vue.delete(state.userObjects, v.username);
@@ -148,12 +149,12 @@ export default {
         return;
       }
       Vue.set(state.apps, v.id, {
-        qtime: moment(),
+        qtime: new Date(),
         ...v,
       });
     },
     setApps(state, v) {
-      let qtime = moment();
+      let qtime = new Date();
       Object.keys(v).forEach((k) => {
         v[k] = {
           qtime,
@@ -180,7 +181,7 @@ export default {
           !Array.isArray(state.objects_qtime[v.id])
           ? []
           : state.objects_qtime[v.id];
-      Vue.set(state.objects_qtime, v.id, moment());
+      Vue.set(state.objects_qtime, v.id, new Date());
 
       if (deepEqual(curs, v)) {
         callbacks.forEach((c) => c());
@@ -244,7 +245,7 @@ export default {
     },
     setUserObjects(state, v) {
       let srcidmap = {};
-      let qtime = moment();
+      let qtime =new Date();
       v.objects.forEach((s) => {
         srcidmap[s.id] = null;
       });
@@ -252,11 +253,11 @@ export default {
       Vue.set(state.userObjects_qtime, v.user, qtime);
     },
     setUserObjectsQTime(state, uname) {
-      Vue.set(state.userObjects_qtime, uname, moment());
+      Vue.set(state.userObjects_qtime, uname, new Date());
     },
     setAppObjects(state, v) {
       let srcidmap = {};
-      let qtime = moment();
+      let qtime = new Date();
       v.objects.forEach((s) => {
         srcidmap[s.id] = null;
       });
@@ -402,10 +403,10 @@ export default {
         // If the user was queried up to 1 second before websocket became active,
         // or was queried less than a second ago, let's just leave it. This avoids
         // an unnecessary query to read user on app startup
-        let cmptime = state.users_qtime[username].add(1, "second");
+        let cmptime = addSeconds(state.users_qtime[username],1);
         if (
           rootState.app.websocket != null &&
-          rootState.app.websocket.isBefore(cmptime) || moment().isBefore(cmptime)
+          isBefore(rootState.app.websocket,cmptime) || isBefore(new Date(),cmptime)
         ) {
           console.vlog(`Not querying ${username} - websocket active or just queried`);
           if (q.hasOwnProperty("callback")) {
@@ -425,7 +426,7 @@ export default {
 
         if (
           rootState.app.websocket != null &&
-          rootState.app.websocket.isBefore(state.apps[q.id].qtime)
+          isBefore(rootState.app.websocket,state.apps[q.id].qtime)
         ) {
           console.vlog(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
@@ -435,8 +436,8 @@ export default {
         }
         if (
           state.apps_qtime !== null &&
-          state.apps_qtime.isAfter(
-            moment().subtract(1, "second")
+          isAfter(state.apps_qtime,
+            subSeconds(new Date(),1)
           )
         ) {
           console.vlog(
@@ -454,7 +455,7 @@ export default {
       if (state.objects[q.id] !== undefined && state.objects[q.id] !== null) {
         if (
           rootState.app.websocket != null &&
-          rootState.app.websocket.isBefore(state.objects_qtime[q.id])
+          isBefore(rootState.app.websocket,state.objects_qtime[q.id])
         ) {
           console.vlog(`Not querying ${q.id} - websocket active`);
           if (q.hasOwnProperty("callback")) {
@@ -470,15 +471,15 @@ export default {
       if (state.userObjects_qtime[q.username] !== undefined) {
         if (
           rootState.app.websocket !== null &&
-          rootState.app.websocket.isBefore(state.userObjects_qtime[q.username])
+          isBefore(rootState.app.websocket,state.userObjects_qtime[q.username])
         ) {
           console.vlog(`Not reading ${q.username} objects - websocket active`);
           return;
         }
         // Check if we JUST queried less than a second ago
         if (
-          state.userObjects_qtime[q.username].isAfter(
-            moment().subtract(1, "second")
+          isAfter(state.userObjects_qtime[q.username],
+            subSeconds(new Date(),1)
           )
         ) {
           console.vlog(
@@ -517,7 +518,7 @@ export default {
       if (
         state.appObjects[q.id] !== undefined &&
         rootState.app.websocket !== null &&
-        rootState.app.websocket.isBefore(state.appObjects_qtime[q.id])
+        isBefore(rootState.app.websocket,state.appObjects_qtime[q.id])
       ) {
         console.vlog(`Not reading ${q.id} objects - websocket active`);
         return;
@@ -563,15 +564,15 @@ export default {
       if (
         state.apps !== null &&
         rootState.app.websocket !== null &&
-        rootState.app.websocket.isBefore(state.apps_qtime)
+        isBefore(rootState.app.websocket,state.apps_qtime)
       ) {
         console.vlog("Not listing apps - websocket active");
         return;
       }
       if (
         state.apps_qtime !== null &&
-        state.apps_qtime.isAfter(
-          moment().subtract(1, "second")
+        isAfter(state.apps_qtime,
+         subSeconds(new Date(),1)
         )
       ) {
         console.vlog(
@@ -580,7 +581,7 @@ export default {
         return;
       }
       console.vlog("Loading apps");
-      commit("setAppsQTime", moment());
+      commit("setAppsQTime", new Date());
       let res = await api("GET", "api/apps", {
         icon: true,
       });

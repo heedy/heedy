@@ -62,7 +62,11 @@
 </template>
 <script>
 import api from "../../../util.mjs";
-import Moment from "../../../dist/moment.mjs";
+import {
+  formatRelative,
+  parse,
+  defaultLocale,
+} from "../../../dist/date-fns.mjs";
 export default {
   props: {
     appid: String,
@@ -97,14 +101,23 @@ export default {
       if (result.data.last_access_date == null) {
         this.accessed = "never";
       } else {
-        this.accessed = Moment(result.data.last_access_date).calendar(null, {
-          sameDay: "[Today]",
-          nextDay: "[Tomorrow]",
-          nextWeek: "dddd",
-          lastDay: "[Yesterday]",
-          lastWeek: "[Last] dddd",
-          sameElse: "DD/MM/YYYY",
-        });
+        const frl = {
+          lastWeek: "'Last' eeee",
+          yesterday: "'Yesterday'",
+          today: "'Today'",
+          tomorrow: "'Tomorrow'",
+          nextWeek: "'Next' eeee",
+          other: "yyyy-MM-dd",
+        };
+        const locale = {
+          ...defaultLocale,
+          formatRelative: (t) => frl[t],
+        };
+        this.accessed = formatRelative(
+          parse(result.data.last_access_date, "yyyy-MM-dd", new Date()),
+          new Date(),
+          { locale }
+        );
       }
       return;
     },

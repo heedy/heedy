@@ -70,13 +70,13 @@
   </div>
 </template>
 <script>
-import moment from "../../../dist/moment.mjs";
+import {getUnixTime,fromUnixTime,format} from "../../../dist/date-fns.mjs";
 
-let fmtString = "YYYY-MM-DD HH:mm";
+let fmtString = "yyyy-MM-dd HH:mm";
 function parseTime(ts) {
   let tsf = parseFloat(ts);
   if (!isNaN(tsf)) {
-    return moment.unix(tsf).format(fmtString);
+    return format(fromUnixTime(tsf),fmtString);
   }
   if (ts == "now") {
     return "now";
@@ -84,7 +84,7 @@ function parseTime(ts) {
   if (ts.startsWith("now-")) {
     return `${ts.substring("now-".length, ts.length)} ago`;
   }
-  return moment(ts).format(fmtString);
+  return format(new Date(ts),fmtString);
 }
 function queryLabel(q) {
   let append = "";
@@ -265,8 +265,8 @@ export default {
         this.timeRange.end != null
       ) {
         return {
-          t1: moment(this.timeRange.start).unix(),
-          t2: moment(this.timeRange.end).unix(),
+          t1: getUnixTime(this.timeRange.start),
+          t2: getUnixTime(this.timeRange.end),
         };
       }
       if (this.dialogTab == 1) {

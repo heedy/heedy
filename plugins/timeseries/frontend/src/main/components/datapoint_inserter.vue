@@ -88,7 +88,7 @@
   </v-form>
 </template>
 <script>
-import moment from "../../../dist/moment.mjs";
+import {getUnixTime} from "../../../dist/date-fns.mjs";
 import { md } from "../../../dist/markdown-it.mjs";
 export default {
   props: {
@@ -152,10 +152,6 @@ export default {
     },
   },
   methods: {
-    disp(v) {
-      console.warn("DISP", v);
-      return "";
-    },
     insert: async function (event) {
       event.preventDefault();
       if (this.loading) return;
@@ -167,14 +163,14 @@ export default {
 
       this.loading = true;
 
-      let dp = { t: moment().unix(), d: this.modified.data };
+      let dp = { t: getUnixTime(new Date()), d: this.modified.data };
       if (this.customTimestamp) {
         if (this.date == null) {
           console.error("Invalid custom timestamp");
           this.loading = false;
           return;
         }
-        dp.t = moment(this.date).unix();
+        dp.t = getUnixTime(this.date);
         if (isFinite(this.duration) && this.duration != 0) {
           if (this.duration < 0) {
             dp.t += this.duration;

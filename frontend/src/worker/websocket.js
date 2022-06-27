@@ -1,4 +1,3 @@
-import moment from "../dist/moment.mjs";
 
 class WebsocketInjector {
   constructor(wkr) {
@@ -14,10 +13,6 @@ class WebsocketInjector {
       this.subscriptions[msg.key](msg.event)
     );
     wkr.addHandler("websocket_status", (ctx, msg) => {
-      if (msg != null) {
-        msg = moment(msg);
-      }
-
       this.status = msg;
       this.status_callbacks.forEach((c) => c(msg));
     });
