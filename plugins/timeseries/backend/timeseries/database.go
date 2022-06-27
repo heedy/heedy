@@ -291,6 +291,9 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 			return nil, err
 		}
 		bi := BatchIterator(SQLBatchIterator{rows, nil})
+		if q.T2 != nil {
+			bi = BatchEndTime{bi, t2}
+		}
 		da, err := bi.NextBatch()
 		if err != nil || da == nil {
 			return EmptyIterator{}, err
@@ -300,9 +303,6 @@ func (ts *TimeseriesDB) rawQuery(q *Query) (DatapointIterator, error) {
 			if err != nil || len(da) == 0 {
 				return EmptyIterator{}, err
 			}
-		}
-		if q.T2 != nil {
-			bi = BatchEndTime{bi, t2}
 		}
 		return NewBatchDatapointIterator(NewChanBatchIterator(bi), da), nil
 
